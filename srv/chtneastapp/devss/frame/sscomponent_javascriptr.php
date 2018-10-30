@@ -108,20 +108,27 @@ return $rtnThis;
 
 function login($rqstrstr) { 
 
-  session_start();
+  session_start(); 
   $tt = treeTop;
   $ott = ownerTree;
-  $eMod = encryptModulus;
-  $eExpo = encryptExponent;
   $si = serverIdent;
-  $pw = apikey;
+  $sp = serverpw;
+
+
+  //LOCAL USER CREDENTIALS BUILT HERE
+  $regUsr = session_id();  
+  $regCode = registerServerIdent($regUsr);  
+
+  $eMod = eModulus; 
+  $eExpo = eExponent;  
 
   if(!isset($_COOKIE['ssv7_dualcode'])) {
     $authcode = "";
   } else { 
     $authcode = $_COOKIE['ssv7_dualcode'];      
   }
- 
+  //httpage.setRequestHeader("api-token-user","{$si}");
+  //httpage.setRequestHeader("api-token-key","{$pw}");
 $rtnThis = <<<JAVASCR
 
 var byId = function( id ) { return document.getElementById( id ); };
@@ -147,15 +154,17 @@ req = new XMLHttpRequest();
 return req;
 }
 
-var key;
-function bodyLoad() {
-  setMaxDigits(262);
-  key = new RSAKeyPair("{$eExpo}","{$eExpo}","{$eMod}",2048);
+var key; 
+function bodyLoad() { 
+   setMaxDigits(262);
+   key = new RSAKeyPair("{$eExpo}","{$eExpo}","{$eMod}", 1024);
 }
 
-document.addEventListener('DOMContentLoaded', function() {  
-  bodyLoad();
-  byId('standardModalBacker').style.display = 'none';
+document.addEventListener('DOMContentLoaded', function() { 
+  bodyLoad(); 
+  if (byId('standardModalBacker')) { 
+    byId('standardModalBacker').style.display = 'none';
+  }
   if (byId('ssUser')) { 
     byId('ssUser').value = "";
     byId('ssPswd').value = "";
@@ -163,24 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 }, false);
 
-function clearForm() { 
- byId('ssUser').value = "";
- byId('ssPswd').value = "";
- byId('ssUser').focus();
-}
-
-function gotoCHTN() {  
-  window.location.href = "{$ott}";
-}
-  
-function openPageInTab(whichURL) { 
-  if (whichURL !== "") {
-    window.location.href = whichURL;
-  }
-}
-
 function doLogin() { 
-
   var crd = new Object(); 
   crd['user'] = byId('ssUser').value; 
   crd['pword'] = byId('ssPswd').value; 
@@ -192,65 +184,28 @@ function doLogin() {
   }
   var cpass = JSON.stringify(crd);
   var ciphertext = window.btoa( encryptedString(key, cpass, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding)); 
-     
   var dta = new Object(); 
   dta['ency'] = ciphertext;
   var passdata = JSON.stringify(dta);
-  var mlURL = "{$tt}/systemposts/sessionlogin";
-  httpage.open("POST",mlURL,true);
-  httpage.setRequestHeader("api-token-user","{$si}");
-  httpage.setRequestHeader("api-token-key","{$pw}");
-  httpage.onreadystatechange = function () { 
-    if (httpage.readyState === 4) {
-      if (httpage.status === 200) { 
-         location.reload(true);  //TRUE - RELOAD FROM SERVER
-      } else { 
-         var rcd = JSON.parse(httpage.responseText);
-         alert(rcd['MESSAGE']);
-      }
-  }
-  };
-  httpage.send(passdata);
-
-}
- 
-function getCookie(cname) {
-    var name = cname + "=";
-    var decodedCookie = decodeURIComponent(document.cookie);
-    var ca = decodedCookie.split(';');
-    for(var i = 0; i <ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) == ' ') {
-            c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-            return c.substring(name.length, c.length);
-        }
-    }
-    return "";
-}  
-    
-function rqstDualCode() { 
-  var dta = new Object(); 
-  dta['rqstuser'] = byId('ssUser').value;
-  var passdata = JSON.stringify(dta);
-  var mlURL = "{$tt}/systemposts/requestdualcode";
-  httpage.open("POST",mlURL,true);
-  httpage.setRequestHeader("api-token-user","{$si}");
-  httpage.setRequestHeader("api-token-key","{$pw}");
-  httpage.onreadystatechange = function () { 
-    if (httpage.readyState === 4) {
-      if (httpage.status === 200) { 
-          alert('If you are a registered ScienceServer user, you will be receiving a dual-authentication access code in your email or by text message.  This code is valid for 30 days');
-      } else { 
-        var rcd = JSON.parse(httpage.responseText);
-        alert(rcd['MESSAGE']);
-      }
-  }
-  };
-  httpage.send(passdata);
-}
-    
+  console.log(passdata);
+  var mlURL = "{$tt}/data-services/sessionlogin";
+  console.log(mlURL);
+  console.log("{$regUsr} / {$regCode}");
+  //httpage.open("POST",mlURL,true);
+  //httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+  //httpage.onreadystatechange = function () { 
+  //  if (httpage.readyState === 4) {
+  //    if (httpage.status === 200) { 
+  //       location.reload(true);  //TRUE - RELOAD FROM SERVER
+  //    } else { 
+  //       var rcd = JSON.parse(httpage.responseText);
+  //       alert(rcd['MESSAGE']);
+  //    }
+  //}
+  //};
+  //httpage.send(passdata);
+} 
+     
 JAVASCR;
 return $rtnThis;
 }

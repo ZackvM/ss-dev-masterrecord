@@ -1,9 +1,5 @@
 <?php
 
-//session_start(); 
-//echo session_id();
-
-
 class dataposters { 
 
   public $responseCode = 503;
@@ -12,27 +8,26 @@ class dataposters {
   function __construct() { 
     $args = func_get_args(); 
     $nbrofargs = func_num_args(); 
-    if (trim($args[0]) === "") { 
-    } else { 
-      $request = explode("/", $args[0]); 
-      if (trim($request[1]) === "") { 
-        $this->responseCode = 400; 
-        $this->rtnData = json_encode(array("MESSAGE" => "DATA NAME MISSING","ITEMSFOUND" => 0, "DATA" => ""));
-      } else {  
-        $dp = new $request[1](); 
-        if (method_exists($dp, $request[2])) { 
-          $funcName = trim($request[2]); 
-          $dataReturned = $dp->$funcName($args[0], $args[1]); 
-          $this->responseCode = $dataReturned['statusCode']; 
-          $this->rtnData = json_encode($dataReturned['data']);
-        } else { 
-          $this->responseCode = 404; 
-          $this->rtnData = json_encode(array("MESSAGE" => "END-POINT FUNCTION NOT FOUND: {$request[2]}","ITEMSFOUND" => 0, "DATA" => ""));
-        }
-      }
-    }
+//    if (trim($args[0]) === "") { 
+//    } else { 
+//      $request = explode("/", $args[0]); 
+//      if (trim($request[1]) === "") { 
+//        $this->responseCode = 400; 
+//        $this->rtnData = json_encode(array("MESSAGE" => "DATA NAME MISSING","ITEMSFOUND" => 0, "DATA" => $args[0]));
+//      } else {  
+//        $dp = new $request[1](); 
+//        if (method_exists($dp, $request[2])) { 
+//          $funcName = trim($request[2]); 
+//          $dataReturned = $dp->$funcName($args[0], $args[1]); 
+//          $this->responseCode = $dataReturned['statusCode']; 
+//          $this->rtnData = json_encode($dataReturned['data']);
+//        } else { 
+//          $this->responseCode = 404; 
+//          $this->rtnData = json_encode(array("MESSAGE" => "END-POINT FUNCTION NOT FOUND: {$request[2]}","ITEMSFOUND" => 0, "DATA" => ""));
+//        }
+//      }
+//    }
   }
-
 
 }
 

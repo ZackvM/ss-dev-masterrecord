@@ -345,9 +345,9 @@ return $rtnThis;
 function generateHeader($mobileInd, $whichpage) {
   $tt = treeTop;      
   $at = genAppFiles;
-  $jsscript =  base64file( "{$at}/publicobj/extjslib/Barrett.js" , "", "js", true);
-  $jsscript .= "\n" . base64file( "{$at}/publicobj/extjslib/BigInt.js" , "", "js");
-  $jsscript .= "\n" . base64file( "{$at}/publicobj/extjslib/RSA.js" , "", "js");
+  $jsscript =  base64file( "{$at}/extlibs/Barrett.js" , "", "js", true);
+  $jsscript .= "\n" . base64file( "{$at}/extlibs/BigInt.js" , "", "js");
+  $jsscript .= "\n" . base64file( "{$at}/extlibs/RSA.js" , "", "js");
   //$jsscript .= "\n" . base64file( "{$at}/publicobj/extjslib/tea.js" , "", "js");
   $rtnThis = <<<STANDARDHEAD
 <!-- <META http-equiv="refresh" content="0;URL={$tt}"> //-->

@@ -3,30 +3,89 @@
 function testerfunction() { 
 return "RETURN THIS VALUE";
 }
-
+ 
 function getipinformation($ip) { 
     //$ws = file_get_contents("http://ipinfo.io/{$ip}/json?token=6043850d53cbb6");
    $ws = file_get_contents("http://ip-api.com/json/{$ip}");
    return $ws;
 }
-
-function simplecrypt( $string, $action = 'e' ) {
-    // you may change these values to your own
-    //https://nazmulahsan.me/simple-two-way-function-encrypt-decrypt-string/
-    $output = false;
-    require( genAppFiles . "/dataconn/serverid.zck");
-    $secret_key = $secretkey;
-    $secret_iv = $siv;
-    $encrypt_method = "AES-256-CBC";
-    $key = hash( 'sha256', $secret_key );
-    $iv = substr( hash( 'sha256', $secret_iv ), 0, 16 );
-    if ( $action == 'e' ) {
-        $output = base64_encode( openssl_encrypt( $string, $encrypt_method, $key, 0, $iv ) );
+ 
+function checkPostingUser($usrname, $passwrd) { 
+    $responseCode = 401;  //UNAUTHORIZED 
+    session_start();
+    if ($usrname === serverIdent) { 
+      //CHECK SERVER CREDENTIALS
+      if ( cryptservice( $passwrd , 'd' ) === servertrupw ) { 
+          $responseCode = 200;
+      }
+    } else { 
+      //CHECK CODE IN DATABASE   
+      require(serverkeys . "/sspdo.zck");  
+      $chkSQL = "SELECT sessid, accesscode FROM serverControls.ss_srvIdents where sessid = :usrsess and datediff(now(), onwhen) < 1";  
+      $rs = $conn->prepare($chkSQL); 
+      $rs->execute(array(':usrsess' => $usrname));
+      if ((int)$rs->rowCount() > 0) { 
+          $r = $rs->fetch(PDO::FETCH_ASSOC);
+      }
+      if (cryptservice($passwrd,'d',true, $usrname) === $usrname) { 
+         $responseCode = 200;
+      }
     }
-    if( $action == 'd' ) {
+    return $responseCode;
+}
+
+function registerServerIdent($sesscode) {     
+   $idcode = generateRandomString(20); 
+   require(serverkeys . "/sspdo.zck");  
+   $delSQL = "delete FROM serverControls.ss_srvIdents where sessid = :sessioncode";
+   $dr = $conn->prepare($delSQL); 
+   $dr->execute(array(':sessioncode' => $sesscode));
+   $insSQL = "insert into serverControls.ss_srvIdents (sessid, accesscode, onwhen) values(:sesscode , :accesscode , now())";
+   $iR = $conn->prepare($insSQL); 
+   $iR->execute(array(':sesscode' => $sesscode, ':accesscode' => $idcode)); 
+   return cryptservice($sesscode,'e',true,$sesscode);  
+}
+
+function cryptservice( $string, $action = 'e', $usedbkey = false, $passedsid = "") {
+    $output = false;
+    require( serverkeys . "/serverid.zck");
+    if ($usedbkey) {
+        session_start(); 
+        $sid = (trim($passedsid) === "") ? session_id() : $passedsid;
+        require(serverkeys . "/sspdo.zck");
+        $sql = "select accesscode from serverControls.ss_srvIdents where sessid = :sid";
+        $rs = $conn->prepare($sql); 
+        $rs->execute(array(':sid' => $sid));
+        if ($rs->rowCount() < 1) { 
+            exit(); 
+        } else { 
+          $r = $rs->fetch(PDO::FETCH_ASSOC);
+        }
+        $localsecretkey = $r['accesscode']; 
+        $secret_key = $localsecretkey;
+        $secret_iv = $localsecretkey;
+        $encrypt_method = "AES-256-CBC";
+        $key = hash( 'sha256', $localsecret_key );
+        $iv = substr( hash( 'sha256', $secret_iv ), 0, 16 );
+        if ( $action == 'e' ) {
+          $output = base64_encode( openssl_encrypt( $string, $encrypt_method, $key, 0, $iv ) );
+        }
+        if( $action == 'd' ) {
+          $output = openssl_decrypt( base64_decode( $string ), $encrypt_method, $key, 0, $iv );
+        }
+    } else { 
+      $secret_key = $secretkey;
+      $secret_iv = $siv;
+      $encrypt_method = "AES-256-CBC";
+      $key = hash( 'sha256', $secret_key );
+      $iv = substr( hash( 'sha256', $secret_iv ), 0, 16 );
+      if ( $action == 'e' ) {
+        $output = base64_encode( openssl_encrypt( $string, $encrypt_method, $key, 0, $iv ) );
+      }
+      if( $action == 'd' ) {
         $output = openssl_decrypt( base64_decode( $string ), $encrypt_method, $key, 0, $iv );
-        //$output = $iv;
-    } 
+      }
+    }
     return $output;
 }
 
@@ -42,39 +101,6 @@ function chtndecrypt($pdata) {
   $privateKey = openssl_pkey_get_private("file:///" . genAppFiles . "/accessfiles/privatekey.pem");      
   openssl_private_decrypt($encMsg, $decrypted, $privateKey); 
   return "{$decrypted}"; 
-}
-
-function callpfcrestapi($method, $url, $user = "", $data = false) { 
-  try {
-    $ch = curl_init(); 
-    if (FALSE === $ch) { return Exception('failed to initialize'); } 
-    switch ($method) { 
-      case "POST": 
-        curl_setopt($ch, CURLOPT_POST, 1); 
-        if ($data) { 
-          curl_setopt($ch,CURLOPT_POSTFIELDS, $data); 
-        }
-      break; 
-      case "GET": 
-        curl_setopt($ch, CURLOPT_GET, 1); 
-      break;
-    }
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);  
-    curl_setopt($ch, CURLOPT_URL, $url); 
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-    $headers = array("pfc-token:{$user}");  //ADD AUTHORIZATION HEADERS HERE
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-    $content = curl_exec($ch);
-    if (FALSE === $content) { 
-      return Exception(curl_error($ch),curl_errno($ch));
-    } else {
-      return $content;
-    }
-  } catch(Exception $e) { 
-    return sprintf('CURL failed with error #%d: %s', $e->getCode(), $e->getMessage()); 
-  } 
 }
 
 function callrestapi($method, $url, $user = "", $apikeyencrypt = "", $data = false) { 
@@ -97,39 +123,6 @@ function callrestapi($method, $url, $user = "", $apikeyencrypt = "", $data = fal
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
     $headers = array("api-token-user:{$user}","api-token-key:{$apikeyencrypt}");  //ADD AUTHORIZATION HEADERS HERE
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-    $content = curl_exec($ch);
-    if (FALSE === $content) { 
-      return Exception(curl_error($ch),curl_errno($ch));
-    } else {
-      return $content;
-    }
-  } catch(Exception $e) { 
-    return sprintf('CURL failed with error #%d: %s', $e->getCode(), $e->getMessage()); 
-  } 
-}
-
-function calltidal($method, $url, $data = false) { 
-  try {
-    $ch = curl_init(); 
-    if (FALSE === $ch) { return Exception('failed to initialize'); } 
-    switch ($method) { 
-      case "POST": 
-        curl_setopt($ch, CURLOPT_POST, 1); 
-        if ($data) { 
-          curl_setopt($ch,CURLOPT_POSTFIELDS, $data); 
-        }
-      break; 
-      case "GET": 
-        curl_setopt($ch, CURLOPT_GET, 1); 
-      break;
-    }
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);  
-    curl_setopt($ch, CURLOPT_URL, $url); 
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-    $headers = array("tidal-user:Y2EvMkFPaGxNbTkyRDJuWVVhUGFsdz09");  //ADD AUTHORIZATION HEADERS HERE
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
     $content = curl_exec($ch);
@@ -221,42 +214,6 @@ function guidv4() {
     $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // set bits 6-7 to 10
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
-
-function saveCreditCardDecision($postArray) { 
-    require(genAppFiles .  "/dataconn/sspdo.zck");
-    $updSQL = "update webcapture.web_PayCapture set "
-            . "auth_avs_code = :authavscode "
-            . ", req_card_number = :reqcardnumber"
-            . ", req_card_expiry_date = :reqcardexpirydate"
-            . ", decision = :decision"
-            . ", auth_code = :authcode "
-            . ", reason_code = :reasoncode"
-            . ", req_card_type = :reqcardtype"
-            . ", auth_amount = :authamount"
-            . ", auth_time = :authtime"
-            . ", message = :authmsg"
-            . ", auth_trans_ref_no = :transrefno "
-            . "where reference_number = :reqRefNbr";
-    $updR = $conn->prepare($updSQL);
-    $updR->execute(array(
-        ':authavscode' => $postArray['auth_avs_code']
-       ,':reqcardnumber' => $postArray['req_card_number']  
-       ,':reqcardexpirydate' => $postArray['req_card_expiry_date']
-       ,':decision' => $postArray['decision']  
-       ,':authcode' => $postArray['auth_code']     
-       ,':reasoncode' => $postArray['reason_code']
-       ,':reqcardtype' => $postArray['req_card_type']
-       ,':authamount' => $postArray['auth_amount']
-       ,':authtime' => $postArray['auth_time']
-       ,':authmsg' => $postArray['message'] 
-       ,':transrefno' => $postArray['auth_trans_ref_no']  
-       ,':reqRefNbr'  => $postArray['req_reference_number']    
-       ));   
-    return $testString;
-    //return $postArray['req_reference_number'];
-}
-
-
 
 function barcode( $filepath="", $text="0", $size="20", $orientation="horizontal", $code_type="code128", $print=false, $SizeFactor=1 ) {
     //https://github.com/davidscotttufts/php-barcode/blob/master/barcode.php
@@ -581,9 +538,42 @@ $rtnthiscalendar .= "</table>";
 return $rtnthiscalendar;    
 }
 
+/*
+ * BACKUP FUNCTIONS
+ *
+function calltidal($method, $url, $data = false) { 
+  try {
+    $ch = curl_init(); 
+    if (FALSE === $ch) { return Exception('failed to initialize'); } 
+    switch ($method) { 
+      case "POST": 
+        curl_setopt($ch, CURLOPT_POST, 1); 
+        if ($data) { 
+          curl_setopt($ch,CURLOPT_POSTFIELDS, $data); 
+        }
+      break; 
+      case "GET": 
+        curl_setopt($ch, CURLOPT_GET, 1); 
+      break;
+    }
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);  
+    curl_setopt($ch, CURLOPT_URL, $url); 
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
+    $headers = array("tidal-user:Y2EvMkFPaGxNbTkyRDJuWVVhUGFsdz09");  //ADD AUTHORIZATION HEADERS HERE
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
+    $content = curl_exec($ch);
+    if (FALSE === $content) { 
+      return Exception(curl_error($ch),curl_errno($ch));
+    } else {
+      return $content;
+    }
+  } catch(Exception $e) { 
+    return sprintf('CURL failed with error #%d: %s', $e->getCode(), $e->getMessage()); 
+  } 
+}
 
-
-
-
+*
+*
+ */
