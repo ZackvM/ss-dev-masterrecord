@@ -1,0 +1,43 @@
+
+
+Changes Made to the following tables: 
+   - webcapture.tbl_siteusage to track user login
+
+   - CREATE TABLE `webcapture`.`sys_allowedpostkeys` (   `sessionid` varchar(200) DEFAULT NULL,   `postKeyGUID` varchar(100) DEFAULT NULL,   `presentInd` int(2) DEFAULT NULL,   `postkeytrackid` int(11) NOT NULL AUTO_INCREMENT,   PRIMARY KEY (`postkeytrackid`) ) ENGINE=InnoDB AUTO_INCREMENT=2562 DEFAULT CHARSET=latin1  ... Add Field: expires (datetime)
+
+   - Add Values to sys_master_menus in four 
+
+   - create tables:  four.sys_userbase_allowinstitution
+   - create tables:  four.sys_userbase_modules
+
+   - the webaccount account must have delete permissions on four.sys_userbase_keypairs
+   - webaccount user's password has changed
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ **************************************************************************************************88
+ Thoughts/Notes/To possibly complete
+
+ - Either use all codes as stored values (ei 4 = grams) or use all values (ei store grams) 
+

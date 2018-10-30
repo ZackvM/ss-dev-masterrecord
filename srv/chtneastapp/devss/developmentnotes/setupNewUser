@@ -1,0 +1,23 @@
+
++------------------------------------------+
+|                                          |
+|      SETTING UP A NEW SS USER            |
+|                                          |
++------------------------------------------+
+
+
+1)  Make a reference in four.sys_userbase.  This reference must include: Userid (auto-generated), userlogin, emailaddress, changePWordInd, allowind, username, displayname, primaryfunction, pwordexpiredate, accesslevel,logcardid, inventorypinkey, logcardExpDte, profilephone, profilealtemail, dlexpiredate, inputon, inputby.
+
+2) change four.sys_userbase.fiveonepword with a bcrypt php function (genpword.php) under the root directory
+
+3) Register what modules the user has access to on the four.sys_userbase_modules table (The modules ids are on the sys_master_menu table under Menu = 'SS5MODULES') 
+
+4) register what institutions user has access to procure at on four.sys_userbase_allowinstitution (institutions can be found on four.sys_master_menu ... menu = 'INSTITUTION'
+
+
+
+
+
+
+//SETTING UP PAGE 
+//TO ALLOW PAGES TO BE DISPLAYED IN SS THE PAGE NAME MUST BE REGISTERED IN BOTH THE CODE ARRAY AT THE TOP ($registeredPages) AND IN THE DATABASE UNDER four.sys_master_menu / Menu = MODULEPAGES (or must be listed in the $securityException array in the main code 

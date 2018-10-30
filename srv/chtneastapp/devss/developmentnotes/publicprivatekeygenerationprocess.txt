@@ -1,0 +1,6 @@
+Process to generate encryption keys 
+
+openssl genrsa -out privatekey.pem 2048   ///GENERATE PRIVATE KEY
+openssl rsa -inform PEM -text -noout < privatekey.pem  ///GENERATE ALL EXPONENT INFORMATION  
+openssl rsa -inform PEM -modulus -noout < privatekey.pem  ///GENERATE MODULUS 
+openssl rsa -in privatekey.pem -pubout -out publickey.pem ///GENERATE PUBLIC KEY 
