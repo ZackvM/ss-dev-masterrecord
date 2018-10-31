@@ -35,6 +35,36 @@ class objgetter {
 
 class objlisting { 
 
+function globalmenu($request) {
+     $rows = array(); 
+     $gMenu = $request;
+     //TO LOAD ALL METHODS IN A CLASS INTO AN ARRAY USE get_class_methods
+     $gm = new globalMenus(); 
+     if (method_exists($gm,$gMenu)) { 
+       $SQL = $gm->$gMenu($rParts[3]);
+       if (trim($SQL) !== "") {
+         //RUN SQL - RETURN RESULTS
+         require(serverkeys . "/sspdo.zck");
+         $r = $conn->prepare($SQL); 
+         $r->execute(); 
+         $itemsFound = $r->rowCount();
+         while ($rs = $r->fetch(PDO::FETCH_ASSOC)) { 
+           $data[] = $rs;
+         }
+         $rows['statusCode'] = 200;
+         $rows['data'] = array('MESSAGE' => '', 'ITEMSFOUND' => $itemsFound, 'DATA' => $data);
+       } else { 
+         $rows['statusCode'] = 503;
+         $rows['data'] = array('MESSAGE' => 'NO SQL RETURNED', 'ITEMSFOUND' => 0,  'DATA' => '');
+       }
+     } else {
+        $rows['statusCode'] = 404; 
+        $rows['data'] = array('MESSAGE' => 'MENU NOT FOUND', 'ITEMSFOUND' => 0, 'DATA' => $request);
+     }
+     return $rows;
+}
+
+
 function template($whichobj,$rqst) { 
     session_start();
     $responseCode = 500;
@@ -177,3 +207,112 @@ function docsrch($whichobj, $rqst) {
  
 }
 
+
+class globalMenus {
+
+    function chtnvocabularyspecimencategory() {
+      return "select distinct catid as codevalue, category as menuvalue, 0 as useasdefault, catid as lookupvalue from masterrecord.voc_chtn_all where trim(ifnull(catid,'')) <> '' order by category";
+    }
+
+    function allinstitutions() {
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'INSTITUTION' order by mnu.dspOrder";
+    }
+
+    function allsegmentstati() {
+      return "SELECT ucase(ifnull(mnu.dspvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'SEGMENTSTATUS' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function allshipdocstatus() {
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'SDStat' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function allpreparationmethods() {
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'PREPMETHOD' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function specimencategorylive() {
+      return "SELECT distinct ucase(trim(ifnull(tisstype,''))) as codevalue, ucase(trim(ifnull(tisstype,''))) as menuvalue, 0 as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM masterrecord.ut_procure_biosample order by codevalue";
+//where trim(ifnull(tisstype,'')) <> ''
+    }
+
+    function metricuoms() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'METRIC' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function qmsstatus() {
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'QMSStatus' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function yesno() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'YESNO' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function allproctypes() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'PROCTYPE' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function downstreamcollectiontypes($parentvalue) {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'COLLECTIONT' and mnu.dspind = 1 and mnu.parentvalue = '{$parentvalue}' order by mnu.dsporder";
+    }
+
+    function unknownmet() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'UNKNOWNMET' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function allasites() {
+      return "SELECT distinct site as codevalue, site as menuvalue, 0 as useasdefault, '' as lookupvalue FROM four.voc_chtn_all where 1=1 and (trim(ifnull(site,'')) <> '' and site <> '<NONE>') order by site";
+    }
+
+    function alldxs() {
+      return "SELECT distinct dx as codevalue, dx as menuvalue, 0 as useasdefault, '' as lookupvalue FROM four.voc_chtn_all where 1=1 and (trim(ifnull(dx,'')) <> '' and dx <> '<NONE>') order by dx";
+    }
+
+    function ageuoms() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'AGEUOM' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function pxirace() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'PXRACE' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function pxisex() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'PXSEX' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function pxicx() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'CX' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function pxirx() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'RX' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function prcinfc() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'INFC' and queriable = 1 and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function prcprpt() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'PRpt' and queriable = 1 and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function upennsogi() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'SOGI' and queriable = 1 and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function pbrpyesnoqstn() {
+        return "SELECT questionapplicationid codevalue, question menuvalue, '' useasdefault, '' lookupvalue FROM pfc.sys_project_questions order by dspOrd";
+    }
+
+    function standardsalutations() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'SALUTATIONS' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function statesprovincelist() {
+      return "SELECT ifnull(dspvalue,'') as codevalue, ifnull(longvalue,'') as menuvalue, ifnull(useasdefault,0) as useasdefault, '' as lookupvalue FROM four.sys_master_menus where menu = 'USSTATES' order by additionalinformation, longvalue";
+    }
+
+    function pfrpactions() {
+      return "SELECT rsts.actionid as codevalue, rsts.reviewaction as menuvalue, 0 as useasdefault, '' as lookupvalue FROM pfc.appdata_project_reviewerstatus rsts where rsts.furtheractionind = 0 order by rsts.dspOrd";
+    }
+
+}

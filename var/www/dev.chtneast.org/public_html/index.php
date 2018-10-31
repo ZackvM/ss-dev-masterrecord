@@ -145,9 +145,6 @@ switch ($request[1]) {
        if ($method === "GET") {
         session_start();        
         //CHECK USER
-   
-//        echo json_encode($_SESSION);
-   
         if (!$_SESSION['loggedin'] || $_SESSION['loggedin'] !== "true")  { 
             $obj = "login";
         } else {
@@ -174,7 +171,7 @@ switch ($request[1]) {
 <head>
 <title>PAGE NOT FOUND</title>
 </head>
-<body><h1>Requested Page ({$reqPage}) @ CHTN Eastern Division - Not Found!</h1>
+<body><h1>Requested Page ({$obj}) @ CHTN Eastern Division - Not Found!</h1>
 </body></html>
 RTNTHIS;
 //PAGE NOT FOUND END

@@ -48,7 +48,7 @@ if ($whichpage !== "login") {
     foreach ($whichUsr->allowedmodules as $modval) {
         if (trim($modval[2]) !== "") { 
             //HEADERONLY
-            $controlList .= "<td valign=bottom>"
+            $controlList .= "<td valign=bottom class=menuHolderSqr>"
                                          . "<div class=mnuHldrOnly>"
                                          . "<div class=hdrOnlyItem onclick=\"navigateSite('{$modval[2]}');\">{$modval[1]}"
                                          . "</div>"
@@ -56,7 +56,7 @@ if ($whichpage !== "login") {
                                   . "</td>";
         } else { 
            //HEADER AND ITEMS
-           $controlList .= "<td valign=bottom><div class=mnuHldr><div class=hdrItem>{$modval[1]}</div>"; 
+           $controlList .= "<td valign=bottom class=menuHolderSqr><div class=mnuHldr><div class=hdrItem>{$modval[1]}</div>"; 
               //GET ITEMS
            $controlList .= "<div class=menuDrpItems><table>";
            foreach ($modval[3] as $lstItem) {
@@ -81,7 +81,7 @@ $dt = dataTree;
                 <table border=0 cellpadding=0 cellspacing=0 id=topBarMenuTable>
                     <tr>
                         <td onclick="navigateSite('');">{$chtn}</td>
-                        <td class=spacer>&nbsp;</td>
+                        <td class=spacer>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
                          {$controlList}
                          <td class=bigspacer></td>
                           {$controlListUniverse} 

@@ -41,8 +41,8 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 #globalTopBar { background: rgba({$this->color_zackgrey},1); padding: .7vh 2vw .5vh 2vw; }
 #barchtnlogo {height: 3.4vh; }
 
-#topBarMenuTable { }
-#topBarMenuTable .spacer {width: 4vw; }
+#topBarMenuTable { width: 100%; }
+#topBarMenuTable .spacer {width: 4vw; white-space: nowrap; }
 .hdrOnlyItem {color: rgba({$this->color_white},1);  font-size: 1.8vh;  padding: 0 2vw 0 0;  white-space: nowrap;}
 .hdrOnlyItem:hover { color: rgba({$this->color_neongreen},1); cursor: pointer; }
 
@@ -51,13 +51,14 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 .mnuHldr:hover {cursor: pointer; }
 .mnuHldr:hover .hdrItem { color: rgba({$this->color_neongreen},1);  white-space: nowrap; }
 .menuDrpItems {position: absolute; left: 0; top: 2.1vh;  background: rgba({$this->color_zackgrey},1); min-width: 10vw; display: none;  white-space: nowrap;}
-.mnuHldr:hover .menuDrpItems {display: block;} 
+.mnuHldr:hover .menuDrpItems {display: block;}
+.menuHolderSqr { white-space: nowrap; } 
 
 .menuDrpItems table {width: 100%; }
 .menuDrpItems table td {color: rgba({$this->color_white},1);font-size: 1.8vh; padding: .6vh 1vw .6vh .8vw; white-space: nowrap; }
 .menuDrpItems table td:hover { cursor: pointer; background: rgba({$this->color_lblue},1); }
 
-.bigspacer { width: 25%;}
+.bigspacer { width: 30%;}
 .universeBtns { color: rgba({$this->color_white},1);  font-size: 1.8vh;  padding: 0 0 0 2vw;  white-space: nowrap; }
 .universeBtns:hover {color: rgba({$this->color_neongreen},1); cursor: pointer; }
 

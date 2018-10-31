@@ -10,16 +10,22 @@ function globalscripts( $keypaircode, $usrid ) {
   $tt = treeTop;
   $ott = ownerTree;
   $dtaTree = dataPath;
-  $eMod = encryptModulus;
-  $eExpo = encryptExponent;
+  $eMod = eModulus;
+  $eExpo = eExponent;
   $si = serverIdent;
-  $pw = apikey;
+  $pw = serverpw;
   
+  //LOCAL USER CREDENTIALS BUILT HERE
+  $regUsr = session_id();  
+  $regCode = registerServerIdent($regUsr);  
+
+
+
 $rtnThis = <<<JAVASCR
 
 var byId = function( id ) { return document.getElementById( id ); };
-var keypair = "{$keypaircode}";
-var usrid = "{$usrid}";
+var usrid = "{$regUsr}";
+var cred = "{$regCode}";
 var treeTop = "{$tt}";
 var mousex;
 var mousey;
@@ -43,16 +49,36 @@ req = new XMLHttpRequest();
 return req;
 }
 
-var key;
+function universalAJAX(methd, url, passedDataJSON, callbackfunc) { 
+  //byId('standardModalBacker').style.display = 'block';
+  //usrid / cred
+  var auth = makebasicauth(usercred,pswdcred);
+  var rtn = new Object();
+  httpage.open(methd, url, true); 
+  httpage.setRequestAuthorization('Authorization', auth);
+  httpage.onreadystatechange = function() { 
+    if (httpage.readyState === 4) { 
+      rtn['responseCode'] = httpage.status;
+      rtn['responseText'] = httpage.responseText; 
+      //byId('standardModalBacker').style.display = 'none';
+      callbackFunc(JSON.stringify(rtn));
+    }
+  };
+  httpage.send(passedDataJSON);
+}
+
+function makebasicauth(usr, pwd) { 
+  var tok = usr + ":" + pwd; 
+  var hash = btoa(tok);
+  return "Basic " + hash;
+}
+
 function bodyLoad() {
-  setMaxDigits(262);
-  key = new RSAKeyPair("{$eExpo}","{$eExpo}","{$eMod}",2048);
   var appcards = document.getElementsByClassName('appcard');
   for (var i = 0; i < appcards.length; i++) { 
     //MOVE OTHER CARDS BACK
     byId(appcards[i].id).style.left  = "101vw";
-  }
-  
+  }  
 }
 
 document.addEventListener('mousemove', function(e) { 
@@ -114,7 +140,6 @@ function login($rqstrstr) {
   $si = serverIdent;
   $sp = serverpw;
 
-
   //LOCAL USER CREDENTIALS BUILT HERE
   $regUsr = session_id();  
   $regCode = registerServerIdent($regUsr);  
@@ -127,8 +152,7 @@ function login($rqstrstr) {
   } else { 
     $authcode = $_COOKIE['ssv7_dualcode'];      
   }
-  //httpage.setRequestHeader("api-token-user","{$si}");
-  //httpage.setRequestHeader("api-token-key","{$pw}");
+  
 $rtnThis = <<<JAVASCR
 
 var byId = function( id ) { return document.getElementById( id ); };
@@ -309,6 +333,20 @@ function datacoordinator($rqststr) {
     
 $rtnthis = <<<JAVASCR
 
+document.addEventListener('DOMContentLoaded', function() {  
+
+  if (byId('btnBankSearchSubmit')) { 
+    byId('btnBankSearchSubmit').addEventListener('click', function() {
+      submitqueryrequest('bankqry');
+    }, false);
+  }
+
+
+
+
+
+}, false);
+
 function changeSearchGrid(whichgrid) { 
   byId('biogroupdiv').style.display = 'none';
   byId('shipdiv').style.display = 'none';        
@@ -355,22 +393,9 @@ function submitqueryrequest(whichquery) {
   var passdta = JSON.stringify(dta);
 
   console.log(passdta);
-  var mlURL = "{$dta}/datadoers/buildcoordquery";
-  httpage.open("POST",mlURL,true);        
-  httpage.setRequestHeader("api-token-user","{$si}");
-  httpage.setRequestHeader("api-token-key","{$pw}"); 
-  httpage.onreadystatechange = function () { 
-    if (httpage.readyState === 4) {
-      if (httpage.status === 200) {     
-          var rcd = JSON.parse(httpage.responseText);
-          navigateSite( rcd['DATA']['qryurl'] );
-      } else { 
-        var rcd = JSON.parse(httpage.responseText);
-        alert(rcd['MESSAGE']);  
-      }
-      }
-    };
-    httpage.send(passdta);
+  var mlURL = "datadoers/buildcoordquery";
+//          var rcd = JSON.parse(httpage.responseText);
+//          navigateSite( rcd['DATA']['qryurl'] );
 
 
 

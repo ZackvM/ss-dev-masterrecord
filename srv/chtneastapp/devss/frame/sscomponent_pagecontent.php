@@ -19,8 +19,8 @@ function datacoordinator($rqststr, $whichusr) {
         if (trim($rqststr[2]) === "") {
 
             $BSGrid = buildBSGrid();
-            $BSBankGrid = buildBSBankGrid(); 
             $BSShipGrid = buildShippingQryGrid();
+            $BSBankGrid = buildBSBankGrid(); 
             $rtnthis = <<<MAINQGRID
     <table border=0 id=mainQGridHoldTbl cellspacing=0 cellpadding=0>
         <tr>
@@ -195,6 +195,9 @@ function documentlibrary($rqststr, $whichusr) {
     $tt = treeTop;
     if ( trim($rqststr[2]) === "docsrch" && trim($rqststr[3]) !== "") { 
         //QUERY TO RUN 
+
+
+
         $dta = json_decode(callrestapi("GET","https://scienceserver.chtneast.org/data-obj-request/docsrch/{$rqststr[3]}", serverIdent, apikey), true);        
         //$estring = simplecrypt('ZACK WAS HERE', 'e');
         //$dstring = simplecrypt($estring, 'd');
@@ -287,9 +290,7 @@ function root($rqstStr, $whichUsr) {
     //json_encode($rqstStr) THIS IS THE ARRAY HOLDING THE URI COMPONENTS 
     //$whichUsr THIS IS THE USER ARRAY {"statusCode":200,"loggedsession":"i46shslvmj1p672lskqs7anmu1","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":20,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"googleiconcode":"lock_open","menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"googleiconcode":"account_balance","menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""}]],["472","REPORTS","",[{"googleiconcode":"account_balance","menuvalue":"All Reports","pagesource":"all-reports","additionalcode":""}]],["473","UTILITIES","",[{"googleiconcode":"account_balance","menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474",null,null,[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]} 
   
-  $d = date('M d, Y H:i');
-  
-  
+  $d = date('M d, Y H:i'); 
   $rtnthis = <<<PAGEHERE
 
 <table border=0 width=100% id=rootTable>
@@ -307,7 +308,6 @@ return $rtnthis;
 }
 
 function login($rqststr) {
-
 //THIS SETS THE COOKIE
 //$number_of_days = 30 ;
 //$date_of_expiry = time() + 60 * 60 * 24 * $number_of_days ; 
@@ -323,7 +323,7 @@ $controlBtn = "<table><tr><td class=adminBtn onclick=\"doLogin();\">Login</td></
 $rtnThis = <<<PAGECONTENT
 
 <div id=loginHolder>        
-<div id=loginDialogHead>ScienceServer &amp; Investigator Gateway Login</div>
+<div id=loginDialogHead>Specimen Management Application Login</div>
 <div id=loginGrid>
 <table border=0 cellspacing=0 cellpadding=0 width=100%>
 <tr><td class=label>Email (as User-Id)</td></tr>
@@ -370,7 +370,7 @@ STANDARDHEAD;
 
 function buildShippingQryGrid() { 
   $si = serverIdent;
-  $sp = apikey;
+  $sp = serverpw;
     
 $fCalendar = buildcalendar('shipBSQFrom'); 
 $shpFromCalendar = <<<CALENDAR
@@ -388,10 +388,11 @@ $shpToCalendar = <<<CALENDAR
 </div>
 CALENDAR;
 
-$segstatusarr = json_decode(callrestapi("GET","https://data.chtneast.org/globalmenu/allshipdocstatus",$si,$sp),true);
-$segstatusd = json_decode($segstatusarr['datareturn'],true);
-$seg = "<table border=1>";
-foreach ($segstatusd['DATA'] as $segval) { 
+
+$segstatusarr = json_decode( callrestapi("GET", dataTree . "/globalmenu/allshipdocstatus",$si,$sp) , true);
+
+$seg = "<table border=1><tr><td align=right onclick=\"fillField('qryShpStatus','','');\">[clear]</td></tr>";
+foreach ($segstatusarr['DATA'] as $segval) { 
   $seg .= "<tr><td onclick=\"fillField('qryShpStatus','{$segval['lookupvalue']}','{$segval['menuvalue']}');\">{$segval['menuvalue']}</td></tr>";
 }
 $seg .= "</table>";
@@ -422,15 +423,14 @@ return $grid;
 
 
 function buildBSBankGrid() { 
-  $si = serverIdent;
-  $sp = apikey;
-  $spcarr = json_decode(callrestapi("GET","https://data.chtneast.org/globalmenu/chtnvocabularyspecimencategory",$si,$sp),true);
-  $spcd = json_decode($spcarr['datareturn'],true);
+  
+  $spcarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/chtnvocabularyspecimencategory", serverIdent, serverpw),true);
+  //$spcd = json_decode($spcarr['datareturn'],true);
   $spc = "<table border=1>";
-  foreach ($spcd['DATA'] as $spcval) { 
+  $spc .= "<tr><td onclick=\"fillField('bnkSpecCat','','');\">[clear]</td></tr>";
+  foreach ($spcarr['DATA'] as $spcval) { 
     $spc .= "<tr><td onclick=\"fillField('bnkSpecCat','{$spcval['lookupvalue']}','{$spcval['menuvalue']}');\">{$spcval['menuvalue']}</td></tr>";
   }
-  $spc .= "<tr><td onclick=\"fillField('bnkSpecCat','','');\">[clear]</td></tr>";
   $spc .= "</table>";
 
     $grid = <<<GRIDLAY
@@ -454,7 +454,7 @@ function buildBSBankGrid() {
 </table>
 </td><td></td></tr>
 <tr><td colspan=3 align=right>
-<table class=tblBtn style="width: 6vw;" onclick="submitqueryrequest('bankqry');"><tr><td><center>Search</td></tr></table>
+<table class=tblBtn style="width: 6vw;" id=btnBankSearchSubmit><tr><td><center>Search</td></tr></table>
 </td><td></td></tr>
 </table>
 

@@ -1,5 +1,10 @@
 <?php
 
+require('sscomponent_pagecontent.php');
+require('sscomponent_javascriptr.php');
+require('sscomponent_stylesheets.php');
+require('sscomponent_defaultelements.php');
+
 class pagebuilder { 
 
   public $statusCode = 404;		
@@ -15,7 +20,7 @@ class pagebuilder {
   public $modalrs = "";
   public $modalrdialogs = "";
   //PAGE NAME MUST BE REGISTERED IN THIS ARRAY - COULD DO A METHOD SEARCH - BUT I LIKE THE CONTROL OF NOT ALLOWING A PAGE THAT IS NOT READY FOR DISPL
-  private $registeredPages = array('login','root');  
+  private $registeredPages = array('login','root','datacoordinator','documentlibrary');  
   //THE SECURITY EXCPETIONS ARE THOSE PAGES THAT DON'T REQUIRE USER RIGHTS TO ACCESS
   private $securityExceptions = array('login', 'root');
 
@@ -35,7 +40,7 @@ function __construct() {
          $this->pagetitle = $pageElements['tabtitle'];
          $this->pagetitleicon = $pageElements['tabicon'];
          $this->headr = $pageElements['headr'];
-//         $this->stylr = $pageElements['styleline'];
+         $this->stylr = $pageElements['styleline'];
          $this->scriptrs = $pageElements['scripts'];
          $this->bodycontent = $pageElements['bodycontent'];
          $this->pagecontrols = $pageElements['controlbars'];
@@ -45,6 +50,7 @@ function __construct() {
          $this->modalrdialogs = $pageElements['moddialog']; 
        } else { 
          $this->statusCode = 404;
+
        }     
      }     
    }   
@@ -66,7 +72,7 @@ function getPageElements($whichpage, $rqststr, $mobileInd, $usrmetrics) {
   if ($whichpage !== "login") {
     $elArr['styleline']    =   (method_exists($ss,'globalstyles') ? $ss->globalstyles($mobileInd) : "");
   }
-  $elArr['styleline']   .=   (method_exists($ss,$whichpage) ? $ss->$whichpage($rqststr) : "");
+  $elArr['styleline']   .=   (method_exists($ss, $whichpage) ? $ss->$whichpage($rqststr) : " (STYLESHEET MISSING {$whichpage}) ");
   //JAVASCRIPT COMPONENTS -------------------------------------------
   if ($whichpage !== "login") {  
     //$ky = json_decode(self::buildsessionkeypair($usr),true);
@@ -93,11 +99,15 @@ function getPageElements($whichpage, $rqststr, $mobileInd, $usrmetrics) {
           }
       }      
   } 
-  if ($allowPage === 1) { 
-    $elArr['bodycontent'] =   (method_exists($pc,$whichpage) ? $pc->$whichpage($rqststr, $usrmetrics) : "");   
+ 
+ if ($allowPage === 1) { 
+    $elArr['bodycontent'] = (method_exists($pc,$whichpage) ? $pc->$whichpage($rqststr, $usrmetrics) : "");   
  } else { 
    $elArr['bodycontent'] =  "<h1>USER NOT ALLOWED ACCESS TO THIS MODULE PAGE ({$whichpage})";
  }
+
+
+
  //END PAGE ELEMENTS ---------------------------
 
 
@@ -106,34 +116,6 @@ function getPageElements($whichpage, $rqststr, $mobileInd, $usrmetrics) {
   return $elArr;
 }
 
-function buildsessionkeypair($usrfile) {
-    //FOR SECURITY THIS SHOULD BE THE ONLY DIRECT DATABASE CONNECTION IN THIS FILE
-    // THIS WILL BUILD THE USER JAVASCRIPT KEYPAIR
-  require(genAppFiles .  "/dataconn/sspdo.zck");  
-
-  $delSQL = "delete from four.sys_userbase_keypairs where activeind = 0";
-  $delR = $conn->prepare($delSQL); 
-  $delR->execute();
-
-  $randomBytes = bin2hex(random_bytes(8));
-  $updSQL = "update four.sys_userbase_keypairs set activeind = 0 where userid = :userid";
-  $updR = $conn->prepare($updSQL); 
-  $updR->execute(array(':userid' => $usrfile->userid));
-  session_start();
-  
-  $insSQL = "insert into four.sys_userbase_keypairs (userid, sessionid, keypaircode, activeind, inputon) values(:userid, :sessionid, :keypaircode, 1, now())";
-  $insR = $conn->prepare($insSQL); 
-  $insR->execute(array(':userid' => $usrfile->userid, ':sessionid' => session_id(), ':keypaircode' => $randomBytes));
-  $payload = json_encode(array('enckeycode' => chtnencrypt($usrfile->userid."::".session_id()."::".$randomBytes)));
-  return $payload;
-}
 
 }
-
-include 'sscomponent_pagecontent.php';
-include 'sscomponent_javascriptr.php';
-include 'sscomponent_stylesheets.php';
-include 'sscomponent_defaultelements.php';
-
-
 
