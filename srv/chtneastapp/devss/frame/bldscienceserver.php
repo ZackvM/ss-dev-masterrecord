@@ -35,7 +35,7 @@ function __construct() {
          $this->pagetitle = $pageElements['tabtitle'];
          $this->pagetitleicon = $pageElements['tabicon'];
          $this->headr = $pageElements['headr'];
-         $this->stylr = $pageElements['styleline'];
+//         $this->stylr = $pageElements['styleline'];
          $this->scriptrs = $pageElements['scripts'];
          $this->bodycontent = $pageElements['bodycontent'];
          $this->pagecontrols = $pageElements['controlbars'];

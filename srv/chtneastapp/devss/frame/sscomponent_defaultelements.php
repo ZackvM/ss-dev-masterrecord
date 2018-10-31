@@ -67,17 +67,16 @@ if ($whichpage !== "login") {
         }
     } 
 
-    $uBtnsj = json_decode(callrestapi("GET","https://data.chtneast.org/ssuniversalcontrols",serverIdent,apikey), true);
-    $uBtns = json_decode($uBtnsj['datareturn'], true);
-    
-    foreach ($uBtns['DATA'] as $unbr => $univval) { 
+$dt = dataTree;
+
+    $uBtnsj = json_decode(callrestapi("GET", dataTree . "/ssuniversalcontrols", serverIdent, serverpw),true);
+    foreach ($uBtnsj['DATA'] as $unbr => $univval) { 
         if ($unbr !== "statusCode") {
           $controlListUniverse .= "<td valign=bottom class=universeBtns align=right {$univval['explainerline']}>{$univval['menuvalue']}</td>";
         }
     }
-    
-    
     $topBar = <<<TBAR
+          <div id=topMenuHolder>
             <div id=globalTopBar>
                 <table border=0 cellpadding=0 cellspacing=0 id=topBarMenuTable>
                     <tr>
@@ -85,19 +84,20 @@ if ($whichpage !== "login") {
                         <td class=spacer>&nbsp;</td>
                          {$controlList}
                          <td class=bigspacer></td>
-                         {$controlListUniverse}                        
+                          {$controlListUniverse} 
                     </tr>
                 </table>
             </div>
+        </div>
 TBAR;
   
   
 
-  $thisMenu = <<<THISMENU
-<div id=topMenuHolder>{$topBar}</div>             
-THISMENU;
+//$thisMenu = <<<THISMENU
+//<div id=topMenuHolder>{$topBar}</div>             
+//THISMENU;
 } 
-  return $thisMenu;
+  return $topBar;
 }
 
 function faviconBldr($whichpage) {  

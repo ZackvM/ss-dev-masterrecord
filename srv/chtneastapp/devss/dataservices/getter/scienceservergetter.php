@@ -12,14 +12,15 @@ class objgetter {
     if (trim($args[0]) === "") { 
     } else { 
       $request = explode("/", $args[0]); 
-      if (trim($request[1]) === "") { 
+      if (trim($request[2]) === "") { 
         $this->responseCode = 400; 
         $this->rtnData = json_encode(array("MESSAGE" => "DATA NAME MISSING","ITEMSFOUND" => 0, "DATA" => ""));
       } else {  
         $obj = new objlisting(); 
         if (method_exists($obj, $request[2])) { 
           $funcName = trim($request[2]); 
-          $dataReturned = $obj->$funcName(trim($request[3]),$args[0]); 
+          //FIRST ARGUMENT IN FUNCTION BELOW IS USUALLY A RECORD IDENTIFIER 
+          $dataReturned = $obj->$funcName("{$request[3]}",$args[0]); 
           $this->responseCode = $dataReturned['statusCode']; 
           $this->rtnData = json_encode($dataReturned['data']);
         } else { 
@@ -45,6 +46,21 @@ function template($whichobj,$rqst) {
     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
     return $rows;  
 }        
+
+function ssuniversalcontrols() { 
+    $rows = array(); 
+    require(genAppFiles . "/dataconn/sspdo.zck");
+      $unverSQL = "SELECT googleiconcode, explainerline, menuvalue FROM four.sys_master_menus where menu = 'SSUNIVERSECONTROL' and dspind = 1 order by dspOrder";
+    $top = $conn->prepare($unverSQL);
+    $top->execute(); 
+    $itemsFound = $top->rowCount();    
+    while ($rs = $top->fetch(PDO::FETCH_ASSOC)) {
+       $rows[] = $rs; 
+    }      
+    $rows['statusCode'] = 200; 
+    $rows['data'] = array("MESSAGE" => "", "ITEMSFOUND" => $itemsFound, "DATA" => $rows);
+    return $rows;  
+}
 
 function shipdocqrycriteria($whichobj, $rqst) { 
     session_start();

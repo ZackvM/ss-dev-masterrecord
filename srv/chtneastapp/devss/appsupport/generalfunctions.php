@@ -12,7 +12,6 @@ function getipinformation($ip) {
  
 function checkPostingUser($usrname, $passwrd) { 
     $responseCode = 401;  //UNAUTHORIZED 
-    session_start();
     if ($usrname === serverIdent) { 
       //CHECK SERVER CREDENTIALS
       if ( cryptservice( $passwrd , 'd' ) === servertrupw ) { 
@@ -26,9 +25,9 @@ function checkPostingUser($usrname, $passwrd) {
       $rs->execute(array(':usrsess' => $usrname));
       if ((int)$rs->rowCount() > 0) { 
           $r = $rs->fetch(PDO::FETCH_ASSOC);
-      }
-      if (cryptservice($passwrd,'d',true, $usrname) === $usrname) { 
-         $responseCode = 200;
+          if (cryptservice($passwrd,'d',true, $usrname) === $usrname) { 
+            $responseCode = 200;
+          }
       }
     }
     return $responseCode;
@@ -90,7 +89,7 @@ function cryptservice( $string, $action = 'e', $usedbkey = false, $passedsid = "
 }
 
 function chtnencrypt($pdata) {  
-  $publicCert = openssl_pkey_get_public("file:///" . genAppFiles . "/accessfiles/publickey.pem");
+  $publicCert = openssl_pkey_get_public("file:///" . serverkeys . "/pubkey.pem");
   openssl_public_encrypt($pdata, $crypted, $publicCert);
   $crypted = base64_encode($crypted);  
   return "{$crypted}";
@@ -98,9 +97,10 @@ function chtnencrypt($pdata) {
 
 function chtndecrypt($pdata) {   
   $encMsg = base64_decode($pdata); 
-  $privateKey = openssl_pkey_get_private("file:///" . genAppFiles . "/accessfiles/privatekey.pem");      
+  $privateKey = openssl_pkey_get_private("file:///" . serverkeys . "/privatekey.pem");     
+  //openssl_pkey_export($privateKey, $pkeyout);  TO TEST AND OUTPUT PRIVATE KEY - TESTING AND REFERENCE ONLY
   openssl_private_decrypt($encMsg, $decrypted, $privateKey); 
-  return "{$decrypted}"; 
+  return $decrypted; 
 }
 
 function callrestapi($method, $url, $user = "", $apikeyencrypt = "", $data = false) { 
@@ -122,7 +122,10 @@ function callrestapi($method, $url, $user = "", $apikeyencrypt = "", $data = fal
     curl_setopt($ch, CURLOPT_URL, $url); 
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
-    $headers = array("api-token-user:{$user}","api-token-key:{$apikeyencrypt}");  //ADD AUTHORIZATION HEADERS HERE
+    $headers = array(
+        'Content-Type:application/json'
+       ,'Authorization: Basic '. base64_encode("{$user}:{$apikeyencrypt}")
+    );  //ADD AUTHORIZATION HEADERS HERE
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
     $content = curl_exec($ch);

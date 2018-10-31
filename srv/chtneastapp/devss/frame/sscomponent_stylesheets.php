@@ -57,7 +57,7 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 .menuDrpItems table td {color: rgba({$this->color_white},1);font-size: 1.8vh; padding: .6vh 1vw .6vh .8vw; white-space: nowrap; }
 .menuDrpItems table td:hover { cursor: pointer; background: rgba({$this->color_lblue},1); }
 
-.bigspacer { width: 18%;}
+.bigspacer { width: 25%;}
 .universeBtns { color: rgba({$this->color_white},1);  font-size: 1.8vh;  padding: 0 0 0 2vw;  white-space: nowrap; }
 .universeBtns:hover {color: rgba({$this->color_neongreen},1); cursor: pointer; }
 

@@ -2,32 +2,33 @@
 
 class dataposters { 
 
-  public $responseCode = 503;
+  public $responseCode = 400;
   public $rtnData = "";
 
-  function __construct() { 
+function __construct() { 
     $args = func_get_args(); 
     $nbrofargs = func_num_args(); 
-//    if (trim($args[0]) === "") { 
-//    } else { 
-//      $request = explode("/", $args[0]); 
-//      if (trim($request[1]) === "") { 
-//        $this->responseCode = 400; 
-//        $this->rtnData = json_encode(array("MESSAGE" => "DATA NAME MISSING","ITEMSFOUND" => 0, "DATA" => $args[0]));
-//      } else {  
-//        $dp = new $request[1](); 
-//        if (method_exists($dp, $request[2])) { 
-//          $funcName = trim($request[2]); 
-//          $dataReturned = $dp->$funcName($args[0], $args[1]); 
-//          $this->responseCode = $dataReturned['statusCode']; 
-//          $this->rtnData = json_encode($dataReturned['data']);
-//        } else { 
-//          $this->responseCode = 404; 
-//          $this->rtnData = json_encode(array("MESSAGE" => "END-POINT FUNCTION NOT FOUND: {$request[2]}","ITEMSFOUND" => 0, "DATA" => ""));
-//        }
-//      }
-//    }
-  }
+    $this->rtnData = $args[0];    
+    if (trim($args[0]) === "") { 
+    } else { 
+      $request = explode("/", $args[0]); 
+      if (trim($request[3]) === "") { 
+        $this->responseCode = 400; 
+        $this->rtnData = json_encode(array("MESSAGE" => "DATA NAME MISSING","ITEMSFOUND" => 0, "DATA" => array()    ));
+      } else { 
+        $dp = new $request[2](); 
+        if (method_exists($dp, $request[3])) { 
+          $funcName = trim($request[3]); 
+          $dataReturned = $dp->$funcName($args[0], $args[1]); 
+          $this->responseCode = $dataReturned['statusCode']; 
+          $this->rtnData = json_encode($dataReturned['data']);
+        } else { 
+          $this->responseCode = 404; 
+          $this->rtnData = json_encode(array("MESSAGE" => "END-POINT FUNCTION NOT FOUND: {$request[2]}","ITEMSFOUND" => 0, "DATA" => ""));
+        }
+      }
+    }
+}
 
 }
 
@@ -188,11 +189,10 @@ class datadoers {
 
 
 class systemposts { 
-    
+
   function sessionlogin($request, $passedData) { 
     session_start();   
     $responseCode = 503; 
-
     $params = json_decode($passedData, true);
     $ec = $params['ency'];
     $cred = json_decode(chtndecrypt($params['ency']), true); //{\"user\":\"z\",\"pword\":\"z\",\"dauth\":\"z\"}
@@ -201,7 +201,7 @@ class systemposts {
     $au = explode("-",$cred['dauth']);
     $sess = session_id(); 
     $ip = $_SERVER['REMOTE_ADDR'];
-    require_once(genAppFiles . "/dataconn/sspdo.zck"); 
+    require(serverkeys . "/sspdo.zck"); 
     $usrChk = "SELECT userid, username, emailaddress, fiveonepword FROM four.sys_userbase where allowind = 1 and emailaddress = :pword and datediff(passwordexpiredate, now()) > -1";
     $usrR = $conn->prepare($usrChk); 
     $usrR->execute(array(':pword' => $u)); 
@@ -215,7 +215,6 @@ class systemposts {
            //BAD AUTH
            $msg = "The Dual Authentication number you entered is an incorrect format";             
          } else {                        
-           $msg = $au;
            $auSQL = "select inputon, ifnull(registerUserIP,'') as registeredUserIP, ifnull(useremail,'') as useridemail, ifnull(phpsessid,'NOTSET') as phpsessid, datediff(now(), inputon) dayssince FROM serverControls.sys_ssv7_authcodes where authid = :aid and authcode = :acode and (phpsessid = :sess OR   ifnull(phpsessid,'NOTSET') = 'NOTSET')  and (useremail = :uemail OR ifnull(useremail,'') = '') "; 
            $auR = $conn->prepare($auSQL);
            $auR->execute(array(':aid' => $au[0], ':acode' => $au[1], ':sess' => $sess, ':uemail' =>$u));
@@ -228,21 +227,16 @@ class systemposts {
                    $newsess = session_id();
                    $updAuthSQL = "update serverControls.sys_ssv7_authcodes set phpsessid = :newsess where authid = :aid and authcode = :acode and useremail = :uemail";
                    $updAR = $conn->prepare($updAuthSQL);
-                   $updAR->execute(array(':newsess' => $newsess, ':aid' => $au[0], ':acode' => $au[1], ':uemail' => $u));
-                   
+                   $updAR->execute(array(':newsess' => $newsess, ':aid' => $au[0], ':acode' => $au[1], ':uemail' => $u)); 
                    if (!isset($_COOKIE['ssv7_dualcode'])) { 
                      setcookie('ssv7_dualcode', "{$au[0]}-{$au[1]}", time() + 2592000, '/','',true,true); // 2592000 = 30 days 3600 - is one hour
                    } 
-                   
                    $updUSRSQL = "update four.sys_userbase set sessionid = :sess, sessionExpire = date_add(now(), INTERVAL 7 HOUR) where emailaddress = :emluser"; 
                    $updUsrR = $conn->prepare($updUSRSQL); 
                    $updUsrR->execute(array(':sess' => $newsess, ':emluser' => $u));
-                   
-                   captureSystemActivity($newsess, '', 'true', $u, '', '', $u, 'POST', 'LOGIN SUCCESS');
-                   
+                   captureSystemActivity($newsess, '', 'true', $u, '', '', $u, 'POST', 'LOGIN SUCCESS');                   
                    $_SESSION['loggedin'] = 'true';
-                   $_SESSION['userid'] = $u;  
-
+                   $_SESSION['userid'] = $u;
                    $msg = "SUCCESS " . session_id();
                    $responseCode = 200;                    
                } else { 
@@ -316,7 +310,7 @@ class systemposts {
 }
 
 function captureSystemActivity($sessionid, $sessionvariables, $loggedsession, $userid, $firstname, $lastname, $email, $requestmethod, $request) { 
-    include(genAppFiles . "/dataconn/sspdo.zck"); 
+    include(serverkeys . "/sspdo.zck"); 
     $insSQL = "insert into webcapture.tbl_siteusage (usagedatetime, sessionid, sessionvariables, loggedsession, userid, firstname, lastname, email, requestmethod, request)  values(now(),  :sessionid, :sessionvariables, :loggedsession, :userid, :firstname, :lastname, :email, :requestmethod, :request)";
     $insR = $conn->prepare($insSQL); 
     $insR->execute(array(

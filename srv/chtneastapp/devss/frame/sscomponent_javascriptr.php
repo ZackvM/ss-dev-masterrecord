@@ -157,7 +157,7 @@ return req;
 var key; 
 function bodyLoad() { 
    setMaxDigits(262);
-   key = new RSAKeyPair("{$eExpo}","{$eExpo}","{$eMod}", 1024);
+   key = new RSAKeyPair("{$eExpo}","{$eExpo}","{$eMod}", 2048);
 }
 
 document.addEventListener('DOMContentLoaded', function() { 
@@ -183,27 +183,24 @@ function doLogin() {
      //crd['dauth'] = codeauth;
   }
   var cpass = JSON.stringify(crd);
-  var ciphertext = window.btoa( encryptedString(key, cpass, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding)); 
+  var ciphertext = window.btoa( encryptedString(key, cpass, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) ); 
   var dta = new Object(); 
   dta['ency'] = ciphertext;
   var passdata = JSON.stringify(dta);
-  console.log(passdata);
-  var mlURL = "{$tt}/data-services/sessionlogin";
-  console.log(mlURL);
-  console.log("{$regUsr} / {$regCode}");
-  //httpage.open("POST",mlURL,true);
-  //httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
-  //httpage.onreadystatechange = function () { 
-  //  if (httpage.readyState === 4) {
-  //    if (httpage.status === 200) { 
-  //       location.reload(true);  //TRUE - RELOAD FROM SERVER
-  //    } else { 
-  //       var rcd = JSON.parse(httpage.responseText);
-  //       alert(rcd['MESSAGE']);
-  //    }
-  //}
-  //};
-  //httpage.send(passdata);
+  var mlURL = "{$tt}/data-services/system-posts/session-login";
+  httpage.open("POST",mlURL,true);
+  httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+  httpage.onreadystatechange = function () { 
+    if (httpage.readyState === 4) {
+      if (httpage.status === 200) { 
+         location.reload(true);  //TRUE - RELOAD FROM SERVER
+      } else { 
+         var rcd = JSON.parse(httpage.responseText);
+         alert(rcd['MESSAGE']);
+      }
+  }
+  };
+  httpage.send(passdata);
 } 
      
 JAVASCR;

@@ -65,7 +65,7 @@ class bldssuser {
     function getUserInformation() { 
         $elArr = array();
         session_start(); 
-        require_once(genAppFiles . "/dataconn/sspdo.zck"); 
+        require_once(serverkeys . "/sspdo.zck"); 
         $userTopSQL = "SELECT userid, ifnull(userlogin,'') as ssusername, lcase(ifnull(emailaddress,'')) as email , ifnull(changePWordInd,1) as changepwordind"
                 . ", ifnull(allowind,0) as allowind, ifnull(allowlinux,0) as allowlinux"
                 . ", ifnull(allowproc,0) as allowprocurement, ifnull(allowcoord,0) as allowcoordination, ifnull(allowhpr,0) as allowhpr, ifnull(allowinvtry,0) as allowinventory"
