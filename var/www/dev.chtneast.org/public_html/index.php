@@ -86,8 +86,6 @@ switch ($request[1]) {
             } 
             break;
 
-
-
           case 'GET':
             $responseCode = 400;
             $data = "";

@@ -9,7 +9,7 @@ function globalscripts( $keypaircode, $usrid ) {
   $sid = session_id();
   $tt = treeTop;
   $ott = ownerTree;
-  $dtaTree = dataPath;
+  $dtaTree = dataTree;
   $eMod = eModulus;
   $eExpo = eExponent;
   $si = serverIdent;
@@ -19,14 +19,11 @@ function globalscripts( $keypaircode, $usrid ) {
   $regUsr = session_id();  
   $regCode = registerServerIdent($regUsr);  
 
-
-
 $rtnThis = <<<JAVASCR
 
 var byId = function( id ) { return document.getElementById( id ); };
-var usrid = "{$regUsr}";
-var cred = "{$regCode}";
 var treeTop = "{$tt}";
+var dataPath = "{$dtaTree}";
 var mousex;
 var mousey;
 
@@ -50,27 +47,21 @@ return req;
 }
 
 function universalAJAX(methd, url, passedDataJSON, callbackfunc) { 
-  //byId('standardModalBacker').style.display = 'block';
-  //usrid / cred
-  var auth = makebasicauth(usercred,pswdcred);
-  var rtn = new Object();
-  httpage.open(methd, url, true); 
-  httpage.setRequestAuthorization('Authorization', auth);
-  httpage.onreadystatechange = function() { 
-    if (httpage.readyState === 4) { 
-      rtn['responseCode'] = httpage.status;
-      rtn['responseText'] = httpage.responseText; 
-      //byId('standardModalBacker').style.display = 'none';
-      callbackFunc(JSON.stringify(rtn));
-    }
-  };
-  httpage.send(passedDataJSON);
-}
-
-function makebasicauth(usr, pwd) { 
-  var tok = usr + ":" + pwd; 
-  var hash = btoa(tok);
-  return "Basic " + hash;
+//  byId('standardModalBacker').style.display = 'block';
+    var rtn = new Object();
+    var grandurl = dataPath+"/"+url;
+    console.log(grandurl);
+//  httpage.open(methd, grandurl, true); 
+//  httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+//  httpage.onreadystatechange = function() { 
+//    if (httpage.readyState === 4) { 
+//      rtn['responseCode'] = httpage.status;
+//      rtn['responseText'] = httpage.responseText; 
+//      //byId('standardModalBacker').style.display = 'none';
+//      callbackFunc(JSON.stringify(rtn));
+//    }
+//  };
+//  httpage.send(passedDataJSON);
 }
 
 function bodyLoad() {
@@ -249,7 +240,6 @@ if (byId('fSrchTerm')) {
 }
 }, false);        
         
-
 function searchDocuments() { 
   var dta = new Object(); 
   dta['srchterm'] = byId('fSrchTerm').value;
@@ -393,14 +383,17 @@ function submitqueryrequest(whichquery) {
   var passdta = JSON.stringify(dta);
 
   console.log(passdta);
-  var mlURL = "datadoers/buildcoordquery";
+  var mlURL = "/buildcoordquery";
+
+  universalAJAX("POST",mlURL,passdta,rspquerysubmital);
 //          var rcd = JSON.parse(httpage.responseText);
 //          navigateSite( rcd['DATA']['qryurl'] );
-
-
-
 }
-        
+
+function rspquerysubmital(jsonDta) { 
+  console.log("CALL BACK COMPLETE");
+}
+
 JAVASCR;
     
     return $rtnthis;
