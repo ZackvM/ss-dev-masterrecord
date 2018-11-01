@@ -47,21 +47,20 @@ return req;
 }
 
 function universalAJAX(methd, url, passedDataJSON, callbackfunc) { 
-//  byId('standardModalBacker').style.display = 'block';
-    var rtn = new Object();
-    var grandurl = dataPath+"/"+url;
-    console.log(grandurl);
-//  httpage.open(methd, grandurl, true); 
-//  httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
-//  httpage.onreadystatechange = function() { 
-//    if (httpage.readyState === 4) { 
-//      rtn['responseCode'] = httpage.status;
-//      rtn['responseText'] = httpage.responseText; 
-//      //byId('standardModalBacker').style.display = 'none';
-//      callbackFunc(JSON.stringify(rtn));
-//    }
-//  };
-//  httpage.send(passedDataJSON);
+  byId('standardModalBacker').style.display = 'block';
+  var rtn = new Object();
+  var grandurl = dataPath+url;
+  httpage.open(methd, grandurl, true); 
+  httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+  httpage.onreadystatechange = function() { 
+    if (httpage.readyState === 4) { 
+      rtn['responseCode'] = httpage.status;
+      rtn['responseText'] = httpage.responseText; 
+      byId('standardModalBacker').style.display = 'none';
+      callbackfunc(rtn);
+    }
+  };
+  httpage.send(passedDataJSON);
 }
 
 function bodyLoad() {
@@ -185,6 +184,13 @@ document.addEventListener('DOMContentLoaded', function() {
     byId('ssPswd').value = "";
     byId('ssUser').focus();
   }
+
+  if (byId('btnSndAuthCode')) { 
+    byId('btnSndAuthCode').addEventListener('click', function() {
+      rqstDualCode();
+    }, false);
+  }
+
 }, false);
 
 function doLogin() { 
@@ -217,7 +223,27 @@ function doLogin() {
   };
   httpage.send(passdata);
 } 
-     
+
+function rqstDualCode() { 
+  var dta = new Object(); 
+  dta['rqstuser'] = byId('ssUser').value;
+  var passdata = JSON.stringify(dta);
+  var mlURL = "{$tt}/data-services/system-posts/request-dualcode";
+  httpage.open("POST",mlURL,true);
+  httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+  httpage.onreadystatechange = function () { 
+    if (httpage.readyState === 4) {
+      if (httpage.status === 200) { 
+          alert('If you are a registered ScienceServer user, you will receive a dual-authentication access code in your email or by text message.  This code is valid for 30 days');
+      } else { 
+        var rcd = JSON.parse(httpage.responseText);
+        alert(rcd['MESSAGE']);
+      }
+  }
+  };
+  httpage.send(passdata);
+}
+
 JAVASCR;
 return $rtnThis;
 }
@@ -235,9 +261,16 @@ function documentlibrary($rqststr) {
 $rtnThis = <<<JAVASCR
     
 document.addEventListener('DOMContentLoaded', function() {  
-if (byId('fSrchTerm')) { 
-  byId('fSrchTerm').focus();        
-}
+  if (byId('fSrchTerm')) { 
+    byId('fSrchTerm').focus();        
+  }
+
+  if (byId('btnSearchDocuments')) { 
+    byId('btnSearchDocuments').addEventListener('click', function() {
+      searchDocuments();
+    }, false);
+  }
+
 }, false);        
         
 function searchDocuments() { 
@@ -245,22 +278,18 @@ function searchDocuments() {
   dta['srchterm'] = byId('fSrchTerm').value;
   dta['doctype'] = byId('fDocTypeValue').value;
   var passdata = JSON.stringify(dta);
-  var mlURL = "{$dta}/datadoers/docsearch";
-  httpage.open("POST",mlURL,true);        
-  httpage.setRequestHeader("api-token-user","{$si}");
-  httpage.setRequestHeader("api-token-key","{$pw}"); 
-  httpage.onreadystatechange = function () { 
-    if (httpage.readyState === 4) {
-      if (httpage.status === 200) {     
-        var rcd = JSON.parse(httpage.responseText);
-        navigateSite('document-library/docsrch/'+rcd['MESSAGE']);
-      } else { 
-        var rcd = JSON.parse(httpage.responseText);
-        alert(rcd['MESSAGE']);  
-      }
-      }
-    };
-    httpage.send(passdata);
+  var mlURL = "/data-doers/doc-search";
+  universalAJAX("POST",mlURL,passdata,answerSearchDocuments);
+}
+
+function answerSearchDocuments(rtnData) { 
+  if (parseInt(rtnData['responseCode']) === 200) {     
+    var rcd = JSON.parse(rtnData['responseText']);
+    navigateSite('document-library/doc-srch/'+rcd['MESSAGE']);
+  } else { 
+    var rcd = JSON.parse(rtnData['responseText']);
+    alert(rcd['MESSAGE']);  
+  }
 }
 
 function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) { 

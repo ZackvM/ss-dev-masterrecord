@@ -122,21 +122,51 @@ switch ($request[1]) {
 
 
     case 'printobj': 
-        //PRINT OBJECT - GET ONLY  
-        if ($method === "GET") { 
-        echo "PRINT AN OBJECT {$method}";         
+      //PRINT OBJECT - GET ONLY  
+      if ($method === "GET") { 
+       //  /print-obj/pathology-report/ay9vM3dqemRNdnlsUjJqdVRSQ0ZNZz09          
+        require(applicationTree . "/scienceserverprint.php");       
+        $prnt = new  printobject($_SERVER['REQUEST_URI']);     
+        http_response_code($prnt->httpresponse);
+        if ($prnt->httpresponse === 200) { 
+          $pgTitle = (trim($prnt->pagetitle) !== "") ? "<title>" . $prnt->pagetitle . "</title>" : "<title>CHTN Eastern</title>";    
+          $pgHead = (trim($prnt->headr) !== "") ? $prnt->headr : "";         
+          $pgIcon = (trim($prnt->pagetitleicon) !== "") ? $prnt->pagetitleicon : "";
+          $pgStyle = (trim($prnt->style) !== "") ? "<style>" . $prnt->style . "\n</style>" :  "";
+          if ($prnt->htmlpdfind === 0) { 
+           //OBJECT IS PDF         
+           $pgBody =  base64file($prnt->bodycontent,'pathologyrptdsp','pdf',true,''); 
+          }
+          if ($prnt->htmlpdfind === 1) { 
+           //OBJECT IS HTML         
+           //echo $prnt->bodycontent;                    
+           $pgBody = $prnt->bodycontent;
+         }
+$rt = <<<RTNTHIS
+<!DOCTYPE html>
+<html>   
+<head>
+{$pgHead}           
+{$pgIcon}            
+{$pgTitle}
+{$pgStyle}
+{$pgScriptr}
+</head>
+<body>
+{$pgBody}
+</body>
+</html>
+RTNTHIS;
+  echo $rt;
+  exit();
         } else { 
-          echo "ONLY GET REQUESTS ARE ALLOWED AT THIS END POINT";
+          echo $prnt->bodycontent . " (" . $prnt->httpresponse . ")";
         }
-
-
-        //DISPLAY PRINTED OBJECT HERE 
-
-
-        break;
-
-
-
+        exit();   
+      } else { 
+        echo "ONLY GET REQUESTS ARE ALLOWED AT THIS END POINT";
+      }
+    break;
     default: 
         //ALLOW GET ONLY - PAGE DISPLAYS
 

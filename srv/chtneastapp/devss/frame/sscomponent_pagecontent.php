@@ -118,14 +118,6 @@ RSLTTBL;
                       $rtnthis = "NO DATA FOUND";
                 }
 
-
-
-
-
-
-
-
-
         }
     }    
     return $rtnthis;
@@ -188,66 +180,59 @@ return $rtnthis;
 }
 
 function documentlibrary($rqststr, $whichusr) { 
-
     $typedsp = "";
     $typevl = "";
     $strm = "";
     $tt = treeTop;
     if ( trim($rqststr[2]) === "docsrch" && trim($rqststr[3]) !== "") { 
         //QUERY TO RUN 
-
-
-
-        $dta = json_decode(callrestapi("GET","https://scienceserver.chtneast.org/data-obj-request/docsrch/{$rqststr[3]}", serverIdent, apikey), true);        
-        //$estring = simplecrypt('ZACK WAS HERE', 'e');
-        //$dstring = simplecrypt($estring, 'd');
+        $dta = json_decode(callrestapi("GET", dataTree . "/docsrch/{$rqststr[3]}", serverIdent, serverpw), true);        
         $strm = $dta['DATA']['head']['srchterm'];        
         $typevl = $dta['DATA']['head']['doctype'];        
         switch ($typevl) { 
             case 'PATHOLOGYRPT':
                 $typedsp = 'Pathology Report Text Search';
                 $docobj = "pathrpt";
+                $printObj = "pathology-report";
                 break;
             case 'PRBGNBR':
                 $typedsp = 'Pathology Report Biogroup Search';
                 $docobj = "pathrpt";
+                $printObj = "pathology-report";
                 break;
             case 'CHARTRVW':
                 $typedsp = 'Chart Review';
                 $docobj = "pxchart";
+                $printObj = "chart-review";
                 break; 
             case 'SHIPDOC':
                 $typedsp = 'Shipment Document (Ship Doc)';
                 $docobj = "shipdoc";
+                $printObj = "shipment-manifest";
                 break;                 
-        }
-        
-        
+        } 
         $dtadsp = "<table width=100% border=0 id=doclibabstbl cellspacing=4>";
         $warning = "";
         $qryBy = $dta['DATA']['head']['bywho'];
         $qryOn = $dta['DATA']['head']['onwhendsp'];
-         if ((int)$dta['ITEMSFOUND'] > 249) { 
+        if ((int)$dta['ITEMSFOUND'] > 249) { 
             $warning = "(You have reached your limit of return results.  For a more indepth query, see a CHTNEast IT Staff)";
         }
         $dtadsp .= "<tr><td colspan=2 valign=top align=right id=byline>({$qryBy}: {$qryOn})</td></tr>";    
         $dtadsp .= "<tr><td colspan=2 valign=top id=headerwarning>Documents Found: " . $dta['ITEMSFOUND'] . " {$warning}</td></tr>";
         $dtadsp .= "<tr><td valign=top class=fldLabel>Ref #</td><td valign=top class=fldLabel>Document Abstract</td></tr>";
         foreach($dta['DATA']['records'] as $rs) { 
-            $selector = simplecrypt($rs['prid'] . "-" . $rs['selector'], "e");
-            $dtadsp .= "<tr onclick=\"openOutSidePage('{$tt}/print/{$docobj}/{$selector}');\" class=datalines>"
+            $selector = cryptservice($rs['prid'] . "-" . $rs['selector'], "e");
+            $dtadsp .= "<tr onclick=\"openOutSidePage('{$tt}/print-obj/{$printObj}/{$selector}');\" class=datalines>"
                                  . "<td valign=top class=bgnbr>{$rs['dspmark']}</td>"
                                  . "<td valign=top class=abstracttext>{$rs['abstract']}...</td>"
                                  . "</tr>";
         }        
         $dtadsp .= "</table>";
-        
-
     } else { 
         //NO QUERY SPECIFIED
-        $dtadsp = "";
+        $dtadsp = " NO QUERY ID ";
     }
-    
     //DOCUMENT TYPES
     $dTypes = "<table class=menuDropTbl >"
             . "<tr><td class=ddMenuItem onclick=\"fillField('fDocType','PATHOLOGYRPT','Pathology Report Text Search','ddSearchTypes');\">Pathology Report Text Search</td></tr>"
@@ -258,21 +243,17 @@ function documentlibrary($rqststr, $whichusr) {
         
 $rtnthis = <<<PAGEHERE
 <table width=100% border=0 cellspacing=2 cellpadding=0 id=docLibHoldTbl>
-
     <tr><td colspan=4 class=pageTitle>Document Library</td></tr>
-
     <tr><td class=fldLabel>Search Term ('like' search)</td><td class=fldLabel>Document Type</td><td></td><td></td></tr>
-
     <tr><td style="width: 50vw;"><input type=text id=fSrchTerm style="width: 50vw;" value="{$strm}"></td>
             <td style="width: 15vw;">
                   <div class=menuHolderDiv>
                   <div class=valueHolder><input type=hidden id=fDocTypeValue value="{$typevl}"><input type=text READONLY id=fDocType style="width: 15vw;" value="{$typedsp}"></div>
                   <div class=valueDropDown style="min-width: 15vw;" id=ddSearchTypes>{$dTypes}</div>
                   </div></td>
-            <td><table class=tblBtn onclick="searchDocuments();"><tr><td>Search</td></tr></table></td>
+            <td><table class=tblBtn id=btnSearchDocuments><tr><td>Search</td></tr></table></td>
             <td></td>
     </tr>   
-
     <tr>
          <td colspan=4>
          <!-- RESULTS SECTION //-->
@@ -280,7 +261,6 @@ $rtnthis = <<<PAGEHERE
              {$dtadsp}
          </td>
     </tr>    
-        
 </table>          
 PAGEHERE;
 return $rtnthis;  
@@ -314,7 +294,7 @@ function login($rqststr) {
 //setcookie("ssv7_dualcode","857885",$date_of_expiry,"/");
 //AUTHENTICATION WILL IGNORE COOKIES
 //if(!isset($_COOKIE['ssv7_dualcode'])) {
-    $addLine = "<tr><td class=label>Dual-Authentication Code <span class=pseudoLink onclick=\"rqstDualCode();\">(Send Authentication Code)</span></td></tr><tr><td><input type=text id=ssDualCode></td></tr>";
+    $addLine = "<tr><td class=label>Dual-Authentication Code <span class=pseudoLink id=btnSndAuthCode>(Send Authentication Code)</span></td></tr><tr><td><input type=text id=ssDualCode></td></tr>";
 //} else {             
 //}
 
@@ -323,7 +303,7 @@ $controlBtn = "<table><tr><td class=adminBtn onclick=\"doLogin();\">Login</td></
 $rtnThis = <<<PAGECONTENT
 
 <div id=loginHolder>        
-<div id=loginDialogHead>Specimen Management Application Login</div>
+<div id=loginDialogHead>ScienceServer2018 &amp; Investigator Services Login </div>
 <div id=loginGrid>
 <table border=0 cellspacing=0 cellpadding=0 width=100%>
 <tr><td class=label>Email (as User-Id)</td></tr>
@@ -335,7 +315,7 @@ $rtnThis = <<<PAGECONTENT
 <tr><td><center> <span class=pseudoLink>Forgot Password</span> </td></tr>    
 </table>        
 </div>
-<div id=loginFooter><b>Disclaimer</b>: This is the data application for the Eastern Division of the Cooperative Human Tissue Network.  It provides access to collection data by employees, remote site contracts and investigators of the CHTNEastern Division.   You must have a valid username and password to access this system.  If you need credentials for this application, please contact a CHTNED Manager.  Unauthorized activity is tracked and reported! To contact the offices of CHTNED, please call (215) 662-4570 or email chtnmail /at/ uphs.upenn.edu</div>    
+<div id=loginFooter><b>Disclaimer</b>: This is the Specimen Management Data Application (SMDA) for the Eastern Division of the Cooperative Human Tissue Network.  It provides access to collection data by employees, remote site contracts and investigators of the CHTNEastern Division.   You must have a valid username and password to access this system.  If you need credentials for this application, please contact a CHTNED Manager.  Unauthorized activity is tracked and reported! To contact the offices of CHTNED, please call (215) 662-4570 or email chtnmail /at/ uphs.upenn.edu</div>    
 </div>
 
 PAGECONTENT;

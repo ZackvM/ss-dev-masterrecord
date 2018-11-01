@@ -79,8 +79,8 @@ function template($whichobj,$rqst) {
 
 function ssuniversalcontrols() { 
     $rows = array(); 
-    require(genAppFiles . "/dataconn/sspdo.zck");
-      $unverSQL = "SELECT googleiconcode, explainerline, menuvalue FROM four.sys_master_menus where menu = 'SSUNIVERSECONTROL' and dspind = 1 order by dspOrder";
+    require(serverkeys . "/sspdo.zck");
+    $unverSQL = "SELECT googleiconcode, explainerline, menuvalue FROM four.sys_master_menus where menu = 'SSUNIVERSECONTROL' and dspind = 1 order by dspOrder";
     $top = $conn->prepare($unverSQL);
     $top->execute(); 
     $itemsFound = $top->rowCount();    

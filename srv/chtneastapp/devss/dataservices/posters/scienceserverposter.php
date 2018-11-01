@@ -35,7 +35,7 @@ function __construct() {
 class datadoers { 
     
     function docsearch($request, $passedData) { 
-       require_once(genAppFiles . "/dataconn/sspdo.zck");  
+       require(serverkeys . "/sspdo.zck");  
        session_start(); 
        $responseCode = 503; 
        $params = json_decode($passedData, true);
@@ -65,6 +65,10 @@ class datadoers {
        $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => "");
        return $rows;      
     }
+
+
+
+
 
     function buildcoordquery($request, $passedData) { 
        require_once(genAppFiles . "/dataconn/sspdo.zck");  
@@ -269,11 +273,13 @@ class systemposts {
     $params = json_decode($passedData, true);
     $rquester = $params['rqstuser']; 
     if (trim($rquester) !== "") {
-    require_once(genAppFiles . "/dataconn/sspdo.zck"); 
-    $chkSQL = "SELECT userid, emailaddress, altphonecellcarrier FROM four.sys_userbase where allowind = 1 and emailaddress = :useremail";
-    $chkR = $conn->prepare($chkSQL);
-    $chkR->execute(array(':useremail' => $rquester));
-    if ($chkR->rowCount() > 0) { 
+  
+      require(serverkeys . "/sspdo.zck"); 
+      $chkSQL = "SELECT userid, emailaddress, altphonecellcarrier FROM four.sys_userbase where allowind = 1 and emailaddress = :useremail";
+      $chkR = $conn->prepare($chkSQL);
+      $chkR->execute(array(':useremail' => $rquester));
+      if ($chkR->rowCount() > 0) { 
+        
         //SEND EMAIL
          $characters = '0123456789';
          $charactersLength = strlen($characters);
@@ -286,8 +292,7 @@ class systemposts {
          $capAuthR = $conn->prepare($capAuthSQL);
          $capAuthR->execute(array(':authcode' => $randomString, ':sess' => session_id(), ':uemail' => $rquester));
          $capID = $conn->lastInsertId();
-         $authCode = "{$capID}-{$randomString}";
-         
+         $authCode = "{$capID}-{$randomString}"; 
          $rqstr = $chkR->fetch(PDO::FETCH_ASSOC);
          if (trim($rqstr['altphonecellcarrier']) !== "") { 
              $emlTo = $rqstr['altphonecellcarrier'];
@@ -296,8 +301,8 @@ class systemposts {
          }
          $rtn = sendSSCodeEmail( $emlTo, $authCode );
          $msg = session_id();
-         //$msg = "";
       }
+
     } else {
       $responseCode = 503;
       $msg = "YOU MUST SUPPLY AN EMAIL USERNAME";
@@ -328,19 +333,12 @@ function captureSystemActivity($sessionid, $sessionvariables, $loggedsession, $u
 
 
 function sendSSCodeEmail( $emailTo, $authCode ) { 
-//TODO: CHECK THE INPUT BEFORE ALLOWING TO TABLE    
-include(genAppFiles . "/dataconn/sspdo.zck"); 
-$insSQL = "insert into serverControls.emailthis "
-       . " (toWhoAddressArray, sbjtLine, msgBody, htmlind, wheninput, bywho)"
-       . " values (:toWhomAddressArray,:sbjtLine,:msgBody,0,now(),:bywho)";
-$insR = $conn->prepare($insSQL);
-$insR->execute(array(
-    ':toWhomAddressArray' => '["' . $emailTo . '"]'
-   ,':sbjtLine' => 'SSv7 Authentication Code'
-   ,':msgBody' => 'The ScienceServer Dual Authentication Code to enter is: ' . $authCode
-   ,':bywho' => 'SSv7'
-)); 
-return $conn->errorInfo(); 
+  //TODO: CHECK THE INPUT BEFORE ALLOWING TO TABLE    
+  require(serverkeys . "/sspdo.zck"); 
+  $insSQL = "insert into serverControls.emailthis (toWhoAddressArray, sbjtLine, msgBody, htmlind, wheninput, bywho) values (:toWhomAddressArray,:sbjtLine,:msgBody,0,now(),:bywho)";
+  $insR = $conn->prepare($insSQL);
+  $insR->execute(array(':toWhomAddressArray' => '["' . $emailTo . '"]',':sbjtLine' => 'SSv7 Authentication Code',':msgBody' => 'The ScienceServer Dual Authentication Code to enter is: ' . $authCode,':bywho' => 'SSv7')); 
+  return $conn->errorInfo(); 
 }
 
 /********** EMAIL TEXTING 
@@ -361,107 +359,5 @@ Consumer Cellular: number@mailmymobile.net
 C-Spire: number@cspire1.com
 Page Plus: number@vtext.com
  */
-
-
-/*********************************************************************\
-
-    TEA = TINY ENCRYPTION ALGORHTITHM
-    https://babelfish.nl/Projecten/JavascriptPhpEncryption
-
-Based on TEA (2nd variant),http://www.simonshepherd.supanet.com/tea.htm
-
-crypt en- and decrypts a string (1st arg) using a key (2nd arg) of
-length 16 with 16 iterations (a 4th argument may be given to use
-another number of iterations (8 is superficial, 16 is often adequate,
-32 is hard)). Arg 3 is true for encryption, false for decryption. Key
-is taken to contain byte characters (0x01-0xFF); subject sstring may
-contain wider characters but only each lower byte is used.
-
-The contents of this file are subject to the Mozilla Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License
-at http:#www.mozilla.org/MPL/
-Software distributed under the License is distributed on an "AS
-IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-implied. See the License for the specific language governing
-rights and limitations under the License.
-The Original Code is Bloom, a rule-based development framework for
-web applications. The Initial Developer of the Original Code is
-Babelfish, Hilversum, The Netherlands.
-All Rights Reserved.
-
-Syntax coloring by dreamprojections.com/SyntaxHighlighter/
-\*********************************************************************/
-/********* OLD ENCRYPTION ***************
-function cryptN($str,$key,$encrypt,$itr) {
-   $res="";
-   while (strlen($str)>8) {
-      $res .= crypt8(substr($str,0,8),$key,$encrypt,$itr);
-      $str = substr($str,8);
-   }
-   if (strlen($str)>0) {
-      while (strlen($str)<8) {
-     $str .= ' ';
-      }
-      $res .= crypt8($str,$key,$encrypt,$itr);
-   }
-   return rtrim($res,' ');
-}
-function crypt8($oct,$key,$encrypt,$itr) {
-   $y=0; $z=0; $k=array(); $k[0]=$k[1]=$k[2]=$k[3]=0;
-   $d=0x9E3779B9; $sum=$encrypt?0:($d*$itr)&0x0ffffffff;
-   $res="";
-   for ($i=0; $i<8; ) {
-      $y=($y<<8)+(ord($oct{$i})&0xFF);
-      $k[$i&3]=($k[$i&3]<<8)+ord($key{$i});
-      $k[$i&3]=($k[$i&3]<<8)+ord($key{$i+8});
-      $i++;
-      $z=($z<<8)+(ord($oct{$i})&0xFF);
-      $k[$i&3]=($k[$i&3]<<8)+ord($key{$i});
-      $k[$i&3]=($k[$i&3]<<8)+ord($key{$i+8});
-      $i++;
-   }
-   if ($encrypt) {
-      while ($itr-->0) {
-     $y = ($y+(($z<<4)^($z>>5))+($z^$sum)+$k[$sum&3])&0x0ffffffff;
-     $sum=$sum+$d;
-     $z = ($z+(($y<<4)^($y>>5))+($y^$sum)+$k[($sum>>11)&3])&0x0ffffffff;
-      }
-   } else {
-      while ($itr-->0) {
-     $z = ($z+0x0100000000-(((($y<<4)^($y>>5))+($y^$sum)+$k[($sum>>11)&3])&0x0ffffffff))&0x0ffffffff;
-     $sum=($sum+0x0100000000-$d)&0x0ffffffff;
-     $y = ($y+0x0100000000-(((($z<<4)^($z>>5))+($z^$sum)+$k[$sum&3])&0x0ffffffff))&0x0ffffffff;
-      }
-   }
-   for ($i=4; $i-->0; ) {
-      $res .= chr(($y&0xFF000000)>>24);
-      $y = $y<<8;
-      $res .= chr(($z&0xFF000000)>>24);
-      $z=$z<<8;
-   }
-   return $res;
-}
-function hexify($oct) {
-   $res="";
-   $hexDig = "0123456789ABCDEF";
-   for ($i=0; $i<strlen($oct);) {
-      $b = ord($oct{$i++});
-      $c = $b&0x0F;
-      $b = $b>>4;
-      $res .= $hexDig{$b} . $hexDig{$c} ;
-   }
-   return $res;
-}
-function dehexify($hex) {//assumes even number of hex digits
-   $res="";
-   for ($i=0; $i<strlen($hex); ) {
-      $b = hexdec($hex{$i++}.$hex{$i++});
-      $res .= chr($b);
-   }
-   return $res;
-   
-}
-****************************/
 
 
