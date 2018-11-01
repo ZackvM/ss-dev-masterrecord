@@ -33,7 +33,40 @@ function __construct() {
 }
 
 class datadoers { 
-    
+
+    function suggestsomething($request, $passedData) { 
+       //{"rqstsuggestion":"masterrecord-sites","given":"thyr"} 
+       require(serverkeys . "/sspdo.zck");  
+       $responseCode = 503;  
+       $params = json_decode($passedData, true);
+       switch (strtolower($params['rqstsuggestion'])) { 
+         case 'masterrecord-sites': 
+             $srchSQL = "SELECT distinct ucase(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subsite,'')='','',concat(' [Sub-Site: ', bs.subsite,'] ')))) suggestionlist FROM masterrecord.ut_procure_biosample bs where voidind <> 1 and (anatomicsite like :likeOne or subsite like :likeTwo) order by ucase(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subsite,'')='','',concat(' [Sub-Site: ', bs.subsite,'] '))))";             
+             $srchRS = $conn->prepare($srchSQL); 
+             $srchRS->execute(array(':likeOne' => "{$params['given']}%", ':likeTwo' => "{$params['given']}%"));          
+             break;
+       }
+
+       $rtnArray = array();
+       if ($srchRS->rowCount() > 0) { 
+          $responseCode = 200;
+          $msg = 0; 
+          $itemsfound = $srchRS->rowCount();
+          while ($r = $srchRS->fetch(PDO::FETCH_ASSOC)) { 
+            $rtnArray[] = $r;
+          }
+       } else { 
+           $responseCode = 404;    
+           $itemsfound = 0;
+           $msg = "NO SUGGESTIONS ARE MADE";
+       }
+
+
+       $rows['statusCode'] = $responseCode; 
+       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $rtnArray);
+       return $rows;      
+    }
+
     function docsearch($request, $passedData) { 
        require(serverkeys . "/sspdo.zck");  
        session_start(); 
@@ -142,9 +175,7 @@ class datadoers {
               $allowWrite = 0;    
            }
            //TODO:  CHECK ONE DATE BEFORE ANOTHER
-           
-           
-           
+                      
            $ssid = session_id();
            $usrSQL = "SELECT originalAccountName FROM four.sys_userbase where sessionid = :sessionid";
            $usrR = $conn->prepare($usrSQL);
@@ -157,8 +188,6 @@ class datadoers {
                $usrName = $user['originalAccountName'];
            }
            if ($allowWrite === 1) { 
-             //WRITE TO QRY BUILD TABLE
-               //insert into four.srv_coord_qry_capture (qryselector, bywhom, qrytype, jsoncriteria, onwhen) values('abcdefg123','proczack','BANK','{\'criteria\':\'critval1\'}',now())        
                $objid = strtolower( generateRandomString() );
                $insSQL = "insert into four.srv_coord_qry_capture (qryselector, bywhom, qrytype, jsoncriteria, onwhen) values(:objid,:user,:qrytype,:criteria,now())";
                $rs = $conn->prepare($insSQL); 

@@ -40,7 +40,6 @@ function datacoordinator($rqststr, $whichusr) {
 MAINQGRID;
             } else { 
                 //$rtnthis = "DO SOMETHING HERE";            
-
                 switch ($rqststr[2]) { 
                   case 'bank':
                     $qryid = $rqststr[3];
@@ -99,9 +98,6 @@ RSLTTBL;
                        $dataTable = $qdata['shipdata'];
                     } else { 
                     }
-
-
-
 
                     $rtnthis = <<<RSLTTBL
 <table border=0 cellpadding=0 cellspacing=0 id=bigQryRsltTbl >
@@ -231,7 +227,7 @@ function documentlibrary($rqststr, $whichusr) {
         $dtadsp .= "</table>";
     } else { 
         //NO QUERY SPECIFIED
-        $dtadsp = " NO QUERY ID ";
+        $dtadsp = "";
     }
     //DOCUMENT TYPES
     $dTypes = "<table class=menuDropTbl >"
@@ -444,38 +440,42 @@ return $grid;
 
 function buildBSGrid() { 
   $si = serverIdent;
-  $sp = apikey;
-  $segstatusarr = json_decode(callrestapi("GET","https://data.chtneast.org/globalmenu/allsegmentstati",$si,$sp),true);
-  $segstatusd = json_decode($segstatusarr['datareturn'],true);
-  $seg = "<table border=1>";
-  foreach ($segstatusd['DATA'] as $segval) { 
+  $sp = serverpw;
+  //DROP MENU BUILDER ********************************************************************************* //
+  $segstatusarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allsegmentstati",$si,$sp),true);
+  $seg = "<table border=1><tr><td align=right onclick=\"fillField('qrySegStatus','','');\">[clear]</td></tr>";
+  foreach ($segstatusarr['DATA'] as $segval) { 
     $seg .= "<tr><td onclick=\"fillField('qrySegStatus','{$segval['lookupvalue']}','{$segval['menuvalue']}');\">{$segval['menuvalue']}</td></tr>";
   }
   $seg .= "</table>";
-  $preparr = json_decode(callrestapi("GET","https://data.chtneast.org/globalmenu/allpreparationmethods",$si,$sp),true);
-  $prepd = json_decode($preparr['datareturn'], true);
+
+  $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allpreparationmethods",$si,$sp),true);
   $prp = "<table border=1>";
-  foreach ($prepd['DATA'] as $prpval) {
+  foreach ($preparr['DATA'] as $prpval) {
     $prp .= "<tr><td>{$prpval['menuvalue']} - {$prpval['lookupvalue']}</td></tr>";
   }
   $prp .= "</table>";
-  $fCalendar = buildcalendar('biosampleQueryFrom'); 
+
+
+$fCalendar = buildcalendar('biosampleQueryFrom'); 
 $bsqFromCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
   <div class=valueHolder><input type=hidden id=bsqueryFromDateValue><input type=text READONLY id=bsqueryFromDate></div>
-  <div class=valueDropDown style="min-width: 15vw;" id=ddInstitutions><div id=bsqCalendar>{$fCalendar}</div></div>
+  <div class=valueDropDown><div id=bsqCalendar>{$fCalendar}</div></div>
 </div>
 CALENDAR;
+
 $tCalendar = buildcalendar('biosampleQueryTo'); 
 $bsqToCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
   <div class=valueHolder><input type=hidden id=bsqueryToDateValue><input type=text READONLY id=bsqueryToDate></div>
-  <div class=valueDropDown style="min-width: 15vw;" id=ddInstitutions><div id=bsqtCalendar>{$tCalendar}</div></div>
+  <div class=valueDropDown><div id=bsqtCalendar>{$tCalendar}</div></div>
 </div>
 CALENDAR;
+  //DROP MENU BUILDER END ********************************************************************************* //
 
 
-    $grid = <<<BSGRID
+$grid = <<<BSGRID
 <table border=0 width=100%>
 <tr><td>BIOGROUP</td></tr>
 <tr><td>
@@ -496,7 +496,12 @@ CALENDAR;
 
 <tr><td>Diagnosis Designation (Site)</td><td>Diagnosis Designation (Diagnosis or Specimen Category)</td></tr>
 <tr>
-  <td><input type=text id=qryDXDSite></td>
+  <td>
+     <div class=suggestionHolder>
+       <input type=text id=qryDXDSite>
+       <div id=siteSuggestions class=suggestionDisplay>&nbsp;</div>
+     </div>
+    </td>
   <td><input type=text id=qryDXDDiagnosis></td>
 </tr>
 

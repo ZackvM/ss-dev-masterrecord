@@ -151,6 +151,9 @@ body { margin: 0; margin-top: 5.5vh; box-sizing: border-box;  }
 #bigQryRsltTbl {margin-left: .5vw; margin-right: .5vw; width: 99vw; } 
 #bankDataHolder { height: 80vh; width: 98vw; overflow: auto; border: 1px solid #000; }
 
+.suggestionHolder { position: relative; }
+.suggestionDisplay {min-width: 25vw; position: absolute; left: 0; height: 15vh; overflow: auto; z-index: 40; box-sizing: border-box; display: none;background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); }
+.suggestionTable { max-width: 24vw; box-sizing: border-box;   }
 
 STYLESHEET;
 return $rtnThis;

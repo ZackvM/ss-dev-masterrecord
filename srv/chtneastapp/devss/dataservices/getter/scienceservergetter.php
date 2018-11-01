@@ -35,6 +35,19 @@ class objgetter {
 
 class objlisting { 
 
+function sscalendar($request,$urirqst) { 
+    $rows = array(); 
+    //TODO:  Check inputs for errors
+    $rq = explode("/",$urirqst);
+    $rqstCal = $rq[3]; 
+    $rqstMnt = $rq[4];
+    $rqstYr = $rq[5];     
+    $rtnCalendar = buildcalendar($rqstCal, $rqstMnt, $rqstYr);
+    $rows['statusCode'] = 200; 
+    $rows['data'] = array('MESSAGE' => '', 'ITEMSFOUND' => 0, 'DATA' => $rtnCalendar);
+    return $rows;
+}
+
 function globalmenu($request) {
      $rows = array(); 
      $gMenu = $request;

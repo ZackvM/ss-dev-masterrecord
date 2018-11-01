@@ -46,8 +46,10 @@ req = new XMLHttpRequest();
 return req;
 }
 
-function universalAJAX(methd, url, passedDataJSON, callbackfunc) { 
-  byId('standardModalBacker').style.display = 'block';
+function universalAJAX(methd, url, passedDataJSON, callbackfunc, dspBacker) { 
+  if (dspBacker === 1) { 
+    byId('standardModalBacker').style.display = 'block';
+  }
   var rtn = new Object();
   var grandurl = dataPath+url;
   httpage.open(methd, grandurl, true); 
@@ -279,7 +281,7 @@ function searchDocuments() {
   dta['doctype'] = byId('fDocTypeValue').value;
   var passdata = JSON.stringify(dta);
   var mlURL = "/data-doers/doc-search";
-  universalAJAX("POST",mlURL,passdata,answerSearchDocuments);
+  universalAJAX("POST",mlURL,passdata,answerSearchDocuments,1);
 }
 
 function answerSearchDocuments(rtnData) { 
@@ -348,9 +350,11 @@ function datacoordinator($rqststr) {
   $eMod = encryptModulus;
   $eExpo = encryptExponent;
   $si = serverIdent;
-  $pw = apikey;
+  $pw = serverpw;
     
 $rtnthis = <<<JAVASCR
+
+
 
 document.addEventListener('DOMContentLoaded', function() {  
 
@@ -360,11 +364,55 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
-
+  if (byId('qryDXDSite')) { 
+    byId('qryDXDSite').addEventListener('keyup', function() {
+      if (byId('qryDXDSite').value.trim().length > 2) { 
+          getSuggestions('qryDXDSite'); 
+      } else { 
+        byId('siteSuggestions').innerHTML = "&nbsp;";
+        byId('siteSuggestions').style.display = 'none';
+      }
+    }, false);
+  }
 
 
 
 }, false);
+
+
+function getSuggestions(whichfield) { 
+switch (whichfield) { 
+  case 'qryDXDSite':
+    var given = new Object(); 
+    given['rqstsuggestion'] = 'masterrecord-sites'; 
+    given['given'] = byId(whichfield).value.trim();
+    var passeddata = JSON.stringify(given);
+    var mlURL = "/data-doers/suggest-something";
+    universalAJAX("POST",mlURL,passeddata,answerGetSuggestions,0);
+  break; 
+}
+
+}
+
+function answerGetSuggestions(rtnData) {
+var rsltTbl = "";
+if (parseInt(rtnData['responseCode']) === 200 ) { 
+  var dta = JSON.parse(rtnData['responseText']);
+  if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
+    var rsltTbl = "<table border=0 class=suggestionTable><tr><td>Below are suggestions for this field.  Using the 'site' value to query against will generate more results.</td></tr>";
+    dta['DATA'].forEach(function(element) { 
+       rsltTbl += "<tr><td>"+element['suggestionlist']+"</td></tr>";
+    }); 
+    rsltTbl += "</table>";  
+    byId('siteSuggestions').innerHTML = rsltTbl; 
+    byId('siteSuggestions').style.display = 'block';
+  } else { 
+    byId('siteSuggestions').innerHTML = "&nbsp;";
+    byId('siteSuggestions').style.display = 'none';
+  }
+}
+
+}
 
 function changeSearchGrid(whichgrid) { 
   byId('biogroupdiv').style.display = 'none';
@@ -382,8 +430,20 @@ function fillField(whichfield, whichvalue, whichdisplay) {
   }       
 }
 
-function getCalendar(whichcalendar, whichdiv, monthyear) { 
-alert(monthyear);        
+var lastRequestCalendarDiv = "";
+function getCalendar(whichcalendar, whichdiv, monthyear) {
+var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;
+lastRequestCalendarDiv = whichdiv;
+universalAJAX("GET",mlURL,"",answerGetCalendar,0);
+}
+
+function answerGetCalendar(rtnData) {
+  if (parseInt(rtnData['responseCode']) === 200) {     
+    var rcd = JSON.parse(rtnData['responseText']);
+    byId(lastRequestCalendarDiv).innerHTML = rcd['DATA']; 
+  } else { 
+    alert("ERROR");  
+  }
 }
 
 function submitqueryrequest(whichquery) { 
@@ -414,7 +474,7 @@ function submitqueryrequest(whichquery) {
   console.log(passdta);
   var mlURL = "/buildcoordquery";
 
-  universalAJAX("POST",mlURL,passdta,rspquerysubmital);
+//  universalAJAX("POST",mlURL,passdta,rspquerysubmital);
 //          var rcd = JSON.parse(httpage.responseText);
 //          navigateSite( rcd['DATA']['qryurl'] );
 }
