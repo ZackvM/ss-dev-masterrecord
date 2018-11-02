@@ -373,9 +373,13 @@ document.addEventListener('DOMContentLoaded', function() {
         byId('siteSuggestions').style.display = 'none';
       }
     }, false);
+
+    byId('qryDXDSite').addEventListener('blur', function() {  
+        byId('siteSuggestions').innerHTML = "&nbsp;";
+        byId('siteSuggestions').style.display = 'none';
+    }, false );
+
   }
-
-
 
 }, false);
 
@@ -399,7 +403,7 @@ var rsltTbl = "";
 if (parseInt(rtnData['responseCode']) === 200 ) { 
   var dta = JSON.parse(rtnData['responseText']);
   if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
-    var rsltTbl = "<table border=0 class=suggestionTable><tr><td>Below are suggestions for this field.  Using the 'site' value to query against will generate more results.</td></tr>";
+    var rsltTbl = "<table border=0 class=suggestionTable><tr><td>Below are suggestions for this field.  Using the 'site' value to query against will generate more results.  These are live values from the masterrecord database.</td></tr>";
     dta['DATA'].forEach(function(element) { 
        rsltTbl += "<tr><td>"+element['suggestionlist']+"</td></tr>";
     }); 
@@ -473,10 +477,16 @@ function submitqueryrequest(whichquery) {
 
   console.log(passdta);
   var mlURL = "/buildcoordquery";
-
 //  universalAJAX("POST",mlURL,passdta,rspquerysubmital);
 //          var rcd = JSON.parse(httpage.responseText);
 //          navigateSite( rcd['DATA']['qryurl'] );
+}
+
+function updatePrepmenu(whatvalue) { 
+  byId('qryPreparationValue').value = '';
+  byId('qryPreparation').value = '';
+  byId('preparationDropDown').innerHTML = "&nbsp;"; 
+
 }
 
 function rspquerysubmital(jsonDta) { 

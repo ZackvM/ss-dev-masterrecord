@@ -450,9 +450,9 @@ function buildBSGrid() {
   $seg .= "</table>";
 
   $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allpreparationmethods",$si,$sp),true);
-  $prp = "<table border=1>";
+  $prp = "<table border=1><tr><td align=right onclick=\"fillField('qryPreparationMethod','','');updatePrepmenu('');\">[clear]</td></tr>";
   foreach ($preparr['DATA'] as $prpval) {
-    $prp .= "<tr><td>{$prpval['menuvalue']} - {$prpval['lookupvalue']}</td></tr>";
+    $prp .= "<tr><td onclick=\"fillField('qryPreparationMethod','{$prpval['lookupvalue']}','{$prpval['menuvalue']}');updatePrepmenu('{$prpval['lookupvalue']}');\">{$prpval['menuvalue']} - {$prpval['lookupvalue']}</td></tr>";
   }
   $prp .= "</table>";
 
@@ -507,8 +507,8 @@ $grid = <<<BSGRID
 
 <tr><td colspan=2>Preparation</td></tr>
 <tr>
-  <td><div class=menuHolderDiv><input type=text id=qryPreparationMethod READONLY><div class=valueDropDown>{$prp}</div></div></td>
-  <td><div class=menuHolderDiv><input type=text id=qryPreparation READONLY><div class=valueDropDown>&nbsp;</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationMethodValue><input type=text id=qryPreparationMethod READONLY><div class=valueDropDown>{$prp}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationValue><input type=text id=qryPreparation READONLY><div class=valueDropDown id=preparationDropDown>&nbsp;</div></div></td>
 </tr>
 
 </table>

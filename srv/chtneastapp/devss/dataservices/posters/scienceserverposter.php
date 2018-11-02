@@ -41,7 +41,7 @@ class datadoers {
        $params = json_decode($passedData, true);
        switch (strtolower($params['rqstsuggestion'])) { 
          case 'masterrecord-sites': 
-             $srchSQL = "SELECT distinct ucase(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subsite,'')='','',concat(' [Sub-Site: ', bs.subsite,'] ')))) suggestionlist FROM masterrecord.ut_procure_biosample bs where voidind <> 1 and (anatomicsite like :likeOne or subsite like :likeTwo) order by ucase(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subsite,'')='','',concat(' [Sub-Site: ', bs.subsite,'] '))))";             
+             $srchSQL = "SELECT distinct ucase(concat(trim(ifnull(bs.anatomicsite,'')), if(ifnull(bs.subsite,'')='','',concat(' [Sub-Site: ', trim(bs.subsite),'] ')))) suggestionlist FROM masterrecord.ut_procure_biosample bs where voidind <> 1 and (anatomicsite like :likeOne or subsite like :likeTwo) order by suggestionlist ";             
              $srchRS = $conn->prepare($srchSQL); 
              $srchRS->execute(array(':likeOne' => "{$params['given']}%", ':likeTwo' => "{$params['given']}%"));          
              break;
