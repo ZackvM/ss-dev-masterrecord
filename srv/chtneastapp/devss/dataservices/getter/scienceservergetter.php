@@ -48,6 +48,34 @@ function sscalendar($request,$urirqst) {
     return $rows;
 }
 
+function subpreparationmenu($request) { 
+    $responseCode = 400;  
+    $msg = "";
+    $itemsfound = 0;
+    $rtnData = array();
+    if (trim($request) !== "") { 
+      require(serverkeys . "/sspdo.zck");               
+      $SQL = "select pr.menuvalue, pr.longvalue, pr.dsporder  from (SELECT menuid FROM four.sys_master_menus where menu = 'PREPMETHOD' and menuvalue = :preparation) as pm left join (SELECT * FROM four.sys_master_menus where menu = 'PREPDETAIL' and dspind = 1) as pr on pm.menuid = pr.parentid order by pr.dsporder";   
+      $rs = $conn->prepare($SQL); 
+      $rs->execute(array(':preparation' => $request));
+      if ($rs->rowCount() < 1) { 
+        $responseCode = 404; 
+        $msg = "NO PREPARATIONS FOUND ({$request})";
+      } else { 
+          $itemsfound = $rs->rowCount();
+          while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+            $rtnData[] = $r;   
+          }          
+          $responseCode = 200;
+      }
+    } else { 
+        $msg = "NO PREPARATION METHOD SPECIFIED";
+    }
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $rtnData);
+     return $rows;
+}
+
 function globalmenu($request) {
      $rows = array(); 
      $gMenu = $request;

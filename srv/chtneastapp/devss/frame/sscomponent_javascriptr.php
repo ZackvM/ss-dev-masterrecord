@@ -354,8 +354,6 @@ function datacoordinator($rqststr) {
     
 $rtnthis = <<<JAVASCR
 
-
-
 document.addEventListener('DOMContentLoaded', function() {  
 
   if (byId('btnBankSearchSubmit')) { 
@@ -486,7 +484,10 @@ function updatePrepmenu(whatvalue) {
   byId('qryPreparationValue').value = '';
   byId('qryPreparation').value = '';
   byId('preparationDropDown').innerHTML = "&nbsp;"; 
-
+  if (whatvalue.trim() === "") { 
+  } else { 
+     //WEBSERVICE END POINT: https://dev.chtneast.org/data-services/subpreparationmenu/frozen
+  }
 }
 
 function rspquerysubmital(jsonDta) { 
