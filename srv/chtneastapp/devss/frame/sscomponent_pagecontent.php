@@ -185,46 +185,89 @@ function documentlibrary($rqststr, $whichusr) {
         $dta = json_decode(callrestapi("GET", dataTree . "/docsrch/{$rqststr[3]}", serverIdent, serverpw), true);        
         $strm = $dta['DATA']['head']['srchterm'];        
         $typevl = $dta['DATA']['head']['doctype'];        
+        $dspInScreen = 0;
         switch ($typevl) { 
             case 'PATHOLOGYRPT':
                 $typedsp = 'Pathology Report Text Search';
                 $docobj = "pathrpt";
                 $printObj = "pathology-report";
+                $dspInScreen = 1;
                 break;
             case 'PRBGNBR':
                 $typedsp = 'Pathology Report Biogroup Search';
                 $docobj = "pathrpt";
                 $printObj = "pathology-report";
+                $dspInScreen = 1; 
                 break;
             case 'CHARTRVW':
                 $typedsp = 'Chart Review';
                 $docobj = "pxchart";
                 $printObj = "chart-review";
+                $dspInScreen = 1;
                 break; 
             case 'SHIPDOC':
                 $typedsp = 'Shipment Document (Ship Doc)';
                 $docobj = "shipdoc";
                 $printObj = "shipment-manifest";
+                $dspInScreen = 0;
                 break;                 
         } 
-        $dtadsp = "<table width=100% border=0 id=doclibabstbl cellspacing=4>";
-        $warning = "";
-        $qryBy = $dta['DATA']['head']['bywho'];
-        $qryOn = $dta['DATA']['head']['onwhendsp'];
-        if ((int)$dta['ITEMSFOUND'] > 249) { 
+        
+        if ($dspInScreen === 0) { 
+          //NO IN SCREEN DISPLAY  
+          $dtadsp = "<table width=100% border=0 id=doclibabstbl cellspacing=4>";
+          $warning = "";
+          $qryBy = $dta['DATA']['head']['bywho'];
+          $qryOn = $dta['DATA']['head']['onwhendsp'];
+          if ((int)$dta['ITEMSFOUND'] > 249) { 
             $warning = "(You have reached your limit of return results.  For a more indepth query, see a CHTNEast IT Staff)";
-        }
-        $dtadsp .= "<tr><td colspan=2 valign=top align=right id=byline>({$qryBy}: {$qryOn})</td></tr>";    
-        $dtadsp .= "<tr><td colspan=2 valign=top id=headerwarning>Documents Found: " . $dta['ITEMSFOUND'] . " {$warning}</td></tr>";
-        $dtadsp .= "<tr><td valign=top class=fldLabel>Ref #</td><td valign=top class=fldLabel>Document Abstract</td></tr>";
-        foreach($dta['DATA']['records'] as $rs) { 
+          }        
+          $dtadsp .= "<tr><td colspan=2 valign=top align=right id=byline>({$qryBy}: {$qryOn})</td></tr>";    
+          $dtadsp .= "<tr><td colspan=2 valign=top id=headerwarning>Documents Found: " . $dta['ITEMSFOUND'] . " {$warning}</td></tr>";
+          $dtadsp .= "<tr><th valign=top class=fldLabel>Ref #</th><th valign=top class=fldLabel>Document Abstract</th></tr>";
+          foreach($dta['DATA']['records'] as $rs) { 
             $selector = cryptservice($rs['prid'] . "-" . $rs['selector'], "e");
             $dtadsp .= "<tr onclick=\"openOutSidePage('{$tt}/print-obj/{$printObj}/{$selector}');\" class=datalines>"
                                  . "<td valign=top class=bgnbr>{$rs['dspmark']}</td>"
                                  . "<td valign=top class=abstracttext>{$rs['abstract']}...</td>"
                                  . "</tr>";
-        }        
-        $dtadsp .= "</table>";
+          }         
+          $dtadsp .= "</table>";
+        } else { 
+            
+            
+          //DISPLAY IN SCREEN  
+          $dtadsp = "<table width=100% border=0 id=doclibabstbl cellspacing=4>";
+          $warning = "";
+          $qryBy = $dta['DATA']['head']['bywho'];
+          $qryOn = $dta['DATA']['head']['onwhendsp'];
+          if ((int)$dta['ITEMSFOUND'] > 249) { 
+            $warning = "(You have reached your limit of return results.  For a more indepth query, see a CHTNEast IT Staff)";
+          }        
+          $dtadsp .= "<tr><td colspan=2 valign=top align=right id=byline>({$qryBy}: {$qryOn})</td></tr>";    
+          $dtadsp .= "<tr><td colspan=2 valign=top id=headerwarning>Documents Found: " . $dta['ITEMSFOUND'] . " {$warning}</td></tr>";
+
+          $innerListing = "<table border=0 id=docVertList>";  
+          foreach($dta['DATA']['records'] as $rs) { 
+            $selector = cryptservice($rs['prid'] . "-" . $rs['selector'], "e");
+            $innerListing .= "<tr>"
+                                    . "<td valign=top><table><tr><td><b>{$rs['dspmark']}</b></td>"
+                                    . "<td onclick=\"alert('{$rs['prid']}-{$rs['selector']}');\" class=prntIcon><i class=\"material-icons\">pageview</i></td>"
+                                    . "<td onclick=\"openOutSidePage('{$tt}/print-obj/{$printObj}/{$selector}');\" class=prntIcon><i class=\"material-icons\">print"
+                                    . "</i></td></tr><tr><td colspan=3>"
+                                    . "{$rs['abstract']}...</td></tr></table></td></tr>";
+          }         
+          $innerListing .= "</table>";
+          
+          $dtadsp .= "<tr><td id=vertHold valign=top><div id=vertdivhold>{$innerListing}</div></td><td valign=top><div id=displayDocText>   </div></td></tr>";
+          
+          $dtadsp .= "</table>";            
+          
+          
+          
+        }
+        
+        
     } else { 
         //NO QUERY SPECIFIED
         $dtadsp = "";
@@ -237,6 +280,11 @@ function documentlibrary($rqststr, $whichusr) {
             . "<tr><td class=ddMenuItem onclick=\"fillField('fDocType','SHIPDOC','Shipment Document (Ship Doc)','ddSearchTypes');\">Shipment Document (Ship Doc)</td></tr>"            
             . "</table>";
         
+
+    
+    
+    
+    
 $rtnthis = <<<PAGEHERE
 <table width=100% border=0 cellspacing=2 cellpadding=0 id=docLibHoldTbl>
     <tr><td colspan=4 class=pageTitle>Document Library</td></tr>

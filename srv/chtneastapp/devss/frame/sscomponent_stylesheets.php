@@ -46,6 +46,10 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 .hdrOnlyItem {color: rgba({$this->color_white},1);  font-size: 1.8vh;  padding: 0 2vw 0 0;  white-space: nowrap;}
 .hdrOnlyItem:hover { color: rgba({$this->color_neongreen},1); cursor: pointer; }
 
+#rightControlPanel { width: 4vw; }
+#topbarUserDisplay {color: rgba({$this->color_neongreen},1); font-size: 1.2vh; }
+
+
 .hdrItem {color: rgba({$this->color_white},1); padding: 0 2vw 0 0; font-size: 1.8vh;  white-space: nowrap; }
 .mnuHldr {position: relative; }
 .mnuHldr:hover {cursor: pointer; }
@@ -174,6 +178,13 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #doclibabstbl .datalines:hover {cursor: pointer; background: rgba({$this->color_lightblue},1); }
 #doclibabstbl .datalines .bgnbr { text-align: center; padding: 1vh 0; } 
 #doclibabstbl .datalines .abstracttext { padding: 1vh 1vw; }
+
+#docVertList {width: 20vw; font-size: 1.3vh; }
+#vertHold {width: 20vw; }
+#vertdivhold {width: 20vw; height: 70vh; border: 1px solid rgba({$this->color_zackgrey},1); overflow: auto; }
+
+.prntIcon {width: 1.4vw; }
+.prntIcon:hover {cursor: pointer; color: rgba({$this->color_neongreen},1); }
 
 STYLESHEET;
 return $rtnThis;

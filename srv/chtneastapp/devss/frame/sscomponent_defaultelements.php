@@ -3,7 +3,7 @@
 class defaultpageelements {
 
 function appcarddisplay($whichpage, $whichUsr) { 
-//USER: {"statusCode":200,"loggedsession":"fhv3lfj32bcp5qbdd1egiqqjb6","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":null,"chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":21,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""}]],["434","HPR-QMS","",[]],["472","REPORTS","",[]],["473","UTILITIES","",[]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]}$thi
+//USER: {"statusCode":200,"loggedsession":"fhv3lfj32bcp5qbdd1egiqqjb6","dbuserid":1,"userid":"proczack","":"Zack von Menchhofen","useremail":null,"chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":21,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""}]],["434","HPR-QMS","",[]],["472","REPORTS","",[]],["473","UTILITIES","",[]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]}$thi
 $thisAcct = "";
 $allAcct = json_encode($whichUsr);
 $hlpfile = buildHelpFiles($whichpage);
@@ -44,7 +44,7 @@ if ($whichpage !== "login") {
     $at = genAppFiles;
     $chtn = base64file("{$at}/publicobj/graphics/smlchtnlogo.png", "barchtnlogo", "png", true);   
     
-    $controlList = "";
+    $controlList = "<table border=0 cellpadding=0 cellspacing=0>";
     foreach ($whichUsr->allowedmodules as $modval) {
         if (trim($modval[2]) !== "") { 
             //HEADERONLY
@@ -65,26 +65,34 @@ if ($whichpage !== "login") {
           $controlList .= "</table></div>";
           $controlList .= "</div></td>";           
         }
-    } 
-
-$dt = dataTree;
+    }
+    $controlList .= "</table>";
 
     $uBtnsj = json_decode(callrestapi("GET", dataTree . "/ssuniversalcontrols", serverIdent, serverpw),true);
+    $controlListUniverse = "<table border=0 cellspacing=0 cellpadding=0>";
     foreach ($uBtnsj['DATA'] as $unbr => $univval) { 
         if ($unbr !== "statusCode") {
-          $controlListUniverse .= "<td valign=bottom class=universeBtns align=right {$univval['explainerline']}>{$univval['menuvalue']}</td>";
+          $controlListUniverse .= "<td valign=bottom class=universeBtns align=right {$univval['explainerline']}><i class=\"material-icons\">{$univval['googleiconcode']}</i></td>";
         }
     }
+    $controlListUniverse .= "</table>";
+    
+    $dspUser = "<b>User</b>: {$whichUsr->userid} ({$whichUsr->username})";
+    
+    
     $topBar = <<<TBAR
           <div id=topMenuHolder>
             <div id=globalTopBar>
                 <table border=0 cellpadding=0 cellspacing=0 id=topBarMenuTable>
                     <tr>
-                        <td onclick="navigateSite('');">{$chtn}</td>
-                        <td class=spacer>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td onclick="navigateSite('');" rowspan=2>{$chtn}</td><td colspan=20 align=right id=topbarUserDisplay>{$dspUser}</td></tr>
+                        <tr><td class=spacer>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td align=right>
                          {$controlList}
-                         <td class=bigspacer></td>
+                         </td>
+                         <td align=right id=rightControlPanel>
                           {$controlListUniverse} 
+                         </td>
                     </tr>
                 </table>
             </div>
