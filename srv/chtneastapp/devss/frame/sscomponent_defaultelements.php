@@ -72,14 +72,15 @@ if ($whichpage !== "login") {
     $controlListUniverse = "<table border=0 cellspacing=0 cellpadding=0>";
     foreach ($uBtnsj['DATA'] as $unbr => $univval) { 
         if ($unbr !== "statusCode") {
-          $controlListUniverse .= "<td valign=bottom class=universeBtns align=right {$univval['explainerline']}><i class=\"material-icons\">{$univval['googleiconcode']}</i></td>";
+          $controlListUniverse .= "<td valign=bottom class=universeBtns align=right {$univval['explainerline']}><i class=\"material-icons universalbtns\">{$univval['googleiconcode']}</i></td>";
         }
     }
     $controlListUniverse .= "</table>";
-    
-    $dspUser = "<b>User</b>: {$whichUsr->userid} ({$whichUsr->username})";
-    
-    
+ 
+    $expDay = ((int)$whichUsr->dayuntilpasswordexp < 1) ? "{$whichUsr->daysuntilpasswordexp} days" : "{$whichUsr->daysuntilpasswordexp} day";
+
+    $dspUser = "<b>User</b>: {$whichUsr->userid} ({$whichUsr->username}) <b>| Email</b>: {$whichUsr->useremail} <b>| Password Expires</b>: {$expDay}";
+     
     $topBar = <<<TBAR
           <div id=topMenuHolder>
             <div id=globalTopBar>
@@ -156,8 +157,8 @@ function modaldialogbuilder($whichpage) {
 
 
 function buildHelpFiles($whichpage) { 
-    //REWRITE THIS TO PULL FROM DATABASE
-    
+
+    //TODO - PULL FROM A WEB SERVICE    
     require(genAppFiles . "/dataconn/sspdo.zck"); 
     $hlpSQL = "SELECT ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt FROM four.base_ss7_help where screenreference = :pgename";
     $hlpR = $conn->prepare($hlpSQL); 

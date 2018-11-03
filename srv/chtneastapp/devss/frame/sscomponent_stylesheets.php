@@ -34,12 +34,12 @@ function globalstyles($mobileInd) {
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
 html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh; color: rgba({$this->color_black},1);}
  
-.appcard { border-left: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 49; padding: 6vh 0 0 0; background: rgba({$this->color_lgrey},1); transition: 1s; }
+.appcard { border-left: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 49; padding: 7.5vh 0 0 0; background: rgba({$this->color_lgrey},1); transition: 1s; }
 #standardModalBacker { position: fixed; top: 0; left: 0;  z-index: 100; background: rgba({$this->color_zackgrey},.7); height: 100vh; width: 100vw; display: none; }
 
 #topMenuHolder {position: fixed; top: 0; left: 0; width: 100vw; z-index: 50; border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
 #globalTopBar { background: rgba({$this->color_zackgrey},1); padding: .7vh 2vw .5vh 2vw; }
-#barchtnlogo {height: 3.4vh; }
+#barchtnlogo {height: 4.5vh; }
 
 #topBarMenuTable { width: 100%; }
 #topBarMenuTable .spacer {width: 4vw; white-space: nowrap; }
@@ -47,8 +47,8 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 .hdrOnlyItem:hover { color: rgba({$this->color_neongreen},1); cursor: pointer; }
 
 #rightControlPanel { width: 4vw; }
-#topbarUserDisplay {color: rgba({$this->color_neongreen},1); font-size: 1.2vh; }
-
+#topbarUserDisplay {color: rgba({$this->color_neongreen},1); font-size: 1.2vh; padding: 0 .2vw 1vh 0; }
+.universalbtns {font-size: 2.1vh; }
 
 .hdrItem {color: rgba({$this->color_white},1); padding: 0 2vw 0 0; font-size: 1.8vh;  white-space: nowrap; }
 .mnuHldr {position: relative; }
@@ -63,7 +63,7 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 .menuDrpItems table td:hover { cursor: pointer; background: rgba({$this->color_lblue},1); }
 
 .bigspacer { width: 30%;}
-.universeBtns { color: rgba({$this->color_white},1);  font-size: 1.8vh;  padding: 0 0 0 2vw;  white-space: nowrap; }
+.universeBtns { color: rgba({$this->color_white},1);  font-size: 1.8vh;  padding: 0 0 0 1vw;  white-space: nowrap; }
 .universeBtns:hover {color: rgba({$this->color_neongreen},1); cursor: pointer; }
 
 #hlpHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
@@ -118,7 +118,7 @@ return $rtnThis;
   function procurementgrid($mobileind) { 
       $rtnThis = <<<STYLESHEET
 
-body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;  }
+body { margin: 0; margin-top: 8vh; box-sizing: border-box; padding: 0 2vw 0 2vw;  }
 
 #pqcTbl {width: 15vw; height: 15vh; font-family: Roboto; font-size: 1.5vh; }
 #pqcLeft {background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1);}
@@ -141,7 +141,7 @@ return $rtnThis;
 function datacoordinator($mobileind) { 
       $rtnThis = <<<STYLESHEET
 
-body { margin: 0; margin-top: 5.5vh; box-sizing: border-box;  }
+body { margin: 0; margin-top: 7vh; box-sizing: border-box;  }
     
 #mainQGridHoldTbl {width: 96%; height: 92vh; box-sizing: border-box; margin-left: 2vw; margin-right: 2vw; }
 #gridholdingdiv {width: 100%; height: 80vh; position: relative;}
@@ -179,13 +179,20 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #doclibabstbl .datalines .bgnbr { text-align: center; padding: 1vh 0; } 
 #doclibabstbl .datalines .abstracttext { padding: 1vh 1vw; }
 
-#docVertList {width: 20vw; font-size: 1.3vh; }
-#vertHold {width: 20vw; }
-#vertdivhold {width: 20vw; height: 70vh; border: 1px solid rgba({$this->color_zackgrey},1); overflow: auto; }
+#docVertList {width: 20vw; font-size: 1.3vh; box-sizing: border-box; }
+#vertHold {width: 20vw; box-sizing: border-box; }
+#vertdivhold {width: 21vw; height: 74vh; border: 1px solid rgba({$this->color_zackgrey},1); overflow: auto;box-sizing: border-box;}
 
 .prntIcon {width: 1.4vw; }
 .prntIcon:hover {cursor: pointer; color: rgba({$this->color_neongreen},1); }
 
+#displayDocText {border: 1px solid rgba({$this->color_zackgrey},1);height: 74vh;overflow: auto; padding: 1vh 1vw; box-sizing: border-box; } 
+#docPRHeader {border-bottom: 1px solid rgba({$this->color_grey},1); color: rgba({$this->color_mgrey},1); font-weight: bold;   }
+#iconHold {border-bottom: 1px solid rgba({$this->color_grey},1); color: rgba({$this->color_mgrey},1); }
+#iconHold:hover {cursor: pointer; color: rgba({$this->color_bred},1); }
+
+#documentDisplay { text-align: justify; line-height: 1.8em; font-size: 1.4vh; padding: 1vh .3vw; } 
+#pxiBottomLine {border-top: 1px solid rgba({$this->color_grey},1); font-size: 1vh; font-weight: bold; }
 STYLESHEET;
 return $rtnThis;
 }      

@@ -34,6 +34,47 @@ function __construct() {
 
 class datadoers { 
 
+    function documenttext($request, $passedData) {
+        //TODO:  Add Error Checking to all Webservice end points 
+      require(serverkeys . "/sspdo.zck");  
+      $responseCode = 400; 
+      $msg = "";
+      $itemsfound = 0;
+      $data = array();
+      $rows = array(); 
+      $params = json_decode($passedData, true);
+      $documentrqst = cryptservice($params['documentid'],'d'); 
+      $documentid = explode("-",$documentrqst);
+      switch ($documentid[0]) { 
+        case 'CR': 
+          //GET CHART REVIEW
+          $chartid = $documentid[1];
+          $sql = "SELECT 'CHARTRVW' as doctype, chartid, chart, pxi, segmentref FROM masterrecord.ut_chartreview where chartid = :chartid and dspind <> 0"; 
+          $rs = $conn->prepare($sql); 
+          $rs->execute(array(':chartid' => $chartid)); 
+        break; 
+        case 'PR':
+          //GET PATH REPORT
+          $prid = $documentid[1];
+          $selector = $documentid[2];
+          $sql = "select 'PATHOLOGYRPT' as doctype, dnpr_nbr, pathreport, prid, selector from masterrecord.qcpathreports where selector = :selector and prid = :prid";
+          $rs = $conn->prepare($sql); 
+          $rs->execute(array(':selector' => $selector, ':prid' => $prid)); 
+        break;
+      }
+      $itemsfound = $rs->rowCount();
+      if ($rs->rowCount() < 0) {  
+        $responseCode = 404; 
+        $msg = "Requested document not found";
+      } else { 
+        $data[] = $rs->fetch(PDO::FETCH_ASSOC);
+        $responseCode = 200;
+      }
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $data);
+      return $rows;
+    }
+
     function suggestsomething($request, $passedData) { 
        //{"rqstsuggestion":"masterrecord-sites","given":"thyr"} 
        require(serverkeys . "/sspdo.zck");  
@@ -46,7 +87,6 @@ class datadoers {
              $srchRS->execute(array(':likeOne' => "{$params['given']}%", ':likeTwo' => "{$params['given']}%"));          
              break;
        }
-
        $rtnArray = array();
        if ($srchRS->rowCount() > 0) { 
           $responseCode = 200;

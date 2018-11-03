@@ -154,9 +154,6 @@ function procurementgrid($rqststr, $whichusr) {
 </div>
 INSTITUTION;
 
-
-
-
 $dCalendar = buildcalendar('procquery'); 
         $calendar = <<<CALENDAR
 <div class=menuHolderDiv>
@@ -211,60 +208,49 @@ function documentlibrary($rqststr, $whichusr) {
                 $printObj = "shipment-manifest";
                 $dspInScreen = 0;
                 break;                 
-        } 
-        
+        }  
         if ($dspInScreen === 0) { 
           //NO IN SCREEN DISPLAY  
           $dtadsp = "<table width=100% border=0 id=doclibabstbl cellspacing=4>";
           $warning = "";
-          $qryBy = $dta['DATA']['head']['bywho'];
-          $qryOn = $dta['DATA']['head']['onwhendsp'];
           if ((int)$dta['ITEMSFOUND'] > 249) { 
             $warning = "(You have reached your limit of return results.  For a more indepth query, see a CHTNEast IT Staff)";
           }        
-          $dtadsp .= "<tr><td colspan=2 valign=top align=right id=byline>({$qryBy}: {$qryOn})</td></tr>";    
           $dtadsp .= "<tr><td colspan=2 valign=top id=headerwarning>Documents Found: " . $dta['ITEMSFOUND'] . " {$warning}</td></tr>";
           $dtadsp .= "<tr><th valign=top class=fldLabel>Ref #</th><th valign=top class=fldLabel>Document Abstract</th></tr>";
           foreach($dta['DATA']['records'] as $rs) { 
             $selector = cryptservice($rs['prid'] . "-" . $rs['selector'], "e");
-            $dtadsp .= "<tr onclick=\"openOutSidePage('{$tt}/print-obj/{$printObj}/{$selector}');\" class=datalines>"
-                                 . "<td valign=top class=bgnbr>{$rs['dspmark']}</td>"
-                                 . "<td valign=top class=abstracttext>{$rs['abstract']}...</td>"
-                                 . "</tr>";
+            $dtadsp .= "<tr onclick=\"openOutSidePage('{$tt}/print-obj/{$printObj}/{$selector}');\" class=datalines><td valign=top class=bgnbr>{$rs['dspmark']}</td><td valign=top class=abstracttext>{$rs['abstract']}...</td></tr>";
           }         
           $dtadsp .= "</table>";
         } else { 
-            
-            
           //DISPLAY IN SCREEN  
           $dtadsp = "<table width=100% border=0 id=doclibabstbl cellspacing=4>";
           $warning = "";
-          $qryBy = $dta['DATA']['head']['bywho'];
-          $qryOn = $dta['DATA']['head']['onwhendsp'];
           if ((int)$dta['ITEMSFOUND'] > 249) { 
             $warning = "(You have reached your limit of return results.  For a more indepth query, see a CHTNEast IT Staff)";
           }        
-          $dtadsp .= "<tr><td colspan=2 valign=top align=right id=byline>({$qryBy}: {$qryOn})</td></tr>";    
           $dtadsp .= "<tr><td colspan=2 valign=top id=headerwarning>Documents Found: " . $dta['ITEMSFOUND'] . " {$warning}</td></tr>";
 
-          $innerListing = "<table border=0 id=docVertList>";  
-          foreach($dta['DATA']['records'] as $rs) { 
-            $selector = cryptservice($rs['prid'] . "-" . $rs['selector'], "e");
-            $innerListing .= "<tr>"
-                                    . "<td valign=top><table><tr><td><b>{$rs['dspmark']}</b></td>"
-                                    . "<td onclick=\"alert('{$rs['prid']}-{$rs['selector']}');\" class=prntIcon><i class=\"material-icons\">pageview</i></td>"
-                                    . "<td onclick=\"openOutSidePage('{$tt}/print-obj/{$printObj}/{$selector}');\" class=prntIcon><i class=\"material-icons\">print"
-                                    . "</i></td></tr><tr><td colspan=3>"
-                                    . "{$rs['abstract']}...</td></tr></table></td></tr>";
+          $innerListing = "<table border=0 id=docVertList width=100%>";  
+          foreach($dta['DATA']['records'] as $rs) {
+            switch($docobj) {
+              case 'pathrpt':
+                $selector = cryptservice("PR-" . $rs['prid'] .  "-" . $rs['selector'], "e"); 
+                $oselector = cryptservice( $rs['prid'], "e");  
+                $innerListing .= "<tr><td valign=top><table width=100%><tr><td><b>{$rs['dspmark']}</b></td><td onclick=\"getDocumentText('{$selector}');\" class=prntIcon><i class=\"material-icons\">pageview</i></td><td onclick=\"openOutSidePage('{$tt}/print-obj/{$printObj}/{$oselector}');\" class=prntIcon><i class=\"material-icons\">print</i></td></tr><tr><td colspan=3>{$rs['abstract']}...</td></tr></table></td></tr>";
+              break;
+              case 'pxchart':
+                $dspMark = substr("000000{$rs['dspmark']}",-6); 
+                $selector = cryptservice("CR-" . $rs['dspmark'], "e");  
+                $innerListing .= "<tr><td valign=top><table width=100%><tr><td><b>Chart #{$dspMark}</b></td><td class=prntIcon onclick=\"getDocumentText('{$selector}');\"><i class=\"material-icons\">pageview</i></td></tr><tr><td colspan=3>{$rs['abstract']}...</td></tr></table></td></tr>";
+              break;
+            }
           }         
           $innerListing .= "</table>";
-          
+
           $dtadsp .= "<tr><td id=vertHold valign=top><div id=vertdivhold>{$innerListing}</div></td><td valign=top><div id=displayDocText>   </div></td></tr>";
-          
           $dtadsp .= "</table>";            
-          
-          
-          
         }
         
         
@@ -278,13 +264,7 @@ function documentlibrary($rqststr, $whichusr) {
             . "<tr><td class=ddMenuItem onclick=\"fillField('fDocType','PRBGNBR','Pathology Report Biogroup Search','ddSearchTypes');\">Pathology Report Biogroup Search</td></tr>"
             . "<tr><td class=ddMenuItem onclick=\"fillField('fDocType','CHARTRVW','Chart Review','ddSearchTypes');\">Chart Review</td></tr>"
             . "<tr><td class=ddMenuItem onclick=\"fillField('fDocType','SHIPDOC','Shipment Document (Ship Doc)','ddSearchTypes');\">Shipment Document (Ship Doc)</td></tr>"            
-            . "</table>";
-        
-
-    
-    
-    
-    
+            . "</table>"; 
 $rtnthis = <<<PAGEHERE
 <table width=100% border=0 cellspacing=2 cellpadding=0 id=docLibHoldTbl>
     <tr><td colspan=4 class=pageTitle>Document Library</td></tr>
@@ -301,7 +281,6 @@ $rtnthis = <<<PAGEHERE
     <tr>
          <td colspan=4>
          <!-- RESULTS SECTION //-->
-             {$estring}<p>{$dstring}<p>     
              {$dtadsp}
          </td>
     </tr>    
@@ -311,7 +290,6 @@ return $rtnthis;
 }
  
 function root($rqstStr, $whichUsr) { 
-    //json_encode($rqstStr) THIS IS THE ARRAY HOLDING THE URI COMPONENTS 
     //$whichUsr THIS IS THE USER ARRAY {"statusCode":200,"loggedsession":"i46shslvmj1p672lskqs7anmu1","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":20,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"googleiconcode":"lock_open","menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"googleiconcode":"account_balance","menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""}]],["472","REPORTS","",[{"googleiconcode":"account_balance","menuvalue":"All Reports","pagesource":"all-reports","additionalcode":""}]],["473","UTILITIES","",[{"googleiconcode":"account_balance","menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474",null,null,[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]} 
   
   $d = date('M d, Y H:i'); 
@@ -521,6 +499,8 @@ $bsqToCalendar = <<<CALENDAR
 </div>
 CALENDAR;
   //DROP MENU BUILDER END ********************************************************************************* //
+
+//TODO ADD PROCURING INSTITUTION AND HPR STATUS
 
 
 $grid = <<<BSGRID

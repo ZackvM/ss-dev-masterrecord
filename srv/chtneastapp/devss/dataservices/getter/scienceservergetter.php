@@ -200,7 +200,7 @@ function docsrch($whichobj, $rqst) {
           $searchTerm = $dta['head']['srchterm'];
            switch ($typeRq) { 
                case 'CHARTRVW':
-                  $ssql = "SELECT trim(substr(cr.chart,1,200)) as abstract, date_format(cr.lastupdate,'%m/%d/%Y') as dspmark FROM masterrecord.ut_chartreview cr  where dspind = 1 and chart like :srchtrm limit 250";
+                  $ssql = "SELECT trim(substr(cr.chart,1,200)) as abstract, chartid as dspmark, date_format(cr.lastupdate,'%m/%d/%Y') as dter FROM masterrecord.ut_chartreview cr  where dspind = 1 and chart like :srchtrm limit 250";
                    $strm = "%{$searchTerm}%";
                break;
                case 'PRBGNBR':
@@ -223,7 +223,7 @@ function docsrch($whichobj, $rqst) {
              ) as selector, substr(concat('000000',ifnull(shipdocRefID,'000000')),-6) as dspmark, concat(ifnull(status,'') , ' (' , ifnull(date_format(statusdate,'%m/%d/%Y'),'') , ') | shipped: ', ifnull(date_format(shipdate, '%m/%d/%Y'),'') , ' | investigator: ', ifnull(invCode,'')) as abstract FROM masterrecord.ut_shipdoc sd where shipdocrefid = :srchtrm ";
                    $strm = (int)$searchTerm;
                    break;
-               //ADD A DEFAULT ERROR IF NOT ABOVE
+               //TODO:ADD A DEFAULT ERROR IF NOT ABOVE
            }
 
            $rs = $conn->prepare($ssql);

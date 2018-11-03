@@ -300,8 +300,43 @@ function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) {
     byId(whichfield).value = whatplaintext; 
   }
 }
+
+function getDocumentText(selector) { 
+  var dta = new Object(); 
+  dta['documentid'] = selector;
+  var passdata = JSON.stringify(dta);
+  var mlURL = "/data-doers/document-text";
+  universalAJAX("POST",mlURL,passdata,answerGetDocumentText,1);
+}
   
- 
+function answerGetDocumentText(rtnData) { 
+  var dspThis = "";
+  if (parseInt(rtnData['responseCode']) === 200) {
+    var dta = JSON.parse(rtnData['responseText']);
+    switch (dta['DATA'][0]['doctype']) { 
+      case 'PATHOLOGYRPT':
+        dspThis = "<table border=0 width=100% cellspacing=0 cellpadding=0><tr><td id=docPRHeader>PATHOLOGY REPORT FOR BIOGROUP "+dta['DATA'][0]['dnpr_nbr']+"</td><td align=right id=iconHold><table onclick=\"alert('NOT FUNCTIONAL AS OF THIS RELEASE');\"><tr><td><i class=\"material-icons\">edit</i></td></tr></table></td></tr>";
+        dspThis += "<tr><td colspan=2 id=documentDisplay>"+dta['DATA'][0]['pathreport']+"</td></tr>";
+        dspThis += "</table>";
+      break; 
+      case 'CHARTRVW':
+        dspThis = "<table border=0 width=100% cellspacing=0 cellpadding=0><tr><td id=docPRHeader>CHART REVIEW: "+('000000'+dta['DATA'][0]['chartid']).substr(-6)+"</td><td align=right id=iconHold><table onclick=\"alert('NOT FUNCTIONAL AS OF THIS RELEASE');\"><tr><td><i class=\"material-icons\">edit</i></td></tr></table></td></tr>";
+        dspThis += "<tr><td colspan=2 id=documentDisplay>"+dta['DATA'][0]['chart']+"</td></tr>";
+        dspThis += "<tr><td colspan=2 align=right id=pxiBottomLine>pxi-id: "+dta['DATA'][0]['pxi']+"</td></tr>";
+        dspThis += "</table>";
+
+
+      break;
+    }
+    if (byId('displayDocText')) { 
+     byId('displayDocText').innerHTML = dspThis; 
+    }
+  } else { 
+    //alert(rtnData['responseText']['MESSAGE']);
+  }
+
+}
+
 JAVASCR;
 return $rtnThis;    
 }
