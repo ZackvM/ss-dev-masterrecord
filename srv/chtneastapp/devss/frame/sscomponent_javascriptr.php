@@ -397,6 +397,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
+  if (byId('btnShipDocSearchSubmit')) {
+    byId('btnShipDocSearchSubmit').addEventListener('click', function() { 
+      submitqueryrequest('shipqry');
+    }, false);
+  } 
+
+  if (byId('btnGenBioSearchSubmit')) { 
+    byId('btnGenBioSearchSubmit').addEventListener('click', function() { 
+      submitqueryrequest('bioqry');
+    }, false);
+  } 
+
   if (byId('qryDXDSite')) { 
     byId('qryDXDSite').addEventListener('keyup', function() {
       if (byId('qryDXDSite').value.trim().length > 2) { 
@@ -411,9 +423,22 @@ document.addEventListener('DOMContentLoaded', function() {
         byId('siteSuggestions').innerHTML = "&nbsp;";
         byId('siteSuggestions').style.display = 'none';
     }, false );
-
   }
 
+  if (byId('qryInvestigator')) { 
+    byId('qryInvestigator').addEventListener('keyup', function() {
+      if (byId('qryInvestigator').value.trim().length > 3) { 
+          getSuggestions('qryInvestigator'); 
+      } else { 
+        byId('investSuggestion').innerHTML = "&nbsp;";
+        byId('investSuggestion').style.display = 'none';
+      }
+    }, false);
+    byId('qryInvestigator').addEventListener('blur', function() {  
+        byId('investSuggestion').innerHTML = "&nbsp;";
+        byId('investSuggestion').style.display = 'none';
+    }, false );
+  }
 }, false);
 
 
@@ -425,13 +450,44 @@ switch (whichfield) {
     given['given'] = byId(whichfield).value.trim();
     var passeddata = JSON.stringify(given);
     var mlURL = "/data-doers/suggest-something";
-    universalAJAX("POST",mlURL,passeddata,answerGetSuggestions,0);
+    universalAJAX("POST",mlURL,passeddata,answerSiteSuggestions,0);
+  break;
+  case 'qryInvestigator':
+    var given = new Object(); 
+    given['rqstsuggestion'] = 'vandyinvest-invest'; 
+    given['given'] = byId(whichfield).value.trim();
+    var passeddata = JSON.stringify(given);
+    var mlURL = "/data-doers/suggest-something";
+    universalAJAX("POST",mlURL,passeddata,answerInvestSuggestions,0);
   break; 
 }
 
 }
 
-function answerGetSuggestions(rtnData) {
+function answerInvestSuggestions(rtnData) { 
+
+var rsltTbl = "";
+if (parseInt(rtnData['responseCode']) === 200 ) { 
+  var dta = JSON.parse(rtnData['responseText']);
+  if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
+    var rsltTbl = "<table border=0 class=suggestionTable><tr><td colspan=2>Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
+
+    dta['DATA'].forEach(function(element) { 
+       rsltTbl += "<tr><td>"+element['investvalue']+"</td><td>"+element['dspinvest']+"</td></tr>";
+    }); 
+
+    rsltTbl += "</table>";  
+    byId('investSuggestion').innerHTML = rsltTbl; 
+    byId('investSuggestion').style.display = 'block';
+  } else { 
+    byId('investSuggestion').innerHTML = "&nbsp;";
+    byId('investSuggestion').style.display = 'none';
+  }
+}
+
+}
+
+function answerSiteSuggestions(rtnData) {
 var rsltTbl = "";
 if (parseInt(rtnData['responseCode']) === 200 ) { 
   var dta = JSON.parse(rtnData['responseText']);
@@ -485,6 +541,7 @@ function answerGetCalendar(rtnData) {
 
 function submitqueryrequest(whichquery) { 
   var dta = new Object();
+  var criteriagiven = 0;
   switch (whichquery) {
     case 'bankqry':
       dta['qryType'] = 'BANK';
@@ -494,25 +551,42 @@ function submitqueryrequest(whichquery) {
       dta['prepFFPE'] = (byId('bnkPrpFFPE').checked) ? 1 : 0;
       dta['prepFIXED'] = (byId('bnkPrpFixed').checked) ? 1 : 0; 
       dta['prepFROZEN'] = (byId('bnkPrpFrozen').checked) ? 1 : 0;
+      criteriagiven = 1;
     break;
-    case 'shpqry':
-        dta['qryType'] = 'SHIP';
-        dta['shipdocnumber'] = byId('shpShipDocNbr').value.trim();
-        dta['sdstatus'] = byId('qryShpStatusValue').value.trim();
-        dta['sdshipfromdte'] = byId('shpQryFromDateValue').value.trim();
-        dta['sdshiptodte'] = byId('shpQryToDateValue').value.trim();
-        dta['investigator'] = byId('shpShipInvestigator').value.trim();
-    break;    
+    case 'shipqry':
+      dta['qryType'] = 'SHIP';
+      dta['shipdocnumber'] = byId('shpShipDocNbr').value.trim();
+      dta['sdstatus'] = byId('qryShpStatusValue').value.trim();
+      dta['sdshipfromdte'] = byId('shpQryFromDateValue').value.trim();
+      dta['sdshiptodte'] = byId('shpQryToDateValue').value.trim();
+      dta['investigator'] = byId('shpShipInvestigator').value.trim();
+      criteriagiven = 1;
+    break;   
+    case 'bioqry':
+      dta['qryType'] = 'BIO';
+      dta['BG'] = byId('qryBG').value.trim(); 
+      dta['procInst'] = byId('qryProcInstValue').value.trim(); 
+      dta['segmentStatus'] = byId('qrySegStatusValue').value.trim(); 
+      dta['qmsStatus'] = byId('qryHPRStatusValue').value.trim(); 
+      dta['procDateFrom'] = byId('bsqueryFromDateValue').value.trim();
+      dta['procDateTo'] = byId('bsqueryToDateValue').value.trim();
+      dta['investigatorCode'] = byId('qryInvestigator').value.trim(); 
+      dta['site'] = byId('qryDXDSite').value.trim();
+      dta['diagnosis'] = byId('qryDXDDiagnosis').value.trim(); 
+      dta['PrepMethod'] = byId('qryPreparationMethodValue').value.trim(); 
+      dta['preparation'] = byId('qryPreparationValue').value.trim(); 
+      criteriagiven = 1;
+    break; 
     default: 
       return null;
   }
-  var passdta = JSON.stringify(dta);
-
-  console.log(passdta);
-  var mlURL = "/buildcoordquery";
-//  universalAJAX("POST",mlURL,passdta,rspquerysubmital);
-//          var rcd = JSON.parse(httpage.responseText);
-//          navigateSite( rcd['DATA']['qryurl'] );
+  if (criteriagiven === 1) { 
+    var passdta = JSON.stringify(dta);
+    console.log(passdta);
+    //{"qryType":"BANK","site":"","dx":"","specimencategory":"","prepFFPE":1,"prepFIXED":1,"prepFROZEN":1}
+    //{"qryType":"SHIP","shipdocnumber":"","sdstatus":"","sdshipfromdte":"","sdshiptodte":"","investigator":""}
+    //{"qryType":"BIO","BG":"","procInst":"","segmentStatus":"","qmsStatus":"","procDateFrom":"","procDateTo":"","investigatorCode":"","site":"","diagnosis":"","PrepMethod":"","preparation":""}
+  }
 }
 
 function updatePrepmenu(whatvalue) { 

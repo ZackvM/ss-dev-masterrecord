@@ -416,7 +416,7 @@ $grid = <<<GRIDLAY
 
    </td></tr>
 <tr><td align=right style="padding: 3vh 45vw 0 0;">
-    <table class=tblBtn style="width: 6vw;" onclick="submitqueryrequest('shpqry');"><tr><td><center>Search</td></tr></table>   
+    <table class=tblBtn id=btnShipDocSearchSubmit style="width: 6vw;"><tr><td><center>Search</td></tr></table>   
    </td></tr>
 </table>            
 GRIDLAY;
@@ -468,12 +468,27 @@ function buildBSGrid() {
   $si = serverIdent;
   $sp = serverpw;
   //DROP MENU BUILDER ********************************************************************************* //
+  $procinstarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allinstitutions",$si,$sp),true);
+  $proc = "<table border=1><tr><td align=right onclick=\"fillField('qryProcInst','','');\">[clear]</td></tr>";
+  foreach ($procinstarr['DATA'] as $procval) { 
+    $proc .= "<tr><td onclick=\"fillField('qryProcInst','{$procval['lookupvalue']}','{$procval['menuvalue']}');\">{$procval['menuvalue']}</td></tr>";
+  }
+  $proc .= "</table>";
+
+
   $segstatusarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allsegmentstati",$si,$sp),true);
   $seg = "<table border=1><tr><td align=right onclick=\"fillField('qrySegStatus','','');\">[clear]</td></tr>";
   foreach ($segstatusarr['DATA'] as $segval) { 
     $seg .= "<tr><td onclick=\"fillField('qrySegStatus','{$segval['lookupvalue']}','{$segval['menuvalue']}');\">{$segval['menuvalue']}</td></tr>";
   }
   $seg .= "</table>";
+
+  $hprstatusarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/qmsstatus",$si,$sp),true);
+  $hpr = "<table border=1><tr><td align=right onclick=\"fillField('qryHPRStatus','','');\">[clear]</td></tr>";
+  foreach ($hprstatusarr['DATA'] as $hprval) { 
+    $hpr .= "<tr><td onclick=\"fillField('qryHPRStatus','{$hprval['lookupvalue']}','{$hprval['menuvalue']}');\">{$hprval['menuvalue']}</td></tr>";
+  }
+  $hpr .= "</table>";
 
   $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allpreparationmethods",$si,$sp),true);
   $prp = "<table border=1><tr><td align=right onclick=\"fillField('qryPreparationMethod','','');updatePrepmenu('');\">[clear]</td></tr>";
@@ -500,7 +515,6 @@ $bsqToCalendar = <<<CALENDAR
 CALENDAR;
   //DROP MENU BUILDER END ********************************************************************************* //
 
-//TODO ADD PROCURING INSTITUTION AND HPR STATUS
 
 
 $grid = <<<BSGRID
@@ -510,11 +524,20 @@ $grid = <<<BSGRID
 
 <table border=0>
 
-<tr><td>Biogroup</td><td>Segment Status</td></tr>
+<tr><td>Biogroup</td><td>Procuring Institution</tr>
 <tr>
   <td><input type=text id=qryBG></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qrySegStatusValue><input type=text id=qrySegStatus READONLY><div class=valueDropDown>{$seg}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryProcInstValue><input type=text id=qryProcInst READONLY><div class=valueDropDown>{$proc}</div></div></td>
 </tr>
+
+<tr>
+<td>Segment Status</td><td>HPR Status</td>
+</tr>
+<tr>
+<td><div class=menuHolderDiv><input type=hidden id=qrySegStatusValue><input type=text id=qrySegStatus READONLY><div class=valueDropDown>{$seg}</div></div></td>
+<td><div class=menuHolderDiv><input type=hidden id=qryHPRStatusValue><input type=text id=qryHPRStatus READONLY><div class=valueDropDown>{$hpr}</div></div></td>
+</tr>
+
 
 <tr><td colspan=2>Procurement Date</td></td></tr>
 <tr>
@@ -522,15 +545,11 @@ $grid = <<<BSGRID
   <td>{$bsqToCalendar}</td>
 </tr>
 
+<tr><td colspan=2>Investigator ID (Use as lookup)</td></tr>
+<tr><td colspan=2><div class=suggestionHolder><input type=text id=qryInvestigator><div id=investSuggestion class=suggestionDisplay>&nbsp;</div></div></td></tr>
+
 <tr><td>Diagnosis Designation (Site)</td><td>Diagnosis Designation (Diagnosis or Specimen Category)</td></tr>
-<tr>
-  <td>
-     <div class=suggestionHolder>
-       <input type=text id=qryDXDSite>
-       <div id=siteSuggestions class=suggestionDisplay>&nbsp;</div>
-     </div>
-    </td>
-  <td><input type=text id=qryDXDDiagnosis></td>
+<tr><td><div class=suggestionHolder><input type=text id=qryDXDSite><div id=siteSuggestions class=suggestionDisplay>&nbsp;</div></div></td><td><input type=text id=qryDXDDiagnosis></td>
 </tr>
 
 <tr><td colspan=2>Preparation</td></tr>
@@ -543,7 +562,7 @@ $grid = <<<BSGRID
 
 </td></tr>
 <tr><td align=right style="padding: 3vh 45vw 0 0;">
-<table class=tblBtn style="width: 6vw;" onclick="alert('search BG');"><tr><td><center>Search</td></tr></table>
+<table class=tblBtn id=btnGenBioSearchSubmit style="width: 6vw;"><tr><td><center>Search</td></tr></table>
 </td></tr>
 </table>
 
@@ -557,7 +576,6 @@ function getBankQryData($qryid) {
   $status = 500;
   $qryby = "";
   $critarr = json_decode(callrestapi("GET","https://scienceserver.chtneast.org/data-obj-request/bankqrycriteria/{$qryid}",$si,$sp),true);
-//"DATA":{"bywhom": "proczack","qrydate": "10\/11\/2018","qrytype": "BANK","jsoncriteria": "{\"qryType\":\"BANK\",\"site\":\"thyroid\",\"dx\":\"\",\"specimencategory\":\"MALIGNANT\",\"prepFFPE\":1,\"prepFIXED\":1,\"prepFROZEN\":1}"}}
   if ((int)$critarr['status'] === 200) { 
       //GET DATA
       $qryby = $critarr['DATA']['bywhom'];    
@@ -575,7 +593,6 @@ function getBankQryData($qryid) {
       $passdata['requestedCategory'] = $qrycrit['specimencategory']; 
       $passdata['requestedPreparation'] = $prp;
       $tidalsearch = calltidal('POST','https://data.chtneast.org/runbank',json_encode($passdata));
-
       $status = 200;
   } else { 
   } 
