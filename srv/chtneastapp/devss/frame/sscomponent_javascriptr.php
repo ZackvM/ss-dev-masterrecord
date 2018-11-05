@@ -439,8 +439,23 @@ document.addEventListener('DOMContentLoaded', function() {
         byId('investSuggestion').style.display = 'none';
     }, false );
   }
-}, false);
 
+  if (byId('shpShipInvestigator')) { 
+    byId('shpShipInvestigator').addEventListener('keyup', function() {
+      if (byId('shpShipInvestigator').value.trim().length > 3) { 
+          getSuggestions('shpShipInvestigator'); 
+      } else { 
+        byId('investSuggestionShp').innerHTML = "&nbsp;";
+        byId('investSuggestionShp').style.display = 'none';
+      }
+    }, false);
+    byId('shpShipInvestigator').addEventListener('blur', function() {  
+        byId('investSuggestionShp').innerHTML = "&nbsp;";
+        byId('investSuggestionShp').style.display = 'none';
+    }, false );
+  }
+
+}, false);
 
 function getSuggestions(whichfield) { 
 switch (whichfield) { 
@@ -459,23 +474,49 @@ switch (whichfield) {
     var passeddata = JSON.stringify(given);
     var mlURL = "/data-doers/suggest-something";
     universalAJAX("POST",mlURL,passeddata,answerInvestSuggestions,0);
-  break; 
-}
+  break;
+  case 'shpShipInvestigator':
+    var given = new Object(); 
+    given['rqstsuggestion'] = 'vandyinvest-invest'; 
+    given['given'] = byId(whichfield).value.trim();
+    var passeddata = JSON.stringify(given);
+    var mlURL = "/data-doers/suggest-something";
+    universalAJAX("POST",mlURL,passeddata,answerInvestShipSuggestions,0);
+  break;
 
 }
 
-function answerInvestSuggestions(rtnData) { 
+}
 
+
+function answerInvestShipSuggestions(rtnData) { 
 var rsltTbl = "";
 if (parseInt(rtnData['responseCode']) === 200 ) { 
   var dta = JSON.parse(rtnData['responseText']);
   if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
     var rsltTbl = "<table border=0 class=suggestionTable><tr><td colspan=2>Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
-
     dta['DATA'].forEach(function(element) { 
        rsltTbl += "<tr><td>"+element['investvalue']+"</td><td>"+element['dspinvest']+"</td></tr>";
     }); 
+    rsltTbl += "</table>";  
+    byId('investSuggestionShp').innerHTML = rsltTbl; 
+    byId('investSuggestionShp').style.display = 'block';
+  } else { 
+    byId('investSuggestionShp').innerHTML = "&nbsp;";
+    byId('investSuggestionShp').style.display = 'none';
+  }
+}
+}
 
+function answerInvestSuggestions(rtnData) { 
+var rsltTbl = "";
+if (parseInt(rtnData['responseCode']) === 200 ) { 
+  var dta = JSON.parse(rtnData['responseText']);
+  if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
+    var rsltTbl = "<table border=0 class=suggestionTable><tr><td colspan=2>Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
+    dta['DATA'].forEach(function(element) { 
+       rsltTbl += "<tr><td>"+element['investvalue']+"</td><td>"+element['dspinvest']+"</td></tr>";
+    }); 
     rsltTbl += "</table>";  
     byId('investSuggestion').innerHTML = rsltTbl; 
     byId('investSuggestion').style.display = 'block';
@@ -484,7 +525,6 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
     byId('investSuggestion').style.display = 'none';
   }
 }
-
 }
 
 function answerSiteSuggestions(rtnData) {
@@ -596,12 +636,29 @@ function updatePrepmenu(whatvalue) {
   if (whatvalue.trim() === "") { 
   } else { 
      //WEBSERVICE END POINT: https://dev.chtneast.org/data-services/subpreparationmenu/frozen
+     var mlURL = "/sub-preparation-menu/"+whatvalue;
+     universalAJAX("GET",mlURL,"",answerUpdatePrepmenu,0);
   }
 }
 
-function rspquerysubmital(jsonDta) { 
-  console.log("CALL BACK COMPLETE");
+function answerUpdatePrepmenu(rtnData) { 
+  byId('qryPreparationValue').value = '';
+  byId('qryPreparation').value = '';
+  byId('preparationDropDown').innerHTML = "&nbsp;"; 
+  var rsltTbl = "";
+  if (parseInt(rtnData['responseCode']) === 200 ) { 
+    var dta = JSON.parse(rtnData['responseText']);
+    if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
+    rsltTbl = "<table border=1><tr><td align=right onclick=\"fillField('qryPreparation','','');\">[clear]</td></tr>";
+    dta['DATA'].forEach(function(element) { 
+      rsltTbl += "<tr><td onclick=\"fillField('qryPreparation','"+element['menuValue']+"','"+element['longValue']+"');\">"+element['longValue']+"</td></tr>";
+    }); 
+    rsltTbl += "</table>";  
+    byId('preparationDropDown').innerHTML = rsltTbl; 
+    }
+  }
 }
+
 
 JAVASCR;
     

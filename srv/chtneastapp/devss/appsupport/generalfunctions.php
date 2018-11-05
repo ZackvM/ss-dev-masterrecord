@@ -330,28 +330,28 @@ if ((int)$nextMonth === 13) {
 
 switch (strtolower($whichcalendar)) {
   case 'procquery':
-    $leftBtnAction  = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" ";
-    $rightBtnAction = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" "; 
+      $leftBtnAction  = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" ";
+      $rightBtnAction = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" "; 
     break;
     case 'biosamplequeryfrom':
-    $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryFrom','bsqCalendar', '{$lastMonth}/{$lastYear}');\" ";
-    $rightBtnAction = " onclick=\"getCalendar('biosampleQueryFrom','bsqCalendar' ,'{$nextMonth}/{$nextYear}');\" ";         
+      $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryFrom','bsqCalendar', '{$lastMonth}/{$lastYear}');\" ";
+      $rightBtnAction = " onclick=\"getCalendar('biosampleQueryFrom','bsqCalendar' ,'{$nextMonth}/{$nextYear}');\" ";         
     break;
   case 'biosamplequeryto':
-    $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
-    $rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";       
+      $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
+      $rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";       
     break;
    case 'shipbsqfrom':
-    //$leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
-    //$rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";  
+      $leftBtnAction  = " onclick=\"getCalendar('shipBSQFrom','shpfCalendar', '{$lastMonth}/{$lastYear}');\" ";
+      $rightBtnAction = " onclick=\"getCalendar('shipBSQFrom','shpfCalendar' ,'{$nextMonth}/{$nextYear}');\" ";  
     break;
     case 'shipbsqto':
-    //$leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
-    //$rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";  
+      $leftBtnAction  = " onclick=\"getCalendar('shipBSQTo','shptCalendar', '{$lastMonth}/{$lastYear}');\" ";
+      $rightBtnAction = " onclick=\"getCalendar('shipBSQTo','shptCalendar' ,'{$nextMonth}/{$nextYear}');\" ";  
     break;        
-  default: 
-    $leftBtnAction  = "  ";
-    $rightBtnAction = "  "; 
+    default: 
+      $leftBtnAction  = "  ";
+      $rightBtnAction = "  "; 
 }
 
 $rtnthiscalendar = "<table border=0 cellspacing=0 cellpadding=0 id=\"{$calTblId}\"><tr><td id=\"{$leftBtnId}\"><i class=\"material-icons\" {$leftBtnAction}>keyboard_arrow_left</i></td><td colspan=5 id=\"{$calTitle}\">{$monthName} {$pyear}</td><td id=\"{$rightBtnId}\"><i class=\"material-icons\" {$rightBtnAction}>keyboard_arrow_right</i></td></tr>";
@@ -383,25 +383,25 @@ while ($currentDay <= $numberOfDays) {
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('bsqueryFromDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
          $dayDsp = $currentDayDsp;
-         $btmLineDsp = "<tr><td colspan=7 id=calBtmLineClear onclick=\" fillField('bsqueryFromDate','','');\" ><center>[clear]</td></tr>";
+         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('bsqueryFromDate','','');\" ><center>[clear]</td></tr>";
          break;
          case 'biosamplequeryto':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('bsqueryToDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
          $dayDsp = $currentDayDsp;
-         $btmLineDsp = "<tr><td colspan=7 id=calBtmLineClear onclick=\" fillField('bsqueryToDate','','');\" ><center>[clear]</td></tr>";
+         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('bsqueryToDate','','');\" ><center>[clear]</td></tr>";
          break;     
          case 'shipbsqfrom':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('shpQryFromDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
          $dayDsp = $currentDayDsp;
-         $btmLineDsp = "";            
+         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('shpQryFromDate','','');\" ><center>[clear]</td></tr>";
          break;
          case 'shipbsqto':     
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('shpQryToDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
          $dayDsp = $currentDayDsp;
-         $btmLineDsp = "";     
+         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('shpQryToDate','','');\" ><center>[clear]</td></tr>";
          break;
        default: 
          $sqrID = "daySqr{$currentDayDsp}";

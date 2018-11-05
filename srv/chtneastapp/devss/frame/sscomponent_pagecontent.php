@@ -378,7 +378,7 @@ $fCalendar = buildcalendar('shipBSQFrom');
 $shpFromCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
   <div class=valueHolder><input type=hidden id=shpQryFromDateValue><input type=text READONLY id=shpQryFromDate></div>
-  <div class=valueDropDown style="min-width: 15vw;" id=fcal><div id=bsqtCalendar>{$fCalendar}</div></div>
+  <div class=valueDropDown style="min-width: 15vw;" id=fcal><div id=shpfCalendar>{$fCalendar}</div></div>
 </div>
 CALENDAR;
   
@@ -386,7 +386,7 @@ $tCalendar = buildcalendar('shipBSQTo');
 $shpToCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
   <div class=valueHolder><input type=hidden id=shpQryToDateValue><input type=text READONLY id=shpQryToDate></div>
-  <div class=valueDropDown style="min-width: 15vw;" id=tcal><div id=bsqtCalendar>{$tCalendar}</div></div>
+  <div class=valueDropDown style="min-width: 15vw;" id=tcal><div id=shptCalendar>{$tCalendar}</div></div>
 </div>
 CALENDAR;
 
@@ -410,8 +410,14 @@ $grid = <<<GRIDLAY
    <tr><td><input type=text id=shpShipDocNbr></td><td>{$shpsts}</td></tr>
    <tr><td>Shipping Date from</td><td>Shipping Date to</td></tr>
    <tr><td>{$shpFromCalendar}</td><td>{$shpToCalendar}</td></tr>    
-   <tr><td colspan=2>Investigator (Inv# or last name)</td></tr>
-   <tr><td colspan=2><input type=text id=shpShipInvestigator></td>
+   <tr><td colspan=2>Investigator (Investigator # - Use as lookup)</td></tr>
+   <tr>
+     <td colspan=2>
+       <div class=suggestionHolder>       
+         <input type=text id=shpShipInvestigator>
+         <div id=investSuggestionShp class=suggestionDisplay>&nbsp;</div>
+       </div>
+     </td>
    </table>
 
    </td></tr>
@@ -493,7 +499,7 @@ function buildBSGrid() {
   $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allpreparationmethods",$si,$sp),true);
   $prp = "<table border=1><tr><td align=right onclick=\"fillField('qryPreparationMethod','','');updatePrepmenu('');\">[clear]</td></tr>";
   foreach ($preparr['DATA'] as $prpval) {
-    $prp .= "<tr><td onclick=\"fillField('qryPreparationMethod','{$prpval['lookupvalue']}','{$prpval['menuvalue']}');updatePrepmenu('{$prpval['lookupvalue']}');\">{$prpval['menuvalue']} - {$prpval['lookupvalue']}</td></tr>";
+    $prp .= "<tr><td onclick=\"fillField('qryPreparationMethod','{$prpval['lookupvalue']}','{$prpval['menuvalue']}');updatePrepmenu('{$prpval['lookupvalue']}');\">{$prpval['menuvalue']}</td></tr>";
   }
   $prp .= "</table>";
 
@@ -514,8 +520,6 @@ $bsqToCalendar = <<<CALENDAR
 </div>
 CALENDAR;
   //DROP MENU BUILDER END ********************************************************************************* //
-
-
 
 $grid = <<<BSGRID
 <table border=0 width=100%>
