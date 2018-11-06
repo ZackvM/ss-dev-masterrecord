@@ -97,6 +97,15 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 .ddMenuItem:hover { cursor: pointer;  background: rgba({$this->color_lblue},1); color: rgba({$this->color_white},1);  }
 
 
+#pageTopButtonBar {width: 100%; box-sizing: border-box; background: rgba({$this->color_zackgrey},1); position: fixed; top: 0; z-index: 49;}
+#pageTopButtonBar .topBtnHolderCell {border-right: 1px solid rgba({$this->color_white},1); padding: 0 .5vw 0 .5vw; } 
+#topBtnBarVerticalSpacer {height: 6.5vh; }
+#topBtnBarHorizontalSpacer {width: .5vw; }
+#topBtnBarTbl { }
+#topBtnBarTbl .topBtnDisplayer {color: rgba({$this->color_white},1); font-size: 1.8vh; } 
+#topBtnBarTbl .topBtnDisplayer:hover {cursor: pointer; color: rgba({$this->color_neongreen}); }
+#topBtnBarTbl .topBtnDisplayer td {white-space: nowrap; }
+
 STYLESHEET;
 
 //FOR CHECKBOXES AND RADIO BUTTONS https://www.w3schools.com/howto/howto_css_custom_checkbox.asp
@@ -141,16 +150,13 @@ return $rtnThis;
 function datacoordinator($mobileind) { 
       $rtnThis = <<<STYLESHEET
 
-body { margin: 0; margin-top: 7vh; box-sizing: border-box;  }
+body { margin: 0; margin-top: 10vh; box-sizing: border-box;  }
     
-#mainQGridHoldTbl {width: 96%; height: 92vh; box-sizing: border-box; margin-left: 2vw; margin-right: 2vw; }
+#mainQGridHoldTbl {width: 96%;  box-sizing: border-box; margin-left: 2vw; margin-right: 2vw; }
 #gridholdingdiv {width: 100%; height: 80vh; position: relative;}
 .gridDiv { position: absolute; top: 0; left: 0; width: 100%; height: 100%;}
 
 #biogroupdiv {background: rgba({$this->color_white},1); display: block; }
-#shipdiv {background: rgba({$this->color_white},1); display: none; }
-#bankdiv {background: rgba({$this->color_white},1); display: none; }
-
 
 #bigQryRsltTbl {margin-left: .5vw; margin-right: .5vw; width: 99vw; } 
 #bankDataHolder { height: 80vh; width: 98vw; overflow: auto; border: 1px solid #000; }
@@ -158,6 +164,11 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box;  }
 .suggestionHolder { position: relative; }
 .suggestionDisplay {min-width: 25vw; position: absolute; left: 0; height: 15vh; overflow: auto; z-index: 40; box-sizing: border-box; display: none;background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); }
 .suggestionTable { max-width: 24vw; box-sizing: border-box;   }
+
+.suggestionCloseBtn:hover {color: rgba({$this->color_bred},1); cursor: pointer; }
+.suggestionDspLine:nth-child(even) { background: rgba({$this->color_grey},1); }
+.suggestionDspLine td { padding: 2px; border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
+.suggestionDspLine:hover { background: rgba({$this->color_lamber},1); cursor: pointer; }
 
 STYLESHEET;
 return $rtnThis;

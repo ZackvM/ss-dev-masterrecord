@@ -272,8 +272,7 @@ class globalMenus {
     }
 
     function specimencategorylive() {
-      return "SELECT distinct ucase(trim(ifnull(tisstype,''))) as codevalue, ucase(trim(ifnull(tisstype,''))) as menuvalue, 0 as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM masterrecord.ut_procure_biosample order by codevalue";
-//where trim(ifnull(tisstype,'')) <> ''
+      return "SELECT distinct ucase(trim(ifnull(tisstype,''))) as codevalue, ucase(trim(ifnull(tisstype,''))) as menuvalue, 0 as useasdefault FROM masterrecord.ut_procure_biosample where trim(ifnull(tisstype,'')) <> '' order by codevalue";
     }
 
     function metricuoms() {

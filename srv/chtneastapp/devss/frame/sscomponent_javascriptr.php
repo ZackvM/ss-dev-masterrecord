@@ -389,38 +389,14 @@ $rtnthis = <<<JAVASCR
 
 document.addEventListener('DOMContentLoaded', function() {  
 
-  if (byId('btnBankSearchSubmit')) { 
-    byId('btnBankSearchSubmit').addEventListener('click', function() {
-      submitqueryrequest('bankqry');
-    }, false);
+  if (byId('qryBG')) { 
+    byId('qryBG').focus();
   }
 
-  if (byId('btnShipDocSearchSubmit')) {
-    byId('btnShipDocSearchSubmit').addEventListener('click', function() { 
-      submitqueryrequest('shipqry');
-    }, false);
-  } 
-
   if (byId('btnGenBioSearchSubmit')) { 
-    byId('btnGenBioSearchSubmit').addEventListener('click', function() { 
+    byId('btnGenBioSearchSubmit').addEventListener('click', function() {
       submitqueryrequest('bioqry');
     }, false);
-  } 
-
-  if (byId('qryDXDSite')) { 
-    byId('qryDXDSite').addEventListener('keyup', function() {
-      if (byId('qryDXDSite').value.trim().length > 2) { 
-          getSuggestions('qryDXDSite'); 
-      } else { 
-        byId('siteSuggestions').innerHTML = "&nbsp;";
-        byId('siteSuggestions').style.display = 'none';
-      }
-    }, false);
-
-    byId('qryDXDSite').addEventListener('blur', function() {  
-        byId('siteSuggestions').innerHTML = "&nbsp;";
-        byId('siteSuggestions').style.display = 'none';
-    }, false );
   }
 
   if (byId('qryInvestigator')) { 
@@ -432,39 +408,23 @@ document.addEventListener('DOMContentLoaded', function() {
         byId('investSuggestion').style.display = 'none';
       }
     }, false);
-    byId('qryInvestigator').addEventListener('blur', function() {  
-        byId('investSuggestion').innerHTML = "&nbsp;";
-        byId('investSuggestion').style.display = 'none';
-    }, false );
+//    byId('qryInvestigator').addEventListener('blur', function() {  
+//        byId('investSuggestion').innerHTML = "&nbsp;";
+//        byId('investSuggestion').style.display = 'none';
+//    }, false );
   }
 
-  if (byId('shpShipInvestigator')) { 
-    byId('shpShipInvestigator').addEventListener('keyup', function() {
-      if (byId('shpShipInvestigator').value.trim().length > 3) { 
-          getSuggestions('shpShipInvestigator'); 
-      } else { 
-        byId('investSuggestionShp').innerHTML = "&nbsp;";
-        byId('investSuggestionShp').style.display = 'none';
-      }
-    }, false);
-    byId('shpShipInvestigator').addEventListener('blur', function() {  
-        byId('investSuggestionShp').innerHTML = "&nbsp;";
-        byId('investSuggestionShp').style.display = 'none';
-    }, false );
+  var fieldinputs = document.querySelectorAll('.inputFld'), i;
+  for (i = 0; i < fieldinputs.length; i++) { 
+      byId(fieldinputs[i].id).addEventListener('focus', function() { 
+         closeAllSuggestions();
+      });
   }
-
+  
 }, false);
 
 function getSuggestions(whichfield) { 
 switch (whichfield) { 
-  case 'qryDXDSite':
-    var given = new Object(); 
-    given['rqstsuggestion'] = 'masterrecord-sites'; 
-    given['given'] = byId(whichfield).value.trim();
-    var passeddata = JSON.stringify(given);
-    var mlURL = "/data-doers/suggest-something";
-    universalAJAX("POST",mlURL,passeddata,answerSiteSuggestions,0);
-  break;
   case 'qryInvestigator':
     var given = new Object(); 
     given['rqstsuggestion'] = 'vandyinvest-invest'; 
@@ -473,34 +433,12 @@ switch (whichfield) {
     var mlURL = "/data-doers/suggest-something";
     universalAJAX("POST",mlURL,passeddata,answerInvestSuggestions,0);
   break;
-  case 'shpShipInvestigator':
-    var given = new Object(); 
-    given['rqstsuggestion'] = 'vandyinvest-invest'; 
-    given['given'] = byId(whichfield).value.trim();
-    var passeddata = JSON.stringify(given);
-    var mlURL = "/data-doers/suggest-something";
-    universalAJAX("POST",mlURL,passeddata,answerInvestShipSuggestions,0);
-  break;
 }
 }
 
-function answerInvestShipSuggestions(rtnData) { 
-var rsltTbl = "";
-if (parseInt(rtnData['responseCode']) === 200 ) { 
-  var dta = JSON.parse(rtnData['responseText']);
-  if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
-    var rsltTbl = "<table border=0 class=suggestionTable><tr><td colspan=2>Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
-    dta['DATA'].forEach(function(element) { 
-       rsltTbl += "<tr><td>"+element['investvalue']+"</td><td>"+element['dspinvest']+"</td></tr>";
-    }); 
-    rsltTbl += "</table>";  
-    byId('investSuggestionShp').innerHTML = rsltTbl; 
-    byId('investSuggestionShp').style.display = 'block';
-  } else { 
-    byId('investSuggestionShp').innerHTML = "&nbsp;";
-    byId('investSuggestionShp').style.display = 'none';
-  }
-}
+function closeAllSuggestions() { 
+    byId('investSuggestion').innerHTML = "&nbsp;";
+    byId('investSuggestion').style.display = 'none';
 }
 
 function answerInvestSuggestions(rtnData) { 
@@ -510,7 +448,7 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
   if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
     var rsltTbl = "<table border=0 class=suggestionTable><tr><td colspan=2>Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
     dta['DATA'].forEach(function(element) { 
-       rsltTbl += "<tr><td>"+element['investvalue']+"</td><td>"+element['dspinvest']+"</td></tr>";
+       rsltTbl += "<tr class=suggestionDspLine onclick=\"fillField('qryInvestigator','"+element['investvalue']+"','"+element['investvalue']+"'); byId('investSuggestion').innerHTML = '&nbsp;'; byId('investSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
     }); 
     rsltTbl += "</table>";  
     byId('investSuggestion').innerHTML = rsltTbl; 
@@ -522,32 +460,14 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
 }
 }
 
-function answerSiteSuggestions(rtnData) {
-var rsltTbl = "";
-if (parseInt(rtnData['responseCode']) === 200 ) { 
-  var dta = JSON.parse(rtnData['responseText']);
-  if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
-    var rsltTbl = "<table border=0 class=suggestionTable><tr><td>Below are suggestions for this field.  Using the 'site' value to query against will generate more results.  These are live values from the masterrecord database.</td></tr>";
-    dta['DATA'].forEach(function(element) { 
-       rsltTbl += "<tr><td>"+element['suggestionlist']+"</td></tr>";
-    }); 
-    rsltTbl += "</table>";  
-    byId('siteSuggestions').innerHTML = rsltTbl; 
-    byId('siteSuggestions').style.display = 'block';
-  } else { 
-    byId('siteSuggestions').innerHTML = "&nbsp;";
-    byId('siteSuggestions').style.display = 'none';
+function clearCriteriaGrid() { 
+  var fieldinputs = document.querySelectorAll('input'), i;
+  for (i = 0; i < fieldinputs.length; i++) { 
+      //console.log(i+") "+fieldinputs[i].id);
+      byId(fieldinputs[i].id).value = "";
   }
 }
-}
 
-function changeSearchGrid(whichgrid) { 
-  byId('biogroupdiv').style.display = 'none';
-  byId('shipdiv').style.display = 'none';        
-  byId('bankdiv').style.display = 'none';        
-  byId(whichgrid).style.display = 'block';        
-}
-        
 function fillField(whichfield, whichvalue, whichdisplay) { 
   if (byId(whichfield)) { 
      byId(whichfield).value = whichdisplay; 
@@ -588,8 +508,10 @@ function submitqueryrequest(whichquery) {
       dta['shipDateFrom'] = byId('shpQryFromDateValue').value.trim();  
       dta['shipDateTo'] = byId('shpQryToDateValue').value.trim();  
       dta['investigatorCode'] = byId('qryInvestigator').value.trim(); 
+      dta['shipdocnbr'] = byId('qryShpDocNbr').value.trim(); 
+      dta['shipdocstatus'] = byId('qryShpStatusValue').value.trim();
       dta['site'] = byId('qryDXDSite').value.trim();
-      dta['diagnosis'] = byId('qryDXDDiagnosis').value.trim(); 
+      dta['specimencategory'] = byId('qryDXDSpecimen').value.trim(); 
       dta['PrepMethod'] = byId('qryPreparationMethodValue').value.trim(); 
       dta['preparation'] = byId('qryPreparationValue').value.trim(); 
       criteriagiven = 1;
@@ -599,14 +521,21 @@ function submitqueryrequest(whichquery) {
   }
   if (criteriagiven === 1) { 
     var passdta = JSON.stringify(dta);    
-    console.log(passdta);        
+    //console.log(passdta);        
     var mlURL = "/data-doers/make-query-request";
     universalAJAX("POST",mlURL,passdta,answerQueryRequest,1);           
   }
 }
 
 function answerQueryRequest(rtnData) { 
-  console.log(JSON.stringify(rtnData));        
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var rsp = JSON.parse(rtnData['responseText']); 
+    alert("* * * * ERROR * * * * \\n\\n"+rsp['MESSAGE']);
+  } else { 
+    //Redirect to results
+    var rsp = JSON.parse(rtnData['responseText']); 
+    navigateSite("data-coordinator/"+rsp['DATA']['coordsearchid']);
+  }        
 }
                
 function updatePrepmenu(whatvalue) { 

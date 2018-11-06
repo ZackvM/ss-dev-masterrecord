@@ -48,22 +48,24 @@ class datadoers {
                 //ERRORS PRESENT
                 $msg = $allow['errormsg'];
             } else { 
-//                //NO ERRORS - SAVE REQUEST
-//                session_start();
-//                $usrSQL = "SELECT originalAccountName FROM four.sys_userbase where sessionid = :sessionid";
-//                $usrR = $conn->prepare($usrSQL);
-//                $usrR->execute(array(':sessionid' =>session_id()));
-//                if ($usrR->rowCount() < 1) { 
-//                  $msg = "SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN";  
-//                } else { 
-//                  $u = $usrR->fetch(PDO::FETCH_ASSOC);
+                //NO ERRORS - SAVE REQUEST
+                require(serverkeys . "/sspdo.zck");  
+                session_start();
+                $usrSQL = "SELECT originalAccountName FROM four.sys_userbase where sessionid = :sessionid";
+                $usrR = $conn->prepare($usrSQL);
+                $usrR->execute(array(':sessionid' =>session_id()));
+                $msg = $usrR->rowCount();
+                if ($usrR->rowCount() < 1) { 
+                  $msg = "SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN";  
+                } else { 
                   $objid = strtolower( generateRandomString() );
-//                  $insSQL = "insert into four.objsrchdocument (objid, bywho, onwhen, srchterm, doctype) value (:objid,:whoby,now(),:srchtrm,:doctype)";
-//                  $insR = $conn->prepare($insSQL);
-                  ////$insR->execute(array(':objid' => $objid, ':whoby' => $u['originalAccountName'], ':srchtrm' =>trim($params['srchterm']), ':doctype' => trim($params['doctype'])));
-              $data['coordsearchid'] = $objid;
-              $responseCode = 200;
-//           }                
+                  $u = $usrR->fetch(PDO::FETCH_ASSOC);
+                  $insSQL = "insert into four.objsrchdocument (objid, bywho, onwhen, srchterm, doctype) value (:objid,:whoby,now(),:srchtrm,:doctype)";
+                  $insR = $conn->prepare($insSQL);
+                  $insR->execute(array(':objid' => $objid, ':whoby' => $u['originalAccountName'], ':srchtrm' => $passedData, ':doctype' => 'COORDINATOR-' . trim($qryrqst['qryType'])    ));
+                  $data['coordsearchid'] = $objid;
+                  $responseCode = 200;
+                }                
             }
             break;
         default: 
@@ -354,7 +356,7 @@ function qryCriteriaCheckBio($rqst) {
     $msg = "";  
   //  {"qryType":"BIO","BG":"","procInst":"","segmentStatus":"","qmsStatus":"","procDateFrom":"2018-11-01","procDateTo":"2018-11-04","shipDateFrom":"2018-11-01","shipDateTo":"2018-11-04","investigatorCode":"","site":"","diagnosis":"","PrepMethod":"","preparation
     //Check Keys in Array 
-    $needkeys = array("qryType","BG","procInst","segmentStatus","qmsStatus","procDateFrom","procDateTo","shipDateFrom","shipDateTo","investigatorCode","site","diagnosis","PrepMethod","preparation");
+    $needkeys = array("qryType","BG","procInst","segmentStatus","qmsStatus","procDateFrom","procDateTo","shipDateFrom","shipDateTo","investigatorCode","shipdocnbr","shipdocstatus","site","specimencategory","PrepMethod","preparation");
     $keysExist = 1;
     foreach ($needkeys as $keyval) { 
         if (!array_key_exists($keyval, $rqst)) {
@@ -376,14 +378,15 @@ function qryCriteriaCheckBio($rqst) {
     } 
     if ($fieldsFilledIn < 1 ) { 
        $allowerror = 1; 
-       $msg = "At least one criteria field must be filled in"; 
+       $msg .= "- At least one criteria field must be filled in"; 
        return array('errorind' => $allowerror, 'errormsg' => $msg);                
     }
-    //NO CHECK procInst,segmentStatus,qmsStatus,site,diagnosis,prepmethod, preparation
+    //NO CHECK procInst,segmentStatus,qmsStatus,site,diagnosis,prepmethod, preparation, shipdocstatus
+
+    $charallowarray = array("0","1","2","3","4","5","6","7","8","9","-",",");     
     //CHECK BIOGROUP NUMBER
     if ( trim($rqst['BG']) !== "" ) { 
       //NOTE:  I DID NOT USE PREG_MATCH HERE BECAUSE ITS NOT A PATTERN THAT NEEDS TO BE VALIDATED - ZACK 
-      $charallowarray = array("0","1","2","3","4","5","6","7","8","9","-",",");     
       $cleanBG = 0;
       for ($i = 0; $i < strlen(trim($rqst['BG'])); $i++) { 
         if (!in_array(substr(trim($rqst['BG']),$i,1), $charallowarray)) { 
@@ -394,7 +397,31 @@ function qryCriteriaCheckBio($rqst) {
         $allowerror = 1; 
         $msg .= "\r\n- ONLY numbers, hyphens and commas are allowed in the biogroup field";
       }
+      if (strpos(trim($rqst['BG']),"-") == true && strpos(trim($rqst['BG']),',') == true) { 
+        $allowerror = 1; 
+        $msg .= "\r\n- Only a Series or a Range searches is allowed at any one time (Biogroup Number)";
+      }
     }
+
+    //CHECK Ship Doc Nbr
+    if ( trim($rqst['shipdocnbr']) !== "" ) { 
+      //NOTE:  I DID NOT USE PREG_MATCH HERE BECAUSE ITS NOT A PATTERN THAT NEEDS TO BE VALIDATED - ZACK 
+      $cleanSN = 0;
+      for ($i = 0; $i < strlen(trim($rqst['shipdocnbr'])); $i++) { 
+        if (!in_array(substr(trim($rqst['shipdocnbr']),$i,1), $charallowarray)) { 
+            $cleanSN = 1;      
+        }
+      }
+      if ($cleanSN === 1) { 
+        $allowerror = 1; 
+        $msg .= "\r\n- ONLY numbers, hyphens and commas are allowed in the Ship Doc Number field";
+      }
+      if (strpos(trim($rqst['shipdocnbr']),"-") == true && strpos(trim($rqst['shipdocnbr']),',') == true) { 
+        $allowerror = 1; 
+        $msg .= "\r\n- Only a Series or a Range searches is allowed at any one time (Ship Doc Number)";
+      }
+    }
+
     //CHECK INV NUMBER
     if (trim($rqst['investigatorCode']) !== "") { 
         if (preg_match('/^inv[0-9]{1,6}/i', trim($rqst['investigatorCode'])) === 0) { 
@@ -433,7 +460,7 @@ function qryCriteriaCheckBio($rqst) {
         //CHECK FROM IS SMALLER THAN TO 
         if (!($fDte < $tDte)) { 
            $allowerror = 1;
-           $msg = "\r\n- When using the procurement date range, the 'from' date must be before the to 'date'.";
+           $msg .= "\r\n- When using the procurement date range, the 'from' date must be before the 'to' date.";
         }        
     }
  }
@@ -468,7 +495,7 @@ function qryCriteriaCheckBio($rqst) {
         //CHECK FROM IS SMALLER THAN TO 
         if (($sfDte > $stDte)) { 
            $allowerror = 1;
-           $msg .= "\r\n- When using the shipment date range, the 'from' date must be before the to 'date'.";
+           $msg .= "\r\n- When using the shipment date range, the 'from' date must be before the 'to' date.";
         }        
     }
  }
