@@ -34,6 +34,46 @@ function __construct() {
 
 class datadoers { 
 
+    function makequeryrequest($request, $passedData) { 
+      $responseCode = 400; 
+      $msg = "";
+      $itemsfound = 0;
+      $data = array();
+      $rows = array(); 
+      $qryrqst = json_decode($passedData, true);
+      switch ($qryrqst['qryType']) { 
+        case 'BIO':
+            $allow = qryCriteriaCheckBio($qryrqst);
+            if ((int)$allow['errorind'] === 1 ) { 
+                //ERRORS PRESENT
+                $msg = $allow['errormsg'];
+            } else { 
+//                //NO ERRORS - SAVE REQUEST
+//                session_start();
+//                $usrSQL = "SELECT originalAccountName FROM four.sys_userbase where sessionid = :sessionid";
+//                $usrR = $conn->prepare($usrSQL);
+//                $usrR->execute(array(':sessionid' =>session_id()));
+//                if ($usrR->rowCount() < 1) { 
+//                  $msg = "SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN";  
+//                } else { 
+//                  $u = $usrR->fetch(PDO::FETCH_ASSOC);
+                  $objid = strtolower( generateRandomString() );
+//                  $insSQL = "insert into four.objsrchdocument (objid, bywho, onwhen, srchterm, doctype) value (:objid,:whoby,now(),:srchtrm,:doctype)";
+//                  $insR = $conn->prepare($insSQL);
+                  ////$insR->execute(array(':objid' => $objid, ':whoby' => $u['originalAccountName'], ':srchtrm' =>trim($params['srchterm']), ':doctype' => trim($params['doctype'])));
+              $data['coordsearchid'] = $objid;
+              $responseCode = 200;
+//           }                
+            }
+            break;
+        default: 
+          $msg = "TYPE OF QUERY NOT SPECIFIED OR NOT RECOGNIZED";          
+      }       
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $data);
+      return $rows;                
+    }
+ 
     function documenttext($request, $passedData) {
         //TODO:  Add Error Checking to all Webservice end points 
       require(serverkeys . "/sspdo.zck");  
@@ -143,125 +183,6 @@ class datadoers {
        $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => "");
        return $rows;      
     }
-
-
-
-
-
-    function buildcoordquery($request, $passedData) { 
-       require_once(genAppFiles . "/dataconn/sspdo.zck");  
-       session_start(); 
-       $responseCode = 503;    
-       $itemsfound = 0;
-       $datarecord = "";
-       $msg = "";
-       $params = json_decode($passedData, true);
-       switch ($params['qryType']) { 
-
-
-//DIFFERENT COORDINATOR QUERY BUILDERS START HERE --------------------------------------           
-
-
-         case 'BANK':
-           //CHECK FIELDS FILLED IN CORRECTLY
-           $allowWrite = 1;             
-           if ( trim($params['site']) === "" && trim($params['dx']) === "" &&  trim($params['specimencategory']) === "" )  { 
-              $msg .= " - Part of the Diagnosis Designation must be entered";
-              $allowWrite = 0;     
-           }
-           if (trim($params['site']) === "" && trim($params['dx']) === "") { 
-              $msg .= " - Either a Site and/or a Diagnosis must be specified";
-              $allowWrite = 0;    
-           }
-           if ($params['prepFFPE'] !== 1 && $params['prepFIXED'] !== 1 && $params['prepFROZEN'] !== 1) { 
-              $msg .= "\r\n - At least one preparation must be specified";
-              $allowWrite = 0;    
-           }
-           $ssid = session_id();
-           $usrSQL = "SELECT originalAccountName FROM four.sys_userbase where sessionid = :sessionid";
-           $usrR = $conn->prepare($usrSQL);
-           $usrR->execute(array(':sessionid' => $ssid));
-           if ($usrR->rowCount() < 1) { 
-               $msg .= "\r\n - SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN"; 
-               $allowWrite = 0; 
-           } else { 
-               $user = $usrR->fetch(PDO::FETCH_ASSOC);
-               $usrName = $user['originalAccountName'];
-           }
-           if ($allowWrite === 1) { 
-             //WRITE TO QRY BUILD TABLE
-               //insert into four.srv_coord_qry_capture (qryselector, bywhom, qrytype, jsoncriteria, onwhen) values('abcdefg123','proczack','BANK','{\'criteria\':\'critval1\'}',now())        
-               $objid = strtolower( generateRandomString() );
-               $insSQL = "insert into four.srv_coord_qry_capture (qryselector, bywhom, qrytype, jsoncriteria, onwhen) values(:objid,:user,:qrytype,:criteria,now())";
-               $rs = $conn->prepare($insSQL); 
-               $rs->execute(
-                 array(
-                      ':objid'      => $objid
-                     ,':user'       => $usrName
-                     ,':qrytype'    => $params['qryType']
-                     ,':criteria'   => $passedData 
-                 )
-               );
-               $urlid =  $conn->lastInsertId() . "-" . $objid;
-               $datarecord = array("qryurl" => "data-coordinator/bank/{$urlid}");
-               $responseCode = 200;
-           }
-           break;
-  
-         case 'SHIP':
-             //{"qryType":"SHIP","shipdocnumber":"5852","sdstatus":"OPEN","sdshipfromdte":"2018-10-20","sdshiptodte":"2018-10-18","investigator":"INV3000"}                         
-           $allowWrite = 1;
-           if (trim($params['shipdocnumber']) === "" && trim($params['sdstatus']) === "" && trim($params['sdshipfromdte']) === "" && trim($params['sdshiptodte']) === "" && trim($params['investigator']) === "") { 
-              $msg .= " - Some search criteria must be entered";
-              $allowWrite = 0; 
-           }                      
-           if ((trim($params['sdshipfromdte']) !== "" && trim($params['sdshiptodte']) === "")  ||   (trim($params['sdshipfromdte']) === "" && trim($params['sdshiptodte']) !== "")) { 
-              $msg .= " - For Date Range Searches:  Both a \"From\" and a \"To\" date must be entered";
-              $allowWrite = 0;    
-           }
-           //TODO:  CHECK ONE DATE BEFORE ANOTHER
-                      
-           $ssid = session_id();
-           $usrSQL = "SELECT originalAccountName FROM four.sys_userbase where sessionid = :sessionid";
-           $usrR = $conn->prepare($usrSQL);
-           $usrR->execute(array(':sessionid' => $ssid));
-           if ($usrR->rowCount() < 1) { 
-               $msg .= "\r\n - SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN"; 
-               $allowWrite = 0; 
-           } else { 
-               $user = $usrR->fetch(PDO::FETCH_ASSOC);
-               $usrName = $user['originalAccountName'];
-           }
-           if ($allowWrite === 1) { 
-               $objid = strtolower( generateRandomString() );
-               $insSQL = "insert into four.srv_coord_qry_capture (qryselector, bywhom, qrytype, jsoncriteria, onwhen) values(:objid,:user,:qrytype,:criteria,now())";
-               $rs = $conn->prepare($insSQL); 
-               $rs->execute(
-                 array(
-                      ':objid'      => $objid
-                     ,':user'       => $usrName
-                     ,':qrytype'    => $params['qryType']
-                     ,':criteria'   => $passedData 
-                 )
-               );
-               $urlid =  $conn->lastInsertId() . "-" . $objid;
-               $datarecord = array("qryurl" => "data-coordinator/ship-doc/{$urlid}");
-               $responseCode = 200;
-           }                 
-         break;
-  
-     
-     
-//DIFFERENT COORDINATOR QUERY BUILDERS END   HERE --------------------------------------           
-  
-  
-         default:
-           $msg = "MALFORMED QUERY PARAMETER DATA STRUCTURE";
-       }
-       $rows['statusCode'] = $responseCode; 
-       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $datarecord);
-       return $rows;
-    } 
 
 }
 
@@ -388,6 +309,9 @@ class systemposts {
     
 }
 
+
+/*****  SUPPORTING FUNCTIONS FOR CLASSES ******/ 
+
 function captureSystemActivity($sessionid, $sessionvariables, $loggedsession, $userid, $firstname, $lastname, $email, $requestmethod, $request) { 
     include(serverkeys . "/sspdo.zck"); 
     $insSQL = "insert into webcapture.tbl_siteusage (usagedatetime, sessionid, sessionvariables, loggedsession, userid, firstname, lastname, email, requestmethod, request)  values(now(),  :sessionid, :sessionvariables, :loggedsession, :userid, :firstname, :lastname, :email, :requestmethod, :request)";
@@ -405,7 +329,6 @@ function captureSystemActivity($sessionid, $sessionvariables, $loggedsession, $u
     )); 
 }
 
-
 function sendSSCodeEmail( $emailTo, $authCode ) { 
   //TODO: CHECK THE INPUT BEFORE ALLOWING TO TABLE    
   require(serverkeys . "/sspdo.zck"); 
@@ -413,6 +336,160 @@ function sendSSCodeEmail( $emailTo, $authCode ) {
   $insR = $conn->prepare($insSQL);
   $insR->execute(array(':toWhomAddressArray' => '["' . $emailTo . '"]',':sbjtLine' => 'SSv7 Authentication Code',':msgBody' => 'The ScienceServer Dual Authentication Code to enter is: ' . $authCode,':bywho' => 'SSv7')); 
   return $conn->errorInfo(); 
+}
+
+function verifyDate($date, $format,  $strict = true) {
+    $dateTime = DateTime::createFromFormat($format, $date);
+    if ($strict) {
+        $errors = DateTime::getLastErrors();
+        if (!empty($errors['warning_count'])) {
+            return false;
+        }
+    }
+    return $dateTime !== false;
+}
+
+function qryCriteriaCheckBio($rqst) { 
+    $allowerror = 0;
+    $msg = "";  
+  //  {"qryType":"BIO","BG":"","procInst":"","segmentStatus":"","qmsStatus":"","procDateFrom":"2018-11-01","procDateTo":"2018-11-04","shipDateFrom":"2018-11-01","shipDateTo":"2018-11-04","investigatorCode":"","site":"","diagnosis":"","PrepMethod":"","preparation
+    //Check Keys in Array 
+    $needkeys = array("qryType","BG","procInst","segmentStatus","qmsStatus","procDateFrom","procDateTo","shipDateFrom","shipDateTo","investigatorCode","site","diagnosis","PrepMethod","preparation");
+    $keysExist = 1;
+    foreach ($needkeys as $keyval) { 
+        if (!array_key_exists($keyval, $rqst)) {
+            $keysExist = 0;
+        }
+    }
+    if ($keysExist === 0) { 
+        $allowerror = 1; 
+        $msg = "ERROR:  BAD REQUEST ARRAY IN BODY";
+        return array('errorind' => $allowerror, 'errormsg' => $msg);        
+    }
+    $fieldsFilledIn = 0; 
+    foreach ($rqst as $k => $v) { 
+      if ($k !== "qryType") {   
+          if (trim($v) !== "") { 
+            $fieldsFilledIn++;
+          }
+      }
+    } 
+    if ($fieldsFilledIn < 1 ) { 
+       $allowerror = 1; 
+       $msg = "At least one criteria field must be filled in"; 
+       return array('errorind' => $allowerror, 'errormsg' => $msg);                
+    }
+    //NO CHECK procInst,segmentStatus,qmsStatus,site,diagnosis,prepmethod, preparation
+    //CHECK BIOGROUP NUMBER
+    if ( trim($rqst['BG']) !== "" ) { 
+      //NOTE:  I DID NOT USE PREG_MATCH HERE BECAUSE ITS NOT A PATTERN THAT NEEDS TO BE VALIDATED - ZACK 
+      $charallowarray = array("0","1","2","3","4","5","6","7","8","9","-",",");     
+      $cleanBG = 0;
+      for ($i = 0; $i < strlen(trim($rqst['BG'])); $i++) { 
+        if (!in_array(substr(trim($rqst['BG']),$i,1), $charallowarray)) { 
+            $cleanBG = 1;      
+        }
+      }
+      if ($cleanBG === 1) { 
+        $allowerror = 1; 
+        $msg .= "\r\n- ONLY numbers, hyphens and commas are allowed in the biogroup field";
+      }
+    }
+    //CHECK INV NUMBER
+    if (trim($rqst['investigatorCode']) !== "") { 
+        if (preg_match('/^inv[0-9]{1,6}/i', trim($rqst['investigatorCode'])) === 0) { 
+          $allowerror = 1; 
+          $msg .= "\r\n- Investigator ID must be in the format of 'INV####', eg. 'INV3000'";            
+        }
+    }
+    //CHECK DATES
+    if ( (trim($rqst['procDateFrom']) !== "" && trim($rqst['procDateTo']) === "" ) ||   (trim($rqst['procDateFrom']) === "" && trim($rqst['procDateTo']) !== "" ) ) { 
+        $allowerror = 1; 
+        $msg .= "\r\n- When querying by date, you must provide both dates within the range (Procurement Date).";          
+    } else { 
+    $procDteAllowFrom = 0;
+    if (trim($rqst['procDateFrom']) !== "") { 
+        $fDteChk = verifyDate(trim($rqst['procDateFrom']),'Y-m-d', true); 
+        if (!$fDteChk) { 
+          $allowerror = 1; 
+          $msg .= "\r\n- The 'From' date in the Procurement date range is an invalid date.";              
+        } else { 
+          $fDte =  DateTime::createFromFormat('Y-m-d', $rqst['procDateFrom'])->setTime(0,0);
+          $procDteAllowFrom = 1;
+        }
+    }
+    $procDteAllowTo = 0;
+    if (trim($rqst['procDateTo']) !== "") { 
+        $tDteChk = verifyDate(trim($rqst['procDateTo']),'Y-m-d', true);         
+        if (!$tDteChk) { 
+          $allowerror = 1; 
+          $msg .= "\r\n- The 'To' date in the Procurement date range is invalid.";              
+        } else { 
+          $tDte =  DateTime::createFromFormat('Y-m-d', $rqst['procDateTo'])->setTime(0,0);
+          $procDteAllowTo = 1;
+        }
+    }    
+    if ($procDteAllowFrom === 1 && $procDteAllowTo === 1) { 
+        //CHECK FROM IS SMALLER THAN TO 
+        if (!($fDte < $tDte)) { 
+           $allowerror = 1;
+           $msg = "\r\n- When using the procurement date range, the 'from' date must be before the to 'date'.";
+        }        
+    }
+ }
+
+    if ( (trim($rqst['shipDateFrom']) !== "" && trim($rqst['shipDateTo']) === "" ) ||   (trim($rqst['shipDateFrom']) === "" && trim($rqst['shipDateTo']) !== "" ) ) { 
+        $allowerror = 1; 
+        $msg .= "\r\n- When querying by date, you must provide both dates within the range (Shipment Date).";          
+    } else { 
+    $shipDteAllowFrom = 0;
+    if (trim($rqst['shipDateFrom']) !== "") { 
+        $sfDteChk = verifyDate(trim($rqst['shipDateFrom']),'Y-m-d', true); 
+        if (!$sfDteChk) { 
+          $allowerror = 1; 
+          $msg .= "\r\n- The 'From' date in the Shipment date range is an invalid date.";              
+        } else { 
+          $sfDte =  DateTime::createFromFormat('Y-m-d', $rqst['shipDateFrom'])->setTime(0,0);
+          $shipDteAllowFrom = 1;
+        }
+    }
+    $shipDteAllowTo = 0;
+    if (trim($rqst['shipDateTo']) !== "") { 
+        $stDteChk = verifyDate(trim($rqst['shipDateTo']),'Y-m-d', true);         
+        if (!$stDteChk) { 
+          $allowerror = 1; 
+          $msg .= "\r\n- The 'To' date in the Shipment date range is invalid.";              
+        } else { 
+          $stDte =  DateTime::createFromFormat('Y-m-d', $rqst['shipDateTo'])->setTime(0,0);
+          $shipDteAllowTo = 1;
+        }
+    }    
+    if ($shipDteAllowFrom === 1 && $shipDteAllowTo === 1) { 
+        //CHECK FROM IS SMALLER THAN TO 
+        if (($sfDte > $stDte)) { 
+           $allowerror = 1;
+           $msg .= "\r\n- When using the shipment date range, the 'from' date must be before the to 'date'.";
+        }        
+    }
+ }
+
+  return array('errorind' => $allowerror, 'errormsg' => $msg);        
+}
+
+function qryCriteriaCheckShip($rqstJSON) { 
+    //{"qryType":"SHIP","shipdocnumber":"","sdstatus":"","sdshipfromdte":"","sdshiptodte":"","investigator":""}
+    $allowerror = 0;
+    $msg = "";
+        
+    return array('allowind' => $allowerror, 'errormsg' => $msg);
+}
+
+function qryCriteriaCheckBank($rqstJSON) { 
+    //{"qryType":"BANK","site":"","dx":"","specimencategory":"","prepFFPE":1,"prepFIXED":1,"prepFROZEN":1}
+    $allowerror = 0;
+    $msg = "";
+        
+    return array('allowind' => $allowerror, 'errormsg' => $msg);
 }
 
 /********** EMAIL TEXTING 

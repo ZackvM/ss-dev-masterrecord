@@ -1,6 +1,5 @@
 <?php
 
-
 class javascriptr {
 
 function globalscripts( $keypaircode, $usrid ) {  
@@ -324,8 +323,6 @@ function answerGetDocumentText(rtnData) {
         dspThis += "<tr><td colspan=2 id=documentDisplay>"+dta['DATA'][0]['chart']+"</td></tr>";
         dspThis += "<tr><td colspan=2 align=right id=pxiBottomLine>pxi-id: "+dta['DATA'][0]['pxi']+"</td></tr>";
         dspThis += "</table>";
-
-
       break;
     }
     if (byId('displayDocText')) { 
@@ -388,6 +385,7 @@ function datacoordinator($rqststr) {
   $pw = serverpw;
     
 $rtnthis = <<<JAVASCR
+        
 
 document.addEventListener('DOMContentLoaded', function() {  
 
@@ -483,11 +481,8 @@ switch (whichfield) {
     var mlURL = "/data-doers/suggest-something";
     universalAJAX("POST",mlURL,passeddata,answerInvestShipSuggestions,0);
   break;
-
 }
-
 }
-
 
 function answerInvestShipSuggestions(rtnData) { 
 var rsltTbl = "";
@@ -544,7 +539,6 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
     byId('siteSuggestions').style.display = 'none';
   }
 }
-
 }
 
 function changeSearchGrid(whichgrid) { 
@@ -583,25 +577,6 @@ function submitqueryrequest(whichquery) {
   var dta = new Object();
   var criteriagiven = 0;
   switch (whichquery) {
-    case 'bankqry':
-      dta['qryType'] = 'BANK';
-      dta['site'] = byId('bnkSite').value.trim();
-      dta['dx'] = byId('bnkDiagnosis').value.trim();
-      dta['specimencategory'] = byId('bnkSpecCat').value.trim();
-      dta['prepFFPE'] = (byId('bnkPrpFFPE').checked) ? 1 : 0;
-      dta['prepFIXED'] = (byId('bnkPrpFixed').checked) ? 1 : 0; 
-      dta['prepFROZEN'] = (byId('bnkPrpFrozen').checked) ? 1 : 0;
-      criteriagiven = 1;
-    break;
-    case 'shipqry':
-      dta['qryType'] = 'SHIP';
-      dta['shipdocnumber'] = byId('shpShipDocNbr').value.trim();
-      dta['sdstatus'] = byId('qryShpStatusValue').value.trim();
-      dta['sdshipfromdte'] = byId('shpQryFromDateValue').value.trim();
-      dta['sdshiptodte'] = byId('shpQryToDateValue').value.trim();
-      dta['investigator'] = byId('shpShipInvestigator').value.trim();
-      criteriagiven = 1;
-    break;   
     case 'bioqry':
       dta['qryType'] = 'BIO';
       dta['BG'] = byId('qryBG').value.trim(); 
@@ -610,6 +585,8 @@ function submitqueryrequest(whichquery) {
       dta['qmsStatus'] = byId('qryHPRStatusValue').value.trim(); 
       dta['procDateFrom'] = byId('bsqueryFromDateValue').value.trim();
       dta['procDateTo'] = byId('bsqueryToDateValue').value.trim();
+      dta['shipDateFrom'] = byId('shpQryFromDateValue').value.trim();  
+      dta['shipDateTo'] = byId('shpQryToDateValue').value.trim();  
       dta['investigatorCode'] = byId('qryInvestigator').value.trim(); 
       dta['site'] = byId('qryDXDSite').value.trim();
       dta['diagnosis'] = byId('qryDXDDiagnosis').value.trim(); 
@@ -621,14 +598,17 @@ function submitqueryrequest(whichquery) {
       return null;
   }
   if (criteriagiven === 1) { 
-    var passdta = JSON.stringify(dta);
-    console.log(passdta);
-    //{"qryType":"BANK","site":"","dx":"","specimencategory":"","prepFFPE":1,"prepFIXED":1,"prepFROZEN":1}
-    //{"qryType":"SHIP","shipdocnumber":"","sdstatus":"","sdshipfromdte":"","sdshiptodte":"","investigator":""}
-    //{"qryType":"BIO","BG":"","procInst":"","segmentStatus":"","qmsStatus":"","procDateFrom":"","procDateTo":"","investigatorCode":"","site":"","diagnosis":"","PrepMethod":"","preparation":""}
+    var passdta = JSON.stringify(dta);    
+    console.log(passdta);        
+    var mlURL = "/data-doers/make-query-request";
+    universalAJAX("POST",mlURL,passdta,answerQueryRequest,1);           
   }
 }
 
+function answerQueryRequest(rtnData) { 
+  console.log(JSON.stringify(rtnData));        
+}
+               
 function updatePrepmenu(whatvalue) { 
   byId('qryPreparationValue').value = '';
   byId('qryPreparation').value = '';

@@ -308,7 +308,7 @@ if (trim($pyear) === "") {
   $pyear = date('Y');
 }
 
-$daysofweek = array('S','M','T','W','Th','F','Sa'); 
+$daysofweek = array('M','T','W','Th','F','Sa','Su'); 
 $firstDayOfMonth = mktime(0,0,0,$pmonth,1,$year);
 $numberOfDays = date('t',$firstDayOfMonth);
 $dateComponents = getdate($firstDayOfMonth);
@@ -425,52 +425,3 @@ $rtnthiscalendar .= "</table>";
 return $rtnthiscalendar;    
 }
 
-
-
-
-
-
-
-
-
-
-
-/*
- * BACKUP FUNCTIONS --- DELETE IF UNNEEDED
- *
-function calltidal($method, $url, $data = false) { 
-  try {
-    $ch = curl_init(); 
-    if (FALSE === $ch) { return Exception('failed to initialize'); } 
-    switch ($method) { 
-      case "POST": 
-        curl_setopt($ch, CURLOPT_POST, 1); 
-        if ($data) { 
-          curl_setopt($ch,CURLOPT_POSTFIELDS, $data); 
-        }
-      break; 
-      case "GET": 
-        curl_setopt($ch, CURLOPT_GET, 1); 
-      break;
-    }
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);  
-    curl_setopt($ch, CURLOPT_URL, $url); 
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-    $headers = array("tidal-user:Y2EvMkFPaGxNbTkyRDJuWVVhUGFsdz09");  //ADD AUTHORIZATION HEADERS HERE
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-    $content = curl_exec($ch);
-    if (FALSE === $content) { 
-      return Exception(curl_error($ch),curl_errno($ch));
-    } else {
-      return $content;
-    }
-  } catch(Exception $e) { 
-    return sprintf('CURL failed with error #%d: %s', $e->getCode(), $e->getMessage()); 
-  } 
-}
-
-*
-*
- */

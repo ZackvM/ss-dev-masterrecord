@@ -19,101 +19,23 @@ function datacoordinator($rqststr, $whichusr) {
         if (trim($rqststr[2]) === "") {
 
             $BSGrid = buildBSGrid();
-            $BSShipGrid = buildShippingQryGrid();
-            $BSBankGrid = buildBSBankGrid(); 
             $rtnthis = <<<MAINQGRID
     <table border=0 id=mainQGridHoldTbl cellspacing=0 cellpadding=0>
         <tr>
-            <td style="width: 6vw;height: 6vh;" valign=bottom><table class=tblBtn style="width: 6vw;" onclick="changeSearchGrid('biogroupdiv');"><tr><td><center>Biogroup</td></tr></table></td>
-            <td style="width: 6vw;height: 6vh;" valign=bottom><table class=tblBtn style="width: 6vw;" onclick="changeSearchGrid('shipdiv');"><tr><td><center>Shipping</td></tr></table></td>
-            <td style="width: 6vw;height: 6vh;" valign=bottom><table class=tblBtn style="width: 6vw;" onclick="changeSearchGrid('bankdiv');"><tr><td><center>Bank</td></tr></table></td>
+            <!-- <td style="width: 6vw;height: 6vh;" valign=bottom><table class=tblBtn style="width: 6vw;" onclick="changeSearchGrid('biogroupdiv');"><tr><td><center>Biogroup</td></tr></table></td> //-->
             <td>&nbsp;</td>        
         </tr> 
          <tr><td colspan=4 valign=top>
                <div id=gridholdingdiv>     
                  <div class=gridDiv id=biogroupdiv>{$BSGrid}</div>
-                 <div class=gridDiv id=shipdiv>{$BSShipGrid}</div>
-                 <div class=gridDiv id=bankdiv>{$BSBankGrid}</div>                                        
+                 
                </div>     
          </td></tr>                    
     </table>
 MAINQGRID;
             } else { 
                 //$rtnthis = "DO SOMETHING HERE";            
-                switch ($rqststr[2]) { 
-                  case 'bank':
-                    $qryid = $rqststr[3];
-                    $qdata = getBankQryData($rqststr[3]); 
-                
-                    if((int)$qdata['status'] === 200) { 
-                      $qbywhom = $qdata['qryby'];
-                      $qon = $qdata['qryon'];
-                      $qcrit = $qdata['criteria'];                      
-                      $bdata = json_decode($qdata['bankdata'], true);
-                      $nbrFound = $bdata['recordsFound'];
-                      if((int)$nbrFound > 0) { 
-                         $dataTable = "<table border=1><tr><th>CHTN #</th><th>PR</th><th>A</th><th>Site</th><th>Diagnosis</th><th>Category</th><th>Metastatic</th><th>Procedure</th><th>HP</th><th>Preparation</th><th>Metric</th><th>A/R/S</th><th>CX</th><th>RX</th></tr>";
-                         foreach($bdata['returnData'] as $val) { 
-                           $arsdsp = $val['age']; 
-                           $arsdsp .= "/" . strtoupper(substr($val['race'],0,2));
-                           $arsdsp .= "/" . strtoupper(substr($val['sex'],0,1));
-                           $cxdsp = strtoupper(substr($val['chemotherapy'],0,1));
-                           $rxdsp = strtoupper(substr($val['radiation'],0,1));                    
-                           $prdsp = (trim($val['pathologyrpturl']) !== "") ? "<td onclick=\"openOutSidePage('{$val['pathologyrpturl']}');\">P</td>" : "<td>&nbsp;</td>";
-                           $adsp = (trim($val['associativeid']) !== "") ? "<td onclick=\"alert('{$val['associativeid']}');\">A</td>" : "<td>&nbsp;</td>";
-                           $dataTable .= <<<BGSLINE
-<tr>
-<td>{$val['divisionallabel']}&nbsp;</td>
-{$prdsp}
-{$adsp}<td>{$val['site']}&nbsp;</td><td>{$val['diagnosis']}&nbsp;</td><td>{$val['specimencategory']}&nbsp;</td><td>{$val['metastatic']}&nbsp;</td><td>{$val['proceduretype']}&nbsp;</td><td>{$val['hourspost']}&nbsp;</td><td>{$val['preparation']}&nbsp;</td><td>{$val['metric']}&nbsp;</td><td>{$arsdsp}</td><td>{$cxdsp}&nbsp;</td><td>{$rxdsp}&nbsp;</td></tr>
-BGSLINE;
-                         }
-                         $dataTable .= "</table>";
-                      } else { 
-                          //NO FOUND
-                      }
-                    } else { 
-                    }
-
-                    $rtnthis = <<<RSLTTBL
-<table border=0 cellpadding=0 cellspacing=0 id=bigQryRsltTbl >
-<tr><td>BUTTON BAR</td></tr>
-<tr><td><table><tr><td>Bank Search</td></tr>
-<tr><td>{$qbywhom} {$qon} {$qcrit['site']} </td></tr>
-</table></td></tr>
-<tr><td><div id=bankDataHolder>{$dataTable}</div></td></tr>
-<tr><td>Records Found: {$nbrFound}</td></tr>
-</table>
-RSLTTBL;
-                       break;
-                  case 'shipdoc': 
-                    $qryid = $rqststr[3];
-                    $qdata = getShipQryData($rqststr[3]); 
-
-                    if((int)$qdata['status'] === 200) { 
-                      $qbywhom = $qdata['qryby'];
-                      $qon = $qdata['qryon'];
-                      $qcrit = $qdata['criteria'];                      
-                  
-                       $dataTable = $qdata['shipdata'];
-                    } else { 
-                    }
-
-                    $rtnthis = <<<RSLTTBL
-<table border=0 cellpadding=0 cellspacing=0 id=bigQryRsltTbl >
-<tr><td>BUTTON BAR</td></tr>
-<tr><td><table><tr><td>Bank Search</td></tr>
-<tr><td>{$qbywhom} {$qon}</td></tr>
-</table></td></tr>
-<tr><td><div id=bankDataHolder>{$dataTable} </div></td></tr>
-<tr><td>Records Found: {$nbrFound}</td></tr>
-</table>
-RSLTTBL;
-                      break; 
-                  default: 
-                      $rtnthis = "NO DATA FOUND";
-                }
-
+ 
         }
     }    
     return $rtnthis;
@@ -481,7 +403,6 @@ function buildBSGrid() {
   }
   $proc .= "</table>";
 
-
   $segstatusarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allsegmentstati",$si,$sp),true);
   $seg = "<table border=1><tr><td align=right onclick=\"fillField('qrySegStatus','','');\">[clear]</td></tr>";
   foreach ($segstatusarr['DATA'] as $segval) { 
@@ -503,6 +424,21 @@ function buildBSGrid() {
   }
   $prp .= "</table>";
 
+$fsCalendar = buildcalendar('shipBSQFrom'); 
+$shpFromCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=hidden id=shpQryFromDateValue><input type=text READONLY id=shpQryFromDate></div>
+  <div class=valueDropDown style="min-width: 15vw;" id=fcal><div id=shpfCalendar>{$fsCalendar}</div></div>
+</div>
+CALENDAR;
+  
+$tsCalendar = buildcalendar('shipBSQTo'); 
+$shpToCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=hidden id=shpQryToDateValue><input type=text READONLY id=shpQryToDate></div>
+  <div class=valueDropDown style="min-width: 15vw;" id=tcal><div id=shptCalendar>{$tsCalendar}</div></div>
+</div>
+CALENDAR;
 
 $fCalendar = buildcalendar('biosampleQueryFrom'); 
 $bsqFromCalendar = <<<CALENDAR
@@ -549,7 +485,10 @@ $grid = <<<BSGRID
   <td>{$bsqToCalendar}</td>
 </tr>
 
-<tr><td colspan=2>Investigator ID (Use as lookup)</td></tr>
+<tr><td colspan=2>Shipping Date</td></tr>
+<tr><td>{$shpFromCalendar}</td><td>{$shpToCalendar}</td></tr>  
+  
+<tr><td colspan=2>Assigned To (Investigator Id)</td></tr>
 <tr><td colspan=2><div class=suggestionHolder><input type=text id=qryInvestigator><div id=investSuggestion class=suggestionDisplay>&nbsp;</div></div></td></tr>
 
 <tr><td>Diagnosis Designation (Site)</td><td>Diagnosis Designation (Diagnosis or Specimen Category)</td></tr>
