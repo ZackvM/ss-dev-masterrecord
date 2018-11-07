@@ -356,7 +356,7 @@ function qryCriteriaCheckBio($rqst) {
     $msg = "";  
   //  {"qryType":"BIO","BG":"","procInst":"","segmentStatus":"","qmsStatus":"","procDateFrom":"2018-11-01","procDateTo":"2018-11-04","shipDateFrom":"2018-11-01","shipDateTo":"2018-11-04","investigatorCode":"","site":"","diagnosis":"","PrepMethod":"","preparation
     //Check Keys in Array 
-    $needkeys = array("qryType","BG","procInst","segmentStatus","qmsStatus","procDateFrom","procDateTo","shipDateFrom","shipDateTo","investigatorCode","shipdocnbr","shipdocstatus","site","specimencategory","PrepMethod","preparation");
+    $needkeys = array("qryType","BG","procInst","segmentStatus","qmsStatus","procDateFrom","procDateTo","shipDateFrom","shipDateTo","investigatorCode","shipdocnbr","shipdocstatus","site","specimencategory","phiage","phirace","phisex","procType","PrepMethod","preparation");
     $keysExist = 1;
     foreach ($needkeys as $keyval) { 
         if (!array_key_exists($keyval, $rqst)) {
@@ -381,9 +381,9 @@ function qryCriteriaCheckBio($rqst) {
        $msg .= "- At least one criteria field must be filled in"; 
        return array('errorind' => $allowerror, 'errormsg' => $msg);                
     }
-    //NO CHECK procInst,segmentStatus,qmsStatus,site,diagnosis,prepmethod, preparation, shipdocstatus
+    //NO CHECK procInst,segmentStatus,qmsStatus,site,diagnosis,prepmethod, preparation, shipdocstatus, phirace, phisex
 
-    $charallowarray = array("0","1","2","3","4","5","6","7","8","9","-",",");     
+    $charallowarray = array("0","1","2","3","4","5","6","7","8","9","-",",","Z");     
     //CHECK BIOGROUP NUMBER
     if ( trim($rqst['BG']) !== "" ) { 
       //NOTE:  I DID NOT USE PREG_MATCH HERE BECAUSE ITS NOT A PATTERN THAT NEEDS TO BE VALIDATED - ZACK 
@@ -395,11 +395,11 @@ function qryCriteriaCheckBio($rqst) {
       }
       if ($cleanBG === 1) { 
         $allowerror = 1; 
-        $msg .= "\r\n- ONLY numbers, hyphens and commas are allowed in the biogroup field";
+        $msg .= "\r\n- ONLY numbers, hyphens, commas and prefix-capital-Z are allowed in the biogroup field";
       }
       if (strpos(trim($rqst['BG']),"-") == true && strpos(trim($rqst['BG']),',') == true) { 
         $allowerror = 1; 
-        $msg .= "\r\n- Only a Series or a Range searches is allowed at any one time (Biogroup Number)";
+        $msg .= "\r\n- Only a Series or a Range search is allowed at any one time (Biogroup Number)";
       }
     }
 
@@ -419,6 +419,21 @@ function qryCriteriaCheckBio($rqst) {
       if (strpos(trim($rqst['shipdocnbr']),"-") == true && strpos(trim($rqst['shipdocnbr']),',') == true) { 
         $allowerror = 1; 
         $msg .= "\r\n- Only a Series or a Range searches is allowed at any one time (Ship Doc Number)";
+      }
+    }
+
+    $charallowagearray = array("0","1","2","3","4","5","6","7","8","9","-");     
+    if ( trim($rqst['phiage']) !== "" ) { 
+      //NOTE:  I DID NOT USE PREG_MATCH HERE BECAUSE ITS NOT A PATTERN THAT NEEDS TO BE VALIDATED - ZACK 
+      $cleanAGE = 0;
+      for ($i = 0; $i < strlen(trim($rqst['phiage'])); $i++) { 
+        if (!in_array(substr(trim($rqst['phiage']),$i,1), $charallowagearray)) { 
+            $cleanAGE = 1;      
+        }
+      }
+      if ($cleanAGE === 1) { 
+        $allowerror = 1; 
+        $msg .= "\r\n- ONLY numbers and hyphens are allowed in the PHI Age field";
       }
     }
 

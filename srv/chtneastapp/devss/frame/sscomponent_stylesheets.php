@@ -124,29 +124,6 @@ STYLESHEET;
 return $rtnThis;
   }    
 
-  function procurementgrid($mobileind) { 
-      $rtnThis = <<<STYLESHEET
-
-body { margin: 0; margin-top: 8vh; box-sizing: border-box; padding: 0 2vw 0 2vw;  }
-
-#pqcTbl {width: 15vw; height: 15vh; font-family: Roboto; font-size: 1.5vh; }
-#pqcLeft {background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1);}
-#pqcLeft:hover {color: rgba({$this->color_neongreen},1); }
-#pqcTitle {background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); text-align: center; } 
-#pqcRight {background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); text-align: right;}
-#pqcRight:hover {color: rgba({$this->color_neongreen},1); }
-.pqcDayHead {background: rgba({$this->color_lightgrey},1); font-size: 1.2vh; font-weight: bold; text-align: center; padding: 4px; }
-.pqcDaySqr { font-size: 1.2vh; padding: 2px; }
-.pqcDaySqr table {border: 1px solid rgba({$this->color_zackgrey},1);width: 100%; height: 100%; }
-.pqcDaySqr table:hover {background: rgba({$this->color_neongreen},1); }
-#pqcTopSpacer {background: rgba({$this->color_lightgrey},1); }
-#pqcBtmSpacer {background: rgba({$this->color_lightgrey},1); }
-
-
-STYLESHEET;
-return $rtnThis;
-  }
-
 function datacoordinator($mobileind) { 
       $rtnThis = <<<STYLESHEET
 
@@ -207,8 +184,7 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 STYLESHEET;
 return $rtnThis;
 }      
-  
- 
+   
 function login($mobileInd) {
 $at = genAppFiles; 
   $bgPic = base64file("{$at}/publicobj/graphics/bg.png","background","bgurl",true);
@@ -247,3 +223,29 @@ return $rtnThis;
   
 }
 
+
+/* BACKUP 
+ *
+  function procurementgrid($mobileind) { 
+      $rtnThis = <<<STYLESHEET
+
+body { margin: 0; margin-top: 8vh; box-sizing: border-box; padding: 0 2vw 0 2vw;  }
+
+#pqcTbl {width: 15vw; height: 15vh; font-family: Roboto; font-size: 1.5vh; }
+#pqcLeft {background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1);}
+#pqcLeft:hover {color: rgba({$this->color_neongreen},1); }
+#pqcTitle {background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); text-align: center; } 
+#pqcRight {background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); text-align: right;}
+#pqcRight:hover {color: rgba({$this->color_neongreen},1); }
+.pqcDayHead {background: rgba({$this->color_lightgrey},1); font-size: 1.2vh; font-weight: bold; text-align: center; padding: 4px; }
+.pqcDaySqr { font-size: 1.2vh; padding: 2px; }
+.pqcDaySqr table {border: 1px solid rgba({$this->color_zackgrey},1);width: 100%; height: 100%; }
+.pqcDaySqr table:hover {background: rgba({$this->color_neongreen},1); }
+#pqcTopSpacer {background: rgba({$this->color_lightgrey},1); }
+#pqcBtmSpacer {background: rgba({$this->color_lightgrey},1); }
+
+
+STYLESHEET;
+return $rtnThis;
+  }
+ */

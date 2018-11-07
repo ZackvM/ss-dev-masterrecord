@@ -5,6 +5,8 @@ class pagecontent {
     //json_encode($rqstStr) THIS IS THE ARRAY HOLDING THE URI COMPONENTS 
     //$whichUsr THIS IS THE USER ARRAY {"statusCode":200,"loggedsession":"i46shslvmj1p672lskqs7anmu1","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":20,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"googleiconcode":"lock_open","menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"googleiconcode":"account_balance","menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""}]],["472","REPORTS","",[{"googleiconcode":"account_balance","menuvalue":"All Reports","pagesource":"all-reports","additionalcode":""}]],["473","UTILITIES","",[{"googleiconcode":"account_balance","menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474",null,null,[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]}     
 
+//<!-- <td style="width: 6vw;height: 6vh;" valign=bottom><table class=tblBtn style="width: 6vw;" onclick="changeSearchGrid('biogroupdiv');"><tr><td><center>Biogroup</td></tr></table></td> //-->
+
 public $maximizeBtn = "<i class=\"material-icons\">keyboard_arrow_up</i>";
 public $minimizeBtn = "<i class=\"material-icons\">keyboard_arrow_down</i>"; 
 public $closeBtn = "<i class=\"material-icons\">close</i>";
@@ -16,86 +18,53 @@ function datacoordinator($rqststr, $whichusr) {
      $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE COORDINATOR SCREEN";        
     } else {    
         if (trim($rqststr[2]) === "") {
-
             $BSGrid = buildBSGrid();
             $topBtnBar = generatePageTopBtnBar('coordinatorCriteriaGrid');
-
             $rtnthis = <<<MAINQGRID
 {$topBtnBar}
     <table border=0 id=mainQGridHoldTbl cellspacing=0 cellpadding=0>
         <tr>
-            <!-- <td style="width: 6vw;height: 6vh;" valign=bottom><table class=tblBtn style="width: 6vw;" onclick="changeSearchGrid('biogroupdiv');"><tr><td><center>Biogroup</td></tr></table></td> //-->
             <td>&nbsp;</td>        
         </tr> 
          <tr><td colspan=4 valign=top>
                <div id=gridholdingdiv>     
-                 <div class=gridDiv id=biogroupdiv>{$BSGrid}</div>
-                 
+                 <div class=gridDiv id=biogroupdiv>{$BSGrid}</div>            
                </div>     
          </td></tr>                    
     </table>
 MAINQGRID;
+        } else {
+            //"DATA":{"head":{"objid":"4psc9i1qqh","bywho":"proczack","onwhendsp":"11\/07\/2018","srchterm":"{\"qryType\":\"BIO\",\"BG\":\"\",\"procInst\":\"\",\"segmentStatus\":\"\",\"qmsStatus\":\"\",\"procDateFrom\":\"2018-01-01\",\"procDateTo\":\"2018-01-31\",\"shipDateFrom\":\"\",\"shipDateTo\":\"\",\"investigatorCode\":\"\",\"shipdocnbr\":\"\",\"shipdocstatus\":\"\",\"site\":\"^bowel;NEUROENDOCRINE\",\"specimencategory\":\"\",\"phiage\":\"\",\"phirace\":\"\",\"phisex\":\"\",\"procType\":\"\",\"PrepMethod\":\"\",\"preparation\":\"\"}"},"searchresults":[{"itemsfound":48,"data":[{"pbiosample":82833,"segmentid":434909,"bsvoid":0,"sgvoid":0,"bgs":"82833T_001","segstatus":"QC","qcstatus":"Q","phiage":"28","phirace":"Unknown","phigender":"M","proctype":"S","procurementdate":"01\/19\/2018","shipdocnbr":"0","sdstatus":"","procuringinstitution":"HUP","specimencategory":"MALIGNANT","site":"SMALL BOWEL","subsite":"","diagnosis":"CARCINOMA","diagnosismodifier":"NEUROENDOCRINE","metssite":"","assignedinvestigator":"","tqrequestnbr":"","preparationmethod":"PB","preparation":"FFPE"},{"pbiosample":82833,"segmentid":434910,"bsvoid":0,"sgvoid":0,"bgs":"82833T_002","segstatus":"QC","qcstatus":"Q","phiage":"28","phirace":"Unknown","phigender":"M","proctype":"S","procurementdate":"01\/19\/2018","shipdocnbr":"0","sdstatus":"","procuringinstitution":"HUP","specimencategory":"MALIGNANT","site":"SMALL BOWEL","subsite":"","diagnosis":"CARCINOMA","diagnosismodifier":"NEUROENDOCRINE","metssite":"","assignedinvestigator":"","tqrequestnbr":"","preparationmethod":"SLIDE","preparation":"H&E SLIDE"},{       
 
+$dta = json_decode(callrestapi("GET", dataTree . "/biogroup-search/{$rqststr[2]}", serverIdent, serverpw),true);
+$itemsfound = $dta['DATA']['searchresults'][0]['itemsfound'];      
 
-        } else { 
-                //$rtnthis = "DO SOMETHING HERE";            
+$dataTbl .= "<table border=1><tr><td>Segment Label</td><td>Status</td><td>QMS</td><td>Procurement Date</td><td>A-R-S</td><td>Specimen Category</td><td>Site-Subsite</td><td>Diagnosis-Modifier</td><td>Ship Doc</td></tr>";
+foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) { 
+  $dataTbl .= "<tr><td>{$val['bgs']}</td><td>{$val['segstatus']}</td><td>{$val['qcstatus']}</td><td>{$val['procurementdate']}</td><td>{$val['phiage']}-{$val['phirace']}-{$val['phigender']}</td><td>{$val['specimencategory']}</td><td>{$val['site']} - {$val['subsite']}</td><td>{$val['diagnosis']} - {$val['diagnosismodifier']}</td><td>{$val['shipdocnbr']}</td></tr>";
+}
+$dataTbl .= "</table>";
+
+$dspTbl = <<<DSPTHIS
+<table border=0><tr><td>Items found: {$itemsfound}</td></tr>
+<tr><td>{$dataTbl}&nbsp;</td></tr>
+</table>
+DSPTHIS;
+
+$topBtnBar = generatePageTopBtnBar('coordinatorResultGrid');
+$rtnthis = <<<MAINQGRID
+{$topBtnBar}
+<table border=0 id=mainRsltGridHoldTbl cellspacing=0 cellpadding=0>
+<tr><td valign=top>
+{$dspTbl}
+</td></tr>                    
+</table>
+MAINQGRID;
+
  
         }
     }    
     return $rtnthis;
-}
-
-function procurementgrid($rqststr, $whichusr) { 
-    if ((int)$whichusr->allowcoord !== 1) { 
-     $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE COORDINATOR SCREEN";        
-    } else {    
-
-        if (trim($rqststr[2]) === "") { 
-            ///QUERY TOP ONLY
-            $month = substr('00' . date('m'),-2);
-            $day = substr('00' . date('d'),-2);
-            $year = date('Y');
-        } else { 
-            ///GET GRID DATA
-        }
-
-        $instvl = $whichusr->presentinstitution;
-        foreach ($whichusr->allowedinstitutions as $instlst) {
-          if (trim($instlst[0]) === $instvl) { 
-            $instdsp = $instlst[1];
-          }
-        } 
-
-        $dInstitutions = "<table border=0 class=menuDropTbl>";
-        foreach ($whichusr->allowedinstitutions as $allinst) { 
-           $dInstitutions .= "<tr><td class=ddMenuItem onclick=\"fillField('fInstitution','{$allinst[0]}','{$allinst[1]}','');\">{$allinst[1]}</td></tr>";
-        }
-        $dInstitutions .= "</table>";
-
-
-        $institution = <<<INSTITUTION
-<div class=menuHolderDiv style="min-width: 20vw;">
-  <div class=valueHolder style="min-width: 20vw;"><input type=hidden id=fInstitutionValue value="{$instvl}"><input type=text READONLY id=fInstitution style="width: 20vw;" value="{$instdsp}"></div>
-  <div class=valueDropDown style="min-width: 20vw;" id=ddInstitutions>{$dInstitutions}</div>
-</div>
-INSTITUTION;
-
-$dCalendar = buildcalendar('procquery'); 
-        $calendar = <<<CALENDAR
-<div class=menuHolderDiv>
-  <div class=valueHolder><input type=hidden id=fDateValue value="{$year}{$month}{$day}"><input type=text READONLY id=fDate value="{$month}/{$day}/{$year}" style="width: 10vw;"></div>
-  <div class=valueDropDown style="min-width: 15vw;" id=ddInstitutions><div id=dspCalendarHere>{$dCalendar}</div></div>
-</div>
-
-CALENDAR;
-
-
-$rtnthis = <<<PAGECONT
-<table border=0><tr><td colspan=3>Procurement</td></tr><tr><td>Institution</td><td>Date</td><td></td></tr><tr><td>{$institution}</td><td>{$calendar}</td><td><table class=tblBtn onclick="alert('get grid');"><tr><td>Display</td></tr></table></td></tr></table>
-PAGECONT;
-
-    }
-return $rtnthis;
 }
 
 function documentlibrary($rqststr, $whichusr) { 
@@ -306,6 +275,27 @@ function buildBSGrid() {
     $proc .= "<tr><td onclick=\"fillField('qryProcInst','{$procval['lookupvalue']}','{$procval['menuvalue']}');\">{$procval['menuvalue']}</td></tr>";
   }
   $proc .= "</table>";
+  
+  $racearr = json_decode(callrestapi("GET", dataTree . "/globalmenu/pxirace",$si,$sp),true);
+  $race = "<table border=1><tr><td align=right onclick=\"fillField('phiRace','','');\">[clear]</td></tr>";
+  foreach ($racearr['DATA'] as $raceval) { 
+    $race .= "<tr><td onclick=\"fillField('phiRace','{$raceval['lookupvalue']}','{$raceval['menuvalue']}');\">{$raceval['menuvalue']}</td></tr>";
+  }
+  $race .= "</table>";
+
+  $sexarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/pxisex",$si,$sp),true);
+  $sex = "<table border=1><tr><td align=right onclick=\"fillField('phiSex','','');\">[clear]</td></tr>";
+  foreach ($sexarr['DATA'] as $sexval) { 
+    $sex .= "<tr><td onclick=\"fillField('phiSex','{$sexval['lookupvalue']}','{$sexval['menuvalue']}');\">{$sexval['menuvalue']}</td></tr>";
+  }
+  $sex .= "</table>";
+
+  $ptypearr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allproctypes",$si,$sp),true);
+  $ptype = "<table border=1><tr><td align=right onclick=\"fillField('qryProcType','','');\">[clear]</td></tr>";
+  foreach ($ptypearr['DATA'] as $ptypeval) { 
+    $ptype .= "<tr><td onclick=\"fillField('qryProcType','{$ptypeval['lookupvalue']}','{$ptypeval['menuvalue']}');\">{$ptypeval['menuvalue']}</td></tr>";
+  }
+  $ptype .= "</table>";
 
   $segstatusarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allsegmentstati",$si,$sp),true);
   $seg = "<table border=1><tr><td align=right onclick=\"fillField('qrySegStatus','','');\">[clear]</td></tr>";
@@ -328,14 +318,12 @@ function buildBSGrid() {
   }
   $prp .= "</table>";
 
-
   $spcarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/specimencategorylive",$si,$sp),true);
   $spc = "<table border=1><tr><td align=right onclick=\"fillField('qryDXDSpecimen','','');\">[clear]</td></tr>";
   foreach ($spcarr['DATA'] as $spcval) {
     $spc .= "<tr><td onclick=\"fillField('qryDXDSpecimen','{$spcval['codevalue']}','{$spcval['menuvalue']}');\">{$spcval['menuvalue']}</td></tr>";
   }
   $spc .= "</table>";
-
 
 $shpstatusarr = json_decode( callrestapi("GET", dataTree . "/globalmenu/allshipdocstatus",$si,$sp) , true);
 $shps = "<table border=1><tr><td align=right onclick=\"fillField('qryShpStatus','','');\">[clear]</td></tr>";
@@ -344,7 +332,6 @@ foreach ($shpstatusarr['DATA'] as $shpval) {
 }
 $shps .= "</table>";
 $shpsts = "<div class=menuHolderDiv><input type=hidden id=qryShpStatusValue><input type=text id=qryShpStatus class=\"inputFld\" READONLY><div class=valueDropDown>{$shps}</div></div>";
-
 
 $fsCalendar = buildcalendar('shipBSQFrom'); 
 $shpFromCalendar = <<<CALENDAR
@@ -384,6 +371,7 @@ $grid = <<<BSGRID
 <tr><td class=pageTitle>Biogroup Query Grid</td></tr>
 <tr><td>
 
+
 <table border=0>
 <tr><td class=fldLabel>Biogroup Number</td><td class=fldLabel>Procuring Institution</td><td class=fldLabel>Segment Status</td><td class=fldLabel>HPR Status</td></tr>
 <tr>
@@ -392,10 +380,11 @@ $grid = <<<BSGRID
 <td><div class=menuHolderDiv><input type=hidden id=qrySegStatusValue><input type=text id=qrySegStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown>{$seg}</div></div></td>
 <td><div class=menuHolderDiv><input type=hidden id=qryHPRStatusValue><input type=text id=qryHPRStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown>{$hpr}</div></div></td>
 </tr>
+<tr><td>(Single, range or series)</td></tr>
 </table>
 
 <table>
-<tr><td colspan=2 class=fldLabel>Procurement Date Range</td><td colspan=2 class=fldLabel>Shipping Date Range</td></tr>
+<tr><td colspan=2 class=fldLabel>Procurement Date Range (From/To)</td><td colspan=2 class=fldLabel>Shipping Date Range (From/To)</td></tr>
 <tr>
   <td>{$bsqFromCalendar}</td>
   <td>{$bsqToCalendar}</td>
@@ -405,30 +394,37 @@ $grid = <<<BSGRID
 </table>
 
 <table>  
-<tr><td colspan=2 class=fldLabel>Assigned To (Investigator Id)</td><td class=fldLabel>Ship Doc Number</td><td class=fldLabel>Ship Doc Status</td></tr>
-<tr><td colspan=2><div class=suggestionHolder><input type=text id=qryInvestigator class="inputFld"><div id=investSuggestion class=suggestionDisplay>&nbsp;</div></div></td><td><input type=text id=qryShpDocNbr class="inputFld" style="width: 20vw;"></td><td>{$shpsts}</td></tr>
+<tr><td class=fldLabel>Assigned To (Investigator Id)</td><td class=fldLabel>Ship Doc Number</td><td class=fldLabel>Ship Doc Status</td></tr>
+<tr><td><div class=suggestionHolder><input type=text id=qryInvestigator class="inputFld"><div id=investSuggestion class=suggestionDisplay>&nbsp;</div></div></td><td><input type=text id=qryShpDocNbr class="inputFld" style="width: 20vw;"></td><td>{$shpsts}</td></tr>
+<tr><td>(Type Inv#, Divisional code, Name, or Institution for list of INV#s)</td><td>(Single, range or series)</td></tr>
 </table>
 
 <table>
 <tr><td class=fldLabel>Diagnosis Designation Search Term</td><td class=fldLabel>Specimen Category</td></tr>
 <tr>
-  <td><input type=text id=qryDXDSite class="inputFld" style="width: 50vw;"></td>
-  <td>    <div class=menuHolderDiv><input type=hidden id=qryDXDSpecimenValue class="inputFld"><input type=text id=qryDXDSpecimen class="inputFld" style="width: 20vw;"><div class=valueDropDown>{$spc}</div></div>     </td>
+  <td><input type=text id=qryDXDSite class="inputFld" style="width: 54vw;"></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryDXDSpecimenValue class="inputFld"><input type=text id=qryDXDSpecimen class="inputFld" style="width: 16vw;"><div class=valueDropDown>{$spc}</div></div>     </td>
 </tr>
+<tr><td colspan=2>(Read instructions in 'help' to query in 'Diagnosis Designation Search Term'.  Delimit with ; [semi-colon] / - [hyphen] to denote blank fields  / 'like' match indicator ^ [caret]. Order: (site-subsite);(diagnosis-modifier);(metssite))</td></tr>
 </table>
 
 <table>
-<tr><td colspan=2 class=fldLabel>Preparation</td></tr>
+<tr><td class=fldLabel>PHI-Age</td><td class=fldLabel>Race</td><td class=fldLabel>Sex</td><td class=fldLabel>Procedure</td><td colspan=2 class=fldLabel>Preparation</td></tr>
 <tr>
-  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationMethodValue><input type=text id=qryPreparationMethod READONLY class="inputFld" style="width: 35vw;"><div class=valueDropDown>{$prp}</div></div></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationValue><input type=text id=qryPreparation READONLY class="inputFld" style="width: 35vw;"><div class=valueDropDown id=preparationDropDown>&nbsp;</div></div></td>
+  <td><input type=text id=phiAge class="inputFld" style="width: 6vw;"></td>
+  <td><div class=menuHolderDiv><input type=hidden id=phiRaceValue><input type=text id=phiRace READONLY class="inputFld" style="width: 12vw;"><div class=valueDropDown>{$race}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=phiSexValue><input type=text id=phiSex READONLY class="inputFld" style="width: 6vw;"><div class=valueDropDown>{$sex}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryProcTypeValue><input type=text id=qryProcType READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown>{$ptype}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationMethodValue><input type=text id=qryPreparationMethod READONLY class="inputFld" style="width: 18.3vw;"><div class=valueDropDown>{$prp}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationValue><input type=text id=qryPreparation READONLY class="inputFld" style="width: 19vw;"><div class=valueDropDown id=preparationDropDown>&nbsp;</div></div></td>
 </tr>
-
+<tr><td>(Single or Range)</td></tr>
 </table>
+
 
 </td></tr>
 <tr><td align=right style="padding: 3vh 26vw 0 0;">
-<table class=tblBtn id=btnGenBioSearchSubmit style="width: 6vw;"><tr><td><center>Search</td></tr></table>
+  <table class=tblBtn id=btnGenBioSearchSubmit style="width: 6vw;"><tr><td><center>Search</td></tr></table>
 </td></tr>
 </table>
 
@@ -437,7 +433,6 @@ return $grid;
 }
 
 function generatePageTopBtnBar($whichpage) { 
-
 
 //TODO:  DUMP THE BUTTONS IN TO A DATABASE AND GRAB WITH A WEBSERVICE
     
@@ -448,7 +443,14 @@ $innerBar = <<<BTNTBL
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="clearCriteriaGrid();"><tr><td><i class="material-icons">layers_clear</i></td><td>Clear Grid</td></tr></table></td>
 </tr>
 BTNTBL;
-break;    
+break;   
+case 'coordinatorResultGrid':
+$innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="navigateSite('data-coordinator');"><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
+</tr>
+BTNTBL;
+    break;
 }
 
 
@@ -466,6 +468,60 @@ return $rtnthis;
 }
 
 /* 
+
+function procurementgrid($rqststr, $whichusr) { 
+    if ((int)$whichusr->allowcoord !== 1) { 
+     $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE COORDINATOR SCREEN";        
+    } else {    
+
+        if (trim($rqststr[2]) === "") { 
+            ///QUERY TOP ONLY
+            $month = substr('00' . date('m'),-2);
+            $day = substr('00' . date('d'),-2);
+            $year = date('Y');
+        } else { 
+            ///GET GRID DATA
+        }
+
+        $instvl = $whichusr->presentinstitution;
+        foreach ($whichusr->allowedinstitutions as $instlst) {
+          if (trim($instlst[0]) === $instvl) { 
+            $instdsp = $instlst[1];
+          }
+        } 
+
+        $dInstitutions = "<table border=0 class=menuDropTbl>";
+        foreach ($whichusr->allowedinstitutions as $allinst) { 
+           $dInstitutions .= "<tr><td class=ddMenuItem onclick=\"fillField('fInstitution','{$allinst[0]}','{$allinst[1]}','');\">{$allinst[1]}</td></tr>";
+        }
+        $dInstitutions .= "</table>";
+
+
+        $institution = <<<INSTITUTION
+<div class=menuHolderDiv style="min-width: 20vw;">
+  <div class=valueHolder style="min-width: 20vw;"><input type=hidden id=fInstitutionValue value="{$instvl}"><input type=text READONLY id=fInstitution style="width: 20vw;" value="{$instdsp}"></div>
+  <div class=valueDropDown style="min-width: 20vw;" id=ddInstitutions>{$dInstitutions}</div>
+</div>
+INSTITUTION;
+
+$dCalendar = buildcalendar('procquery'); 
+        $calendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=hidden id=fDateValue value="{$year}{$month}{$day}"><input type=text READONLY id=fDate value="{$month}/{$day}/{$year}" style="width: 10vw;"></div>
+  <div class=valueDropDown style="min-width: 15vw;" id=ddInstitutions><div id=dspCalendarHere>{$dCalendar}</div></div>
+</div>
+
+CALENDAR;
+
+
+$rtnthis = <<<PAGECONT
+<table border=0><tr><td colspan=3>Procurement</td></tr><tr><td>Institution</td><td>Date</td><td></td></tr><tr><td>{$institution}</td><td>{$calendar}</td><td><table class=tblBtn onclick="alert('get grid');"><tr><td>Display</td></tr></table></td></tr></table>
+PAGECONT;
+
+    }
+return $rtnthis;
+}
+
 
 function buildShippingQryGrid() { 
   $si = serverIdent;

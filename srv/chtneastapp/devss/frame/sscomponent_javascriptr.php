@@ -338,42 +338,6 @@ JAVASCR;
 return $rtnThis;    
 }
 
-function procurementgrid($rqststr) { 
-
-  session_start(); 
-    
-  $tt = treeTop;
-  $eMod = encryptModulus;
-  $eExpo = encryptExponent;
-  $si = serverIdent;
-  $pw = apikey;
-    
-$rtnThis = <<<JAVASCR
-
-
-function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) { 
-  if (byId(whichfield)) { 
-    byId(whichfield+'Value').value = whatvalue;    
-    byId(whichfield).value = whatplaintext; 
-  }
-}
-
-function fillTopDate(whatDate) {
-  var dteparts = whatDate.split("/"); 
-  byId('fDate').value = whatDate;
-  byId('fDateValue').value = dteparts[2]+dteparts[0]+dteparts[1];
-}
-
-function getcalendar(whatcalendar,whatmonth,whatyear) { 
-  alert('GETTHISCALENDAR '+whatcalendar);
-
-
-}
-
-JAVASCR;
-return $rtnThis;    
-}
-
 function datacoordinator($rqststr) { 
     
   session_start(); 
@@ -512,6 +476,10 @@ function submitqueryrequest(whichquery) {
       dta['shipdocstatus'] = byId('qryShpStatusValue').value.trim();
       dta['site'] = byId('qryDXDSite').value.trim();
       dta['specimencategory'] = byId('qryDXDSpecimen').value.trim(); 
+      dta['phiage'] = byId('phiAge').value.trim(); 
+      dta['phirace'] = byId('phiRaceValue').value.trim(); 
+      dta['phisex'] = byId('phiSexValue').value.trim(); 
+      dta['procType'] = byId('qryProcTypeValue').value.trim(); 
       dta['PrepMethod'] = byId('qryPreparationMethodValue').value.trim(); 
       dta['preparation'] = byId('qryPreparationValue').value.trim(); 
       criteriagiven = 1;
