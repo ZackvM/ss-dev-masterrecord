@@ -218,6 +218,11 @@ function guidv4() {
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
+function getColor($num) {
+    $hash = md5('color' . $num); // modify 'color' to get a different palette
+    return array(hexdec(substr($hash, 0, 2)), hexdec(substr($hash, 2, 2)), hexdec(substr($hash, 4, 2))); 
+}
+
 function buildcalendar($whichcalendar, $pmonth, $pyear) { 
 
 //******FORMATTING

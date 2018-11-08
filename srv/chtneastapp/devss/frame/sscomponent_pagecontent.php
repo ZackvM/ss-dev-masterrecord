@@ -34,16 +34,138 @@ function datacoordinator($rqststr, $whichusr) {
     </table>
 MAINQGRID;
         } else {
-            //"DATA":{"head":{"objid":"4psc9i1qqh","bywho":"proczack","onwhendsp":"11\/07\/2018","srchterm":"{\"qryType\":\"BIO\",\"BG\":\"\",\"procInst\":\"\",\"segmentStatus\":\"\",\"qmsStatus\":\"\",\"procDateFrom\":\"2018-01-01\",\"procDateTo\":\"2018-01-31\",\"shipDateFrom\":\"\",\"shipDateTo\":\"\",\"investigatorCode\":\"\",\"shipdocnbr\":\"\",\"shipdocstatus\":\"\",\"site\":\"^bowel;NEUROENDOCRINE\",\"specimencategory\":\"\",\"phiage\":\"\",\"phirace\":\"\",\"phisex\":\"\",\"procType\":\"\",\"PrepMethod\":\"\",\"preparation\":\"\"}"},"searchresults":[{"itemsfound":48,"data":[{"pbiosample":82833,"segmentid":434909,"bsvoid":0,"sgvoid":0,"bgs":"82833T_001","segstatus":"QC","qcstatus":"Q","phiage":"28","phirace":"Unknown","phigender":"M","proctype":"S","procurementdate":"01\/19\/2018","shipdocnbr":"0","sdstatus":"","procuringinstitution":"HUP","specimencategory":"MALIGNANT","site":"SMALL BOWEL","subsite":"","diagnosis":"CARCINOMA","diagnosismodifier":"NEUROENDOCRINE","metssite":"","assignedinvestigator":"","tqrequestnbr":"","preparationmethod":"PB","preparation":"FFPE"},{"pbiosample":82833,"segmentid":434910,"bsvoid":0,"sgvoid":0,"bgs":"82833T_002","segstatus":"QC","qcstatus":"Q","phiage":"28","phirace":"Unknown","phigender":"M","proctype":"S","procurementdate":"01\/19\/2018","shipdocnbr":"0","sdstatus":"","procuringinstitution":"HUP","specimencategory":"MALIGNANT","site":"SMALL BOWEL","subsite":"","diagnosis":"CARCINOMA","diagnosismodifier":"NEUROENDOCRINE","metssite":"","assignedinvestigator":"","tqrequestnbr":"","preparationmethod":"SLIDE","preparation":"H&E SLIDE"},{       
+            //"DATA":{"head":{"objid":"4psc9i1qqh","bywho":"proczack","onwhendsp":"11\/07\/2018","srchterm":"{\"qryType\":\"BIO\",\"BG\":\"\",\"procInst\":\"\",\"segmentStatus\":\"\",\"qmsStatus\":\"\",\"procDateFrom\":\"2018-01-01\",\"procDateTo\":\"2018-01-31\",\"shipDateFrom\":\"\",\"shipDateTo\":\"\",\"investigatorCode\":\"\",\"shipdocnbr\":\"\",\"shipdocstatus\":\"\",\"site\":\"^bowel;NEUROENDOCRINE\",\"specimencategory\":\"\",\"phiage\":\"\",\"phirace\":\"\",\"phisex\":\"\",\"procType\":\"\",\"PrepMethod\":\"\",\"preparation\":\"\"}"},"searchresults":[{"itemsfound":48,"data":["proctype":"S" "procuringinstitution":"HUP" "preparationmethod":"PB","preparation":"FFPE"}       
 
 $dta = json_decode(callrestapi("GET", dataTree . "/biogroup-search/{$rqststr[2]}", serverIdent, serverpw),true);
 $itemsfound = $dta['DATA']['searchresults'][0]['itemsfound'];      
 
-$dataTbl .= "<table border=1><tr><td>Segment Label</td><td>Status</td><td>QMS</td><td>Procurement Date</td><td>A-R-S</td><td>Specimen Category</td><td>Site-Subsite</td><td>Diagnosis-Modifier</td><td>Ship Doc</td></tr>";
+$dataTbl .= <<<TOPROW
+<table border=0 id="coordinatorResultTbl">
+   <thead>
+   <tr>
+   <th></th>
+   <th></th>
+   <th>Label</th>
+   <th>Status</th>
+   <th class="cnttxt">QMS</th>
+   <th class="groupingstart">Category</th>
+   <th>Site-Subsite</th>
+   <th>Diagnosis-Modifier</th>
+   <th>Mets Site</th>
+   <th class="groupingstart">Procurement</th>
+   <th>Institution</th>
+   <th class="groupingstart cnttxt">A</th>
+   <th class="cnttxt">R</th>
+   <th class="cnttxt">S</th>
+   <th class="cnttxt">CX</th>
+   <th class="cnttxt">RX</th>
+   <th class="cnttxt">PR</th>
+   <th class="cnttxt">IC</th>
+   <th>PMethod</th>
+   <th>Preparaion</th>
+   <th class="cnttxt">HP</th>
+   <th>Metric</th>
+   <th class="cnttxt">Qty</th>
+   <th class=groupingstart>Ship Doc</th>
+   <th>Investigator</th>
+   <th>Request</th>
+</tr>
+</thead>
+<tbody>
+TOPROW;
+
+$pbident = "";
 foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) { 
-  $dataTbl .= "<tr><td>{$val['bgs']}</td><td>{$val['segstatus']}</td><td>{$val['qcstatus']}</td><td>{$val['procurementdate']}</td><td>{$val['phiage']}-{$val['phirace']}-{$val['phigender']}</td><td>{$val['specimencategory']}</td><td>{$val['site']} - {$val['subsite']}</td><td>{$val['diagnosis']} - {$val['diagnosismodifier']}</td><td>{$val['shipdocnbr']}</td></tr>";
+
+    if ($pbident <> $val['pbiosample']) { 
+        //GET NEW COLOR
+        $colorArray = getColor($val['pbiosample']);
+        $pbSqrBgColor = " style=\"background: rgba({$colorArray[0]}, {$colorArray[1]}, {$colorArray[2]},1); \" ";
+        $pbident = $val['pbiosample'];
+    }
+
+    if ($val['bsvoid'] === 1 || $val['sgvoid'] === 1) { 
+      //MARK AS VOIDED
+    }
+
+    //NOT USED IN PASSED ARRAY 
+    //$val['sdstatus'] = Shipdoc Status
+    //:{$val['statusby']} = Statused By User
+    //
+    /////////////////////////////
+
+//S
+
+
+    switch ($val['qcstatuscode']) { 
+      case 'S': //SUBMITTED
+        $qmsicon = "<i class=\"material-icons\">offline_bolt</i>";
+        $clssuffix = "s";
+        $qcstatustxt = "QMS Process: {$val['qcstatus']}";
+      break;
+      case 'L': //LAB ACTION  
+        $qmsicon = "<i class=\"material-icons\">schedule</i>";  
+        $clssuffix = "l";
+        $qcstatustxt = "QMS Process: {$val['qcstatus']}";
+      break;
+      case 'R': //RESUBMITTED 
+        $qmsicon = "<i class=\"material-icons\">history</i>";
+        $clssuffix = "r";
+        $qcstatustxt = "QMS Process: {$val['qcstatus']}";
+      break;
+      case 'H':
+        $qmsicon = "<i class=\"material-icons\">offline_pin</i>";
+        $clssuffix = "h";
+        $qcstatustxt = "QMS Process: {$val['qcstatus']}";
+      break;
+      case 'Q':
+        $qmsicon = "<i class=\"material-icons\">stars</i>";
+        $clssuffix = "q";
+        $qcstatustxt = "QMS Process: {$val['qcstatus']}";
+      break;
+      default:  //NO VALUE MATCHING
+        $qmsicon = "<i class=\"material-icons\">help_outline</i>";
+        $clssuffix = "";
+        $qcstatustxt = "QMS Process: NOT STATUSED!";
+    }
+
+
+    $stsDte = (trim($val['statusdate']) === "") ? "<br>&nbsp;" : "<br><center><span class=tinyText>({$val['statusdate']})</span>";
+    $dspSD = ((int)$val['shipdocnbr'] === 0) ? "" : substr(('000000' . $val['shipdocnbr']),-6) . "<br><span class=tinyText>({$val['shipmentdate']})</span>";
+      $assmnt = (strtoupper(substr($val['assignedinvestigator'],0,3)) === "INV") ?  "{$val['assignedinvestigatorlname']}, {$val['assignedinvestigatorfname']} ({$val['assignedinvestigator']})<br>{$val['assignedinvestigatorinstitute']}" : "" ;
+
+$dataTbl .=  <<<LINEITEM
+<tr id="sg{$val['segmentid']}" data-selected=0 data-scannedlocation="{$val['scannedlocation']}" data-associd="{$val['associd']}" data-bscmt="{$val['bscomment']}" data-hprq="{$val['hprquestion']}" data-segcmt="{$val['sgcomments']}"  >
+  <td><i class="material-icons informationalicon">error_outline</i></td>
+  <td {$pbSqrBgColor} class=colorline>&nbsp;</td>
+  <td valign=top class=bgsLabel>{$val['bgs']}</td>
+  <td valign=top>{$val['segstatus']} {$stsDte}</td>
+  <td class="qmsiconholder{$clssuffix}"><div class=ttholder>{$qmsicon}<div class=tt>{$qcstatustxt}</div></div></td>
+  <td valign=top class="groupingstart">{$val['specimencategory']}</td>
+  <td valign=top>{$val['site']} - {$val['subsite']}</td>
+  <td valign=top>{$val['diagnosis']} - {$val['diagnosismodifier']}</td>
+  <td valign=top>{$val['metssite']}</td>
+  <td valign=top class=groupingstart>{$val['procurementdate']}</td>
+  <td valign=top><div class=ttholder>{$val['procuringinstitutioncode']}<div class=tt>{$val['procuringinstitution']}</div></div></td>
+  <td valign=top class="groupingstart cntr">{$val['phiage']}</td>
+  <td valign=top class="cntr">{$val['phirace']}</td>
+  <td valign=top class="cntr">{$val['phigender']}</td>
+  <td valign=top class="cntr">{$val['cxind']}</td>
+  <td valign=top class="cntr">{$val['rxind']}</td>
+  <td valign=top class="cntr">{$val['pathologyrptind']}</td>
+  <td valign=top class="cntr">{$val['informedconsentind']}</td>
+  <td valign=top>{$val['preparationmethod']}</td>
+  <td valign=top>{$val['preparation']}</td>
+  <td valign=top class="cntr">{$val['hourspost']}</td>
+  <td valign=top>{$val['metric']} {$val['metricuom']}</td>
+  <td valign=top class="cntr">{$val['qty']}</td>
+  <td valign=top class=groupingstart>{$dspSD}</td>
+  <td valign=top>{$assmnt}</td>
+  <td valign=top>{$val['tqrequestnbr']}</td>
+</tr>
+LINEITEM;
 }
-$dataTbl .= "</table>";
+$dataTbl .= "</tbody></table>";
 
 $dspTbl = <<<DSPTHIS
 <table border=0><tr><td>Items found: {$itemsfound}</td></tr>

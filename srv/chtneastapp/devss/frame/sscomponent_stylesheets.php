@@ -9,6 +9,7 @@ class stylesheets {
   public $color_brwgrey = "239,235,233";
   public $color_ddrwgrey = "189,185,183";
   public $color_lamber = "255,248,225";
+  public $color_dullyellow = "226,226,125";
   public $color_mamber = "204,197,175";
   public $color_mgrey = "160,160,160";
   public $color_dblue = "0,32,113";
@@ -23,6 +24,7 @@ class stylesheets {
   public $color_darkgrey = "145,145,145";
   public $color_zackgrey = "48,57,71";  //#303947 
   public $color_zackcomp = "235,242,255"; //#ebf2ff
+  public $color_deeppurple = "107, 18, 102";
 
 //.sectionHeadr {font-size: 1.3vh;padding: 8px; background: rgba({$this->color_dblue},1);color: rgba({$this->color_white},1);border-top: 1px solid rgba({$this->color_dblue},1); border-left: 1px solid rgba({$this->color_dblue},1); }
 function globalstyles($mobileInd) {
@@ -146,6 +148,34 @@ body { margin: 0; margin-top: 10vh; box-sizing: border-box;  }
 .suggestionDspLine:nth-child(even) { background: rgba({$this->color_grey},1); }
 .suggestionDspLine td { padding: 2px; border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
 .suggestionDspLine:hover { background: rgba({$this->color_lamber},1); cursor: pointer; }
+
+
+#coordinatorResultTbl { width: 99vw; border-collapse: collapse;   }
+#coordinatorResultTbl thead th { white-space: nowrap; padding: 8px 4px; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 1.3vh; text-align: left; } 
+#coordinatorResultTbl thead .cnttxt {text-align: center; }
+#coordinatorResultTbl .colorline {width: 6px; }
+
+#coordinatorResultTbl tbody td {font-size: 1.3vh; padding: 8px 6px; }
+#coordinatorResultTbl tbody .tinyText {font-size: 1vh; }
+#coordinatorResultTbl tbody .bgsLabel { font-weight: bold; }
+#coordinatorResultTbl tbody .informationalicon { color: rgba({$this->color_mgrey},1); text-align: center; }
+#coordinatorResultTbl tbody .informationalicon:hover {cursor: pointer; color: rgba({$this->color_bred},1); }
+#coordinatorResultTbl tbody tr {border-bottom: 1px solid rgba({$this->color_mgrey},1); }
+#coordinatorResultTbl tbody tr:nth-child(even) {background: rgba({$this->color_lgrey},1); }
+#coordinatorResultTbl tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
+#coordinatorResultTbl tbody .qmsiconholder { text-align: center; } 
+#coordinatorResultTbl tbody .qmsiconholders { text-align: center; background: rgba({$this->color_bred}, 1); color: rgba({$this->color_white},1);  }
+#coordinatorResultTbl tbody .qmsiconholderl { text-align: center; background: rgba({$this->color_deeppurple}, 1); color: rgba({$this->color_white},1); } 
+#coordinatorResultTbl tbody .qmsiconholderr { text-align: center; background: rgba({$this->color_dullyellow}, 1); color: rgba({$this->color_dblue},1); } 
+#coordinatorResultTbl tbody .qmsiconholderh { text-align: center; background: rgba({$this->color_lblue}, 1); color: rgba({$this->color_white},1); } 
+#coordinatorResultTbl tbody .qmsiconholderq { text-align: center;  background: rgba({$this->color_darkgreen}, 1); color: rgba({$this->color_white},1);} 
+
+#coordinatorResultTbl tbody .ttholder { position: relative; }
+#coordinatorResultTbl tbody .ttholder:hover .tt { display: block; }
+#coordinatorResultTbl tbody .tt { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; }
+#coordinatorResultTbl tbody .cntr { text-align: center; }
+#coordinatorResultTbl tbody .groupingstart {border-left: 3px solid rgba({$this->color_zackgrey},1); }
+#coordinatorResultTbl thead .groupingstart {border-left: 3px solid rgba({$this->color_white},1); }
 
 STYLESHEET;
 return $rtnThis;

@@ -686,15 +686,20 @@ select bs.pbiosample
       , sg.voidind sgvoid
       , ucase(ifnull(sg.bgs,'')) as bgs
       , sg.segstatus
-      , ifnull(bs.qcprocstatus,'') as qcstatus
+      , ifnull(date_format(sg.statusdate,'%m/%d/%Y'),'') as statusdate
+      , ifnull(sg.statusby,'') as statusby
+      , ifnull(bs.qcprocstatus,'') as qcstatuscode
+      , ucase(ifnull(mnuqms.dspvalue,'')) as qcstatus
       , ifnull(bs.pxiage,'') as phiage
-      , ifnull(bs.pxirace,'') as phirace
+      , ucase(substr(ifnull(bs.pxirace,''),1,3)) as phirace
       , ifnull(bs.pxigender,'') as phigender
       , ifnull(bs.proctype,'') as proctype
       , ifnull(date_format(sg.procurementdate,'%m/%d/%Y'),'') as procurementdate 
+      , ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shipmentdate 
       , ifnull(sg.shipdocrefid,0) as shipdocnbr
       , ifnull(sd.status,'') as sdstatus
-      , sg.procuredat procuringinstitution 
+      , ifnull(sg.procuredat,'') procuringinstitutioncode
+      , ifnull(mnuinst.dspvalue,'') as procuringinstitution
       , ifnull(bs.tisstype,'') as specimencategory
       , ifnull(bs.anatomicsite,'') as site
       , ifnull(bs.subsite,'') as subsite
@@ -702,12 +707,37 @@ select bs.pbiosample
       , ifnull(bs.subdiagnos,'') as diagnosismodifier
       , ifnull(bs.metssite,'') as metssite
       , ifnull(sg.assignedto,'') as assignedinvestigator
+      , ifnull(i.invest_fname,'') as assignedinvestigatorfname
+      , ifnull(i.invest_lname,'') as assignedinvestigatorlname
+      , ifnull(i.invest_homeinstitute,'') as assignedinvestigatorinstitute
       , ifnull(sg.assignedReq,'') as tqrequestnbr
       , ifnull(sg.prepmethod,'') as preparationmethod
       , ifnull(sg.preparation,'') as preparation
+      , ifnull(sg.hourspost,'') as hourspost
+      , ifnull(sg.metric,'') as metric
+      , ifnull(sg.metricuom,'') as metricuomcode 
+      , ifnull(mnumet.dspvalue,'') as metricuom
+      , ifnull(sg.qty,'') as qty
+      , ifnull(sg.scannedlocation,'') as scannedlocation
+      , substr(ifnull(mnucx.dspvalue,''),1,1) as cxind
+      , substr(ifnull(mnurx.dspvalue,''),1,1) as rxind
+      , substr(ifnull(mnupr.dspvalue,''),1,1) as pathologyrptind
+      , substr(ifnull(mnuinfc.dspvalue,''),1,1) as informedconsentind
+      , ifnull(bs.associd,'') as associd
+      , ifnull(bs.biosamplecomment,'') as bscomment
+      , ifnull(bs.questionhpr,'') as hprquestion
+      , ifnull(sg.segmentcomments,'') as sgcomments
 from masterrecord.ut_procure_segment sg 
 left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample 
 left join masterrecord.ut_shipdoc sd on sg.shipdocrefid = sd.shipdocrefid 
+left join vandyinvest.invest i on sg.assignedto = i.investid 
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') mnuinst on sg.procuredAt = mnuinst.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') mnuqms on bs.qcprocstatus = mnuqms.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'METRIC') as mnumet on sg.metricuom = mnumet.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'cx') as mnucx on bs.chemoind = mnucx.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'rx') as mnurx on bs.radind = mnurx.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') as mnupr on bs.pathreport = mnupr.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INFC') as mnuinfc on bs.informedconsent = mnuinfc.menuvalue 
 where 1=1 {$sqlCritAdd} 
 order by sg.bgs
 limit 0, 5000
