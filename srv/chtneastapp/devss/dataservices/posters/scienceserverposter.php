@@ -185,9 +185,27 @@ class datadoers {
        $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => "");
        return $rows;      
     }
-
+    
+    function hprstatusbybiogroup($request, $passedData) { 
+        //["81948","82852"]
+       $responseCode = 503;  
+       $bgList = json_decode($passedData, true); 
+       $itemsfound = 0;
+       $dta = array();
+       if (count($bgList['biogroups']) < 0) { 
+           $responseCode = 400;
+           $msg = "YOU HAVE NOT SELECTED ANY BIOGROUPS"; 
+       } else {
+           //LOOK UP BIOGROUPS
+           $msg = count($bgList);
+       }        
+       $dta = count($bgList['biogroups']); ///TESTING LINE ONLY
+       $rows['statusCode'] = $responseCode; 
+       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+       return $rows;    
+    }
+    
 }
-
 
 class systemposts { 
 
@@ -310,7 +328,6 @@ class systemposts {
   }  
     
 }
-
 
 /*****  SUPPORTING FUNCTIONS FOR CLASSES ******/ 
 

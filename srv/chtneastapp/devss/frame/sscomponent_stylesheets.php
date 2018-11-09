@@ -25,20 +25,22 @@ class stylesheets {
   public $color_zackgrey = "48,57,71";  //#303947 
   public $color_zackcomp = "235,242,255"; //#ebf2ff
   public $color_deeppurple = "107, 18, 102";
+  public $color_aqua = "203, 232, 240";
 
-//.sectionHeadr {font-size: 1.3vh;padding: 8px; background: rgba({$this->color_dblue},1);color: rgba({$this->color_white},1);border-top: 1px solid rgba({$this->color_dblue},1); border-left: 1px solid rgba({$this->color_dblue},1); }
+  //Z-INDEX:  0-30 - Base - Level // 40-49  - Floating level // 50 Black wait screen // 50+ dialogs above wait screen 
+  
 function globalstyles($mobileInd) {
 
-    //#appcard_useraccount { border-left: 1px solid rgba({$this->color_zackgrey},1);border-right: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 49; padding: 8vh 0 0 0; background: rgba({$this->color_white},1); transition: 1s; }
-    
+ 
  $rtnThis = <<<STYLESHEET
 
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
 html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh; color: rgba({$this->color_black},1);}
  
-.appcard { border-left: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 49; padding: 7.5vh 0 0 0; background: rgba({$this->color_lgrey},1); transition: 1s; }
+.appcard { border-left: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 49; padding: 11vh 0 0 0; background: rgba({$this->color_lgrey},1); transition: 1s; }
 #standardModalBacker { position: fixed; top: 0; left: 0;  z-index: 100; background: rgba({$this->color_zackgrey},.7); height: 100vh; width: 100vw; display: none; }
 
+.material-icons {font-size: 2.3vh; }
 #topMenuHolder {position: fixed; top: 0; left: 0; width: 100vw; z-index: 50; border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
 #globalTopBar { background: rgba({$this->color_zackgrey},1); padding: .7vh 2vw .5vh 2vw; }
 #barchtnlogo {height: 4.5vh; }
@@ -129,7 +131,7 @@ return $rtnThis;
 function datacoordinator($mobileind) { 
       $rtnThis = <<<STYLESHEET
 
-body { margin: 0; margin-top: 10vh; box-sizing: border-box;  }
+body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
     
 #mainQGridHoldTbl {width: 96%;  box-sizing: border-box; margin-left: 2vw; margin-right: 2vw; }
 #gridholdingdiv {width: 100%; height: 80vh; position: relative;}
@@ -153,17 +155,22 @@ body { margin: 0; margin-top: 10vh; box-sizing: border-box;  }
 #coordinatorResultTbl { width: 99vw; border-collapse: collapse;   }
 #coordinatorResultTbl thead th { white-space: nowrap; padding: 8px 4px; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 1.3vh; text-align: left; } 
 #coordinatorResultTbl thead .cnttxt {text-align: center; }
-#coordinatorResultTbl .colorline {width: 6px; }
+#coordinatorResultTbl .colorline {width: .1vw !important; }
 
-#coordinatorResultTbl tbody td {font-size: 1.3vh; padding: 8px 6px; }
+#coordinatorResultTbl tbody td {font-size: 1.4vh; padding: 8px 6px; }
 #coordinatorResultTbl tbody .tinyText {font-size: 1vh; }
 #coordinatorResultTbl tbody .bgsLabel { font-weight: bold; }
 #coordinatorResultTbl tbody .informationalicon { color: rgba({$this->color_mgrey},1); text-align: center; }
 #coordinatorResultTbl tbody .informationalicon:hover {cursor: pointer; color: rgba({$this->color_bred},1); }
+
 #coordinatorResultTbl tbody tr {border-bottom: 1px solid rgba({$this->color_mgrey},1); }
 #coordinatorResultTbl tbody tr:nth-child(even) {background: rgba({$this->color_lgrey},1); }
 #coordinatorResultTbl tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
-#coordinatorResultTbl tbody .qmsiconholder { text-align: center; } 
+#coordinatorResultTbl tbody tr[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
+
+#coordinatorResultTbl .strikeout { text-decoration: line-through; }
+#coordinatorResultTbl tbody .qmsiconholder { text-align: center; font-size: 1vh; } 
+.qms .material-icons {font-size: 2.1vh; }
 #coordinatorResultTbl tbody .qmsiconholders { text-align: center; background: rgba({$this->color_bred}, 1); color: rgba({$this->color_white},1);  }
 #coordinatorResultTbl tbody .qmsiconholderl { text-align: center; background: rgba({$this->color_deeppurple}, 1); color: rgba({$this->color_white},1); } 
 #coordinatorResultTbl tbody .qmsiconholderr { text-align: center; background: rgba({$this->color_dullyellow}, 1); color: rgba({$this->color_dblue},1); } 
@@ -172,6 +179,10 @@ body { margin: 0; margin-top: 10vh; box-sizing: border-box;  }
 
 #coordinatorResultTbl tbody .ttholder { position: relative; }
 #coordinatorResultTbl tbody .ttholder:hover .tt { display: block; }
+#coordinatorResultTbl tbody .ttholder .infoIconDiv {float: left; }
+#coordinatorResultTbl tbody .ttholder .infoTxtDspDiv {position: absolute; background: rgba({$this->color_aqua},1); min-width: 20vw;  max-width: 35vw; z-index: 40; left: 2vw; display: none; padding: 8px; box-sizing: border-box; font-size: 1.8vh; }
+#coordinatorResultTbl tbody .ttholder .infoTxtDspDiv:after{content:'';position:absolute;border:15px solid transparent;border-top:15px solid rgba({$this->color_aqua},1); top:0px;left:-10px;}
+#coordinatorResultTbl tbody .ttholder:hover .infoTxtDspDiv { display: block; }
 #coordinatorResultTbl tbody .tt { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; }
 #coordinatorResultTbl tbody .cntr { text-align: center; }
 #coordinatorResultTbl tbody .groupingstart {border-left: 3px solid rgba({$this->color_zackgrey},1); }

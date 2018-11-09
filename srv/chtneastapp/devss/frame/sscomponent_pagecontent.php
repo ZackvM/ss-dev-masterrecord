@@ -39,6 +39,7 @@ MAINQGRID;
 $dta = json_decode(callrestapi("GET", dataTree . "/biogroup-search/{$rqststr[2]}", serverIdent, serverpw),true);
 $itemsfound = $dta['DATA']['searchresults'][0]['itemsfound'];      
 
+if ((int)$itemsfound > 0 ) { 
 $dataTbl .= <<<TOPROW
 <table border=0 id="coordinatorResultTbl">
    <thead>
@@ -76,26 +77,18 @@ TOPROW;
 
 $pbident = "";
 foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) { 
-
     if ($pbident <> $val['pbiosample']) { 
         //GET NEW COLOR
         $colorArray = getColor($val['pbiosample']);
         $pbSqrBgColor = " style=\"background: rgba({$colorArray[0]}, {$colorArray[1]}, {$colorArray[2]},1); \" ";
         $pbident = $val['pbiosample'];
     }
-
     if ($val['bsvoid'] === 1 || $val['sgvoid'] === 1) { 
       //MARK AS VOIDED
+        $strikeoutInd = "strikeout";
+    } else { 
+        $strikeoutInd = "zck";
     }
-
-    //NOT USED IN PASSED ARRAY 
-    //$val['sdstatus'] = Shipdoc Status
-    //:{$val['statusby']} = Statused By User
-    //
-    /////////////////////////////
-
-//S
-
 
     switch ($val['qcstatuscode']) { 
       case 'S': //SUBMITTED
@@ -129,22 +122,48 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
         $qcstatustxt = "QMS Process: NOT STATUSED!";
     }
 
-
     $sglabel = preg_replace( '/[Tt]_/','',$val['bgs']);
-
-    $stsDte = (trim($val['statusdate']) === "") ? "<br>&nbsp;" : "<br><center><span class=tinyText>({$val['statusdate']})</span>";
-    $dspSD = ((int)$val['shipdocnbr'] === 0) ? "" : substr(('000000' . $val['shipdocnbr']),-6) . "<br><span class=tinyText>({$val['shipmentdate']})</span>";
+    $stsDte = (trim($val['statusdate']) === "") ? "<br>&nbsp;" : "<br><center><span class=tinyText>({$val['statusdate']})</span>";    
     $assmnt = (strtoupper(substr($val['assignedinvestigator'],0,3)) === "INV") ?  "{$val['assignedinvestigatorlname']}, {$val['assignedinvestigatorfname']} ({$val['assignedinvestigator']})<br>{$val['assignedinvestigatorinstitute']}" : "" ;
     $subsitedsp = (trim($val['subsite']) === "") ? "" : ("::" . $val['subsite']);
     $modds = (trim($val['diagnosismodifier']) === "") ? "" : ("::" . $val['diagnosismodifier']);
-
+    
+    if ((int)$val['shipdocnbr'] === 0) {
+        $dspSD = ""; 
+    } else { 
+        $dspSD = "<div class=ttholder>" . substr(('000000' . $val['shipdocnbr']),-6) . "<br><span class=tinyText>({$val['shipmentdate']})</span>";
+        if (trim($val['sdstatus']) === "") { 
+            $dspSD .= "<div class=tt>&nbsp;</div>";
+        } else { 
+            $dspSD .= "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]</div>";
+        }
+        $dspSD .= "</div>";
+    }
+    
+    $bscmt = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','',$val['bscomment']));
+    $hrcmt = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','',$val['hprquestion']));
+    $sgcmt = preg_replace('SS[Vv]\dSEGMENT COMMENTS','',$val['sgcomments']);
+    $invloc = $val['scannedlocation'];
+    
+    $cmtDsp = "";    
+    $cmtDsp .= ( trim($bscmt)  !== "" ) ? "<b>Biosample Comments</b>: {$bscmt}" : "";
+    $cmtDsp .= ( trim($hrcmt) !== "") ?  "<br><b>HPR Question</b>:  {$hrcmt}" : "";
+    $cmtDsp .= ( trim($sgcmt) !== "" ) ? "<br><b>Segment Comments</b>: {$sgcmt}" : "";
+    $cmtDsp .= ( trim($invloc) !== "" ) ?  (trim($cmtDsp) !== "") ?  "<br><b>Inventory Location</b>: {$invloc}" : "<b>Inventory Location</b>: {$invloc}" : "";
+    
+    //$sgencry = cryptservice($val['segmentid']);
+    $sgencry = $val['segmentid'];
+    
+    $moreInfo = ( trim($cmtDsp) !== "" ) ? "<div class=ttholder><div class=infoIconDiv><i class=\"material-icons informationalicon\">error_outline</i></div><div class=infoTxtDspDiv>{$cmtDsp}</div></div>" : "";
+    
+    
 $dataTbl .=  <<<LINEITEM
-<tr id="sg{$val['segmentid']}" data-selected=0 data-scannedlocation="{$val['scannedlocation']}" data-associd="{$val['associd']}" data-bscmt="{$val['bscomment']}" data-hprq="{$val['hprquestion']}" data-segcmt="{$val['sgcomments']}"  >
-  <td><i class="material-icons informationalicon">error_outline</i></td>
+<tr id="sg{$val['segmentid']}" class="{$strikeoutInd}" data-biogroup="{$val['pbiosample']}" data-segmentid="{$val['segmentid']}" data-selected="false" data-associd="{$val['associd']}" onclick="rowselector('sg{$val['segmentid']}');" ondblclick="navigateSite('segment/{$sgencry}');">
+  <td>{$moreInfo}</td>
   <td {$pbSqrBgColor} class=colorline>&nbsp;</td>
   <td valign=top class=bgsLabel>{$sglabel}</td>
   <td valign=top>{$val['segstatus']} {$stsDte}</td>
-  <td class="qmsiconholder{$clssuffix}"><div class=ttholder>{$qmsicon}<div class=tt>{$qcstatustxt}</div></div></td>
+  <td class="qms qmsiconholder{$clssuffix}"><div class=ttholder>{$qmsicon}<div class=tt>{$qcstatustxt}</div></div></td>
   <td valign=top class="groupingstart">{$val['specimencategory']}</td>
   <td valign=top>{$val['site']}{$subsitedsp}</td>
   <td valign=top>{$val['diagnosis']}{$modds}</td>
@@ -169,7 +188,12 @@ $dataTbl .=  <<<LINEITEM
 </tr>
 LINEITEM;
 }
-$dataTbl .= "</tbody></table>";
+$dataTbl .= "</tbody></table><p>&nbsp;<p>&nbsp;<p>&nbsp;<p>";
+} else { 
+    $dataTbl = "<h1>NO BIOSAMPLES FOUND MATCHING YOUR CRITERIA.  CLICK THE \"NEW SEARCH\" BUTTON AND TRY TO BROADEN YOUR SEARCH.</h1>";
+}
+
+
 
 $dspTbl = <<<DSPTHIS
 <table border=0><tr><td>Items found: {$itemsfound}</td></tr>
@@ -305,7 +329,7 @@ $rtnthis = <<<PAGEHERE
              {$dtadsp}
          </td>
     </tr>    
-</table>          
+</table>      
 PAGEHERE;
 return $rtnthis;  
 }
@@ -574,6 +598,14 @@ case 'coordinatorResultGrid':
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="navigateSite('data-coordinator');"><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Edit BG');"><tr><td><i class="material-icons">bubble_chart</i></td><td>Edit Biogroup</td></tr></table></td>        
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Edit Segment');"><tr><td><i class="material-icons">blur_circular</i></td><td>Edit Segment</td></tr></table></td>        
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('assign');"><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('create SD');"><tr><td><i class="material-icons">departure_board</i></td><td>Create Shipdoc</td></tr></table></td>  
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('View Documents');"><tr><td><i class="material-icons">file_copy</i></td><td>View Documents</td></tr></table></td>     
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Associative Groups');"><tr><td><i class="material-icons">link</i></td><td>Associative Group</td></tr></table></td>       
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('HPR Results');"><tr><td><i class="material-icons">stars</i></td><td>View HPR Results</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="sendHPRSubmitOverride();"><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Over-Ride</td></tr></table></td>           
 </tr>
 BTNTBL;
     break;

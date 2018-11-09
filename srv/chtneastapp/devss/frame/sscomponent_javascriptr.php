@@ -512,7 +512,6 @@ function updatePrepmenu(whatvalue) {
   byId('preparationDropDown').innerHTML = "&nbsp;"; 
   if (whatvalue.trim() === "") { 
   } else { 
-     //WEBSERVICE END POINT: https://dev.chtneast.org/data-services/subpreparationmenu/frozen
      var mlURL = "/sub-preparation-menu/"+whatvalue;
      universalAJAX("GET",mlURL,"",answerUpdatePrepmenu,0);
   }
@@ -536,10 +535,71 @@ function answerUpdatePrepmenu(rtnData) {
   }
 }
 
+function inArray(needle, haystack) {
+    var length = haystack.length;
+    for(var i = 0; i < length; i++) {
+        if(haystack[i] == needle) return true;
+    }
+    return false;
+}        
+        
+function rowselector(whichrow) { 
+  if (byId(whichrow)) { 
+    if (byId(whichrow).dataset.selected === "false") { 
+          //SELECT
+          byId(whichrow).dataset.selected = "true";
+        } else { 
+          //DESELECT
+          byId(whichrow).dataset.selected = "false";
+        }
+  }
+}
+        
+function  sendHPRSubmitOverride() {  
+   if (byId('coordinatorResultTbl')) { 
+      var bg = []; 
+      var seg = [];  
+      for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) { 
+        if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
+           if (!inArray(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup, bg)) { 
+              bg[bg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup;    
+              seg[seg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid;    
+           }
+        }
+      }
+      if (parseInt(bg.length) > 0) {   
+            var totalobj = new Object(); 
+            totalobj['biogroups'] = bg; 
+            totalobj['segments'] = seg;
+             var passdta = JSON.stringify(totalobj);    
+             console.log(passdta);        
+             var mlURL = "/data-doers/hpr-status-by-biogroup";
+             universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
+      } else { 
+         alert('You haven\'t selected any biogroups to submit to HPR');
+      }
+   } else { 
+      alert('Result table doesn\'t exist');    
+   }
+}
+
+function answerSendHPRSubmitOverride(rtnDta) { 
+   console.log(rtnDta);    
+}
+        
+function howManyResultsSelected() { 
+    var countr = 0;        
+    for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) { 
+        if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
+          countr++; 
+        }
+    }
+   return countr;        
+}
 
 JAVASCR;
     
-    return $rtnthis;
+return $rtnthis;
 }
 
 }
