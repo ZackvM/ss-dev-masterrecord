@@ -130,25 +130,29 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     }
 
 
+    $sglabel = preg_replace( '/[Tt]_/','',$val['bgs']);
+
     $stsDte = (trim($val['statusdate']) === "") ? "<br>&nbsp;" : "<br><center><span class=tinyText>({$val['statusdate']})</span>";
     $dspSD = ((int)$val['shipdocnbr'] === 0) ? "" : substr(('000000' . $val['shipdocnbr']),-6) . "<br><span class=tinyText>({$val['shipmentdate']})</span>";
-      $assmnt = (strtoupper(substr($val['assignedinvestigator'],0,3)) === "INV") ?  "{$val['assignedinvestigatorlname']}, {$val['assignedinvestigatorfname']} ({$val['assignedinvestigator']})<br>{$val['assignedinvestigatorinstitute']}" : "" ;
+    $assmnt = (strtoupper(substr($val['assignedinvestigator'],0,3)) === "INV") ?  "{$val['assignedinvestigatorlname']}, {$val['assignedinvestigatorfname']} ({$val['assignedinvestigator']})<br>{$val['assignedinvestigatorinstitute']}" : "" ;
+    $subsitedsp = (trim($val['subsite']) === "") ? "" : ("::" . $val['subsite']);
+    $modds = (trim($val['diagnosismodifier']) === "") ? "" : ("::" . $val['diagnosismodifier']);
 
 $dataTbl .=  <<<LINEITEM
 <tr id="sg{$val['segmentid']}" data-selected=0 data-scannedlocation="{$val['scannedlocation']}" data-associd="{$val['associd']}" data-bscmt="{$val['bscomment']}" data-hprq="{$val['hprquestion']}" data-segcmt="{$val['sgcomments']}"  >
   <td><i class="material-icons informationalicon">error_outline</i></td>
   <td {$pbSqrBgColor} class=colorline>&nbsp;</td>
-  <td valign=top class=bgsLabel>{$val['bgs']}</td>
+  <td valign=top class=bgsLabel>{$sglabel}</td>
   <td valign=top>{$val['segstatus']} {$stsDte}</td>
   <td class="qmsiconholder{$clssuffix}"><div class=ttholder>{$qmsicon}<div class=tt>{$qcstatustxt}</div></div></td>
   <td valign=top class="groupingstart">{$val['specimencategory']}</td>
-  <td valign=top>{$val['site']} - {$val['subsite']}</td>
-  <td valign=top>{$val['diagnosis']} - {$val['diagnosismodifier']}</td>
+  <td valign=top>{$val['site']}{$subsitedsp}</td>
+  <td valign=top>{$val['diagnosis']}{$modds}</td>
   <td valign=top>{$val['metssite']}</td>
   <td valign=top class=groupingstart>{$val['procurementdate']}</td>
   <td valign=top><div class=ttholder>{$val['procuringinstitutioncode']}<div class=tt>{$val['procuringinstitution']}</div></div></td>
   <td valign=top class="groupingstart cntr">{$val['phiage']}</td>
-  <td valign=top class="cntr">{$val['phirace']}</td>
+  <td valign=top class="cntr"><div class=ttholder>{$val['phiracecode']}<div class=tt>{$val['phirace']}</div></div></td>
   <td valign=top class="cntr">{$val['phigender']}</td>
   <td valign=top class="cntr">{$val['cxind']}</td>
   <td valign=top class="cntr">{$val['rxind']}</td>

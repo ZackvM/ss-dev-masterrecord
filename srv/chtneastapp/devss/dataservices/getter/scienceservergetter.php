@@ -691,7 +691,8 @@ select bs.pbiosample
       , ifnull(bs.qcprocstatus,'') as qcstatuscode
       , ucase(ifnull(mnuqms.dspvalue,'')) as qcstatus
       , ifnull(bs.pxiage,'') as phiage
-      , ucase(substr(ifnull(bs.pxirace,''),1,3)) as phirace
+      , ucase(substr(ifnull(bs.pxirace,''),1,3)) as phiracecode
+      , ucase(ifnull(bs.pxirace,'')) as phirace
       , ifnull(bs.pxigender,'') as phigender
       , ifnull(bs.proctype,'') as proctype
       , ifnull(date_format(sg.procurementdate,'%m/%d/%Y'),'') as procurementdate 
