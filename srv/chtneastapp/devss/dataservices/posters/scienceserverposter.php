@@ -197,7 +197,26 @@ class datadoers {
            $msg = "YOU HAVE NOT SELECTED ANY BIOGROUPS"; 
        } else {
            //LOOK UP BIOGROUPS
-           $msg = count($bgList);
+           $errorind = 0; 
+           $errormsg = "";
+           foreach ($bgList['biogroups'] as $bgkey => $bgval) { 
+           //1) CHECK GET QMS STATUS OF BIOGROUP
+           //2) CHECK THAT THERE IS A PATHOLOGY REPORT
+           //3) SEE IF SEGID IS A SLIDE
+           //4) SEE IF SEGID IS ASSIGNED TO QC
+             $bg = $bgval; 
+             $segid = $bgList['segments'][$bgkey]   
+
+               $msg .= " .. {$bgkey} => {$bgval} // {$bgList['segments'][$bgkey]} " ; 
+
+           }
+
+
+
+
+
+
+
        }        
        $dta = count($bgList['biogroups']); ///TESTING LINE ONLY
        $rows['statusCode'] = $responseCode; 
