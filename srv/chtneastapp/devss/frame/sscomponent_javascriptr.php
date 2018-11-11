@@ -359,7 +359,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (byId('btnGenBioSearchSubmit')) { 
     byId('btnGenBioSearchSubmit').addEventListener('click', function() {
-      submitqueryrequest('bioqry');
+      //TODO: CHECK FIELDS EXIST
+      var dta = new Object();
+      var criteriagiven = 0;
+      dta['qryType'] = 'BIO';
+      dta['BG'] = byId('qryBG').value.trim(); 
+      dta['procInst'] = byId('qryProcInstValue').value.trim(); 
+      dta['segmentStatus'] = byId('qrySegStatusValue').value.trim(); 
+      dta['qmsStatus'] = byId('qryHPRStatusValue').value.trim(); 
+      dta['procDateFrom'] = byId('bsqueryFromDateValue').value.trim();
+      dta['procDateTo'] = byId('bsqueryToDateValue').value.trim();
+      dta['shipDateFrom'] = byId('shpQryFromDateValue').value.trim();  
+      dta['shipDateTo'] = byId('shpQryToDateValue').value.trim();  
+      dta['investigatorCode'] = byId('qryInvestigator').value.trim(); 
+      dta['shipdocnbr'] = byId('qryShpDocNbr').value.trim(); 
+      dta['shipdocstatus'] = byId('qryShpStatusValue').value.trim();
+      dta['site'] = byId('qryDXDSite').value.trim();
+      dta['specimencategory'] = byId('qryDXDSpecimen').value.trim(); 
+      dta['phiage'] = byId('phiAge').value.trim(); 
+      dta['phirace'] = byId('phiRaceValue').value.trim(); 
+      dta['phisex'] = byId('phiSexValue').value.trim(); 
+      dta['procType'] = byId('qryProcTypeValue').value.trim(); 
+      dta['PrepMethod'] = byId('qryPreparationMethodValue').value.trim(); 
+      dta['preparation'] = byId('qryPreparationValue').value.trim(); 
+      criteriagiven = 1;
+      if (criteriagiven === 1) { 
+        var passdta = JSON.stringify(dta);    
+        //console.log(passdta);        
+        var mlURL = "/data-doers/make-query-request";
+        universalAJAX("POST",mlURL,passdta,answerQueryRequest,1);           
+      }
     }, false);
   }
 
@@ -378,14 +407,106 @@ document.addEventListener('DOMContentLoaded', function() {
 //    }, false );
   }
 
+  if (byId('btnBarAssignSample')) { 
+    byId('btnBarAssignSample').addEventListener('click',function() { 
+      var selection = gatherSelection();
+      if (parseInt(selection['responseCode']) === 200) { 
+        console.log(selection['itemsSelect']+" --- "+JSON.stringify(selection['selectionListing']));
+      } else { 
+        alert(selection['message']);
+      }
+    }, false );
+  }
+
+
+  if (byId('btnBarSubmitHPR')) { 
+    byId('btnBarSubmitHPR').addEventListener('click', function() { 
+
+      if (byId('coordinatorResultTbl')) { 
+        var bg = []; 
+        var seg = [];  
+        for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) { 
+          if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
+            if (!inArray(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup, bg)) { 
+              bg[bg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup;    
+              seg[seg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid;    
+            }
+          }
+        }
+        if (parseInt(bg.length) > 0) {   
+          var totalobj = new Object(); 
+          totalobj['biogroups'] = bg; 
+          totalobj['segments'] = seg;
+          var passdta = JSON.stringify(totalobj);    
+          console.log(passdta);        
+          var mlURL = "/data-doers/hpr-status-by-biogroup";
+          universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
+        } else { 
+          alert('You haven\'t selected any biogroups to submit to HPR');
+        }
+      } else { 
+        alert('Result table doesn\'t exist');    
+      }
+
+
+
+    }, false);
+  }
+
   var fieldinputs = document.querySelectorAll('.inputFld'), i;
   for (i = 0; i < fieldinputs.length; i++) { 
       byId(fieldinputs[i].id).addEventListener('focus', function() { 
          closeAllSuggestions();
       });
-  }
-  
+  }  
 }, false);
+
+function gatherSelection() { 
+  var responseCode = 400;
+  var msg = "";
+  var sglist = new Object();
+  var returnObj = new Object(); 
+  var itemsSelected = 0;
+  var cntr = 0;
+  if (byId('coordinatorResultTbl')) { 
+    for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) {  
+      if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
+        
+        sglist[cntr] = {biogroup:byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup,segmentid:byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid};     
+        cntr++;
+
+        //if (!inArray(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup, bg)) { 
+        //bg[bg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup;    
+        //}
+
+      }
+    }
+    itemsSelected = cntr;
+    if (itemsSelected > 0) { 
+      responseCode = 200;
+    } else { 
+      msg = 'You haven\'t selected any samples';
+    }
+  } else { 
+      msg = 'The \'Result\' table doesn\'t have any listed samples.  Run a valid query before performing actions.';    
+  }
+  returnObj['responseCode'] = responseCode;
+  returnObj['message'] = msg;
+  returnObj['itemsSelect'] = itemsSelected;
+  returnObj['selectionListing'] = sglist;
+  console.log(JSON.stringify(returnObj));
+  return returnObj; 
+}
+
+function howManyResultsSelected() { 
+    var countr = 0;        
+    for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) { 
+        if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
+          countr++; 
+        }
+    }
+   return countr;        
+}
 
 function getSuggestions(whichfield) { 
 switch (whichfield) { 
@@ -457,44 +578,6 @@ function answerGetCalendar(rtnData) {
   }
 }
 
-function submitqueryrequest(whichquery) { 
-  var dta = new Object();
-  var criteriagiven = 0;
-  switch (whichquery) {
-    case 'bioqry':
-      dta['qryType'] = 'BIO';
-      dta['BG'] = byId('qryBG').value.trim(); 
-      dta['procInst'] = byId('qryProcInstValue').value.trim(); 
-      dta['segmentStatus'] = byId('qrySegStatusValue').value.trim(); 
-      dta['qmsStatus'] = byId('qryHPRStatusValue').value.trim(); 
-      dta['procDateFrom'] = byId('bsqueryFromDateValue').value.trim();
-      dta['procDateTo'] = byId('bsqueryToDateValue').value.trim();
-      dta['shipDateFrom'] = byId('shpQryFromDateValue').value.trim();  
-      dta['shipDateTo'] = byId('shpQryToDateValue').value.trim();  
-      dta['investigatorCode'] = byId('qryInvestigator').value.trim(); 
-      dta['shipdocnbr'] = byId('qryShpDocNbr').value.trim(); 
-      dta['shipdocstatus'] = byId('qryShpStatusValue').value.trim();
-      dta['site'] = byId('qryDXDSite').value.trim();
-      dta['specimencategory'] = byId('qryDXDSpecimen').value.trim(); 
-      dta['phiage'] = byId('phiAge').value.trim(); 
-      dta['phirace'] = byId('phiRaceValue').value.trim(); 
-      dta['phisex'] = byId('phiSexValue').value.trim(); 
-      dta['procType'] = byId('qryProcTypeValue').value.trim(); 
-      dta['PrepMethod'] = byId('qryPreparationMethodValue').value.trim(); 
-      dta['preparation'] = byId('qryPreparationValue').value.trim(); 
-      criteriagiven = 1;
-    break; 
-    default: 
-      return null;
-  }
-  if (criteriagiven === 1) { 
-    var passdta = JSON.stringify(dta);    
-    //console.log(passdta);        
-    var mlURL = "/data-doers/make-query-request";
-    universalAJAX("POST",mlURL,passdta,answerQueryRequest,1);           
-  }
-}
-
 function answerQueryRequest(rtnData) { 
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var rsp = JSON.parse(rtnData['responseText']); 
@@ -555,47 +638,10 @@ function rowselector(whichrow) {
   }
 }
         
-function  sendHPRSubmitOverride() {  
-   if (byId('coordinatorResultTbl')) { 
-      var bg = []; 
-      var seg = [];  
-      for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) { 
-        if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
-           if (!inArray(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup, bg)) { 
-              bg[bg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup;    
-              seg[seg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid;    
-           }
-        }
-      }
-      if (parseInt(bg.length) > 0) {   
-            var totalobj = new Object(); 
-            totalobj['biogroups'] = bg; 
-            totalobj['segments'] = seg;
-             var passdta = JSON.stringify(totalobj);    
-             console.log(passdta);        
-             var mlURL = "/data-doers/hpr-status-by-biogroup";
-             universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
-      } else { 
-         alert('You haven\'t selected any biogroups to submit to HPR');
-      }
-   } else { 
-      alert('Result table doesn\'t exist');    
-   }
-}
-
 function answerSendHPRSubmitOverride(rtnDta) { 
    console.log(rtnDta);    
 }
         
-function howManyResultsSelected() { 
-    var countr = 0;        
-    for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) { 
-        if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
-          countr++; 
-        }
-    }
-   return countr;        
-}
 
 JAVASCR;
     

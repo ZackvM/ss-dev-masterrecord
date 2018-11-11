@@ -205,7 +205,7 @@ class datadoers {
            //3) SEE IF SEGID IS A SLIDE
            //4) SEE IF SEGID IS ASSIGNED TO QC
              $bg = $bgval; 
-             $segid = $bgList['segments'][$bgkey]   
+             $segid = $bgList['segments'][$bgkey];   
 
                $msg .= " .. {$bgkey} => {$bgval} // {$bgList['segments'][$bgkey]} " ; 
 

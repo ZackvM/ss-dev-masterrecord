@@ -152,8 +152,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $cmtDsp .= ( trim($invloc) !== "" ) ?  (trim($cmtDsp) !== "") ?  "<br><b>Inventory Location</b>: {$invloc}" : "<b>Inventory Location</b>: {$invloc}" : "";
     
     //$sgencry = cryptservice($val['segmentid']);
-    $sgencry = $val['segmentid'];
-    
+    $sgencry = $val['segmentid']; 
     $moreInfo = ( trim($cmtDsp) !== "" ) ? "<div class=ttholder><div class=infoIconDiv><i class=\"material-icons informationalicon\">error_outline</i></div><div class=infoTxtDspDiv>{$cmtDsp}</div></div>" : "";
     
     
@@ -600,12 +599,12 @@ $innerBar = <<<BTNTBL
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="navigateSite('data-coordinator');"><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Edit BG');"><tr><td><i class="material-icons">bubble_chart</i></td><td>Edit Biogroup</td></tr></table></td>        
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Edit Segment');"><tr><td><i class="material-icons">blur_circular</i></td><td>Edit Segment</td></tr></table></td>        
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('assign');"><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('create SD');"><tr><td><i class="material-icons">departure_board</i></td><td>Create Shipdoc</td></tr></table></td>  
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('View Documents');"><tr><td><i class="material-icons">file_copy</i></td><td>View Documents</td></tr></table></td>     
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Associative Groups');"><tr><td><i class="material-icons">link</i></td><td>Associative Group</td></tr></table></td>       
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('HPR Results');"><tr><td><i class="material-icons">stars</i></td><td>View HPR Results</td></tr></table></td> 
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="sendHPRSubmitOverride();"><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Over-Ride</td></tr></table></td>           
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarSubmitHPR><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Over-Ride</td></tr></table></td>           
 </tr>
 BTNTBL;
     break;
