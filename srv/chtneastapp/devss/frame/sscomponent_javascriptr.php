@@ -412,6 +412,8 @@ document.addEventListener('DOMContentLoaded', function() {
       var selection = gatherSelection();
       if (parseInt(selection['responseCode']) === 200) { 
         console.log(selection['itemsSelect']+" --- "+JSON.stringify(selection['selectionListing']));
+        //var mlURL = "/data-doers/hpr-status-by-biogroup";
+        //  universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
       } else { 
         alert(selection['message']);
       }
@@ -421,35 +423,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (byId('btnBarSubmitHPR')) { 
     byId('btnBarSubmitHPR').addEventListener('click', function() { 
-
-      if (byId('coordinatorResultTbl')) { 
-        var bg = []; 
-        var seg = [];  
-        for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) { 
-          if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
-            if (!inArray(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup, bg)) { 
-              bg[bg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup;    
-              seg[seg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid;    
-            }
-          }
-        }
-        if (parseInt(bg.length) > 0) {   
-          var totalobj = new Object(); 
-          totalobj['biogroups'] = bg; 
-          totalobj['segments'] = seg;
-          var passdta = JSON.stringify(totalobj);    
-          console.log(passdta);        
-          var mlURL = "/data-doers/hpr-status-by-biogroup";
-          universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
-        } else { 
-          alert('You haven\'t selected any biogroups to submit to HPR');
-        }
+      var selection = gatherSelection();
+      if (parseInt(selection['responseCode']) === 200) { 
+        var passdta = JSON.stringify(selection['selectionListing']);
+        var mlURL = "/data-doers/hpr-status-by-biogroup";
+        universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
       } else { 
-        alert('Result table doesn\'t exist');    
+        alert(selection['message']);
       }
-
-
-
     }, false);
   }
 
@@ -650,3 +631,34 @@ return $rtnthis;
 
 }
 
+
+
+
+/*
+ *  BACKUP CODE 
+ *
+      if (byId('coordinatorResultTbl')) { 
+        var bg = []; 
+        var seg = [];  
+        for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) { 
+          if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
+            if (!inArray(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup, bg)) { 
+              bg[bg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup;    
+              seg[seg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid;    
+            }
+          }
+        }
+        if (parseInt(bg.length) > 0) {   
+          var totalobj = new Object(); 
+          totalobj['biogroups'] = bg; 
+          totalobj['segments'] = seg;
+          var passdta = JSON.stringify(totalobj);    
+          console.log(passdta);        
+          var mlURL = "/data-doers/hpr-status-by-biogroup";
+          universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
+        } else { 
+          alert('You haven\'t selected any biogroups to submit to HPR');
+        }
+      } else { 
+        alert('Result table doesn\'t exist');    
+      }
