@@ -2,11 +2,11 @@
 
 class defaultpageelements {
 
-function appcarddisplay($whichpage, $whichUsr) { 
+function appcarddisplay($whichpage, $whichUsr, $rqststr) { 
 //USER: {"statusCode":200,"loggedsession":"fhv3lfj32bcp5qbdd1egiqqjb6","dbuserid":1,"userid":"proczack","":"Zack von Menchhofen","useremail":null,"chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":21,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""}]],["434","HPR-QMS","",[]],["472","REPORTS","",[]],["473","UTILITIES","",[]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]}$thi
 $thisAcct = "";
 $allAcct = json_encode($whichUsr);
-$hlpfile = buildHelpFiles($whichpage);
+$hlpfile = buildHelpFiles($whichpage, $rqststr);
 
 
 
@@ -147,23 +147,32 @@ function modalbackbuilder($whichpage) {
 }
 
 function modaldialogbuilder($whichpage) {
-  
-  $thisModDialog = "<div id=standardModalDialog></div>";
-
-    return $thisModDialog;
+   $thisModDialog = ""; 
+   switch ($whichpage) { 
+       case 'datacoordinator': 
+              $thisModDialog = "<div id=standardModalDialog></div>";
+       break;
+   }
+   return $thisModDialog;
 }    
 
 }
 
 
-function buildHelpFiles($whichpage) { 
+function buildHelpFiles($whichpage, $request) { 
 
+    $c = count($request);
+    if ((int)$c > 2) { 
+        $whichpage .= ":subpage";
+    }
+    
     //TODO - PULL FROM A WEB SERVICE    
     require(genAppFiles . "/dataconn/sspdo.zck"); 
     $hlpSQL = "SELECT ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt FROM four.base_ss7_help where screenreference = :pgename";
     $hlpR = $conn->prepare($hlpSQL); 
     $hlpR->execute(array(':pgename' => $whichpage));
     if ($hlpR->rowCount() < 1) { 
+
         $rthis = <<<RTNTHIS
 
    <div id=hlpHolderDiv>
@@ -172,7 +181,7 @@ function buildHelpFiles($whichpage) {
    <div id=hlpSubTitle>-Sub Title-</div>            
    <div id=hlpByLine>zacheryv@mail.med.upenn.edu / September 25, 2018</div>             
    <div id=hlpText>
-       There is no help file for this ScienceServer screen.  
+       There is no help file for this ScienceServer screen.  ({$whichpage} -- {$request[1]} , {$request[2]}  {$c}  )  
                 
    </div>
    </div>                

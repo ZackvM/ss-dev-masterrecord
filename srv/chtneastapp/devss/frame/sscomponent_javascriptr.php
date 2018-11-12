@@ -411,15 +411,15 @@ document.addEventListener('DOMContentLoaded', function() {
     byId('btnBarAssignSample').addEventListener('click',function() { 
       var selection = gatherSelection();
       if (parseInt(selection['responseCode']) === 200) { 
-        console.log(selection['itemsSelect']+" --- "+JSON.stringify(selection['selectionListing']));
-        //var mlURL = "/data-doers/hpr-status-by-biogroup";
-        //  universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
+        var passdta = JSON.stringify(selection['selectionListing']);
+        console.log(passdta);
+        var mlURL = "/data-doers/assign-biogroup";
+        universalAJAX("POST",mlURL,passdta,answerAssignBG,1);   
       } else { 
         alert(selection['message']);
       }
     }, false );
   }
-
 
   if (byId('btnBarSubmitHPR')) { 
     byId('btnBarSubmitHPR').addEventListener('click', function() { 
@@ -427,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (parseInt(selection['responseCode']) === 200) { 
         var passdta = JSON.stringify(selection['selectionListing']);
         var mlURL = "/data-doers/hpr-status-by-biogroup";
-        universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
+//        universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
       } else { 
         alert(selection['message']);
       }
@@ -475,7 +475,7 @@ function gatherSelection() {
   returnObj['message'] = msg;
   returnObj['itemsSelect'] = itemsSelected;
   returnObj['selectionListing'] = sglist;
-  console.log(JSON.stringify(returnObj));
+  //console.log(JSON.stringify(returnObj));
   return returnObj; 
 }
 
@@ -568,6 +568,10 @@ function answerQueryRequest(rtnData) {
     var rsp = JSON.parse(rtnData['responseText']); 
     navigateSite("data-coordinator/"+rsp['DATA']['coordsearchid']);
   }        
+}
+        
+function answerAssignBG(rtnData) { 
+   alert(JSON.stringify(rtnData));        
 }
                
 function updatePrepmenu(whatvalue) { 

@@ -232,6 +232,7 @@ RTNTHIS;
 {$pgBody}
 {$pgMenu}
 {$pgModal}
+{$pgDialogs}    
 </body>
 </html>
 RTNTHIS;

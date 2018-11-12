@@ -105,7 +105,6 @@ function globalmenu($request) {
      return $rows;
 }
 
-
 function template($whichobj,$rqst) { 
     session_start();
     $responseCode = 500;
@@ -207,8 +206,6 @@ function biogroupsearch($whichobj, $rqst) {
     return $rows;  
 }
 
-
-
 function docsrch($whichobj, $rqst) { 
     session_start();
     $responseCode = 500;   
@@ -290,6 +287,10 @@ class globalMenus {
 
     function allsegmentstati() {
       return "SELECT ucase(ifnull(mnu.dspvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'SEGMENTSTATUS' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+    
+    function menusegmentstatus() {
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'SEGMENTSTATUS' and mnu.dspInd = 1 order by mnu.dsporder";
     }
 
     function allshipdocstatus() {
@@ -685,7 +686,8 @@ select bs.pbiosample
       , bs.voidind bsvoid 
       , sg.voidind sgvoid
       , ucase(ifnull(sg.bgs,'')) as bgs
-      , sg.segstatus
+      , sg.segstatus as segstatuscode
+      , ifnull(mnuseg.dspvalue,'ERRROR') as segstatus        
       , ifnull(date_format(sg.statusdate,'%m/%d/%Y'),'') as statusdate
       , ifnull(sg.statusby,'') as statusby
       , ifnull(bs.qcprocstatus,'') as qcstatuscode
@@ -738,8 +740,9 @@ left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'M
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'cx') as mnucx on bs.chemoind = mnucx.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'rx') as mnurx on bs.radind = mnurx.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') as mnupr on bs.pathreport = mnupr.menuvalue
-left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INFC') as mnuinfc on bs.informedconsent = mnuinfc.menuvalue 
-where 1=1 {$sqlCritAdd} 
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INFC') as mnuinfc on bs.informedconsent = mnuinfc.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus mnu where mnu.menu = 'SEGMENTSTATUS') as mnuseg on sg.segstatus = mnuseg.menuvalue              
+where 1=1 and sg.voidind <> 1 and bs.voidind <> 1   {$sqlCritAdd} 
 order by sg.bgs
 limit 0, 5000
 SQLSTMT;

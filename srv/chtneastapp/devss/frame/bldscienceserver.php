@@ -81,7 +81,7 @@ function getPageElements($whichpage, $rqststr, $mobileInd, $usrmetrics) {
   $elArr['scripts']     .=   (method_exists($js,$whichpage) ? $js->$whichpage($rqststr) : "");
 
   //CONTROL BARS GET BUILT HERE --------------------------------------------------------------   
-  $elArr['acctdsp'] =   (method_exists($oe,'appcarddisplay') ? $oe->appcarddisplay($whichpage, $usrmetrics ) : "");
+  $elArr['acctdsp'] =   (method_exists($oe,'appcarddisplay') ? $oe->appcarddisplay($whichpage, $usrmetrics, $rqststr ) : "");
   $elArr['controlbars']  =   (method_exists($oe,'menubuilder') ? $oe->menubuilder($whichpage, $usrmetrics ) : "");     
   $elArr['modalscreen']  =   (method_exists($oe,'modalbackbuilder') ? $oe->modalbackbuilder($whichpage) : "");
   $elArr['moddialog']    =   (method_exists($oe,'modaldialogbuilder') ? $oe->modaldialogbuilder($whichpage) : "");

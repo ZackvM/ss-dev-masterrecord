@@ -446,7 +446,7 @@ function buildBSGrid() {
   }
   $ptype .= "</table>";
 
-  $segstatusarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allsegmentstati",$si,$sp),true);
+  $segstatusarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/menusegmentstatus",$si,$sp),true);
   $seg = "<table border=1><tr><td align=right onclick=\"fillField('qrySegStatus','','');\">[clear]</td></tr>";
   foreach ($segstatusarr['DATA'] as $segval) { 
     $seg .= "<tr><td onclick=\"fillField('qrySegStatus','{$segval['lookupvalue']}','{$segval['menuvalue']}');\">{$segval['menuvalue']}</td></tr>";

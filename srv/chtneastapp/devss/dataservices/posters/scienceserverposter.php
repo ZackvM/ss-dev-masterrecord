@@ -192,37 +192,69 @@ class datadoers {
        $bgList = json_decode($passedData, true); 
        $itemsfound = 0;
        $dta = array();
-       if (count($bgList['biogroups']) < 0) { 
-           $responseCode = 400;
-           $msg = "YOU HAVE NOT SELECTED ANY BIOGROUPS"; 
-       } else {
+       //if (count($bgList['biogroups']) < 0) { 
+       //    $responseCode = 400;
+       //    $msg = "YOU HAVE NOT SELECTED ANY BIOGROUPS"; 
+       //} else {
            //LOOK UP BIOGROUPS
-           $errorind = 0; 
-           $errormsg = "";
-           foreach ($bgList['biogroups'] as $bgkey => $bgval) { 
+       //    $errorind = 0; 
+       //    $errormsg = "";
+       //    foreach ($bgList['biogroups'] as $bgkey => $bgval) { 
            //1) CHECK GET QMS STATUS OF BIOGROUP
            //2) CHECK THAT THERE IS A PATHOLOGY REPORT
            //3) SEE IF SEGID IS A SLIDE
            //4) SEE IF SEGID IS ASSIGNED TO QC
-             $bg = $bgval; 
-             $segid = $bgList['segments'][$bgkey];   
-
-               $msg .= " .. {$bgkey} => {$bgval} // {$bgList['segments'][$bgkey]} " ; 
-
-           }
-
-
-
-
-
-
-
-       }        
-       $dta = count($bgList['biogroups']); ///TESTING LINE ONLY
+         //    $bg = $bgval; 
+         //    $segid = $bgList['segments'][$bgkey];   
+         //      $msg .= " .. {$bgkey} => {$bgval} // {$bgList['segments'][$bgkey]} " ; 
+         //  }
+       //}        
+       //$dta = count($bgList['biogroups']); ///TESTING LINE ONLY
        $rows['statusCode'] = $responseCode; 
        $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
        return $rows;    
     }
+    
+    function assignbiogroup($request, $passedData) { 
+       require(serverkeys . "/sspdo.zck");  
+       session_start(); 
+       $responseCode = 503;  
+       $pdta = json_decode($passedData, true); 
+       $itemsfound = 0;
+       $msgArr = array();
+       //$dta = array();
+        //{"0":{"biogroup":"81948","segmentid":"431100"},"1":{"biogroup":"81948","segmentid":"431101"},"2":{"biogroup":"81948","segmentid":"431104"}}
+       $errorsInd = 0;
+       foreach ($pdta as $key => $value ) { 
+           $dta .= " ... {$key} {$value['segmentid']}";
+           $chkSQL = "SELECT replace(ifnull(bgs,''),'T_','') as bgs, ifnull(segstatus,'') as segstatus, ifnull(shippeddate,'') as shippeddate, ifnull(shipdocrefid,'') as shipdocrefid FROM masterrecord.ut_procure_segment where segmentid = :segmentid";
+            $chkR = $conn->prepare($chkSQL); 
+            $chkR->execute(array(':segmentid' => $value['segmentid'] ));
+            if ($chkR->rowCount() > 0) { 
+                $r = $chkR->fetch(PDO::FETCH_ASSOC);
+                 if (strtoupper(trim($r['segstatus'])) === 'SHIPPED') { 
+                     $errorsInd = 1; 
+                     $msgArr[] .= "Sample Labelled {$r['bgs']} is already marked as shipped.  Shipped samples are not able to be assigned.";
+                 }
+         
+
+
+                
+                $errorsInd = 1;
+            } else { 
+                $errorsInd = 1; 
+                $msgArr[] .= "Segment does not Exist.  See CHTN Eastern IT (dbSegmentId: {$value['segmentid']})";
+            }            
+            if ($errorsInd === 0) { 
+                $responseCode = 200;
+            }           
+       }       
+       $msg = json_encode($msgArr);       
+       $rows['statusCode'] = $responseCode; 
+       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+       return $rows;        
+    }
+    
     
 }
 
