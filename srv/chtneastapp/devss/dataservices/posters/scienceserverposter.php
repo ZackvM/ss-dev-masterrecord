@@ -132,6 +132,12 @@ class datadoers {
              $srchSQL = "SELECT investid as investvalue, concat(trim(concat(  ifnull(invest_lname,''),', ', ifnull(invest_fname,'')  )) , if(ifnull(invest_homeinstitute,'')='','',concat(' / ',invest_homeinstitute)), ' [', ucase(ifnull(invest_division,'')),']') as dspinvest FROM vandyinvest.invest where 1=1 and (investid like :optOne or invest_fname like :optTwo or invest_lname like :optThree or invest_homeinstitute like :optFour or divisionid like :optFive) order by invest_lname";
              $srchRS = $conn->prepare($srchSQL); 
              $srchRS->execute(array(':optOne' => "{$params['given']}%", ':optTwo' => "{$params['given']}%", ':optThree' => "{$params['given']}%", ':optFour' => "{$params['given']}%", ':optFive' => "{$params['given']}%"));          
+             break;
+         case 'vandyinvest-requests':
+           
+             $srchSQL = "select rq.requestid  from vandyinvest.investtissreq rq left join vandyinvest.investproj pr on rq.projid = pr.projid where pr.investid = :investid";
+             $srchRS = $conn->prepare($srchSQL); 
+             $srchRS->execute(array(':investid' => "{$params['given']}"));          
             break; 
        }
        $rtnArray = array();
@@ -147,8 +153,6 @@ class datadoers {
            $itemsfound = 0;
            $msg = "NO SUGGESTIONS ARE MADE";
        }
-
-
        $rows['statusCode'] = $responseCode; 
        $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $rtnArray);
        return $rows;      
@@ -218,38 +222,66 @@ class datadoers {
     function assignbiogroup($request, $passedData) { 
        require(serverkeys . "/sspdo.zck");  
        session_start(); 
-       $responseCode = 503;  
+       $responseCode = 400;  
        $pdta = json_decode($passedData, true); 
        $itemsfound = 0;
        $msgArr = array();
        //$dta = array();
-        //{"0":{"biogroup":"81948","segmentid":"431100"},"1":{"biogroup":"81948","segmentid":"431101"},"2":{"biogroup":"81948","segmentid":"431104"}}
-       $errorsInd = 0;
+       //{"0":{"biogroup":"81948","segmentid":"431100"},"1":{"biogroup":"81948","segmentid":"431101"},"2":{"biogroup":"81948","segmentid":"431104"}}
+       $errorInd = 0;
+       $assignableSQL = "select menuvalue, dspvalue, assignablestatus from four.sys_master_menus where menu = 'SEGMENTSTATUS'";
+       $assignableRS = $conn->prepare($assignableSQL); 
+       $assignableRS->execute(); 
+       while ($asr = $assignableRS->fetch(PDO::FETCH_ASSOC)) { 
+         $assignableStatus[] = $asr;
+       }
+
        foreach ($pdta as $key => $value ) { 
-           $dta .= " ... {$key} {$value['segmentid']}";
-           $chkSQL = "SELECT replace(ifnull(bgs,''),'T_','') as bgs, ifnull(segstatus,'') as segstatus, ifnull(shippeddate,'') as shippeddate, ifnull(shipdocrefid,'') as shipdocrefid FROM masterrecord.ut_procure_segment where segmentid = :segmentid";
+           //$dta .= " ... {$key} {$value['segmentid']}";
+           $chkSQL = "SELECT replace(ifnull(bgs,''),'T_','') as bgs, ifnull(segstatus,'') as segstatus, ifnull(date_format(shippeddate,'%m/%d/%Y'),'') as shippeddate, ifnull(shipdocrefid,'') as shipdocrefid FROM masterrecord.ut_procure_segment where segmentid = :segmentid";
             $chkR = $conn->prepare($chkSQL); 
             $chkR->execute(array(':segmentid' => $value['segmentid'] ));
             if ($chkR->rowCount() > 0) { 
                 $r = $chkR->fetch(PDO::FETCH_ASSOC);
-                 if (strtoupper(trim($r['segstatus'])) === 'SHIPPED') { 
-                     $errorsInd = 1; 
-                     $msgArr[] .= "Sample Labelled {$r['bgs']} is already marked as shipped.  Shipped samples are not able to be assigned.";
-                 }
-         
-
-
-                
-                $errorsInd = 1;
+                //CHECK STATUS
+                $statusFound = 0;
+                foreach ($assignableStatus as $aKey => $aVal) {
+                  if (strtoupper(trim($r['segstatus'])) === strtoupper(trim($aVal['menuvalue']))) {
+                    $statusFound = 1;
+                    if ((int)$aVal['assignablestatus'] === 0) {
+                      $errorInd = 1; 
+                      $msgArr[] .= "{$r['bgs']} is statused as \"{$aVal['dspvalue']}\".  This segment status is unable to be assigned.";
+                    }
+                  }
+                }
+                if ($statusFound === 0) { 
+                  $errorInd = 1;
+                  $msgArr[] .= "Segment Label {$r['bgs']} has an invalid status.  This segment is unable to be assigned.";
+                }                
+                //CHECK SHIPDATE
+                if ($r['shippeddate'] !== "") { 
+                  $errorInd = 1;
+                  $msgArr[] .= "Segment Label {$r['bgs']} has a shipment date ({$r['shippeddate']}) .  This segment is unable to be assigned.";
+                }                
+                //CHECK SHIPDOCID 
+                if ($r['shipdocrefid'] !== "") { 
+                  $errorInd = 1;
+                  $sddsp = substr(('000000' . $r['shipdocrefid']),-6);
+                  $msgArr[] .= "Segment Label {$r['bgs']} is listed on ship-doc ({$sddsp}) .  This segment is unable to be assigned.";
+                }                
             } else { 
-                $errorsInd = 1; 
+                $errorInd = 1; 
                 $msgArr[] .= "Segment does not Exist.  See CHTN Eastern IT (dbSegmentId: {$value['segmentid']})";
             }            
-            if ($errorsInd === 0) { 
-                $responseCode = 200;
-            }           
-       }       
-       $msg = json_encode($msgArr);       
+
+       }
+
+       if ($errorInd === 0) { 
+         $responseCode = 200;
+         $dta = array('pagecontent' =>  bldDialog('dataCoordinatorBGSAssignment', $passedData));
+       }
+
+       $msg = $msgArr;       
        $rows['statusCode'] = $responseCode; 
        $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
        return $rows;        
@@ -601,6 +633,15 @@ function qryCriteriaCheckBank($rqstJSON) {
         
     return array('allowind' => $allowerror, 'errormsg' => $msg);
 }
+
+function bldDialog($whichdialog, $passedData) {  
+  $at = applicationTree; 
+  require("{$at}/sscomponent_pagecontent.php"); 
+  $bldr = new pagecontent(); 
+  $rtnDialog = $bldr->sysDialogBuilder($whichdialog, $passedData);
+  return $rtnDialog;
+}
+
 
 /********** EMAIL TEXTING 
 AT&T: number@txt.att.net (SMS), number@mms.att.net (MMS)

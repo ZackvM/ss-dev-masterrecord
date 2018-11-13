@@ -39,7 +39,13 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
  
 .appcard { border-left: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 49; padding: 11vh 0 0 0; background: rgba({$this->color_lgrey},1); transition: 1s; }
 #standardModalBacker { position: fixed; top: 0; left: 0;  z-index: 100; background: rgba({$this->color_zackgrey},.7); height: 100vh; width: 100vw; display: none; }
-#standardModalDialog {display: none; width: 40vw; height: 20vh; background: rgba({$this->color_lgrey},1); position: fixed; margin-left: -20vw; left: 50%; margin-top: -10vh; top: 50%; z-index: 51; }
+#standardModalDialog {display: none; background: rgba({$this->color_lgrey},1); position: fixed; margin-left: -20vw; left: 50%; margin-top: -10vh; top: 50%; z-index: 101; border: 2px solid rgba({$this->color_zackgrey},1); }
+
+#systemDialogClose { width: .5vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 2vh;text-align: right; padding: .3vh .1vw; }
+#systemDialogClose:hover {cursor: pointer; color: rgba({$this->color_bred},1); }
+
+#systemDialogTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 1.3vh; padding: .3vh .3vw; }
+
 
 .material-icons {font-size: 2.3vh; }
 #topMenuHolder {position: fixed; top: 0; left: 0; width: 100vw; z-index: 50; border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
@@ -189,6 +195,7 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #coordinatorResultTbl tbody .groupingstart {border-left: 3px solid rgba({$this->color_zackgrey},1); }
 #coordinatorResultTbl thead .groupingstart {border-left: 3px solid rgba({$this->color_white},1); }
 
+#selectorAssignInv {width: 10vw; }
 STYLESHEET;
 return $rtnThis;
 }  

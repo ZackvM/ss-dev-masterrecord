@@ -491,6 +491,12 @@ function runbiogroupsearchquery($srchrqstjson) {
             $fieldsQueried++;
             break;
 
+        case 'requestNbr': 
+            $sqlCritAdd .= " and ( sg.assignedReq = :reqnbr ) ";
+            $qryArr += [':reqnbr' => "{$fldvalue}"];
+            $fieldsQueried++;
+          break;
+
         case 'shipdocnbr':
              
            $sdvalue = "{$fldvalue}";
@@ -687,7 +693,7 @@ select bs.pbiosample
       , sg.voidind sgvoid
       , ucase(ifnull(sg.bgs,'')) as bgs
       , sg.segstatus as segstatuscode
-      , ifnull(mnuseg.dspvalue,'ERRROR') as segstatus        
+      , ifnull(mnuseg.dspvalue,'ERROR') as segstatus        
       , ifnull(date_format(sg.statusdate,'%m/%d/%Y'),'') as statusdate
       , ifnull(sg.statusby,'') as statusby
       , ifnull(bs.qcprocstatus,'') as qcstatuscode

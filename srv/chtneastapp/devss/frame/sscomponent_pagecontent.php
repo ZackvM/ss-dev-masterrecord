@@ -13,6 +13,65 @@ public $closeBtn = "<i class=\"material-icons\">close</i>";
 public $menuBtn = "<i class=\"material-icons\">menu</i>";
 public $checkBtn = "<i class=\"material-icons\">check</i>";
 
+
+function sysDialogBuilder($whichdialog, $passedData) {
+ 
+    switch($whichdialog) { 
+      case 'dataCoordinatorBGSAssignment': 
+
+        $titleBar = "Segment Assignment Dialog";
+        $footerBar = "";
+        $dataString = $passedData; 
+        $dta = json_decode($passedData, true);
+        $dspSegTbl .= "<table border=1><tr>";
+        $cellCntr = 0;
+        foreach ($dta as $ky => $vl) { 
+            if ($cellCntr === 3) { 
+              $dspSegTbl .= "</tr><tr>";
+              $cellCntr = 0; 
+            }
+            $dspSegTbl .= "<td>{$vl['bgslabel']}</td>";
+            $cellCntr++;
+        }
+        $dspSegTbl .= "</table>";
+        
+
+        $innerDialog = <<<DIALOGINNER
+<table border=0>
+<tr><td colspan=2 style="font-size: 1.5vh;">Please choose an investigator code and request number: <input type=hidden value='{$dataString}' id=fldBGSListing></td><td rowspan=2 valign=top>{$dspSegTbl}</td></tr>
+<tr><td>
+   <table border=0>
+   <tr><td>Investigator Id</td><td>Request #</td></tr>
+   <tr>
+       <td style="width: 10vw;"><div class=suggestionHolder><input type=text id=selectorAssignInv class="inputFld" onkeyup="selectorInvestigator();"><div id=assignInvestSuggestion class=suggestionDisplay>&nbsp;</div></div></td>
+       <td><div class=menuHolderDiv onmouseover="byId('assignInvestSuggestion').style.display = 'none'; setAssignsRequests();"><input type=text id=selectorAssignReq READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown id=requestDropDown></div></div></td>
+   </tr>
+   <tr><td>(Suggestions are made on name, institution, inv#)</td><td></td></tr>
+   </table>
+</td></tr>
+<tr><td colspan=2 align=right>BTN</td></tr>
+</table>
+
+DIALOGINNER;
+
+      break;
+      default: 
+      $innerTbl = "";
+    }
+
+  $rtnthis = <<<PAGEHERE
+<table border=0 cellspacing=0 cellpadding=0>
+<tr><td id=systemDialogTitle>{$titleBar}</td><td onclick="closeSystemDialog();" id=systemDialogClose>&times</td></tr>
+<tr><td colspan=2>
+  {$innerDialog}
+</td></tr>
+<tr><td colspan=2>{$footerBar}</td></tr>
+</table>
+PAGEHERE;
+return $rtnthis;
+}
+
+
 function datacoordinator($rqststr, $whichusr) { 
     if ((int)$whichusr->allowcoord !== 1) { 
      $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE COORDINATOR SCREEN";        
@@ -129,9 +188,20 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $modds = (trim($val['diagnosismodifier']) === "") ? "" : ("::" . $val['diagnosismodifier']);
     
     if ((int)$val['shipdocnbr'] === 0) {
-        $dspSD = ""; 
-    } else { 
-        $dspSD = "<div class=ttholder>" . substr(('000000' . $val['shipdocnbr']),-6) . "<br><span class=tinyText>({$val['shipmentdate']})</span>";
+        $dspSD = "";
+        if (trim($val['shipmentdate']) !== "") { 
+          $dspSD = "&nbsp;<br><span class=tinyText>({$val['shipmentdate']})</span>";
+        } 
+    } else {
+
+
+        if (trim($val['shipmentdate']) !== "") { 
+          $dtedspthis = "<br><span class=tinyText>({$val['shipmentdate']})</span>";
+        } else { 
+          $dtedspthis = "<br><span class=tinyText>&nbsp;</span>";
+        }
+
+        $dspSD = "<div class=ttholder>" . substr(('000000' . $val['shipdocnbr']),-6) . $dtedspthis;
         if (trim($val['sdstatus']) === "") { 
             $dspSD .= "<div class=tt>&nbsp;</div>";
         } else { 
@@ -157,7 +227,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     
     
 $dataTbl .=  <<<LINEITEM
-<tr id="sg{$val['segmentid']}" class="{$strikeoutInd}" data-biogroup="{$val['pbiosample']}" data-segmentid="{$val['segmentid']}" data-selected="false" data-associd="{$val['associd']}" onclick="rowselector('sg{$val['segmentid']}');" ondblclick="navigateSite('segment/{$sgencry}');">
+<tr id="sg{$val['segmentid']}" class="{$strikeoutInd}" data-biogroup="{$val['pbiosample']}" data-bgslabel="{$sglabel}" data-segmentid="{$val['segmentid']}" data-selected="false" data-associd="{$val['associd']}" onclick="rowselector('sg{$val['segmentid']}');" ondblclick="navigateSite('segment/{$sgencry}');">
   <td>{$moreInfo}</td>
   <td {$pbSqrBgColor} class=colorline>&nbsp;</td>
   <td valign=top class=bgsLabel>{$sglabel}</td>
@@ -480,7 +550,7 @@ foreach ($shpstatusarr['DATA'] as $shpval) {
   $shps .= "<tr><td onclick=\"fillField('qryShpStatus','{$shpval['lookupvalue']}','{$shpval['menuvalue']}');\">{$shpval['menuvalue']}</td></tr>";
 }
 $shps .= "</table>";
-$shpsts = "<div class=menuHolderDiv><input type=hidden id=qryShpStatusValue><input type=text id=qryShpStatus class=\"inputFld\" READONLY><div class=valueDropDown>{$shps}</div></div>";
+$shpsts = "<div class=menuHolderDiv><input type=hidden id=qryShpStatusValue><input type=text id=qryShpStatus class=\"inputFld\" style=\"width: 15vw;\" READONLY><div class=valueDropDown>{$shps}</div></div>";
 
 $fsCalendar = buildcalendar('shipBSQFrom'); 
 $shpFromCalendar = <<<CALENDAR
@@ -543,9 +613,14 @@ $grid = <<<BSGRID
 </table>
 
 <table>  
-<tr><td class=fldLabel>Assigned To (Investigator Id)</td><td class=fldLabel>Ship Doc Number</td><td class=fldLabel>Ship Doc Status</td></tr>
-<tr><td><div class=suggestionHolder><input type=text id=qryInvestigator class="inputFld"><div id=investSuggestion class=suggestionDisplay>&nbsp;</div></div></td><td><input type=text id=qryShpDocNbr class="inputFld" style="width: 20vw;"></td><td>{$shpsts}</td></tr>
-<tr><td>(Type Inv#, Divisional code, Name, or Institution for list of INV#s)</td><td>(Single, range or series)</td></tr>
+<tr><td class=fldLabel>Assigned To (Investigator Id)</td><td class=fldLabel>TQ-Request Id</td><td class=fldLabel>Ship Doc Number</td><td class=fldLabel>Ship Doc Status</td></tr>
+<tr>
+  <td><div class=suggestionHolder><input type=text id=qryInvestigator class="inputFld"><div id=investSuggestion class=suggestionDisplay>&nbsp;</div></div></td>
+  <td><input type=text id=qryREQ class="inputFld" style="width: 10vw;"></td>
+  <td><input type=text id=qryShpDocNbr class="inputFld" style="width: 20vw;"></td>
+  <td>{$shpsts}</td>
+</tr>
+<tr><td>(Type Inv#: for suggestion list type Divisional Code, Name, INV# or Institution.)</td><td>(REQ#)</td><td>(Single, range or series)</td></tr>
 </table>
 
 <table>
