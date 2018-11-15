@@ -99,12 +99,6 @@ if ($whichpage !== "login") {
             </div>
         </div>
 TBAR;
-  
-  
-
-//$thisMenu = <<<THISMENU
-//<div id=topMenuHolder>{$topBar}</div>             
-//THISMENU;
 } 
   return $topBar;
 }
@@ -150,7 +144,7 @@ function modaldialogbuilder($whichpage) {
    $thisModDialog = ""; 
    switch ($whichpage) { 
        case 'datacoordinator': 
-              $thisModDialog = "<div id=standardModalDialog></div>";
+           $thisModDialog = "<div id=standardModalDialog></div>";
        break;
    }
    return $thisModDialog;

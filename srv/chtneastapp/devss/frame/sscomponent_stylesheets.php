@@ -27,7 +27,7 @@ class stylesheets {
   public $color_deeppurple = "107, 18, 102";
   public $color_aqua = "203, 232, 240";
 
-  //Z-INDEX:  0-30 - Base - Level // 40-49  - Floating level // 50 Black wait screen // 50+ dialogs above wait screen 
+  //Z-INDEX:  0-30 - Base - Level // 40-49  - Floating level // 100 Black wait screen // 100+ dialogs above wait screen 
   
 function globalstyles($mobileInd) {
 
@@ -139,7 +139,7 @@ function datacoordinator($mobileind) {
       $rtnThis = <<<STYLESHEET
 
 body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
-    
+
 #mainQGridHoldTbl {width: 96%;  box-sizing: border-box; margin-left: 2vw; margin-right: 2vw; }
 #gridholdingdiv {width: 100%; height: 80vh; position: relative;}
 .gridDiv { position: absolute; top: 0; left: 0; width: 100%; height: 100%;}
@@ -196,6 +196,25 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #coordinatorResultTbl thead .groupingstart {border-left: 3px solid rgba({$this->color_white},1); }
 
 #selectorAssignInv {width: 10vw; }
+
+#assigSegHolder {border-left: rgba({$this->color_dblue},1) 1px solid; padding: 8px 4px 0 4px; }
+#segmentAssignListing { height: 20vh; overflow: auto;  }
+
+#assigningSegTbl { font-size: 1.5vh; }
+#assigningSegTbl #saTitle { text-align: center;  border-bottom: 1px solid rgba({$this->color_dblue},1); }
+#assigningSegTbl .segmentBGSNbr { border-left: 1px solid rgba({$this->color_dblue},1);border-bottom: 1px solid rgba({$this->color_dblue},1); padding: 2px 2px 0 2px; font-size: 1.2vh; }
+
+#resultTblContextMenu { position: fixed; z-index: 51; background: rgba({$this->color_white}, 1); top: -999px; left: -999px; border: 1px solid rgba({$this->color_dblue},1); display: none; }
+
+#contentMenuTbl { }
+#contentMenuTbl .contextOptionHolder { border-bottom: 1px solid rgba({$this->color_white},1); background: rgba({$this->color_white},1); }
+#contentMenuTbl .contextOptionHolder:hover { cursor: pointer; background: rgba({$this->color_lamber},1); border-bottom: 1px solid rgba({$this->color_mgrey},1);  }
+
+#contentMenuTbl .contextOptionHolder .cmOptionIcon { font-size: 2.5vh; color: rgba({$this->color_mgrey}, 1) }
+#contentMenuTbl .contextOptionHolder .cmOptionText { font-size: 1.2vh; color: rgba({$this->color_mgrey},1); }
+
+#contentMenuTbl .contextOptionHolder:hover .cmOptionIcon {color: rgba({$this->color_dblue},1); }
+#contentMenuTbl .contextOptionHolder:hover .cmOptionText {color: rgba({$this->color_dblue},1); }
 STYLESHEET;
 return $rtnThis;
 }  

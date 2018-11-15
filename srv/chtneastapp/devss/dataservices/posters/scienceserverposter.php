@@ -34,6 +34,22 @@ function __construct() {
 
 class datadoers { 
 
+    function assignsegments($request, $passdata) { 
+//{"segmentlist":"{\"0\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948001\",\"segmentid\":\"431100\"},\"1\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948003\",\"segmentid\":\"431102\"},\"2\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948004\",\"segmentid\":\"431103\"}}","investigatorid":"INV3000","requestnbr":"REQ19002"}
+      $responseCode = 400; 
+      $msg = "";
+      $itemsfound = 0;
+      $data = array();
+      $rows = array(); 
+      $qryrqst = json_decode($passdata, true);
+
+      $msg = $qryrqst['investigatorid'];
+
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $data);
+      return $rows;
+    } 
+
     function makequeryrequest($request, $passedData) { 
       $responseCode = 400; 
       $msg = "";

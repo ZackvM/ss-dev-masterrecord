@@ -19,18 +19,18 @@ function sysDialogBuilder($whichdialog, $passedData) {
     switch($whichdialog) { 
       case 'dataCoordinatorBGSAssignment': 
 
-        $titleBar = "Segment Assignment Dialog";
+        $titleBar = "Segment Assignment";
         $footerBar = "";
         $dataString = $passedData; 
         $dta = json_decode($passedData, true);
-        $dspSegTbl .= "<table border=1><tr>";
+        $dspSegTbl .= "<table border=0 id=assigningSegTbl><tr><td colspan=3 id=saTitle>Segments Being Assigned</td></tr><tr>";
         $cellCntr = 0;
         foreach ($dta as $ky => $vl) { 
             if ($cellCntr === 3) { 
               $dspSegTbl .= "</tr><tr>";
               $cellCntr = 0; 
             }
-            $dspSegTbl .= "<td>{$vl['bgslabel']}</td>";
+            $dspSegTbl .= "<td class=segmentBGSNbr>{$vl['bgslabel']}</td>";
             $cellCntr++;
         }
         $dspSegTbl .= "</table>";
@@ -38,18 +38,25 @@ function sysDialogBuilder($whichdialog, $passedData) {
 
         $innerDialog = <<<DIALOGINNER
 <table border=0>
-<tr><td colspan=2 style="font-size: 1.5vh;">Please choose an investigator code and request number: <input type=hidden value='{$dataString}' id=fldBGSListing></td><td rowspan=2 valign=top>{$dspSegTbl}</td></tr>
-<tr><td>
+<tr><td colspan=2 style="font-size: 1.8vh;padding: 8px;">Please specify an investigator code and request number: <input type=hidden value='{$dataString}' id=dialogBGSListing></td><td rowspan=3 valign=top id=assigSegHolder><div id=segmentAssignListing>{$dspSegTbl}</td></tr>
+<tr><td valign=top><center>
    <table border=0>
-   <tr><td>Investigator Id</td><td>Request #</td></tr>
+   <tr><td class=fldLabel>Investigator Id</td><td class=fldLabel>Request #</td></tr>
    <tr>
-       <td style="width: 10vw;"><div class=suggestionHolder><input type=text id=selectorAssignInv class="inputFld" onkeyup="selectorInvestigator();"><div id=assignInvestSuggestion class=suggestionDisplay>&nbsp;</div></div></td>
+       <td style="width: 10vw;"><div class=suggestionHolder><input type=text id=selectorAssignInv class="inputFld" onkeyup="selectorInvestigator(); byId('selectorAssignReq').value = '';byId('requestDropDown').innerHTML = ''; "><div id=assignInvestSuggestion class=suggestionDisplay>&nbsp;</div></div></td>
        <td><div class=menuHolderDiv onmouseover="byId('assignInvestSuggestion').style.display = 'none'; setAssignsRequests();"><input type=text id=selectorAssignReq READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown id=requestDropDown></div></div></td>
    </tr>
-   <tr><td>(Suggestions are made on name, institution, inv#)</td><td></td></tr>
+   <tr><td style="font-size: 1vh">(Suggestions on name, institution, inv#)</td><td></td></tr>
    </table>
 </td></tr>
-<tr><td colspan=2 align=right>BTN</td></tr>
+<tr><td colspan=2 align=right>
+<table><tr><td>   
+<table class=tblBtn id=btnDialogAssign style="width: 6vw;" onclick="sendSegmentAssignment('invest');" ><tr><td><center>Assign</td></tr></table>
+</td><td>
+<table class=tblBtn id=btnDialogBank style="width: 6vw;" onclick="sendSegmentAssignment('bank');"><tr><td><center>Bank</td></tr></table>
+</td></tr></table>
+
+ </td></tr>
 </table>
 
 DIALOGINNER;
@@ -227,7 +234,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     
     
 $dataTbl .=  <<<LINEITEM
-<tr id="sg{$val['segmentid']}" class="{$strikeoutInd}" data-biogroup="{$val['pbiosample']}" data-bgslabel="{$sglabel}" data-segmentid="{$val['segmentid']}" data-selected="false" data-associd="{$val['associd']}" onclick="rowselector('sg{$val['segmentid']}');" ondblclick="navigateSite('segment/{$sgencry}');">
+<tr id="sg{$val['segmentid']}" class="resultTblLine" data-biogroup="{$val['pbiosample']}" data-bgslabel="{$sglabel}" data-segmentid="{$val['segmentid']}" data-selected="false" data-associd="{$val['associd']}" onclick="rowselector('sg{$val['segmentid']}');" ondblclick="navigateSite('segment/{$sgencry}');">
   <td>{$moreInfo}</td>
   <td {$pbSqrBgColor} class=colorline>&nbsp;</td>
   <td valign=top class=bgsLabel>{$sglabel}</td>
@@ -258,6 +265,8 @@ $dataTbl .=  <<<LINEITEM
 LINEITEM;
 }
 $dataTbl .= "</tbody></table><p>&nbsp;<p>&nbsp;<p>&nbsp;<p>";
+$context = generateContextMenu('coordinatorResultGrid');
+$dataTbl .= "<div id=resultTblContextMenu>{$context}</div>";
 } else { 
     $dataTbl = "<h1>NO BIOSAMPLES FOUND MATCHING YOUR CRITERIA.  CLICK THE \"NEW SEARCH\" BUTTON AND TRY TO BROADEN YOUR SEARCH.</h1>";
 }
@@ -265,8 +274,8 @@ $dataTbl .= "</tbody></table><p>&nbsp;<p>&nbsp;<p>&nbsp;<p>";
 
 
 $dspTbl = <<<DSPTHIS
-<table border=0><tr><td>Items found: {$itemsfound}</td></tr>
-<tr><td>{$dataTbl}&nbsp;</td></tr>
+<table border=0><tr><td>Items found: {$itemsfound}</td><td align=right>(right-click grid for context menu)</td></tr>
+<tr><td colspan=2>{$dataTbl}&nbsp;</td></tr>
 </table>
 DSPTHIS;
 
@@ -672,20 +681,15 @@ case 'coordinatorResultGrid':
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="navigateSite('data-coordinator');"><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Edit BG');"><tr><td><i class="material-icons">bubble_chart</i></td><td>Edit Biogroup</td></tr></table></td>        
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Edit Segment');"><tr><td><i class="material-icons">blur_circular</i></td><td>Edit Segment</td></tr></table></td>        
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('export');"><tr><td><i class="material-icons">import_export</i></td><td>Export Results</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Toggle Select');"><tr><td><i class="material-icons">get_app</i></td><td>Toggle Select</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('create SD');"><tr><td><i class="material-icons">departure_board</i></td><td>Create Shipdoc</td></tr></table></td>  
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('View Documents');"><tr><td><i class="material-icons">file_copy</i></td><td>View Documents</td></tr></table></td>     
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Associative Groups');"><tr><td><i class="material-icons">link</i></td><td>Associative Group</td></tr></table></td>       
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('HPR Results');"><tr><td><i class="material-icons">stars</i></td><td>View HPR Results</td></tr></table></td> 
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarSubmitHPR><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Over-Ride</td></tr></table></td>           
 </tr>
 BTNTBL;
     break;
 }
-
-
 
 $rtnthis = <<<RTNTHIS
 <div id=pageTopButtonBar>
@@ -694,7 +698,33 @@ $rtnthis = <<<RTNTHIS
 {$innerBar}
 </table>
 </div>
+RTNTHIS;
+return $rtnthis;
+}
 
+function generateContextMenu($whichpage) { 
+
+//TODO:  DUMP THE BUTTONS IN TO A DATABASE AND GRAB WITH A WEBSERVICE
+    
+switch ($whichpage) { 
+case 'coordinatorResultGrid':
+$innerBar = <<<BTNTBL
+<tr><td class=contextOptionHolder><table onclick="alert('Edit BG');"><tr><td><i class="material-icons cmOptionIcon">bubble_chart</i></td><td id=EDITBGDSP class=cmOptionText>Edit Biogroup</td></tr></table></td></tr>        
+<tr><td class=contextOptionHolder><table onclick="alert('Edit Segment');"><tr><td><i class="material-icons cmOptionIcon">blur_circular</i></td><td id=EDITSEGDSP class=cmOptionText>Edit Segment</td></tr></table></td></tr>        
+<tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Pathology Report</td></tr></table></td></tr>     
+<tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Shipment Document</td></tr></table></td></tr>     
+<tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Chart Review</td></tr></table></td></tr>     
+<tr><td class=contextOptionHolder><table onclick="alert('Associative Groups');"><tr><td><i class="material-icons cmOptionIcon">link</i></td><td class=cmOptionText>Associative Group</td></tr></table></td></tr>       
+<tr><td class=contextOptionHolder><table onclick="alert('HPR Results');"><tr><td><i class="material-icons cmOptionIcon">stars</i></td><td class=cmOptionText>View HPR Results</td></tr></table></td></tr> 
+BTNTBL;
+    break;
+}
+
+$rtnthis = <<<RTNTHIS
+  <input type=hidden id=clickedElementId>
+  <table border=0 cellspacing=0 cellpadding=0 id=contentMenuTbl> 
+{$innerBar}
+</table>
 RTNTHIS;
 return $rtnthis;
 }

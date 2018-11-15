@@ -357,12 +357,46 @@ function datacoordinator($rqststr) {
   $pw = serverpw;
     
 $rtnthis = <<<JAVASCR
-        
+
+function openRightClickMenu(whichmenu, whichelementclicked) { 
+  if (byId('resultTblContextMenu')) { 
+    if (byId('resultTblContextMenu').style.display === 'none' || byId('resultTblContextMenu').style.display === '') {
+      byId('clickedElementId').value = whichelementclicked;
+      var bg = byId(whichelementclicked).dataset.biogroup;
+      var sg = byId(whichelementclicked).dataset.bgslabel;
+      byId('EDITBGDSP').innerHTML = "Edit Biogroup "+bg; 
+      byId('EDITSEGDSP').innerHTML = "Edit Segment "+sg; 
+      byId('resultTblContextMenu').style.left = (mousex - 10) + "px";
+      byId('resultTblContextMenu').style.top = (mousey - 10) + "px";
+      byId('resultTblContextMenu').style.display = "block";
+    } else {
+      byId('clickedElementId').value = ""; 
+      byId('EDITBGDSP').innerHTML = "Edit Biogroup"; 
+      byId('EDITSEGDSP').innerHTML = "Edit Segment"; 
+      byId('resultTblContextMenu').style.left = "-999px";
+      byId('resultTblContextMenu').style.top = "-999px";
+      byId('resultTblContextMenu').style.display = "none";
+    }
+  }
+}    
 
 document.addEventListener('DOMContentLoaded', function() {  
 
   if (byId('qryBG')) { 
     byId('qryBG').focus();
+  }
+
+  if (byId('coordinatorResultTbl')) {   
+   document.addEventListener('contextmenu', function(e) { 
+      e.preventDefault();
+   }, false);
+    var rsltRows = document.getElementsByClassName('resultTblLine'); 
+    Array.from(rsltRows).forEach(function(element) {
+      byId(element.id).addEventListener('contextmenu', function(e) { 
+         e.preventDefault();
+         openRightClickMenu('resultstable',element.id);
+      }, false)   ;       
+    });
   }
 
   if (byId('btnGenBioSearchSubmit')) { 
@@ -394,7 +428,6 @@ document.addEventListener('DOMContentLoaded', function() {
       criteriagiven = 1;
       if (criteriagiven === 1) { 
         var passdta = JSON.stringify(dta);    
-        //console.log(passdta);        
         var mlURL = "/data-doers/make-query-request";
         universalAJAX("POST",mlURL,passdta,answerQueryRequest,1);           
       }
@@ -410,10 +443,6 @@ document.addEventListener('DOMContentLoaded', function() {
         byId('investSuggestion').style.display = 'none';
       }
     }, false);
-//    byId('qryInvestigator').addEventListener('blur', function() {  
-//        byId('investSuggestion').innerHTML = "&nbsp;";
-//        byId('investSuggestion').style.display = 'none';
-//    }, false );
   }
 
   if (byId('btnBarAssignSample')) { 
@@ -421,7 +450,6 @@ document.addEventListener('DOMContentLoaded', function() {
       var selection = gatherSelection();
       if (parseInt(selection['responseCode']) === 200) { 
         var passdta = JSON.stringify(selection['selectionListing']);
-        console.log(passdta);
         var mlURL = "/data-doers/assign-biogroup";
         universalAJAX("POST",mlURL,passdta,answerAssignBG,1);   
       } else { 
@@ -472,14 +500,11 @@ function gatherSelection() {
   if (byId('coordinatorResultTbl')) { 
     for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) {  
       if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
-        
         sglist[cntr] = {biogroup:byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup,bgslabel:byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.bgslabel,segmentid:byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid};     
         cntr++;
-
         //if (!inArray(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup, bg)) { 
         //bg[bg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup;    
         //}
-
       }
     }
     itemsSelected = cntr;
@@ -495,7 +520,6 @@ function gatherSelection() {
   returnObj['message'] = msg;
   returnObj['itemsSelect'] = itemsSelected;
   returnObj['selectionListing'] = sglist;
-  //console.log(JSON.stringify(returnObj));
   return returnObj; 
 }
 
@@ -557,7 +581,7 @@ function answerRequestDrop(rtnData) {
     var dta = JSON.parse(rtnData['responseText']);
     var menuTbl = "<table border=1>";
     dta['DATA'].forEach(function(element) { 
-      menuTbl += "<tr><td onclick=\"fillField('selectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;'; byId('requestDropDown').style.display = 'none';\">"+element['requestid']+"</td></tr>";
+      menuTbl += "<tr><td onclick=\"fillField('selectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;';\">"+element['requestid']+"</td></tr>";
     });  
     menuTbl += "</table>";
     byId('requestDropDown').innerHTML = menuTbl; 
@@ -606,7 +630,6 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
 function clearCriteriaGrid() { 
   var fieldinputs = document.querySelectorAll('input'), i;
   for (i = 0; i < fieldinputs.length; i++) { 
-      //console.log(i+") "+fieldinputs[i].id);
       byId(fieldinputs[i].id).value = "";
   }
 }
@@ -718,7 +741,30 @@ function rowselector(whichrow) {
 function answerSendHPRSubmitOverride(rtnDta) { 
    console.log(rtnDta);    
 }
-        
+
+function sendSegmentAssignment(typeofassign) { 
+  var dta = new Object(); 
+  dta['segmentlist'] = byId('dialogBGSListing').value;
+  switch(typeofassign) { 
+    case 'invest':
+      dta['investigatorid'] = byId('selectorAssignInv').value;
+      dta['requestnbr'] = byId('selectorAssignReq').value;
+      break;
+    case 'bank':
+      dta['investigatorid'] = 'BANK';
+      dta['requestnbr'] = '';
+      break;
+  }
+
+  var passdata = JSON.stringify(dta);
+  var mlURL = "/data-doers/assign-segments";
+  universalAJAX("POST",mlURL,passdata,answerSendSegmentAssignment,2);
+}      
+
+function answerSendSegmentAssignment(rtnData) { 
+  console.log(rtnData);
+
+}
 
 JAVASCR;
     
@@ -727,34 +773,3 @@ return $rtnthis;
 
 }
 
-
-
-
-/*
- *  BACKUP CODE 
- *
-      if (byId('coordinatorResultTbl')) { 
-        var bg = []; 
-        var seg = [];  
-        for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) { 
-          if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
-            if (!inArray(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup, bg)) { 
-              bg[bg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup;    
-              seg[seg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid;    
-            }
-          }
-        }
-        if (parseInt(bg.length) > 0) {   
-          var totalobj = new Object(); 
-          totalobj['biogroups'] = bg; 
-          totalobj['segments'] = seg;
-          var passdta = JSON.stringify(totalobj);    
-          console.log(passdta);        
-          var mlURL = "/data-doers/hpr-status-by-biogroup";
-          universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
-        } else { 
-          alert('You haven\'t selected any biogroups to submit to HPR');
-        }
-      } else { 
-        alert('Result table doesn\'t exist');    
-      }
