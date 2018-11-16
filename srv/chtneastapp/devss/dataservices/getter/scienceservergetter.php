@@ -195,10 +195,9 @@ function biogroupsearch($whichobj, $rqst) {
       } else { 
         $dta['head'] = $headR->fetch(PDO::FETCH_ASSOC);
         $searchTerm = $dta['head']['srchterm'];
-        $rsltArr = runbiogroupsearchquery($searchTerm);
-       
+        $rsltArr = runbiogroupsearchquery($searchTerm); 
         $dta['searchresults'] = $rsltArr; 
-
+        $responseCode = 200;
       }
     }
     $rows['statusCode'] = $responseCode; 
@@ -760,14 +759,12 @@ SQLSTMT;
         $sendthis['data'][] = $rs;
       }
     } else { 
-      //ERRORS WITH THE CRITERIA -- SEND BACK ERROR
+      //TODO:ERRORS WITH THE CRITERIA -- SEND BACK ERROR
     }
   } else { 
-    //NO FIELDS QUERIED -- THAT SHOULDN'T HAPPEN BUT ITS A CATCH
+    //TODO:NO FIELDS QUERIED -- THAT SHOULDN'T HAPPEN BUT ITS A CATCH
   }
-
   $rtndta[] = $sendthis;
-  //$rtndta[] = $qryArr;
   return $rtndta;
 }
 

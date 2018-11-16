@@ -37,14 +37,143 @@ class datadoers {
     function assignsegments($request, $passdata) { 
 //{"segmentlist":"{\"0\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948001\",\"segmentid\":\"431100\"},\"1\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948003\",\"segmentid\":\"431102\"},\"2\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948004\",\"segmentid\":\"431103\"}}","investigatorid":"INV3000","requestnbr":"REQ19002"}
       $responseCode = 400; 
+      $error = 0;
       $msg = "";
       $itemsfound = 0;
       $data = array();
       $rows = array(); 
+      $msgArr = array();
+      require(serverkeys . "/sspdo.zck");  
       $qryrqst = json_decode($passdata, true);
 
-      $msg = $qryrqst['investigatorid'];
+      if ($qryrqst['investigatorid'] === 'BANK') { 
+          $assInv = 'BANKED';  //SEGMENT STATUS FROM SYS_MASTER_MENUS
+          $assProj = "";
+          $assReq = '';
+      } else { 
+          if (trim($qryrqst['requestnbr']) === "" || trim($qryrqst['investigatorid']) === "") { 
+            $error = 1; 
+            $msgArr[] = "Both an Investigator and a request number is required.  No Segments have been assigned.";
+          } else { 
+            //CHECK VALIDITY OF INV/REQ
+            $chkSQL = "select rq.requestid, pr.projid, pr.investid from vandyinvest.investtissreq rq left join vandyinvest.investproj pr on rq.projid = pr.projid where rq.requestid = :rq and pr.investid = :iv";
+            $chkR = $conn->prepare($chkSQL);
+            $chkR->execute(array(':rq' => trim($qryrqst['requestnbr']), ':iv' => trim($qryrqst['investigatorid'])));
+            if ($chkR->rowCount() < 1) { 
+              $error = 1; 
+              $msgArr[] = "The specified Investigator/request number combination is NOT valid ({$qryrqst['investigatorid']}/{$qryrqst['requestnbr']}).  No Segments have been assigned.";
+            } else {
+              $dbrq = $chkR->fetch(PDO::FETCH_ASSOC);  
+              $assInv = strtoupper(trim($qryrqst['investigatorid']));  //SEGMENT STATUS FROM SYS_MASTER_MENUS
+              $assProj = strtoupper(trim($dbrq['projid']));
+              $assReq = strtoupper(trim($qryrqst['requestnbr']));
+            }
+          }
+      }
 
+      //3) CHECK SEGMENT EXISTS AND IS IN A STATE TO BE REASSIGNED - CHECKING SEGMENTS FIRST MAKES THIS SORT OF A TRANSACTIONAL COMPONENT
+      $assignableSQL = "select menuvalue, dspvalue, assignablestatus from four.sys_master_menus where menu = 'SEGMENTSTATUS'";
+      $assignableRS = $conn->prepare($assignableSQL); 
+      $assignableRS->execute(); 
+      while ($asr = $assignableRS->fetch(PDO::FETCH_ASSOC)) { 
+        $assignableStatus[] = $asr;
+      }
+      $segList = json_decode($qryrqst['segmentlist'], true);
+      foreach ($segList as $k => $v) {  
+        $chkSQL = "SELECT replace(ifnull(bgs,''),'T_','') as bgs, ifnull(segstatus,'') as segstatus, ifnull(date_format(shippeddate,'%m/%d/%Y'),'') as shippeddate, ifnull(shipdocrefid,'') as shipdocrefid FROM masterrecord.ut_procure_segment where segmentid = :segmentid";
+        $chkR = $conn->prepare($chkSQL); 
+        $chkR->execute(array(':segmentid' => $v['segmentid'] ));
+        if ($chkR->rowCount() > 0) { 
+          $r = $chkR->fetch(PDO::FETCH_ASSOC);
+          //CHECK SHIPDATE
+          if ($r['shippeddate'] !== "") { 
+            $error = 1;
+            $msgArr[] = "Segment Label {$r['bgs']} has a shipment date ({$r['shippeddate']}) .  This segment is unable to be assigned.";
+          }                 
+          //CHECK SHIPDOCID 
+          if ($r['shipdocrefid'] !== "") { 
+            $error = 1;
+            $sddsp = substr(('000000' . $r['shipdocrefid']),-6);
+            $msgArr[] = "Segment Label {$r['bgs']} is listed on ship-doc ({$sddsp}) .  This segment is unable to be assigned.";
+          }                
+          //CHECK STATUS
+          $statusFound = 0;
+          foreach ($assignableStatus as $aKey => $aVal) {
+            if (strtoupper(trim($r['segstatus'])) === strtoupper(trim($aVal['menuvalue']))) {
+              $statusFound = 1;
+              if ((int)$aVal['assignablestatus'] === 0) {
+                $error = 1; 
+                $msgArr[] = "{$r['bgs']} is statused as \"{$aVal['dspvalue']}\".  This segment status is unable to be assigned.";
+              }
+            }
+          }
+          if ($statusFound === 0) { 
+            $error = 1;
+            $msgArr[] = "Segment Label {$r['bgs']} has an invalid status.  This segment is unable to be assigned.";
+          }                
+          
+        } else { 
+          $error = 1; 
+          $msgArr[] = "Segment does not Exist.  See CHTN Eastern IT (dbSegmentId: {$v['segmentid']})";
+        }             
+      } 
+
+      if ($error === 0) { 
+          session_start(); 
+          $usrSQL = "SELECT originalAccountName FROM four.sys_userbase where sessionid = :sessionid";
+          $usrR = $conn->prepare($usrSQL);
+          $usrR->execute(array(':sessionid' =>session_id()));
+          if ($usrR->rowCount() < 1) { 
+            $msgArr[] = "SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN";  
+            $msg = json_encode($msgArr);
+          } else { 
+            $u = $usrR->fetch(PDO::FETCH_ASSOC);
+            //4) REASSIGN SEGMENT
+
+            foreach ($segList as $k => $v) {  
+                //GET PREVIOUS STATUS AND ASSIGNMENT
+                $prvSQL = "select bgs, ifnull(segstatus,'') segstatus, statusdate, ifnull(statusby,'') statusby, ifnull(assignedTo,'') assignedto , ifnull(assignedProj,'') assignedproj, ifnull(assignedReq,'') assignedreq, assignmentdate, ifnull(assignedby,'') assignedby from masterrecord.ut_procure_segment where segmentid = :segid";
+                $prvR = $conn->prepare($prvSQL); 
+                $prvR->execute(array(':segid' => $v['segmentid']));
+                $prvRec = $prvR->fetch(PDO::FETCH_ASSOC);                 
+                //SAVE OLD STATUS TO HISTORY TABLE
+                $svePrvSQL = "insert into masterrecord.ut_procure_segment_history_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) values(:segid,:segstatus,:segstatusby,:segstatuson,now(),:enteredby)"; 
+                $svePrvR = $conn->prepare($svePrvSQL); 
+                $svePrvR->execute(array(':segid' => $v['segmentid'], ':segstatus' => $prvRec['segstatus'], ':segstatusby' => $prvRec['statusby'], ':segstatuson' => $prvRec['statusdate'], ':enteredby' => $u['originalAccountName'])); 
+                //SAVE OLD ASSIGNMENT 
+                $aInv = (trim($prvRec['assignedto']) === "") ? "NO-INV-ASSIGNMENT" : trim($prvRec['assignedto']); 
+                $aPrj = (trim($prvRec['assignedproj']) === "") ? "NO-PROJ-ASSIGNMENT" : trim($prvRec['assignedproj']); 
+                $aReq = (trim($prvRec['assignedreq']) === "") ? "NO-REQ-ASSIGNMENT" : trim($prvRec['assignedreq']);
+                $aBy = (trim($prvRec['assignedby']) === "") ? "NO-BY-ASSIGNMENT" : trim($prvRec['assignedby']); 
+                $prvASQL = "insert into masterrecord.ut_procure_segment_history_assignment(segmentid, previousassignment, previousproject, previousrequest, previousassignmentdate, previousassignmentby, enteredby, enteredon) values(:segmentid, :previousassignment, :previousproject, :previousrequest, :previousassignmentdate, :previousassignmentby, :enteredby, now())";
+                $prvAR = $conn->prepare($prvASQL); 
+                $prvAR->execute(array(':segmentid' => $v['segmentid'],':previousassignment' => $aInv,':previousproject' => $aPrj,':previousrequest' => $aReq,':previousassignmentdate' => $prvRec['assignmentdate'],':previousassignmentby' => $aBy,':enteredby' => $u['originalAccountName']));
+                //WRITE NEW STATUS WITH ASSIGNMENT WITH PERSON WRITING AND DATE WRITTEN 
+                if ($assInv === 'BANKED') {
+                  $sts = 'BANKED'; 
+                  $stsB = $u['originalAccountName']; 
+                  $aTo = '';
+                  $aPrj = '';
+                  $aRq = '';
+                } else { 
+                  $sts = 'ASSIGNED'; 
+                  $stsB = $u['originalAccountName']; 
+                  $aTo = $assInv;
+                  $aPrj = $assProj;
+                  $aRq = $assReq;
+                } 
+                $segUpdSQL = "update masterrecord.ut_procure_segment set segstatus = :segStat, statusdate = now(), statusby = :statBy, assignedto = :aTo, assignedproj = :aPrj, assignedreq = :aRq, assignmentdate = now(), assignedby = :aBy where segmentid = :segid ";
+                $segUpdR = $conn->prepare($segUpdSQL); 
+                $segUpdR->execute(array(':segStat' => $sts, ':statBy' => $stsB, ':aTo' => $aTo, ':aPrj' => $aPrj, ':aRq' => $aRq, ':aBy' => $stsB, ':segid' => $v['segmentid']));
+
+            }
+            $responseCode = 200;
+          //  //SEND STATUS 200 
+          }                
+      } else { 
+        //SEND ERROR MESSAGE
+        $msg = json_encode($msgArr);
+      }
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $data);
       return $rows;

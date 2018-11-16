@@ -49,7 +49,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
    <tr><td style="font-size: 1vh">(Suggestions on name, institution, inv#)</td><td></td></tr>
    </table>
 </td></tr>
-<tr><td colspan=2 align=right>
+<tr><td colspan=2><center>
 <table><tr><td>   
 <table class=tblBtn id=btnDialogAssign style="width: 6vw;" onclick="sendSegmentAssignment('invest');" ><tr><td><center>Assign</td></tr></table>
 </td><td>
@@ -100,8 +100,6 @@ function datacoordinator($rqststr, $whichusr) {
     </table>
 MAINQGRID;
         } else {
-            //"DATA":{"head":{"objid":"4psc9i1qqh","bywho":"proczack","onwhendsp":"11\/07\/2018","srchterm":"{\"qryType\":\"BIO\",\"BG\":\"\",\"procInst\":\"\",\"segmentStatus\":\"\",\"qmsStatus\":\"\",\"procDateFrom\":\"2018-01-01\",\"procDateTo\":\"2018-01-31\",\"shipDateFrom\":\"\",\"shipDateTo\":\"\",\"investigatorCode\":\"\",\"shipdocnbr\":\"\",\"shipdocstatus\":\"\",\"site\":\"^bowel;NEUROENDOCRINE\",\"specimencategory\":\"\",\"phiage\":\"\",\"phirace\":\"\",\"phisex\":\"\",\"procType\":\"\",\"PrepMethod\":\"\",\"preparation\":\"\"}"},"searchresults":[{"itemsfound":48,"data":["proctype":"S" "procuringinstitution":"HUP" "preparationmethod":"PB","preparation":"FFPE"}       
-
 $dta = json_decode(callrestapi("GET", dataTree . "/biogroup-search/{$rqststr[2]}", serverIdent, serverpw),true);
 $itemsfound = $dta['DATA']['searchresults'][0]['itemsfound'];      
 
@@ -272,9 +270,47 @@ $dataTbl .= "<div id=resultTblContextMenu>{$context}</div>";
 }
 
 
+            //"DATA":{"head":{"objid":"4psc9i1qqh","bywho":"proczack","onwhendsp":"11\/07\/2018","srchterm":"{\"qryType\":\"BIO\",\"BG\":\"\",\"procInst\":\"\",\"segmentStatus\":\"\",\"qmsStatus\":\"\",\"procDateFrom\":\"2018-01-01\",\"procDateTo\":\"2018-01-31\",\"shipDateFrom\":\"\",\"shipDateTo\":\"\",\"investigatorCode\":\"\",\"shipdocnbr\":\"\",\"shipdocstatus\":\"\",\"site\":\"^bowel;NEUROENDOCRINE\",\"specimencategory\":\"\",\"phiage\":\"\",\"phirace\":\"\",\"phisex\":\"\",\"procType\":\"\",\"PrepMethod\":\"\",\"preparation\":\"\"}"},"searchresults":[{"itemsfound":48,"data":["proctype":"S" "procuringinstitution":"HUP" "preparationmethod":"PB","preparation":"FFPE"}       
+
+
+
+$objid = $dta['DATA']['head']['objid'];
+$bywho = $dta['DATA']['head']['bywho'];
+$onwhendsp = $dta['DATA']['head']['onwhendsp'];
+$srchtrm = json_decode($dta['DATA']['head']['srchterm'], true);
+
+$parameterGrid = <<<TBLPARAGRID
+
+<table border=1>
+<tr><td>Query Object: </td><td>{$objid}</td></tr>
+<tr><td>Created By: </td><td>{$bywho}</td></tr>
+<tr><td>Create On: </td><td>{$onwhendsp}</td></tr>
+<tr><td colspan=2><center>SEARCH TERM PARAMETERS</td></tr>
+<tr><td>Biogroups: </td><td>{$srchtrm['BG']}</td></tr>
+<tr><td>Procuring Institution: </td><td>{$srchtrm['procInst']}</td></tr>
+<tr><td>Segment Status: </td><td>{$srchtrm['segmentStatus']}</td></tr>
+<tr><td>QMS Status: </td><td>{$srchtrm['qmsStatus']}</td></tr>
+<tr><td>Procurement Date Range: </td><td>{$srchtrm['procDateFrom']} - {$srchtrm['procDateTo']}</td></tr>
+<tr><td>Shipment Date Range: </td><td>{$srchtrm['shipDateFrom']} - {$srchtrm['shipDateTo']}</td></tr>
+<tr><td>Investigator Code: </td><td>{$srchtrm['investigatorCode']}</td></tr>
+<tr><td>Request Code: </td><td>{$srchtrm['requestNbr']}</td></tr>
+<tr><td>Shipment Document: </td><td>{$srchtrm['shipdocnbr']}</td></tr>
+<tr><td>Shipment Document Status: </td><td>{$srchtrm['shipdocstatus']}</td></tr>
+<tr><td>Diagnosis Designation: </td><td>{$srchtrm['site']}</td></tr>
+<tr><td>Specimen Category: </td><td>{$srchtrm['specimencategory']}</td></tr>
+<tr><td>Age (PHI): </td><td>{$srchtrm['phiage']}</td></tr>
+<tr><td>Race (PHI): </td><td>{$srchtrm['phirace']}</td></tr>
+<tr><td>Sex (PHI): </td><td>{$srchtrm['phisex']}</td></tr>
+<tr><td>Procedure Type: </td><td>{$srchtrm['procType']}</td></tr>
+<tr><td>Preparation Method: </td><td>{$srchtrm['PrepMethod']}</td></tr>
+<tr><td>Preparation: </td><td>{$srchtrm['preparation']}</td></tr>
+</table>
+
+TBLPARAGRID;
+
 
 $dspTbl = <<<DSPTHIS
-<table border=0><tr><td>Items found: {$itemsfound}</td><td align=right>(right-click grid for context menu)</td></tr>
+<table border=0><tr><td>Items found: {$itemsfound} <input type=hidden value="{$rqststr[2]}" id=urlrequestid></td><td align=right>(right-click grid for context menu)</td></tr>
 <tr><td colspan=2>{$dataTbl}&nbsp;</td></tr>
 </table>
 DSPTHIS;
@@ -284,7 +320,10 @@ $rtnthis = <<<MAINQGRID
 {$topBtnBar}
 <table border=0 id=mainRsltGridHoldTbl cellspacing=0 cellpadding=0>
 <tr><td valign=top>
-{$dspTbl}
+  <div id=resultHoldingDiv>
+     <div id=recordResultDiv>{$dspTbl}</div>
+     <div id=dspParameterGrid>{$parameterGrid}</div>
+   </div>
 </td></tr>                    
 </table>
 MAINQGRID;
@@ -681,8 +720,9 @@ case 'coordinatorResultGrid':
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="navigateSite('data-coordinator');"><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('export');"><tr><td><i class="material-icons">import_export</i></td><td>Export Results</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('Toggle Select');"><tr><td><i class="material-icons">get_app</i></td><td>Toggle Select</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="exportResults();"><tr><td><i class="material-icons">import_export</i></td><td>Export Results</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="toggleSelect();"><tr><td><i class="material-icons">get_app</i></td><td>Toggle Select</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="displayParameters();"><tr><td><i class="material-icons">settings</i></td><td>View Parameters</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('create SD');"><tr><td><i class="material-icons">departure_board</i></td><td>Create Shipdoc</td></tr></table></td>  
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarSubmitHPR><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Over-Ride</td></tr></table></td>           
