@@ -730,13 +730,13 @@ case 'coordinatorResultGrid':
 //TODO: MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
 $innerBar = <<<BTNTBL
 <tr>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="navigateSite('data-coordinator');"><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="exportResults();"><tr><td><i class="material-icons">import_export</i></td><td>Export Results</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="toggleSelect();"><tr><td><i class="material-icons">get_app</i></td><td>Toggle Select</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="displayParameters();"><tr><td><i class="material-icons">settings</i></td><td>View Parameters</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('create SD');"><tr><td><i class="material-icons">local_shipping</i></td><td>Create Shipdoc</td></tr></table></td>  
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarSubmitHPR><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Over-Ride</td></tr></table></td>           
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltNew><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltExport><tr><td><i class="material-icons">import_export</i></td><td>Export Results</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltToggle><tr><td><i class="material-icons">get_app</i></td><td>Toggle Select</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltParams><tr><td><i class="material-icons">settings</i></td><td>View Parameters</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltMakeSD><tr><td><i class="material-icons">local_shipping</i></td><td>Create Shipdoc</td></tr></table></td>  
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltSubmitHPR><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Over-Ride</td></tr></table></td>           
 </tr>
 BTNTBL;
     break;

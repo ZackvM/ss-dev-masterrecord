@@ -33,7 +33,7 @@ function __construct() {
 }
 
 class datadoers { 
-
+ 
     function assignsegments($request, $passdata) { 
 //{"segmentlist":"{\"0\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948001\",\"segmentid\":\"431100\"},\"1\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948003\",\"segmentid\":\"431102\"},\"2\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948004\",\"segmentid\":\"431103\"}}","investigatorid":"INV3000","requestnbr":"REQ19002"}
       $responseCode = 400; 
@@ -334,37 +334,93 @@ class datadoers {
        $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => "");
        return $rows;      
     }
-    
-    function hprstatusbybiogroup($request, $passedData) { 
-        //["81948","82852"]
-       $responseCode = 503;  
-       $bgList = json_decode($passedData, true); 
-       $itemsfound = 0;
-       $dta = array();
-       //if (count($bgList['biogroups']) < 0) { 
-       //    $responseCode = 400;
-       //    $msg = "YOU HAVE NOT SELECTED ANY BIOGROUPS"; 
-       //} else {
-           //LOOK UP BIOGROUPS
-       //    $errorind = 0; 
-       //    $errormsg = "";
-       //    foreach ($bgList['biogroups'] as $bgkey => $bgval) { 
-           //1) CHECK GET QMS STATUS OF BIOGROUP
-           //2) CHECK THAT THERE IS A PATHOLOGY REPORT
-           //3) SEE IF SEGID IS A SLIDE
-           //4) SEE IF SEGID IS ASSIGNED TO QC
-         //    $bg = $bgval; 
-         //    $segid = $bgList['segments'][$bgkey];   
-         //      $msg .= " .. {$bgkey} => {$bgval} // {$bgList['segments'][$bgkey]} " ; 
-         //  }
-       //}        
-       //$dta = count($bgList['biogroups']); ///TESTING LINE ONLY
-       $rows['statusCode'] = $responseCode; 
-       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
-       return $rows;    
+     
+    function preprocessshipdoc($request, $passdata) { 
+      $responseCode = 400; 
+      require(serverkeys . "/sspdo.zck");  
+      $error = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $data = array();
+      $errorInd = 0;
+      $assignableSQL = "SELECT menuvalue FROM four.sys_master_menus where menu = 'SEGMENTSTATUS' and additionalInformation = 'ASSIGNSTATUS' and dspind = 1";
+      $assignableRS = $conn->prepare($assignableSQL); 
+      $assignableRS->execute(); 
+      while ($asr = $assignableRS->fetch(PDO::FETCH_ASSOC)) { 
+        $assignableStatus[] = $asr;
+      }
+      $pdta = json_decode($passdata, true);
+      $rcdCntr = 0;
+      foreach ($pdta as $key => $value ) { 
+        $chkSQL = "SELECT replace(ifnull(bgs,''),'T_','') as bgs, ifnull(segstatus,'') as segstatus, ifnull(date_format(shippeddate,'%m/%d/%Y'),'') as shippeddate, ifnull(shipdocrefid,'') as shipdocrefid, ifnull(assignedTo,'') as assignedto FROM masterrecord.ut_procure_segment where segmentid = :segmentid";
+        $chkR = $conn->prepare($chkSQL); 
+        $chkR->execute(array(':segmentid' => $value['segmentid'] ));
+        if ($chkR->rowCount() > 0) { 
+          $r = $chkR->fetch(PDO::FETCH_ASSOC);
+          //1. MUST BE STATUSED ASSIGNED
+          //CHECK STATUS
+          $statusFound = 0;
+          foreach ($assignableStatus as $aKey => $aVal) {
+            if (strtoupper(trim($r['segstatus'])) === strtoupper(trim($aVal['menuvalue']))) {
+              $statusFound = 1;
+            }
+          }
+          if ($statusFound === 0) { 
+            $errorInd = 1;
+            $msgArr[] .= "Segment Label {$r['bgs']} is not assigned.  This segment is unable to be added to a shipment document.";
+          }                
+
+          //2. NO SHIPDOC NBR
+          //3. NO SHIPDATE
+          if ($r['shippeddate'] !== "") { 
+            $errorInd = 1;
+            $msgArr[] .= "{$r['bgs']} has a shipment date ({$r['shippeddate']}).  This segment is unable to be added to a shipment document.";
+          }                
+          //CHECK SHIPDOCID 
+          if ($r['shipdocrefid'] !== "") { 
+            $errorInd = 1;
+            $sddsp = substr(('000000' . $r['shipdocrefid']),-6);
+            $msgArr[] .= "{$r['bgs']} is listed on ship-doc ({$sddsp}) already.  This segment is unable to be added to a shipment document.";
+          }                
+          //4. ALL MUST BE ASSIGNED TO THE SAME INVESTIGATOR
+          if ($r['assignedto'] === '') { 
+            $errorInd = 1;
+            $msgArr[] .= "{$r['bgs']} does not have an assignment.  This segment is unable to be added to a shipment document.";
+          } else {
+          if ($rcdCntr === 0) { 
+              //SET INVCHK
+              $invChk = strtoupper(trim($r['assignedto'])); 
+          } else { 
+             if ($invChk !== strtoupper(trim($r['assignedto']))) { 
+               $errorInd = 1;
+               $msgArr[] .= "You can only select segments for one investigator. {$r['bgs']} is assigned to {$r['assignedto']}.  This segment is unable to be added to a shipment document.";
+             }
+          }
+          }
+
+          //START HERE:  CHECK THAT THERE ARE NO OPEN SHIPDOCS!  
+
+
+
+          $rcdCntr++; 
+        } else { 
+          $errorInd = 1; 
+          $msgArr[] .= "Segment does not Exist.  See CHTN Eastern IT (dbSegmentId: {$value['segmentid']})";
+        }
+      }
+      
+      if ($errorInd === 0) { 
+        $responseCode = 200;
+        //$dta = array('pagecontent' =>  bldDialog('dataCoordinatorBGSAssignment', $passedData));
+      }
+
+      $msg = $msgArr;       
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $data);
+      return $rows;
     }
-    
-    function assignbiogroup($request, $passedData) { 
+
+    function preprocessassignsegments($request, $passedData) { 
        require(serverkeys . "/sspdo.zck");  
        session_start(); 
        $responseCode = 400;  
@@ -372,9 +428,8 @@ class datadoers {
        $itemsfound = 0;
        $msgArr = array();
        //$dta = array();
-       //{"0":{"biogroup":"81948","segmentid":"431100"},"1":{"biogroup":"81948","segmentid":"431101"},"2":{"biogroup":"81948","segmentid":"431104"}}
        $errorInd = 0;
-       $assignableSQL = "select menuvalue, dspvalue, assignablestatus from four.sys_master_menus where menu = 'SEGMENTSTATUS'";
+       $assignableSQL = "select menuvalue, dspvalue, assignablestatus from four.sys_master_menus where menu = 'SEGMENTSTATUS' and dspind = 1";
        $assignableRS = $conn->prepare($assignableSQL); 
        $assignableRS->execute(); 
        while ($asr = $assignableRS->fetch(PDO::FETCH_ASSOC)) { 
@@ -382,8 +437,7 @@ class datadoers {
        }
 
        foreach ($pdta as $key => $value ) { 
-           //$dta .= " ... {$key} {$value['segmentid']}";
-           $chkSQL = "SELECT replace(ifnull(bgs,''),'T_','') as bgs, ifnull(segstatus,'') as segstatus, ifnull(date_format(shippeddate,'%m/%d/%Y'),'') as shippeddate, ifnull(shipdocrefid,'') as shipdocrefid FROM masterrecord.ut_procure_segment where segmentid = :segmentid";
+            $chkSQL = "SELECT replace(ifnull(bgs,''),'T_','') as bgs, ifnull(segstatus,'') as segstatus, ifnull(date_format(shippeddate,'%m/%d/%Y'),'') as shippeddate, ifnull(shipdocrefid,'') as shipdocrefid FROM masterrecord.ut_procure_segment where segmentid = :segmentid";
             $chkR = $conn->prepare($chkSQL); 
             $chkR->execute(array(':segmentid' => $value['segmentid'] ));
             if ($chkR->rowCount() > 0) { 
@@ -403,6 +457,7 @@ class datadoers {
                   $errorInd = 1;
                   $msgArr[] .= "Segment Label {$r['bgs']} has an invalid status.  This segment is unable to be assigned.";
                 }                
+
                 //CHECK SHIPDATE
                 if ($r['shippeddate'] !== "") { 
                   $errorInd = 1;

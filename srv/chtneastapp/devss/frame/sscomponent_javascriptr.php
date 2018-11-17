@@ -453,10 +453,60 @@ document.addEventListener('DOMContentLoaded', function() {
     byId('qryBG').focus();
   }
 
-  if (byId('resultTblContextMenu')) { 
-     byId('resultTblContextMenu').addEventListener('mouseout', function() { 
-         //openRightClickMenu('resultstable','');
-     }, false);
+  if (byId('btnBarRsltNew')) { 
+    byId('btnBarRsltNew').addEventListener('click', function() { 
+      navigateSite('data-coordinator');
+    }, false);
+  }
+
+  if (byId('btnBarRsltExport')) { 
+    byId('btnBarRsltExport').addEventListener('click', function() { 
+      exportResults();
+    }, false);
+  }
+
+  if (byId('btnBarRsltToggle')) { 
+    byId('btnBarRsltToggle').addEventListener('click', function() { 
+      toggleSelect();
+    }, false);
+  }
+
+  if (byId('btnBarRsltParams')) { 
+    byId('btnBarRsltParams').addEventListener('click', function() { 
+      displayParameters();
+    }, false);
+  }
+
+  if (byId('btnBarRsltMakeSD')) { 
+    byId('btnBarRsltMakeSD').addEventListener('click', function() { 
+      var selection = gatherSelection();
+      if (parseInt(selection['responseCode']) === 200) { 
+        var passdta = JSON.stringify(selection['selectionListing']);
+        var mlURL = "/data-doers/preprocess-shipdoc";
+        universalAJAX("POST",mlURL,passdta,answerPreprocessShipDoc,1);   
+      } else { 
+        alert(selection['message']);
+      }
+    }, false);
+  }
+
+  if (byId('btnBarRsltAssignSample')) { 
+    byId('btnBarRsltAssignSample').addEventListener('click',function() { 
+      var selection = gatherSelection();
+      if (parseInt(selection['responseCode']) === 200) { 
+        var passdta = JSON.stringify(selection['selectionListing']);
+        var mlURL = "/data-doers/preprocess-assign-segments";
+        universalAJAX("POST",mlURL,passdta,answerAssignBG,1);   
+      } else { 
+        alert(selection['message']);
+      }
+    }, false );
+  }
+
+  if (byId('btnBarRsltSubmitHPR')) { 
+    byId('btnBarRsltSubmitHPR').addEventListener('click', function() { 
+      alert('SUBMIT TO HPR');
+    }, false);
   }
 
   if (byId('coordinatorResultTbl')) {   
@@ -470,6 +520,12 @@ document.addEventListener('DOMContentLoaded', function() {
          openRightClickMenu('resultstable',element.id);
       }, false)   ;       
     });
+  }
+
+  if (byId('resultTblContextMenu')) { 
+     byId('resultTblContextMenu').addEventListener('mouseout', function() { 
+         //openRightClickMenu('resultstable','');
+     }, false);
   }
 
   if (byId('btnGenBioSearchSubmit')) { 
@@ -514,32 +570,6 @@ document.addEventListener('DOMContentLoaded', function() {
       } else { 
         byId('investSuggestion').innerHTML = "&nbsp;";
         byId('investSuggestion').style.display = 'none';
-      }
-    }, false);
-  }
-
-  if (byId('btnBarAssignSample')) { 
-    byId('btnBarAssignSample').addEventListener('click',function() { 
-      var selection = gatherSelection();
-      if (parseInt(selection['responseCode']) === 200) { 
-        var passdta = JSON.stringify(selection['selectionListing']);
-        var mlURL = "/data-doers/assign-biogroup";
-        universalAJAX("POST",mlURL,passdta,answerAssignBG,1);   
-      } else { 
-        alert(selection['message']);
-      }
-    }, false );
-  }
-
-  if (byId('btnBarSubmitHPR')) { 
-    byId('btnBarSubmitHPR').addEventListener('click', function() { 
-      var selection = gatherSelection();
-      if (parseInt(selection['responseCode']) === 200) { 
-        var passdta = JSON.stringify(selection['selectionListing']);
-        var mlURL = "/data-doers/hpr-status-by-biogroup";
-//        universalAJAX("POST",mlURL,passdta,answerSendHPRSubmitOverride,1);   
-      } else { 
-        alert(selection['message']);
       }
     }, false);
   }
@@ -742,7 +772,28 @@ function answerQueryRequest(rtnData) {
     navigateSite("data-coordinator/"+rsp['DATA']['coordsearchid']);
   }        
 }
-        
+
+function answerPreprocessShipDoc(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("SHIPMENT DOCUMENT ERROR:\\n"+dspMsg);
+   } else { 
+     //DISPLAY SHIPDOC CREATOR
+     if (byId('standardModalDialog')) {
+       console.log ('display shipdoc creator');
+       //var dta = JSON.parse(rtnData['responseText']); 
+       //byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       //byId('standardModalBacker').style.display = 'block';
+       //byId('standardModalDialog').style.display = 'block';
+       //byId('selectorAssignInv').focus();
+     }  
+   }        
+}
+
 function answerAssignBG(rtnData) { 
    if (parseInt(rtnData['responseCode']) !== 200) { 
      var msgs = JSON.parse(rtnData['responseText']);
