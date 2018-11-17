@@ -668,13 +668,14 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
 
 
 function answerInvestSuggestions(rtnData) { 
+//suggestionTable
 var rsltTbl = "";
 if (parseInt(rtnData['responseCode']) === 200 ) { 
   var dta = JSON.parse(rtnData['responseText']);
   if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
-    var rsltTbl = "<table border=0 class=suggestionTable><tr><td colspan=2>Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
+    var rsltTbl = "<table border=0 class=\"menuDropTbl\"><tr><td colspan=2 style=\"font-size: 1.2vh; padding: 8px;\">Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
     dta['DATA'].forEach(function(element) { 
-       rsltTbl += "<tr class=suggestionDspLine onclick=\"fillField('qryInvestigator','"+element['investvalue']+"','"+element['investvalue']+"'); byId('investSuggestion').innerHTML = '&nbsp;'; byId('investSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
+       rsltTbl += "<tr class=ddMenuItem onclick=\"fillField('qryInvestigator','"+element['investvalue']+"','"+element['investvalue']+"'); byId('investSuggestion').innerHTML = '&nbsp;'; byId('investSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
     }); 
     rsltTbl += "</table>";  
     byId('investSuggestion').innerHTML = rsltTbl; 
@@ -767,9 +768,9 @@ function answerUpdatePrepmenu(rtnData) {
   if (parseInt(rtnData['responseCode']) === 200 ) { 
     var dta = JSON.parse(rtnData['responseText']);
     if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
-    rsltTbl = "<table border=1><tr><td align=right onclick=\"fillField('qryPreparation','','');\">[clear]</td></tr>";
+    rsltTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryPreparation','','');\" class=ddMenuClearOption>[clear]</td></tr>";
     dta['DATA'].forEach(function(element) { 
-      rsltTbl += "<tr><td onclick=\"fillField('qryPreparation','"+element['menuValue']+"','"+element['longValue']+"');\">"+element['longValue']+"</td></tr>";
+      rsltTbl += "<tr><td onclick=\"fillField('qryPreparation','"+element['menuValue']+"','"+element['longValue']+"');\" class=ddMenuItem>"+element['longValue']+"</td></tr>";
     }); 
     rsltTbl += "</table>";  
     byId('preparationDropDown').innerHTML = rsltTbl; 

@@ -102,10 +102,26 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 /* DROP DOWN TABLES */
 .menuHolderDiv { position: relative; }
 .menuHolderDiv:hover .valueDropDown { display: block; cursor: pointer; }
-.valueDropDown {background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .1vh; min-height: 15vh; overflow: auto; display: none; z-index: 45; }
+.valueDropDown {background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .1vh; min-height: 15vh; max-height: 30vh; overflow: auto; display: none; z-index: 25; }
 .menuDropTbl { font-size: 1.8vh; padding: .6vh .1vw .6vh .1vw; white-space: nowrap; background: rgba({$this->color_white},1); width: 100%; }
 .ddMenuItem {padding: .3vh .2vw;}
 .ddMenuItem:hover { cursor: pointer;  background: rgba({$this->color_lblue},1); color: rgba({$this->color_white},1);  }
+.ddMenuClearOption { font-size: 1.1vh; }
+.ddMenuClearOption:hover {color: rgba({$this->color_bred},1); }
+
+/* DROP DOWN CALENDARS */
+.ddMenuCalendar { width: 100%; }
+.ddMenuCalTopRow { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); }
+.smallCtlBtn { font-size: 1.5vh;padding: 3px 0; }
+.smallCtlBtn:hover { color: rgba({$this->color_neongreen},1); cursor: pointer; }
+.ddMenuCalTitle { font-size: 1.3vh; text-align: center; padding: 3px 0; }
+.ddCalHeadDay { background: rgba({$this->color_mgrey},1); padding: 8px 5px; width: 14%; box-sizing: border-box;  }
+.topSpacer { background: rgba({$this->color_grey},1); border-left: 1px solid rgba({$this->color_zackgrey}, 1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
+.btmSpacer { background: rgba({$this->color_grey},1); border-left: 1px solid rgba({$this->color_zackgrey}, 1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
+.mnuDaySquare { height: 3vh; text-align: left; padding: 4px 0 0 4px; border-left: 1px solid rgba({$this->color_zackgrey}, 1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
+.mnuDaySquare:hover {background: rgba({$this->color_lblue},1); color: rgba({$this->color_white},1); }
+.calBtmLineClear { font-size: 1vh; padding: 8px 0; }
+.calBtmLineClear:hover { color: rgba({$this->color_bred},1); }
 
 
 #pageTopButtonBar {width: 100%; box-sizing: border-box; background: rgba({$this->color_zackgrey},1); position: fixed; top: 0; z-index: 49;}
@@ -150,7 +166,7 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #bankDataHolder { height: 80vh; width: 98vw; overflow: auto; border: 1px solid #000; }
 
 .suggestionHolder { position: relative; }
-.suggestionDisplay {min-width: 25vw; position: absolute; left: 0; height: 15vh; overflow: auto; z-index: 40; box-sizing: border-box; display: none;background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); }
+.suggestionDisplay {min-width: 25vw; position: absolute; left: 0; max-height: 30vh; min-height: 15vh; overflow: auto; z-index: 25; box-sizing: border-box; display: none;background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); }
 .suggestionTable { max-width: 24vw; box-sizing: border-box;   }
 
 .suggestionCloseBtn:hover {color: rgba({$this->color_bred},1); cursor: pointer; }

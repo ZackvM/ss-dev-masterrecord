@@ -225,87 +225,6 @@ function getColor($num) {
 
 function buildcalendar($whichcalendar, $pmonth, $pyear) { 
 
-//******FORMATTING
-    switch (strtolower($whichcalendar)) {
-      case 'procquery':
-        $calTblId = "pqcTbl";
-        $leftBtnId = "pqcLeft";
-        $leftBtnAction = " onclick=\"alert('LEFT');\" ";
-        $calTitle = "pqcTitle";
-        $rightBtnId = "pqcRight";
-        $rightBtnAction = " onclick=\"alert('RIGHT');\" ";
-        $dayHeadClass = "pqcDayHead";
-        $topSpacer = "pqcTopSpacer";
-        $daySquare = "pqcDaySqr";
-        $btmSpacer = "pqcBtmSpacer";
-        $daySquare = "pqcDaySqr";
-        $btmLine = "pqcBtmLine";
-        break;
-      case 'biosamplequeryfrom':
-        $calTblId = "bsqTbl";
-        $leftBtnId = "bsqLeft";
-        $calTitle = "bsqTitle";
-        $rightBtnId = "bsqRight";
-        $dayHeadClass = "bsqDayHead";
-        $topSpacer = "bsqTopSpacer";
-        $daySquare = "bsqDaySqr";
-        $btmSpacer = "bsqBtmSpacer";
-        $daySquare = "bsqDaySqr";
-        $btmLine = "bsqBtmLine";
-        break;   
-      case 'biosamplequeryto':
-        $calTblId = "bstqTbl";
-        $leftBtnId = "bstqLeft";
-        $calTitle = "bstqTitle";
-        $rightBtnId = "bstqRight";
-        $dayHeadClass = "bstqDayHead";
-        $topSpacer = "bstqTopSpacer";
-        $daySquare = "bstqDaySqr";
-        $btmSpacer = "bstqBtmSpacer";
-        $daySquare = "bstqDaySqr";
-        $btmLine = "bstqBtmLine";          
-         break;
-      case 'shipbsqfrom':
-        $calTblId = "shpFromTbl";
-        $leftBtnId = "shpFromLeft";
-        $calTitle = "shpFromTitle";
-        $rightBtnId = "shpFromRight";
-        $dayHeadClass = "shpFromDayHead";
-        $topSpacer = "shpFromTopSpacer";
-        $daySquare = "shpFromDaySqr";
-        $btmSpacer = "shpFromBtmSpacer";
-        $daySquare = "shpFromDaySqr";
-        $btmLine = "shpFromBtmLine";
-        break;
-        case 'shipbsqto':
-        $calTblId = "shpToTbl";
-        $leftBtnId = "shpToLeft";
-        $calTitle = "shpToTitle";
-        $rightBtnId = "shpToRight";
-        $dayHeadClass = "shpToDayHead";
-        $topSpacer = "shpToTopSpacer";
-        $daySquare = "shpToDaySqr";
-        $btmSpacer = "shpToBtmSpacer";
-        $daySquare = "shpToDaySqr";
-        $btmLine = "shpToBtmLine";          
-          break;
-   default: 
-      $calTblId = "GENERALCALENDAR";
-      $leftBtnId = "GENERALLEFTBTN";
-      $leftBtnAction = " onclick=\"alert('LEFT');\" ";
-      $calTitle = "GENERALTITLE";
-      $rightBtnId = "GENERALRIGHTBTN";
-      $rightBtnAction = " onclick=\"alert('RIGHT');\" ";
-      $dayHeadClass = "GENERALDAYHEADCLASS";
-      $topSpacer = "GENERALTOPSPACER";
-      $daySquare = "GENERALDAYQUARE";
-      $btmSpacer = "GENERALBTMSPACER";
-      $daySquare = "GENERALDAYSQAURE";
-      $btmLine = "GENERALBTMLINE";
-    }
-
-
-//************************** BUILD THE CALENDAR *******************
 if (trim($pmonth) === "") { 
   $pmonth = date('m');
 }
@@ -333,41 +252,135 @@ if ((int)$nextMonth === 13) {
   $nextYear = ((int)$nextYear + 1);
 }
 
-switch (strtolower($whichcalendar)) {
-  case 'procquery':
-      $leftBtnAction  = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" ";
-      $rightBtnAction = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" "; 
-    break;
-    case 'biosamplequeryfrom':
-      $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryFrom','bsqCalendar', '{$lastMonth}/{$lastYear}');\" ";
-      $rightBtnAction = " onclick=\"getCalendar('biosampleQueryFrom','bsqCalendar' ,'{$nextMonth}/{$nextYear}');\" ";         
-    break;
-  case 'biosamplequeryto':
-      $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
-      $rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";       
-    break;
-   case 'shipbsqfrom':
-      $leftBtnAction  = " onclick=\"getCalendar('shipBSQFrom','shpfCalendar', '{$lastMonth}/{$lastYear}');\" ";
-      $rightBtnAction = " onclick=\"getCalendar('shipBSQFrom','shpfCalendar' ,'{$nextMonth}/{$nextYear}');\" ";  
-    break;
-    case 'shipbsqto':
-      $leftBtnAction  = " onclick=\"getCalendar('shipBSQTo','shptCalendar', '{$lastMonth}/{$lastYear}');\" ";
-      $rightBtnAction = " onclick=\"getCalendar('shipBSQTo','shptCalendar' ,'{$nextMonth}/{$nextYear}');\" ";  
-    break;        
-    default: 
+//******FORMATTING
+    switch (strtolower($whichcalendar)) {
+      case 'procquery':
+        $calTblId = "pqcTbl";
+        $leftBtnId = "pqcLeft";
+        $leftBtnAction = " onclick=\"alert('LEFT');\" ";
+        $calTitle = "pqcTitle";
+        $rightBtnId = "pqcRight";
+        $rightBtnAction = " onclick=\"alert('RIGHT');\" ";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $btmSpacer = "btmSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmLine = "pqcBtmLine";
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        $leftBtnAction  = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" ";
+        $rightBtnAction = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" "; 
+        break;
+      case 'biosamplequeryfrom':
+        $calTblId = "bsqTbl";
+        $leftBtnId = "bsqLeft";
+        $calTitle = "bsqTitle";
+        $rightBtnId = "bsqRight";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmSpacer = "btmSpacer";
+        $btmLine = "bsqBtmLine";
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryFrom','bsqCalendar', '{$lastMonth}/{$lastYear}');\" ";
+        $rightBtnAction = " onclick=\"getCalendar('biosampleQueryFrom','bsqCalendar' ,'{$nextMonth}/{$nextYear}');\" ";         
+        break;   
+      case 'biosamplequeryto':
+        $calTblId = "bstqTbl";
+        $leftBtnId = "bstqLeft";
+        $calTitle = "bstqTitle";
+        $rightBtnId = "bstqRight";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmSpacer = "btmSpacer";
+        $btmLine = "bstqBtmLine";          
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
+        $rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";       
+        break;
+      case 'shipbsqfrom':
+        $calTblId = "shpFromTbl";
+        $leftBtnId = "shpFromLeft";
+        $calTitle = "shpFromTitle";
+        $rightBtnId = "shpFromRight";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmSpacer = "btmSpacer";
+        $btmLine = "shpFromBtmLine";
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        $leftBtnAction  = " onclick=\"getCalendar('shipBSQFrom','shpfCalendar', '{$lastMonth}/{$lastYear}');\" ";
+        $rightBtnAction = " onclick=\"getCalendar('shipBSQFrom','shpfCalendar' ,'{$nextMonth}/{$nextYear}');\" ";  
+        break;
+      case 'shipbsqto':
+        $calTblId = "shpToTbl";
+        $leftBtnId = "shpToLeft";
+        $calTitle = "shpToTitle";
+        $rightBtnId = "shpToRight";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmSpacer = "btmSpacer";
+        $btmLine = "shpToBtmLine";          
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        $leftBtnAction  = " onclick=\"getCalendar('shipBSQTo','shptCalendar', '{$lastMonth}/{$lastYear}');\" ";
+        $rightBtnAction = " onclick=\"getCalendar('shipBSQTo','shptCalendar' ,'{$nextMonth}/{$nextYear}');\" ";  
+        break;
+   default: 
+      $calTblId = "GENERALCALENDAR";
+      $leftBtnId = "GENERALLEFTBTN";
+      $leftBtnAction = " onclick=\"alert('LEFT');\" ";
+      $calTitle = "GENERALTITLE";
+      $rightBtnId = "GENERALRIGHTBTN";
+      $rightBtnAction = " onclick=\"alert('RIGHT');\" ";
+      $dayHeadClass = "ddCalHeadDay";
+      $topSpacer = "topSpacer";
+      $daySquare = "mnuDaySquare";
+      $btmSpacer = "btmSpacer";
+      $btmLine = "GENERALBTMLINE";
+      $calendarClass = "ddMenuCalendar";
+      $calTitleClass = "ddMenuCalTitle";
+      $topBarClass = "ddMenuCalTopRow";
+      $topCtlBtnClass= "smallCtlBtn";
       $leftBtnAction  = "  ";
       $rightBtnAction = "  "; 
-}
+    }
 
-$rtnthiscalendar = "<table border=0 cellspacing=0 cellpadding=0 id=\"{$calTblId}\"><tr><td id=\"{$leftBtnId}\"><i class=\"material-icons\" {$leftBtnAction}>keyboard_arrow_left</i></td><td colspan=5 id=\"{$calTitle}\">{$monthName} {$pyear}</td><td id=\"{$rightBtnId}\"><i class=\"material-icons\" {$rightBtnAction}>keyboard_arrow_right</i></td></tr>";
+
+//************************** BUILD THE CALENDAR *******************
+
+$rtnthiscalendar = <<<CALSTRT
+   <table border=0 cellspacing=0 cellpadding=0 id="{$calTblId}" class="{$calendarClass}">
+     <tr class="{$topBarClass}">
+       <td id="{$leftBtnId}"{$leftBtnAction}><i class="material-icons {$topCtlBtnClass}">keyboard_arrow_left</i></td>
+       <td colspan=5 id="{$calTitle}" class="{$calTitleClass}">{$monthName} {$pyear}</td>
+       <td id="{$rightBtnId}" align=right><i class="material-icons {$topCtlBtnClass}" {$rightBtnAction}>keyboard_arrow_right</i></td>
+    </tr>
+CALSTRT;
 $rtnthiscalendar .= "<tr>";
 foreach ($daysofweek as $day) { 
   $rtnthiscalendar .= "<th class=\"{$dayHeadClass}\">{$day}</th>";
 }
 $rtnthiscalendar .= "</tr>";
 $rtnthiscalendar .= "<tr>";
+
 if ($dayOfWeek > 0) { 
-    $rtnthiscalendar .= "<td colspan='{$dayOfWeek}' id=\"{$topSpacer}\">&nbsp;</td>";
+    $rtnthiscalendar .= "<td colspan='{$dayOfWeek}' class=\"{$topSpacer}\">&nbsp;</td>";
 }
 $currentDay = 1; 
 while ($currentDay <= $numberOfDays) { 
@@ -421,7 +434,7 @@ while ($currentDay <= $numberOfDays) {
 }
 if ($dayOfWeek !== 7) { 
   $remainingDays = (7 - $dayOfWeek); 
-  $rtnthiscalendar .= "<td colspan={$remainingDays} id=\"{$btmSpacer}\">&nbsp;</td>";
+  $rtnthiscalendar .= "<td colspan={$remainingDays} class=\"{$btmSpacer}\">&nbsp;</td>";
 }
 $rtnthiscalendar .= "</tr>";
 $rtnthiscalendar .= "{$btmLineDsp}";

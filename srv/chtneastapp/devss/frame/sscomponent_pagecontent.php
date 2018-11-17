@@ -537,68 +537,68 @@ function buildBSGrid() {
   $sp = serverpw;
   //DROP MENU BUILDER ********************************************************************************* //
   $procinstarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allinstitutions",$si,$sp),true);
-  $proc = "<table border=1><tr><td align=right onclick=\"fillField('qryProcInst','','');\">[clear]</td></tr>";
+  $proc = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryProcInst','','');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ($procinstarr['DATA'] as $procval) { 
-    $proc .= "<tr><td onclick=\"fillField('qryProcInst','{$procval['lookupvalue']}','{$procval['menuvalue']}');\">{$procval['menuvalue']}</td></tr>";
+    $proc .= "<tr><td onclick=\"fillField('qryProcInst','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
   }
   $proc .= "</table>";
   
   $racearr = json_decode(callrestapi("GET", dataTree . "/globalmenu/pxirace",$si,$sp),true);
-  $race = "<table border=1><tr><td align=right onclick=\"fillField('phiRace','','');\">[clear]</td></tr>";
+  $race = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('phiRace','','');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ($racearr['DATA'] as $raceval) { 
-    $race .= "<tr><td onclick=\"fillField('phiRace','{$raceval['lookupvalue']}','{$raceval['menuvalue']}');\">{$raceval['menuvalue']}</td></tr>";
+    $race .= "<tr><td onclick=\"fillField('phiRace','{$raceval['lookupvalue']}','{$raceval['menuvalue']}');\" class=ddMenuItem>{$raceval['menuvalue']}</td></tr>";
   }
   $race .= "</table>";
 
   $sexarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/pxisex",$si,$sp),true);
-  $sex = "<table border=1><tr><td align=right onclick=\"fillField('phiSex','','');\">[clear]</td></tr>";
+  $sex = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('phiSex','','');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ($sexarr['DATA'] as $sexval) { 
-    $sex .= "<tr><td onclick=\"fillField('phiSex','{$sexval['lookupvalue']}','{$sexval['menuvalue']}');\">{$sexval['menuvalue']}</td></tr>";
+    $sex .= "<tr><td onclick=\"fillField('phiSex','{$sexval['lookupvalue']}','{$sexval['menuvalue']}');\" class=ddMenuItem>{$sexval['menuvalue']}</td></tr>";
   }
   $sex .= "</table>";
 
   $ptypearr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allproctypes",$si,$sp),true);
-  $ptype = "<table border=1><tr><td align=right onclick=\"fillField('qryProcType','','');\">[clear]</td></tr>";
+  $ptype = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryProcType','','');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ($ptypearr['DATA'] as $ptypeval) { 
-    $ptype .= "<tr><td onclick=\"fillField('qryProcType','{$ptypeval['lookupvalue']}','{$ptypeval['menuvalue']}');\">{$ptypeval['menuvalue']}</td></tr>";
+    $ptype .= "<tr><td onclick=\"fillField('qryProcType','{$ptypeval['lookupvalue']}','{$ptypeval['menuvalue']}');\" class=ddMenuItem>{$ptypeval['menuvalue']}</td></tr>";
   }
   $ptype .= "</table>";
 
   $segstatusarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/menusegmentstatus",$si,$sp),true);
-  $seg = "<table border=1><tr><td align=right onclick=\"fillField('qrySegStatus','','');\">[clear]</td></tr>";
+  $seg = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qrySegStatus','','');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ($segstatusarr['DATA'] as $segval) { 
-    $seg .= "<tr><td onclick=\"fillField('qrySegStatus','{$segval['lookupvalue']}','{$segval['menuvalue']}');\">{$segval['menuvalue']}</td></tr>";
+    $seg .= "<tr><td onclick=\"fillField('qrySegStatus','{$segval['lookupvalue']}','{$segval['menuvalue']}');\" class=ddMenuItem>{$segval['menuvalue']}</td></tr>";
   }
   $seg .= "</table>";
 
   $hprstatusarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/qmsstatus",$si,$sp),true);
-  $hpr = "<table border=1><tr><td align=right onclick=\"fillField('qryHPRStatus','','');\">[clear]</td></tr>";
+  $hpr = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryHPRStatus','','');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ($hprstatusarr['DATA'] as $hprval) { 
-    $hpr .= "<tr><td onclick=\"fillField('qryHPRStatus','{$hprval['lookupvalue']}','{$hprval['menuvalue']}');\">{$hprval['menuvalue']}</td></tr>";
+    $hpr .= "<tr><td onclick=\"fillField('qryHPRStatus','{$hprval['lookupvalue']}','{$hprval['menuvalue']}');\" class=ddMenuItem>{$hprval['menuvalue']}</td></tr>";
   }
   $hpr .= "</table>";
 
   $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allpreparationmethods",$si,$sp),true);
-  $prp = "<table border=1><tr><td align=right onclick=\"fillField('qryPreparationMethod','','');updatePrepmenu('');\">[clear]</td></tr>";
+  $prp = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryPreparationMethod','','');updatePrepmenu('');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ($preparr['DATA'] as $prpval) {
-    $prp .= "<tr><td onclick=\"fillField('qryPreparationMethod','{$prpval['lookupvalue']}','{$prpval['menuvalue']}');updatePrepmenu('{$prpval['lookupvalue']}');\">{$prpval['menuvalue']}</td></tr>";
+    $prp .= "<tr><td onclick=\"fillField('qryPreparationMethod','{$prpval['lookupvalue']}','{$prpval['menuvalue']}');updatePrepmenu('{$prpval['lookupvalue']}');\" class=ddMenuItem>{$prpval['menuvalue']}</td></tr>";
   }
   $prp .= "</table>";
 
   $spcarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/specimencategorylive",$si,$sp),true);
-  $spc = "<table border=1><tr><td align=right onclick=\"fillField('qryDXDSpecimen','','');\">[clear]</td></tr>";
+  $spc = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryDXDSpecimen','','');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ($spcarr['DATA'] as $spcval) {
-    $spc .= "<tr><td onclick=\"fillField('qryDXDSpecimen','{$spcval['codevalue']}','{$spcval['menuvalue']}');\">{$spcval['menuvalue']}</td></tr>";
+    $spc .= "<tr><td onclick=\"fillField('qryDXDSpecimen','{$spcval['codevalue']}','{$spcval['menuvalue']}');\" class=ddMenuItem>{$spcval['menuvalue']}</td></tr>";
   }
   $spc .= "</table>";
 
 $shpstatusarr = json_decode( callrestapi("GET", dataTree . "/globalmenu/allshipdocstatus",$si,$sp) , true);
-$shps = "<table border=1><tr><td align=right onclick=\"fillField('qryShpStatus','','');\">[clear]</td></tr>";
+$shps = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryShpStatus','','');\" class=ddMenuClearOption>[clear]</td></tr>";
 foreach ($shpstatusarr['DATA'] as $shpval) { 
-  $shps .= "<tr><td onclick=\"fillField('qryShpStatus','{$shpval['lookupvalue']}','{$shpval['menuvalue']}');\">{$shpval['menuvalue']}</td></tr>";
+  $shps .= "<tr><td onclick=\"fillField('qryShpStatus','{$shpval['lookupvalue']}','{$shpval['menuvalue']}');\" class=ddMenuItem>{$shpval['menuvalue']}</td></tr>";
 }
 $shps .= "</table>";
-$shpsts = "<div class=menuHolderDiv><input type=hidden id=qryShpStatusValue><input type=text id=qryShpStatus class=\"inputFld\" style=\"width: 15vw;\" READONLY><div class=valueDropDown>{$shps}</div></div>";
+$shpsts = "<div class=menuHolderDiv><input type=hidden id=qryShpStatusValue><input type=text id=qryShpStatus class=\"inputFld\" style=\"width: 15vw;\" READONLY><div class=valueDropDown style=\"width: 15vw;\">{$shps}</div></div>";
 
 $fsCalendar = buildcalendar('shipBSQFrom'); 
 $shpFromCalendar = <<<CALENDAR
@@ -620,7 +620,7 @@ $fCalendar = buildcalendar('biosampleQueryFrom');
 $bsqFromCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
   <div class=valueHolder><input type=hidden id=bsqueryFromDateValue><input type=text READONLY id=bsqueryFromDate class="inputFld" style="width: 18vw;"></div>
-  <div class=valueDropDown><div id=bsqCalendar>{$fCalendar}</div></div>
+  <div class=valueDropDown style="width: 18vw;"><div id=bsqCalendar>{$fCalendar}</div></div>
 </div>
 CALENDAR;
 
@@ -628,7 +628,7 @@ $tCalendar = buildcalendar('biosampleQueryTo');
 $bsqToCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
   <div class=valueHolder><input type=hidden id=bsqueryToDateValue><input type=text READONLY id=bsqueryToDate class="inputFld" style="width: 18vw;"></div>
-  <div class=valueDropDown><div id=bsqtCalendar>{$tCalendar}</div></div>
+  <div class=valueDropDown style="width: 18vw;"><div id=bsqtCalendar>{$tCalendar}</div></div>
 </div>
 CALENDAR;
   //DROP MENU BUILDER END ********************************************************************************* //
@@ -643,9 +643,9 @@ $grid = <<<BSGRID
 <tr><td class=fldLabel>Biogroup Number</td><td class=fldLabel>Procuring Institution</td><td class=fldLabel>Segment Status</td><td class=fldLabel>HPR Status</td></tr>
 <tr>
   <td><input type=text id=qryBG class="inputFld" style="width: 20vw;"></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryProcInstValue><input type=text id=qryProcInst READONLY class="inputFld" style="width: 20vw;"><div class=valueDropDown>{$proc}</div></div></td>
-<td><div class=menuHolderDiv><input type=hidden id=qrySegStatusValue><input type=text id=qrySegStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown>{$seg}</div></div></td>
-<td><div class=menuHolderDiv><input type=hidden id=qryHPRStatusValue><input type=text id=qryHPRStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown>{$hpr}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryProcInstValue><input type=text id=qryProcInst READONLY class="inputFld" style="width: 20vw;"><div class=valueDropDown style="width: 20vw;">{$proc}</div></div></td>
+<td><div class=menuHolderDiv><input type=hidden id=qrySegStatusValue><input type=text id=qrySegStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="width: 15vw;">{$seg}</div></div></td>
+<td><div class=menuHolderDiv><input type=hidden id=qryHPRStatusValue><input type=text id=qryHPRStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="width: 15vw;">{$hpr}</div></div></td>
 </tr>
 <tr><td>(Single, range or series)</td></tr>
 </table>
@@ -675,7 +675,7 @@ $grid = <<<BSGRID
 <tr><td class=fldLabel>Diagnosis Designation Search Term</td><td class=fldLabel>Specimen Category</td></tr>
 <tr>
   <td><input type=text id=qryDXDSite class="inputFld" style="width: 54vw;"></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryDXDSpecimenValue class="inputFld"><input type=text id=qryDXDSpecimen class="inputFld" style="width: 16vw;"><div class=valueDropDown>{$spc}</div></div>     </td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryDXDSpecimenValue class="inputFld"><input type=text id=qryDXDSpecimen class="inputFld" style="width: 16vw;"><div class=valueDropDown style="width: 16vw;">{$spc}</div></div>     </td>
 </tr>
 <tr><td colspan=2>(Read instructions in 'help' to query in 'Diagnosis Designation Search Term'.  Delimit with ; [semi-colon] / - [hyphen] to denote blank fields  / 'like' match indicator ^ [caret]. Order: (site-subsite);(diagnosis-modifier);(metssite))</td></tr>
 </table>
@@ -684,11 +684,11 @@ $grid = <<<BSGRID
 <tr><td class=fldLabel>PHI-Age</td><td class=fldLabel>Race</td><td class=fldLabel>Sex</td><td class=fldLabel>Procedure</td><td colspan=2 class=fldLabel>Preparation</td></tr>
 <tr>
   <td><input type=text id=phiAge class="inputFld" style="width: 6vw;"></td>
-  <td><div class=menuHolderDiv><input type=hidden id=phiRaceValue><input type=text id=phiRace READONLY class="inputFld" style="width: 12vw;"><div class=valueDropDown>{$race}</div></div></td>
-  <td><div class=menuHolderDiv><input type=hidden id=phiSexValue><input type=text id=phiSex READONLY class="inputFld" style="width: 6vw;"><div class=valueDropDown>{$sex}</div></div></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryProcTypeValue><input type=text id=qryProcType READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown>{$ptype}</div></div></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationMethodValue><input type=text id=qryPreparationMethod READONLY class="inputFld" style="width: 18.3vw;"><div class=valueDropDown>{$prp}</div></div></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationValue><input type=text id=qryPreparation READONLY class="inputFld" style="width: 19vw;"><div class=valueDropDown id=preparationDropDown>&nbsp;</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=phiRaceValue><input type=text id=phiRace READONLY class="inputFld" style="width: 12vw;"><div class=valueDropDown style="width: 12vw;">{$race}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=phiSexValue><input type=text id=phiSex READONLY class="inputFld" style="width: 6vw;"><div class=valueDropDown style="width: 6vw;">{$sex}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryProcTypeValue><input type=text id=qryProcType READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="width: 8vw;">{$ptype}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationMethodValue><input type=text id=qryPreparationMethod READONLY class="inputFld" style="width: 18.3vw;"><div class=valueDropDown style="width: 18.3vw;">{$prp}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationValue><input type=text id=qryPreparation READONLY class="inputFld" style="width: 19vw;"><div class=valueDropDown style="width: 19vw;" id=preparationDropDown>&nbsp;</div></div></td>
 </tr>
 <tr><td>(Single or Range)</td></tr>
 </table>
