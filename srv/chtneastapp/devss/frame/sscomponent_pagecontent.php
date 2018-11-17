@@ -43,8 +43,18 @@ function sysDialogBuilder($whichdialog, $passedData) {
    <table border=0>
    <tr><td class=fldLabel>Investigator Id</td><td class=fldLabel>Request #</td></tr>
    <tr>
-       <td style="width: 10vw;"><div class=suggestionHolder><input type=text id=selectorAssignInv class="inputFld" onkeyup="selectorInvestigator(); byId('selectorAssignReq').value = '';byId('requestDropDown').innerHTML = ''; "><div id=assignInvestSuggestion class=suggestionDisplay>&nbsp;</div></div></td>
-       <td><div class=menuHolderDiv onmouseover="byId('assignInvestSuggestion').style.display = 'none'; setAssignsRequests();"><input type=text id=selectorAssignReq READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown id=requestDropDown></div></div></td>
+       <td style="width: 10vw;">
+         <div class=suggestionHolder>
+          <input type=text id=selectorAssignInv class="inputFld" onkeyup="selectorInvestigator(); byId('selectorAssignReq').value = '';byId('requestDropDown').innerHTML = ''; ">
+          <div id=assignInvestSuggestion class=suggestionDisplay>&nbsp;</div>
+         </div>
+       </td>
+       <td>
+         <div class=menuHolderDiv onmouseover="byId('assignInvestSuggestion').style.display = 'none'; setAssignsRequests();">
+          <input type=text id=selectorAssignReq READONLY class="inputFld" style="width: 8vw;">
+          <div class=valueDropDown id=requestDropDown style="width: 8vw;"></div>
+         </div>
+       </td>
    </tr>
    <tr><td style="font-size: 1vh">(Suggestions on name, institution, inv#)</td><td></td></tr>
    </table>
@@ -232,7 +242,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     
     
 $dataTbl .=  <<<LINEITEM
-<tr id="sg{$val['segmentid']}" class="resultTblLine" data-biogroup="{$val['pbiosample']}" data-bgslabel="{$sglabel}" data-segmentid="{$val['segmentid']}" data-selected="false" data-associd="{$val['associd']}" onclick="rowselector('sg{$val['segmentid']}');" ondblclick="navigateSite('segment/{$sgencry}');">
+<tr id="sg{$val['segmentid']}" class="resultTblLine" data-biogroup="{$val['pbiosample']}" data-shipdoc="{$val['shipdocnbr']}" data-bgslabel="{$sglabel}" data-segmentid="{$val['segmentid']}" data-selected="false" data-associd="{$val['associd']}" onclick="rowselector('sg{$val['segmentid']}');" ondblclick="navigateSite('segment/{$sgencry}');">
   <td>{$moreInfo}</td>
   <td {$pbSqrBgColor} class=colorline>&nbsp;</td>
   <td valign=top class=bgsLabel>{$sglabel}</td>
@@ -281,30 +291,32 @@ $srchtrm = json_decode($dta['DATA']['head']['srchterm'], true);
 
 $parameterGrid = <<<TBLPARAGRID
 
-<table border=1>
-<tr><td>Query Object: </td><td>{$objid}</td></tr>
-<tr><td>Created By: </td><td>{$bywho}</td></tr>
-<tr><td>Create On: </td><td>{$onwhendsp}</td></tr>
-<tr><td colspan=2><center>SEARCH TERM PARAMETERS</td></tr>
-<tr><td>Biogroups: </td><td>{$srchtrm['BG']}</td></tr>
-<tr><td>Procuring Institution: </td><td>{$srchtrm['procInst']}</td></tr>
-<tr><td>Segment Status: </td><td>{$srchtrm['segmentStatus']}</td></tr>
-<tr><td>QMS Status: </td><td>{$srchtrm['qmsStatus']}</td></tr>
-<tr><td>Procurement Date Range: </td><td>{$srchtrm['procDateFrom']} - {$srchtrm['procDateTo']}</td></tr>
-<tr><td>Shipment Date Range: </td><td>{$srchtrm['shipDateFrom']} - {$srchtrm['shipDateTo']}</td></tr>
-<tr><td>Investigator Code: </td><td>{$srchtrm['investigatorCode']}</td></tr>
-<tr><td>Request Code: </td><td>{$srchtrm['requestNbr']}</td></tr>
-<tr><td>Shipment Document: </td><td>{$srchtrm['shipdocnbr']}</td></tr>
-<tr><td>Shipment Document Status: </td><td>{$srchtrm['shipdocstatus']}</td></tr>
-<tr><td>Diagnosis Designation: </td><td>{$srchtrm['site']}</td></tr>
-<tr><td>Specimen Category: </td><td>{$srchtrm['specimencategory']}</td></tr>
-<tr><td>Age (PHI): </td><td>{$srchtrm['phiage']}</td></tr>
-<tr><td>Race (PHI): </td><td>{$srchtrm['phirace']}</td></tr>
-<tr><td>Sex (PHI): </td><td>{$srchtrm['phisex']}</td></tr>
-<tr><td>Procedure Type: </td><td>{$srchtrm['procType']}</td></tr>
-<tr><td>Preparation Method: </td><td>{$srchtrm['PrepMethod']}</td></tr>
-<tr><td>Preparation: </td><td>{$srchtrm['preparation']}</td></tr>
-</table>
+<div id=qParameterHolder><table border=0 id=qryParameterDspTbl >
+<tr><td colspan=2 id=title>Query Parameters</td></tr>
+<tr><td class=columnQParamName>Query Object: </td>          <td class=ColumnDataObj>{$objid}</td></tr>
+<tr><td class=columnQParamName>Created By: </td>            <td class=ColumnDataObj>{$bywho}</td></tr>
+<tr><td class=columnQParamName>Create On: </td>             <td class=ColumnDataObj>{$onwhendsp}</td></tr>
+<tr><td class=columnQParamName>Records Found: </td>         <td class=ColumnDataObj>{$itemsfound}</td></tr>
+<tr><td colspan=2 id=srchTrmParaTitle >SEARCH TERM PARAMETERS</td></tr>
+<tr><td class=columnQParamName>Biogroups: </td>             <td class=ColumnDataObj>{$srchtrm['BG']}</td></tr>
+<tr><td class=columnQParamName>Procuring Institution: </td> <td class=ColumnDataObj>{$srchtrm['procInst']}</td></tr>
+<tr><td class=columnQParamName>Segment Status: </td>        <td class=ColumnDataObj>{$srchtrm['segmentStatus']}</td></tr>
+<tr><td class=columnQParamName>QMS Status: </td>            <td class=ColumnDataObj>{$srchtrm['qmsStatus']}</td></tr>
+<tr><td class=columnQParamName>Procurement Date Range: </td><td class=ColumnDataObj>{$srchtrm['procDateFrom']} - {$srchtrm['procDateTo']}</td></tr>
+<tr><td class=columnQParamName>Shipment Date Range: </td>   <td class=ColumnDataObj>{$srchtrm['shipDateFrom']} - {$srchtrm['shipDateTo']}</td></tr>
+<tr><td class=columnQParamName>Investigator Code: </td>     <td class=ColumnDataObj>{$srchtrm['investigatorCode']}</td></tr>
+<tr><td class=columnQParamName>Request Code: </td>          <td class=ColumnDataObj>{$srchtrm['requestNbr']}</td></tr>
+<tr><td class=columnQParamName>Shipment Document: </td>     <td class=ColumnDataObj>{$srchtrm['shipdocnbr']}</td></tr>
+<tr><td class=columnQParamName>Shipment Document Status:</td><td class=ColumnDataObj>{$srchtrm['shipdocstatus']}</td></tr>
+<tr><td class=columnQParamName>Diagnosis Designation:</td>  <td class=ColumnDataObj>{$srchtrm['site']}</td></tr>
+<tr><td class=columnQParamName>Specimen Category: </td>     <td class=ColumnDataObj>{$srchtrm['specimencategory']}</td></tr>
+<tr><td class=columnQParamName>Age (PHI): </td>             <td class=ColumnDataObj>{$srchtrm['phiage']}</td></tr>
+<tr><td class=columnQParamName>Race (PHI): </td>            <td class=ColumnDataObj>{$srchtrm['phirace']}</td></tr>
+<tr><td class=columnQParamName>Sex (PHI): </td>             <td class=ColumnDataObj>{$srchtrm['phisex']}</td></tr>
+<tr><td class=columnQParamName>Procedure Type: </td>        <td class=ColumnDataObj>{$srchtrm['procType']}</td></tr>
+<tr><td class=columnQParamName>Preparation Method: </td>    <td class=ColumnDataObj>{$srchtrm['PrepMethod']}</td></tr>
+<tr><td class=columnQParamName>Preparation: </td>           <td class=ColumnDataObj>{$srchtrm['preparation']}</td></tr>
+</table></div>
 
 TBLPARAGRID;
 
@@ -638,7 +650,6 @@ $grid = <<<BSGRID
 <tr><td class=pageTitle>Biogroup Query Grid</td></tr>
 <tr><td>
 
-
 <table border=0>
 <tr><td class=fldLabel>Biogroup Number</td><td class=fldLabel>Procuring Institution</td><td class=fldLabel>Segment Status</td><td class=fldLabel>HPR Status</td></tr>
 <tr>
@@ -693,7 +704,6 @@ $grid = <<<BSGRID
 <tr><td>(Single or Range)</td></tr>
 </table>
 
-
 </td></tr>
 <tr><td align=right style="padding: 3vh 26vw 0 0;">
   <table class=tblBtn id=btnGenBioSearchSubmit style="width: 6vw;"><tr><td><center>Search</td></tr></table>
@@ -717,6 +727,7 @@ $innerBar = <<<BTNTBL
 BTNTBL;
 break;   
 case 'coordinatorResultGrid':
+//TODO: MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="navigateSite('data-coordinator');"><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
@@ -724,7 +735,7 @@ $innerBar = <<<BTNTBL
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="toggleSelect();"><tr><td><i class="material-icons">get_app</i></td><td>Toggle Select</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="displayParameters();"><tr><td><i class="material-icons">settings</i></td><td>View Parameters</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('create SD');"><tr><td><i class="material-icons">departure_board</i></td><td>Create Shipdoc</td></tr></table></td>  
+  <td class=topBtnHolderCell><table class=topBtnDisplayer onclick="alert('create SD');"><tr><td><i class="material-icons">local_shipping</i></td><td>Create Shipdoc</td></tr></table></td>  
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarSubmitHPR><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Over-Ride</td></tr></table></td>           
 </tr>
 BTNTBL;
@@ -751,8 +762,8 @@ case 'coordinatorResultGrid':
 $innerBar = <<<BTNTBL
 <tr><td class=contextOptionHolder><table onclick="alert('Edit BG');"><tr><td><i class="material-icons cmOptionIcon">bubble_chart</i></td><td id=EDITBGDSP class=cmOptionText>Edit Biogroup</td></tr></table></td></tr>        
 <tr><td class=contextOptionHolder><table onclick="alert('Edit Segment');"><tr><td><i class="material-icons cmOptionIcon">blur_circular</i></td><td id=EDITSEGDSP class=cmOptionText>Edit Segment</td></tr></table></td></tr>        
+<tr><td class=contextOptionHolder><table onclick="alert('Edit Shipdoc');"><tr><td><i class="material-icons cmOptionIcon">local_shipping</i></td><td class=cmOptionText id=EDITSHPDOC>Edit Shipment Document</td></tr></table></td></tr>     
 <tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Pathology Report</td></tr></table></td></tr>     
-<tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Shipment Document</td></tr></table></td></tr>     
 <tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Chart Review</td></tr></table></td></tr>     
 <tr><td class=contextOptionHolder><table onclick="alert('Associative Groups');"><tr><td><i class="material-icons cmOptionIcon">link</i></td><td class=cmOptionText>Associative Group</td></tr></table></td></tr>       
 <tr><td class=contextOptionHolder><table onclick="alert('HPR Results');"><tr><td><i class="material-icons cmOptionIcon">stars</i></td><td class=cmOptionText>View HPR Results</td></tr></table></td></tr> 

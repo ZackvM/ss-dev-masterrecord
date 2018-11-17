@@ -423,8 +423,15 @@ function openRightClickMenu(whichmenu, whichelementclicked) {
       byId('clickedElementId').value = whichelementclicked;
       var bg = byId(whichelementclicked).dataset.biogroup;
       var sg = byId(whichelementclicked).dataset.bgslabel;
+      var sh = byId(whichelementclicked).dataset.shipdoc;
       byId('EDITBGDSP').innerHTML = "Edit Biogroup "+bg; 
-      byId('EDITSEGDSP').innerHTML = "Edit Segment "+sg; 
+      byId('EDITSEGDSP').innerHTML = "Edit Segment "+sg;  
+      if (parseInt(sh) === 0) { 
+        byId('EDITSHPDOC').innerHTML = "Segment is not on a Ship-Doc"; 
+      } else {
+        var shpnbr = ("000000"+sh).substr(-6);
+        byId('EDITSHPDOC').innerHTML = "Edit Ship-Doc "+shpnbr; 
+      }
       byId('resultTblContextMenu').style.left = (mousex - 10) + "px";
       byId('resultTblContextMenu').style.top = (mousey - 10) + "px";
       byId('resultTblContextMenu').style.display = "block";
@@ -432,6 +439,7 @@ function openRightClickMenu(whichmenu, whichelementclicked) {
       byId('clickedElementId').value = ""; 
       byId('EDITBGDSP').innerHTML = "Edit Biogroup"; 
       byId('EDITSEGDSP').innerHTML = "Edit Segment"; 
+      byId('EDITSHPDOC').innerHTML = "Edit Ship-Doc"; 
       byId('resultTblContextMenu').style.left = "-999px";
       byId('resultTblContextMenu').style.top = "-999px";
       byId('resultTblContextMenu').style.display = "none";
@@ -443,6 +451,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (byId('qryBG')) { 
     byId('qryBG').focus();
+  }
+
+  if (byId('resultTblContextMenu')) { 
+     byId('resultTblContextMenu').addEventListener('mouseout', function() { 
+         //openRightClickMenu('resultstable','');
+     }, false);
   }
 
   if (byId('coordinatorResultTbl')) {   
@@ -638,9 +652,9 @@ function answerRequestDrop(rtnData) {
   if (parseInt(rtnData['responseCode']) === 200 ) { 
     //{"MESSAGE":0,"ITEMSFOUND":10,"DATA":[{"requestid":"REQ15262"},{"requestid":"REQ17321"},{"requestid":"REQ20137"},{"requestid":"REQ19002"},{"requestid":"REQ21130"},{"requestid":"REQ21131"},{"requestid":"REQ22758"},{"requestid":"REQ22757"},{"requestid":"REQ23034"}]}
     var dta = JSON.parse(rtnData['responseText']);
-    var menuTbl = "<table border=1>";
+    var menuTbl = "<table border=0 class=\"menuDropTbl\">";
     dta['DATA'].forEach(function(element) { 
-      menuTbl += "<tr><td onclick=\"fillField('selectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;';\">"+element['requestid']+"</td></tr>";
+      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('selectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;';\">"+element['requestid']+"</td></tr>";
     });  
     menuTbl += "</table>";
     byId('requestDropDown').innerHTML = menuTbl; 
@@ -652,9 +666,9 @@ var rsltTbl = "";
 if (parseInt(rtnData['responseCode']) === 200 ) { 
   var dta = JSON.parse(rtnData['responseText']);
   if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
-    var rsltTbl = "<table border=0 class=suggestionTable><tr><td colspan=2>Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
+    var rsltTbl = "<table border=0 class=\"menuDropTbl\"><tr><td colspan=2 style=\"font-size: 1.2vh; padding: 8px;\">Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
     dta['DATA'].forEach(function(element) { 
-       rsltTbl += "<tr class=suggestionDspLine onclick=\"fillField('selectorAssignInv','"+element['investvalue']+"','"+element['investvalue']+"'); byId('assignInvestSuggestion').innerHTML = '&nbsp;'; byId('assignInvestSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
+       rsltTbl += "<tr class=ddMenuItem onclick=\"fillField('selectorAssignInv','"+element['investvalue']+"','"+element['investvalue']+"'); byId('assignInvestSuggestion').innerHTML = '&nbsp;'; byId('assignInvestSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
     }); 
     rsltTbl += "</table>";  
     byId('assignInvestSuggestion').innerHTML = rsltTbl; 
@@ -668,7 +682,6 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
 
 
 function answerInvestSuggestions(rtnData) { 
-//suggestionTable
 var rsltTbl = "";
 if (parseInt(rtnData['responseCode']) === 200 ) { 
   var dta = JSON.parse(rtnData['responseText']);
@@ -745,6 +758,7 @@ function answerAssignBG(rtnData) {
        byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
        byId('standardModalBacker').style.display = 'block';
        byId('standardModalDialog').style.display = 'block';
+       byId('selectorAssignInv').focus();
      }  
    }        
 }

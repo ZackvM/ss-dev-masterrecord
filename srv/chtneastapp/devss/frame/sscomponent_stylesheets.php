@@ -235,6 +235,15 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #resultHoldingDiv { position: relative; } 
 #resultHoldingDiv #recordResultDiv {  display: block;}
 #resultHoldingDiv #dspParameterGrid { display: none;}
+
+#qParameterHolder { padding: 0 25vw 0 25vw; }
+#qParameterHolder #qryParameterDspTbl { width: 50vw; border: 1px solid rgba({$this->color_zackgrey},1); }
+#qParameterHolder #qryParameterDspTbl #title { text-align: center; font-size: 2.8vh; color: rgba({$this->color_lblue},1); font-weight: bold;    }
+#qParameterHolder #qryParameterDspTbl .columnQParamName { width: 5vw; padding: 8px 5px 8px 5px; font-weight: bold; font-size: 1.4vh; white-space: nowrap; border-bottom: 1px solid rgba({$this->color_grey},1); border-right: 1px solid rgba({$this->color_grey},1); }
+#qParameterHolder #qryParameterDspTbl .ColumnDataObj { font-size: 1.4vh; padding: 8px 5px;border-bottom: 1px solid rgba({$this->color_grey},1); } 
+#qParameterHolder #qryParameterDspTbl #srchTrmParaTitle { text-align: center; font-size: 2vh; color: rgba({$this->color_lblue},1); padding: 3vh 0 0 0; }
+
+
 STYLESHEET;
 return $rtnThis;
 }  
