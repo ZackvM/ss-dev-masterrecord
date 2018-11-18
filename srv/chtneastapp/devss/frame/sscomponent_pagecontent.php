@@ -17,8 +17,81 @@ public $checkBtn = "<i class=\"material-icons\">check</i>";
 function sysDialogBuilder($whichdialog, $passedData) {
  
     switch($whichdialog) { 
-      case 'dataCoordinatorBGSAssignment': 
+      case 'dataCoordinatorShipDocCreate': 
+        $titleBar = "Shipment Document Creation";
+        $dataString = $passedData; 
+        $dta = json_decode($passedData, true);
+/*
++---------------------+------------------+------+-----+---------+----------------+
+| Field               | Type             | Null | Key | Default | Extra          |
++---------------------+------------------+------+-----+---------+----------------+
+| shipdocRefID        | int(10) unsigned | NO   | PRI | NULL    | auto_increment |
+| status              | varchar(45)      | YES  |     | NULL    |                |
+| statusDate          | datetime         | YES  |     | NULL    |                |
+| shipdate            | datetime         | YES  |     | NULL    |                |
+| invCode             | varchar(45)      | YES  |     | NULL    |                |
+| shipAddy            | varchar(1500)    | YES  |     | NULL    |                |
+| billAddy            | varchar(1500)    | YES  |     | NULL    |                |
+| invEmail            | varchar(150)     | YES  |     | NULL    |                |
+| PONbr               | varchar(45)      | YES  |     | NULL    |                |
+| toLab               | datetime         | YES  |     | NULL    |                |
+| acceptedBy          | varchar(45)      | YES  |     | NULL    |                |
+| comments            | varchar(500)     | YES  |     | NULL    |                |
+| setupOn             | datetime         | YES  |     | NULL    |                |
+| setupBy             | varchar(45)      | YES  |     | NULL    |                |
++---------------------+------------------+------+-----+---------+----------------+
+ */
 
+    //GET INVESTIGATOR INFOMRATION  - {"status":200,"MESSAGE":"","ITEMSFOUND":1,"DATA":{"investid":"INV3000","investigator":"Mr. Zachery Von Menchhofen","investstatus":"On Hold","institution":"University of Pennsylvania Hospital","institutiontype":"Academic\/Non-Profit","primarydivision":"Eastern","investemail":"zacheryv@mail.med.upenn.edu"}}
+    $idta = json_decode(callrestapi("GET", dataTree . "/investigator-head/{$dta['inv']}", serverIdent, serverpw),true);
+    $wsStatus = (int)$idta['status'];
+    if ($wsStatus === 200) {  
+        $iName = $idta['DATA']['investigator'];
+        $istatus = $idta['DATA']['investstatus'];
+        $iinstitution = $idta['DATA']['institution'];
+        $iinsttype = $idta['DATA']['institutiontype'];
+        $iprimediv = $idta['DATA']['primarydivision'];
+        $iemail = $idta['DATA']['investemail'];
+
+
+
+
+
+
+
+        $innerDialog = <<<DIALOGINNER
+<table border=1 width=100%><tr><td>{$passedData}</td></tr></table>
+<table border=1 width=100%><tr><td></td><td>Ship Doc</td></tr><tr><td></td><td align=right style="width: 5vw;"><input type=text style="width: 5vw" id=sdcShipDocNbr READONLY value="NEW"></td></tr></table>
+<table border=1 width=100%>
+   <tr><td>Investigator Code</td><td>Investigator Name</td><td>Email</td><td>TQ-Status</td><td>Primary Division</td></tr>
+   <tr>
+     <td><input type=text id=sdcInvestCode READONLY style="width: 7vw;"  value="{$dta['inv']}"></td>
+     <td><input type=text id=sdcInvestName READONLY style="width: 15vw;" value="{$iName}"></td>
+     <td><input type=text id=sdcInvestEmail READONLY style="width: 20vw;" value="{$iemail}"></td>
+     <td><input type=text id=sdcInvestEmail READONLY style="width: 7vw;" value="{$istatus}"></td>
+     <td><input type=text id=sdcInvestPrimeDiv READONLY style="width: 12vw;" value="{$iprimediv}"></td>
+   </tr>
+</table>
+<table border=1 width=100%><tr><td>Institution</td><td>Institution Type</td></tr>
+<tr>
+   <td><input type=text id=sdcInvestInstitution READONLY style="width: 20vw;" value="{$iinstitution}"></td>
+   <td><input type=text id=sdcInvestEmail READONLY style="width: 15vw;" value="{$iinsttype}"></td>
+</tr>
+</table>
+
+DIALOGINNER;
+        $footerBar = "";
+    } else { 
+
+        $innerDialog = <<<DIALOGINNER
+
+MISSING INVESTIGATOR INFORMATION
+
+DIALOGINNER;
+        $footerBar = "";
+    }
+      break;
+      case 'dataCoordinatorBGSAssignment': 
         $titleBar = "Segment Assignment";
         $footerBar = "";
         $dataString = $passedData; 
@@ -34,8 +107,6 @@ function sysDialogBuilder($whichdialog, $passedData) {
             $cellCntr++;
         }
         $dspSegTbl .= "</table>";
-        
-
         $innerDialog = <<<DIALOGINNER
 <table border=0>
 <tr><td colspan=2 style="font-size: 1.8vh;padding: 8px;">Please specify an investigator code and request number: <input type=hidden value='{$dataString}' id=dialogBGSListing></td><td rowspan=3 valign=top id=assigSegHolder><div id=segmentAssignListing>{$dspSegTbl}</td></tr>
@@ -68,9 +139,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
 
  </td></tr>
 </table>
-
 DIALOGINNER;
-
       break;
       default: 
       $innerTbl = "";

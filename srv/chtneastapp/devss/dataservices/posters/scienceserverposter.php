@@ -369,7 +369,6 @@ class datadoers {
             $errorInd = 1;
             $msgArr[] .= "Segment Label {$r['bgs']} is not assigned.  This segment is unable to be added to a shipment document.";
           }                
-
           //2. NO SHIPDOC NBR
           //3. NO SHIPDATE
           if ($r['shippeddate'] !== "") { 
@@ -397,11 +396,7 @@ class datadoers {
              }
           }
           }
-
-          //START HERE:  CHECK THAT THERE ARE NO OPEN SHIPDOCS!  
-
-
-
+          //TODO: CHECK THAT THERE ARE NO OPEN SHIPDOCS
           $rcdCntr++; 
         } else { 
           $errorInd = 1; 
@@ -411,12 +406,13 @@ class datadoers {
       
       if ($errorInd === 0) { 
         $responseCode = 200;
-        //$dta = array('pagecontent' =>  bldDialog('dataCoordinatorBGSAssignment', $passedData));
+        $pdta['inv'] = $invChk;
+        $dta = array('pagecontent' =>  bldDialog('dataCoordinatorShipDocCreate', json_encode($pdta)));
       }
 
       $msg = $msgArr;       
       $rows['statusCode'] = $responseCode; 
-      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $data);
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;
     }
 

@@ -155,6 +155,33 @@ function shipdocqrycriteria($whichobj, $rqst) {
     return $rows;          
 }
 
+function investigatorhead($whichobj, $rqst) { 
+    session_start();
+    $responseCode = 404;
+    $msg = "No Investigator specified";
+    $itemsfound = 0;
+    if (trim($whichobj) !== "" ) { 
+    $dta = array();
+    require(genAppFiles . "/dataconn/sspdo.zck");  
+    $getSQL = "select i.investid, trim(concat(ifnull(i.invest_salutation,''),' ',ifnull(i.invest_fname,''),' ', ifnull(i.invest_lname,''))) as investigator, i.invest_status as investstatus, i.invest_homeinstitute as institution, i.invest_institutiontype as institutiontype, i.invest_division as primarydivision, e.add_email as investemail from vandyinvest.invest i left join (select investid, add_email from vandyinvest.eastern_address where investid = :investidb and add_type = 'INVESTIGATOR') e on i.investid = e.investid where i.investid = :investid";
+    $rs = $conn->prepare($getSQL);
+    $rs->execute( array(':investid' => strtoupper($whichobj), ':investidb' => strtoupper($whichobj)));
+    if ($rs->rowCount() < 1) { 
+       $msg = "QUERY OBJECT NOT FOUND";    
+    } else { 
+       $dta = $rs->fetch(PDO::FETCH_ASSOC);       
+       $itemsfound = 1;
+       $responseCode = 200;
+       $msg = "";
+    }
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('status' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+    return $rows;  
+
+}
+
+
 function bankqrycriteria($whichobj,$rqst) { 
     session_start();
     $responseCode = 404;

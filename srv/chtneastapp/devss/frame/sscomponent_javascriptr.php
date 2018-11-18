@@ -710,7 +710,6 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
 }
 }
 
-
 function answerInvestSuggestions(rtnData) { 
 var rsltTbl = "";
 if (parseInt(rtnData['responseCode']) === 200 ) { 
@@ -784,12 +783,18 @@ function answerPreprocessShipDoc(rtnData) {
    } else { 
      //DISPLAY SHIPDOC CREATOR
      if (byId('standardModalDialog')) {
-       console.log ('display shipdoc creator');
-       //var dta = JSON.parse(rtnData['responseText']); 
-       //byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
-       //byId('standardModalBacker').style.display = 'block';
-       //byId('standardModalDialog').style.display = 'block';
-       //byId('selectorAssignInv').focus();
+       var dta = JSON.parse(rtnData['responseText']); 
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+
+       byId('standardModalDialog').style.marginLeft = 0;
+       byId('standardModalDialog').style.left = "10vw";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "3vh";
+       byId('standardModalDialog').style.width = "80vw";
+       byId('systemDialogTitle').style.width = "80vw";
+
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
      }  
    }        
 }
@@ -807,6 +812,14 @@ function answerAssignBG(rtnData) {
      if (byId('standardModalDialog')) {
        var dta = JSON.parse(rtnData['responseText']); 
        byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+
+       byId('standardModalDialog').style.marginLeft = "-20vw";
+       byId('standardModalDialog').style.left = "50%";
+       byId('standardModalDialog').style.marginTop = "-10vh";
+       byId('standardModalDialog').style.top = "50%";
+       byId('standardModalDialog').style.width = "40vw";
+       byId('systemDialogTitle').style.width = "40vw";
+
        byId('standardModalBacker').style.display = 'block';
        byId('standardModalDialog').style.display = 'block';
        byId('selectorAssignInv').focus();
