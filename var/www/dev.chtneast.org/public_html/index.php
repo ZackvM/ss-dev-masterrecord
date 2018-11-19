@@ -78,17 +78,29 @@ switch ($request[1]) {
       #map {
         height: 80vh;
         width: 40vw;
+        float: left;
       }
+      #console { 
+        height: 80vh;
+        width: 40vw;
+        border: 1px solid #000;
+        float: left;
+            overflow: auto;
+            }
     </style>
   </head>
   <body>
-    <h1>Drexel University/Eosinophil Project Slide 1</h1>CHTN Eastern Digital Slide Viewer
+    
     <div id="map"></div>
-    <script>
+   
+   
+     <script>
       var map = L.map('map').setView([51.505, -0.09], 3);
+      
       L.tileLayer('https://dev.chtneast.org/slides/slidetwo/{z}/{y}/{x}.jpg', {
         maxZoom: 9
       }).addTo(map);
+                        
     </script>
   </body>
 </html>

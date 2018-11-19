@@ -21,27 +21,16 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $titleBar = "Shipment Document Creation";
         $dataString = $passedData; 
         $dta = json_decode($passedData, true);
-/*
-+---------------------+------------------+------+-----+---------+----------------+
-| Field               | Type             | Null | Key | Default | Extra          |
-+---------------------+------------------+------+-----+---------+----------------+
-| shipdate            | datetime         | YES  |     | NULL    |                |
-| toLab               | datetime         | YES  |     | NULL    |                |
-| comments            | varchar(500)     | YES  |     | NULL    |                |
-+---------------------+------------------+------+-----+---------+----------------+
- */
 
-    $idta = json_decode(callrestapi("GET", dataTree . "/investigator-head/{$dta['inv']}", serverIdent, serverpw),true);
-    $wsStatus = (int)$idta['status'];
-    if ($wsStatus === 200) {  
-        $iName = $idta['DATA']['investigator'];
-        $istatus = $idta['DATA']['investstatus'];
-        $iinstitution = $idta['DATA']['institution'];
-        $iinsttype = $idta['DATA']['institutiontype'];
-        $iprimediv = $idta['DATA']['primarydivision'];
-        $iemail = $idta['DATA']['investemail'];
-    
-
+  $idta = json_decode(callrestapi("GET", dataTree . "/investigator-head/{$dta['inv']}", serverIdent, serverpw),true);
+  $wsStatus = (int)$idta['status'];
+  if ($wsStatus === 200) {  
+    $iName = $idta['DATA']['investigator'];
+    $istatus = $idta['DATA']['investstatus'];
+    $iinstitution = $idta['DATA']['institution'];
+    $iinsttype = $idta['DATA']['institutiontype'];
+    $iprimediv = $idta['DATA']['primarydivision'];
+    $iemail = $idta['DATA']['investemail'];
     $sadta = json_decode(callrestapi("GET", dataTree . "/investigator-ship-address/{$dta['inv']}", serverIdent, serverpw),true);
     $wsSAStatus = (int)$sadta['status'];
     if ($wsSAStatus === 200) {  
@@ -50,17 +39,13 @@ function sysDialogBuilder($whichdialog, $passedData) {
       $shipAdd .= (trim($sadta['DATA']['addept']) !== "") ? "\r\n{$sadta['DATA']['addept']}" : "";
       $shipAdd .= (trim($sadta['DATA']['adline1']) !== "") ? "\r\n{$sadta['DATA']['adline1']}" : "";
       $shipAdd .= (trim($sadta['DATA']['adline2']) !== "") ? "\r\n{$sadta['DATA']['adline2']}" : "";
-
       $locShipLine = (trim($sadta['DATA']['adcity']) !== "") ? "{$sadta['DATA']['adcity']}" : "";
       $locShipLine .= (trim($sadta['DATA']['adstate']) !== "") ? (trim($locShipLine) !== "") ? ", {$sadta['DATA']['adstate']}" : "{$sadta['DATA']['adstate']}" : "" ;
       $locShipLine .= (trim($sadta['DATA']['adzipcode']) !== "") ? (trim($locShipLine) !== "") ? " {$sadta['DATA']['adzipcode']}" : "{$sadta['DATA']['adzipcode']}" : "" ;
       $shipAdd .= "\r\n{$locShipLine}";
-
       $shipAdd .= (trim($sadta['DATA']['adcountry']) !== "") ? "\r\n{$sadta['DATA']['adcountry']}" : "";
-   
       $shipPhone = (trim($sadta['DATA']['adphone']) !== "") ? "{$sadta['DATA']['adphone']}" : "";
       $shipEmail = (trim($sadta['DATA']['ademail']) !== "") ? "{$sadta['DATA']['ademail']}" : "";
-
     } else { 
       //NO SHIPPING ADDRESS
     }
@@ -73,91 +58,98 @@ function sysDialogBuilder($whichdialog, $passedData) {
       $billAdd .= (trim($badta['DATA']['addept']) !== "") ? "\r\n{$badta['DATA']['addept']}" : "";
       $billAdd .= (trim($badta['DATA']['adline1']) !== "") ? "\r\n{$badta['DATA']['adline1']}" : "";
       $billAdd .= (trim($badta['DATA']['adline2']) !== "") ? "\r\n{$badta['DATA']['adline2']}" : "";
-
       $locBillLine = (trim($badta['DATA']['adcity']) !== "") ? "{$badta['DATA']['adcity']}" : "";
       $locBillLine .= (trim($badta['DATA']['adstate']) !== "") ? (trim($locBillLine) !== "") ? ", {$badta['DATA']['adstate']}" : "{$badta['DATA']['adstate']}" : "" ;
       $locBillLine .= (trim($badta['DATA']['adzipcode']) !== "") ? (trim($locBillLine) !== "") ? " {$badta['DATA']['adzipcode']}" : "{$badta['DATA']['adzipcode']}" : "" ;
       $billAdd .= "\r\n{$locBillLine}";
-
       $billAdd .= (trim($badta['DATA']['adcountry']) !== "") ? "\r\n{$badta['DATA']['adcountry']}" : "";
-   
       $billPhone = (trim($badta['DATA']['adphone']) !== "") ? "{$badta['DATA']['adphone']}" : "";
       $billEmail = (trim($badta['DATA']['ademail']) !== "") ? "{$badta['DATA']['ademail']}" : "";
-
     } else { 
       //NO SHIPPING ADDRESS
     }
-
-
+    
 $shCalendar = buildcalendar('shipSDCFrom'); 
 $shpCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
-  <div class=valueHolder><input type=hidden id=sdcRqstShipDateValue><input type=text READONLY id=sdcRqstShipDate class="inputFld" style="width: 9vw;"></div>
-  <div class=valueDropDown style="min-width: 17vw;" id=fcal><div id=rShpCalendar>{$shCalendar}</div></div>
+  <div class=valueHolder><input type=hidden id=sdcRqstShipDateValue><input type=text READONLY id=sdcRqstShipDate class="inputFld"></div>
+  <div class=valueDropDown id=sdshpcal><div id=rShpCalendar>{$shCalendar}</div></div>
 </div>
 CALENDAR;
 
+$lbCalendar = buildcalendar('shipSDCToLab'); 
+$labCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=hidden id=sdcRqstToLabDateValue><input type=text READONLY id=sdcRqstToLabDate class="inputFld"></div>
+  <div class=valueDropDown id=tolabcal><div id=rToLabCalendar>{$lbCalendar}</div></div>
+</div>
+CALENDAR;
 
+  // - Segments are listed here
+  // {"0":{"biogroup":"81948","bgslabel":"81948001","segmentid":"431100"},"1":{"biogroup":"81948","bgslabel":"81948002","segmentid":"431101"},"inv":"INV3000"}
+   $segListR = json_decode($passedData, true);    
+   $segmentTbl = "<table><tr><th>Segments To Add To Shipdoc</th></tr>";
+   $rowCount = 0;
+   foreach($segListR as $sgK => $sgV) { 
+       if (trim($sgK) !== 'inv') {
+        $segmentTbl .= "<tr><td><input type=checkbox CHECKED data-bgsnbr=\"{$segV['bgslabel']}\" id=\"bgsList{$rowCount}\"><td>{$sgV['bgslabel']}</td></tr>";
+        $rowCount++;
+       }
+   }
+   $segmentTbl .= "</table>";
+   
         $innerDialog = <<<DIALOGINNER
-<table border=1 width=100%><tr><td></td><td>Ship Doc</td></tr><tr><td></td><td align=right style="width: 5vw;"><input type=text style="width: 5vw" id=sdcShipDocNbr READONLY value="NEW"></td></tr></table>
-<table border=1 width=100%><tr><td valign=top>
+<table border=0  id=sdcMainHolderTbl>
+    <tr><td>Ship Doc</td><td>Shipment Accepted By</td><td>Acceptor's Email</td><td>Shipment Purchase Order #</td><td>Requested Ship Date</td><td>Date to Pull</td><td>Segments For Shipment</td></tr>
+    <tr>
+            <td><input type=text id=sdcShipDocNbr READONLY value="NEW"></td>
+            <td><input type=text id=sdcAcceptedBy value=""></td>
+            <td><input type=text id=sdcAcceptorsEmail value=""></td>
+            <td><input type=text id=sdcPurchaseOrder value=""></td>
+            <td>{$shpCalendar}</td>
+            <td>{$labCalendar}</td>
+           <td rowspan=4 valign=top id=segmentListHolder><!-- SEGMENT LISTING //--> {$segmentTbl} </td></tr>
+    <tr><td colspan=6> <table><tr><td>Public Comments</td></tr><tr><td><TEXTAREA id=sdcPublicComments></textarea></td></tr></table> </td></tr>         
 
-<table border=1>
-  <tr>
-   <td>Shipment Accepted By</td>
-   <td>Acceptor's Email</td>
-   <td>Shipment Purchase Order #</td>
-   <td>Requested Ship Date</td>
-  </tr>
-  <tr>
-    <td><input type=text id=sdcAcceptedBy style="width: 9vw;" value=""></td>
-    <td><input type=text id=sdcAcceptorsEmail style="width: 15vw;" value=""></td>
-    <td><input type=text id=sdcPurchaseOrder style="width: 10vw;" value=""></td>
-    <td>{$shpCalendar}</td>
-  </tr>
-</table>
-
-<table border=1>
+<tr><td valign=top colspan=6>
+<table border=0 width=100%><tr><td id=TQAnnouncement>Investigator Information from CHTN TissueQuest</td></tr><tr><td>This information is from the central CHTN database (TissueQuest).  If you correct or change any information below you must also update it in TissueQuest!</td></tr></table>
+ <table border=0>
    <tr><td>Investigator Code</td><td>Investigator Name</td><td>Investigator's Email</td><td>Primary Division</td></tr>
    <tr>
-     <td><input type=text id=sdcInvestCode READONLY style="width: 7vw;"  value="{$dta['inv']}"></td>
-     <td><input type=text id=sdcInvestName READONLY style="width: 15vw;" value="{$iName}"></td>
-     <td><input type=text id=sdcInvestEmail READONLY style="width: 20vw;" value="{$iemail}"></td>
-     <td><input type=text id=sdcInvestPrimeDiv READONLY style="width: 12vw;" value="{$iprimediv}"></td>
+     <td><input type=text id=sdcInvestCode READONLY value="{$dta['inv']}"></td>
+     <td><input type=text id=sdcInvestName value="{$iName}"></td>
+     <td><input type=text id=sdcInvestEmail value="{$iemail}"></td>
+     <td><input type=text id=sdcInvestPrimeDiv READONLY value="{$iprimediv}"></td>
    </tr>
 </table>
-<table border=1><tr><td>Institution</td><td>Institution Type</td><td>TQ-Status</td></tr>
+<table border=0><tr><td>Institution</td><td>Institution Type</td><td>TQ-Status</td></tr>
 <tr>
-   <td><input type=text id=sdcInvestInstitution READONLY style="width: 20vw;" value="{$iinstitution}"></td>
-   <td><input type=text id=sdcInvestEmail READONLY style="width: 15vw;" value="{$iinsttype}"></td>
-   <td><input type=text id=sdcInvestEmail READONLY style="width: 7vw;" value="{$istatus}"></td>
+   <td><input type=text id=sdcInvestInstitution value="{$iinstitution}"></td>
+   <td><input type=text id=sdcInvestTQInstType READONLY value="{$iinsttype}"></td>
+   <td><input type=text id=sdcInvestTQStatus READONLY value="{$istatus}"></td>
 </tr>
 </table>
 
-<table border=1><tr><td valign=top>
+<table border=0><tr><td valign=top>
 
-<table border=1><tr><td>Shipping Address</td></tr>
-<tr><td><TEXTAREA id=sdcInvestShippingAddress style="width: 20vw; height: 10vh;">{$shipAdd}</TEXTAREA></td></tr>
-<tr><td>Shipping Phone</td></tr>
-<tr><td><input type=text id=sdcShippingPhone READONLY style="width: 20vw;"  value="{$shipPhone}"></td>
-<tr><td>Shipping Email</td></tr>
-<tr><td><input type=text id=sdcShippingEmail READONLY style="width: 20vw;"  value="{$shipEmail}"></td>
+<table border=0><tr><td colspan=2>Shipping Address</td></tr>
+<tr><td colspan=2><TEXTAREA id=sdcInvestShippingAddress>{$shipAdd}</TEXTAREA></td></tr>
+<tr><td>Shipping Phone</td><td>Shipping Email</td></tr>
+<tr><td><input type=text id=sdcShippingPhone value="{$shipPhone}"></td><td><input type=text id=sdcShippingEmail value="{$shipEmail}"></td>
 </table>
 
 </td><td valign=top>
 
-<table border=1><tr><td>Billing Address</td></tr>
-<tr><td><TEXTAREA id=sdcInvestBillingAddress style="width: 20vw; height: 10vh;">{$billAdd}</TEXTAREA></td></tr>
-<tr><td>Billing Phone</td></tr>
-<tr><td><input type=text id=sdcBillPhone READONLY style="width: 20vw;"  value="{$billPhone}"></td>
-<tr><td>Shipping Email</td></tr>
-<tr><td><input type=text id=sdcBillEmail READONLY style="width: 20vw;"  value="{$billEmail}"></td>
+<table border=0><tr><td colspan=2>Billing Address</td></tr>
+<tr><td colspan=2><TEXTAREA id=sdcInvestBillingAddress>{$billAdd}</TEXTAREA></td></tr>
+<tr><td>Billing Phone</td><td>Shipping Email</td></tr>
+<tr><td><input type=text id=sdcBillPhone value="{$billPhone}"></td><td><input type=text id=sdcBillEmail value="{$billEmail}"></td>
 </table>
-
 </td></tr></table>
 
-
-</td><td valign=top>{$passedData}</td></tr></table>
+</td></tr>
+<tr><td colspan=6 align=right><table class=tblBtn id=btnDialogAssign style="width: 6vw;" onclick="packCreateShipdoc();"><tr><td><center>Save</td></tr></table>    
+</table>
 
 DIALOGINNER;
         $footerBar = "";
@@ -237,6 +229,17 @@ PAGEHERE;
 return $rtnthis;
 }
 
+function segment($rqststr, $whichusr) { 
+    if ((int)$whichusr->allowcoord !== 1) { 
+     $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE COORDINATOR SCREEN";        
+    } else {    
+        $rtnthis = <<<PAGEHERE
+                {$rqststr[2]}
+PAGEHERE;
+        
+    }    
+    return $rtnthis;
+}
 
 function datacoordinator($rqststr, $whichusr) { 
     if ((int)$whichusr->allowcoord !== 1) { 
@@ -386,7 +389,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $cmtDsp .= ( trim($invloc) !== "" ) ?  (trim($cmtDsp) !== "") ?  "<br><b>Inventory Location</b>: {$invloc}" : "<b>Inventory Location</b>: {$invloc}" : "";
     
     //$sgencry = cryptservice($val['segmentid']);
-    $sgencry = $val['segmentid']; 
+    $sgencry =  cryptservice($val['segmentid']); 
     $moreInfo = ( trim($cmtDsp) !== "" ) ? "<div class=ttholder><div class=infoIconDiv><i class=\"material-icons informationalicon\">error_outline</i></div><div class=infoTxtDspDiv>{$cmtDsp}</div></div>" : "";
     
     

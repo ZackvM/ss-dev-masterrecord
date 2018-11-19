@@ -949,6 +949,11 @@ function displayParameters() {
   }
 }
 
+function packCreateShipdoc() { 
+    console.log('This is the Shipdoc Processor');
+        
+}
+        
 JAVASCR;
     
 return $rtnthis;

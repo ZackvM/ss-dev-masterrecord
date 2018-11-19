@@ -89,6 +89,7 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 .fldLabel {font-family: Roboto; font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding-top: 1vh; }
 input {width: 25vw; box-sizing: border-box; font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_mgrey},1);  }
 input:focus, input:active {background: rgba({$this->color_lamber},.5); border: 1px solid rgba({$this->color_dblue},.5);  outline: none;  }
+textarea { box-sizing: border-box; font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_mgrey},1); resize: none; }
 .pageTitle {font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1);}
 
 input[type=checkbox] { width: 2vw; }
@@ -102,7 +103,7 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 /* DROP DOWN TABLES */
 .menuHolderDiv { position: relative; }
 .menuHolderDiv:hover .valueDropDown { display: block; cursor: pointer; }
-.valueDropDown {background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .1vh; min-height: 15vh; max-height: 30vh; overflow: auto; display: none; z-index: 25; }
+.valueDropDown {background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .1vh; min-height: 15vh; max-height: 33vh; overflow: auto; display: none; z-index: 25; }
 .menuDropTbl { font-size: 1.8vh; padding: .6vh .1vw .6vh .1vw; white-space: nowrap; background: rgba({$this->color_white},1); width: 100%; }
 .ddMenuItem {padding: .3vh .2vw;}
 .ddMenuItem:hover { cursor: pointer;  background: rgba({$this->color_lblue},1); color: rgba({$this->color_white},1);  }
@@ -151,6 +152,15 @@ STYLESHEET;
 return $rtnThis;
   }    
 
+  function segment($mobileind) { 
+      $rtnThis = <<<STYLESHEET
+
+body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
+      
+STYLESHEET;
+      return $rtnThis;
+  }
+  
 function datacoordinator($mobileind) { 
       $rtnThis = <<<STYLESHEET
 
@@ -243,6 +253,39 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #qParameterHolder #qryParameterDspTbl .ColumnDataObj { font-size: 1.4vh; padding: 8px 5px;border-bottom: 1px solid rgba({$this->color_grey},1); } 
 #qParameterHolder #qryParameterDspTbl #srchTrmParaTitle { text-align: center; font-size: 2vh; color: rgba({$this->color_lblue},1); padding: 3vh 0 0 0; }
 
+
+/* shipdocCreator */
+#sdcMainHolderTbl { width: 80vw;}
+#sdcRqstShipDate {width: 9vw; }
+#sdshpcal {min-width: 17vw; }
+#sdcRqstToLabDate {width: 9vw; }
+#tolabcal { min-width: 17vw; }
+
+#sdcShipDocNbr { width: 5vw }
+#sdcAcceptedBy { width: 9vw; }
+#sdcAcceptorsEmail { width: 16vw; }
+#sdcPurchaseOrder { width: 11vw; }
+#sdcPublicComments {width: 62vw; height: 10vh; }
+
+#TQAnnouncement { font-family: Roboto; font-size:  2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); border-top: 1px solid rgba({$this->color_zackgrey},1);  }
+
+#sdcInvestCode { width: 6vw; }
+#sdcInvestName { width: 18vw; }
+#sdcInvestEmail { width: 26vw; }
+#sdcInvestPrimeDiv { width: 10vw; }
+#sdcInvestInstitution { width: 35.2vw; }
+#sdcInvestTQStatus {width: 10vw; }
+#sdcInvestTQInstType {width: 15vw; }
+
+#sdcInvestShippingAddress {width: 29.7vw; height: 18vh; resize:none; }
+#sdcShippingPhone {width: 14.8vw; }
+#sdcShippingEmail {width: 14.8vw; }
+#sdcInvestBillingAddress {width: 29.7vw; height: 18vh; resize:none; }
+#sdcBillPhone { width: 14.8vw;  }
+#sdcBillEmail { width: 14.8vw; }
+
+
+#segmentListHolder { width: 20vw; border-left: 1px solid rgba({$this->color_zackgrey},1); }
 
 STYLESHEET;
 return $rtnThis;

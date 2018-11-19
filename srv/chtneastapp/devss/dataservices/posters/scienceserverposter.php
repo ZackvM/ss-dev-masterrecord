@@ -195,7 +195,7 @@ class datadoers {
             } else { 
                 //NO ERRORS - SAVE REQUEST
                 require(serverkeys . "/sspdo.zck");  
-                session_start();
+                session_start();        
                 $usrSQL = "SELECT originalAccountName FROM four.sys_userbase where sessionid = :sessionid";
                 $usrR = $conn->prepare($usrSQL);
                 $usrR->execute(array(':sessionid' =>session_id()));

@@ -324,6 +324,23 @@ if ((int)$nextMonth === 13) {
         $leftBtnAction  = " onclick=\"getCalendar('shipSDCFrom','rShpCalendar', '{$lastMonth}/{$lastYear}',2);\" ";
         $rightBtnAction = " onclick=\"getCalendar('shipSDCFrom','rShpCalendar' ,'{$nextMonth}/{$nextYear}',2);\" ";  
         break;
+     case 'shipsdctolab':
+        $calTblId = "shpSDCTbl";
+        $leftBtnId = "shpFromLeft";
+        $calTitle = "shpFromTitle";
+        $rightBtnId = "shpFromRight";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmSpacer = "btmSpacer";
+        $btmLine = "shpFromBtmLine";
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        $leftBtnAction  = " onclick=\"getCalendar('shipSDCToLab','rToLabCalendar', '{$lastMonth}/{$lastYear}',2);\" ";
+        $rightBtnAction = " onclick=\"getCalendar('shipSDCToLab','rToLabCalendar' ,'{$nextMonth}/{$nextYear}',2);\" ";  
+        break;
       case 'shipbsqfrom':
         $calTblId = "shpFromTbl";
         $leftBtnId = "shpFromLeft";
@@ -431,6 +448,12 @@ while ($currentDay <= $numberOfDays) {
          $action = " onclick=\" fillField('sdcRqstShipDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
          $dayDsp = $currentDayDsp;
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('sdcRqstShipDate','','');\" ><center>[clear]</td></tr>";
+         break;
+         case 'shipsdctolab':
+         $sqrID = "daySqr{$currentDayDsp}";
+         $action = " onclick=\" fillField('sdcRqstToLabDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
+         $dayDsp = $currentDayDsp;
+         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('sdcRqstToLabDate','','');\" ><center>[clear]</td></tr>";
          break;
          case 'shipbsqfrom':
          $sqrID = "daySqr{$currentDayDsp}";
