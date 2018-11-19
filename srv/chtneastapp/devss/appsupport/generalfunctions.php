@@ -307,6 +307,23 @@ if ((int)$nextMonth === 13) {
         $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";       
         break;
+      case 'shipsdcfrom':
+        $calTblId = "shpSDCTbl";
+        $leftBtnId = "shpFromLeft";
+        $calTitle = "shpFromTitle";
+        $rightBtnId = "shpFromRight";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmSpacer = "btmSpacer";
+        $btmLine = "shpFromBtmLine";
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        $leftBtnAction  = " onclick=\"getCalendar('shipSDCFrom','rShpCalendar', '{$lastMonth}/{$lastYear}',2);\" ";
+        $rightBtnAction = " onclick=\"getCalendar('shipSDCFrom','rShpCalendar' ,'{$nextMonth}/{$nextYear}',2);\" ";  
+        break;
       case 'shipbsqfrom':
         $calTblId = "shpFromTbl";
         $leftBtnId = "shpFromLeft";
@@ -409,6 +426,12 @@ while ($currentDay <= $numberOfDays) {
          $dayDsp = $currentDayDsp;
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('bsqueryToDate','','');\" ><center>[clear]</td></tr>";
          break;     
+         case 'shipsdcfrom':
+         $sqrID = "daySqr{$currentDayDsp}";
+         $action = " onclick=\" fillField('sdcRqstShipDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
+         $dayDsp = $currentDayDsp;
+         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('sdcRqstShipDate','','');\" ><center>[clear]</td></tr>";
+         break;
          case 'shipbsqfrom':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('shpQryFromDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";

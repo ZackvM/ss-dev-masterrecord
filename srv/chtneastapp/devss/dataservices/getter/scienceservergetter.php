@@ -178,9 +178,58 @@ function investigatorhead($whichobj, $rqst) {
     $rows['statusCode'] = $responseCode; 
     $rows['data'] = array('status' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
     return $rows;  
-
 }
 
+
+function investigatorbilladdress($whichobj, $rqst) { 
+    session_start();
+    $responseCode = 404;
+    $msg = "No Investigator specified";
+    $itemsfound = 0;
+    if (trim($whichobj) !== "" ) { 
+    $dta = array();
+    require(genAppFiles . "/dataconn/sspdo.zck");  
+    $getSQL = "select ifnull(add_address1,'') adline1, ifnull(add_address2,'') adline2, ifnull(add_attn,'') adattn, ifnull(add_institution,'') adinstitution, ifnull(add_department,'') addept, ifnull(add_city,'') adcity, ifnull(add_state,'') adstate, ifnull(add_zipcode,'') adzipcode, ifnull(add_country,'') adcountry ,ifnull(add_email,'') ademail, ifnull(add_phone,'') adphone  from vandyinvest.eastern_address where investid = :investid and add_type = 'BILLING' order by addressid desc limit 1";
+    $rs = $conn->prepare($getSQL);
+    $rs->execute( array(':investid' => strtoupper($whichobj)));
+    if ($rs->rowCount() < 1) { 
+       $msg = "QUERY OBJECT NOT FOUND";    
+    } else { 
+       $dta = $rs->fetch(PDO::FETCH_ASSOC);       
+       $itemsfound = 1;
+       $responseCode = 200;
+       $msg = "";
+    }
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('status' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+    return $rows;  
+}
+
+function investigatorshipaddress($whichobj, $rqst) { 
+    session_start();
+    $responseCode = 404;
+    $msg = "No Investigator specified";
+    $itemsfound = 0;
+    if (trim($whichobj) !== "" ) { 
+    $dta = array();
+    require(genAppFiles . "/dataconn/sspdo.zck");  
+    $getSQL = "select ifnull(add_address1,'') adline1, ifnull(add_address2,'') adline2, ifnull(add_attn,'') adattn, ifnull(add_institution,'') adinstitution, ifnull(add_department,'') addept, ifnull(add_city,'') adcity, ifnull(add_state,'') adstate, ifnull(add_zipcode,'') adzipcode, ifnull(add_country,'') adcountry ,ifnull(add_email,'') ademail, ifnull(add_phone,'') adphone  from vandyinvest.eastern_address where investid = :investid and add_type = 'SHIPPING' order by addressid desc limit 1";
+    $rs = $conn->prepare($getSQL);
+    $rs->execute( array(':investid' => strtoupper($whichobj)));
+    if ($rs->rowCount() < 1) { 
+       $msg = "QUERY OBJECT NOT FOUND";    
+    } else { 
+       $dta = $rs->fetch(PDO::FETCH_ASSOC);       
+       $itemsfound = 1;
+       $responseCode = 200;
+       $msg = "";
+    }
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('status' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+    return $rows;  
+}
 
 function bankqrycriteria($whichobj,$rqst) { 
     session_start();

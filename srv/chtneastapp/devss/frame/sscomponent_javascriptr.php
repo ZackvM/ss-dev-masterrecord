@@ -746,10 +746,10 @@ function fillField(whichfield, whichvalue, whichdisplay) {
 }
 
 var lastRequestCalendarDiv = "";
-function getCalendar(whichcalendar, whichdiv, monthyear) {
+function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
 var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;
 lastRequestCalendarDiv = whichdiv;
-universalAJAX("GET",mlURL,"",answerGetCalendar,0);
+universalAJAX("GET",mlURL,"",answerGetCalendar,modalCtl);
 }
 
 function answerGetCalendar(rtnData) {

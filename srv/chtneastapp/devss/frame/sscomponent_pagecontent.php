@@ -25,24 +25,12 @@ function sysDialogBuilder($whichdialog, $passedData) {
 +---------------------+------------------+------+-----+---------+----------------+
 | Field               | Type             | Null | Key | Default | Extra          |
 +---------------------+------------------+------+-----+---------+----------------+
-| shipdocRefID        | int(10) unsigned | NO   | PRI | NULL    | auto_increment |
-| status              | varchar(45)      | YES  |     | NULL    |                |
-| statusDate          | datetime         | YES  |     | NULL    |                |
 | shipdate            | datetime         | YES  |     | NULL    |                |
-| invCode             | varchar(45)      | YES  |     | NULL    |                |
-| shipAddy            | varchar(1500)    | YES  |     | NULL    |                |
-| billAddy            | varchar(1500)    | YES  |     | NULL    |                |
-| invEmail            | varchar(150)     | YES  |     | NULL    |                |
-| PONbr               | varchar(45)      | YES  |     | NULL    |                |
 | toLab               | datetime         | YES  |     | NULL    |                |
-| acceptedBy          | varchar(45)      | YES  |     | NULL    |                |
 | comments            | varchar(500)     | YES  |     | NULL    |                |
-| setupOn             | datetime         | YES  |     | NULL    |                |
-| setupBy             | varchar(45)      | YES  |     | NULL    |                |
 +---------------------+------------------+------+-----+---------+----------------+
  */
 
-    //GET INVESTIGATOR INFOMRATION  - {"status":200,"MESSAGE":"","ITEMSFOUND":1,"DATA":{"investid":"INV3000","investigator":"Mr. Zachery Von Menchhofen","investstatus":"On Hold","institution":"University of Pennsylvania Hospital","institutiontype":"Academic\/Non-Profit","primarydivision":"Eastern","investemail":"zacheryv@mail.med.upenn.edu"}}
     $idta = json_decode(callrestapi("GET", dataTree . "/investigator-head/{$dta['inv']}", serverIdent, serverpw),true);
     $wsStatus = (int)$idta['status'];
     if ($wsStatus === 200) {  
@@ -52,32 +40,124 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $iinsttype = $idta['DATA']['institutiontype'];
         $iprimediv = $idta['DATA']['primarydivision'];
         $iemail = $idta['DATA']['investemail'];
+    
+
+    $sadta = json_decode(callrestapi("GET", dataTree . "/investigator-ship-address/{$dta['inv']}", serverIdent, serverpw),true);
+    $wsSAStatus = (int)$sadta['status'];
+    if ($wsSAStatus === 200) {  
+      $shipAdd = (trim($sadta['DATA']['adattn']) !== "") ? "Attn: {$sadta['DATA']['adattn']}" : "";
+      $shipAdd .= (trim($sadta['DATA']['adinstitution']) !== "") ? "\r\n{$sadta['DATA']['adinstitution']}" : "";
+      $shipAdd .= (trim($sadta['DATA']['addept']) !== "") ? "\r\n{$sadta['DATA']['addept']}" : "";
+      $shipAdd .= (trim($sadta['DATA']['adline1']) !== "") ? "\r\n{$sadta['DATA']['adline1']}" : "";
+      $shipAdd .= (trim($sadta['DATA']['adline2']) !== "") ? "\r\n{$sadta['DATA']['adline2']}" : "";
+
+      $locShipLine = (trim($sadta['DATA']['adcity']) !== "") ? "{$sadta['DATA']['adcity']}" : "";
+      $locShipLine .= (trim($sadta['DATA']['adstate']) !== "") ? (trim($locShipLine) !== "") ? ", {$sadta['DATA']['adstate']}" : "{$sadta['DATA']['adstate']}" : "" ;
+      $locShipLine .= (trim($sadta['DATA']['adzipcode']) !== "") ? (trim($locShipLine) !== "") ? " {$sadta['DATA']['adzipcode']}" : "{$sadta['DATA']['adzipcode']}" : "" ;
+      $shipAdd .= "\r\n{$locShipLine}";
+
+      $shipAdd .= (trim($sadta['DATA']['adcountry']) !== "") ? "\r\n{$sadta['DATA']['adcountry']}" : "";
+   
+      $shipPhone = (trim($sadta['DATA']['adphone']) !== "") ? "{$sadta['DATA']['adphone']}" : "";
+      $shipEmail = (trim($sadta['DATA']['ademail']) !== "") ? "{$sadta['DATA']['ademail']}" : "";
+
+    } else { 
+      //NO SHIPPING ADDRESS
+    }
+
+    $badta = json_decode(callrestapi("GET", dataTree . "/investigator-bill-address/{$dta['inv']}", serverIdent, serverpw),true);
+    $wsBAStatus = (int)$badta['status'];
+    if ($wsBAStatus === 200) {  
+      $billAdd = (trim($badta['DATA']['adattn']) !== "") ? "Attn: {$badta['DATA']['adattn']}" : "";
+      $billAdd .= (trim($badta['DATA']['adinstitution']) !== "") ? "\r\n{$badta['DATA']['adinstitution']}" : "";
+      $billAdd .= (trim($badta['DATA']['addept']) !== "") ? "\r\n{$badta['DATA']['addept']}" : "";
+      $billAdd .= (trim($badta['DATA']['adline1']) !== "") ? "\r\n{$badta['DATA']['adline1']}" : "";
+      $billAdd .= (trim($badta['DATA']['adline2']) !== "") ? "\r\n{$badta['DATA']['adline2']}" : "";
+
+      $locBillLine = (trim($badta['DATA']['adcity']) !== "") ? "{$badta['DATA']['adcity']}" : "";
+      $locBillLine .= (trim($badta['DATA']['adstate']) !== "") ? (trim($locBillLine) !== "") ? ", {$badta['DATA']['adstate']}" : "{$badta['DATA']['adstate']}" : "" ;
+      $locBillLine .= (trim($badta['DATA']['adzipcode']) !== "") ? (trim($locBillLine) !== "") ? " {$badta['DATA']['adzipcode']}" : "{$badta['DATA']['adzipcode']}" : "" ;
+      $billAdd .= "\r\n{$locBillLine}";
+
+      $billAdd .= (trim($badta['DATA']['adcountry']) !== "") ? "\r\n{$badta['DATA']['adcountry']}" : "";
+   
+      $billPhone = (trim($badta['DATA']['adphone']) !== "") ? "{$badta['DATA']['adphone']}" : "";
+      $billEmail = (trim($badta['DATA']['ademail']) !== "") ? "{$badta['DATA']['ademail']}" : "";
+
+    } else { 
+      //NO SHIPPING ADDRESS
+    }
 
 
-
-
-
+$shCalendar = buildcalendar('shipSDCFrom'); 
+$shpCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=hidden id=sdcRqstShipDateValue><input type=text READONLY id=sdcRqstShipDate class="inputFld" style="width: 9vw;"></div>
+  <div class=valueDropDown style="min-width: 17vw;" id=fcal><div id=rShpCalendar>{$shCalendar}</div></div>
+</div>
+CALENDAR;
 
 
         $innerDialog = <<<DIALOGINNER
-<table border=1 width=100%><tr><td>{$passedData}</td></tr></table>
 <table border=1 width=100%><tr><td></td><td>Ship Doc</td></tr><tr><td></td><td align=right style="width: 5vw;"><input type=text style="width: 5vw" id=sdcShipDocNbr READONLY value="NEW"></td></tr></table>
-<table border=1 width=100%>
-   <tr><td>Investigator Code</td><td>Investigator Name</td><td>Email</td><td>TQ-Status</td><td>Primary Division</td></tr>
+<table border=1 width=100%><tr><td valign=top>
+
+<table border=1>
+  <tr>
+   <td>Shipment Accepted By</td>
+   <td>Acceptor's Email</td>
+   <td>Shipment Purchase Order #</td>
+   <td>Requested Ship Date</td>
+  </tr>
+  <tr>
+    <td><input type=text id=sdcAcceptedBy style="width: 9vw;" value=""></td>
+    <td><input type=text id=sdcAcceptorsEmail style="width: 15vw;" value=""></td>
+    <td><input type=text id=sdcPurchaseOrder style="width: 10vw;" value=""></td>
+    <td>{$shpCalendar}</td>
+  </tr>
+</table>
+
+<table border=1>
+   <tr><td>Investigator Code</td><td>Investigator Name</td><td>Investigator's Email</td><td>Primary Division</td></tr>
    <tr>
      <td><input type=text id=sdcInvestCode READONLY style="width: 7vw;"  value="{$dta['inv']}"></td>
      <td><input type=text id=sdcInvestName READONLY style="width: 15vw;" value="{$iName}"></td>
      <td><input type=text id=sdcInvestEmail READONLY style="width: 20vw;" value="{$iemail}"></td>
-     <td><input type=text id=sdcInvestEmail READONLY style="width: 7vw;" value="{$istatus}"></td>
      <td><input type=text id=sdcInvestPrimeDiv READONLY style="width: 12vw;" value="{$iprimediv}"></td>
    </tr>
 </table>
-<table border=1 width=100%><tr><td>Institution</td><td>Institution Type</td></tr>
+<table border=1><tr><td>Institution</td><td>Institution Type</td><td>TQ-Status</td></tr>
 <tr>
    <td><input type=text id=sdcInvestInstitution READONLY style="width: 20vw;" value="{$iinstitution}"></td>
    <td><input type=text id=sdcInvestEmail READONLY style="width: 15vw;" value="{$iinsttype}"></td>
+   <td><input type=text id=sdcInvestEmail READONLY style="width: 7vw;" value="{$istatus}"></td>
 </tr>
 </table>
+
+<table border=1><tr><td valign=top>
+
+<table border=1><tr><td>Shipping Address</td></tr>
+<tr><td><TEXTAREA id=sdcInvestShippingAddress style="width: 20vw; height: 10vh;">{$shipAdd}</TEXTAREA></td></tr>
+<tr><td>Shipping Phone</td></tr>
+<tr><td><input type=text id=sdcShippingPhone READONLY style="width: 20vw;"  value="{$shipPhone}"></td>
+<tr><td>Shipping Email</td></tr>
+<tr><td><input type=text id=sdcShippingEmail READONLY style="width: 20vw;"  value="{$shipEmail}"></td>
+</table>
+
+</td><td valign=top>
+
+<table border=1><tr><td>Billing Address</td></tr>
+<tr><td><TEXTAREA id=sdcInvestBillingAddress style="width: 20vw; height: 10vh;">{$billAdd}</TEXTAREA></td></tr>
+<tr><td>Billing Phone</td></tr>
+<tr><td><input type=text id=sdcBillPhone READONLY style="width: 20vw;"  value="{$billPhone}"></td>
+<tr><td>Shipping Email</td></tr>
+<tr><td><input type=text id=sdcBillEmail READONLY style="width: 20vw;"  value="{$billEmail}"></td>
+</table>
+
+</td></tr></table>
+
+
+</td><td valign=top>{$passedData}</td></tr></table>
 
 DIALOGINNER;
         $footerBar = "";
@@ -147,7 +227,7 @@ DIALOGINNER;
 
   $rtnthis = <<<PAGEHERE
 <table border=0 cellspacing=0 cellpadding=0>
-<tr><td id=systemDialogTitle>{$titleBar}</td><td onclick="closeSystemDialog();" id=systemDialogClose>&times</td></tr>
+<tr><td id=systemDialogTitle>{$titleBar}</td><td onclick="closeSystemDialog();" id=systemDialogClose>{$this->closeBtn}</td></tr>
 <tr><td colspan=2>
   {$innerDialog}
 </td></tr>
