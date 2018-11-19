@@ -63,7 +63,41 @@ if ($detect->isMobile()) {
  */
 
 
-switch ($request[1]) { 
+switch ($request[1]) {
+
+    case 'chtneasternmicroscope': 
+      
+        $pg = <<<PAGECONTENT
+
+<html>  
+  <head>
+    <title>CHTN Eastern Microscope</title>
+    <link rel="stylesheet" href="https://dev.chtneast.org/slides/leaf.css">
+    <script src="https://dev.chtneast.org/slides/leaf.js"></script>
+    <style>
+      #map {
+        height: 80vh;
+        width: 40vw;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Drexel University/Eosinophil Project Slide 1</h1>CHTN Eastern Digital Slide Viewer
+    <div id="map"></div>
+    <script>
+      var map = L.map('map').setView([51.505, -0.09], 3);
+      L.tileLayer('https://dev.chtneast.org/slides/slidetwo/{z}/{y}/{x}.jpg', {
+        maxZoom: 9
+      }).addTo(map);
+    </script>
+  </body>
+</html>
+
+
+PAGECONTENT;
+echo $pg;
+        exit();
+        break; 
     case 'dataservices': 
         //BOTH GET AND POSTS GO HERE
         $responseCode = 400;
