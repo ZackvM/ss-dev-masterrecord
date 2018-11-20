@@ -278,10 +278,10 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #sdcInvestTQInstType {width: 15vw; }
 
 #sdcInvestShippingAddress {width: 29.7vw; height: 18vh; resize:none; }
-#sdcShippingPhone {width: 14.8vw; }
+#sdcShippingPhone {width: 29.7vw; }
 #sdcShippingEmail {width: 14.8vw; }
 #sdcInvestBillingAddress {width: 29.7vw; height: 18vh; resize:none; }
-#sdcBillPhone { width: 14.8vw;  }
+#sdcBillPhone { width: 29.7vw;  }
 #sdcBillEmail { width: 14.8vw; }
 
 

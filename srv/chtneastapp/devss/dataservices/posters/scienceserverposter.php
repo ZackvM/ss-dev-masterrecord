@@ -416,6 +416,95 @@ class datadoers {
       return $rows;
     }
 
+    function shipdocquickcreator($request, $passeddata) { 
+
+/*
+  CHECKS
+  ----------------------------------
+  2) MUST HAVE LIST OF SEGMENTS
+  3) SEGMENTS MUST BE ASSIGNED TO SAME AS sdcInvestCode
+  4) SEGMENTS MUST NOT BE ON A SHIPDOC AND MUST NOT HAVE A SHIPDATE
+  5) ALL ACCEPT AND DATE FIELDS MUST HAVE VALUES
+  6) ALL INVESTIGATOR FIELDS MUST HAVE VALUES (SHIPPING/BILLING ADDRESSES) 
+ */
+ 
+       require(serverkeys . "/sspdo.zck");  
+       session_start(); 
+       $responseCode = 400;  
+       $pdta = json_decode($passeddata, true); 
+       $itemsfound = 0;
+       //$msgArr = array();
+       //$dta = array();
+       $errorInd = 0;
+       
+//{"sdcShipDocNbr":"NEW","sdcAcceptedBy":"","sdcAcceptorsEmail":"","sdcPurchaseOrder":"","sdcRqstShipDateValue":"","sdcRqstShipDate":"","sdcRqstToLabDateValue":"","sdcRqstToLabDate":"","sdcBGSList0":"on","sdcBGSList1":"on","sdcPublicComments":"","sdcInvestCode":"INV3000","sdcInvestName":"Mr. Zachery Von Menchhofen","sdcInvestEmail":"zacheryv@mail.med.upenn.edu","sdcInvestPrimeDiv":"Eastern","sdcInvestInstitution":"University of Pennsylvania Hospital","sdcInvestTQInstType":"Academic/Non-Profit","sdcInvestTQStatus":"On Hold","sdcInvestShippingAddress":"Attn: Zachery Von Menchhofen\nUniversity of Pennsylvania\nPathology & Laboratory Medicine\n3400 Spruce Street\n568 Dulles\nPhiladelphia, Pennsylvania 19104\nU.S.A.","sdcShippingPhone":"(215) 622-4570 (ext. )","sdcShippingEmail":"","sdcInvestBillingAddress":"Attn: Zachery Von Menchhofen\nUniversity of Pennsylvania\nPathology & Laboratory Medicine\n3400 Spruce Street\n570 Dulles\nPhiladelphia, Pennsylvania 19104\nU.S.A.","sdcBillPhone":"(215) 622-4570 (ext. )","sdcBillEmail":"","listedSegments":"[{\"segmentid\":\"431100\",\"bgs\":\"431100\"},{\"segmentid\":\"431101\",\"bgs\":\"431101\"}]"}
+
+
+     if ( strtoupper(trim($pdta['sdcShipDocNbr'])) !== "NEW") { 
+       $errorInd = 1; 
+       $msgArr[] .= "THE SHIPDOC NUMBER MUST BE LISTED AS NEW";
+     } 
+
+     if (  trim($pdta['sdcAcceptedBy']) === "" ) { 
+       $errorInd = 1; 
+       $msgArr[] .= "THE NAME OF THE PERSON ACCEPTING THE SHIPMENT IS REQUIRED";
+     }
+
+     if ( trim($pdta['sdcAcceptorsEmail']) === "") { 
+       $errorInd = 1; 
+       $msgArr[] .= "THE EMAIL OF THE PERSON ACCEPTING IS REQUIRED";
+     } else { 
+       //VALID EMAIL??
+       if (filter_var(trim($pdta['sdcAcceptorsEmail']), FILTER_VALIDATE_EMAIL)) {
+       } else {
+         $errorInd = 1; 
+         $msgArr[] .= "THE ACCEPTING PERSON'S EMAIL IS INVALID";
+       }
+     }     
+
+     if ( trim($pdta['sdcPurchaseOrder']) === "" ) { 
+       $errorInd = 1; 
+       $msgArr[] .= "A PURCHASE ORDER NUMBER IS REQUIRED";
+     }
+
+     if ( trim($pdta['sdcRqstShipDateValue']) === "" ) { 
+       $errorInd = 1;
+       $msgArr[] .= "A REQUESTED SHIPMENT DATE VALUE IS REQUIRED";
+     } else { 
+       $shpDteVerif = verifyDate(trim($pdta['sdcRqstShipDateValue']),'Y-m-d', true); 
+       if (!$shpDteVerif) { 
+         $errorInd = 1;
+         $msgArr[] .= "THE DATE FOR THE REQUESTED SHIPMENT DATE IS INVALID";
+       }
+     }
+
+
+     if ( trim($pdta['sdcRqstToLabDateValue']) === "" ) { 
+       $errorInd = 1;
+       $msgArr[] .= "A REQUESTED 'DATE TO PULL' DATE IS REQUIRED";
+     } else { 
+       $shpDteVerif = verifyDate(trim($pdta['sdcRqstToLabDateValue']),'Y-m-d', true); 
+       if (!$shpDteVerif) { 
+         $errorInd = 1;
+         $msgArr[] .= "THE DATE FOR THE REQUESTED 'DATE TO PULL' IS INVALID";
+       }
+     }
+
+       if (  $errorInd === 0 ) { 
+         //WRITE THE SHIPDOC - SEND BACK NUMBER
+
+
+
+         $responseCode = 200;  
+       } else { 
+         //SEND BACK ERRORS
+         $msg = $msgArr;
+       } 
+       $rows['statusCode'] = $responseCode; 
+       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+       return $rows;        
+    }
+
     function preprocessassignsegments($request, $passedData) { 
        require(serverkeys . "/sspdo.zck");  
        session_start(); 

@@ -43,7 +43,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
       $locShipLine .= (trim($sadta['DATA']['adstate']) !== "") ? (trim($locShipLine) !== "") ? ", {$sadta['DATA']['adstate']}" : "{$sadta['DATA']['adstate']}" : "" ;
       $locShipLine .= (trim($sadta['DATA']['adzipcode']) !== "") ? (trim($locShipLine) !== "") ? " {$sadta['DATA']['adzipcode']}" : "{$sadta['DATA']['adzipcode']}" : "" ;
       $shipAdd .= "\r\n{$locShipLine}";
-      $shipAdd .= (trim($sadta['DATA']['adcountry']) !== "") ? "\r\n{$sadta['DATA']['adcountry']}" : "";
+      //$shipAdd .= (trim($sadta['DATA']['adcountry']) !== "") ? "\r\n{$sadta['DATA']['adcountry']}" : "";
       $shipPhone = (trim($sadta['DATA']['adphone']) !== "") ? "{$sadta['DATA']['adphone']}" : "";
       $shipEmail = (trim($sadta['DATA']['ademail']) !== "") ? "{$sadta['DATA']['ademail']}" : "";
     } else { 
@@ -62,7 +62,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
       $locBillLine .= (trim($badta['DATA']['adstate']) !== "") ? (trim($locBillLine) !== "") ? ", {$badta['DATA']['adstate']}" : "{$badta['DATA']['adstate']}" : "" ;
       $locBillLine .= (trim($badta['DATA']['adzipcode']) !== "") ? (trim($locBillLine) !== "") ? " {$badta['DATA']['adzipcode']}" : "{$badta['DATA']['adzipcode']}" : "" ;
       $billAdd .= "\r\n{$locBillLine}";
-      $billAdd .= (trim($badta['DATA']['adcountry']) !== "") ? "\r\n{$badta['DATA']['adcountry']}" : "";
+      //$billAdd .= (trim($badta['DATA']['adcountry']) !== "") ? "\r\n{$badta['DATA']['adcountry']}" : "";
       $billPhone = (trim($badta['DATA']['adphone']) !== "") ? "{$badta['DATA']['adphone']}" : "";
       $billEmail = (trim($badta['DATA']['ademail']) !== "") ? "{$badta['DATA']['ademail']}" : "";
     } else { 
@@ -92,19 +92,19 @@ CALENDAR;
    $rowCount = 0;
    foreach($segListR as $sgK => $sgV) { 
        if (trim($sgK) !== 'inv') {
-        $segmentTbl .= "<tr><td><input type=checkbox CHECKED data-bgsnbr=\"{$segV['bgslabel']}\" id=\"bgsList{$rowCount}\"><td>{$sgV['bgslabel']}</td></tr>";
+        $segmentTbl .= "<tr><td><input type=checkbox CHECKED data-segment=\"{$sgV['segmentid']}\" data-bgs=\"{$sgV['bgsLabel']}\" id=\"sdcBGSList{$rowCount}\"><td>{$sgV['bgslabel']}</td></tr>";
         $rowCount++;
        }
    }
    $segmentTbl .= "</table>";
    
         $innerDialog = <<<DIALOGINNER
-<table border=0  id=sdcMainHolderTbl>
-    <tr><td>Ship Doc</td><td>Shipment Accepted By</td><td>Acceptor's Email</td><td>Shipment Purchase Order #</td><td>Requested Ship Date</td><td>Date to Pull</td><td>Segments For Shipment</td></tr>
+<form id=frmShipDocCreate><table border=0  id=sdcMainHolderTbl>
+    <tr><td>Ship Doc</td><td>Shipment Accepted By *</td><td>Acceptor's Email *</td><td>Shipment Purchase Order # *</td><td>Requested Ship Date *</td><td>Date to Pull *</td><td>Segments For Shipment *</td></tr>
     <tr>
             <td><input type=text id=sdcShipDocNbr READONLY value="NEW"></td>
             <td><input type=text id=sdcAcceptedBy value=""></td>
-            <td><input type=text id=sdcAcceptorsEmail value=""></td>
+            <td><input type=text id=sdcAcceptorsEmail value=""><!--TODO: ADD OPTIONS DROPDOWN FOR JOURNAL AND CREDIT CARD//--></td>
             <td><input type=text id=sdcPurchaseOrder value=""></td>
             <td>{$shpCalendar}</td>
             <td>{$labCalendar}</td>
@@ -114,7 +114,7 @@ CALENDAR;
 <tr><td valign=top colspan=6>
 <table border=0 width=100%><tr><td id=TQAnnouncement>Investigator Information from CHTN TissueQuest</td></tr><tr><td>This information is from the central CHTN database (TissueQuest).  If you correct or change any information below you must also update it in TissueQuest!</td></tr></table>
  <table border=0>
-   <tr><td>Investigator Code</td><td>Investigator Name</td><td>Investigator's Email</td><td>Primary Division</td></tr>
+   <tr><td>Investigator Code *</td><td>Investigator Name *</td><td>Investigator's Email *</td><td>Primary Division</td></tr>
    <tr>
      <td><input type=text id=sdcInvestCode READONLY value="{$dta['inv']}"></td>
      <td><input type=text id=sdcInvestName value="{$iName}"></td>
@@ -132,24 +132,25 @@ CALENDAR;
 
 <table border=0><tr><td valign=top>
 
-<table border=0><tr><td colspan=2>Shipping Address</td></tr>
+<table border=0><tr><td colspan=2>Shipping Address *</td></tr>
 <tr><td colspan=2><TEXTAREA id=sdcInvestShippingAddress>{$shipAdd}</TEXTAREA></td></tr>
-<tr><td>Shipping Phone</td><td>Shipping Email</td></tr>
-<tr><td><input type=text id=sdcShippingPhone value="{$shipPhone}"></td><td><input type=text id=sdcShippingEmail value="{$shipEmail}"></td>
+<tr><td>Shipping Phone</td><!-- <td>Shipping Email</td> //--></tr>
+<tr><td><input type=text id=sdcShippingPhone value="{$shipPhone}"></td><td><!--<input type=text id=sdcShippingEmail value="{$shipEmail}">//--></td>
 </table>
 
 </td><td valign=top>
 
-<table border=0><tr><td colspan=2>Billing Address</td></tr>
+<table border=0><tr><td colspan=2>Billing Address *</td></tr>
 <tr><td colspan=2><TEXTAREA id=sdcInvestBillingAddress>{$billAdd}</TEXTAREA></td></tr>
-<tr><td>Billing Phone</td><td>Shipping Email</td></tr>
-<tr><td><input type=text id=sdcBillPhone value="{$billPhone}"></td><td><input type=text id=sdcBillEmail value="{$billEmail}"></td>
+<tr><td>Billing Phone</td><!--<td>Billing Email</td>//--></tr>
+<tr><td><input type=text id=sdcBillPhone value="{$billPhone}"></td><!--<td><input type=text id=sdcBillEmail value="{$billEmail}">//--></td>
 </table>
 </td></tr></table>
 
 </td></tr>
 <tr><td colspan=6 align=right><table class=tblBtn id=btnDialogAssign style="width: 6vw;" onclick="packCreateShipdoc();"><tr><td><center>Save</td></tr></table>    
-</table>
+</table></form>
+
 
 DIALOGINNER;
         $footerBar = "";

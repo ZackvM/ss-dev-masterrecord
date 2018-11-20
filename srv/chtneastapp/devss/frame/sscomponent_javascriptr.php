@@ -949,11 +949,42 @@ function displayParameters() {
   }
 }
 
-function packCreateShipdoc() { 
-    console.log('This is the Shipdoc Processor');
-        
+function packCreateShipdoc() {
+
+  var elements = document.getElementById("frmShipDocCreate").elements;
+  var dta = new Object();
+  var segments = [];  
+  for (var i = 0; i < elements.length; i++) { 
+    if ( elements[i].type === 'checkbox' ) {
+      if (elements[i].id.substr(0,10) === 'sdcBGSList' ) {
+        if (elements[i].checked) {  
+          segments[segments.length] = { segmentid : byId(elements[i].id).dataset.segment, bgs : byId(elements[i].id).dataset.segment  }; 
+        }
+      } 
+    }
+    dta[elements[i].id] = elements[i].value.trim();      
+  }
+  dta['listedSegments'] = JSON.stringify(segments);
+  var passdata = JSON.stringify(dta);
+  var mlURL = "/data-doers/shipdoc-quick-creator";
+  universalAJAX("POST",mlURL,passdata,answerPackCreateShipdoc,2);
+
 }
-        
+
+function answerPackCreateShipdoc(rtnData) { 
+  console.log(rtnData);
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("SHIPMENT DOCUMENT CREATION ERROR:\\n"+dspMsg);
+  } else { 
+    //Good results
+  }        
+}
+
 JAVASCR;
     
 return $rtnthis;
