@@ -416,93 +416,98 @@ class datadoers {
       return $rows;
     }
 
-    function shipdocquickcreator($request, $passeddata) { 
-
-/*
-  CHECKS
-  ----------------------------------
-  2) MUST HAVE LIST OF SEGMENTS
-  3) SEGMENTS MUST BE ASSIGNED TO SAME AS sdcInvestCode
-  4) SEGMENTS MUST NOT BE ON A SHIPDOC AND MUST NOT HAVE A SHIPDATE
-  5) ALL ACCEPT AND DATE FIELDS MUST HAVE VALUES
-  6) ALL INVESTIGATOR FIELDS MUST HAVE VALUES (SHIPPING/BILLING ADDRESSES) 
- */
- 
+    function shipdocquickcreator($request, $passeddata) {  
        require(serverkeys . "/sspdo.zck");  
        session_start(); 
        $responseCode = 400;  
        $pdta = json_decode($passeddata, true); 
        $itemsfound = 0;
-       //$msgArr = array();
-       //$dta = array();
+       $msgArr = array();
+       $dta = array();
        $errorInd = 0;
-       
-//{"sdcShipDocNbr":"NEW","sdcAcceptedBy":"","sdcAcceptorsEmail":"","sdcPurchaseOrder":"","sdcRqstShipDateValue":"","sdcRqstShipDate":"","sdcRqstToLabDateValue":"","sdcRqstToLabDate":"","sdcBGSList0":"on","sdcBGSList1":"on","sdcPublicComments":"","sdcInvestCode":"INV3000","sdcInvestName":"Mr. Zachery Von Menchhofen","sdcInvestEmail":"zacheryv@mail.med.upenn.edu","sdcInvestPrimeDiv":"Eastern","sdcInvestInstitution":"University of Pennsylvania Hospital","sdcInvestTQInstType":"Academic/Non-Profit","sdcInvestTQStatus":"On Hold","sdcInvestShippingAddress":"Attn: Zachery Von Menchhofen\nUniversity of Pennsylvania\nPathology & Laboratory Medicine\n3400 Spruce Street\n568 Dulles\nPhiladelphia, Pennsylvania 19104\nU.S.A.","sdcShippingPhone":"(215) 622-4570 (ext. )","sdcShippingEmail":"","sdcInvestBillingAddress":"Attn: Zachery Von Menchhofen\nUniversity of Pennsylvania\nPathology & Laboratory Medicine\n3400 Spruce Street\n570 Dulles\nPhiladelphia, Pennsylvania 19104\nU.S.A.","sdcBillPhone":"(215) 622-4570 (ext. )","sdcBillEmail":"","listedSegments":"[{\"segmentid\":\"431100\",\"bgs\":\"431100\"},{\"segmentid\":\"431101\",\"bgs\":\"431101\"}]"}
+     //DATA CHECKS  
+     ( strtoupper(trim($pdta['sdcShipDocNbr'])) !== "NEW") ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE SHIPDOC NUMBER MUST BE LISTED AS 'NEW'")) : "" ;
+     ( trim($pdta['sdcAcceptedBy']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE NAME OF THE PERSON ACCEPTING SHIPMENT IS REQUIRED")) : "" ; 
+     ( trim($pdta['sdcAcceptorsEmail']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE EMAIL OF THE PERSON ACCEPTING THE SHIPMENT MUST BE SPECIFIED")) : "" ; 
+     ( trim($pdta['sdcAcceptorsEmail']) !== "" && !filter_var(trim($pdta['sdcAcceptorsEmail']), FILTER_VALIDATE_EMAIL) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE ACCEPTOR'S EMAIL APPEARS TO BE AN INVALID EMAIL ADDRESS")) : "" ;
+     ( trim($pdta['sdcPurchaseOrder']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "A PURCHASE ORDER NUMBER IS REQUIRED")) : "" ;
+     ( trim($pdta['sdcRqstShipDateValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "A REQUESTED SHIPMENT DATE IS REQUIRED")) : "" ;
+     ( trim($pdta['sdcRqstShipDateValue']) !== "" &&  !verifyDate(trim($pdta['sdcRqstShipDateValue']),'Y-m-d', true) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE DATE SPECIFIED FOR THE SHIPMENT IS INVALID")) : "" ;
+     ( trim($pdta['sdcRqstToLabDateValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "A 'DATE TO PULL' IS REQUIRED")) : "" ;
+     ( trim($pdta['sdcRqstToLabDateValue']) !== "" &&  !verifyDate(trim($pdta['sdcRqstToLabDateValue']),'Y-m-d', true) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE 'DATE TO PULL' IS INVALID")) : "" ;
+     ( trim($pdta['sdcInvestCode']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE INVESTIGATOR'S CODE MUST BE SPECIFIED")) : "" ; 
+     ( trim($pdta['sdcInvestCode']) !== "" && substr( strtoupper(trim($pdta['sdcInvestCode'])),0,3) <> 'INV' ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE INVESTIGATOR'S CODE IS INVALID")) : "" ; //THIS IS JUST A PSUEDO CHECK BETTER CHECKS SHOULD BE MADE
+     ( trim($pdta['sdcInvestEmail']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE INVESTIGATOR'S EMAIL MUST BE SPECIFIED")) : "" ; 
+     ( trim($pdta['sdcInvestEmail']) !== "" && !filter_var(trim($pdta['sdcInvestEmail']), FILTER_VALIDATE_EMAIL) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE INVESTIGATOR'S EMAIL APPEARS TO BE AN INVALID EMAIL ADDRESS")) : "" ;
+     ( trim($pdta['sdcInvestName']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE INVESTIGATOR'S NAME MUST BE SPECIFIED")) : "" ; 
+     ( trim($pdta['sdcInvestShippingAddress']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "A SHIPPING ADDRESS MUST BE SPECIFIED")) : "" ; 
+     ( trim($pdta['sdcInvestBillingAddress']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "A BILLING ADDRESS MUST BE SPECIFIED")) : "" ; 
+     ( trim($pdta['sdcShippingPhone']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "A SHIPPING PHONE NUMBER MUST BE SPECIFIED")) : "" ;  
+     ( trim($pdta['sdcShippingPhone']) !== "" && !preg_match('/^\(\d{3}\)\s\d{3}-\d{4}(\s[x]\d{1,7})*$/',trim($pdta['sdcShippingPhone']))) ? (list( $errorInd, $msgArr[] ) = array( 1 ,"THE SHIPPING PHONE NUMBER IS IN AN INVALID FORMAT.  FORMAT IS (123) 456-7890 x0000")) : ""; 
+     ( trim($pdta['sdcBillPhone']) !== "" && !preg_match('/^\(\d{3}\)\s\d{3}-\d{4}(\s[x]\d{1,7})*$/',trim($pdta['sdcBillPhone']))) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE BILLING PHONE NUMBER IS IN AN INVALID FORMAT.  FORMAT IS (123) 456-7890 x0000")) : "" ; 
 
-
-     if ( strtoupper(trim($pdta['sdcShipDocNbr'])) !== "NEW") { 
-       $errorInd = 1; 
-       $msgArr[] .= "THE SHIPDOC NUMBER MUST BE LISTED AS NEW";
-     } 
-
-     if (  trim($pdta['sdcAcceptedBy']) === "" ) { 
-       $errorInd = 1; 
-       $msgArr[] .= "THE NAME OF THE PERSON ACCEPTING THE SHIPMENT IS REQUIRED";
-     }
-
-     if ( trim($pdta['sdcAcceptorsEmail']) === "") { 
-       $errorInd = 1; 
-       $msgArr[] .= "THE EMAIL OF THE PERSON ACCEPTING IS REQUIRED";
-     } else { 
-       //VALID EMAIL??
-       if (filter_var(trim($pdta['sdcAcceptorsEmail']), FILTER_VALIDATE_EMAIL)) {
+     $segments = json_decode($pdta['listedSegments'], true);
+     ( count($segments) < 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "NO SEGMENTS HAVE BEEN SPECIFIED FOR THIS SHIPMENT DOCUMENT" )) : "" ; 
+     $chkSQL = "select replace(bgs,'_','') as bgs, ifnull(shippeddate,'') as shippeddate, ifnull(shipdocrefid,'') as shipdocrefid, ifnull(assignedto,'') as assignedto from masterrecord.ut_procure_segment where segmentid = :segmentid and assignedto = :investcode";
+     $chkR = $conn->prepare($chkSQL);
+     foreach ($segments as $sgk => $sgv) {
+       $chkR->execute(array(':segmentid' => $sgv['segmentid'], ':investcode' => $pdta['sdcInvestCode']));
+       if ( $chkR->rowCount() < 1 ) { 
+         $errorInd = 1;
+         $msgArr[] = "{$sgv['bgs']} IS NOT ASSIGNED TO INVESTIGATOR {$pdta['sdcInvestCode']}. EITHER EXCLUDE THIS SEGMENT OR CORRECT THIS DATA BEFORE CONTINUING";
        } else {
-         $errorInd = 1; 
-         $msgArr[] .= "THE ACCEPTING PERSON'S EMAIL IS INVALID";
-       }
-     }     
-
-     if ( trim($pdta['sdcPurchaseOrder']) === "" ) { 
-       $errorInd = 1; 
-       $msgArr[] .= "A PURCHASE ORDER NUMBER IS REQUIRED";
-     }
-
-     if ( trim($pdta['sdcRqstShipDateValue']) === "" ) { 
-       $errorInd = 1;
-       $msgArr[] .= "A REQUESTED SHIPMENT DATE VALUE IS REQUIRED";
-     } else { 
-       $shpDteVerif = verifyDate(trim($pdta['sdcRqstShipDateValue']),'Y-m-d', true); 
-       if (!$shpDteVerif) { 
-         $errorInd = 1;
-         $msgArr[] .= "THE DATE FOR THE REQUESTED SHIPMENT DATE IS INVALID";
+         //CREATE SHIPDOC AND SHIPMENT FIELDS FOR BLANK!
+         $r = $chkR->fetch(PDO::FETCH_ASSOC); 
+         ( $r['shippeddate'] !== "" || $r['shipdocrefid'] !== "") ? ( list( $errorInd, $msgArr[] ) = array( 1 , "SEGMENT {$sgv['bgs']} HAS EITHER A SHIPMENT DATE OR A SHIP DOCUMENT REFERENCE.  EITHER EXCLUDE THIS SEGMENT OR CORRECT THIS DATA.") ) : "" ;
        }
      }
 
+     if (  $errorInd === 0 ) { 
+      /* 
 
-     if ( trim($pdta['sdcRqstToLabDateValue']) === "" ) { 
-       $errorInd = 1;
-       $msgArr[] .= "A REQUESTED 'DATE TO PULL' DATE IS REQUIRED";
-     } else { 
-       $shpDteVerif = verifyDate(trim($pdta['sdcRqstToLabDateValue']),'Y-m-d', true); 
-       if (!$shpDteVerif) { 
-         $errorInd = 1;
-         $msgArr[] .= "THE DATE FOR THE REQUESTED 'DATE TO PULL' IS INVALID";
-       }
-     }
-
-       if (  $errorInd === 0 ) { 
-         //WRITE THE SHIPDOC - SEND BACK NUMBER
-
-
-
-         $responseCode = 200;  
+       */
+       //WRITE THE SHIPDOC - SEND BACK NUMBER
+       $usrSQL = "SELECT originalAccountName as usrname FROM four.sys_userbase where sessionid = :sessionid";
+       $usrR = $conn->prepare($usrSQL);
+       $usrR->execute(array(':sessionid' => session_id()));
+       if ($usrR->rowCount() < 1) { 
+         $msgArr[] = "SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN";  
        } else { 
+         $u = $usrR->fetch(PDO::FETCH_ASSOC);
+         $usr = $u['usrname']; 
+         $sdInsSQL = "insert into masterrecord.ut_shipdoc (sdstatus, statusdate, acceptedby, acceptedbyemail, ponbr, rqstshipdate, rqstpulldate, comments, investcode, investname, investemail, investinstitution, institutiontype, investdivision, oncreationinveststatus, shipaddy, shipphone, billaddy, billphone, setupby, setupon) values('OPEN', now(), :acceptedby, :acceptedbyemail, :ponbr, :rqstshipdate, :rqstpulldate, :comments, :investcode, :investname, :investemail, :investinstitution, :institutiontype, :investdivision, :oncreationinveststatus, :shipaddy, :shipphone, :billaddy, :billphone, :setupby, now())";   
+         $sdR = $conn->prepare($sdInsSQL); 
+         $sdR->execute(array(':acceptedby' => trim($pdta['sdcAcceptedBy']) ,':acceptedbyemail' => trim($pdta['sdcAcceptorsEmail']),':ponbr' => trim($pdta['sdcPurchaseOrder']) ,':rqstshipdate' => trim($pdta['sdcRqstShipDateValue']),':rqstpulldate' => trim($pdta['sdcRqstToLabDateValue']),':comments' => trim($pdta['sdcPublicComments']),':investcode' => strtoupper(trim($pdta['sdcInvestCode'])),':investname' => trim($pdta['sdcInvestName']),':investemail' => trim($pdta['sdcInvestEmail']),':investinstitution' => strtoupper(trim($pdta['sdcInvestInstitution'])),':institutiontype' => trim($pdta['sdcInvestTQInstType']),':investdivision' => trim($pdta['sdcInvestPrimeDiv']),':oncreationinveststatus' => trim($pdta['sdcInvestTQStatus']),':shipaddy' => trim($pdta['sdcInvestShippingAddress']),':shipphone' => trim($pdta['sdcShippingPhone']),':billaddy' => trim($pdta['sdcInvestBillingAddress']),':billphone' => trim($pdta['sdcBillPhone']),':setupby'  => $usr )); 
+         $shipdocnbr = $conn->lastInsertId();         
+         $dta['shipdocrefid'] = $shipdocnbr; 
+
+         $sdStsInsSQL = "insert into masterrecord.ut_shipdochistory(shipdocrefid, status, statusdate, bywhom, ondate) values( :shipdocrefid, :status, now(), :bywhom, now())";
+         $sdStsInsR = $conn->prepare($sdStsInsSQL); 
+         $sdStsInsR->execute(array(':shipdocrefid' => $shipdocnbr, ':status' => 'SHIPDOCCREATED', ':bywhom' => $usr)); 
+
+         //ADD SEGMENTS TO SHIPDOCDETAIL / UPDATE MASTERRECORD SEGMENT
+         $segstsSQL = "SELECT menuvalue, additionalinformation FROM four.sys_master_menus where menu = 'SEGMENTSTATUS' and additionalinformation = 'SHIPDOCSEGSTATUS' and dspind = 1";
+         $segstsR = $conn->prepare($segststSQL); 
+         $segstsR->execute(); 
+         $segsts = $segstsR->fetch(PDO::FETCH_ASSOC); 
+         $detailInsSQL = "insert into masterrecord.ut_shipdocdetails (shipdocrefid, segid, addon, addedby) value(:shipdocrefid, :segid, now(), :addedby)";
+         $detailR = $conn->prepare($detailInsSQL); 
+         $updSegSQL = "update masterrecord.ut_procure_segment set segstatus = :segstatus, statusDate = now(), statusby = :statby, shipdocrefid = :shipdocref where segmentid = :segmentid";
+         $updSegR = $conn->prepare($updSegSQL); 
+         foreach ( $segments as $s => $sg ) {
+           $detailR->execute(array(":shipdocrefid" => $shipdocnbr, ":segid" => $sg['segmentid'], ":addedby" => $usr)); 
+           $updSegR->execute(array(":segstatus" => $segsts['menuvalue'], ":statby" => $usr, ":shipdocref" => $shipdocnbr, ":segmentid" => $sg['segmentid']));
+           $sdStsInsR->execute(array(':shipdocrefid' => $shipdocnbr, ':status' => "SEGMENT ADDED. SEGID={$sg['segmentid']}", ':bywhom' => $usr)); 
+         }
+         $responseCode = 200; 
+       }
+     } else { 
          //SEND BACK ERRORS
          $msg = $msgArr;
-       } 
-       $rows['statusCode'] = $responseCode; 
-       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
-       return $rows;        
+     } 
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+     return $rows;        
     }
 
     function preprocessassignsegments($request, $passedData) { 

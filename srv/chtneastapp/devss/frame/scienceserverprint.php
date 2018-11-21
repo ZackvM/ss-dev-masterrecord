@@ -209,7 +209,7 @@ function getShipmentDocument($sdid, $originalURL) {
         //********************END BARCODE CREATION
     
         
-        $topSQL = "SELECT ifnull(status,'NEW') as sdstatus, date_format(statusDate, '%m/%d/%Y') as statusdate, ifnull(shipmenttrackingnbr,'') as trackingnbr, ifnull(date_format(shipdate,'%m/%d/%Y'),'') as shipdate, ifnull(invcode,'') as invcode, ifnull(shipaddy,'') as shipaddress, ifnull(billaddy,'') as billaddress, ifnull(invemail,'') as invemail, ifnull(ponbr,'') as ponbr, ifnull(salesorder,'') as salesorder, ifnull(date_format(tolab,'%m/%d/%Y'),'') as tolab, ifnull(acceptedby,'') as acceptedby, ifnull(comments,'') as comments, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
+        $topSQL = "SELECT ifnull(sdstatus,'NEW') as sdstatus, date_format(statusdate, '%m/%d/%Y') as statusdate, ifnull(shipmenttrackingnbr,'') as trackingnbr, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as shipdate, ifnull(investcode,'') as invcode, ifnull(shipaddy,'') as shipaddress, ifnull(billaddy,'') as billaddress, ifnull(investemail,'') as invemail, ifnull(ponbr,'') as ponbr, ifnull(salesorder,'') as salesorder, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as tolab, ifnull(acceptedby,'') as acceptedby, ifnull(comments,'') as comments, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
         
         $topR = $conn->prepare($topSQL);
         $topR->execute(array(':sdnbr' => $sdid));

@@ -958,7 +958,7 @@ function packCreateShipdoc() {
     if ( elements[i].type === 'checkbox' ) {
       if (elements[i].id.substr(0,10) === 'sdcBGSList' ) {
         if (elements[i].checked) {  
-          segments[segments.length] = { segmentid : byId(elements[i].id).dataset.segment, bgs : byId(elements[i].id).dataset.segment  }; 
+          segments[segments.length] = { segmentid : byId(elements[i].id).dataset.segment, bgs : byId(elements[i].id).dataset.bgs  }; 
         }
       } 
     }

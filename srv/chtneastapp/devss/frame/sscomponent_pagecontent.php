@@ -44,7 +44,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
       $locShipLine .= (trim($sadta['DATA']['adzipcode']) !== "") ? (trim($locShipLine) !== "") ? " {$sadta['DATA']['adzipcode']}" : "{$sadta['DATA']['adzipcode']}" : "" ;
       $shipAdd .= "\r\n{$locShipLine}";
       //$shipAdd .= (trim($sadta['DATA']['adcountry']) !== "") ? "\r\n{$sadta['DATA']['adcountry']}" : "";
-      $shipPhone = (trim($sadta['DATA']['adphone']) !== "") ? "{$sadta['DATA']['adphone']}" : "";
+      $shipPhone = (trim($sadta['DATA']['adphone']) !== "") ? preg_replace('/\([Ee][Xx][Tt]\.\s+\)/','',"{$sadta['DATA']['adphone']}") : "";
       $shipEmail = (trim($sadta['DATA']['ademail']) !== "") ? "{$sadta['DATA']['ademail']}" : "";
     } else { 
       //NO SHIPPING ADDRESS
@@ -63,7 +63,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
       $locBillLine .= (trim($badta['DATA']['adzipcode']) !== "") ? (trim($locBillLine) !== "") ? " {$badta['DATA']['adzipcode']}" : "{$badta['DATA']['adzipcode']}" : "" ;
       $billAdd .= "\r\n{$locBillLine}";
       //$billAdd .= (trim($badta['DATA']['adcountry']) !== "") ? "\r\n{$badta['DATA']['adcountry']}" : "";
-      $billPhone = (trim($badta['DATA']['adphone']) !== "") ? "{$badta['DATA']['adphone']}" : "";
+      $billPhone = (trim($badta['DATA']['adphone']) !== "") ? preg_replace('/\([Ee][Xx][Tt]\.\s+\)/','',"{$badta['DATA']['adphone']}") : "";
       $billEmail = (trim($badta['DATA']['ademail']) !== "") ? "{$badta['DATA']['ademail']}" : "";
     } else { 
       //NO SHIPPING ADDRESS
@@ -92,12 +92,15 @@ CALENDAR;
    $rowCount = 0;
    foreach($segListR as $sgK => $sgV) { 
        if (trim($sgK) !== 'inv') {
-        $segmentTbl .= "<tr><td><input type=checkbox CHECKED data-segment=\"{$sgV['segmentid']}\" data-bgs=\"{$sgV['bgsLabel']}\" id=\"sdcBGSList{$rowCount}\"><td>{$sgV['bgslabel']}</td></tr>";
+        $segmentTbl .= "<tr><td><input type=checkbox CHECKED data-segment=\"{$sgV['segmentid']}\" data-bgs=\"{$sgV['bgslabel']}\" id=\"sdcBGSList{$rowCount}\"><td>{$sgV['bgslabel']}</td></tr>";
         $rowCount++;
        }
    }
    $segmentTbl .= "</table>";
-   
+
+
+
+
         $innerDialog = <<<DIALOGINNER
 <form id=frmShipDocCreate><table border=0  id=sdcMainHolderTbl>
     <tr><td>Ship Doc</td><td>Shipment Accepted By *</td><td>Acceptor's Email *</td><td>Shipment Purchase Order # *</td><td>Requested Ship Date *</td><td>Date to Pull *</td><td>Segments For Shipment *</td></tr>
@@ -134,7 +137,7 @@ CALENDAR;
 
 <table border=0><tr><td colspan=2>Shipping Address *</td></tr>
 <tr><td colspan=2><TEXTAREA id=sdcInvestShippingAddress>{$shipAdd}</TEXTAREA></td></tr>
-<tr><td>Shipping Phone</td><!-- <td>Shipping Email</td> //--></tr>
+<tr><td>Shipping Phone * (format: '(123) 456-7890 x0000' x is optional)</td><!-- <td>Shipping Email</td> //--></tr>
 <tr><td><input type=text id=sdcShippingPhone value="{$shipPhone}"></td><td><!--<input type=text id=sdcShippingEmail value="{$shipEmail}">//--></td>
 </table>
 
@@ -142,7 +145,7 @@ CALENDAR;
 
 <table border=0><tr><td colspan=2>Billing Address *</td></tr>
 <tr><td colspan=2><TEXTAREA id=sdcInvestBillingAddress>{$billAdd}</TEXTAREA></td></tr>
-<tr><td>Billing Phone</td><!--<td>Billing Email</td>//--></tr>
+<tr><td>Billing Phone (format: '(123) 456-7890 x0000' x is optional)</td><!--<td>Billing Email</td>//--></tr>
 <tr><td><input type=text id=sdcBillPhone value="{$billPhone}"></td><!--<td><input type=text id=sdcBillEmail value="{$billEmail}">//--></td>
 </table>
 </td></tr></table>

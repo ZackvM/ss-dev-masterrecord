@@ -322,7 +322,7 @@ function docsrch($whichobj, $rqst) {
               substring('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', rand()*36+1, 1),
               substring('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', rand()*36+1, 1),
               substring('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', rand()*36+1, 1)
-             ) as selector, substr(concat('000000',ifnull(shipdocRefID,'000000')),-6) as dspmark, concat(ifnull(status,'') , ' (' , ifnull(date_format(statusdate,'%m/%d/%Y'),'') , ') | shipped: ', ifnull(date_format(shipdate, '%m/%d/%Y'),'') , ' | investigator: ', ifnull(invCode,'')) as abstract FROM masterrecord.ut_shipdoc sd where shipdocrefid = :srchtrm ";
+             ) as selector, substr(concat('000000',ifnull(shipdocrefid,'000000')),-6) as dspmark, concat(ifnull(sdstatus,'') , ' (' , ifnull(date_format(statusdate,'%m/%d/%Y'),'') , ') | Requested Ship Date: ', ifnull(date_format(rqstshipdate, '%m/%d/%Y'),'') , ' | investigator: ', ifnull(investcode,'')) as abstract FROM masterrecord.ut_shipdoc sd where shipdocrefid = :srchtrm ";
                    $strm = (int)$searchTerm;
                    break;
                //TODO:ADD A DEFAULT ERROR IF NOT ABOVE
@@ -781,7 +781,7 @@ select bs.pbiosample
       , ifnull(date_format(sg.procurementdate,'%m/%d/%Y'),'') as procurementdate 
       , ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shipmentdate 
       , ifnull(sg.shipdocrefid,0) as shipdocnbr
-      , ifnull(sd.status,'') as sdstatus
+      , ifnull(sd.sdstatus,'') as sdstatus
       , ifnull(sg.procuredat,'') procuringinstitutioncode
       , ifnull(mnuinst.dspvalue,'') as procuringinstitution
       , ifnull(bs.tisstype,'') as specimencategory
