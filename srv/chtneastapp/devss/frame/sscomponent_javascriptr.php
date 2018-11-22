@@ -747,9 +747,9 @@ function fillField(whichfield, whichvalue, whichdisplay) {
 
 var lastRequestCalendarDiv = "";
 function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
-var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;
-lastRequestCalendarDiv = whichdiv;
-universalAJAX("GET",mlURL,"",answerGetCalendar,modalCtl);
+  var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;
+  lastRequestCalendarDiv = whichdiv;
+  universalAJAX("GET",mlURL,"",answerGetCalendar,modalCtl);
 }
 
 function answerGetCalendar(rtnData) {
@@ -972,7 +972,6 @@ function packCreateShipdoc() {
 }
 
 function answerPackCreateShipdoc(rtnData) { 
-  console.log(rtnData);
   if (parseInt(rtnData['responseCode']) !== 200) { 
      var msgs = JSON.parse(rtnData['responseText']);
      var dspMsg = ""; 
@@ -982,6 +981,10 @@ function answerPackCreateShipdoc(rtnData) {
      alert("SHIPMENT DOCUMENT CREATION ERROR:\\n"+dspMsg);
   } else { 
     //Good results
+    var answerBack = JSON.parse(rtnData['responseText']);
+    var sdn = ('000000'+answerBack['DATA']['shipdocrefid']).substr(-6);
+    alert("SHIPMENT DOCUMENT CREATED ("+  sdn   +")"); 
+    location.reload(); 
   }        
 }
 

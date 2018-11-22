@@ -98,9 +98,6 @@ CALENDAR;
    }
    $segmentTbl .= "</table>";
 
-
-
-
         $innerDialog = <<<DIALOGINNER
 <form id=frmShipDocCreate><table border=0  id=sdcMainHolderTbl>
     <tr><td>Ship Doc</td><td>Shipment Accepted By *</td><td>Acceptor's Email *</td><td>Shipment Purchase Order # *</td><td>Requested Ship Date *</td><td>Date to Pull *</td><td>Segments For Shipment *</td></tr>
@@ -434,11 +431,6 @@ $dataTbl .= "<div id=resultTblContextMenu>{$context}</div>";
 } else { 
     $dataTbl = "<h1>NO BIOSAMPLES FOUND MATCHING YOUR CRITERIA.  CLICK THE \"NEW SEARCH\" BUTTON AND TRY TO BROADEN YOUR SEARCH.</h1>";
 }
-
-
-            //"DATA":{"head":{"objid":"4psc9i1qqh","bywho":"proczack","onwhendsp":"11\/07\/2018","srchterm":"{\"qryType\":\"BIO\",\"BG\":\"\",\"procInst\":\"\",\"segmentStatus\":\"\",\"qmsStatus\":\"\",\"procDateFrom\":\"2018-01-01\",\"procDateTo\":\"2018-01-31\",\"shipDateFrom\":\"\",\"shipDateTo\":\"\",\"investigatorCode\":\"\",\"shipdocnbr\":\"\",\"shipdocstatus\":\"\",\"site\":\"^bowel;NEUROENDOCRINE\",\"specimencategory\":\"\",\"phiage\":\"\",\"phirace\":\"\",\"phisex\":\"\",\"procType\":\"\",\"PrepMethod\":\"\",\"preparation\":\"\"}"},"searchresults":[{"itemsfound":48,"data":["proctype":"S" "procuringinstitution":"HUP" "preparationmethod":"PB","preparation":"FFPE"}       
-
-
 
 $objid = $dta['DATA']['head']['objid'];
 $bywho = $dta['DATA']['head']['bywho'];
