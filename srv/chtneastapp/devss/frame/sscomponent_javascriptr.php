@@ -417,29 +417,33 @@ function datacoordinator($rqststr) {
     
 $rtnthis = <<<JAVASCR
 
+var rowidclick = "";
 function openRightClickMenu(whichmenu, whichelementclicked) { 
   if (byId('resultTblContextMenu')) { 
     if (byId('resultTblContextMenu').style.display === 'none' || byId('resultTblContextMenu').style.display === '') {
-      byId('clickedElementId').value = whichelementclicked;
+      rowidclick = whichelementclicked;
       var bg = byId(whichelementclicked).dataset.biogroup;
       var sg = byId(whichelementclicked).dataset.bgslabel;
       var sh = byId(whichelementclicked).dataset.shipdoc;
-      byId('EDITBGDSP').innerHTML = "Edit Biogroup "+bg; 
-      byId('EDITSEGDSP').innerHTML = "Edit Segment "+sg;  
+//      byId('EDITBGDSP').innerHTML = "Edit Biogroup "+bg; 
+//      byId('EDITSEGDSP').innerHTML = "Edit Segment "+sg;  
       if (parseInt(sh) === 0) { 
-        byId('EDITSHPDOC').innerHTML = "Segment is not on a Ship-Doc"; 
+//        byId('EDITSHPDOC').innerHTML = "Segment is not on a Ship-Doc";
+        byId('PRINTSD').innerHTML = "No Ship-Doc to Print"; 
       } else {
         var shpnbr = ("000000"+sh).substr(-6);
-        byId('EDITSHPDOC').innerHTML = "Edit Ship-Doc "+shpnbr; 
+//        byId('EDITSHPDOC').innerHTML = "Edit Ship-Doc "+shpnbr; 
+        byId('PRINTSD').innerHTML = "Print Ship-doc "+shpnbr; 
       }
       byId('resultTblContextMenu').style.left = (mousex - 10) + "px";
       byId('resultTblContextMenu').style.top = (mousey - 10) + "px";
       byId('resultTblContextMenu').style.display = "block";
-    } else {
-      byId('clickedElementId').value = ""; 
-      byId('EDITBGDSP').innerHTML = "Edit Biogroup"; 
-      byId('EDITSEGDSP').innerHTML = "Edit Segment"; 
-      byId('EDITSHPDOC').innerHTML = "Edit Ship-Doc"; 
+    } else { 
+      rowidclick = "";
+//      byId('EDITBGDSP').innerHTML = "Edit Biogroup"; 
+//      byId('EDITSEGDSP').innerHTML = "Edit Segment"; 
+//      byId('EDITSHPDOC').innerHTML = "Edit Ship-Doc"; 
+      byId('PRINTSD').innerHTML = "View/Print Ship-Doc"; 
       byId('resultTblContextMenu').style.left = "-999px";
       byId('resultTblContextMenu').style.top = "-999px";
       byId('resultTblContextMenu').style.display = "none";
@@ -448,6 +452,24 @@ function openRightClickMenu(whichmenu, whichelementclicked) {
 }    
 
 document.addEventListener('DOMContentLoaded', function() {  
+
+  if (byId('cntxEditBG')) { 
+    byId('cntxEditBG').addEventListener('click', function() { 
+      if (rowidclick !== "") {
+        //alert(byId(rowidclick).dataset.ebiogroup);  
+        openRightClickMenu('',''); //CLOSE MENU
+      }
+    }, false);
+  }
+ 
+  if (byId('cntxPrntSD')) { 
+    byId('cntxPrntSD').addEventListener('click', function() { 
+      if (rowidclick !== "") {
+        openOutSidePage("{$tt}/print-obj/shipment-manifest/"+byId(rowidclick).dataset.eshipdoc);  
+        openRightClickMenu('',''); //CLOSE MENU
+      }
+    }, false);
+  }
 
   if (byId('qryBG')) { 
     byId('qryBG').focus();
@@ -603,7 +625,7 @@ function gatherSelection() {
   if (byId('coordinatorResultTbl')) { 
     for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) {  
       if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
-        sglist[cntr] = {biogroup:byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup,bgslabel:byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.bgslabel,segmentid:byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid};     
+        sglist[cntr] = {biogroup : byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup , bgslabel : byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.bgslabel , segmentid:byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid };     
         cntr++;
         //if (!inArray(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup, bg)) { 
         //bg[bg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup;    

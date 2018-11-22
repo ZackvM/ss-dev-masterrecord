@@ -209,7 +209,7 @@ function getShipmentDocument($sdid, $originalURL) {
         //********************END BARCODE CREATION
     
         
-        $topSQL = "SELECT ifnull(sdstatus,'NEW') as sdstatus, date_format(statusdate, '%m/%d/%Y') as statusdate, ifnull(shipmenttrackingnbr,'') as trackingnbr, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as shipdate, ifnull(investcode,'') as invcode, ifnull(shipaddy,'') as shipaddress, ifnull(billaddy,'') as billaddress, ifnull(investemail,'') as invemail, ifnull(ponbr,'') as ponbr, ifnull(salesorder,'') as salesorder, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as tolab, ifnull(acceptedby,'') as acceptedby, ifnull(comments,'') as comments, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
+        $topSQL = "SELECT ifnull(sdstatus,'NEW') as sdstatus, date_format(statusdate, '%m/%d/%Y') as statusdate, ifnull(shipmenttrackingnbr,'') as trackingnbr, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as shipdate, ifnull(investcode,'') as invcode, ifnull(investname,'') as investname, ifnull(shipaddy,'') as shipaddress, ifnull(billaddy,'') as billaddress, ifnull(investemail,'') as invemail, ifnull(ponbr,'') as ponbr, ifnull(salesorder,'') as salesorder, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as tolab, ifnull(acceptedby,'') as acceptedby, ifnull(acceptedbyemail,'') as acceptedbyemail, ifnull(comments,'') as comments, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
         
         $topR = $conn->prepare($topSQL);
         $topR->execute(array(':sdnbr' => $sdid));
@@ -223,25 +223,31 @@ function getShipmentDocument($sdid, $originalURL) {
             $trcknbr = (trim($sd['trackingnbr']) === "") ? "" : " / {$sd['trackingnbr']}";
             $shpdte = $sd['shipdate'];
             $icode = $sd['invcode'];
-            $shpadd = $sd['shipaddress'];
-            $billadd = $sd['billaddress'];
+            $shpadd = nl2br($sd['shipaddress']);
+            $billadd = nl2br($sd['billaddress']);
             $invemail = (trim($sd['invemail']) === "") ? "" : "<br>{$sd['invemail']}";
             $ponbr = $sd['ponbr'];
             $salesorder = (trim($sd['salesorder']) === "") ? "" : " / " . substr('000000' . $sd['salesorder'], -6);
             $tolab = $sd['tolab']; 
             $acceptedby = $sd['acceptedby'];
+            $acceptedby .= (trim($sd['acceptedbyemail']) !== "") ? "<br>({$sd['acceptedbyemail']})" : "";
             $cmt = $sd['comments']; 
             $setupon = $sd['setupon'];
             $setupby = $sd['setupby'];
+
             
-            $iSQL = "SELECT concat(ifnull(invest_lname,''),', ', ifnull(invest_fname,'')) as iname FROM vandyinvest.invest where investid = :icode";
-            $inv = $conn->prepare($iSQL);
-            $inv->execute(array(':icode' => $icode));
-            if ($inv->rowCount() > 0) { 
+            if (trim($sd['investname']) === "" ) {
+              $iSQL = "SELECT concat(ifnull(invest_lname,''),', ', ifnull(invest_fname,'')) as iname FROM vandyinvest.invest where investid = :icode";
+              $inv = $conn->prepare($iSQL);
+              $inv->execute(array(':icode' => $icode));
+              if ($inv->rowCount() > 0) { 
                 $iinv = $inv->fetch(PDO::FETCH_ASSOC);
                 $iname = "[{$iinv['iname']}]";
-            } else { 
+              } else { 
                 $iname = "";
+              }
+            } else { 
+              $iname = "[{$sd['investname']}]";
             }
             
             
@@ -322,12 +328,12 @@ function getShipmentDocument($sdid, $originalURL) {
                 
                 $innerTblLine .=  "<tr style=\"{$bgc} height: 20pt;\">"
                                              . "<td style=\"text-align: right; padding: 1px 3px 1px 1px; border: 1px solid rgba(203,203,203,1); border-left: none;border-top: none;  \">{$dtl['qty']}</td>"
-                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;  \">{$dtl['bgs']}</td>"
-                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;  \">{$bd}</td>"
-                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;  \">{$prp}</td>"
+                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$dtl['bgs']}</td>"
+                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$bd}</td>"
+                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$prp}</td>"
                                              . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none; white-space: nonwrap; \">{$weightMet}</td>"                                             
-                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;  \">{$ars}</td>"
-                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none; border-right: none; text-align: right;  \">{$cxrx}</td></tr>";
+                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$ars}</td>"
+                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none; border-right: none; text-align: right;\">{$cxrx}</td></tr>";
                $nLines += 1;
                $tQty += (int)$dtl['qty'];
             }
@@ -339,7 +345,7 @@ function getShipmentDocument($sdid, $originalURL) {
 <style>
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
 html {margin: 0;}
-body { margin: 0; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1); }
+body { margin: 0; font-family: Roboto; font-size: 9pt; color: rgba(48,57,71,1); }
 </style>
 </head>
 <body>
@@ -365,8 +371,8 @@ body { margin: 0; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1)
             
             <table  cellspacing=0 cellpadding=0 border=0>
                 <tr><td style="font-size: 10pt; border: 1px solid rgba(0,0,0,1); border-right: none; width: 100px;padding: 4px; font-weight: bold;" align=right>STATUS:</td><td colspan=2 style="font-size: 10pt; border: 1px solid rgba(0,0,0,1); border-left: none; padding: 4px;">{$sts}</td></tr>
-                <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Shipment Date:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$shpdte}</td><td style="width: 150px; font-size: 8pt; font-weight: bold; padding: 2px 4px 2px 4px; border: 1px solid rgba(0,0,0,1); border-bottom: none; border-top: none;">Comments</td></tr>
-                <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">To Lab:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$tolab}</td><td rowspan=5 valign=top style="padding: 0 4px 1px 0; border: 1px solid rgba(0,0,0,1); border-top: none;">{$cmt}</td></tr>
+                <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Requested Ship Date:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$shpdte}</td><td style="width: 150px; font-size: 8pt; font-weight: bold; padding: 2px 4px 2px 4px; border: 1px solid rgba(0,0,0,1); border-bottom: none; border-top: none;">Comments</td></tr>
+                <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Date To Pull:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$tolab}</td><td rowspan=5 valign=top style="padding: 0 4px 1px 0; border: 1px solid rgba(0,0,0,1); border-top: none;font-size: 8pt; padding: 0 4px 0 4px;">{$cmt}</td></tr>
                 <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Setup Date:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$setupon}</td></tr>
                 <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Setup By:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$setupby}</td></tr>
                 <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Status Date:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$stsdte}</td></tr>
@@ -391,8 +397,20 @@ body { margin: 0; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1)
 
     <table width=100% cellpadding=0 cellspacing=0 border=0  style="font-size: 7pt;">
     <tr><td style="height: 8px;" colspan=5></td></tr>
-    <tr><td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;">Investigator</td><td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;">Ship Via</td><td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;">Courier/Tracking #</td><td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;">Purchase Order / Sales Order #</td><td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold; border-right: none;">Accepted By</td></tr>
-    <tr><td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);">{$icode} {$iname}{$invemail}</td><td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);">&nbsp;</td><td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);">&nbsp; {$trcknbr}</td><td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);">{$ponbr} {$salesorder}</td><td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);">{$acceptedby}</td></tr>
+    <tr> 
+        <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;" valign=top>Investigator</td>
+        <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;" valign=top>Ship Via</td>
+        <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;" valign=top>Courier/Tracking #</td>
+        <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;" valign=top>Purchase Order / Sales Order #</td>
+        <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold; border-right: none;" valign=top>Accepted By</td>
+    </tr>
+    <tr>
+      <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);" valign=top>{$icode} {$iname}{$invemail}</td>
+      <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);" valign=top>&nbsp;</td>
+      <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);" valign=top>&nbsp; {$trcknbr}</td>
+      <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);" valign=top>{$ponbr} {$salesorder}</td>
+      <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);">{$acceptedby}</td>
+    </tr>
     <tr><td style="height: 10px;" colspan=5></td></tr>
     </table>
     
@@ -441,7 +459,6 @@ $output = shell_exec($linuxCmd);
         
         }
     return array('status' => 200, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => 'pdf');
-    //return array('status' => $sts, 'text' =>  '', 'pathtodoc' => genAppFiles . "/publicobj/documents/pathrpts/pathologyrpt{$filehandle}.pdf", 'format' => 'pdf');
 }
 
 function getPathReportText($pathrptid, $orginalURI) { 

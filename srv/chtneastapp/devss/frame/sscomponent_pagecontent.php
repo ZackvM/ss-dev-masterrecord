@@ -390,12 +390,27 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $cmtDsp .= ( trim($invloc) !== "" ) ?  (trim($cmtDsp) !== "") ?  "<br><b>Inventory Location</b>: {$invloc}" : "<b>Inventory Location</b>: {$invloc}" : "";
     
     //$sgencry = cryptservice($val['segmentid']);
-    $sgencry =  cryptservice($val['segmentid']); 
+    $sgencry = cryptservice($val['segmentid']);
+    $bgencry = cryptservice($val['pbiosample']);
+    $sdencry = ( trim($val['shipdocnbr']) !== "" ) ? cryptservice($val['shipdocnbr']) : "";
     $moreInfo = ( trim($cmtDsp) !== "" ) ? "<div class=ttholder><div class=infoIconDiv><i class=\"material-icons informationalicon\">error_outline</i></div><div class=infoTxtDspDiv>{$cmtDsp}</div></div>" : "";
     
     
 $dataTbl .=  <<<LINEITEM
-<tr id="sg{$val['segmentid']}" class="resultTblLine" data-biogroup="{$val['pbiosample']}" data-shipdoc="{$val['shipdocnbr']}" data-bgslabel="{$sglabel}" data-segmentid="{$val['segmentid']}" data-selected="false" data-associd="{$val['associd']}" onclick="rowselector('sg{$val['segmentid']}');" ondblclick="navigateSite('segment/{$sgencry}');">
+   <tr 
+     id="sg{$val['segmentid']}" 
+     class="resultTblLine" 
+     data-biogroup="{$val['pbiosample']}" 
+     data-ebiogroup="{$bgencry}" 
+     data-shipdoc="{$val['shipdocnbr']}" 
+     data-eshipdoc = "{$sdencry}";
+     data-bgslabel="{$sglabel}" 
+     data-segmentid="{$val['segmentid']}" 
+     data-selected="false" 
+     data-associd="{$val['associd']}" 
+     onclick="rowselector('sg{$val['segmentid']}');" 
+     ondblclick="navigateSite('segment/{$sgencry}');"
+  >
   <td>{$moreInfo}</td>
   <td {$pbSqrBgColor} class=colorline>&nbsp;</td>
   <td valign=top class=bgsLabel>{$sglabel}</td>
@@ -903,24 +918,27 @@ return $rtnthis;
 
 function generateContextMenu($whichpage) { 
 
-//TODO:  DUMP THE BUTTONS IN TO A DATABASE AND GRAB WITH A WEBSERVICE
+//TODO: DUMP THE BUTTONS IN TO A DATABASE AND GRAB WITH A WEBSERVICE
     
+//TODO: ADD THESE BACK IN AS YOU ADD FUNCTIONALITY
+//<tr><td class=contextOptionHolder><table id=cntxEditBG><tr><td><i class="material-icons cmOptionIcon">bubble_chart</i></td><td id=EDITBGDSP class=cmOptionText>Edit Biogroup</td></tr></table></td></tr>        
+//<tr><td class=contextOptionHolder><table onclick="alert('Edit Segment');"><tr><td><i class="material-icons cmOptionIcon">blur_circular</i></td><td id=EDITSEGDSP class=cmOptionText>Edit Segment</td></tr></table></td></tr>        
+//<tr><td class=contextOptionHolder><table onclick="alert('Edit Shipdoc');"><tr><td><i class="material-icons cmOptionIcon">local_shipping</i></td><td class=cmOptionText id=EDITSHPDOC>Edit Shipment Document</td></tr></table></td></tr>     
+//<tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Pathology Report</td></tr></table></td></tr>     
+//<tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Chart Review</td></tr></table></td></tr>     
+//<tr><td class=contextOptionHolder><table onclick="alert('Associative Groups');"><tr><td><i class="material-icons cmOptionIcon">link</i></td><td class=cmOptionText>Associative Group</td></tr></table></td></tr>       
+//<tr><td class=contextOptionHolder><table onclick="alert('HPR Results');"><tr><td><i class="material-icons cmOptionIcon">stars</i></td><td class=cmOptionText>View HPR Results</td></tr></table></td></tr> 
+
+
 switch ($whichpage) { 
 case 'coordinatorResultGrid':
 $innerBar = <<<BTNTBL
-<tr><td class=contextOptionHolder><table onclick="alert('Edit BG');"><tr><td><i class="material-icons cmOptionIcon">bubble_chart</i></td><td id=EDITBGDSP class=cmOptionText>Edit Biogroup</td></tr></table></td></tr>        
-<tr><td class=contextOptionHolder><table onclick="alert('Edit Segment');"><tr><td><i class="material-icons cmOptionIcon">blur_circular</i></td><td id=EDITSEGDSP class=cmOptionText>Edit Segment</td></tr></table></td></tr>        
-<tr><td class=contextOptionHolder><table onclick="alert('Edit Shipdoc');"><tr><td><i class="material-icons cmOptionIcon">local_shipping</i></td><td class=cmOptionText id=EDITSHPDOC>Edit Shipment Document</td></tr></table></td></tr>     
-<tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Pathology Report</td></tr></table></td></tr>     
-<tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Chart Review</td></tr></table></td></tr>     
-<tr><td class=contextOptionHolder><table onclick="alert('Associative Groups');"><tr><td><i class="material-icons cmOptionIcon">link</i></td><td class=cmOptionText>Associative Group</td></tr></table></td></tr>       
-<tr><td class=contextOptionHolder><table onclick="alert('HPR Results');"><tr><td><i class="material-icons cmOptionIcon">stars</i></td><td class=cmOptionText>View HPR Results</td></tr></table></td></tr> 
+<tr><td class=contextOptionHolder><table id=cntxPrntSD><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText id=PRINTSD>View Documents/Shipment Document</td></tr></table></td></tr>     
 BTNTBL;
     break;
 }
 
 $rtnthis = <<<RTNTHIS
-  <input type=hidden id=clickedElementId>
   <table border=0 cellspacing=0 cellpadding=0 id=contentMenuTbl> 
 {$innerBar}
 </table>
