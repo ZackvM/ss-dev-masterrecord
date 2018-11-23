@@ -396,7 +396,6 @@ function answerGetDocumentText(rtnData) {
      byId('displayDocText').innerHTML = dspThis; 
     }
   } else { 
-    //alert(rtnData['responseText']['MESSAGE']);
   }
 
 }
@@ -527,7 +526,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (byId('btnBarRsltSubmitHPR')) { 
     byId('btnBarRsltSubmitHPR').addEventListener('click', function() { 
-      alert('SUBMIT TO HPR');
+      //SUBMIT TO HPR
+      var selection = gatherSelection();
+      if (parseInt(selection['responseCode']) === 200) { 
+        var passdta = JSON.stringify(selection['selectionListing']);
+        var mlURL = "/data-doers/preprocess-override-hpr";
+        universalAJAX("POST",mlURL,passdta,answerPreprocessOverrideHPR,1);   
+      } else { 
+        alert(selection['message']);
+      }
     }, false);
   }
 
@@ -792,6 +799,34 @@ function answerQueryRequest(rtnData) {
     var rsp = JSON.parse(rtnData['responseText']); 
     navigateSite("data-coordinator/"+rsp['DATA']['coordsearchid']);
   }        
+}
+
+function answerPreprocessOverrideHPR(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("QMS/HPR SUBMITTAL ERROR:\\n"+dspMsg);
+   } else { 
+     //DISPLAY OVERRIDE SCREEN
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+
+       byId('standardModalDialog').style.marginLeft = 0;
+       byId('standardModalDialog').style.left = "10vw";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "3vh";
+       byId('standardModalDialog').style.width = "80vw";
+       byId('systemDialogTitle').style.width = "80vw";
+
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+
+   }
 }
 
 function answerPreprocessShipDoc(rtnData) { 

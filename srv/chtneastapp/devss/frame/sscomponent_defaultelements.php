@@ -8,18 +8,22 @@ $thisAcct = "";
 $allAcct = json_encode($whichUsr);
 $hlpfile = buildHelpFiles($whichpage, $rqststr);
 
-
-
 if ($whichpage !== "login") { 
   $tt = treeTop;    
   $thisAcct = <<<THISMENU
 
 <div id=appcard_useraccount class=appcard> 
- Account Display
- <p>{$tt}
- <br>{$whichUsr->useremail}   
- <hr>
- {$allAcct}
+<div id=clsBtnHold><table width=100%><tr><td id=usrAccountTitle>Your User Account</td><td></td><td id=closeBtn onclick="openAppCard('appcard_useraccount');">&times;</td></tr></table></div>   
+<div id=usrAccountDspDiv>
+<table border=1>
+<tr><td>Login Name: </td><td>{$whichUsr->useremail}</td></tr>
+<tr><td>DB ID: </td><td>{$whichUsr->userid}</td></tr>
+<tr><td>User's Name: </td><td>{$whichUsr->username}</td></tr>
+<tr><td>Driver's License Expiration: </td><td>{$whichUsr->drvlicexp}</td></tr>
+
+</table>   
+
+</div>
 </div>   
  
 <div id=appcard_environmentals class=appcard> 

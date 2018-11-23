@@ -356,6 +356,10 @@ class globalMenus {
       return "select distinct catid as codevalue, category as menuvalue, 0 as useasdefault, catid as lookupvalue from masterrecord.voc_chtn_all where trim(ifnull(catid,'')) <> '' order by category";
     }
 
+    function shipdocpovalues() {
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'SHIPDOCPO' order by mnu.dspOrder";
+    }
+
     function allinstitutions() {
       return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'INSTITUTION' order by mnu.dspOrder";
     }

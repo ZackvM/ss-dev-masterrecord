@@ -66,7 +66,7 @@ class bldssuser {
         $elArr = array();
         session_start(); 
         require_once(serverkeys . "/sspdo.zck"); 
-        $userTopSQL = "SELECT userid, ifnull(userlogin,'') as ssusername, lcase(ifnull(emailaddress,'')) as email , ifnull(changePWordInd,1) as changepwordind"
+        $userTopSQL = "SELECT userid, ifnull(originalaccountname,'') as ssusername, lcase(ifnull(emailaddress,'')) as email , ifnull(changePWordInd,1) as changepwordind"
                 . ", ifnull(allowind,0) as allowind, ifnull(allowlinux,0) as allowlinux"
                 . ", ifnull(allowproc,0) as allowprocurement, ifnull(allowcoord,0) as allowcoordination, ifnull(allowhpr,0) as allowhpr, ifnull(allowinvtry,0) as allowinventory"
                 . ", ifnull(presentinstitution,'') as presentinstitution, timestampdiff(MINUTE, now(), sessionexpire) minleftinsession, ifnull(username,'') as displayname, ifnull(primaryinstcode,'') as primaryinstcode, timestampdiff(DAY, now(), passwordExpireDate) daystopasswordexpire"

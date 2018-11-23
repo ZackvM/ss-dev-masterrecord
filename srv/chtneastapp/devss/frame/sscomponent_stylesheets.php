@@ -124,7 +124,6 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 .calBtmLineClear { font-size: 1vh; padding: 8px 0; }
 .calBtmLineClear:hover { color: rgba({$this->color_bred},1); }
 
-
 #pageTopButtonBar {width: 100%; box-sizing: border-box; background: rgba({$this->color_zackgrey},1); position: fixed; top: 0; z-index: 49;}
 #pageTopButtonBar .topBtnHolderCell {border-right: 1px solid rgba({$this->color_white},1); padding: 0 .5vw 0 .5vw; } 
 #topBtnBarVerticalSpacer {height: 6.5vh; }
@@ -133,6 +132,9 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 #topBtnBarTbl .topBtnDisplayer {color: rgba({$this->color_white},1); font-size: 1.8vh; } 
 #topBtnBarTbl .topBtnDisplayer:hover {cursor: pointer; color: rgba({$this->color_neongreen}); }
 #topBtnBarTbl .topBtnDisplayer td {white-space: nowrap; }
+
+#usrAccountTitle { font-size: 2vh; font-weight: bold; color: rgba({$this->color_lblue},1); }
+
 
 STYLESHEET;
 

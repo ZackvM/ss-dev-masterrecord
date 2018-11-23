@@ -16,60 +16,85 @@ public $checkBtn = "<i class=\"material-icons\">check</i>";
 
 function sysDialogBuilder($whichdialog, $passedData) {
  
-    switch($whichdialog) { 
+    switch($whichdialog) {
+      case 'dataCoordinatorHPROverride':
+
+        if ( count($passedData) > 0 ) {   
+          $biogroupTbl = "<table border=1><tr><th>biogroup</th><th>Present Status</th><th>New Status</th></tr>";
+          foreach ($passedData as $key => $val) { 
+              $bgency = cryptservice($val);
+              //              $idta = callrestapi("GET", dataTree . "/biogroup-hpr-status/{$bgency}", serverIdent, serverpw);
+              $arr['bgency'] = cryptservice($val);
+              $passdata = json_encode($arr);  
+              $idta = callrestapi("POST", dataTree . "/data-doers/biogroup-hpr-status",serverIdent, serverpw, $passdata);             
+
+
+              $biogroupTbl .= "<tr><td>{$val}</td><td>{$idta}</td><td></td></tr>";
+          }
+          $biogroupTbl .= "</table>";
+        }
+
+        $titleBar = "QMS/HPR Inventory Override";
+        $innerDialog = <<<DIALOGINNER
+        {$biogroupTbl}
+
+DIALOGINNER;
+        $footerBar = "";
+      break;
       case 'dataCoordinatorShipDocCreate': 
+        $si = serverIdent;
+        $sp = serverpw;
         $titleBar = "Shipment Document Creation";
         $dataString = $passedData; 
         $dta = json_decode($passedData, true);
+        $idta = json_decode(callrestapi("GET", dataTree . "/investigator-head/{$dta['inv']}", serverIdent, serverpw),true);
+        $wsStatus = (int)$idta['status'];
+        if ($wsStatus === 200) {  
+          $iName = $idta['DATA']['investigator'];
+          $istatus = $idta['DATA']['investstatus'];
+          $iinstitution = $idta['DATA']['institution'];
+          $iinsttype = $idta['DATA']['institutiontype'];
+          $iprimediv = $idta['DATA']['primarydivision'];
+          $iemail = $idta['DATA']['investemail'];
+          $sadta = json_decode(callrestapi("GET", dataTree . "/investigator-ship-address/{$dta['inv']}", serverIdent, serverpw),true);
+          $wsSAStatus = (int)$sadta['status'];
+          if ($wsSAStatus === 200) {  
+            $shipAdd = (trim($sadta['DATA']['adattn']) !== "") ? "Attn: {$sadta['DATA']['adattn']}" : "";
+            $shipAdd .= (trim($sadta['DATA']['adinstitution']) !== "") ? "\r\n{$sadta['DATA']['adinstitution']}" : "";
+            $shipAdd .= (trim($sadta['DATA']['addept']) !== "") ? "\r\n{$sadta['DATA']['addept']}" : "";
+            $shipAdd .= (trim($sadta['DATA']['adline1']) !== "") ? "\r\n{$sadta['DATA']['adline1']}" : "";
+            $shipAdd .= (trim($sadta['DATA']['adline2']) !== "") ? "\r\n{$sadta['DATA']['adline2']}" : "";
+            $locShipLine = (trim($sadta['DATA']['adcity']) !== "") ? "{$sadta['DATA']['adcity']}" : "";
+            $locShipLine .= (trim($sadta['DATA']['adstate']) !== "") ? (trim($locShipLine) !== "") ? ", {$sadta['DATA']['adstate']}" : "{$sadta['DATA']['adstate']}" : "" ;
+            $locShipLine .= (trim($sadta['DATA']['adzipcode']) !== "") ? (trim($locShipLine) !== "") ? " {$sadta['DATA']['adzipcode']}" : "{$sadta['DATA']['adzipcode']}" : "" ;
+            $shipAdd .= "\r\n{$locShipLine}";
+            //$shipAdd .= (trim($sadta['DATA']['adcountry']) !== "") ? "\r\n{$sadta['DATA']['adcountry']}" : "";
+            $shipPhone = (trim($sadta['DATA']['adphone']) !== "") ? preg_replace('/\([Ee][Xx][Tt]\.\s+\)/','',"{$sadta['DATA']['adphone']}") : "";
+            $shipEmail = (trim($sadta['DATA']['ademail']) !== "") ? "{$sadta['DATA']['ademail']}" : "";
+          } else { 
+            //NO SHIPPING ADDRESS
+          }
 
-  $idta = json_decode(callrestapi("GET", dataTree . "/investigator-head/{$dta['inv']}", serverIdent, serverpw),true);
-  $wsStatus = (int)$idta['status'];
-  if ($wsStatus === 200) {  
-    $iName = $idta['DATA']['investigator'];
-    $istatus = $idta['DATA']['investstatus'];
-    $iinstitution = $idta['DATA']['institution'];
-    $iinsttype = $idta['DATA']['institutiontype'];
-    $iprimediv = $idta['DATA']['primarydivision'];
-    $iemail = $idta['DATA']['investemail'];
-    $sadta = json_decode(callrestapi("GET", dataTree . "/investigator-ship-address/{$dta['inv']}", serverIdent, serverpw),true);
-    $wsSAStatus = (int)$sadta['status'];
-    if ($wsSAStatus === 200) {  
-      $shipAdd = (trim($sadta['DATA']['adattn']) !== "") ? "Attn: {$sadta['DATA']['adattn']}" : "";
-      $shipAdd .= (trim($sadta['DATA']['adinstitution']) !== "") ? "\r\n{$sadta['DATA']['adinstitution']}" : "";
-      $shipAdd .= (trim($sadta['DATA']['addept']) !== "") ? "\r\n{$sadta['DATA']['addept']}" : "";
-      $shipAdd .= (trim($sadta['DATA']['adline1']) !== "") ? "\r\n{$sadta['DATA']['adline1']}" : "";
-      $shipAdd .= (trim($sadta['DATA']['adline2']) !== "") ? "\r\n{$sadta['DATA']['adline2']}" : "";
-      $locShipLine = (trim($sadta['DATA']['adcity']) !== "") ? "{$sadta['DATA']['adcity']}" : "";
-      $locShipLine .= (trim($sadta['DATA']['adstate']) !== "") ? (trim($locShipLine) !== "") ? ", {$sadta['DATA']['adstate']}" : "{$sadta['DATA']['adstate']}" : "" ;
-      $locShipLine .= (trim($sadta['DATA']['adzipcode']) !== "") ? (trim($locShipLine) !== "") ? " {$sadta['DATA']['adzipcode']}" : "{$sadta['DATA']['adzipcode']}" : "" ;
-      $shipAdd .= "\r\n{$locShipLine}";
-      //$shipAdd .= (trim($sadta['DATA']['adcountry']) !== "") ? "\r\n{$sadta['DATA']['adcountry']}" : "";
-      $shipPhone = (trim($sadta['DATA']['adphone']) !== "") ? preg_replace('/\([Ee][Xx][Tt]\.\s+\)/','',"{$sadta['DATA']['adphone']}") : "";
-      $shipEmail = (trim($sadta['DATA']['ademail']) !== "") ? "{$sadta['DATA']['ademail']}" : "";
-    } else { 
-      //NO SHIPPING ADDRESS
-    }
-
-    $badta = json_decode(callrestapi("GET", dataTree . "/investigator-bill-address/{$dta['inv']}", serverIdent, serverpw),true);
-    $wsBAStatus = (int)$badta['status'];
-    if ($wsBAStatus === 200) {  
-      $billAdd = (trim($badta['DATA']['adattn']) !== "") ? "Attn: {$badta['DATA']['adattn']}" : "";
-      $billAdd .= (trim($badta['DATA']['adinstitution']) !== "") ? "\r\n{$badta['DATA']['adinstitution']}" : "";
-      $billAdd .= (trim($badta['DATA']['addept']) !== "") ? "\r\n{$badta['DATA']['addept']}" : "";
-      $billAdd .= (trim($badta['DATA']['adline1']) !== "") ? "\r\n{$badta['DATA']['adline1']}" : "";
-      $billAdd .= (trim($badta['DATA']['adline2']) !== "") ? "\r\n{$badta['DATA']['adline2']}" : "";
-      $locBillLine = (trim($badta['DATA']['adcity']) !== "") ? "{$badta['DATA']['adcity']}" : "";
-      $locBillLine .= (trim($badta['DATA']['adstate']) !== "") ? (trim($locBillLine) !== "") ? ", {$badta['DATA']['adstate']}" : "{$badta['DATA']['adstate']}" : "" ;
-      $locBillLine .= (trim($badta['DATA']['adzipcode']) !== "") ? (trim($locBillLine) !== "") ? " {$badta['DATA']['adzipcode']}" : "{$badta['DATA']['adzipcode']}" : "" ;
-      $billAdd .= "\r\n{$locBillLine}";
-      //$billAdd .= (trim($badta['DATA']['adcountry']) !== "") ? "\r\n{$badta['DATA']['adcountry']}" : "";
-      $billPhone = (trim($badta['DATA']['adphone']) !== "") ? preg_replace('/\([Ee][Xx][Tt]\.\s+\)/','',"{$badta['DATA']['adphone']}") : "";
-      $billEmail = (trim($badta['DATA']['ademail']) !== "") ? "{$badta['DATA']['ademail']}" : "";
-    } else { 
-      //NO SHIPPING ADDRESS
-    }
+          $badta = json_decode(callrestapi("GET", dataTree . "/investigator-bill-address/{$dta['inv']}", serverIdent, serverpw),true);
+          $wsBAStatus = (int)$badta['status'];
+          if ($wsBAStatus === 200) {  
+            $billAdd = (trim($badta['DATA']['adattn']) !== "") ? "Attn: {$badta['DATA']['adattn']}" : "";
+            $billAdd .= (trim($badta['DATA']['adinstitution']) !== "") ? "\r\n{$badta['DATA']['adinstitution']}" : "";
+            $billAdd .= (trim($badta['DATA']['addept']) !== "") ? "\r\n{$badta['DATA']['addept']}" : "";
+            $billAdd .= (trim($badta['DATA']['adline1']) !== "") ? "\r\n{$badta['DATA']['adline1']}" : "";
+            $billAdd .= (trim($badta['DATA']['adline2']) !== "") ? "\r\n{$badta['DATA']['adline2']}" : "";
+            $locBillLine = (trim($badta['DATA']['adcity']) !== "") ? "{$badta['DATA']['adcity']}" : "";
+            $locBillLine .= (trim($badta['DATA']['adstate']) !== "") ? (trim($locBillLine) !== "") ? ", {$badta['DATA']['adstate']}" : "{$badta['DATA']['adstate']}" : "" ;
+            $locBillLine .= (trim($badta['DATA']['adzipcode']) !== "") ? (trim($locBillLine) !== "") ? " {$badta['DATA']['adzipcode']}" : "{$badta['DATA']['adzipcode']}" : "" ;
+            $billAdd .= "\r\n{$locBillLine}";
+            //$billAdd .= (trim($badta['DATA']['adcountry']) !== "") ? "\r\n{$badta['DATA']['adcountry']}" : "";
+            $billPhone = (trim($badta['DATA']['adphone']) !== "") ? preg_replace('/\([Ee][Xx][Tt]\.\s+\)/','',"{$badta['DATA']['adphone']}") : "";
+            $billEmail = (trim($badta['DATA']['ademail']) !== "") ? "{$badta['DATA']['ademail']}" : "";
+          } else { 
+            //NO SHIPPING ADDRESS
+          }
     
-$shCalendar = buildcalendar('shipSDCFrom'); 
+          $shCalendar = buildcalendar('shipSDCFrom'); 
 $shpCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
   <div class=valueHolder><input type=hidden id=sdcRqstShipDateValue><input type=text READONLY id=sdcRqstShipDate class="inputFld"></div>
@@ -77,7 +102,7 @@ $shpCalendar = <<<CALENDAR
 </div>
 CALENDAR;
 
-$lbCalendar = buildcalendar('shipSDCToLab'); 
+          $lbCalendar = buildcalendar('shipSDCToLab'); 
 $labCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
   <div class=valueHolder><input type=hidden id=sdcRqstToLabDateValue><input type=text READONLY id=sdcRqstToLabDate class="inputFld"></div>
@@ -85,18 +110,24 @@ $labCalendar = <<<CALENDAR
 </div>
 CALENDAR;
 
-  // - Segments are listed here
-  // {"0":{"biogroup":"81948","bgslabel":"81948001","segmentid":"431100"},"1":{"biogroup":"81948","bgslabel":"81948002","segmentid":"431101"},"inv":"INV3000"}
-   $segListR = json_decode($passedData, true);    
-   $segmentTbl = "<table><tr><th>Segments To Add To Shipdoc</th></tr>";
-   $rowCount = 0;
-   foreach($segListR as $sgK => $sgV) { 
-       if (trim($sgK) !== 'inv') {
-        $segmentTbl .= "<tr><td><input type=checkbox CHECKED data-segment=\"{$sgV['segmentid']}\" data-bgs=\"{$sgV['bgslabel']}\" id=\"sdcBGSList{$rowCount}\"><td>{$sgV['bgslabel']}</td></tr>";
-        $rowCount++;
-       }
-   }
-   $segmentTbl .= "</table>";
+//GET PO ALLOW VALUES
+          $poarr = json_decode(callrestapi("GET", dataTree . "/global-menu/ship-doc-po-values",$si,$sp),true);
+          $po = "<table border=0 class=menuDropTbl>";
+          foreach ($poarr['DATA'] as $poval) { 
+            $po .= "<tr><td onclick=\"fillField('sdcPurchaseOrder','{$poval['lookupvalue']}','{$poval['menuvalue']}');\" class=ddMenuItem>{$poval['menuvalue']}</td></tr>";
+          }
+          $po .= "</table>";
+
+          $segListR = json_decode($passedData, true);    
+          $segmentTbl = "<table><tr><th>Segments To Add To Shipdoc</th></tr>";
+          $rowCount = 0;
+          foreach($segListR as $sgK => $sgV) { 
+            if (trim($sgK) !== 'inv') {
+              $segmentTbl .= "<tr><td><input type=checkbox CHECKED data-segment=\"{$sgV['segmentid']}\" data-bgs=\"{$sgV['bgslabel']}\" id=\"sdcBGSList{$rowCount}\"><td>{$sgV['bgslabel']}</td></tr>";
+              $rowCount++;
+            }
+          }
+          $segmentTbl .= "</table>";
 
         $innerDialog = <<<DIALOGINNER
 <form id=frmShipDocCreate><table border=0  id=sdcMainHolderTbl>
@@ -104,8 +135,8 @@ CALENDAR;
     <tr>
             <td><input type=text id=sdcShipDocNbr READONLY value="NEW"></td>
             <td><input type=text id=sdcAcceptedBy value=""></td>
-            <td><input type=text id=sdcAcceptorsEmail value=""><!--TODO: ADD OPTIONS DROPDOWN FOR JOURNAL AND CREDIT CARD//--></td>
-            <td><input type=text id=sdcPurchaseOrder value=""></td>
+            <td><input type=text id=sdcAcceptorsEmail value=""></td>
+            <td><div class=menuHolderDiv><input type=text id=sdcPurchaseOrder value=""><div class=valueDropDown style="width: 20vw;">{$po}</div></div></td>
             <td>{$shpCalendar}</td>
             <td>{$labCalendar}</td>
            <td rowspan=4 valign=top id=segmentListHolder><!-- SEGMENT LISTING //--> {$segmentTbl} </td></tr>
@@ -134,7 +165,7 @@ CALENDAR;
 
 <table border=0><tr><td colspan=2>Shipping Address *</td></tr>
 <tr><td colspan=2><TEXTAREA id=sdcInvestShippingAddress>{$shipAdd}</TEXTAREA></td></tr>
-<tr><td>Shipping Phone * (format: '(123) 456-7890 x0000' x is optional)</td><!-- <td>Shipping Email</td> //--></tr>
+<tr><td>Shipping Phone * (format: '(123) 456-7890 x0000' / x is optional)</td><!-- <td>Shipping Email</td> //--></tr>
 <tr><td><input type=text id=sdcShippingPhone value="{$shipPhone}"></td><td><!--<input type=text id=sdcShippingEmail value="{$shipEmail}">//--></td>
 </table>
 
@@ -142,7 +173,7 @@ CALENDAR;
 
 <table border=0><tr><td colspan=2>Billing Address *</td></tr>
 <tr><td colspan=2><TEXTAREA id=sdcInvestBillingAddress>{$billAdd}</TEXTAREA></td></tr>
-<tr><td>Billing Phone (format: '(123) 456-7890 x0000' x is optional)</td><!--<td>Billing Email</td>//--></tr>
+<tr><td>Billing Phone (format: '(123) 456-7890 x0000' / x is optional)</td><!--<td>Billing Email</td>//--></tr>
 <tr><td><input type=text id=sdcBillPhone value="{$billPhone}"></td><!--<td><input type=text id=sdcBillEmail value="{$billEmail}">//--></td>
 </table>
 </td></tr></table>
@@ -262,7 +293,10 @@ function datacoordinator($rqststr, $whichusr) {
          </td></tr>                    
     </table>
 MAINQGRID;
+
         } else {
+
+//RESULT SCREEN            
 $dta = json_decode(callrestapi("GET", dataTree . "/biogroup-search/{$rqststr[2]}", serverIdent, serverpw),true);
 $itemsfound = $dta['DATA']['searchresults'][0]['itemsfound'];      
 
@@ -879,7 +913,7 @@ return $grid;
 
 function generatePageTopBtnBar($whichpage) { 
 
-//TODO:  DUMP THE BUTTONS IN TO A DATABASE AND GRAB WITH A WEBSERVICE
+//TODO:  DUMP THE BUTTONS INTO A DATABASE AND GRAB WITH A WEBSERVICE
     
 switch ($whichpage) { 
 case 'coordinatorCriteriaGrid':
@@ -946,212 +980,4 @@ RTNTHIS;
 return $rtnthis;
 }
 
-/* 
-
-function procurementgrid($rqststr, $whichusr) { 
-    if ((int)$whichusr->allowcoord !== 1) { 
-     $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE COORDINATOR SCREEN";        
-    } else {    
-
-        if (trim($rqststr[2]) === "") { 
-            ///QUERY TOP ONLY
-            $month = substr('00' . date('m'),-2);
-            $day = substr('00' . date('d'),-2);
-            $year = date('Y');
-        } else { 
-            ///GET GRID DATA
-        }
-
-        $instvl = $whichusr->presentinstitution;
-        foreach ($whichusr->allowedinstitutions as $instlst) {
-          if (trim($instlst[0]) === $instvl) { 
-            $instdsp = $instlst[1];
-          }
-        } 
-
-        $dInstitutions = "<table border=0 class=menuDropTbl>";
-        foreach ($whichusr->allowedinstitutions as $allinst) { 
-           $dInstitutions .= "<tr><td class=ddMenuItem onclick=\"fillField('fInstitution','{$allinst[0]}','{$allinst[1]}','');\">{$allinst[1]}</td></tr>";
-        }
-        $dInstitutions .= "</table>";
-
-
-        $institution = <<<INSTITUTION
-<div class=menuHolderDiv style="min-width: 20vw;">
-  <div class=valueHolder style="min-width: 20vw;"><input type=hidden id=fInstitutionValue value="{$instvl}"><input type=text READONLY id=fInstitution style="width: 20vw;" value="{$instdsp}"></div>
-  <div class=valueDropDown style="min-width: 20vw;" id=ddInstitutions>{$dInstitutions}</div>
-</div>
-INSTITUTION;
-
-$dCalendar = buildcalendar('procquery'); 
-        $calendar = <<<CALENDAR
-<div class=menuHolderDiv>
-  <div class=valueHolder><input type=hidden id=fDateValue value="{$year}{$month}{$day}"><input type=text READONLY id=fDate value="{$month}/{$day}/{$year}" style="width: 10vw;"></div>
-  <div class=valueDropDown style="min-width: 15vw;" id=ddInstitutions><div id=dspCalendarHere>{$dCalendar}</div></div>
-</div>
-
-CALENDAR;
-
-
-$rtnthis = <<<PAGECONT
-<table border=0><tr><td colspan=3>Procurement</td></tr><tr><td>Institution</td><td>Date</td><td></td></tr><tr><td>{$institution}</td><td>{$calendar}</td><td><table class=tblBtn onclick="alert('get grid');"><tr><td>Display</td></tr></table></td></tr></table>
-PAGECONT;
-
-    }
-return $rtnthis;
-}
-
-
-function buildShippingQryGrid() { 
-  $si = serverIdent;
-  $sp = serverpw;
-    
-$fCalendar = buildcalendar('shipBSQFrom'); 
-$shpFromCalendar = <<<CALENDAR
-<div class=menuHolderDiv>
-  <div class=valueHolder><input type=hidden id=shpQryFromDateValue><input type=text READONLY id=shpQryFromDate></div>
-  <div class=valueDropDown style="min-width: 15vw;" id=fcal><div id=shpfCalendar>{$fCalendar}</div></div>
-</div>
-CALENDAR;
-  
-$tCalendar = buildcalendar('shipBSQTo'); 
-$shpToCalendar = <<<CALENDAR
-<div class=menuHolderDiv>
-  <div class=valueHolder><input type=hidden id=shpQryToDateValue><input type=text READONLY id=shpQryToDate></div>
-  <div class=valueDropDown style="min-width: 15vw;" id=tcal><div id=shptCalendar>{$tCalendar}</div></div>
-</div>
-CALENDAR;
-
-
-$segstatusarr = json_decode( callrestapi("GET", dataTree . "/globalmenu/allshipdocstatus",$si,$sp) , true);
-$seg = "<table border=1><tr><td align=right onclick=\"fillField('qryShpStatus','','');\">[clear]</td></tr>";
-foreach ($segstatusarr['DATA'] as $segval) { 
-  $seg .= "<tr><td onclick=\"fillField('qryShpStatus','{$segval['lookupvalue']}','{$segval['menuvalue']}');\">{$segval['menuvalue']}</td></tr>";
-}
-$seg .= "</table>";
-$shpsts = "<div class=menuHolderDiv><input type=hidden id=qryShpStatusValue><input type=text id=qryShpStatus READONLY><div class=valueDropDown>{$seg}</div></div>";
-
-$grid = <<<GRIDLAY
-<table border=0 width=100%>
-<tr><td>Shipping Query</td></tr>
-<tr><td colspan=2>
-
-   <table border=0>    
-   <tr><td>Ship-Doc #</td><td>Ship Doc Status</td></tr> 
-   <tr><td><input type=text id=shpShipDocNbr></td><td>{$shpsts}</td></tr>
-   <tr><td>Shipping Date from</td><td>Shipping Date to</td></tr>
-   <tr><td>{$shpFromCalendar}</td><td>{$shpToCalendar}</td></tr>    
-   <tr><td colspan=2>Investigator (Investigator # - Use as lookup)</td></tr>
-   <tr>
-     <td colspan=2>
-       <div class=suggestionHolder>       
-         <input type=text id=shpShipInvestigator>
-         <div id=investSuggestionShp class=suggestionDisplay>&nbsp;</div>
-       </div>
-     </td>
-   </table>
-
-   </td></tr>
-<tr><td align=right style="padding: 3vh 45vw 0 0;">
-    <table class=tblBtn id=btnShipDocSearchSubmit style="width: 6vw;"><tr><td><center>Search</td></tr></table>   
-   </td></tr>
-</table>            
-GRIDLAY;
-return $grid;             
-}
-
-function buildBSBankGrid() { 
-  
-  $spcarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/chtnvocabularyspecimencategory", serverIdent, serverpw),true);
-  //$spcd = json_decode($spcarr['datareturn'],true);
-  $spc = "<table border=1>";
-  $spc .= "<tr><td onclick=\"fillField('bnkSpecCat','','');\">[clear]</td></tr>";
-  foreach ($spcarr['DATA'] as $spcval) { 
-    $spc .= "<tr><td onclick=\"fillField('bnkSpecCat','{$spcval['lookupvalue']}','{$spcval['menuvalue']}');\">{$spcval['menuvalue']}</td></tr>";
-  }
-  $spc .= "</table>";
-
-    $grid = <<<GRIDLAY
-<table border=0 width=100%>
-<tr><td colspan=4>Read 'Help' Screen to use this screen more fully.  This is a derivative of the CHTN Transient Inventory App.</td></tr>
-<tr><td>Site</td><td>Diagnosis</td><td>Specimen Category</td><td width=20%></td></tr>
-<tr>
-   <td><input type=text id=bnkSite></td>
-   <td><input type=text id=bnkDiagnosis></td>
-   <td><div class=menuHolderDiv><input type=text id=bnkSpecCat READONLY><div class=valueDropDown>{$spc}</div></div></td>
-   <td></td>
-</tr>
-<tr><td colspan=3>
-<center>
-<table border=0>
-<tr>
-<td><div><input type=checkbox id=bnkPrpFFPE checked><label for=bnkPrpFFPE>FFPE</label></div></td>
-<td><div><input type=checkbox id=bnkPrpFixed checked><label for=bnkPrpFixed>FIXED</label></div></td>
-<td><div><input type=checkbox id=bnkPrpFrozen checked><label for=bnkPrpFrozen>FROZEN</label></div></td>
-</tr>
-</table>
-</td><td></td></tr>
-<tr><td colspan=3 align=right>
-<table class=tblBtn style="width: 6vw;" id=btnBankSearchSubmit><tr><td><center>Search</td></tr></table>
-</td><td></td></tr>
-</table>
-
-GRIDLAY;
-return $grid; 
-}
-
-
-function getBankQryData($qryid) { 
-  $si = serverIdent;
-  $sp = apikey;
-  $status = 500;
-  $qryby = "";
-  $critarr = json_decode(callrestapi("GET","https://scienceserver.chtneast.org/data-obj-request/bankqrycriteria/{$qryid}",$si,$sp),true);
-  if ((int)$critarr['status'] === 200) { 
-      //GET DATA
-      $qryby = $critarr['DATA']['bywhom'];    
-      $qryon = $critarr['DATA']['qrydate'];
-      $qrycrit = json_decode($critarr['DATA']['jsoncriteria'], true);
-
-      $prp = array();
-      if ((int)$qrycrit['prepFFPE'] === 1) $prp[] = "FFPE";
-      if ((int)$qrycrit['prepFIXED'] === 1) $prp[] = "FIXED";
-      if ((int)$qrycrit['prepFROZEN'] === 1) $prp[] = "FROZEN";
-      $passdata['requester'] = "";
-      $passdata['requestedDataPage'] = 0;
-      $passdata['requestedSite'] = $qrycrit['site'];
-      $passdata['requestedDiagnosis'] = $qrycrit['dx'];
-      $passdata['requestedCategory'] = $qrycrit['specimencategory']; 
-      $passdata['requestedPreparation'] = $prp;
-      $tidalsearch = calltidal('POST','https://data.chtneast.org/runbank',json_encode($passdata));
-      $status = 200;
-  } else { 
-  } 
-  return array('status' => $status, 'qryby' => $qryby, 'qryon' => $qryon, 'criteria' => $qrycrit, 'bankdata' => $tidalsearch);
-}
-
-function getShipQryData($qryid) {
-  $si = serverIdent;
-  $sp = apikey;
-  $status = 500;
-  $qryby = "";
-  $critarr = json_decode(callrestapi("GET","https://scienceserver.chtneast.org/data-obj-request/shipdocqrycriteria/{$qryid}",$si,$sp),true);
-  if ((int)$critarr['status'] === 200) { 
-      $qryby = $critarr['DATA']['bywhom'];    
-      $qryon = $critarr['DATA']['qrydate'];
-      $qrycrit = json_decode($critarr['DATA']['jsoncriteria'], true);
-      $passdata['requester'] = "";
-      $passdata['requestedDataPage'] = 0;
-      $passdata['shipdocnumber'] = $qrycrit['shipdocnumber'];
-      $passdata['sdstatus'] = $qrycrit['sdstatus'];
-      $passdata['sdshipfromdte'] = $qrycrit['sdshipfromdte']; 
-      $passdata['sdshiptodte'] = $qrycrit['sdshiptodte'];
-      $passdata['investigator'] = $qrycrit['investigator'];
-      //$tidalsearch = calltidal('POST','https://data.chtneast.org/runbank',json_encode($passdata));
-      $status = 200;
-  } else { 
-  } 
-  return array('status' => $status, 'qryby' => $qryby, 'qryon' => $qryon, 'criteria' => $qrycrit, 'shipdata' => json_encode($passdata));
-}
- */
 

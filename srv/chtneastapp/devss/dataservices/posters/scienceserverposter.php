@@ -34,6 +34,21 @@ function __construct() {
 
 class datadoers { 
  
+    function biogrouphprstatus($request, $passdata) { 
+      $dta = array(); 
+      require(serverkeys . "/sspdo.zck");  
+      $pdta = json_decode($passdata,true);
+      $pbiosample = cryptservice($pdta['bgency'], 'd'); 
+      
+      
+      $dta['bg'] = $pbiosample;
+
+      $rows['statusCode'] = 200; 
+      $rows['data'] = array('MESSAGE' => '', 'ITEMSFOUND' => 0, 'DATA' => $dta);
+      return $rows;
+    }
+
+
     function assignsegments($request, $passdata) { 
 //{"segmentlist":"{\"0\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948001\",\"segmentid\":\"431100\"},\"1\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948003\",\"segmentid\":\"431102\"},\"2\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948004\",\"segmentid\":\"431103\"}}","investigatorid":"INV3000","requestnbr":"REQ19002"}
       $responseCode = 400; 
@@ -334,7 +349,39 @@ class datadoers {
        $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => "");
        return $rows;      
     }
-     
+
+    function preprocessoverridehpr($request, $passdata) { 
+      $responseCode = 400; 
+      require(serverkeys . "/sspdo.zck");  
+      $error = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $data = array();
+      $errorInd = 0;
+      $pdta = json_decode($passdata, true);
+      $bgArr = array();
+      //{"0":{"biogroup":"84278","bgslabel":"84278001","segmentid":"445631"},"1":{"biogroup":"84278","bgslabel":"84278002","segmentid":"445632"}}
+      foreach ($pdta as $key => $value) {
+        if (!in_array($value['biogroup'], $bgArr)) {    
+            $msgArr[] = "{$value['biogroup']}";
+            $bgArr[] = $value['biogroup'];
+        }
+      }
+
+      //DATA CHECKS  
+      ( count($bgArr) < 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "NO BIOGROUPS WERE SUBMITTED FOR QMS/HPR OVER-RIDE")) : "";
+
+      if ($errorInd === 0) { 
+        $responseCode = 200;
+        $dta = array('pagecontent' =>  bldDialog('dataCoordinatorHPROverride', $bgArr));
+      } else { 
+        $msg = $msgArr;
+      }       
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+      return $rows;        
+    }
+
     function preprocessshipdoc($request, $passdata) { 
       $responseCode = 400; 
       require(serverkeys . "/sspdo.zck");  
