@@ -210,7 +210,8 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #coordinatorResultTbl tbody .qmsiconholderl { text-align: center; background: rgba({$this->color_deeppurple}, 1); color: rgba({$this->color_white},1); } 
 #coordinatorResultTbl tbody .qmsiconholderr { text-align: center; background: rgba({$this->color_dullyellow}, 1); color: rgba({$this->color_dblue},1); } 
 #coordinatorResultTbl tbody .qmsiconholderh { text-align: center; background: rgba({$this->color_lblue}, 1); color: rgba({$this->color_white},1); } 
-#coordinatorResultTbl tbody .qmsiconholderq { text-align: center;  background: rgba({$this->color_darkgreen}, 1); color: rgba({$this->color_white},1);} 
+#coordinatorResultTbl tbody .qmsiconholderq { text-align: center; background: rgba({$this->color_darkgreen}, 1); color: rgba({$this->color_white},1);} 
+#coordinatorResultTbl tbody .qmsiconholdern { text-align: center; background: rgba({$this->color_aqua}, 1); color: rgba({$this->color_zackgrey},1);} 
 
 #coordinatorResultTbl tbody .ttholder { position: relative; }
 #coordinatorResultTbl tbody .ttholder:hover .tt { display: block; }

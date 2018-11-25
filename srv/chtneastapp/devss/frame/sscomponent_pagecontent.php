@@ -20,17 +20,127 @@ function sysDialogBuilder($whichdialog, $passedData) {
       case 'dataCoordinatorHPROverride':
 
         if ( count($passedData) > 0 ) {   
-          $biogroupTbl = "<table border=1><tr><th>biogroup</th><th>Present Status</th><th>New Status</th></tr>";
+          $biogroupTbl = "<table border=1><tr><th></th><th>biogroup</th><th>Designation</th><th>Pathology Rpt</th><th>QMS Value</th><th>Present Status</th><th>New Status</th><th>Slide Submitted</th></tr>";
+          $submittalCnt = 0;
           foreach ($passedData as $key => $val) { 
               $bgency = cryptservice($val);
-              //              $idta = callrestapi("GET", dataTree . "/biogroup-hpr-status/{$bgency}", serverIdent, serverpw);
               $arr['bgency'] = cryptservice($val);
-              $passdata = json_encode($arr);  
-              $idta = callrestapi("POST", dataTree . "/data-doers/biogroup-hpr-status",serverIdent, serverpw, $passdata);             
+              $passdata = json_encode($arr); 
+              //{"MESSAGE":"","ITEMSFOUND":0,"DATA":{"bg":"81948","qcprocstatus":"R","desigsite":"LIVER","desigdx":"","desigspeccat":"NORMAL","hprdecision":"CONFIRM","hprslidereviewed":"81948T_002"}}
+              //THIS ASSUMES THAT ALL BIOGROUPS WILL ALWAYS BE FOUND ... TODO:  CATCH ERRORS HERE 
+              $idta = json_decode(callrestapi("POST", dataTree . "/data-doers/biogroup-hpr-status",serverIdent, serverpw, $passdata), true);             
+              $desig = ( trim($idta['DATA']['desigsite']) !== "") ? strtoupper(trim($idta['DATA']['desigsite'])) : "";
+              $desig .= ( trim($idta['DATA']['desigdx']) !== "") ? " / " . strtoupper(trim($idta['DATA']['desigdx'])) : "";
+              $desig .= ( trim($idta['DATA']['desigspeccat']) !== "") ? strtoupper(" [" . trim($idta['DATA']['desigspeccat']) . "]") : "";
+              $prsQMSStat = strtoupper(trim($idta['DATA']['qmsvalue']));                         
+              $prsFld = "<input type=hidden id=\"qmsPresentValue{$val}\" value=\"{$idta['DATA']['qcprocstatus']}\">"; 
+              $qmsvl = ( trim($idta['DATA']['hprdecision']) !== "" ) ? trim($idta['DATA']['hprdecision']) : "";
+              $qmsvl .= (trim($idta['DATA']['hprslidereviewed']) !== "" ) ?  ( trim($qmsvl) !== "" ) ? " / " . preg_replace('/[Tt]_/','',trim($idta['DATA']['hprslidereviewed'])) : preg_replace('/[Tt]_/','',trim($idta['DATA']['hprslidereviewed'])) : "";
+              $prpresent = $idta['DATA']['prpresent'];
+              //TODO: Make this dynamic!  
+              switch ($idta['DATA']['qcprocstatus']) {                   
+                 case 'H':
+                    $newQMS = '&nbsp;';
+                    $chkbox = "&nbsp;";
+                    $slidepicker = "";
+                    break;
+                case 'N':
+                    $newQMS = 'SUBMIT';
+                    $chkbox = "<input type=checkbox CHECKED>";
+                    //[{"bgs":"83251002","hprind":"Y","assignedto":"","tohpr":""}]  
+                    $slideTbl = "<table border=1>";
+                    foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) { 
+  
+                      $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
+                      $hprind = ($sv['hprind'] == 'Y') ? "H" : "";
+                      $hpralready = ($sv['tohpr'] == '') ? "-" : "X";
+                      $sldAssign = (trim($sv['assignedto']) === "") ? "" : "A"; 
+                      $slideTbl .= "<tr><td>{$hprind}</td><td>{$sv['bgs']}</td><td>{$hpralready}</td><td>{$sldAssign}</td></tr>";
+
+                    }
+                    $slideTbl .= "</table>"; 
+                    $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" style=\"width: 10vw;\"><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
+                    
+                    $submittalCnt++;
+                    break;
+                case 'L':
+                    $newQMS = 'RESUBMIT';
+                    $chkbox = "<input type=checkbox CHECKED>";                   
+                    $slideTbl = "<table border=1>";
+                    foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) { 
+  
+                      $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
+                      $hprind = ($sv['hprind'] == 'Y') ? "H" : "";
+                      $hpralready = ($sv['tohpr'] == '') ? "-" : "X";
+                      $sldAssign = (trim($sv['assignedto']) === "") ? "" : "A"; 
+                      $slideTbl .= "<tr><td>{$hprind}</td><td>{$sv['bgs']}</td><td>{$hpralready}</td><td>{$sldAssign}</td></tr>";
+                        
+
+                    }
+                    $slideTbl .= "</table>"; 
+                    $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" style=\"width: 10vw;\"><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
+                    $submittalCnt++;
+                    break;
+                case 'R':
+                    $newQMS = '&nbsp;';
+                    $chkbox = "&nbsp;";                   
+                    $slidepicker = "";
+                    break;
+                case 'S':
+                    $newQMS = '&nbsp;';
+                    $chkbox = "&nbsp;";                   
+                    $slidepicker = "";
+                    break;
+                case 'Q':
+                    $newQMS = 'RESUBMIT';
+                    $chkbox = "<input type=checkbox CHECKED>";                   
+                    $slideTbl = "<table border=1>";
+                    foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) { 
+  
+                      $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
+                      $hprind = ($sv['hprind'] == 'Y') ? "H" : "";
+                      $hpralready = ($sv['tohpr'] == '') ? "-" : "X";
+                      $sldAssign = (trim($sv['assignedto']) === "") ? "" : "A"; 
+                      $slideTbl .= "<tr><td>{$hprind}</td><td>{$sv['bgs']}</td><td>{$hpralready}</td><td>{$sldAssign}</td></tr>";
+
+                    }
+                    $slideTbl .= "</table>"; 
+                    $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" style=\"width: 10vw;\"><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
+                    $submittalCnt++;
+                    break;
+                default:
+                    $newQMS = 'SUBMIT';
+                    $chkbox = "<input type=checkbox CHECKED>";                   
+                    $slideTbl = "<table border=1>";
+                    foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) { 
+  
+                      $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
+                      $hprind = ($sv['hprind'] == 'Y') ? "H" : "";
+                      $hpralready = ($sv['tohpr'] == '') ? "-" : "X";
+                      $sldAssign = (trim($sv['assignedto']) === "") ? "" : "A"; 
+                      $slideTbl .= "<tr><td>{$hprind}</td><td>{$sv['bgs']}</td><td>{$hpralready}</td><td>{$sldAssign}</td></tr>";
 
 
-              $biogroupTbl .= "<tr><td>{$val}</td><td>{$idta}</td><td></td></tr>";
+                    }
+                    $slideTbl .= "</table>"; 
+                    $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" style=\"width: 10vw;\"><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
+                    $submittalCnt++;
+              }
+
+              $biogroupTbl .= <<<BGTBL
+<tr>  
+<td>{$chkbox}</td>  
+<td>{$val}</td>   
+<td>{$desig}</td> 
+<td>{$prpresent}</td>  
+<td>{$qmsvl}</td> 
+<td>{$prsQMSStat}{$prsFld}</td>     
+<td>{$newQMS}</td>
+<td>{$slidepicker}</td>
+</tr>
+BGTBL;
           }
+          $biogroupTbl .= "<tr><td colspan=7 align=right>Submittals to QMS Process</td><td>{$submittalCnt}</td></tr>";
           $biogroupTbl .= "</table>";
         }
 
@@ -375,6 +485,11 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
       case 'Q':
         $qmsicon = "<i class=\"material-icons\">stars</i>";
         $clssuffix = "q";
+        $qcstatustxt = "QMS Process: {$val['qcstatus']}";
+      break;
+      case 'N':
+        $qmsicon = "<i class=\"material-icons\">play_circle_outline</i>";
+        $clssuffix = "n";
         $qcstatustxt = "QMS Process: {$val['qcstatus']}";
       break;
       default:  //NO VALUE MATCHING

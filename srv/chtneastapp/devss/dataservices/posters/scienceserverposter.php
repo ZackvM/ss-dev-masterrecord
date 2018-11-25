@@ -39,11 +39,35 @@ class datadoers {
       require(serverkeys . "/sspdo.zck");  
       $pdta = json_decode($passdata,true);
       $pbiosample = cryptservice($pdta['bgency'], 'd'); 
-      
-      
-      $dta['bg'] = $pbiosample;
+      $qmsSQL = "select bs.pbiosample, ifnull(bs.tisstype,'') as spccat, ifnull(bs.anatomicsite,'') as site, ifnull(bs.diagnosis,'') as dx, substr(ifnull(prr.dspvalue,'No'),1,1) as pathreportdsp, ifnull(bs.qcvalv2,''), ifnull(bs.hprmarkbyon,'') as hprmarkon, ifnull(bs.hprind,0) as hprind, ifnull(bs.qcind,0) as qcind, ifnull(bs.qcmarkbyon,'') as qcmarkbyon, ifnull(bs.qcprocstatus,'') as qcprocstatus, ifnull(qc.dspvalue,'') as qmsvalue, ifnull(bs.hprdecision,'') as hprdecision, ifnull(bs.hprresult,0) as hprresultrecord, ifnull(hprslidereviewed,'') as hprslidereviewed, ifnull(hprby,'') as hprby, ifnull(hpron,'') as hpron from masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') as prr on bs.pathreport = prr.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as qc on bs.qcprocstatus = qc.menuvalue where bs.pbiosample = :pbiosample";
+      $qmsR = $conn->prepare($qmsSQL); 
+      $qmsR->execute(array(':pbiosample' => $pbiosample));
+      if ($qmsR->rowCount() <> 1) {       
+        $rows['statusCode'] = 404;
+        $dta['bg'] = $pbiosample . " BAD PBIOSAMPLE";
+        $msg = "NO BIOGROUP FOUND MATCHING {$pbiosample}";
+      } else {    
+        $qms = $qmsR->fetch(PDO::FETCH_ASSOC);
 
-      $rows['statusCode'] = 200; 
+        $slideListSQL = "select replace(bgs,'T_','') as bgs, if(hprblockind=1,'Y','N') as hprind, ifnull(assignedto,'') as assignedto, if(tohpr=1,'Y','') as tohpr from masterrecord.ut_procure_segment bs where bs.biosampleLabel = :pbiosample and bs.prepmethod = 'SLIDE'";
+        $slideListR = $conn->prepare($slideListSQL); 
+        $slideListR->execute(array(':pbiosample' => $pbiosample)); 
+        $slideListArr = array();
+        while ($sl = $slideListR->fetch(PDO::FETCH_ASSOC)) { 
+          $slideListArr[] = $sl;
+        }
+        $dta['bg'] = $pbiosample;
+        $dta['qcprocstatus'] = $qms['qcprocstatus'];
+        $dta['qmsvalue'] = $qms['qmsvalue'];
+        $dta['desigsite'] = $qms['site'];
+        $dta['desigdx'] = $qms['dx'];
+        $dta['desigspeccat'] = $qms['spccat'];
+        $dta['prpresent'] = $qms['pathreportdsp'];
+        $dta['hprdecision'] = $qms['hprdecision'];
+        $dta['hprslidereviewed'] = $qms['hprslidereviewed'];
+        $dta['slidelist'] = $slideListArr;
+        $rows['statusCode'] = 200; 
+      }
       $rows['data'] = array('MESSAGE' => '', 'ITEMSFOUND' => 0, 'DATA' => $dta);
       return $rows;
     }
