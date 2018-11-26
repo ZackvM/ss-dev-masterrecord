@@ -287,8 +287,27 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #sdcBillPhone { width: 29.7vw;  }
 #sdcBillEmail { width: 14.8vw; }
 
-
 #segmentListHolder { width: 20vw; border-left: 1px solid rgba({$this->color_zackgrey},1); }
+
+#qmsSldListTbl { font-size: 1.5vh; border-collapse: collapse; }
+#qmsSldListTbl th { text-align: left; border-bottom: 1px solid rgba({$this->color_zackgrey},1); font-size: 1.2vh; font-weight: bold; padding: 1vh .5vw 0 .5vw; } 
+#qmsSldListTbl tbody tr { border-bottom: 1px solid rgba({$this->color_mgrey},1); }
+#qmsSldListTbl tbody tr:nth-child(even) { background: rgba({$this->color_lightgrey},1); }
+#qmsSldListTbl tbody tr:hover { background: rgba({$this->color_lamber},1); }
+#qmsSldListTbl tbody tr td { border-right: 1px solid rgba({$this->color_mgrey},1); padding: 1.2vh .5vw 1.2vh .5vw; }
+#qmsSldListTbl thead tr .fldHolder { height: 3vh; } 
+
+#qmsSldListTbl tbody .sldOptionListTbl {font-size: 1.3vh; width: 9.9vw; }
+#qmsSldListTbl tbody .sldOptionListTbl tr { background: rgba({$this->color_white},1); }
+#qmsSldListTbl tbody .sldOptionListTbl tr:hover { background: rgba({$this->color_white},1); cursor: pointer; }
+#qmsSldListTbl tbody .sldOptionListTbl tr td { border: none; padding: 0; }
+#qmsSldListTbl tbody .sldOptionListTbl .sldOptionClear {text-align: right; font-size: 1vh; font-weight: bold; color: rgba({$this->color_mgrey},1); }
+#qmsSldListTbl tbody .sldOptionListTbl .sldOptionClear:hover { color: rgba({$this->color_bred},1); }
+
+.sldLblFld { width: 6vw; }
+.sldusedfld { width: 1vw; text-align: center; }
+.sldassignhpr { width: 1vw; text-align: center; }
+.sldassigninv { width: 1vw; text-align: center; }
 
 STYLESHEET;
 return $rtnThis;

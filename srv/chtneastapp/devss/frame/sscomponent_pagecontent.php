@@ -20,7 +20,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
       case 'dataCoordinatorHPROverride':
 
         if ( count($passedData) > 0 ) {   
-          $biogroupTbl = "<table border=1><tr><th></th><th>biogroup</th><th>Designation</th><th>Pathology Rpt</th><th>QMS Value</th><th>Present Status</th><th>New Status</th><th>Slide Submitted</th></tr>";
+          $biogroupTbl = "<form id=frmQMSSubmitter><table border=0><tr><td valign=top rowspan=2><table border=0 id=qmsSldListTbl><thead><tr><th></th><th>Biogroup</th><th>Designation</th><th>Path-Rpt</th><th>QMS Conclusion</th><th>Present Status</th><th>New Status</th><th>Slide Submitted</th></tr></thead><tbody>";
           $submittalCnt = 0;
           foreach ($passedData as $key => $val) { 
               $bgency = cryptservice($val);
@@ -37,49 +37,67 @@ function sysDialogBuilder($whichdialog, $passedData) {
               $qmsvl = ( trim($idta['DATA']['hprdecision']) !== "" ) ? trim($idta['DATA']['hprdecision']) : "";
               $qmsvl .= (trim($idta['DATA']['hprslidereviewed']) !== "" ) ?  ( trim($qmsvl) !== "" ) ? " / " . preg_replace('/[Tt]_/','',trim($idta['DATA']['hprslidereviewed'])) : preg_replace('/[Tt]_/','',trim($idta['DATA']['hprslidereviewed'])) : "";
               $prpresent = $idta['DATA']['prpresent'];
-              //TODO: Make this dynamic!  
+              $newQMS = '&nbsp;';
+              $chkbox = "&nbsp;";
+              //TODO: Make this dynamic AND NON-REPEATING!  
               switch ($idta['DATA']['qcprocstatus']) {                   
                  case 'H':
-                    $newQMS = '&nbsp;';
-                    $chkbox = "&nbsp;";
-                    $slidepicker = "";
+                    if (count($idta['DATA']['slidelist']) > 0) { 
+                      $slideTbl = "<table border=0 class=sldOptionListTbl><tr><td colspan=4 onclick=\"fillField('fldSld{$submittalCnt}','','');\" class=sldOptionClear>[clear]</td></tr>";
+                      foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) {  
+                        $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
+                        $hprind = ($sv['hprind'] == 'Y') ? "H" : "-"; //THIS IS MARKED AS HPR SLIDE
+                        $hpralready = ($sv['tohpr'] == '') ? "-" : "X"; //ALREADY SUBMITTED TO QMS
+                        $sldAssign = (trim($sv['assignedto']) === "") ? "-" : "A"; //ASSIGNED
+                        $slideTbl .= "<tr onclick=\"fillField('fldSld{$submittalCnt}','','{$sv['bgs']}');\"><td class=sldLblFld>{$sv['bgs']}</td><td class=sldusedfld>{$hpralready}</td><td class=sldassignhpr>{$hprind}</td><td class=sldassigninv>{$sldAssign}</td></tr>";
+                      }
+                      $slideTbl .= "</table>"; 
+                      $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" id=\"fldSld{$submittalCnt}\" style=\"width: 10vw;\" READONLY><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
+                      $newQMS = 'Resubmit';
+                      $chkbox = "<input type=checkbox CHECKED>";
+                      $submittalCnt++;
+                    } else { 
+                      $slidepicker = "NO SLIDES IN THIS BIOGROUP";
+                    }
+
                     break;
                 case 'N':
-                    $newQMS = 'SUBMIT';
-                    $chkbox = "<input type=checkbox CHECKED>";
-                    //[{"bgs":"83251002","hprind":"Y","assignedto":"","tohpr":""}]  
-                    $slideTbl = "<table border=1>";
-                    foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) { 
-  
-                      $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
-                      $hprind = ($sv['hprind'] == 'Y') ? "H" : "";
-                      $hpralready = ($sv['tohpr'] == '') ? "-" : "X";
-                      $sldAssign = (trim($sv['assignedto']) === "") ? "" : "A"; 
-                      $slideTbl .= "<tr><td>{$hprind}</td><td>{$sv['bgs']}</td><td>{$hpralready}</td><td>{$sldAssign}</td></tr>";
-
+                    if (count($idta['DATA']['slidelist']) > 0) { 
+                      $slideTbl = "<table border=0 class=sldOptionListTbl><tr><td colspan=4 onclick=\"fillField('fldSld{$submittalCnt}','','');\" class=sldOptionClear>[clear]</td></tr>";
+                      foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) {  
+                        $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
+                        $hprind = ($sv['hprind'] == 'Y') ? "H" : "-"; //THIS IS MARKED AS HPR SLIDE
+                        $hpralready = ($sv['tohpr'] == '') ? "-" : "X"; //ALREADY SUBMITTED TO QMS
+                        $sldAssign = (trim($sv['assignedto']) === "") ? "-" : "A"; //ASSIGNED
+                        $slideTbl .= "<tr onclick=\"fillField('fldSld{$submittalCnt}','','{$sv['bgs']}');\"><td class=sldLblFld>{$sv['bgs']}</td><td class=sldusedfld>{$hpralready}</td><td class=sldassignhpr>{$hprind}</td><td class=sldassigninv>{$sldAssign}</td></tr>";
+                      }
+                      $slideTbl .= "</table>"; 
+                      $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" id=\"fldSld{$submittalCnt}\" style=\"width: 10vw;\" READONLY><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
+                      $newQMS = 'SUBMIT';
+                      $chkbox = "<input type=checkbox CHECKED>";
+                      $submittalCnt++;
+                    } else { 
+                      $slidepicker = "NO SLIDES IN THIS BIOGROUP";
                     }
-                    $slideTbl .= "</table>"; 
-                    $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" style=\"width: 10vw;\"><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
-                    
-                    $submittalCnt++;
                     break;
                 case 'L':
-                    $newQMS = 'RESUBMIT';
-                    $chkbox = "<input type=checkbox CHECKED>";                   
-                    $slideTbl = "<table border=1>";
-                    foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) { 
-  
-                      $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
-                      $hprind = ($sv['hprind'] == 'Y') ? "H" : "";
-                      $hpralready = ($sv['tohpr'] == '') ? "-" : "X";
-                      $sldAssign = (trim($sv['assignedto']) === "") ? "" : "A"; 
-                      $slideTbl .= "<tr><td>{$hprind}</td><td>{$sv['bgs']}</td><td>{$hpralready}</td><td>{$sldAssign}</td></tr>";
-                        
-
+                    if (count($idta['DATA']['slidelist']) > 0) { 
+                      $slideTbl = "<table border=0 class=sldOptionListTbl><tr><td colspan=4 onclick=\"fillField('fldSld{$submittalCnt}','','');\" class=sldOptionClear>[clear]</td></tr>";
+                      foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) {  
+                        $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
+                        $hprind = ($sv['hprind'] == 'Y') ? "H" : "-"; //THIS IS MARKED AS HPR SLIDE
+                        $hpralready = ($sv['tohpr'] == '') ? "-" : "X"; //ALREADY SUBMITTED TO QMS
+                        $sldAssign = (trim($sv['assignedto']) === "") ? "-" : "A"; //ASSIGNED
+                        $slideTbl .= "<tr onclick=\"fillField('fldSld{$submittalCnt}','','{$sv['bgs']}');\"><td class=sldLblFld>{$sv['bgs']}</td><td class=sldusedfld>{$hpralready}</td><td class=sldassignhpr>{$hprind}</td><td class=sldassigninv>{$sldAssign}</td></tr>";
+                      }
+                      $slideTbl .= "</table>"; 
+                      $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" id=\"fldSld{$submittalCnt}\" style=\"width: 10vw;\" READONLY><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
+                      $newQMS = 'RESUBMIT';
+                      $chkbox = "<input type=checkbox CHECKED>";                   
+                      $submittalCnt++;
+                    } else { 
+                      $slidepicker = "NO SLIDES IN THIS BIOGROUP";
                     }
-                    $slideTbl .= "</table>"; 
-                    $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" style=\"width: 10vw;\"><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
-                    $submittalCnt++;
                     break;
                 case 'R':
                     $newQMS = '&nbsp;';
@@ -92,39 +110,28 @@ function sysDialogBuilder($whichdialog, $passedData) {
                     $slidepicker = "";
                     break;
                 case 'Q':
-                    $newQMS = 'RESUBMIT';
-                    $chkbox = "<input type=checkbox CHECKED>";                   
-                    $slideTbl = "<table border=1>";
-                    foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) { 
-  
-                      $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
-                      $hprind = ($sv['hprind'] == 'Y') ? "H" : "";
-                      $hpralready = ($sv['tohpr'] == '') ? "-" : "X";
-                      $sldAssign = (trim($sv['assignedto']) === "") ? "" : "A"; 
-                      $slideTbl .= "<tr><td>{$hprind}</td><td>{$sv['bgs']}</td><td>{$hpralready}</td><td>{$sldAssign}</td></tr>";
-
-                    }
-                    $slideTbl .= "</table>"; 
-                    $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" style=\"width: 10vw;\"><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
-                    $submittalCnt++;
+                    $newQMS = '&nbsp;';
+                    $chkbox = "&nbsp;";
+                    $slidepicker = "";
                     break;
                 default:
-                    $newQMS = 'SUBMIT';
-                    $chkbox = "<input type=checkbox CHECKED>";                   
-                    $slideTbl = "<table border=1>";
-                    foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) { 
-  
-                      $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
-                      $hprind = ($sv['hprind'] == 'Y') ? "H" : "";
-                      $hpralready = ($sv['tohpr'] == '') ? "-" : "X";
-                      $sldAssign = (trim($sv['assignedto']) === "") ? "" : "A"; 
-                      $slideTbl .= "<tr><td>{$hprind}</td><td>{$sv['bgs']}</td><td>{$hpralready}</td><td>{$sldAssign}</td></tr>";
-
-
+                    if (count($idta['DATA']['slidelist']) > 0) { 
+                      $slideTbl = "<table border=0 class=sldOptionListTbl><tr><td colspan=4 onclick=\"fillField('fldSld{$submittalCnt}','','');\" class=sldOptionClear>[clear]</td></tr>";
+                      foreach ( $idta['DATA']['slidelist'] as $sk => $sv ) {  
+                        $submitslide = ($sv['hprind'] == 'Y' && $sv['tohpr'] != 'Y') ? $sv['bgs'] : "";
+                        $hprind = ($sv['hprind'] == 'Y') ? "H" : "-"; //THIS IS MARKED AS HPR SLIDE
+                        $hpralready = ($sv['tohpr'] == '') ? "-" : "X"; //ALREADY SUBMITTED TO QMS
+                        $sldAssign = (trim($sv['assignedto']) === "") ? "-" : "A"; //ASSIGNED
+                        $slideTbl .= "<tr onclick=\"fillField('fldSld{$submittalCnt}','','{$sv['bgs']}');\"><td class=sldLblFld>{$sv['bgs']}</td><td class=sldusedfld>{$hpralready}</td><td class=sldassignhpr>{$hprind}</td><td class=sldassigninv>{$sldAssign}</td></tr>";
+                      }
+                      $slideTbl .= "</table>"; 
+                      $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" id=\"fldSld{$submittalCnt}\" style=\"width: 10vw;\"><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
+                      $newQMS = 'SUBMIT';
+                      $chkbox = "<input type=checkbox CHECKED>";                   
+                      $submittalCnt++;
+                    } else { 
+                      $slidepicker = "NO SLIDES IN THIS BIOGROUP";
                     }
-                    $slideTbl .= "</table>"; 
-                    $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" style=\"width: 10vw;\"><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
-                    $submittalCnt++;
               }
 
               $biogroupTbl .= <<<BGTBL
@@ -132,22 +139,29 @@ function sysDialogBuilder($whichdialog, $passedData) {
 <td>{$chkbox}</td>  
 <td>{$val}</td>   
 <td>{$desig}</td> 
-<td>{$prpresent}</td>  
+<td><center>{$prpresent}</td>  
 <td>{$qmsvl}</td> 
 <td>{$prsQMSStat}{$prsFld}</td>     
 <td>{$newQMS}</td>
-<td>{$slidepicker}</td>
+<td class=fldHolder>{$slidepicker}</td>
 </tr>
 BGTBL;
           }
-          $biogroupTbl .= "<tr><td colspan=7 align=right>Submittals to QMS Process</td><td>{$submittalCnt}</td></tr>";
-          $biogroupTbl .= "</table>";
+          $biogroupTbl .= "</tbody><tfoot><tr><td colspan=7 align=right>Submittals to QMS Process: &nbsp;</td><td>{$submittalCnt}</td></tr></tfoot>";
+          $biogroupTbl .= "</table></td>";
+
+        
+          $biogroupTbl .= "<td valign=top>INVENTORY TRAY SELECT</td></tr>";
+
+          $biogroupTbl .= "<tr><td valign=top>LOGCREDs</td></tr><tr><td colspan=2>Slide Option Menu Legend: X = Slide has been used in QMS / H = Slide is part of HPR Group / A = Slide is assigned to investigator</td></tr></table></form>";
+
+        } else { 
+          $biogroupTbl = "ERROR: NO BIOGROUPS SELECTED!";          
         }
 
         $titleBar = "QMS/HPR Inventory Override";
         $innerDialog = <<<DIALOGINNER
         {$biogroupTbl}
-
 DIALOGINNER;
         $footerBar = "";
       break;
