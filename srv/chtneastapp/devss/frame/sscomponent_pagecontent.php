@@ -13,7 +13,6 @@ public $closeBtn = "<i class=\"material-icons\">close</i>";
 public $menuBtn = "<i class=\"material-icons\">menu</i>";
 public $checkBtn = "<i class=\"material-icons\">check</i>";
 
-
 function sysDialogBuilder($whichdialog, $passedData) {
  
     switch($whichdialog) {
@@ -23,6 +22,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
           $biogroupTbl = "<form id=frmQMSSubmitter><table border=0><tr><td valign=top rowspan=2><table border=0 id=qmsSldListTbl><thead><tr><th></th><th>Biogroup</th><th>Designation</th><th>Path-Rpt</th><th>QMS Conclusion</th><th>Present Status</th><th>New Status</th><th>Slide Submitted</th></tr></thead><tbody>";
           $submittalCnt = 0;
           foreach ($passedData as $key => $val) { 
+              $rowId = "";
               $bgency = cryptservice($val);
               $arr['bgency'] = cryptservice($val);
               $passdata = json_encode($arr); 
@@ -53,8 +53,9 @@ function sysDialogBuilder($whichdialog, $passedData) {
                       }
                       $slideTbl .= "</table>"; 
                       $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" id=\"fldSld{$submittalCnt}\" style=\"width: 10vw;\" READONLY><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
-                      $newQMS = 'Resubmit';
-                      $chkbox = "<input type=checkbox CHECKED>";
+                      $newQMS = 'RESUBMIT';
+                      $chkbox = "<input type=checkbox CHECKED id='chkBox{$submittalCnt}' onclick=\"checkBoxIndicators(this.id);\">";
+                      $rowId = "tr{$submittalCnt}";
                       $submittalCnt++;
                     } else { 
                       $slidepicker = "NO SLIDES IN THIS BIOGROUP";
@@ -74,7 +75,8 @@ function sysDialogBuilder($whichdialog, $passedData) {
                       $slideTbl .= "</table>"; 
                       $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" id=\"fldSld{$submittalCnt}\" style=\"width: 10vw;\" READONLY><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
                       $newQMS = 'SUBMIT';
-                      $chkbox = "<input type=checkbox CHECKED>";
+                      $chkbox = "<input type=checkbox CHECKED id='chkBox{$submittalCnt}' onclick=\"checkBoxIndicators(this.id);\">";
+                      $rowId = "tr{$submittalCnt}";                      
                       $submittalCnt++;
                     } else { 
                       $slidepicker = "NO SLIDES IN THIS BIOGROUP";
@@ -93,7 +95,8 @@ function sysDialogBuilder($whichdialog, $passedData) {
                       $slideTbl .= "</table>"; 
                       $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" id=\"fldSld{$submittalCnt}\" style=\"width: 10vw;\" READONLY><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
                       $newQMS = 'RESUBMIT';
-                      $chkbox = "<input type=checkbox CHECKED>";                   
+                      $chkbox = "<input type=checkbox CHECKED id='chkBox{$submittalCnt}' onclick=\"checkBoxIndicators(this.id);\">";                   
+                      $rowId = "tr{$submittalCnt}";                      
                       $submittalCnt++;
                     } else { 
                       $slidepicker = "NO SLIDES IN THIS BIOGROUP";
@@ -127,7 +130,8 @@ function sysDialogBuilder($whichdialog, $passedData) {
                       $slideTbl .= "</table>"; 
                       $slidepicker = "<div class=menuHolderDiv><input type=text value=\"{$submitslide}\" id=\"fldSld{$submittalCnt}\" style=\"width: 10vw;\"><div class=valueDropDown style=\"width: 10vw;\">{$slideTbl}</div></div>";
                       $newQMS = 'SUBMIT';
-                      $chkbox = "<input type=checkbox CHECKED>";                   
+                      $chkbox = "<input type=checkbox CHECKED id='chkBox{$submittalCnt}' onclick=\"checkBoxIndicators(this.id);\">";                   
+                      $rowId = "tr{$submittalCnt}";                      
                       $submittalCnt++;
                     } else { 
                       $slidepicker = "NO SLIDES IN THIS BIOGROUP";
@@ -135,7 +139,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
               }
 
               $biogroupTbl .= <<<BGTBL
-<tr>  
+<tr id="{$rowId}" data-bg="{$val}" data-newqms="{$newQMS}">  
 <td>{$chkbox}</td>  
 <td>{$val}</td>   
 <td>{$desig}</td> 
@@ -147,13 +151,26 @@ function sysDialogBuilder($whichdialog, $passedData) {
 </tr>
 BGTBL;
           }
-          $biogroupTbl .= "</tbody><tfoot><tr><td colspan=7 align=right>Submittals to QMS Process: &nbsp;</td><td>{$submittalCnt}</td></tr></tfoot>";
+          $biogroupTbl .= "</tbody><tfoot><tr><td colspan=7 align=right>Submittals to QMS Process: &nbsp;</td><td id=nbrQMSSubmittal>{$submittalCnt}</td></tr></tfoot>";
           $biogroupTbl .= "</table></td>";
-
-        
-          $biogroupTbl .= "<td valign=top>INVENTORY TRAY SELECT</td></tr>";
-
-          $biogroupTbl .= "<tr><td valign=top>LOGCREDs</td></tr><tr><td colspan=2>Slide Option Menu Legend: X = Slide has been used in QMS / H = Slide is part of HPR Group / A = Slide is assigned to investigator</td></tr></table></form>";
+          
+          //BUILD HPR TRAY LIST
+          //{"MESSAGE":"status message 68c33f8hkvok7q6h4ip5rb5oq0","ITEMSFOUND":0,"DATA":[{"parentid":293,"locationid":294,"locationdsp":"Tray: 001","scancode":"HPRT001","hprtraystatus":"SENT"},{"parentid":293,"locationid":330,"locationdsp":"Tray: 002","scancode":"HPRT002","hprtraystatus":"LOADED"},{"parentid":293,"locationid":331,"locationdsp":"Tray: 003","scancode":"HPRT003","hprtraystatus":"SENT"},{"parentid":293,"locationid":663,"locationdsp":"Tray: 004","scancode":"HPRT004","hprtraystatus":"SENT"},{"parentid":293,"locationid":1033,"locationdsp":"Tray: 005","scancode":"HPRT005","hprtraystatus":null},{"parentid":293,"locationid":1034,"locationdsp":"Tray: 006","scancode":"HPRT006","hprtraystatus":null},{"parentid":293,"locationid":1035,"locationdsp":"Tray: 007","scancode":"HPRT007","hprtraystatus":null},{"parentid":293,"locationid":1036,"locationdsp":"Tray: 008","scancode":"HPRT008","hprtraystatus":null},{"parentid":293,"locationid":1037,"locationdsp":"Tray: 009","scancode":"HPRT009","hprtraystatus":null},{"parentid":293,"locationid":1038,"locationdsp":"Tray: 010","scancode":"HPRT010","hprtraystatus":null},{"parentid":293,"locationid":1039,"locationdsp":"Tray: 011","scancode":"HPRT011","hprtraystatus":null},{"parentid":293,"locationid":1040,"locationdsp":"Tray: 012","scancode":"HPRT012","hprtraystatus":null}]}
+          $hprtlist = json_decode(callrestapi("GET", dataTree . "/hpr-tray-list", serverIdent, serverpw), true) ;
+          $hprtTbl = "<table border=0>";
+          foreach($hprtlist['DATA'] as $hprk => $hprv) { 
+              //TODO: MAKE THIS CHECK DYNAMIC
+              if ($hprv['hprtraystatus'] === 'SENT' || $hprv['hprtraystatus'] === 'LOADED') { 
+                $hprtTbl .= "<tr><td style=\"text-decoration: line-through;\">{$hprv['locationdsp']}</td></tr>";                
+              } else { 
+              $hprtTbl .= "<tr><td onclick=\"fillField('fldHPRTray','{$hprv['scancode']}','{$hprv['locationdsp']}');\">{$hprv['locationdsp']}</td></tr>";
+              }
+          }
+          $hprtTbl .= "</table>";
+          
+          $traylist = "<table border=0><tr><th align=left>Slide Tray</th></tr><tr><td><div class=menuHolderDiv><input type=hidden id=\"fldHPRTrayValue\"><input type=text id=\"fldHPRTray\" style=\"width: 15vw;\"><div class=valueDropDown style=\"width: 15vw;\">{$hprtTbl}</div></div></td></tr><tr><th align=left>Inventory User PIN</th></tr><tr><td><input type=password id=fldUsrPIN style=\"width: 15vw;\"></td></tr><tr><td align=right><table class=tblBtn id=btnHPRSendTray style=\"width: 6vw;\" onclick=\"sendHPRTray();\"><tr><td style=\"white-space: nowrap;\"><center>Send Tray</td></tr></table></td></tr></table>";
+          $biogroupTbl .= "<td valign=top>{$traylist}</td></tr>";
+          $biogroupTbl .= "<tr><td valign=top>&nbsp;</td></tr><tr><td colspan=2>Slide Option Menu Legend: X = Slide has been used in QMS / H = Slide is part of HPR Group / A = Slide is assigned to investigator</td></tr></table></form>";
 
         } else { 
           $biogroupTbl = "ERROR: NO BIOGROUPS SELECTED!";          
@@ -351,7 +368,7 @@ DIALOGINNER;
        <td>
          <div class=menuHolderDiv onmouseover="byId('assignInvestSuggestion').style.display = 'none'; setAssignsRequests();">
           <input type=text id=selectorAssignReq READONLY class="inputFld" style="width: 8vw;">
-          <div class=valueDropDown id=requestDropDown style="width: 8vw;"></div>
+          <div class=valueDropDown id=requestDropDown style="min-width: 8vw;"></div>
          </div>
        </td>
    </tr>

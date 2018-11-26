@@ -66,12 +66,15 @@ function universalAJAX(methd, url, passedDataJSON, callbackfunc, dspBacker) {
   httpage.send(passedDataJSON);
 }
 
+var key;  
 function bodyLoad() {
   var appcards = document.getElementsByClassName('appcard');
   for (var i = 0; i < appcards.length; i++) { 
     //MOVE OTHER CARDS BACK
     byId(appcards[i].id).style.left  = "101vw";
-  }  
+  }
+   setMaxDigits(262);
+   key = new RSAKeyPair("{$eExpo}","{$eExpo}","{$eMod}", 2048);
 }
 
 document.addEventListener('mousemove', function(e) { 
@@ -450,8 +453,9 @@ function openRightClickMenu(whichmenu, whichelementclicked) {
   }
 }    
 
+var key;         
 document.addEventListener('DOMContentLoaded', function() {  
-
+     
   if (byId('cntxEditBG')) { 
     byId('cntxEditBG').addEventListener('click', function() { 
       if (rowidclick !== "") {
@@ -693,27 +697,24 @@ function closeAllSuggestions() {
 
 function setAssignsRequests() {
   if (byId('selectorAssignInv').value.trim() !== "" ) { 
-    buildRequestDrop(byId('selectorAssignInv').value.trim());
-  } 
-}
-
-function buildRequestDrop(whichinvestigator) { 
     var given = new Object(); 
     given['rqstsuggestion'] = 'vandyinvest-requests'; 
-    given['given'] = whichinvestigator;
+    given['given'] = byId('selectorAssignInv').value.trim();
     var passeddata = JSON.stringify(given);
     var mlURL = "/data-doers/suggest-something";
     universalAJAX("POST",mlURL,passeddata,answerRequestDrop,2);
+  } 
 }
+
+
 
 function answerRequestDrop(rtnData) { 
   var rsltTbl = "";
   if (parseInt(rtnData['responseCode']) === 200 ) { 
-    //{"MESSAGE":0,"ITEMSFOUND":10,"DATA":[{"requestid":"REQ15262"},{"requestid":"REQ17321"},{"requestid":"REQ20137"},{"requestid":"REQ19002"},{"requestid":"REQ21130"},{"requestid":"REQ21131"},{"requestid":"REQ22758"},{"requestid":"REQ22757"},{"requestid":"REQ23034"}]}
     var dta = JSON.parse(rtnData['responseText']);
     var menuTbl = "<table border=0 class=\"menuDropTbl\">";
     dta['DATA'].forEach(function(element) { 
-      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('selectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;';\">"+element['requestid']+"</td></tr>";
+      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('selectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;';\">"+element['requestid']+" ["+element['rqstatus']+"]</td></tr>";
     });  
     menuTbl += "</table>";
     byId('requestDropDown').innerHTML = menuTbl; 
@@ -924,19 +925,46 @@ function inArray(needle, haystack) {
 function rowselector(whichrow) { 
   if (byId(whichrow)) { 
     if (byId(whichrow).dataset.selected === "false") { 
-          //SELECT
           byId(whichrow).dataset.selected = "true";
         } else { 
-          //DESELECT
           byId(whichrow).dataset.selected = "false";
         }
   }
 }
         
-function answerSendHPRSubmitOverride(rtnDta) { 
-   console.log(rtnDta);    
+function answerSendHPRSubmitOverride(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var rsp = JSON.parse(rtnData['responseText']); 
+    alert("* * * * ERROR * * * * \\n\\n"+rsp['MESSAGE']);
+  } else { 
+    //Redirect to results
+    console.log(rtnData);    
+  }        
 }
 
+function sendHPRTray() {
+  var dta = new Object();
+  var sldlst = new Object();       
+  var cntr = 0;        
+  var e = byId('frmQMSSubmitter').elements;
+   for ( var i = 0; i < e.length; i++ ) {
+      if (e[i].id.substr(0,6) === 'chkBox') {   
+        if (e[i].checked) {      
+          sldlst[cntr] = [byId('tr'+parseInt(e[i].id.substr(6))).dataset.bg , byId('tr'+parseInt(e[i].id.substr(6))).dataset.newqms ];
+          cntr++;
+        }
+      }
+   }
+   dta['slidelist'] = sldlst;
+   dta['hprtray'] = byId('fldHPRTray').value; 
+   dta['invscancode'] = byId('fldHPRTrayValue').value;    
+   dta['usrPIN'] = window.btoa( encryptedString(key, byId('fldUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );   
+   var passdata = JSON.stringify(dta);        
+   var mlURL = "/data-doers/inventory-hprtray-override";
+   universalAJAX("POST",mlURL,passdata,answerSendHPRSubmitOverride,2);          
+}
+        
+        
 function sendSegmentAssignment(typeofassign) { 
   var dta = new Object(); 
   dta['segmentlist'] = byId('dialogBGSListing').value;
@@ -1045,6 +1073,21 @@ function answerPackCreateShipdoc(rtnData) {
   }        
 }
 
+function checkBoxIndicators(whichbox) { 
+   var submittingCnt = 0;
+   var e = byId('frmQMSSubmitter').elements;
+   for ( var i = 0; i < e.length; i++ ) {
+      if (e[i].id.substr(0,6) === 'chkBox') {   
+        if (e[i].checked) {      
+          submittingCnt++;
+        }
+      }
+   }
+   if (byId('nbrQMSSubmittal')) { 
+       byId('nbrQMSSubmittal').innerHTML = submittingCnt;
+   }
+}
+        
 JAVASCR;
     
 return $rtnthis;

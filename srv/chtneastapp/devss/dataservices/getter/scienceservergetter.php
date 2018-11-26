@@ -105,12 +105,31 @@ function globalmenu($request) {
      return $rows;
 }
 
-function template($whichobj,$rqst) { 
+function hprtraylist($whichobj, $rqst) { 
     session_start();
     $responseCode = 500;
     $msg = "status message " . session_id();
     $itemsfound = 0;
     $dta = array();
+    require(serverkeys . "/sspdo.zck");
+    $sql = "SELECT ifnull(parentid,'') as parentid, ifnull(locationid,'') as locationid, ifnull(locationdsp,'NO LOCATION DISPLAY') as locationdsp, ifnull(scancode,'0000') as scancode, ifnull(hprtraystatus,'') as hprtraystatus  FROM four.sys_inventoryLocations where typeOLocation = 'HPR TRAY'";
+    $rs = $conn->prepare($sql); 
+    $rs->execute(); 
+    while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+        $dta[] = $r;
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+    return $rows;  
+}
+
+
+function template($whichobj,$rqst) { 
+    session_start();
+    $responseCode = 500;
+    $msg = "status message " . session_id();
+    $itemsfound = 0;
+    $dta = array(); 
     
     $rows['statusCode'] = $responseCode; 
     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);

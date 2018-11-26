@@ -33,6 +33,50 @@ function __construct() {
 }
 
 class datadoers { 
+    
+    function inventoryhprtrayoverride($request, $passdata) { 
+      $responseCode = 400; 
+      $error = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $dta = array();
+      $msgArr = array();
+      $pdta = json_decode($passdata, true);  
+      require(serverkeys . "/sspdo.zck");  
+      session_start();      
+      $sessid = session_id();
+      $usrpin = chtndecrypt($pdta['usrPIN'], true);
+      $usrChkSQL = "SELECT ifnull(emailaddress,'') as emailaddress, ifnull(originalaccountname,'') as originalaccountname, ifnull(allowind,0) as allowind, ifnull(allowcoord,0) as allowcoord, ifnull(allowinvtry,0) as allowinventory, ifnull(sessionid,'') as sessionid FROM four.sys_userbase where sessionid = :sessid and inventorypinkey = :usrpin and allowind = 1 and allowcoord = 1 and allowinvtry = 1";
+      $usrChkR = $conn->prepare($usrChkSQL); 
+      $usrChkR->execute(array(':sessid' => $sessid, ':usrpin' => $usrpin));
+      if ($usrChkR->rowCount() < 1) { 
+          $responseCode = 401;
+          $msgArr[] = "USER NOT ALLOWED TO PERFORM THIS INVENTORY ACTION";
+      } else { 
+        $traydsp = $pdta['hprtray'];
+        $invscancode = $pdta['invscancode'];
+        $slidessent = count($pdta['slidelist']);
+        foreach ($pdta['slidelist'] as $slidekey => $slidevalue) { 
+          //0 = BIOGROUP / 1 = NEW QMS STATUS
+          //$msg .= " ... " . $slidevalue[0] . " - " . $slidevalue[1];          
+          //CHECKS 
+            //1) DOUBLE CHECK BGroup is NOT QMS FINISHED ( = Q)
+               //TODO: BEFORE - MAKE HISTORY TABLE COPY PRESENT VALUES TO IT
+               //TODO: ZACK - CAN YOU CLEAN UP FIELDS?
+            //2) MARK THE BG WITH NEW STATUS AND ALSO WRITE TO HISTORY TABLE
+            //3) MAKE SURE PASSED INVENTORY LOCATION IS VALID AND IS TRAY 
+            //4) GET SLIDE BEING SUBMITTED, MARK SEGMENT WITH NEW LOCATION - 
+               //TODO: MAKE INVENTORY HISTORY TABLE COPY VALUES TO IT
+            //5) COPY TO SEGMENT LOCATION HISTORY TABLE
+        }
+        $msgArr[] = $usrpin . " --- " . $sessid;
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode;   
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
  
     function biogrouphprstatus($request, $passdata) { 
       $dta = array(); 
@@ -318,8 +362,7 @@ class datadoers {
              $srchRS->execute(array(':optOne' => "{$params['given']}%", ':optTwo' => "{$params['given']}%", ':optThree' => "{$params['given']}%", ':optFour' => "{$params['given']}%", ':optFive' => "{$params['given']}%"));          
              break;
          case 'vandyinvest-requests':
-           
-             $srchSQL = "select rq.requestid  from vandyinvest.investtissreq rq left join vandyinvest.investproj pr on rq.projid = pr.projid where pr.investid = :investid";
+             $srchSQL = "select rq.requestid, ifnull(rq.req_status,'') as rqstatus  from vandyinvest.investtissreq rq left join vandyinvest.investproj pr on rq.projid = pr.projid where pr.investid = :investid order by rq.req_status";
              $srchRS = $conn->prepare($srchSQL); 
              $srchRS->execute(array(':investid' => "{$params['given']}"));          
             break; 
