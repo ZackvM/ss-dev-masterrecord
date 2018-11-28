@@ -27,8 +27,8 @@ function sysDialogBuilder($whichdialog, $passedData) {
               $arr['bgency'] = cryptservice($val);
               $passdata = json_encode($arr); 
               //{"MESSAGE":"","ITEMSFOUND":0,"DATA":{"bg":"81948","qcprocstatus":"R","desigsite":"LIVER","desigdx":"","desigspeccat":"NORMAL","hprdecision":"CONFIRM","hprslidereviewed":"81948T_002"}}
-              //THIS ASSUMES THAT ALL BIOGROUPS WILL ALWAYS BE FOUND ... TODO:  CATCH ERRORS HERE 
-              $idta = json_decode(callrestapi("POST", dataTree . "/data-doers/biogroup-hpr-status",serverIdent, serverpw, $passdata), true);             
+              //TODO:THIS ASSUMES THAT ALL BIOGROUPS WILL ALWAYS BE FOUND ... CATCH ERRORS HERE 
+              $idta = json_decode(callrestapi("POST", dataTree . "/data-doers/biogroup-hpr-status",serverIdent, serverpw, $passdata), true);  //GETS ALL SLIDES IN A GROUP THAT ARE NOT SHIPPED           
               $desig = ( trim($idta['DATA']['desigsite']) !== "") ? strtoupper(trim($idta['DATA']['desigsite'])) : "";
               $desig .= ( trim($idta['DATA']['desigdx']) !== "") ? " / " . strtoupper(trim($idta['DATA']['desigdx'])) : "";
               $desig .= ( trim($idta['DATA']['desigspeccat']) !== "") ? strtoupper(" [" . trim($idta['DATA']['desigspeccat']) . "]") : "";
@@ -103,17 +103,17 @@ function sysDialogBuilder($whichdialog, $passedData) {
                     }
                     break;
                 case 'R':
-                    $newQMS = '&nbsp;';
+                    $newQMS = '';
                     $chkbox = "&nbsp;";                   
                     $slidepicker = "";
                     break;
                 case 'S':
-                    $newQMS = '&nbsp;';
+                    $newQMS = '';
                     $chkbox = "&nbsp;";                   
                     $slidepicker = "";
                     break;
                 case 'Q':
-                    $newQMS = '&nbsp;';
+                    $newQMS = '';
                     $chkbox = "&nbsp;";
                     $slidepicker = "";
                     break;
@@ -168,7 +168,7 @@ BGTBL;
           }
           $hprtTbl .= "</table>";
           
-          $traylist = "<table border=0><tr><th align=left>Slide Tray</th></tr><tr><td><div class=menuHolderDiv><input type=hidden id=\"fldHPRTrayValue\"><input type=text id=\"fldHPRTray\" style=\"width: 15vw;\"><div class=valueDropDown style=\"width: 15vw;\">{$hprtTbl}</div></div></td></tr><tr><th align=left>Inventory User PIN</th></tr><tr><td><input type=password id=fldUsrPIN style=\"width: 15vw;\"></td></tr><tr><td align=right><table class=tblBtn id=btnHPRSendTray style=\"width: 6vw;\" onclick=\"sendHPRTray();\"><tr><td style=\"white-space: nowrap;\"><center>Send Tray</td></tr></table></td></tr></table>";
+          $traylist = "<table border=0><tr><th align=left>Slide Tray</th></tr><tr><td><div class=menuHolderDiv><input type=hidden id=\"fldHPRTrayValue\"><input type=text id=\"fldHPRTray\" style=\"width: 15vw;\" READONLY><div class=valueDropDown style=\"width: 15vw;\">{$hprtTbl}</div></div></td></tr><tr><th align=left>Inventory User PIN</th></tr><tr><td><input type=password id=fldUsrPIN style=\"width: 15vw;\"></td></tr><tr><td align=right><table class=tblBtn id=btnHPRSendTray style=\"width: 6vw;\" onclick=\"sendHPRTray();\"><tr><td style=\"white-space: nowrap;\"><center>Send Tray</td></tr></table></td></tr></table>";
           $biogroupTbl .= "<td valign=top>{$traylist}</td></tr>";
           $biogroupTbl .= "<tr><td valign=top>&nbsp;</td></tr><tr><td colspan=2>Slide Option Menu Legend: X = Slide has been used in QMS / H = Slide is part of HPR Group / A = Slide is assigned to investigator</td></tr></table></form>";
 

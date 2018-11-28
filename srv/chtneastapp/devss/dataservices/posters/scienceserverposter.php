@@ -52,25 +52,69 @@ class datadoers {
       if ($usrChkR->rowCount() < 1) { 
           $responseCode = 401;
           $msgArr[] = "USER NOT ALLOWED TO PERFORM THIS INVENTORY ACTION";
-      } else { 
-        $traydsp = $pdta['hprtray'];
-        $invscancode = $pdta['invscancode'];
+      } else {
+    
+        $usr = $usrChkR->fetch(PDO::FETCH_ASSOC);
+        $traydsp = trim($pdta['hprtray']);
+        $invscancode = trim($pdta['invscancode']);
         $slidessent = count($pdta['slidelist']);
-        foreach ($pdta['slidelist'] as $slidekey => $slidevalue) { 
-          //0 = BIOGROUP / 1 = NEW QMS STATUS
-          //$msg .= " ... " . $slidevalue[0] . " - " . $slidevalue[1];          
-          //CHECKS 
-            //1) DOUBLE CHECK BGroup is NOT QMS FINISHED ( = Q)
-               //TODO: BEFORE - MAKE HISTORY TABLE COPY PRESENT VALUES TO IT
-               //TODO: ZACK - CAN YOU CLEAN UP FIELDS?
-            //2) MARK THE BG WITH NEW STATUS AND ALSO WRITE TO HISTORY TABLE
-            //3) MAKE SURE PASSED INVENTORY LOCATION IS VALID AND IS TRAY 
-            //4) GET SLIDE BEING SUBMITTED, MARK SEGMENT WITH NEW LOCATION - 
-               //TODO: MAKE INVENTORY HISTORY TABLE COPY VALUES TO IT
-            //5) COPY TO SEGMENT LOCATION HISTORY TABLE
+
+        if ($traydsp === "") { 
+          $error = 1; 
+          $msgArr[] = "YOU DID NOT SPECIFY AN HPR TRAY (INVENTORY LOCATION TRAY)";
+        }      
+
+        if ($invscancode === "") {
+          $error = 1; 
+          $msgArr[] = "YOU DID NOT SPECIFY AN HPR TRAY (INVENTORY LOCATION SCANCODE MISSING)"; 
         }
-        $msgArr[] = $usrpin . " --- " . $sessid;
-        $responseCode = 200;
+
+        //TODO: MAKE SURE THAT THE INVENTORY SCAN CODE IS TRUE & AND IS A VALID TRAY
+        //SELECT * FROM four.sys_inventoryLocations where scancode = 'HPRT001' and physicallocationind = 1 
+
+        if ($slidessent < 1) { 
+            $error = 1; 
+            $msgArr[] = "YOU HAVE NOT SPECIFIED ANY SLIDES TO SEND TO THE QMS PROCESS";
+        }
+
+        if ($slidessent > 16) { 
+            $error = 1; 
+            $msgArr[] = "ONLY 16 SLIDES FIT IN A SLIDE TRAY";
+        }
+
+        foreach ($pdta['slidelist'] as $slidekey => $slidevalue) { 
+          //0 = BIOGROUP / 1 = NEW QMS STATUS / 2 = SLIDE NUMBER 
+  
+          $qmsChk = bgqmsstatus($slidevalue[0]);      
+
+          if ((int)$qmsChk['responsecode'] !== 200) { 
+            $error = 1;
+            $msgArr[] = "{$slidelist[0]} BIOGROUP NOT FOUND IN QMS STATUS.  SEE A CHTNEASTERN IT STAFF PERSON.";
+          } else {
+  
+            if (trim($qmsChk['data'][0]['qcprocstatus']) === 'Q') { 
+              $error = 1; 
+              $msgArr[] = "{$slidevalue[0]} IS ALREADY MARKED AS QMS COMPLETE";
+            }           
+
+            if (trim($slidevalue[2]) === "") { 
+              $error = 1; 
+              $msgArr[] = "YOU HAVE NOT SPECIFIED A SLIDE TO USE FOR BIOGROUP'S QMS ({$slidevalue[0]})";
+            }  
+
+            //TODO:  CHECK THAT SLIDE IS A REAL SLIDE
+            
+
+          }
+        }
+ 
+        if ($error !== 0) { 
+        } else {
+          //DO ALL DB WRITING HERE
+            
+          $msgArr[] = $usr['originalaccountname'];
+//            $responseCode = 200;
+        }
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode;   
@@ -93,7 +137,7 @@ class datadoers {
       } else {    
         $qms = $qmsR->fetch(PDO::FETCH_ASSOC);
 
-        $slideListSQL = "select replace(bgs,'T_','') as bgs, if(hprblockind=1,'Y','N') as hprind, ifnull(assignedto,'') as assignedto, if(tohpr=1,'Y','') as tohpr from masterrecord.ut_procure_segment bs where bs.biosampleLabel = :pbiosample and bs.prepmethod = 'SLIDE'";
+        $slideListSQL = "select replace(bgs,'T_','') as bgs, if(hprblockind=1,'Y','N') as hprind, ifnull(assignedto,'') as assignedto, if(tohpr=1,'Y','') as tohpr from masterrecord.ut_procure_segment sg where sg.biosampleLabel = :pbiosample and sg.prepmethod = 'SLIDE' and sg.segstatus <> 'SHIPPED'";
         $slideListR = $conn->prepare($slideListSQL); 
         $slideListR->execute(array(':pbiosample' => $pbiosample)); 
         $slideListArr = array();
@@ -220,7 +264,7 @@ class datadoers {
                 $prvR->execute(array(':segid' => $v['segmentid']));
                 $prvRec = $prvR->fetch(PDO::FETCH_ASSOC);                 
                 //SAVE OLD STATUS TO HISTORY TABLE
-                $svePrvSQL = "insert into masterrecord.ut_procure_segment_history_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) values(:segid,:segstatus,:segstatusby,:segstatuson,now(),:enteredby)"; 
+                $svePrvSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) values(:segid,:segstatus,:segstatusby,:segstatuson,now(),:enteredby)"; 
                 $svePrvR = $conn->prepare($svePrvSQL); 
                 $svePrvR->execute(array(':segid' => $v['segmentid'], ':segstatus' => $prvRec['segstatus'], ':segstatusby' => $prvRec['statusby'], ':segstatuson' => $prvRec['statusdate'], ':enteredby' => $u['originalAccountName'])); 
                 //SAVE OLD ASSIGNMENT 
@@ -228,7 +272,7 @@ class datadoers {
                 $aPrj = (trim($prvRec['assignedproj']) === "") ? "NO-PROJ-ASSIGNMENT" : trim($prvRec['assignedproj']); 
                 $aReq = (trim($prvRec['assignedreq']) === "") ? "NO-REQ-ASSIGNMENT" : trim($prvRec['assignedreq']);
                 $aBy = (trim($prvRec['assignedby']) === "") ? "NO-BY-ASSIGNMENT" : trim($prvRec['assignedby']); 
-                $prvASQL = "insert into masterrecord.ut_procure_segment_history_assignment(segmentid, previousassignment, previousproject, previousrequest, previousassignmentdate, previousassignmentby, enteredby, enteredon) values(:segmentid, :previousassignment, :previousproject, :previousrequest, :previousassignmentdate, :previousassignmentby, :enteredby, now())";
+                $prvASQL = "insert into masterrecord.history_procure_segment_assignment(segmentid, previousassignment, previousproject, previousrequest, previousassignmentdate, previousassignmentby, enteredby, enteredon) values(:segmentid, :previousassignment, :previousproject, :previousrequest, :previousassignmentdate, :previousassignmentby, :enteredby, now())";
                 $prvAR = $conn->prepare($prvASQL); 
                 $prvAR->execute(array(':segmentid' => $v['segmentid'],':previousassignment' => $aInv,':previousproject' => $aPrj,':previousrequest' => $aReq,':previousassignmentdate' => $prvRec['assignmentdate'],':previousassignmentby' => $aBy,':enteredby' => $u['originalAccountName']));
                 //WRITE NEW STATUS WITH ASSIGNMENT WITH PERSON WRITING AND DATE WRITTEN 
@@ -620,7 +664,7 @@ class datadoers {
          $updSegR = $conn->prepare($updSegSQL);
          $presentSQL = "select ifnull(segstatus,'') as segstatus, ifnull(statusby,'') as segstatusby, ifnull(statusdate,'') statusdate from masterrecord.ut_procure_segment where segmentid = :segmentid";
          $presentR = $conn->prepare($presentSQL);
-         $addHistorySQL = "insert into masterrecord.ut_procure_segment_history_status(segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) values(:sg,:psegstat,:pstatby,:pdte,now(),:updusr)";
+         $addHistorySQL = "insert into masterrecord.history_procure_segment_status(segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) values(:sg,:psegstat,:pstatby,:pdte,now(),:updusr)";
          $addHistoryR = $conn->prepare($addHistorySQL);
 
          foreach ( $segments as $s => $sg ) {
@@ -722,20 +766,20 @@ class systemposts {
     $responseCode = 503; 
     $params = json_decode($passedData, true);
     $ec = $params['ency'];
-    $cred = json_decode(chtndecrypt($params['ency']), true); //{\"user\":\"z\",\"pword\":\"z\",\"dauth\":\"z\"}
+    $cred = json_decode(chtndecrypt($params['ency']), true); 
     $u = $cred['user'];
     $p = $cred['pword'];
     $au = explode("-",$cred['dauth']);
     $sess = session_id(); 
-    $ip = $_SERVER['REMOTE_ADDR'];
+    $ip = clientipserver();
     require(serverkeys . "/sspdo.zck"); 
     $usrChk = "SELECT userid, username, emailaddress, fiveonepword FROM four.sys_userbase where allowind = 1 and emailaddress = :pword and datediff(passwordexpiredate, now()) > -1";
     $usrR = $conn->prepare($usrChk); 
     $usrR->execute(array(':pword' => $u)); 
-    $ucnt = $usrR->rowCount(); 
-    if ($ucnt > 0 ) { 
+    if ( $usrR->rowCount() === 1 ) { 
       $r = $usrR->fetch(PDO::FETCH_ASSOC);  
       $dbPword = $r['fiveonepword'];
+      $usrid = $r['userid'];
       if (password_verify($p,  $dbPword)) { 
         //USER NAME AND PASSWORD CORRECT - CHECK AUTH          
          if (count($au) <> 2) { 
@@ -749,6 +793,7 @@ class systemposts {
                //CHECK DAYS SINCE
                $authenR = $auR->fetch(PDO::FETCH_ASSOC);
                if ((int)$authenR['dayssince'] < 31) { 
+
                    //GOOD - SESSION CREATE LOGGEDON - CAPTURE SYSTEM ACTIVITY - REDIRECT IN JAVASCRIPT WITH STATUSCODE = 200
                    session_regenerate_id(true);
                    $newsess = session_id();
@@ -757,10 +802,16 @@ class systemposts {
                    $updAR->execute(array(':newsess' => $newsess, ':aid' => $au[0], ':acode' => $au[1], ':uemail' => $u)); 
                    if (!isset($_COOKIE['ssv7_dualcode'])) { 
                      setcookie('ssv7_dualcode', "{$au[0]}-{$au[1]}", time() + 2592000, '/','',true,true); // 2592000 = 30 days 3600 - is one hour
-                   } 
+                   }
+
                    $updUSRSQL = "update four.sys_userbase set sessionid = :sess, sessionExpire = date_add(now(), INTERVAL 7 HOUR) where emailaddress = :emluser"; 
                    $updUsrR = $conn->prepare($updUSRSQL); 
                    $updUsrR->execute(array(':sess' => $newsess, ':emluser' => $u));
+
+                   $trckSQL = "insert into four.sys_lastLogins(userid, usremail, logdatetime, fromip) values(:userid, :usremail, now(), :ip)";
+                   $trckR = $conn->prepare($trckSQL);
+                   $trckR->execute(array(':userid' => $usrid, ':usremail' => $u, ':ip' => $ip));
+
                    captureSystemActivity($newsess, '', 'true', $u, '', '', $u, 'POST', 'LOGIN SUCCESS');                   
                    $_SESSION['loggedin'] = 'true';
                    $_SESSION['userid'] = $u;
@@ -854,6 +905,27 @@ function captureSystemActivity($sessionid, $sessionvariables, $loggedsession, $u
        ,':requestmethod' => $requestmethod
        ,':request' => $request
     )); 
+}
+
+// Function to get the client ip address
+function clientipserver() {
+    $ipaddress = '';
+    if ($_SERVER['HTTP_CLIENT_IP'])
+        $ipaddress = $_SERVER['HTTP_CLIENT_IP'];
+    else if($_SERVER['HTTP_X_FORWARDED_FOR'])
+        $ipaddress = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    else if($_SERVER['HTTP_X_FORWARDED'])
+        $ipaddress = $_SERVER['HTTP_X_FORWARDED'];
+    else if($_SERVER['HTTP_FORWARDED_FOR'])
+        $ipaddress = $_SERVER['HTTP_FORWARDED_FOR'];
+    else if($_SERVER['HTTP_FORWARDED'])
+        $ipaddress = $_SERVER['HTTP_FORWARDED'];
+    else if($_SERVER['REMOTE_ADDR'])
+        $ipaddress = $_SERVER['REMOTE_ADDR'];
+    else
+        $ipaddress = 'UNKNOWN';
+ 
+    return $ipaddress;
 }
 
 function sendSSCodeEmail( $emailTo, $authCode ) { 
@@ -1066,6 +1138,49 @@ function bldDialog($whichdialog, $passedData) {
   $rtnDialog = $bldr->sysDialogBuilder($whichdialog, $passedData);
   return $rtnDialog;
 }
+
+function bgqmsstatus($whichbg) { 
+  $responseCode = 400;
+  if (trim($whichbg) !== "") {   
+    $pbg = (float)$whichbg; 
+    if (is_numeric($pbg) && ($pbg > 0)) { 
+      require(serverkeys . "/sspdo.zck"); 
+      $sql = "SELECT ifnull(pBioSample,0) as pbiosample, read_Label as readlabel, ifnull(QCVALv2,'') as qcvalue, ifnull(HPRInd,0) as hprindicator, ifnull(hprMarkByOn,'') as hprmarkbyon, ifnull(QCInd,'') as qcindicator, ifnull(QCMarkByOn,'') as qcmarkbyon, ifnull(QCProcStatus,'') as qcprocstatus, ifnull(HPRDecision,'') as hprdecision, ifnull(HPRResult,'') as hprresult, ifnull(HPRSlideReviewed,'') as hprslidereviewed, ifnull(HPRBy,'') as hprby, ifnull(HPROn,'') as hpron FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
+      $rs = $conn->prepare($sql);
+      $rs->execute(array(':pbiosample' => $pbg));
+      if ($rs->rowCount() === 1) { 
+        $r = $rs->fetch(PDO::FETCH_ASSOC); 
+        $dta[] = $r;
+        $responseCode = 200;
+      } else { 
+        $responseCode = 404;
+      }
+    }
+  }  
+  return array('responsecode' => $responseCode, 'data' => $dta);
+}
+
+function bgsslide($whichbgs) { 
+  $responseCode = 400; 
+  $dta = array();
+  if (trim($whichbgs) !== "") { 
+    require(serverkeys . "/sspdo.zck"); 
+    $sql = "SELECT segmentid FROM masterrecord.ut_procure_segment where replace(bgs,'T_','') = :bgs and segstatus <> 'SHIPPED' and  prepmethod = 'SLIDE'";
+    $rs = $conn->prepare($sql); 
+    $rs->execute(array(':bgs' => $whichbgs));
+    if ($rs->rowCount() === 1) { 
+      $r = $rs->fetch(PDO::FETCH_ASSOC); 
+      $dta[] = $r;
+      $responseCode = 200;
+    } else { 
+      $responseCode = 404;
+    } 
+  } else { 
+    $responseCode = 404;
+  }
+  return array('responsecode' => $responseCode, 'data' => $dta);
+}
+
 
 
 /********** EMAIL TEXTING 

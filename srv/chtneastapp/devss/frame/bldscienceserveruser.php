@@ -27,6 +27,7 @@ class bldssuser {
     public $drvlicexp = "";
     public $allowedmodules = "";
     public $allowedinstitutions = "";
+    public $lastlogin = "";
     
     function __construct() {
         //$args = func_get_args(); 
@@ -58,6 +59,7 @@ class bldssuser {
           $this->drvlicexp = $userelements['dlexpiration'];
           $this->allowedmodules = $userelements['modules'];
           $this->allowedinstitutions = $userelements['institutions'];
+          $this->lastlogin = $userelements['lastlogin'];
         }
         
     }
@@ -130,9 +132,24 @@ class bldssuser {
                $insts[$cntr] = array($inst['institutioncode'], $inst['institutionname'] );
                ++$cntr;
            }
-           
+
+           //GET LAST LOGIN 
+           $lastLogSQL = "SELECT fromip, date_format(logDateTime, '%a %b %D, %Y at %H:%i') as dspdatetime FROM four.sys_lastLogins where userid = :userid order by logDateTime desc limit 1,1";
+           $lastLogR = $conn->prepare($lastLogSQL); 
+           $lastLogR->execute(array(':userid' => $uid ));
+           if ( $lastLogR->rowCount() === 1 ) {
+             $ll = $lastLogR->fetch(PDO::FETCH_ASSOC);  
+             $lastlog['lastlogdate'] = $ll['dspdatetime'];
+             $lastlog['fromip'] = $ll['fromip']; 
+           } else { 
+             $lastlog['lastlogdate'] = "";
+             $lastlog['fromip'] = ""; 
+           }
+
            $elArr['modules'] = $mods;
            $elArr['institutions'] = $insts;
+           $elArr['lastlogin'] = $lastlog;
+
            
         }   else { 
            $elArr['sssession'] = "";             
@@ -158,6 +175,7 @@ class bldssuser {
            $elArr['dlexpiration'] = "";
            $elArr['modules'] = "";
            $elArr['institutions'] = "";
+           $elArr['lastlogin'] = array('lastlogdate' => "", 'fromip' => "");
         }     
         return $elArr;
     }

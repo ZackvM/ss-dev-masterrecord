@@ -13,17 +13,17 @@ if ($whichpage !== "login") {
   $thisAcct = <<<THISMENU
 
 <div id=appcard_useraccount class=appcard> 
-<div id=clsBtnHold><table width=100%><tr><td id=usrAccountTitle>Your User Account</td><td></td><td id=closeBtn onclick="openAppCard('appcard_useraccount');">&times;</td></tr></table></div>   
-<div id=usrAccountDspDiv>
-<table border=1>
-<tr><td>Login Name: </td><td>{$whichUsr->useremail}</td></tr>
-<tr><td>DB ID: </td><td>{$whichUsr->userid}</td></tr>
-<tr><td>User's Name: </td><td>{$whichUsr->username}</td></tr>
-<tr><td>Driver's License Expiration: </td><td>{$whichUsr->drvlicexp}</td></tr>
-
-</table>   
-
-</div>
+  <div id=clsBtnHold><table width=99%><tr><td id=usrAccountTitle>Your User Account</td><td></td><td id=closeBtn onclick="openAppCard('appcard_useraccount');">&times;</td></tr></table>
+  </div>   
+    <div id=usrAccountDspDiv>
+      <table border=1>
+        <tr><td>Login Name: </td><td>{$whichUsr->useremail}</td></tr>
+        <tr><td>DB ID: </td><td>{$whichUsr->userid}</td></tr>
+        <tr><td>User's Name: </td><td>{$whichUsr->username}</td></tr>
+        <tr><td>Driver's License Expiration: </td><td>{$whichUsr->drvlicexp}</td></tr>
+      </table>   
+    </div>
+{$allAcct}
 </div>   
  
 <div id=appcard_environmentals class=appcard> 
@@ -83,7 +83,9 @@ if ($whichpage !== "login") {
  
     $expDay = ((int)$whichUsr->dayuntilpasswordexp < 1) ? "{$whichUsr->daysuntilpasswordexp} days" : "{$whichUsr->daysuntilpasswordexp} day";
 
-    $dspUser = "<b>User</b>: {$whichUsr->userid} ({$whichUsr->username}) <b>| Email</b>: {$whichUsr->useremail} <b>| Password Expires</b>: {$expDay}";
+     
+    $lastlog = ( trim($whichUsr->lastlogin['lastlogdate']) !== "" ) ?  " <b>| Last Access</b>: {$whichUsr->lastlogin['lastlogdate']} from {$whichUsr->lastlogin['fromip']}" : " <b>| Last Access</b>: - ";
+    $dspUser = "<b>User</b>: {$whichUsr->userid} ({$whichUsr->username}) <b>| Email</b>: {$whichUsr->useremail} <b>| Password Expires</b>: {$expDay}{$lastlog}";
      
     $topBar = <<<TBAR
           <div id=topMenuHolder>

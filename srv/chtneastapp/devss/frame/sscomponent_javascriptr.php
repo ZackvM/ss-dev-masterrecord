@@ -246,10 +246,13 @@ function bodyLoad() {
 }
 
 document.addEventListener('DOMContentLoaded', function() { 
+
   bodyLoad(); 
+
   if (byId('standardModalBacker')) { 
     byId('standardModalBacker').style.display = 'none';
   }
+
   if (byId('ssUser')) { 
     byId('ssUser').value = "";
     byId('ssPswd').value = "";
@@ -934,8 +937,12 @@ function rowselector(whichrow) {
         
 function answerSendHPRSubmitOverride(rtnData) { 
   if (parseInt(rtnData['responseCode']) !== 200) { 
-    var rsp = JSON.parse(rtnData['responseText']); 
-    alert("* * * * ERROR * * * * \\n\\n"+rsp['MESSAGE']);
+    var rsp = JSON.parse(rtnData['responseText']);
+    var dspMsg = "";
+    rsp['MESSAGE'].forEach(function(element) { 
+      dspMsg += "\\n - "+element;
+    }); 
+    alert("* * * * ERROR * * * * \\n\\n"+dspMsg);
   } else { 
     //Redirect to results
     console.log(rtnData);    
@@ -950,7 +957,7 @@ function sendHPRTray() {
    for ( var i = 0; i < e.length; i++ ) {
       if (e[i].id.substr(0,6) === 'chkBox') {   
         if (e[i].checked) {      
-          sldlst[cntr] = [byId('tr'+parseInt(e[i].id.substr(6))).dataset.bg , byId('tr'+parseInt(e[i].id.substr(6))).dataset.newqms ];
+          sldlst[cntr] = [byId('tr'+parseInt(e[i].id.substr(6))).dataset.bg , byId('tr'+parseInt(e[i].id.substr(6))).dataset.newqms, byId('fldSld'+parseInt(e[i].id.substr(6))).value];
           cntr++;
         }
       }
@@ -960,6 +967,7 @@ function sendHPRTray() {
    dta['invscancode'] = byId('fldHPRTrayValue').value;    
    dta['usrPIN'] = window.btoa( encryptedString(key, byId('fldUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );   
    var passdata = JSON.stringify(dta);        
+   //TODO MAKE A 'PLEASE WAIT' INDICATION - AS THIS PROCESS CAN TAKE UP TO 10+ SECONDS 
    var mlURL = "/data-doers/inventory-hprtray-override";
    universalAJAX("POST",mlURL,passdata,answerSendHPRSubmitOverride,2);          
 }
