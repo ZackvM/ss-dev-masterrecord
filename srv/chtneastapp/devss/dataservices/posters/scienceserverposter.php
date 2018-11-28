@@ -67,11 +67,16 @@ class datadoers {
         if ($invscancode === "") {
           $error = 1; 
           $msgArr[] = "YOU DID NOT SPECIFY AN HPR TRAY (INVENTORY LOCATION SCANCODE MISSING)"; 
+        } else { 
+          $trayChkSQL = "SELECT * FROM four.sys_inventoryLocations where scancode = :scancode and physicallocationind = 1";
+          $trayChkR = $conn->prepare($trayChkSQL); 
+          $trayChkR->execute(array(':scancode' => $invscancode));
+          if ($trayChkR->rowCount() < 1) { 
+            $error = 1; 
+            $msgArr[] = "THE HPR TRAY SCANCODE MISSING IS NOT VALID";               
+          }
         }
-
-        //TODO: MAKE SURE THAT THE INVENTORY SCAN CODE IS TRUE & AND IS A VALID TRAY
-        //SELECT * FROM four.sys_inventoryLocations where scancode = 'HPRT001' and physicallocationind = 1 
-
+        
         if ($slidessent < 1) { 
             $error = 1; 
             $msgArr[] = "YOU HAVE NOT SPECIFIED ANY SLIDES TO SEND TO THE QMS PROCESS";
@@ -82,29 +87,48 @@ class datadoers {
             $msgArr[] = "ONLY 16 SLIDES FIT IN A SLIDE TRAY";
         }
 
+        $apprvSlideCntr = 0;
+        $slideListArr = array();
         foreach ($pdta['slidelist'] as $slidekey => $slidevalue) { 
-          //0 = BIOGROUP / 1 = NEW QMS STATUS / 2 = SLIDE NUMBER 
-  
+           /************************** 
+            * ALL SEGMENT CHECK SHOULD GO HERE
+            * //0 = BIOGROUP / 1 = NEW QMS STATUS / 2 = SLIDE NUMBER // 3 = SLIDE SEGMENT ID
+            ***************************/
           $qmsChk = bgqmsstatus($slidevalue[0]);      
-
           if ((int)$qmsChk['responsecode'] !== 200) { 
             $error = 1;
             $msgArr[] = "{$slidelist[0]} BIOGROUP NOT FOUND IN QMS STATUS.  SEE A CHTNEASTERN IT STAFF PERSON.";
           } else {
-  
             if (trim($qmsChk['data'][0]['qcprocstatus']) === 'Q') { 
               $error = 1; 
               $msgArr[] = "{$slidevalue[0]} IS ALREADY MARKED AS QMS COMPLETE";
             }           
-
             if (trim($slidevalue[2]) === "") { 
               $error = 1; 
               $msgArr[] = "YOU HAVE NOT SPECIFIED A SLIDE TO USE FOR BIOGROUP'S QMS ({$slidevalue[0]})";
             }  
-
             //TODO:  CHECK THAT SLIDE IS A REAL SLIDE
-            
-
+            switch($slidevalue[1]) { 
+              case 'RESUBMIT': 
+                  $qmscondition = 'R';
+                  break;
+              case 'SUBMIT':
+                  $qmscondition = 'S';
+                  break;
+              default:
+                  $qmscondition = 'S';
+            }
+            //TODO: CHECK TO MAKE SURE THE SEGMENT ID IS NOT SHIPPED
+              if ($error === 0) { 
+                //Add Segment to dbWriteArray
+                  $slideListArr[$apprvSlideCntr]['bg'] = $slidevalue[0];
+                  $slideListArr[$apprvSlideCntr]['readlabel'] = $qmsChk['data'][0]['readlabel'];
+                  $slideListArr[$apprvSlideCntr]['qmsnew'] = $slidevalue[1];
+                  $slideListArr[$apprvSlideCntr]['slidenbr'] = $slidevalue[2];
+                  $slideListArr[$apprvSlideCntr]['slideid'] = $slidevalue[3];
+                  $slideListArr[$apprvSlideCntr]['qmscondition'] = $qmscondition;
+                  $apprvSlideCntr++;
+              }        
           }
         }
  
@@ -112,8 +136,41 @@ class datadoers {
         } else {
           //DO ALL DB WRITING HERE
             
-          $msgArr[] = $usr['originalaccountname'];
-//            $responseCode = 200;
+           //UPDATE BIOSAMPLE QMSSTATUS 
+           $updSQL = "update masterrecord.ut_procure_biosample set qcprocstatus = :newQ, qmsstatusby = :bywho, qmsstatuson = now() where pbiosample = :pbiosample";
+           $updR = $conn->prepare($updSQL);  
+           //ADD TO HISTORY TABLE
+           $hisSQL = "insert into masterrecord.history_procure_biosample_qms(pbiosample, readlabel, qcprocstatus, qmsstatusby,  qmsstatuson, historyrecordon, historyrecordby) values(:pbiosample, :readlabel, :qmsstatus, :qmsstatusby, now(), now(), :historyrec  ordby)";
+           $hisRS = $conn->prepare($hisSQL);
+           //MARK SEGMENT WITH NEW LOCATION
+           $updSegLocSQL = "update masterrecord.ut_procure_segment set scannedLocation = :dsplocation, scanloccode = :invscancode, scannedStatus = 'INVENTORY-HPRTRAY-OVERRIDE', scannedBy = :usr, scannedDate = now(), toHPR = 1, toHPRBy = :usra, toHPROn = now() where segmentid = :segmentid";
+           $segLocRS = $conn->prepare($updSegLocSQL);   
+           //COPY TO SEGMENT LOCATION HISTORY TABLE
+           $invHisSQL = "insert into masterrecord.history_procure_segment_inventory (segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) value(:segmentid, :bgs, :scannedlocation, :scannedinventorycode, :inventoryscanstatus, :scannedby, now(), now(), :historyby)";
+           $invHisRS = $conn->prepare($invHisSQL);
+           //HPR SUBMISSION TABLE AND HPR HISTORY TABLE
+           $hprHisSQL = "insert into masterrecord.history_procure_segment_hprsubmission (segmentid, tohpron, tohprby, historyon, historyby) values(:segmentid, now(), :tohprby, now(), 'HPR-INV-TRAY-OVERRIDE')";
+           $hprHisRS = $conn->prepare($hprHisSQL);
+           // MARK INVENTORY SLIDE TRAY AS LOCKED OUT
+           
+           
+          foreach ($slideListArr as $sld) {   
+             //$updR->execute(array(':newQ' => $sld['qmscondition'], ':bywho' =>$usr['originalaccountname'], ':pbiosample' => $sld['bg'] ));
+             //$hisRS->execute(array(':pbiosample' => $sld['bg'], ':readlabel' => $sld['readlabel'], ':qmsstatus  ' => $sld['qmscondition'],':qmsstatusby' => $usr['originalaccountname'] , ':historyrecordby' => 'HPR TRAY LOAD' ));
+             //$segLocRS->execute(array(':dsplocation' => $traydsp, ':invscancode' => $invscancode, ':usr' =>$usr['originalaccountname'], ':usra' =>$usr['originalaccountname'], ':segmentid' => $sld['slideid']));i    
+             //EXECUTE $invHisRS
+             //EXECUTE $hprHisRS
+          }
+          
+          $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = 'SENT', hprtraystatusby = :usr, hprtraystatuson = now() where scancode = :scncode";
+          $traySTSRS = $conn->prepare($traySTSSQL);
+          //EXECUTE $traySTSRS 
+          $tryHisSQL = "insert into masterrecord.history_hpr_tray_status (trayscancode, tray, traystatus, historyon, historyby) values(:trayscancode, :tray, :traystatus, now(), :historyby)";
+          $tryHisRS = $conn->prepare($tryHisSQL);
+          //EXECUTE $tryHisRS
+
+//     UNCOMMENT
+//    $responseCode = 200;
         }
       }
       $msg = $msgArr;
@@ -137,7 +194,7 @@ class datadoers {
       } else {    
         $qms = $qmsR->fetch(PDO::FETCH_ASSOC);
 
-        $slideListSQL = "select replace(bgs,'T_','') as bgs, if(hprblockind=1,'Y','N') as hprind, ifnull(assignedto,'') as assignedto, if(tohpr=1,'Y','') as tohpr from masterrecord.ut_procure_segment sg where sg.biosampleLabel = :pbiosample and sg.prepmethod = 'SLIDE' and sg.segstatus <> 'SHIPPED'";
+        $slideListSQL = "select segmentid, replace(bgs,'T_','') as bgs, if(hprblockind=1,'Y','N') as hprind, ifnull(assignedto,'') as assignedto, if(tohpr=1,'Y','') as tohpr from masterrecord.ut_procure_segment sg where sg.biosampleLabel = :pbiosample and sg.prepmethod = 'SLIDE' and sg.segstatus <> 'SHIPPED'";
         $slideListR = $conn->prepare($slideListSQL); 
         $slideListR->execute(array(':pbiosample' => $pbiosample)); 
         $slideListArr = array();

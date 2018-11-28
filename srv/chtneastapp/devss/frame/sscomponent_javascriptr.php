@@ -709,8 +709,6 @@ function setAssignsRequests() {
   } 
 }
 
-
-
 function answerRequestDrop(rtnData) { 
   var rsltTbl = "";
   if (parseInt(rtnData['responseCode']) === 200 ) { 
@@ -957,7 +955,7 @@ function sendHPRTray() {
    for ( var i = 0; i < e.length; i++ ) {
       if (e[i].id.substr(0,6) === 'chkBox') {   
         if (e[i].checked) {      
-          sldlst[cntr] = [byId('tr'+parseInt(e[i].id.substr(6))).dataset.bg , byId('tr'+parseInt(e[i].id.substr(6))).dataset.newqms, byId('fldSld'+parseInt(e[i].id.substr(6))).value];
+          sldlst[cntr] = [byId('tr'+parseInt(e[i].id.substr(6))).dataset.bg , byId('tr'+parseInt(e[i].id.substr(6))).dataset.newqms, byId('fldSld'+parseInt(e[i].id.substr(6))).value, byId('fldSld'+parseInt(e[i].id.substr(6))+'Value').value];
           cntr++;
         }
       }
@@ -1043,7 +1041,6 @@ function displayParameters() {
 }
 
 function packCreateShipdoc() {
-
   var elements = document.getElementById("frmShipDocCreate").elements;
   var dta = new Object();
   var segments = [];  
@@ -1061,7 +1058,6 @@ function packCreateShipdoc() {
   var passdata = JSON.stringify(dta);
   var mlURL = "/data-doers/shipdoc-quick-creator";
   universalAJAX("POST",mlURL,passdata,answerPackCreateShipdoc,2);
-
 }
 
 function answerPackCreateShipdoc(rtnData) { 
