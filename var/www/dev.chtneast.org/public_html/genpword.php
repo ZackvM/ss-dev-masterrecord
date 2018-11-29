@@ -1,7 +1,7 @@
 <?php
 
 //$randomBytes = bin2hex(random_bytes(8));
-$randomBytes = 'Bluedog';
+$randomBytes = 'Cats4Loki';
 //$randomBytes = "CHTN2587";
 $options = [
     'cost' => 12,

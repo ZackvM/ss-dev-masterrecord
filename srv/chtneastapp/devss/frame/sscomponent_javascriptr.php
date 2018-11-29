@@ -422,6 +422,7 @@ function datacoordinator($rqststr) {
     
 $rtnthis = <<<JAVASCR
 
+
 var rowidclick = "";
 function openRightClickMenu(whichmenu, whichelementclicked) { 
   if (byId('resultTblContextMenu')) { 
@@ -943,7 +944,8 @@ function answerSendHPRSubmitOverride(rtnData) {
     alert("* * * * ERROR * * * * \\n\\n"+dspMsg);
   } else { 
     //Redirect to results
-    console.log(rtnData);    
+    alert('HPR TRAY OVERRIDE COMPLETE');
+    location.reload();
   }        
 }
 
@@ -961,6 +963,7 @@ function sendHPRTray() {
       }
    }
    dta['slidelist'] = sldlst;
+   dta['deviationreason'] = byId('fldDeviationReason').value;
    dta['hprtray'] = byId('fldHPRTray').value; 
    dta['invscancode'] = byId('fldHPRTrayValue').value;    
    dta['usrPIN'] = window.btoa( encryptedString(key, byId('fldUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );   

@@ -57,12 +57,18 @@ class datadoers {
         $usr = $usrChkR->fetch(PDO::FETCH_ASSOC);
         $traydsp = trim($pdta['hprtray']);
         $invscancode = trim($pdta['invscancode']);
+        $devreason = trim($pdta['deviationreason']);
         $slidessent = count($pdta['slidelist']);
 
         if ($traydsp === "") { 
           $error = 1; 
           $msgArr[] = "YOU DID NOT SPECIFY AN HPR TRAY (INVENTORY LOCATION TRAY)";
         }      
+
+        if ($devreason === "") { 
+            $error = 1; 
+            $msgArr[] = "YOU ARE DEVIATING FROM CHTN EASTERN STANDARD OPERATING PROCEDURES.  YOU MUST SUPPLY A REASON FOR THE DEVIATION";
+        }
 
         if ($invscancode === "") {
           $error = 1; 
@@ -90,37 +96,37 @@ class datadoers {
         $apprvSlideCntr = 0;
         $slideListArr = array();
         foreach ($pdta['slidelist'] as $slidekey => $slidevalue) { 
-           /************************** 
-            * ALL SEGMENT CHECK SHOULD GO HERE
-            * //0 = BIOGROUP / 1 = NEW QMS STATUS / 2 = SLIDE NUMBER // 3 = SLIDE SEGMENT ID
-            ***************************/
-          $qmsChk = bgqmsstatus($slidevalue[0]);      
-          if ((int)$qmsChk['responsecode'] !== 200) { 
-            $error = 1;
-            $msgArr[] = "{$slidelist[0]} BIOGROUP NOT FOUND IN QMS STATUS.  SEE A CHTNEASTERN IT STAFF PERSON.";
-          } else {
-            if (trim($qmsChk['data'][0]['qcprocstatus']) === 'Q') { 
-              $error = 1; 
-              $msgArr[] = "{$slidevalue[0]} IS ALREADY MARKED AS QMS COMPLETE";
-            }           
-            if (trim($slidevalue[2]) === "") { 
-              $error = 1; 
-              $msgArr[] = "YOU HAVE NOT SPECIFIED A SLIDE TO USE FOR BIOGROUP'S QMS ({$slidevalue[0]})";
-            }  
-            //TODO:  CHECK THAT SLIDE IS A REAL SLIDE
-            switch($slidevalue[1]) { 
-              case 'RESUBMIT': 
-                  $qmscondition = 'R';
-                  break;
-              case 'SUBMIT':
-                  $qmscondition = 'S';
-                  break;
-              default:
-                  $qmscondition = 'S';
-            }
-            //TODO: CHECK TO MAKE SURE THE SEGMENT ID IS NOT SHIPPED
-              if ($error === 0) { 
-                //Add Segment to dbWriteArray
+             /************************** 
+             * ALL SEGMENT CHECK SHOULD GO HERE IN THIS FOREACH LOOP
+             * //0 = BIOGROUP / 1 = NEW QMS STATUS / 2 = SLIDE NUMBER // 3 = SLIDE SEGMENT ID
+             ***************************/
+             $qmsChk = bgqmsstatus($slidevalue[0]);      
+             if ((int)$qmsChk['responsecode'] !== 200) { 
+               $error = 1;
+               $msgArr[] = "{$slidelist[0]} BIOGROUP NOT FOUND IN QMS STATUS.  SEE A CHTNEASTERN IT STAFF PERSON.";
+             } else {
+               if (trim($qmsChk['data'][0]['qcprocstatus']) === 'Q') { 
+                 $error = 1; 
+                 $msgArr[] = "{$slidevalue[0]} IS ALREADY MARKED AS QMS COMPLETE";
+               }           
+               if (trim($slidevalue[2]) === "") { 
+                 $error = 1; 
+                 $msgArr[] = "YOU HAVE NOT SPECIFIED A SLIDE TO USE FOR BIOGROUP'S QMS ({$slidevalue[0]})";
+               }  
+               //TODO:  CHECK THAT SLIDE IS A REAL SLIDE
+               switch($slidevalue[1]) { 
+                 case 'RESUBMIT': 
+                   $qmscondition = 'R';
+                   break;
+                 case 'SUBMIT':
+                    $qmscondition = 'S';
+                    break;
+                 default:
+                   $qmscondition = 'S';
+               }
+               //TODO: CHECK TO MAKE SURE THE SEGMENT ID IS NOT SHIPPED
+               if ($error === 0) { 
+                  //Add Segment to dbWriteArray
                   $slideListArr[$apprvSlideCntr]['bg'] = $slidevalue[0];
                   $slideListArr[$apprvSlideCntr]['readlabel'] = $qmsChk['data'][0]['readlabel'];
                   $slideListArr[$apprvSlideCntr]['qmsnew'] = $slidevalue[1];
@@ -128,49 +134,52 @@ class datadoers {
                   $slideListArr[$apprvSlideCntr]['slideid'] = $slidevalue[3];
                   $slideListArr[$apprvSlideCntr]['qmscondition'] = $qmscondition;
                   $apprvSlideCntr++;
-              }        
-          }
+               }         
+             }
         }
- 
+
+        //TEST SLIDE [{"bg":"84285","readlabel":"84285T_","qmsnew":"SUBMIT","slidenbr":"84285003","slideid":"445661","qmscondition":"S"}    
         if ($error !== 0) { 
         } else {
-          //DO ALL DB WRITING HERE
-            
+           //DO ALL DB WRITING HERE 
            //UPDATE BIOSAMPLE QMSSTATUS 
            $updSQL = "update masterrecord.ut_procure_biosample set qcprocstatus = :newQ, qmsstatusby = :bywho, qmsstatuson = now() where pbiosample = :pbiosample";
            $updR = $conn->prepare($updSQL);  
            //ADD TO HISTORY TABLE
-           $hisSQL = "insert into masterrecord.history_procure_biosample_qms(pbiosample, readlabel, qcprocstatus, qmsstatusby,  qmsstatuson, historyrecordon, historyrecordby) values(:pbiosample, :readlabel, :qmsstatus, :qmsstatusby, now(), now(), :historyrec  ordby)";
+           $hisSQL = "insert into masterrecord.history_procure_biosample_qms(pbiosample, readlabel, qcprocstatus, qmsstatusby,  qmsstatuson, historyrecordon, historyrecordby) values(:pbiosample, :readlabel, :qmsstatus, :qmsstatusby, now(), now(), :historyrecordby)";
            $hisRS = $conn->prepare($hisSQL);
            //MARK SEGMENT WITH NEW LOCATION
-           $updSegLocSQL = "update masterrecord.ut_procure_segment set scannedLocation = :dsplocation, scanloccode = :invscancode, scannedStatus = 'INVENTORY-HPRTRAY-OVERRIDE', scannedBy = :usr, scannedDate = now(), toHPR = 1, toHPRBy = :usra, toHPROn = now() where segmentid = :segmentid";
+           $updSegLocSQL = "update masterrecord.ut_procure_segment set scannedLocation = :dsplocation, scanloccode = :invscancode, scannedStatus = 'INVENTORY-HPRTRAY-OVERRIDE', scannedBy = :usr, scannedDate = now(), toHPR = 1, hprboxnbr = :invscancodea, toHPRBy = :usra, toHPROn = now() where segmentid = :segmentid";
            $segLocRS = $conn->prepare($updSegLocSQL);   
            //COPY TO SEGMENT LOCATION HISTORY TABLE
            $invHisSQL = "insert into masterrecord.history_procure_segment_inventory (segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) value(:segmentid, :bgs, :scannedlocation, :scannedinventorycode, :inventoryscanstatus, :scannedby, now(), now(), :historyby)";
            $invHisRS = $conn->prepare($invHisSQL);
            //HPR SUBMISSION TABLE AND HPR HISTORY TABLE
            $hprHisSQL = "insert into masterrecord.history_procure_segment_hprsubmission (segmentid, tohpron, tohprby, historyon, historyby) values(:segmentid, now(), :tohprby, now(), 'HPR-INV-TRAY-OVERRIDE')";
-           $hprHisRS = $conn->prepare($hprHisSQL);
-           // MARK INVENTORY SLIDE TRAY AS LOCKED OUT
-           
-           
+           $hprHisRS = $conn->prepare($hprHisSQL); 
+ 
+
           foreach ($slideListArr as $sld) {   
-             //$updR->execute(array(':newQ' => $sld['qmscondition'], ':bywho' =>$usr['originalaccountname'], ':pbiosample' => $sld['bg'] ));
-             //$hisRS->execute(array(':pbiosample' => $sld['bg'], ':readlabel' => $sld['readlabel'], ':qmsstatus  ' => $sld['qmscondition'],':qmsstatusby' => $usr['originalaccountname'] , ':historyrecordby' => 'HPR TRAY LOAD' ));
-             //$segLocRS->execute(array(':dsplocation' => $traydsp, ':invscancode' => $invscancode, ':usr' =>$usr['originalaccountname'], ':usra' =>$usr['originalaccountname'], ':segmentid' => $sld['slideid']));i    
-             //EXECUTE $invHisRS
-             //EXECUTE $hprHisRS
+            //ACTUAL DATABASE WRITING HERE
+             $updR->execute(array(':newQ' => $sld['qmscondition'], ':bywho' =>$usr['originalaccountname'], ':pbiosample' => $sld['bg'] ));
+             $hisRS->execute(array(':pbiosample' => $sld['bg'], ':readlabel' => $sld['readlabel'], ':qmsstatus' => $sld['qmscondition'],':qmsstatusby' => $usr['originalaccountname'] , ':historyrecordby' => 'HPR OVERRIDE TRAY LOAD' ));
+             $segLocRS->execute(array(':dsplocation' => $traydsp, ':invscancode' => $invscancode, ':usr' =>$usr['originalaccountname'], ':invscancodea' => $invscancode, ':usra' =>$usr['originalaccountname'], ':segmentid' => $sld['slideid']));
+             $invHisRS->execute(array(':segmentid' => $sld['slideid'],':bgs' => $sld['bg'],':scannedlocation' => $traydsp,':scannedinventorycode' => $invscancode,':inventoryscanstatus' => 'HPR-SUBMIT-OVERRIDE',':scannedby' => $usr['originalaccountname'],':historyby' => 'COORDINATOR SCREEN HPR INVENTORY OVERRIDE'));
+             $hprHisRS->execute(array(':segmentid' => $sld['slideid'],':tohprby' => $usr['originalaccountname']));
           }
           
+          // MARK INVENTORY SLIDE TRAY AS LOCKED OUT
           $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = 'SENT', hprtraystatusby = :usr, hprtraystatuson = now() where scancode = :scncode";
           $traySTSRS = $conn->prepare($traySTSSQL);
-          //EXECUTE $traySTSRS 
+          $traySTSRS->execute(array(':usr' => $usr['originalaccountname'], ':scncode' => $invscancode)); 
           $tryHisSQL = "insert into masterrecord.history_hpr_tray_status (trayscancode, tray, traystatus, historyon, historyby) values(:trayscancode, :tray, :traystatus, now(), :historyby)";
           $tryHisRS = $conn->prepare($tryHisSQL);
-          //EXECUTE $tryHisRS
+          $tryHisRS->execute(array(':trayscancode' => $invscancode, ':tray' => $traydsp, ':traystatus' => 'SENT', ':historyby' => $usr['originalaccountname']));
+          $devSQL = "insert into masterrecord.tbl_operating_deviations(module, whodeviated, whendeviated, operationsarea, functiondeviated, reasonfordeviation, payload) value('data-coordination', :whodeviated, now(), 'inventory', 'inventory-hpr-tray-override' , :reasonfordeviation, :payload)";
+          $devRS = $conn->prepare($devSQL); 
+          $devRS->execute(array(':whodeviated' => $usr['originalaccountname'], ':reasonfordeviation' => $devreason, ':payload' => $passdata));
 
-//     UNCOMMENT
-//    $responseCode = 200;
+          $responseCode = 200;
         }
       }
       $msg = $msgArr;
