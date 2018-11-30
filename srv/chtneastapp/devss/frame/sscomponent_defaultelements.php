@@ -41,7 +41,6 @@ return $thisAcct;
 }    
     
 function menubuilder($whichpage, $whichUsr) {
-
 $thisMenu = "";    
 if ($whichpage !== "login") {
     $tt = treeTop;    
@@ -82,7 +81,6 @@ if ($whichpage !== "login") {
     $controlListUniverse .= "</table>";
  
     $expDay = ((int)$whichUsr->dayuntilpasswordexp < 1) ? "{$whichUsr->daysuntilpasswordexp} days" : "{$whichUsr->daysuntilpasswordexp} day";
-
      
     $lastlog = ( trim($whichUsr->lastlogin['lastlogdate']) !== "" ) ?  " <b>| Last Access</b>: {$whichUsr->lastlogin['lastlogdate']} from {$whichUsr->lastlogin['fromip']}" : " <b>| Last Access</b>: - ";
     $dspUser = "<b>User</b>: {$whichUsr->userid} ({$whichUsr->username}) <b>| Email</b>: {$whichUsr->useremail} <b>| Password Expires</b>: {$expDay}{$lastlog}";
@@ -130,6 +128,9 @@ function pagetabs($whichpage) {
     case 'scienceserverhelp':
       $thisTab = "ScienceServer Help @ CHTNEastern";
       break;
+    case 'hprreview':
+        $thisTab = "HPR Review @ CHTNEastern";
+        break;
     default: 
       $thisTab = "CHTN Eastern Division"; 
     break; 

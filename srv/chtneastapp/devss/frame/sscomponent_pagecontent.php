@@ -166,12 +166,6 @@ BGTBL;
           }
           $biogroupTbl .= "</tbody><tfoot><tr><td colspan=7 align=right>Submittals to QMS Process: &nbsp;</td><td id=nbrQMSSubmittal>{$submittalCnt}</td></tr></tfoot>";
           $biogroupTbl .= "</table></td>";
-
-
-
-
-
-
           //BUILD HPR TRAY LIST
           //{"MESSAGE":"status message 68c33f8hkvok7q6h4ip5rb5oq0","ITEMSFOUND":0,"DATA":[{"parentid":293,"locationid":294,"locationdsp":"Tray: 001","scancode":"HPRT001","hprtraystatus":"SENT"},{"parentid":293,"locationid":330,"locationdsp":"Tray: 002","scancode":"HPRT002","hprtraystatus":"LOADED"},{"parentid":293,"locationid":331,"locationdsp":"Tray: 003","scancode":"HPRT003","hprtraystatus":"SENT"},{"parentid":293,"locationid":663,"locationdsp":"Tray: 004","scancode":"HPRT004","hprtraystatus":"SENT"},{"parentid":293,"locationid":1033,"locationdsp":"Tray: 005","scancode":"HPRT005","hprtraystatus":null},{"parentid":293,"locationid":1034,"locationdsp":"Tray: 006","scancode":"HPRT006","hprtraystatus":null},{"parentid":293,"locationid":1035,"locationdsp":"Tray: 007","scancode":"HPRT007","hprtraystatus":null},{"parentid":293,"locationid":1036,"locationdsp":"Tray: 008","scancode":"HPRT008","hprtraystatus":null},{"parentid":293,"locationid":1037,"locationdsp":"Tray: 009","scancode":"HPRT009","hprtraystatus":null},{"parentid":293,"locationid":1038,"locationdsp":"Tray: 010","scancode":"HPRT010","hprtraystatus":null},{"parentid":293,"locationid":1039,"locationdsp":"Tray: 011","scancode":"HPRT011","hprtraystatus":null},{"parentid":293,"locationid":1040,"locationdsp":"Tray: 012","scancode":"HPRT012","hprtraystatus":null}]}
           $hprtlist = json_decode(callrestapi("GET", dataTree . "/hpr-tray-list", serverIdent, serverpw), true) ;
@@ -844,6 +838,31 @@ PAGEHERE;
 return $rtnthis;
 }
 
+function hprreview($rqststr, $whichusr) { 
+
+if (trim($rqststr[2]) === "") { 
+
+//HPR Query Grid and Scanner
+$grid = buildHPRGrid(); 
+    $pg = <<<PAGECONTENT
+{$grid}
+PAGECONTENT;
+
+} else { 
+ 
+    //GET SLIDE LIST AND METRICS
+   $pgContent = buildHPRBenchTop($rqststr);
+   $topBtnBar = generatePageTopBtnBar('hprreviewactions');
+   $pg = <<<PAGECONTENT
+   {$topBtnBar} 
+{$pgContent}
+PAGECONTENT;
+
+}
+
+return $pg;
+}
+
 function login($rqststr) {
 //THIS SETS THE COOKIE
 //$number_of_days = 30 ;
@@ -855,7 +874,7 @@ function login($rqststr) {
 //} else {             
 //}
 
-$controlBtn = "<table><tr><td class=adminBtn onclick=\"doLogin();\">Login</td></tr></table>";    
+$controlBtn = "<table><tr><td class=adminBtn id=btnLoginCtl>Login</td></tr></table>";    
     
 $rtnThis = <<<PAGECONTENT
 
@@ -903,6 +922,41 @@ STANDARDHEAD;
   return $rtnThis;
 }    
 
+}
+
+function buildHPRGrid() { 
+
+$grid = <<<HPRGRID
+<div id=hprInnerScan>
+<table>
+<tr><th class=fldLabel>Scan or Type Tray # / Biogroup / Segment label</th></tr>
+<tr><td><input type=text id=fldHPRScan></td></tr>
+<tr><td align=right>
+  <table class=tblBtn id=btnHPRScanSearch style="width: 6vw;"><tr><td><center>Go!</td></tr></table>
+</td></tr>
+</table>
+</div>
+HPRGRID;
+return $grid;
+}
+
+function buildHPRBenchTop($whichQryId) { 
+
+    $mlURL = dataTree . "/docsrch/{$whichQryId[2]}";
+
+$dta = callrestapi("GET", dataTree . "/docsrch/{$whichQryId[2]}", serverIdent, serverpw);
+//$strm = $dta['DATA']['head']['srchterm'];        
+//$typevl = $dta['DATA']['head']['doctype'];        
+$si = serverIdent;
+$sp = serverpw;
+$grid = <<<HPRGRID
+<div id=hprBenchTopHold>
+
+{$whichQryId[2]} = {$mlURL}<br>{$si} / {$sp}
+
+</div>
+HPRGRID;
+return $grid;
 }
 
 function buildBSGrid() { 
@@ -1077,8 +1131,9 @@ return $grid;
 
 function generatePageTopBtnBar($whichpage) { 
 
-//TODO:  DUMP THE BUTTONS INTO A DATABASE AND GRAB WITH A WEBSERVICE
-    
+//TODO:  DUMP THE BUTTONS INTO A DATABASE AND GRAB WITH A WEBSERVICE    
+//TODO: MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
+
 switch ($whichpage) { 
 case 'coordinatorCriteriaGrid':
 $innerBar = <<<BTNTBL
@@ -1087,8 +1142,14 @@ $innerBar = <<<BTNTBL
 </tr>
 BTNTBL;
 break;   
+case 'hprreviewactions': 
+$innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">layers_clear</i></td><td>New Review</td></tr></table></td>
+</tr>
+BTNTBL;
+break; 
 case 'coordinatorResultGrid':
-//TODO: MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltNew><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>

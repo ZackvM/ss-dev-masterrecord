@@ -344,6 +344,7 @@ function docsrch($whichobj, $rqst) {
              ) as selector, substr(concat('000000',ifnull(shipdocrefid,'000000')),-6) as dspmark, concat(ifnull(sdstatus,'') , ' (' , ifnull(date_format(statusdate,'%m/%d/%Y'),'') , ') | Requested Ship Date: ', ifnull(date_format(rqstshipdate, '%m/%d/%Y'),'') , ' | investigator: ', ifnull(investcode,'')) as abstract FROM masterrecord.ut_shipdoc sd where shipdocrefid = :srchtrm ";
                    $strm = (int)$searchTerm;
                    break;
+               
                //TODO:ADD A DEFAULT ERROR IF NOT ABOVE
            }
 
@@ -365,7 +366,33 @@ function docsrch($whichobj, $rqst) {
     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
     return $rows;  
 }
- 
+
+function hprrequestcode($whichobj, $rqst) { 
+    session_start();
+    $responseCode = 400;   
+    $msg = "status message";
+    $itemsfound = 0;
+    $dta = array();
+    if ($whichobj === "") { 
+    } else {
+      require(genAppFiles . "/dataconn/sspdo.zck");  
+      $objGetSQL = "SELECT srchterm FROM four.objsrchdocument where objid = :objid";
+      $objGetRS = $conn->prepare($objGetSQL); 
+      $objGetRS->execute(array(':objid' => $whichobj)); 
+      if ($objGetRS->rowCount() < 1) { 
+        $responseCode = 404;
+      } else { 
+        $itemsfound = $objGetRS->rowCount();
+        $rs = $objGetRS->fetch(PDO::FETCH_ASSOC); 
+        $dta[] = $rs['srchterm'];
+        $responseCode = 200;
+      }
+    } 
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+    return $rows;  
+}
+
 }
 
 

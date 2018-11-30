@@ -20,7 +20,7 @@ class pagebuilder {
   public $modalrs = "";
   public $modalrdialogs = "";
   //PAGE NAME MUST BE REGISTERED IN THIS ARRAY - COULD DO A METHOD SEARCH - BUT I LIKE THE CONTROL OF NOT ALLOWING A PAGE THAT IS NOT READY FOR DISPL
-  private $registeredPages = array('login','root','datacoordinator','documentlibrary','segment');  
+  private $registeredPages = array('login','root','datacoordinator','documentlibrary','segment','hprreview');  
   //THE SECURITY EXCPETIONS ARE THOSE PAGES THAT DON'T REQUIRE USER RIGHTS TO ACCESS
   private $securityExceptions = array('login', 'root');
 
@@ -105,10 +105,7 @@ function getPageElements($whichpage, $rqststr, $mobileInd, $usrmetrics) {
  } else { 
    $elArr['bodycontent'] =  "<h1>USER NOT ALLOWED ACCESS TO THIS MODULE PAGE ({$whichpage})";
  }
-
-
-
- //END PAGE ELEMENTS ---------------------------
+  //END PAGE ELEMENTS ---------------------------
 
 
 //RETURN STATUS - GOOD ---------------------------------------------------------------

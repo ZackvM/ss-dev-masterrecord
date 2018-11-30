@@ -162,7 +162,22 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 STYLESHEET;
       return $rtnThis;
   }
-  
+
+function hprreview($mobileind) { 
+    
+$rtnThis = <<<STYLESHEET
+
+body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
+
+
+#hprInnerScan { position: absolute; width: 25vw; height: 16vh; left: 50%; top: 50%; transform: translate(-50%, -50%)  }
+#hprInnerScan table tr th {font-size: 1.5vh; text-align: left; }
+
+STYLESHEET;
+return $rtnThis;
+}
+
+
 function datacoordinator($mobileind) { 
       $rtnThis = <<<STYLESHEET
 

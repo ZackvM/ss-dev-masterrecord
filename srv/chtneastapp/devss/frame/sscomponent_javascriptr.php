@@ -192,7 +192,7 @@ function JSONToCSVConvertor(JSONData, ReportTitle, ShowLabel) {
 JAVASCR;
 return $rtnThis;    
 }
-
+ 
 function login($rqstrstr) { 
 
   session_start(); 
@@ -264,6 +264,18 @@ document.addEventListener('DOMContentLoaded', function() {
       rqstDualCode();
     }, false);
   }
+
+  if (byId('btnLoginCtl')) {
+    byId('btnLoginCtl').addEventListener('click', function() {
+      doLogin();
+    }, false);
+  }
+
+  document.addEventListener('keypress', function(event) { 
+    if (event.which === 13) { 
+      doLogin();
+    }
+  }, false);
 
 }, false);
 
@@ -408,6 +420,80 @@ function answerGetDocumentText(rtnData) {
 
 JAVASCR;
 return $rtnThis;    
+}
+
+function hprreview($rqststr) { 
+
+  if (trim($rqststr[2]) === "") { 
+    //THIS IS THE JAVASCRIPT FOR THE QUERY GRID PAGE
+    $rtnthis = <<<JAVASCR
+
+document.addEventListener('DOMContentLoaded', function() {  
+
+  if (byId('fldHPRScan')) { 
+    byId('fldHPRScan').focus();
+  }
+
+  if (byId('btnHPRScanSearch')) { 
+    byId('btnHPRScanSearch').addEventListener('click', function() { 
+      sendHPRReviewRequest();
+    } , false);
+  }
+
+  document.addEventListener('keypress', function(event) { 
+    if (event.which === 13) { 
+      sendHPRReviewRequest();
+    }
+  }, false);
+
+}, false);
+
+function sendHPRReviewRequest() { 
+  if (byId('fldHPRScan')) { 
+    if (byId('fldHPRScan').value.trim() !== "") { 
+      var dta = new Object();
+      dta['doctype'] = 'HPRWorkBenchRequest';
+      dta['srchterm'] = byId('fldHPRScan').value.trim();    
+      var passdata = JSON.stringify(dta);
+      var mlURL = "/data-doers/doc-search";
+      universalAJAX("POST",mlURL,passdata,answerSendHPRReviewRequest,1);
+    } else { 
+      alert('You haven\'t scanned/entered a tray #, biogroup, or slide');
+    }
+  }
+}
+
+function answerSendHPRReviewRequest(rtnData) { 
+  if (parseInt(rtnData['responseCode']) === 200) {     
+    var rcd = JSON.parse(rtnData['responseText']);
+    navigateSite('hpr-review/'+rcd['MESSAGE']);
+  } else { 
+    var rcd = JSON.parse(rtnData['responseText']);
+    alert(rcd['MESSAGE']);  
+  }
+}
+
+JAVASCR;
+  
+  } else { 
+    //THIS IS THE JAVASCRIPT FOR THE RESULTS-WORK PAGE
+    $rtnthis = <<<JAVASCR
+
+document.addEventListener('DOMContentLoaded', function() {  
+
+  if (byId('btnNewHPRReview')) { 
+    byId('btnNewHPRReview').addEventListener('click',function() { 
+      navigateSite('hpr-review');
+    }, false);
+  }
+
+}, false);
+
+JAVASCR;
+
+  }
+    
+return $rtnthis;
 }
 
 function datacoordinator($rqststr) { 
