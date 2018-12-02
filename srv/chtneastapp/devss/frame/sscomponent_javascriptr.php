@@ -473,6 +473,7 @@ function answerSendHPRReviewRequest(rtnData) {
   }
 }
 
+
 JAVASCR;
   
   } else { 
@@ -488,6 +489,32 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
 }, false);
+
+
+function requestSegmentInfo(whichsegment) { 
+  if (whichsegment.trim() !== "") {  
+      var dta = new Object();
+      dta['segmentid'] = whichsegment;
+      var passdata = JSON.stringify(dta);
+      var mlURL = "/data-doers/hpr-workbench-segment-lookup";
+      universalAJAX("POST",mlURL,passdata,answerHPRWorkBenchSegmentLookup,1);
+  }
+}
+
+function answerHPRWorkBenchSegmentLookup(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //alert("HPR WORKBENCH ERROR:\\n"+dspMsg);  //DSIPLAY ERROR MESSAGE
+   } else { 
+
+
+   }
+}
+
 
 JAVASCR;
 
@@ -829,22 +856,22 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
 }
 
 function answerInvestSuggestions(rtnData) { 
-var rsltTbl = "";
-if (parseInt(rtnData['responseCode']) === 200 ) { 
-  var dta = JSON.parse(rtnData['responseText']);
-  if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
-    var rsltTbl = "<table border=0 class=\"menuDropTbl\"><tr><td colspan=2 style=\"font-size: 1.2vh; padding: 8px;\">Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
-    dta['DATA'].forEach(function(element) { 
-       rsltTbl += "<tr class=ddMenuItem onclick=\"fillField('qryInvestigator','"+element['investvalue']+"','"+element['investvalue']+"'); byId('investSuggestion').innerHTML = '&nbsp;'; byId('investSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
+  var rsltTbl = "";
+  if (parseInt(rtnData['responseCode']) === 200 ) { 
+    var dta = JSON.parse(rtnData['responseText']);
+    if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
+      var rsltTbl = "<table border=0 class=\"menuDropTbl\"><tr><td colspan=2 style=\"font-size: 1.2vh; padding: 8px;\">Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
+      dta['DATA'].forEach(function(element) { 
+      rsltTbl += "<tr class=ddMenuItem onclick=\"fillField('qryInvestigator','"+element['investvalue']+"','"+element['investvalue']+"'); byId('investSuggestion').innerHTML = '&nbsp;'; byId('investSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
     }); 
-    rsltTbl += "</table>";  
-    byId('investSuggestion').innerHTML = rsltTbl; 
-    byId('investSuggestion').style.display = 'block';
-  } else { 
-    byId('investSuggestion').innerHTML = "&nbsp;";
-    byId('investSuggestion').style.display = 'none';
+      rsltTbl += "</table>";  
+      byId('investSuggestion').innerHTML = rsltTbl; 
+      byId('investSuggestion').style.display = 'block';
+    } else { 
+      byId('investSuggestion').innerHTML = "&nbsp;";
+      byId('investSuggestion').style.display = 'none';
+    }
   }
-}
 }
 
 function clearCriteriaGrid() { 

@@ -5,8 +5,6 @@ class pagecontent {
     //json_encode($rqstStr) THIS IS THE ARRAY HOLDING THE URI COMPONENTS 
     //$whichUsr THIS IS THE USER ARRAY {"statusCode":200,"loggedsession":"i46shslvmj1p672lskqs7anmu1","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":20,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"googleiconcode":"lock_open","menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"googleiconcode":"account_balance","menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""}]],["472","REPORTS","",[{"googleiconcode":"account_balance","menuvalue":"All Reports","pagesource":"all-reports","additionalcode":""}]],["473","UTILITIES","",[{"googleiconcode":"account_balance","menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474",null,null,[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]}     
 
-//<!-- <td style="width: 6vw;height: 6vh;" valign=bottom><table class=tblBtn style="width: 6vw;" onclick="changeSearchGrid('biogroupdiv');"><tr><td><center>Biogroup</td></tr></table></td> //-->
-
 public $maximizeBtn = "<i class=\"material-icons\">keyboard_arrow_up</i>";
 public $minimizeBtn = "<i class=\"material-icons\">keyboard_arrow_down</i>"; 
 public $closeBtn = "<i class=\"material-icons\">close</i>";
@@ -948,7 +946,6 @@ function buildHPRBenchTop($whichQryId) {
     
     $pdta = json_encode(array('srchTrm' => $dta['DATA'][0]));
     $sidedta = json_decode(callrestapi("POST", dataTree . "/data-doers/hpr-workbench-side-panel",serverIdent, serverpw, $pdta), true);          
-   // {"MESSAGE":[],"ITEMSFOUND":3,"DATA":[{"bgs":"83251T002","pbiosample":83251,"prepmethod":"SLIDE","preparation":"H&E SLIDE","segmentid":441967,"procurementdate":"04\/23\/2018","procuringtech":"quintv","institution":"HUP","institutionname":"Hospital of The University of Pennsylvania","designation":"SKIN (NORMAL)","freshcount":3},{"bgs":"82870T002","pbiosample":82870,"prepmethod":"SLIDE","preparation":"HE SLIDE","segmentid":435211,"procurementdate":"01\/31\/2018","procuringtech":"jballiet","institution":"LANC","institutionname":"Lancaster Hospital ","designation":"KIDNEY (DISEASE)","freshcount":0},{"bgs":"84285T003","pbiosample":84285,"prepmethod":"SLIDE","preparation":"H&E SLIDE","segmentid":445661,"procurementdate":"11\/20\/2018","procuringtech":"dmack","institution":"PRESBY","institutionname":"Presbyterian Hospital","designation":"SINUS SINUSITIS (DISEASED)","freshcount":0}]}  
     if ((int)$sidedta['ITEMSFOUND'] < 1) { 
         //NO SLIDES FOUND
         $pg = "<div id=hprwbHeadErrorHolder><H1>{$sidedta['MESSAGE'][0]} - See a CHTNEastern Staff if you feel this is incorrect.</div>";
@@ -959,7 +956,7 @@ function buildHPRBenchTop($whichQryId) {
            $freshDsp = ((int)$sval['freshcount'] > 0) ? "[FRESH SEGMENT HAS SHIPPED]" : "";
            $cntr = ($skey + 1); 
            $sidePanelTbl .= <<<SLIDELINE
-<tr class=rowBacker><td onclick="alert('{$sval['segmentid']}');" class=rowHolder>
+<tr class=rowBacker><td onclick="requestSegmentInfo('{$sval['segmentid']}');" class=rowHolder>
     <table border=0 class=slide>
       <tr>
         <td rowspan=3 class=slidecountr>{$cntr}</td>

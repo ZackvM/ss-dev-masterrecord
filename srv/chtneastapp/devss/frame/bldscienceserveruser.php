@@ -60,8 +60,7 @@ class bldssuser {
           $this->allowedmodules = $userelements['modules'];
           $this->allowedinstitutions = $userelements['institutions'];
           $this->lastlogin = $userelements['lastlogin'];
-        }
-        
+        }    
     }
     
     function getUserInformation() { 
@@ -179,6 +178,5 @@ class bldssuser {
         }     
         return $elArr;
     }
-    
-    
+        
 }

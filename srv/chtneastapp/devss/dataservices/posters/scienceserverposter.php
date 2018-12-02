@@ -24,7 +24,7 @@ function __construct() {
           $this->rtnData = json_encode($dataReturned['data']);
         } else { 
           $this->responseCode = 404; 
-          $this->rtnData = json_encode(array("MESSAGE" => "END-POINT FUNCTION NOT FOUND: {$request[2]}","ITEMSFOUND" => 0, "DATA" => ""));
+          $this->rtnData = json_encode(array("MESSAGE" => "END-POINT FUNCTION NOT FOUND: {$request[3]}","ITEMSFOUND" => 0, "DATA" => ""));
         }
       }
     }
@@ -33,6 +33,27 @@ function __construct() {
 }
 
 class datadoers { 
+
+
+
+    function hprworkbenchsegmentlookup($request, $passdata) { 
+ 
+      $responseCode = 400; 
+      $error = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $dta = array();
+      $msgArr = array();
+      $pdta = json_decode($passdata,true);
+      $segmentid = $pdta['segmentid'];
+
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode;   
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+
+    }
 
     function hprworkbenchsidepanel($request, $passdata) {  
       $responseCode = 400; 

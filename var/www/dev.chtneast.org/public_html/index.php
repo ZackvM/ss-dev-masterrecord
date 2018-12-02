@@ -146,9 +146,6 @@ echo $pg;
                 $responseCode = 401;
             }
             break;
-
-
-
            default: 
                echo "ONLY GET/POST are allowed under this end point!"; 
                $responseCode = 405;
