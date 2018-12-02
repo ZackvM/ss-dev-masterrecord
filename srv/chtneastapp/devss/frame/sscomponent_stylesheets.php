@@ -167,11 +167,36 @@ function hprreview($mobileind) {
     
 $rtnThis = <<<STYLESHEET
 
-body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
+body { margin: 0; margin-top: 11vh; box-sizing: border-box;  }
 
 
-#hprInnerScan { position: absolute; width: 25vw; height: 16vh; left: 50%; top: 50%; transform: translate(-50%, -50%)  }
+#hprInnerScan { position: absolute; width: 25vw; height: 16vh; left: 50%; top: 50%; transform: translate(-50%, -50%);  }
 #hprInnerScan table tr th {font-size: 1.5vh; text-align: left; }
+
+#hprwbHeadErrorHolder { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); Text-align: center; } 
+
+
+#masterWorkBenchTbl { width: 99vw; height: 85vh; }
+#masterWorkBenchTbl #sidePanelTD { width: 15vw; }
+#masterWorkBenchTbl #sidePanelTD #sidePanel {width: 15vw; height: 85vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); overflow: auto; }
+#masterWorkBenchTbl #workBenchTD {width: 84vw; }
+#masterWorkBenchTbl #workBenchTD #workBench {width: 84vw; min-height: 85vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); }
+
+#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl { width: 14.9vw; border-collapse: collapse; box-sizing: border-box;  }
+#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .workbenchheader { font-size: 1.5vh; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; }
+#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .slidesfound { font-size: 1.2vh; text-align: right; background: rgba({$this->color_white},1); color: rgba({$this->color_zackgrey},1); padding: 1vh .3vw 0 0; border-top: 1px solid rgba({$this->color_zackgrey},1);  }
+#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowHolder { padding: .3vh 0 ; }
+#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowBacker:nth-child(even) { background: rgba({$this->color_grey},1);  }
+#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowBacker:hover { background: rgba({$this->color_lamber},1); cursor: pointer; }
+
+.slide { width: 14.8vw; }
+.slide .slidecountr { font-size: 2vh; font-weight: bold; text-align: center; width: 2vw; }
+.slide .slidenbr { font-size: 1.3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); }
+.slide .slidedesignation { font-size: 1.3vh; text-align: justify; }
+.slide .slidedate { font-size: 1vh; white-space: nowrap;}
+.slide .slidetech { font-size: 1vh; text-align: right; white-space:nowrap;}
+.slide .slidefreshdsp { font-size: 1.2vh; color: rgba({$this->color_bred},1); font-weight: bold; text-align: center; }
+
 
 STYLESHEET;
 return $rtnThis;

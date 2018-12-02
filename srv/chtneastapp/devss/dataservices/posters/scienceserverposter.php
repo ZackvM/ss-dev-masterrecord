@@ -33,7 +33,96 @@ function __construct() {
 }
 
 class datadoers { 
-    
+
+    function hprworkbenchsidepanel($request, $passdata) {  
+      $responseCode = 400; 
+      $error = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $dta = array();
+      $msgArr = array();
+      $pdta = json_decode($passdata,true);
+      $srchTrm = $pdta['srchTrm'];
+      $sidePanelSQL = "SELECT replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
+      $bldSidePanel = 0;
+      $typeOfSearch = "";
+      switch ($srchTrm) { 
+        case (preg_match('/\b\d{1,4}\b/',$srchTrm) ? true : false) :
+          $sidePanelSQL .= "and sg.hprboxnbr = :hprboxnbr";
+          $qryArr = array(':hprboxnbr' => ('HPRT' . substr(('0000' . $srchTrm),-3)));
+          $bldSidePanel = 1;
+          $typeOfSearch = "HPR Inventory Tray " . substr(('0000' . $srchTrm),-3);
+          break;
+        case (preg_match('/\b\d{5}\b/',$srchTrm) ? true : false) :
+          $sidePanelSQL .= "and sg.prepMethod = :prpmet and sg.biosamplelabel  = :biogroup and sg.segstatus <> :segstatus"; 
+          $qryArr = array(':biogroup' => (int)$srchTrm, ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED');
+          $bldSidePanel = 1;
+          $typeOfSearch = "Biogroup Slides for " . $srchTrm;
+          break;         
+        case (preg_match('/\bED\d{5}.{1,}\b/i', $srchTrm) ? true : false) :  
+          $sidePanelSQL .= "and concat('ED',replace(sg.bgs,'_','')) = :edbgs "; 
+          $qryArr = array(':edbgs' =>  str_replace('_','',strtoupper($srchTrm)));
+          $bldSidePanel = 1;
+          $typeOfSearch = "Slide Label Search for " .  $srchTrm;
+          break;
+        case (preg_match('/\b\d{5}[a-zA-Z]{1,}.{1,}\b/', $srchTrm) ? true : false) :  
+          $sidePanelSQL .= "and replace(sg.bgs,'_','') = :bgs "; 
+          $qryArr = array(':bgs' =>  str_replace('_','',strtoupper($srchTrm)));
+          $bldSidePanel = 1;
+          $typeOfSearch = "Slide Label Search for " . $srchTrm;
+          break;
+        case (preg_match('/\bHPRT\d{3}\b/i', $srchTrm) ? true : false) :  
+          $sidePanelSQL .= "and sg.hprboxnbr = :hprboxnbr "; 
+          $qryArr = array(':hprboxnbr' =>  $srchTrm);
+          $bldSidePanel = 1;
+          $typeOfSearch = "HPR Inventory Tray " . preg_replace('/HPRT/i','',$srchTrm);
+          break;
+        default:
+         //DEFAULT 
+      }
+      if ($bldSidePanel === 1) {  
+        require(serverkeys . "/sspdo.zck");  
+        $listRS = $conn->prepare($sidePanelSQL); 
+        $listRS->execute($qryArr);
+
+        if ($listRS->rowCount() < 1) { 
+          $responseCode = 404;
+          $itemsfound = 0; 
+          $msgArr[] = "NO ITEMS FOUND MATCHING YOUR CRITERIA ({$srchTrm}) ";
+        } else { 
+          $itemsfound = $listRS->rowCount();
+          $item = 0;
+          while ($rs = $listRS->fetch(PDO::FETCH_ASSOC)) { 
+            $dta[$item]['bgs']               = $rs['bgs'];
+            $dta[$item]['pbiosample']        = $rs['biosamplelabel'];
+            $dta[$item]['prepmethod']        = $rs['prepmethod'];
+            $dta[$item]['preparation']       = $rs['preparation'];
+            $dta[$item]['segmentid']         = $rs['segmentid'];
+            $dta[$item]['procurementdate']   = $rs['procurementdate'];
+            $dta[$item]['procuringtech']     = $rs['procuringtech'];
+            $dta[$item]['institution']       = $rs['procuredat'];
+            $dta[$item]['institutionname']   = $rs['institutionname'];
+            $dta[$item]['designation']       = $rs['designation'];
+            //CHECK FOR FRESH
+            $frshSQL = "SELECT count(1) as cnt FROM masterrecord.ut_procure_segment where prepmethod = 'FRESH' and voidind <> 1 and (segstatus = 'SHIPPED' or segstatus = 'ASSIGNED' or segstatus = 'ONOFFFER') and biosamplelabel = :biosamplelabel";
+            $frshRS = $conn->prepare($frshSQL); 
+            $frshRS->execute(array(':biosamplelabel' => $rs['biosamplelabel']));
+            $frsh = $frshRS->fetch(PDO::FETCH_ASSOC); 
+            $dta[$item]['freshcount'] = $frsh['cnt'];
+            $item++;
+          }
+          $msgArr[] = $typeOfSearch;
+          $responseCode = 200;
+        }
+      } else { 
+        $msgArr[] = "BAD SEARCH STRING";
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode;   
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+
     function inventoryhprtrayoverride($request, $passdata) { 
       $responseCode = 400; 
       $error = 0;

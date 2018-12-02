@@ -942,21 +942,63 @@ return $grid;
 
 function buildHPRBenchTop($whichQryId) { 
 
-    $mlURL = dataTree . "/docsrch/{$whichQryId[2]}";
+  $dta = json_decode(callrestapi("GET", dataTree . "/hpr-request-code/{$whichQryId[2]}", serverIdent, serverpw), true);
+  if ((int)$dta['ITEMSFOUND'] === 1) { 
+    //GET WORKBENCH
+    
+    $pdta = json_encode(array('srchTrm' => $dta['DATA'][0]));
+    $sidedta = json_decode(callrestapi("POST", dataTree . "/data-doers/hpr-workbench-side-panel",serverIdent, serverpw, $pdta), true);          
+   // {"MESSAGE":[],"ITEMSFOUND":3,"DATA":[{"bgs":"83251T002","pbiosample":83251,"prepmethod":"SLIDE","preparation":"H&E SLIDE","segmentid":441967,"procurementdate":"04\/23\/2018","procuringtech":"quintv","institution":"HUP","institutionname":"Hospital of The University of Pennsylvania","designation":"SKIN (NORMAL)","freshcount":3},{"bgs":"82870T002","pbiosample":82870,"prepmethod":"SLIDE","preparation":"HE SLIDE","segmentid":435211,"procurementdate":"01\/31\/2018","procuringtech":"jballiet","institution":"LANC","institutionname":"Lancaster Hospital ","designation":"KIDNEY (DISEASE)","freshcount":0},{"bgs":"84285T003","pbiosample":84285,"prepmethod":"SLIDE","preparation":"H&E SLIDE","segmentid":445661,"procurementdate":"11\/20\/2018","procuringtech":"dmack","institution":"PRESBY","institutionname":"Presbyterian Hospital","designation":"SINUS SINUSITIS (DISEASED)","freshcount":0}]}  
+    if ((int)$sidedta['ITEMSFOUND'] < 1) { 
+        //NO SLIDES FOUND
+        $pg = "<div id=hprwbHeadErrorHolder><H1>{$sidedta['MESSAGE'][0]} - See a CHTNEastern Staff if you feel this is incorrect.</div>";
+    } else {
+        $sidePanelTbl = "<table border=0 id=sidePanelSlideListTbl>"; 
+        $sidePanelTbl .= "<tr><th class=workbenchheader>{$sidedta['MESSAGE'][0]}</th></tr>";
+        foreach ($sidedta['DATA'] as $skey => $sval) {
+           $freshDsp = ((int)$sval['freshcount'] > 0) ? "[FRESH SEGMENT HAS SHIPPED]" : "";
+           $cntr = ($skey + 1); 
+           $sidePanelTbl .= <<<SLIDELINE
+<tr class=rowBacker><td onclick="alert('{$sval['segmentid']}');" class=rowHolder>
+    <table border=0 class=slide>
+      <tr>
+        <td rowspan=3 class=slidecountr>{$cntr}</td>
+        <td colspan=3 class=slidenbr valign=top>{$sval['bgs']} / {$sval['preparation']}</td>
+      </tr>
+      <tr><td colspan=3 class=slidedesignation valign=top>{$sval['designation']}</td></tr>
+      <tr><td valign=top class=slidedate><b>Procurement</b>: {$sval['procurementdate']}</td><td valign=top class=slidetech><b>Tech</b>: {$sval['procuringtech']}</td></tr>
+      <tr><td valign=top colspan=3 class=slidefreshdsp>{$freshDsp}</td></tr>
+    </table>
+</td></tr>
+SLIDELINE;
+        }
+        $sidePanelTbl .= "<tr><td class=slidesfound><b>Slides Found</b>: {$cntr}</td></tr>";
+        $sidePanelTbl .= "</table>";
 
-$dta = callrestapi("GET", dataTree . "/docsrch/{$whichQryId[2]}", serverIdent, serverpw);
-//$strm = $dta['DATA']['head']['srchterm'];        
-//$typevl = $dta['DATA']['head']['doctype'];        
-$si = serverIdent;
-$sp = serverpw;
+
+        $pg = <<<PGCONTNT
+<table border=0 id=masterWorkBenchTbl>
+  <tr>
+    <td valign=top id=sidePanelTD><div id=sidePanel>{$sidePanelTbl}</div></td>
+    <td valign=top id=workBenchTD><div id=workBench>WORK BENCH</div></td>
+  </tr>
+</table>
+PGCONTNT;
+    } 
+    
 $grid = <<<HPRGRID
-<div id=hprBenchTopHold>
-
-{$whichQryId[2]} = {$mlURL}<br>{$si} / {$sp}
-
-</div>
+  {$pg}
 HPRGRID;
-return $grid;
+} else { 
+  
+
+  //DISPLAY ERROR
+$grid = <<<HPRGRID
+<div id=hprwbHeadErrorHolder><H1>No Workbench was found for the given URL Criteria Code - See a CHTNEastern Staff if you feel this is incorrect.</div>
+HPRGRID;
+}
+
+  return $grid;
 }
 
 function buildBSGrid() { 
