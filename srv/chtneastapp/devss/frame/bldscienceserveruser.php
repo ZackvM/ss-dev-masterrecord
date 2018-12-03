@@ -1,5 +1,8 @@
 <?php
 
+$userTestString = "USER TEST STRING";
+
+
 class bldssuser { 
     
     public $statusCode = 404;
