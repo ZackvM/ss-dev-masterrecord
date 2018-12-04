@@ -922,6 +922,40 @@ STANDARDHEAD;
 
 }
 
+function bldHPRWorkBenchSide($hprSegmentObj) {  
+    $segLabel = strtoupper(preg_replace('/\_/', '', $hprSegmentObj[0]['bgs']));
+    $dspSite = strtoupper($hprSegmentObj[0]['site']);
+    $speccat = strtoupper($hprSegmentObj[0]['specimencategory']);
+    $pg = <<<PAGECONTENT
+<table border=0 cellspacing=0 cellpadding=0 id=workBenchHolding>
+    <tr><td valign=top id=workBenchPrelimInfoHold>
+                      
+            <div id=divWorkBenchPrelimInfo>
+            <table border=0 cellspacing=0 cellpadding=0 width=100%>
+            <tr><td class=workbenchheader>SLIDE: {$segLabel}</td></tr>
+            <tr><td>
+               <!-- TECHNICIAN INFO //--> 
+                <table border=0 width=100%>
+                 <tr><td>Site</td><td>Diagnosis</td><td>Specimen Category</td></tr>
+                 <tr><td>{$dspSite}</td><td>Diagnosis</td><td>{$speccat}</td></tr>    
+            
+                 </table>
+            </td></tr>
+            </table>
+            </div>   
+           
+            </td>
+            <td valign=top>
+            <! -- WORK PANEL //-->
+            </td>
+    </tr>
+ </table>
+PAGECONTENT;
+   
+    return $pg;          
+}
+              
+
 function buildHPRGrid() { 
 
 $grid = <<<HPRGRID

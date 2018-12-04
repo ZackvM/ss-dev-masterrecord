@@ -183,7 +183,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box;  }
 #masterWorkBenchTbl #workBenchTD #workBench {width: 84vw; min-height: 85vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); }
 
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl { width: 14.9vw; border-collapse: collapse; box-sizing: border-box;  }
-#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .workbenchheader { font-size: 1.5vh; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; }
+ .workbenchheader { font-size: 1.5vh; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .slidesfound { font-size: 1.2vh; text-align: right; background: rgba({$this->color_white},1); color: rgba({$this->color_zackgrey},1); padding: 1vh .3vw 0 0; border-top: 1px solid rgba({$this->color_zackgrey},1);  }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowHolder { padding: .3vh 0 ; }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowBacker:nth-child(even) { background: rgba({$this->color_grey},1);  }
@@ -196,6 +196,12 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box;  }
 .slide .slidedate { font-size: 1vh; white-space: nowrap;}
 .slide .slidetech { font-size: 1vh; text-align: right; white-space:nowrap;}
 .slide .slidefreshdsp { font-size: 1.2vh; color: rgba({$this->color_bred},1); font-weight: bold; text-align: center; }
+
+
+#workBenchHolding { width: 83.8vw; height: 85vh; }
+#workBenchPrelimInfoHold { width: 30vw; padding: 0 .4vw 0 0;  box-sizing: border-box; }
+#divWorkBenchPrelimInfo {border-right: 1px solid rgba({$this->color_zackgrey},1); }
+
 
 
 STYLESHEET;

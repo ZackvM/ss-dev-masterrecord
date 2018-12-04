@@ -509,12 +509,15 @@ function answerHPRWorkBenchSegmentLookup(rtnData) {
        dspMsg += "\\n - "+element;
      });
      //alert("HPR WORKBENCH ERROR:\\n"+dspMsg);  //DSIPLAY ERROR MESSAGE
-   } else { 
-
-
+   } else {  
+            var prts = JSON.parse(rtnData['responseText']);
+            if (byId('workBench')) { 
+              byId('workBench').innerHTML = prts['DATA']['workbenchpage'];
+            }
    }
 }
 
+            
 
 JAVASCR;
 

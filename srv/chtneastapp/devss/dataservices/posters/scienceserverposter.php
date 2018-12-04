@@ -42,14 +42,22 @@ class datadoers {
       $dta = array();
       $msgArr = array();
       $pdta = json_decode($passdata,true);
-      $segmentid = $pdta['segmentid'];
-      $dobldr = require(genAppFiles . '/dataobjects/bldscienceserverdataobject.php');
-      $doSegment = new ssdataobject('segment',435211); 
-      $dta['object'] = $doSegment->objectname;
       
-
-
-
+      
+      $segmentid = $pdta['segmentid'];
+      require(genAppFiles . '/dataobjects/bldscienceserverdataobject.php');
+      $doSegment = new ssdataobject('segment',$segmentid); 
+      //$dta['objectname'] = $doSegment->objectname;
+      //$dta['objectid'] = $doSegment->objectid;
+      //$dta['session'] = $doSegment->session;
+      //$dta['object'] = $doSegment->object;
+      //$dta['found'] = $doSegment->foundindicator;
+      
+      require(genAppFiles . '/frame/sscomponent_pagecontent.php');      
+      $dta['workbenchpage'] = bldHPRWorkBenchSide($doSegment->object); 
+     
+      //TODO: IF ALL CHECKS OUT THEN CHANGE TO 200
+      $responseCode = 200;
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode;   
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -65,6 +73,7 @@ class datadoers {
       $msgArr = array();
       $pdta = json_decode($passdata,true);
       $srchTrm = $pdta['srchTrm'];
+      //TODO:  MOVE THIS TO A WEBSERVICE
       $sidePanelSQL = "SELECT replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
       $bldSidePanel = 0;
       $typeOfSearch = "";
