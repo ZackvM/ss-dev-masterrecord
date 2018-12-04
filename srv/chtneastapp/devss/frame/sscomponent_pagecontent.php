@@ -922,25 +922,39 @@ STANDARDHEAD;
 
 }
 
-function bldHPRWorkBenchSide($hprSegmentObj) {  
-    $segLabel = strtoupper(preg_replace('/\_/', '', $hprSegmentObj[0]['bgs']));
-    $dspSite = strtoupper($hprSegmentObj[0]['site']);
-    $dspSite .= ( trim($hprSegmentObj[0]['subsite']) === "") ? "" : (" / " . strtoupper($hprSegmentObj[0]['subsite']));  
-    $dspSite .= ( trim($hprSegmentObj[0]['specimencategory']) === "") ? "" : (" (" . strtoupper($hprSegmentObj[0]['specimencategory']) . ")");
-    $dspSite = trim($dspSite);
-    $dx = strtoupper($hprSegmentObj[0]['dx']);
-    $dx .= (trim($hprSegmentObj[0]['dxmod']) === "") ? "" : (" / " . strtoupper($hprSegmentObj[0]['dxmod']));
-    $dx = trim($dx);
-    $mets = strtoupper(trim($hprSegmentObj[0]['metssite']));
-    $metsdx = strtoupper(trim($hprSegmentObj[0]['metssitedx']));
-    $sysdx = strtoupper(trim($hprSegmentObj[0]['systemicdx']));
-    $cx = strtoupper(substr(trim($hprSegmentObj[0]['cx']),0,1));
-    $rx = strtoupper(substr(trim($hprSegmentObj[0]['rx']),0,1));
-    $hprind = ((int)$hprSegmentObj[0]['hprind'] === 1) ? 'Yes' : 'No';
-    $qcind = ((int)$hprSegmentObj[0]['qcind'] === 1) ? 'Yes' : 'No';
-    $pathrpt = strtoupper(trim($hprSegmentObj[0]['pthrpt']));
-    $infcon = strtoupper(trim($hprSegmentObj[0]['infc']));
+function bldHPRWorkBenchSide($SGObj) {  
 
+  $sgDta = $SGObj['DATA'][0];
+  $segLabel = strtoupper(preg_replace('/\_/', '', $sgDta['bgs']));
+  $dspSite = strtoupper($sgDta['site']);
+  $dspSite .= ( trim($sgDta['subsite']) === "") ? "" : (" / " . strtoupper($sgDta['subsite']));  
+  $dspSite .= ( trim($sgDta['specimencategory']) === "") ? "" : (" (" . strtoupper($sgDta['specimencategory']) . ")");
+  $dspSite = trim($dspSite);
+  $dx = strtoupper($sgDta['dx']);
+  $dx .= (trim($sgDta['dxmod']) === "") ? "" : (" / " . strtoupper($sgDta['dxmod']));
+  $dx = trim($dx);
+  $mets = strtoupper(trim($sgDta['metssite']));
+  $metsdx = strtoupper(trim($sgDta['metssitedx']));
+  $sysdx = strtoupper(trim($sgDta['systemicdx']));
+  $cx = strtoupper(substr(trim($sgDta['cx']),0,1));
+  $rx = strtoupper(substr(trim($sgDta['rx']),0,1));
+  $hprind = ((int)$sgDta['hprind'] === 1) ? 'Yes' : 'No';
+  $qcind = ((int)$sgDta['qcind'] === 1) ? 'Yes' : 'No';
+  $pathrpt = strtoupper(trim($sgDta['pthrpt']));
+  $infcon = strtoupper(trim($sgDta['infc']));
+  $uninv = strtoupper(trim($sgDta['uninvolvedind']));
+  $phirace = strtoupper(trim($sgDta['phirace']));
+  $phisex = strtoupper(trim($sgDta['phisex']));
+  $phiage = $sgDta['phiage']; 
+  $phiage .= (trim($sgDta['phiageuom']) === "") ? "" : " " . trim($sgDta['phiageuom']);
+  $procedure = trim($sgDta['proceduretype']);
+  $procedure .= (trim($sgDta['procedureinstitution']) === "") ? "" : "-" . trim($sgDta['procedureinstitution']);
+  $procedureLine2 = (trim($sgDta['proceduredate']) === "") ? "" : trim($sgDta['proceduredate']);
+  $procedureLine2 .= (trim($sgDta['proctechnician']) === "") ? " (" : trim($sgDta['proctechnician']) . ")"; 
+  $procedure .= (trim($procedureLine2) !== "" ) ? "<br>{$procedureLine2}" : "";
+  $hprquestion = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','', trim($sgDta['hprquestion'])));
+  $bscomment = $hrcmt = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','',trim($sgDta['biosamplecomment'])));
+  
     $pg = <<<PAGECONTENT
 <table border=0 cellspacing=0 cellpadding=0 id=workBenchHolding>
     <tr><td valign=top id=workBenchPrelimInfoHold>
@@ -950,21 +964,23 @@ function bldHPRWorkBenchSide($hprSegmentObj) {
             <tr><td class=workbenchheader>SLIDE: {$segLabel}</td></tr>
             <tr><td>
                <!-- TECHNICIAN INFO //--> 
-                <table border=1 width=100%>
-                 <tr><td colspan=2>Site / Subsite (Specimen Category)</td><td colspan=2>Diagnosis / Modifier</td></tr>
-                 <tr><td colspan=2>{$dspSite}&nbsp;</td><td colspan=2>{$dx}&nbsp;</td></tr> 
-                 <tr><td colspan=2>METS Site</td><td colspan=2>Mets Site DX</tr>   
-                 <tr><td colspan=2>{$mets}&nbsp;</td><td colspan=2>{$metsdx}&nbsp;</td></tr>  
-                 <tr><td colspan=4>Systemic Diagnosis</td></tr>
-                 <tr><td colspan=4>{$sysdx}&nbsp;</td></tr>          
-                 <tr><td>CX/RX</td><td>HPR/QC</td><td>PR/IC</td><td>Uninvolved</td></tr>
-                 <tr><td>{$cx}/{$rx}</td><td>{$hprind}/{$qcind}</td><td>{$pathrpt}/{$infcon}</td><td>Uninvolved</td></tr>
-
- 
-                 <tr><td>Age</td><td>Sex</td><td>Age</td><td>Procedure</td></tr>
-
-
+                <table border=0 width=100%>
+                 <tr><td colspan=2 valign=top>Site / Subsite (Specimen Category)</td><td colspan=2 valign=top>Diagnosis / Modifier</td></tr>
+                 <tr><td colspan=2 valign=top>{$dspSite}&nbsp;</td><td colspan=2 valign=top>{$dx}&nbsp;</td></tr> 
+                 <tr><td colspan=2 valign=top>METS Site</td><td colspan=2 valign=top>Mets Site DX</tr>   
+                 <tr><td colspan=2 valign=top>{$mets}&nbsp;</td><td colspan=2 valign=top>{$metsdx}&nbsp;</td></tr>  
+                 <tr><td colspan=4 valign=top>Systemic Diagnosis</td></tr>
+                 <tr><td colspan=4 valign=top>{$sysdx}&nbsp;</td></tr>          
+                 <tr><td valign=top>CX/RX</td><td valign=top>HPR/QC</td><td valign=top>PR/IC</td><td valign=top>Uninvolved</td></tr>
+                 <tr><td valign=top>{$cx}/{$rx}&nbsp;</td><td valign=top>{$hprind}/{$qcind}&nbsp;</td><td valign=top>{$pathrpt}/{$infcon}&nbsp;</td><td valign=top>{$uninv}</td></tr>
+                 <tr><td valign=top>Age</td><td valign=top>Race</td><td valign=top>Sex</td><td valign=top>Procedure</td></tr>
+                 <tr><td valign=top>{$phiage}&nbsp;</td><td valign=top>{$phirace}&nbsp;</td><td valign=top>{$phisex}&nbsp;</td><td valign=top>{$procedure}&nbsp;</td></tr>
+                 <tr><td colspan=4 valign=top>Technician Question For HPR/QMS Review</td></tr>
+                 <tr><td colspan=4 valign=top>{$hprquestion}&nbsp;</td></tr>
+                 <tr><td colspan=4 valign=top>Biosample Comment</td></tr>
+                 <tr><td colspan=4 valign=top>{$bscomment}&nbsp;</td></tr>
                  </table>
+                 <!-- END TECHNICIAN TABLE //--> 
             </td></tr>
             </table>
             </div>   
@@ -1036,7 +1052,7 @@ SLIDELINE;
 <table border=0 id=masterWorkBenchTbl>
   <tr>
     <td valign=top id=sidePanelTD><div id=sidePanel>{$sidePanelTbl}</div></td>
-    <td valign=top id=workBenchTD><div id=workBench>WORK BENCH</div></td>
+    <td valign=top id=workBenchTD><div id=workBench>&nbsp;</div></td>
   </tr>
 </table>
 PGCONTNT;

@@ -424,10 +424,12 @@ return $rtnThis;
 
 function hprreview($rqststr) { 
 
+  $sp = serverpw;    
+    
   if (trim($rqststr[2]) === "") { 
     //THIS IS THE JAVASCRIPT FOR THE QUERY GRID PAGE
     $rtnthis = <<<JAVASCR
-
+            
 document.addEventListener('DOMContentLoaded', function() {  
 
   if (byId('fldHPRScan')) { 
@@ -479,7 +481,7 @@ JAVASCR;
   } else { 
     //THIS IS THE JAVASCRIPT FOR THE RESULTS-WORK PAGE
     $rtnthis = <<<JAVASCR
-
+            
 document.addEventListener('DOMContentLoaded', function() {  
 
   if (byId('btnNewHPRReview')) { 
@@ -496,7 +498,7 @@ function requestSegmentInfo(whichsegment) {
       var dta = new Object();
       dta['segmentid'] = whichsegment;
       var passdata = JSON.stringify(dta);
-      var mlURL = "/data-doers/hpr-workbench-segment-lookup";
+      var mlURL = "/data-doers/hpr-workbench-builder";
       universalAJAX("POST",mlURL,passdata,answerHPRWorkBenchSegmentLookup,1);
   }
 }

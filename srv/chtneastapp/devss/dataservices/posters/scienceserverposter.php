@@ -34,7 +34,7 @@ function __construct() {
 
 class datadoers { 
 
-    function hprworkbenchsegmentlookup($request, $passdata) {  
+    function hprworkbenchbuilder($request, $passdata) {  
       $responseCode = 400; 
       $error = 0;
       $msg = "";
@@ -43,22 +43,17 @@ class datadoers {
       $msgArr = array();
       $pdta = json_decode($passdata,true);
       
-      
-      $segmentid = $pdta['segmentid'];
-      require(genAppFiles . '/dataobjects/bldscienceserverdataobject.php');
-      $doSegment = new ssdataobject('segment',$segmentid); 
-      //$dta['objectname'] = $doSegment->objectname;
-      //$dta['objectid'] = $doSegment->objectid;
-      //$dta['session'] = $doSegment->session;
-      //$dta['object'] = $doSegment->object;
-      //$dta['found'] = $doSegment->foundindicator;
-      
-      require(genAppFiles . '/frame/sscomponent_pagecontent.php');      
-      $dta['workbenchpage'] = bldHPRWorkBenchSide($doSegment->object); 
-     
+      if ($pdta['segmentid'] === "" || !$pdta['segmentid']) { 
+          //BAD REQUEST
+          //TODO:  BUILD ERROR RESPONSE
+      } else {
+        $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $pdta['segmentid'],serverIdent, serverpw), true);
+        require(genAppFiles . "/frame/sscomponent_pagecontent.php");
+        $dta['workbenchpage'] = bldHPRWorkBenchSide($segData); 
+        $responseCode = 200;
+        $msg = $msgArr;        
+      }
       //TODO: IF ALL CHECKS OUT THEN CHANGE TO 200
-      $responseCode = 200;
-      $msg = $msgArr;
       $rows['statusCode'] = $responseCode;   
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;

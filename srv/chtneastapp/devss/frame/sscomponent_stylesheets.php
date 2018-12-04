@@ -179,8 +179,8 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box;  }
 #masterWorkBenchTbl { width: 99vw; height: 85vh; }
 #masterWorkBenchTbl #sidePanelTD { width: 15vw; }
 #masterWorkBenchTbl #sidePanelTD #sidePanel {width: 15vw; height: 85vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); overflow: auto; }
-#masterWorkBenchTbl #workBenchTD {width: 84vw; }
-#masterWorkBenchTbl #workBenchTD #workBench {width: 84vw; min-height: 85vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); }
+#masterWorkBenchTbl #workBenchTD {width: 84vw; height: 85vh; box-sizing: border-box; }
+#masterWorkBenchTbl #workBenchTD #workBench {width: 84vw; height: 85vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); }
 
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl { width: 14.9vw; border-collapse: collapse; box-sizing: border-box;  }
  .workbenchheader { font-size: 1.5vh; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; }
@@ -198,10 +198,9 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box;  }
 .slide .slidefreshdsp { font-size: 1.2vh; color: rgba({$this->color_bred},1); font-weight: bold; text-align: center; }
 
 
-#workBenchHolding { width: 83.8vw; height: 85vh; }
+#workBenchHolding { width: 83.8vw; height: 85vh; box-sizing: border-box;  }
 #workBenchPrelimInfoHold { width: 30vw; padding: 0 .4vw 0 0;  box-sizing: border-box; }
-#divWorkBenchPrelimInfo {border-right: 1px solid rgba({$this->color_zackgrey},1); }
-
+#divWorkBenchPrelimInfo {border-right: 1px solid rgba({$this->color_zackgrey},1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
 
 
 STYLESHEET;
