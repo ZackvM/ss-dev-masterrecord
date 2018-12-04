@@ -925,7 +925,22 @@ STANDARDHEAD;
 function bldHPRWorkBenchSide($hprSegmentObj) {  
     $segLabel = strtoupper(preg_replace('/\_/', '', $hprSegmentObj[0]['bgs']));
     $dspSite = strtoupper($hprSegmentObj[0]['site']);
-    $speccat = strtoupper($hprSegmentObj[0]['specimencategory']);
+    $dspSite .= ( trim($hprSegmentObj[0]['subsite']) === "") ? "" : (" / " . strtoupper($hprSegmentObj[0]['subsite']));  
+    $dspSite .= ( trim($hprSegmentObj[0]['specimencategory']) === "") ? "" : (" (" . strtoupper($hprSegmentObj[0]['specimencategory']) . ")");
+    $dspSite = trim($dspSite);
+    $dx = strtoupper($hprSegmentObj[0]['dx']);
+    $dx .= (trim($hprSegmentObj[0]['dxmod']) === "") ? "" : (" / " . strtoupper($hprSegmentObj[0]['dxmod']));
+    $dx = trim($dx);
+    $mets = strtoupper(trim($hprSegmentObj[0]['metssite']));
+    $metsdx = strtoupper(trim($hprSegmentObj[0]['metssitedx']));
+    $sysdx = strtoupper(trim($hprSegmentObj[0]['systemicdx']));
+    $cx = strtoupper(substr(trim($hprSegmentObj[0]['cx']),0,1));
+    $rx = strtoupper(substr(trim($hprSegmentObj[0]['rx']),0,1));
+    $hprind = ((int)$hprSegmentObj[0]['hprind'] === 1) ? 'Yes' : 'No';
+    $qcind = ((int)$hprSegmentObj[0]['qcind'] === 1) ? 'Yes' : 'No';
+    $pathrpt = strtoupper(trim($hprSegmentObj[0]['pthrpt']));
+    $infcon = strtoupper(trim($hprSegmentObj[0]['infc']));
+
     $pg = <<<PAGECONTENT
 <table border=0 cellspacing=0 cellpadding=0 id=workBenchHolding>
     <tr><td valign=top id=workBenchPrelimInfoHold>
@@ -935,10 +950,20 @@ function bldHPRWorkBenchSide($hprSegmentObj) {
             <tr><td class=workbenchheader>SLIDE: {$segLabel}</td></tr>
             <tr><td>
                <!-- TECHNICIAN INFO //--> 
-                <table border=0 width=100%>
-                 <tr><td>Site</td><td>Diagnosis</td><td>Specimen Category</td></tr>
-                 <tr><td>{$dspSite}</td><td>Diagnosis</td><td>{$speccat}</td></tr>    
-            
+                <table border=1 width=100%>
+                 <tr><td colspan=2>Site / Subsite (Specimen Category)</td><td colspan=2>Diagnosis / Modifier</td></tr>
+                 <tr><td colspan=2>{$dspSite}&nbsp;</td><td colspan=2>{$dx}&nbsp;</td></tr> 
+                 <tr><td colspan=2>METS Site</td><td colspan=2>Mets Site DX</tr>   
+                 <tr><td colspan=2>{$mets}&nbsp;</td><td colspan=2>{$metsdx}&nbsp;</td></tr>  
+                 <tr><td colspan=4>Systemic Diagnosis</td></tr>
+                 <tr><td colspan=4>{$sysdx}&nbsp;</td></tr>          
+                 <tr><td>CX/RX</td><td>HPR/QC</td><td>PR/IC</td><td>Uninvolved</td></tr>
+                 <tr><td>{$cx}/{$rx}</td><td>{$hprind}/{$qcind}</td><td>{$pathrpt}/{$infcon}</td><td>Uninvolved</td></tr>
+
+ 
+                 <tr><td>Age</td><td>Sex</td><td>Age</td><td>Procedure</td></tr>
+
+
                  </table>
             </td></tr>
             </table>
@@ -1260,7 +1285,6 @@ function generateContextMenu($whichpage) {
 //<tr><td class=contextOptionHolder><table onclick="alert('View Documents');"><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText>View Documents/Chart Review</td></tr></table></td></tr>     
 //<tr><td class=contextOptionHolder><table onclick="alert('Associative Groups');"><tr><td><i class="material-icons cmOptionIcon">link</i></td><td class=cmOptionText>Associative Group</td></tr></table></td></tr>       
 //<tr><td class=contextOptionHolder><table onclick="alert('HPR Results');"><tr><td><i class="material-icons cmOptionIcon">stars</i></td><td class=cmOptionText>View HPR Results</td></tr></table></td></tr> 
-
 
 switch ($whichpage) { 
 case 'coordinatorResultGrid':

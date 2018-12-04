@@ -75,10 +75,25 @@ SELECT sg.biosamplelabel, sg.segmentid, ifnull(sg.bgs,'XXXXXX') as bgs
 , ifnull(sg.segmentcomments,'') as segmentcomments
 , ifnull(sg.qty,1) as qty  
 , ifnull(bs.tisstype,'') as specimencategory
-, concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite, '')='','', concat('/',ifnull(bs.subSite,''))))  as site
-    
+, ifnull(bs.anatomicSite,'') site
+, ifnull(bs.subSite, '') subsite
+, ifnull(bs.diagnosis,'') as dx
+, ifnull(bs.subdiagnos,'') as dxmod
+, ifnull(bs.metssite,'') as metssite
+, ifnull(bs.metssitedx,'') as metssitedx
+, ifnull(bs.pdxsystemic,'') as systemicdx
+, ifnull(cxv.dspvalue,'') as cx
+, ifnull(rxv.dspvalue,'') as rx
+, ifnull(bs.hprind,0) as hprind
+, ifnull(bs.qcind,0) as qcind
+, ifnull(prv.dspvalue,'Pending') as pthrpt
+, ifnull(icv.dspvalue,'No') as infc 
 FROM masterrecord.ut_procure_segment sg
-LEFT JOIN masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample             
+LEFT JOIN masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'CX') as cxv on bs.chemoind = cxv.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'RX') as rxv on bs.radind = rxv.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') as prv on bs.pathreport = prv.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'infc') as icv on bs.pathreport = icv.menuvalue
 where segmentid = :objectid             
 OBJECTSQL;
      $obj = runObjectSQL($defineSQL, $id);
