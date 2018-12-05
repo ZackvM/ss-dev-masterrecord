@@ -922,9 +922,11 @@ STANDARDHEAD;
 
 }
 
-function bldHPRWorkBenchSide($SGObj) {  
+function bldHPRWorkBenchSide($SGObj, $allSGObj) {  
 
   $sgDta = $SGObj['DATA'][0];
+  $allSgDta = $allSGObj['DATA'];
+
   $segLabel = strtoupper(preg_replace('/\_/', '', $sgDta['bgs']));
   $dspSite = strtoupper($sgDta['site']);
   $dspSite .= ( trim($sgDta['subsite']) === "") ? "" : (" / " . strtoupper($sgDta['subsite']));  
@@ -943,51 +945,91 @@ function bldHPRWorkBenchSide($SGObj) {
   $pathrpt = strtoupper(trim($sgDta['pthrpt']));
   $infcon = strtoupper(trim($sgDta['infc']));
   $uninv = strtoupper(trim($sgDta['uninvolvedind']));
-  $phirace = strtoupper(trim($sgDta['phirace']));
-  $phisex = strtoupper(trim($sgDta['phisex']));
+  $phirace = substr(strtoupper(trim($sgDta['phirace'])),0,3);
+  $phisex = substr(strtoupper(trim($sgDta['phisex'])),0,1);
   $phiage = $sgDta['phiage']; 
-  $phiage .= (trim($sgDta['phiageuom']) === "") ? "" : " " . trim($sgDta['phiageuom']);
+  $phiage .= (trim($sgDta['phiageuom']) === "") ? "" : "" ; //. strtoupper(trim($sgDta['phiageuom']))
   $procedure = trim($sgDta['proceduretype']);
   $procedure .= (trim($sgDta['procedureinstitution']) === "") ? "" : "-" . trim($sgDta['procedureinstitution']);
   $procedureLine2 = (trim($sgDta['proceduredate']) === "") ? "" : trim($sgDta['proceduredate']);
-  $procedureLine2 .= (trim($sgDta['proctechnician']) === "") ? " (" : trim($sgDta['proctechnician']) . ")"; 
+  $procedureLine2 .= (trim($sgDta['proctechnician']) === "") ? "" :  " (" . trim($sgDta['proctechnician']) . ")"; 
   $procedure .= (trim($procedureLine2) !== "" ) ? "<br>{$procedureLine2}" : "";
   $hprquestion = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','', trim($sgDta['hprquestion'])));
   $bscomment = $hrcmt = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','',trim($sgDta['biosamplecomment'])));
+  $prTxt = (trim($sgDta['pathologyreporttext']) === "") ? "NO PATHOLOGY REPORT FOUND" : trim($sgDta['pathologyreporttext']);
+  $prTxtBtns = (trim($sgDta['pathologyreporttext']) === "") ? "" : "<td onclick=\"alert('{$sgDta['prrecordselector']}');\" align=right><i class=\"material-icons\">print</i></td>";
+
+
+  if ((int)$allSGObj['ITEMSFOUND'] > 0) {
+    $segPartsDsp = "<table border=1 cellspacing=0 cellpadding=0><tr><td>Segment</td><td>Status</td><td>Preparation</td><td>Metric</td><td>Assignment</td></tr>";
+    foreach ($allSgDta as $rcd) {
+      $partSegLabel = strtoupper(preg_replace('/\_/', '', $rcd['bgs']));
+      $prp = trim(strtoupper($rcd['prepmethod']));
+      $met = (trim($rcd['metricdsp']) === "") ?  "" : strtoupper(trim($rcd['metricdsp']));
+      $ass = (trim($rcd['invest']) === "") ? "" : strtoupper(trim($rcd['invest']));
+      $segPartsDsp .= "<tr><td>{$partSegLabel}</td><td>{$rcd['segstatus']}</td><td>{$prp}</td><td>{$met}</td><td>{$ass}</td></tr>";
+    }
+    $segPartsDsp .= "</table>";
+  }
+
   
+
+
+
     $pg = <<<PAGECONTENT
 <table border=0 cellspacing=0 cellpadding=0 id=workBenchHolding>
     <tr><td valign=top id=workBenchPrelimInfoHold>
-                      
+
             <div id=divWorkBenchPrelimInfo>
             <table border=0 cellspacing=0 cellpadding=0 width=100%>
             <tr><td class=workbenchheader>SLIDE: {$segLabel}</td></tr>
             <tr><td>
                <!-- TECHNICIAN INFO //--> 
-                <table border=0 width=100%>
-                 <tr><td colspan=2 valign=top>Site / Subsite (Specimen Category)</td><td colspan=2 valign=top>Diagnosis / Modifier</td></tr>
-                 <tr><td colspan=2 valign=top>{$dspSite}&nbsp;</td><td colspan=2 valign=top>{$dx}&nbsp;</td></tr> 
-                 <tr><td colspan=2 valign=top>METS Site</td><td colspan=2 valign=top>Mets Site DX</tr>   
-                 <tr><td colspan=2 valign=top>{$mets}&nbsp;</td><td colspan=2 valign=top>{$metsdx}&nbsp;</td></tr>  
-                 <tr><td colspan=4 valign=top>Systemic Diagnosis</td></tr>
-                 <tr><td colspan=4 valign=top>{$sysdx}&nbsp;</td></tr>          
-                 <tr><td valign=top>CX/RX</td><td valign=top>HPR/QC</td><td valign=top>PR/IC</td><td valign=top>Uninvolved</td></tr>
-                 <tr><td valign=top>{$cx}/{$rx}&nbsp;</td><td valign=top>{$hprind}/{$qcind}&nbsp;</td><td valign=top>{$pathrpt}/{$infcon}&nbsp;</td><td valign=top>{$uninv}</td></tr>
-                 <tr><td valign=top>Age</td><td valign=top>Race</td><td valign=top>Sex</td><td valign=top>Procedure</td></tr>
-                 <tr><td valign=top>{$phiage}&nbsp;</td><td valign=top>{$phirace}&nbsp;</td><td valign=top>{$phisex}&nbsp;</td><td valign=top>{$procedure}&nbsp;</td></tr>
-                 <tr><td colspan=4 valign=top>Technician Question For HPR/QMS Review</td></tr>
-                 <tr><td colspan=4 valign=top>{$hprquestion}&nbsp;</td></tr>
-                 <tr><td colspan=4 valign=top>Biosample Comment</td></tr>
-                 <tr><td colspan=4 valign=top>{$bscomment}&nbsp;</td></tr>
+                <table border=0 width=100% cellpadding=0 cellspacing=0>
+                 <tr><td colspan=3 valign=top class=littleFieldLabel width=50%>Site / Subsite (Specimen Category)</td><td colspan=3 valign=top class=littleFieldLabelEnd width=50%>Diagnosis / Modifier</td></tr>
+                 <tr><td colspan=3 valign=top class=dataFieldDsp>{$dspSite}&nbsp;</td><td colspan=3 valign=top class=dataFieldDspEnd>{$dx}&nbsp;</td></tr> 
+                 <tr><td colspan=3 valign=top class=littleFieldLabel width=50%>METS Site</td><td colspan=3 valign=top class=littleFieldLabelEnd width=50%>Mets Site DX</tr>   
+                 <tr><td colspan=3 valign=top class=dataFieldDsp>{$mets}&nbsp;</td><td colspan=3 valign=top class=dataFieldDspEnd>{$metsdx}&nbsp;</td></tr>  
+                 <tr><td colspan=6 valign=top class=littleFieldLabelEnd>Systemic Diagnosis</td></tr>
+                 <tr><td colspan=6 valign=top class=dataFieldDspEnd>{$sysdx}&nbsp;</td></tr>          
+                 <tr><td valign=top class=littleFieldLabel width=17%>A/R/S</td><td valign=top class=littleFieldLabel width=17%>CX/RX</td><td valign=top class=littleFieldLabel width=17%>HPR/QC</td><td valign=top class=littleFieldLabel width=17%>PR/IC</td><td valign=top class=littleFieldLabel width=17%>Procedure</td><td valign=top class=littleFieldLabelEnd width=17%>Uninvolved</td></tr>
+                 <tr> <td valign=top class=dataFieldDsp>{$phiage} / {$phirace} / {$phisex}&nbsp;</td><td valign=top class=dataFieldDsp>{$cx}/{$rx}&nbsp;</td><td valign=top class=dataFieldDsp>{$hprind}/{$qcind}&nbsp;</td><td valign=top class=dataFieldDsp>{$pathrpt}/{$infcon}&nbsp;</td><td valign=top class=dataFieldDsp>{$procedure}&nbsp;</td><td valign=top class=dataFieldDspEnd>{$uninv}</td></tr>
+                 <tr><td colspan=6 valign=top class=littleFieldLabelEnd>Technician Question For HPR/QMS Review</td></tr>
+                 <tr><td colspan=6 valign=top class=dataFieldDspEnd>{$hprquestion}&nbsp;</td></tr>
+                 <tr><td colspan=6 valign=top class=littleFieldLabelEnd>Biosample Comment</td></tr>
+                 <tr><td colspan=6 valign=top class=dataFieldDspEnd style="border: none;">{$bscomment}&nbsp;</td></tr>
                  </table>
                  <!-- END TECHNICIAN TABLE //--> 
             </td></tr>
             </table>
             </div>   
-           
+
+            <div id=allSegmentDsp>
+            <table border=0 cellspacing=0 cellpadding=0 width=100%>
+            <tr><td class=workbenchheader>CONSTITUENT SEGMENTS FOR </td></tr>
+            <tr><td>
+            <!-- CONSTITUENT SEGMENTS //-->
+            {$segPartsDsp} 
+            </td></tr>
+            </table> 
+
+            </div>
+
             </td>
             <td valign=top>
-            <! -- WORK PANEL //-->
+
+            <div id=divWorkBenchPathRptDsp>
+            <!-- PATH REPORT DISPLAY //--> 
+            <table border=0 cellspacing=0 cellpadding=0 width=100%>
+            <tr><td class=workbenchheader><table width=100% cellpadding=0 cellspacing=0><tr><td>Pathology Report</td>{$prTxtBtns}</tr></table> </td></tr>
+            <tr><td><div id=hprPathRptTextDsp>
+            {$prTxt}
+            </div></td></tr>
+            </table>
+            <!-- END PATH REPORT DISPLAY //-->
+            </div>
+
+
             </td>
     </tr>
  </table>
@@ -1028,7 +1070,7 @@ function buildHPRBenchTop($whichQryId) {
         $sidePanelTbl = "<table border=0 id=sidePanelSlideListTbl>"; 
         $sidePanelTbl .= "<tr><th class=workbenchheader>{$sidedta['MESSAGE'][0]}</th></tr>";
         foreach ($sidedta['DATA'] as $skey => $sval) {
-           $freshDsp = ((int)$sval['freshcount'] > 0) ? "[FRESH SEGMENT HAS SHIPPED]" : "";
+           $freshDsp = ((int)$sval['freshcount'] > 0) ? "[CONTAINS DIRECT SHIPMENT]" : "";
            $cntr = ($skey + 1); 
            $sidePanelTbl .= <<<SLIDELINE
 <tr class=rowBacker><td onclick="requestSegmentInfo('{$sval['segmentid']}');" class=rowHolder>

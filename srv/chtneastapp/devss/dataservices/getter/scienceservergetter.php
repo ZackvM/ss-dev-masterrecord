@@ -35,7 +35,37 @@ class objgetter {
 
 class objlisting { 
 
- function dosinglesegment($request, $urirqst) {  //DO = DataObject             
+ //do = Data Object
+ function dobiogroupsegmentshortlisting($request, $urirqst) { 
+    $rows = array(); 
+    $dta = array(); 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $itemsfound = 0;
+    $rq = explode("/",$urirqst);
+    if (trim($rq[3]) === ""  || !is_numeric($rq[3])) { 
+    } else { 
+      $segid = $rq[3];
+      $defineSQL = <<<OBJECTSQL
+select ifnull(sg.bgs,'NOSEGMENT#') as bgs, ifnull(sgs.dspvalue,'NO STATUS') as segstatus, ifnull(prepmethod,'NO PREP') as prepmethod, trim(if(ifnull(metric,'') = '', '', concat(ifnull(metric,''),' ', ifnull(muom.longvalue,'')))) as metricdsp, trim(concat(ifnull(i.investid,''), ucase(  if(ifnull(i.lname,'')='','', concat('/',ifnull(i.lname,'')))))) as invest from (SELECT biosamplelabel FROM masterrecord.ut_procure_segment where segmentid = :objectid) as primtbl left join masterrecord.ut_procure_segment sg on primtbl.biosamplelabel = sg.biosamplelabel left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') sgs on sg.segstatus = sgs.menuvalue left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') muom on sg.metricuom = muom.menuvalue left join (SELECT investid , ifnull(invest_lname,'') lname , ifnull(invest_fname,'') fname, ifnull(invest_homeinstitute,'') homeinst FROM vandyinvest.invest) i on sg.assignedto = i.investid order by sg.bgs asc
+OBJECTSQL;
+      $obj = runObjectSQL($defineSQL, $segid);
+      if (count($obj) > 0) { 
+         $dta = $obj;
+         $responseCode = 200;
+         $itemsfound = count($obj);
+         $msg = ""; 
+      } else { 
+         $responseCode = 404; 
+         $msg = "INDIVIDUAL DATA OBJECT NOT FOUND";
+      }
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;    
+ }
+
+ function dosinglesegment($request, $urirqst) { 
     $rows = array(); 
     $dta = array(); 
     $responseCode = 400; 
@@ -46,70 +76,7 @@ class objlisting {
     } else { 
        $segid = $rq[3];
 $defineSQL = <<<OBJECTSQL
-SELECT sg.biosamplelabel, sg.segmentid, ifnull(sg.bgs,'XXXXXX') as bgs
-, ifnull(sg.segstatus,'') segstatuscode
-, ifnull(sg.statusdate,'') as statusdate, ifnull(sg.statusby,'') as statusby
-, ifnull(sg.shipdocrefid,'') as shipdocrefid
-, ifnull(sg.shippeddate,'') as shippeddate
-, ifnull(sg.hourspost,'') as hourspost
-, ifnull(sg.metric,'') as metric
-, ifnull(sg.metricuom,'') as metricuomcode
-, ifnull(sg.prepmethod,'') as prepmethod 
-, ifnull(sg.preparation,'') as preparation
-, ifnull(sg.prepmodifier,'') as prepmodifier
-, ifnull(sg.prepadditives,'') as prepadditive
-, ifnull(sg.assignedto,'') as assignedto
-, ifnull(sg.assignedproj,'') as assignedproject
-, ifnull(sg.assignedreq,'') as assignedrequest
-, ifnull(sg.assignmentdate,'') as assigneddate
-, ifnull(sg.assignedby,'') as assignedby
-, ifnull(sg.procurementdate,'') as procurementdate
-, ifnull(sg.enteredon,'') as procurementdbdate
-, ifnull(sg.enteredby,'') as procuringtechnician
-, ifnull(sg.procuredat,'') as procuringinstitution
-, ifnull(sg.hprblockind,0) as hprblockind
-, ifnull(sg.slidegroupid,0) as slidegroupid
-, ifnull(sg.reqrqrbloodmatch,'') as reqrequestbloodmatch
-, ifnull(sg.reqchartreview,'') as reqrequestchartreview
-, ifnull(sg.slidefromblockid,'') as slidefromblockid
-, ifnull(sg.voidind,0) as voidind 
-, ifnull(sg.segmentvoidreason,'') as segmentvoidreason
-, ifnull(sg.scannedlocation,'') as scannedlocation
-, ifnull(sg.scanloccode,'') as scanloccode
-, ifnull(sg.scannedstatus,'') as scannedstatus
-, ifnull(sg.scannedby,'') as scannedby
-, ifnull(sg.scanneddate,'') as scanneddate
-, ifnull(sg.tohpr,0) as tohprind 
-, ifnull(sg.hprboxnbr,'') as hprboxnbr
-, ifnull(sg.tohprby,'') as tohprby 
-, ifnull(sg.tohpron,'') as tohpron
-, ifnull(sg.segmentcomments,'') as segmentcomments
-, ifnull(sg.qty,1) as qty  
-, ifnull(bs.tisstype,'') as specimencategory
-, ifnull(bs.anatomicSite,'') site
-, ifnull(bs.subSite, '') subsite
-, ifnull(bs.diagnosis,'') as dx
-, ifnull(bs.subdiagnos,'') as dxmod
-, ifnull(bs.metssite,'') as metssite
-, ifnull(bs.metssitedx,'') as metssitedx
-, ifnull(bs.pdxsystemic,'') as systemicdx
-, ifnull(cxv.dspvalue,'') as cx
-, ifnull(rxv.dspvalue,'') as rx
-, ifnull(bs.hprind,0) as hprind
-, ifnull(bs.qcind,0) as qcind
-, ifnull(prv.dspvalue,'Pending') as pthrpt
-, ifnull(icv.dspvalue,'No') as infc 
-, ifnull(uvv.dspvalue,'No') as uninvolvedind
-, ifnull(bs.pxirace,'Unknown') as phirace
-, ifnull(sxv.dspvalue, 'Unknown') as phisex
-, ifnull(bs.pxiage,'-') as phiage        
-, ifnull(auv.longvalue,'') as phiageuom
-, ifnull(ptv.dspvalue,'') as proceduretype
-, ifnull(bs.procureInstitution,'') as procedureinstitution  
-, ifnull(date_format(bs.procedureDate,'%m/%d/%Y'),'') as proceduredate
-, ifnull(bs.createdby,'') as proctechnician 
-, ifnull(bs.questionHPR,'') as hpquestion
-, ifnull(bs.biosampleComment,'') as biosamplecomment    
+SELECT sg.biosamplelabel, sg.segmentid, ifnull(sg.bgs,'XXXXXX') as bgs, ifnull(sg.segstatus,'') segstatuscode, ifnull(sg.statusdate,'') as statusdate, ifnull(sg.statusby,'') as statusby, ifnull(sg.shipdocrefid,'') as shipdocrefid, ifnull(sg.shippeddate,'') as shippeddate, ifnull(sg.hourspost,'') as hourspost, ifnull(sg.metric,'') as metric, ifnull(sg.metricuom,'') as metricuomcode, ifnull(sg.prepmethod,'') as prepmethod , ifnull(sg.preparation,'') as preparation, ifnull(sg.prepmodifier,'') as prepmodifier, ifnull(sg.prepadditives,'') as prepadditive, ifnull(sg.assignedto,'') as assignedto, ifnull(sg.assignedproj,'') as assignedproject, ifnull(sg.assignedreq,'') as assignedrequest, ifnull(sg.assignmentdate,'') as assigneddate, ifnull(sg.assignedby,'') as assignedby, ifnull(sg.procurementdate,'') as procurementdate, ifnull(sg.enteredon,'') as procurementdbdate, ifnull(sg.enteredby,'') as procuringtechnician, ifnull(sg.procuredat,'') as procuringinstitution, ifnull(sg.hprblockind,0) as hprblockind, ifnull(sg.slidegroupid,0) as slidegroupid, ifnull(sg.reqrqrbloodmatch,'') as reqrequestbloodmatch, ifnull(sg.reqchartreview,'') as reqrequestchartreview, ifnull(sg.slidefromblockid,'') as slidefromblockid, ifnull(sg.voidind,0) as voidind, ifnull(sg.segmentvoidreason,'') as segmentvoidreason, ifnull(sg.scannedlocation,'') as scannedlocation, ifnull(sg.scanloccode,'') as scanloccode, ifnull(sg.scannedstatus,'') as scannedstatus, ifnull(sg.scannedby,'') as scannedby, ifnull(sg.scanneddate,'') as scanneddate, ifnull(sg.tohpr,0) as tohprind, ifnull(sg.hprboxnbr,'') as hprboxnbr, ifnull(sg.tohprby,'') as tohprby, ifnull(sg.tohpron,'') as tohpron, ifnull(sg.segmentcomments,'') as segmentcomments, ifnull(sg.qty,1) as qty, ifnull(bs.tisstype,'') as specimencategory, ifnull(bs.anatomicSite,'') site, ifnull(bs.subSite, '') subsite, ifnull(bs.diagnosis,'') as dx, ifnull(bs.subdiagnos,'') as dxmod, ifnull(bs.metssite,'') as metssite, ifnull(bs.metssitedx,'') as metssitedx, ifnull(bs.pdxsystemic,'') as systemicdx, ifnull(cxv.dspvalue,'') as cx, ifnull(rxv.dspvalue,'') as rx, ifnull(bs.hprind,0) as hprind, ifnull(bs.qcind,0) as qcind, ifnull(prv.dspvalue,'Pending') as pthrpt, ifnull(icv.dspvalue,'No') as infc, ifnull(uvv.dspvalue,'No') as uninvolvedind, ifnull(bs.pxirace,'Unknown') as phirace, ifnull(sxv.dspvalue, 'Unknown') as phisex, ifnull(bs.pxiage,'-') as phiage, ifnull(auv.longvalue,'') as phiageuom, ifnull(ptv.dspvalue,'') as proceduretype, ifnull(bs.procureInstitution,'') as procedureinstitution, ifnull(date_format(bs.procedureDate,'%m/%d/%Y'),'') as proceduredate, ifnull(bs.createdby,'') as proctechnician, ifnull(bs.questionHPR,'') as hpquestion, ifnull(bs.biosampleComment,'') as biosamplecomment, substr(read_label,1,6) as bsreadlabel, ifnull(prpt.pathreport,'') as pathologyreporttext, ifnull(prpt.selector,'') as prrecordselector    
 FROM masterrecord.ut_procure_segment sg
 LEFT JOIN masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'CX') as cxv on bs.chemoind = cxv.menuvalue
@@ -120,6 +87,7 @@ left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'Y
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu='PXSEX') as sxv on bs.pxigender = sxv.menuvalue   
 left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'ageuom') as auv on bs.pxiAgeUOM = auv.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PROCTYPE') as ptv on bs.procType = ptv.menuvalue        
+left join (select prid, selector, pathreport from masterrecord.qcpathreports) as prpt on bs.pathreportid = prpt.prid
 where segmentid = :objectid             
 OBJECTSQL;
      $obj = runObjectSQL($defineSQL, $segid);       

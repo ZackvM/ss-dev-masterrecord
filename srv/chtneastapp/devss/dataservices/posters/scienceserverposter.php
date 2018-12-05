@@ -48,8 +48,10 @@ class datadoers {
           //TODO:  BUILD ERROR RESPONSE
       } else {
         $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $pdta['segmentid'],serverIdent, serverpw), true);
+        $allSegData = json_decode(callrestapi("GET", dataTree. "/do-biogroup-segment-short-listing/" . $pdta['segmentid'],serverIdent, serverpw), true);
+
         require(genAppFiles . "/frame/sscomponent_pagecontent.php");
-        $dta['workbenchpage'] = bldHPRWorkBenchSide($segData); 
+        $dta['workbenchpage'] = bldHPRWorkBenchSide($segData, $allSegData); 
         $responseCode = 200;
         $msg = $msgArr;        
       }

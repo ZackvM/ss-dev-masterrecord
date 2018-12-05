@@ -15,6 +15,7 @@ class stylesheets {
   public $color_dblue = "0,32,113";
   public $color_mblue = "13,70,160";
   public $color_lblue = "84,113,210";
+  public $color_cornflowerblue = "100,149,237";
   public $color_lightblue = "209, 219, 255";
   public $color_zgrey = "48,57,71";
   public $color_neongreen = "57,255,20";
@@ -180,10 +181,12 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box;  }
 #masterWorkBenchTbl #sidePanelTD { width: 15vw; }
 #masterWorkBenchTbl #sidePanelTD #sidePanel {width: 15vw; height: 85vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); overflow: auto; }
 #masterWorkBenchTbl #workBenchTD {width: 84vw; height: 85vh; box-sizing: border-box; }
-#masterWorkBenchTbl #workBenchTD #workBench {width: 84vw; height: 85vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); }
+#masterWorkBenchTbl #workBenchTD #workBench {width: 84vw; height: 85vh; box-sizing:  }
+
+/* border-box; border: 1px solid rgba({$this->color_zackgrey},1); */
 
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl { width: 14.9vw; border-collapse: collapse; box-sizing: border-box;  }
- .workbenchheader { font-size: 1.5vh; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; }
+ .workbenchheader { font-size: 1.5vh; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .slidesfound { font-size: 1.2vh; text-align: right; background: rgba({$this->color_white},1); color: rgba({$this->color_zackgrey},1); padding: 1vh .3vw 0 0; border-top: 1px solid rgba({$this->color_zackgrey},1);  }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowHolder { padding: .3vh 0 ; }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowBacker:nth-child(even) { background: rgba({$this->color_grey},1);  }
@@ -199,9 +202,16 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box;  }
 
 
 #workBenchHolding { width: 83.8vw; height: 85vh; box-sizing: border-box;  }
-#workBenchPrelimInfoHold { width: 30vw; padding: 0 .4vw 0 0;  box-sizing: border-box; }
-#divWorkBenchPrelimInfo {border-right: 1px solid rgba({$this->color_zackgrey},1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
+#workBenchPrelimInfoHold { width: 35vw; padding: 0 .4vw 0 0;  box-sizing: border-box; height: 85vh; overflow: hidden; }
+#divWorkBenchPrelimInfo {border: 1px solid rgba({$this->color_zackgrey},1); max-height: 42vh; overflow: auto;  }
+#divWorkBenchPathRptDsp {border: 1px solid rgba({$this->color_zackgrey},1); height: 85vh; }
+#hprPathRptTextDsp { height: 79vh; overflow: auto; padding: .8vh .3vw .8vh .3vw; box-sizing: border-box; font-size: 1.3vh; line-height: 1.8em; text-align: justify; }
 
+
+.littleFieldLabel { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); padding: .5vh 0 .5vh .3vw; border-right: 1px solid rgba({$this->color_mgrey},1);} 
+.littleFieldLabelEnd { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); padding: .5vh 0 .5vh .3vw; } 
+.dataFieldDsp { font-size: 1.2vh; background: rgba({$this->color_white},1); padding: .8vh .3vw; border-bottom: 1px solid rgba({$this->color_mgrey},1); border-right: 1px solid rgba({$this->color_mgrey},1);  }
+.dataFieldDspEnd { font-size: 1.2vh; background: rgba({$this->color_white},1); padding: .8vh .3vw; border-bottom: 1px solid rgba({$this->color_mgrey},1);   }
 
 STYLESHEET;
 return $rtnThis;
