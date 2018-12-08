@@ -167,7 +167,6 @@ echo $pg;
     case 'printobj': 
       //PRINT OBJECT - GET ONLY  
       if ($method === "GET") { 
-       //  /print-obj/pathology-report/ay9vM3dqemRNdnlsUjJqdVRSQ0ZNZz09          
         require(applicationTree . "/scienceserverprint.php");       
         $prnt = new  printobject($_SERVER['REQUEST_URI']);     
         http_response_code($prnt->httpresponse);

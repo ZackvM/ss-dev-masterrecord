@@ -43,19 +43,20 @@ class datadoers {
       $msgArr = array();
       $pdta = json_decode($passdata,true);
       
-      if ($pdta['segmentid'] === "" || !$pdta['segmentid']) { 
+      if ($pdta['segmentid'] === "" || !$pdta['segmentid'] || !$pdta['pbiosample'] || $pdta['pbiosample'] === "" ) { 
           //BAD REQUEST
           //TODO:  BUILD ERROR RESPONSE
       } else {
-        $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $pdta['segmentid'],serverIdent, serverpw), true);
-        $allSegData = json_decode(callrestapi("GET", dataTree. "/do-biogroup-segment-short-listing/" . $pdta['segmentid'],serverIdent, serverpw), true);
 
+        $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $pdta['segmentid'],serverIdent, serverpw), true);
+        $allSegData = json_decode(callrestapi("GET", dataTree. "/biogroup-segment-short-listing/" . $pdta['segmentid'],serverIdent, serverpw), true);
+        $pHPRSegData = json_decode(callrestapi("GET", dataTree. "/past-hpr-by-segment/" . $pdta['segmentid'],serverIdent, serverpw), true);
         require(genAppFiles . "/frame/sscomponent_pagecontent.php");
-        $dta['workbenchpage'] = bldHPRWorkBenchSide($segData, $allSegData); 
+        $dta['workbenchpage'] = bldHPRWorkBenchSide($segData, $allSegData,$pHPRSegData, $pdta['pbiosample']); 
         $responseCode = 200;
         $msg = $msgArr;        
+
       }
-      //TODO: IF ALL CHECKS OUT THEN CHANGE TO 200
       $rows['statusCode'] = $responseCode;   
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;
@@ -70,8 +71,7 @@ class datadoers {
       $msgArr = array();
       $pdta = json_decode($passdata,true);
       $srchTrm = $pdta['srchTrm'];
-      //TODO:  MOVE THIS TO A WEBSERVICE
-      $sidePanelSQL = "SELECT replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
+      $sidePanelSQL = "SELECT bs.pbiosample, replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
       $bldSidePanel = 0;
       $typeOfSearch = "";
       switch ($srchTrm) { 

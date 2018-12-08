@@ -552,7 +552,6 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
         } 
     } else {
 
-
         if (trim($val['shipmentdate']) !== "") { 
           $dtedspthis = "<br><span class=tinyText>({$val['shipmentdate']})</span>";
         } else { 
@@ -847,7 +846,9 @@ $grid = buildHPRGrid();
 PAGECONTENT;
 
 } else { 
- 
+
+if (trim($rqststr[2]) !== 'pastreview') {
+
     //GET SLIDE LIST AND METRICS
    $pgContent = buildHPRBenchTop($rqststr);
    $topBtnBar = generatePageTopBtnBar('hprreviewactions');
@@ -855,6 +856,17 @@ PAGECONTENT;
    {$topBtnBar} 
 {$pgContent}
 PAGECONTENT;
+
+} else { 
+
+    $pgContent = "PAST HPReview";
+   $topBtnBar = generatePageTopBtnBar('hprpast');
+   $pg = <<<PAGECONTENT
+   {$topBtnBar} 
+{$pgContent}
+PAGECONTENT;
+
+}
 
 }
 
@@ -922,10 +934,12 @@ STANDARDHEAD;
 
 }
 
-function bldHPRWorkBenchSide($SGObj, $allSGObj) {  
+function bldHPRWorkBenchSide($SGObj, $allSGObj, $pastHPRObj, $pbiosample) {  
 
+  $tt = treeTop;
   $sgDta = $SGObj['DATA'][0];
   $allSgDta = $allSGObj['DATA'];
+  $pHPRDta = $pastHPRObj['DATA'];
 
   $segLabel = strtoupper(preg_replace('/\_/', '', $sgDta['bgs']));
   $dspSite = strtoupper($sgDta['site']);
@@ -957,24 +971,49 @@ function bldHPRWorkBenchSide($SGObj, $allSGObj) {
   $hprquestion = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','', trim($sgDta['hprquestion'])));
   $bscomment = $hrcmt = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','',trim($sgDta['biosamplecomment'])));
   $prTxt = (trim($sgDta['pathologyreporttext']) === "") ? "NO PATHOLOGY REPORT FOUND" : trim($sgDta['pathologyreporttext']);
-  $prTxtBtns = (trim($sgDta['pathologyreporttext']) === "") ? "" : "<td onclick=\"alert('{$sgDta['prrecordselector']}');\" align=right><i class=\"material-icons\">print</i></td>";
+  $selector = cryptservice($sgDta['prprid'] . "-" . $sgDta['prrecordselector'], "e");
+  $prTxtBtns = (trim($sgDta['pathologyreporttext']) === "") ? "" : "<td onclick=\"openOutSidePage('{$tt}/print-obj/pathology-report/{$selector}');\" align=right><i class=\"material-icons prntbtn\">print</i></td>";
+
+  $revGridConfirm   = buildHPRConfirmGrid($pbiosample,$segLabel);
+  $revGridAdd       = buildHPRAddGrid($pbiosample,$segLabel);
+  $revGridDeny      = buildHPRDenyGrid($pbiosample,$segLabel);
+  $revGridIncon     = buildHPRInconGrid($pbiosample,$segLabel);
+  $revGridUnuse     = buildHPRUnuseGrid($pbiosample,$segLabel);
 
 
   if ((int)$allSGObj['ITEMSFOUND'] > 0) {
-    $segPartsDsp = "<table border=1 cellspacing=0 cellpadding=0><tr><td>Segment</td><td>Status</td><td>Preparation</td><td>Metric</td><td>Assignment</td></tr>";
+    $segPartsDsp = "<table border=0 cellspacing=0 cellpadding=0 width=100% id=constituentTbl><tr><td class=littleFieldLabelEnd>Segment</td><td class=littleFieldLabelEnd>Status</td><td class=littleFieldLabelEnd>Preparation</td><td class=littleFieldLabelEnd>Metric</td><td class=littleFieldLabelEnd>Assignment</td></tr>";
     foreach ($allSgDta as $rcd) {
       $partSegLabel = strtoupper(preg_replace('/\_/', '', $rcd['bgs']));
+      $conBGDsp = substr($partSegLabel,0,5); 
       $prp = trim(strtoupper($rcd['prepmethod']));
       $met = (trim($rcd['metricdsp']) === "") ?  "" : strtoupper(trim($rcd['metricdsp']));
       $ass = (trim($rcd['invest']) === "") ? "" : strtoupper(trim($rcd['invest']));
-      $segPartsDsp .= "<tr><td>{$partSegLabel}</td><td>{$rcd['segstatus']}</td><td>{$prp}</td><td>{$met}</td><td>{$ass}</td></tr>";
+      $segPartsDsp .= "<tr><td class=conDataCell>{$partSegLabel}</td><td class=conDataCell>{$rcd['segstatus']}</td><td class=conDataCell>{$prp}</td><td class=conDataCell>{$met}</td><td class=conDataCell>{$ass}</td></tr>";
     }
     $segPartsDsp .= "</table>";
+  } else { 
+    $segPartDsp = "NO CONSTITUENT SEGMENTS FOUND";
   }
 
-  
+  $hprDsp = "<table border=0 cellspacing=0 cellpadding=0 width=100% id=constituentTbl><tr><td class=littleFieldLabelEnd>Slide</td><td class=littleFieldLabelEnd>Reviewer</td><td class=littleFieldLabelEnd>Read On</td><td class=littleFieldLabelEnd>Decision</td><td class=littleFieldLabelEnd>Diagnosis Designation</td><td class=littleFieldLabelEnd>Reviewer Comments</td></tr>";
+    $pastSlideCntr = 0;  
+    foreach ($pHPRDta as $rcd) {
+      if (trim($rcd['slide']) !== "") {  
+      $hprSegLabel = strtoupper(preg_replace('/\_/', '', $rcd['slide']));
+      $hprDX = $rcd['desig'];
+      $hprDX .= (trim($rcd['speccat']) === "") ? "" : " [" . trim($rcd['speccat']) . "]";
+      $hprDX = trim($hprDX);
+      $hprCmt = trim($rcd['reviewercomments']);
+      $hprDsp .= "<tr class=hoverRow onclick=\"navigateSite('hpr-review/past-review/{$rcd['biohprid']}');\"><td class=conDataCell>{$hprSegLabel}</td><td class=conDataCell>{$rcd['reviewer']}</td><td class=conDataCell>{$rcd['reviewedon']}</td><td class=conDataCell>{$rcd['decision']}</td><td class=conDataCell>{$hprDX}&nbsp;</td><td class=conDataCell>{$hprCmt}&nbsp;</td></tr>";
+      $pastSlideCntr++;
+      } 
+    }
+    $hprDsp .= "</table>";
 
-
+    if ($pastSlideCntr < 1) { 
+      $hprDsp = "NO PAST HPR PERFORMED";
+    }
 
     $pg = <<<PAGECONTENT
 <table border=0 cellspacing=0 cellpadding=0 id=workBenchHolding>
@@ -1006,30 +1045,54 @@ function bldHPRWorkBenchSide($SGObj, $allSGObj) {
 
             <div id=allSegmentDsp>
             <table border=0 cellspacing=0 cellpadding=0 width=100%>
-            <tr><td class=workbenchheader>CONSTITUENT SEGMENTS FOR </td></tr>
+            <tr><td class=workbenchheader>CONSTITUENT SEGMENTS FOR {$conBGDsp}</td></tr>
             <tr><td>
             <!-- CONSTITUENT SEGMENTS //-->
+            <div id=allSegHolder>
             {$segPartsDsp} 
+            </div>
             </td></tr>
             </table> 
-
             </div>
+
+            <div id=pastHPRDsp>
+            <table border=0 cellspacing=0 cellpadding=0 width=100%>
+            <tr><td class=workbenchheader>PAST HPR PERFORMED ON BIOGROUP {$conBGDsp}</td></tr>
+            <tr><td>
+            <!-- PAST HPR SEGMENTS //-->
+            <div id=allSegHolder>
+            {$hprDsp} 
+            </div>
+            </td></tr>
+            </table> 
+            </div>
+
+
 
             </td>
             <td valign=top>
 
-            <div id=divWorkBenchPathRptDsp>
-            <!-- PATH REPORT DISPLAY //--> 
-            <table border=0 cellspacing=0 cellpadding=0 width=100%>
-            <tr><td class=workbenchheader><table width=100% cellpadding=0 cellspacing=0><tr><td>Pathology Report</td>{$prTxtBtns}</tr></table> </td></tr>
-            <tr><td><div id=hprPathRptTextDsp>
-            {$prTxt}
-            </div></td></tr>
-            </table>
-            <!-- END PATH REPORT DISPLAY //-->
+            <div id=workBenchDisplayHolder>
+              <div id=divWorkBenchPathRptDsp>
+                <!-- PATH REPORT DISPLAY //--> 
+                <table border=0 cellspacing=0 cellpadding=0 width=100%>
+                <tr><td class=workbenchheader><table width=100% cellpadding=0 cellspacing=0><tr><td>Pathology Report</td>{$prTxtBtns}</tr></table> </td></tr>
+                <tr><td>
+                    <div id=hprPathRptTextDsp>
+                      {$prTxt}
+                    </div>
+                </td></tr>
+                </table>
+                <!-- END PATH REPORT DISPLAY //-->
+              </div>
+
+            <div id=reviewersWorkBenchConfirm>{$revGridConfirm}</div>
+            <div id=reviewersWorkBenchAdd>{$revGridAdd}</div>
+            <div id=reviewersWorkBenchDeny>{$revGridDeny}</div>
+            <div id=reviewersWorkBenchIncon>{$revGridIncon}</div>
+            <div id=reviewersWorkBenchUnuse>{$revGridUnuse}</div>
+
             </div>
-
-
             </td>
     </tr>
  </table>
@@ -1037,10 +1100,86 @@ PAGECONTENT;
    
     return $pg;          
 }
-              
+
+function buildHPRConfirmGrid($biogroupnbr, $slidenbr) {
+
+$pg = <<<CONFIRMFRM
+<form id=frmConfirmation>
+<input type=hidden id=fldBG value={$biogroupnbr}>
+<input type=hidden id=fldSld value={$slidenbr}>
+<div id=divHPRConfirm>
+  <table border=0 cellspacing=0 cellpadding=0 width=100%>
+  <tr><td class=workbenchheaderconfirm><table width=100% cellpadding=0 cellspacing=0><tr><td>Confirm Diagnosis Designation for Biogroup {$biogroupnbr}</td></tr></table> </td></tr>
+  </table>
+</div>
+</form>
+CONFIRMFRM;
+
+  return $pg;
+}
+
+function buildHPRAddGrid($biogroupnbr, $slidenbr) {
+
+$pg = <<<CONFIRMFRM
+<form id=frmAdditional>
+<input type=hidden id=fldBG value={$biogroupnbr}>
+<input type=hidden id=fldSld value={$slidenbr}>
+<div id=divHPRAddition>
+  <table border=0 cellspacing=0 cellpadding=0 width=100%>
+  <tr><td class=workbenchheaderadd><table width=100% cellpadding=0 cellspacing=0><tr><td>Diagnosis Designation Additions for Biogroup {$biogroupnbr}</td></tr></table> </td></tr>
+  </table>
+</div>
+</form>
+CONFIRMFRM;
+  return $pg;
+}
+
+function buildHPRDenyGrid($biogroupnbr, $slidenbr) {
+$pg = <<<CONFIRMFRM
+<form id=frmDenial>
+<input type=hidden id=fldBG value={$biogroupnbr}>
+<input type=hidden id=fldSld value={$slidenbr}>
+<div id=divHPRDeny>
+  <table border=0 cellspacing=0 cellpadding=0 width=100%>
+  <tr><td class=workbenchheaderdeny><table width=100% cellpadding=0 cellspacing=0><tr><td>Denied Diagnosis Designation for Biogroup {$biogroupnbr}</td></tr></table> </td></tr>
+  </table>
+</div>
+</form>
+CONFIRMFRM;
+  return $pg;
+}
+
+function buildHPRInconGrid($biogroupnbr, $slidenbr) {
+$pg = <<<CONFIRMFRM
+<form id=frmIncon>
+<input type=hidden id=fldBG value={$biogroupnbr}>
+<input type=hidden id=fldSld value={$slidenbr}>
+<div id=divHPRIncon>
+  <table border=0 cellspacing=0 cellpadding=0 width=100%>
+  <tr><td class=workbenchheaderincon><table width=100% cellpadding=0 cellspacing=0><tr><td>Diagnosis Designation Inconclusive for Biogroup {$biogroupnbr}</td></tr></table> </td></tr>
+  </table>
+</div>
+</form>
+CONFIRMFRM;
+  return $pg;
+}
+
+function buildHPRUnuseGrid($biogroupnbr, $slidenbr) {
+$pg = <<<CONFIRMFRM
+<form id=frmUnused>
+<input type=hidden id=fldBG value={$biogroupnbr}>
+<input type=hidden id=fldSld value={$slidenbr}>
+<div id=divHPRUnuse>
+  <table border=0 cellspacing=0 cellpadding=0 width=100%>
+  <tr><td class=workbenchheaderunuse><table width=100% cellpadding=0 cellspacing=0><tr><td>Unusable Biosample {$biogroupnbr}</td></tr></table> </td></tr>
+  </table>
+</div>
+</form>
+CONFIRMFRM;
+  return $pg;
+}
 
 function buildHPRGrid() { 
-
 $grid = <<<HPRGRID
 <div id=hprInnerScan>
 <table>
@@ -1073,7 +1212,7 @@ function buildHPRBenchTop($whichQryId) {
            $freshDsp = ((int)$sval['freshcount'] > 0) ? "[CONTAINS DIRECT SHIPMENT]" : "";
            $cntr = ($skey + 1); 
            $sidePanelTbl .= <<<SLIDELINE
-<tr class=rowBacker><td onclick="requestSegmentInfo('{$sval['segmentid']}');" class=rowHolder>
+<tr class=rowBacker><td onclick="requestSegmentInfo('{$sval['segmentid']}',{$sval['pbiosample']});" class=rowHolder>
     <table border=0 class=slide>
       <tr>
         <td rowspan=3 class=slidecountr>{$cntr}</td>
@@ -1104,8 +1243,6 @@ $grid = <<<HPRGRID
   {$pg}
 HPRGRID;
 } else { 
-  
-
   //DISPLAY ERROR
 $grid = <<<HPRGRID
 <div id=hprwbHeadErrorHolder><H1>No Workbench was found for the given URL Criteria Code - See a CHTNEastern Staff if you feel this is incorrect.</div>
@@ -1302,6 +1439,12 @@ case 'hprreviewactions':
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">layers_clear</i></td><td>New Review</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPathReportDsp><tr><td><i class="material-icons">description</i></td><td>Pathology Report</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnConfirmHPR><tr><td><i class="material-icons">check_circle_outline</i></td><td>Confirm</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddHPR><tr><td><i class="material-icons">add_circle_outline</i></td><td>Additional</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnDenyHPR><tr><td><i class="material-icons">error_outline</i></td><td>Denied</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnUnusableHPR><tr><td><i class="material-icons">highlight_off</i></td><td>Unusable</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnInconHPR><tr><td><i class="material-icons">help_outline</i></td><td>Inconclusive</td></tr></table></td>
 </tr>
 BTNTBL;
 break; 

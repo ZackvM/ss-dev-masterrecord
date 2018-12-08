@@ -186,7 +186,15 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box;  }
 /* border-box; border: 1px solid rgba({$this->color_zackgrey},1); */
 
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl { width: 14.9vw; border-collapse: collapse; box-sizing: border-box;  }
- .workbenchheader { font-size: 1.5vh; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
+
+.workbenchheader { font-size: 1.5vh; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
+.workbenchheaderconfirm { font-size: 1.5vh; background: rgba({$this->color_darkgreen},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
+.workbenchheaderadd { font-size: 1.5vh; background: rgba({$this->color_dullyellow},1); color: rgba({$this->color_dblue},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
+.workbenchheaderdeny { font-size: 1.5vh; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
+.workbenchheaderincon { font-size: 1.5vh; background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
+.workbenchheaderunuse { font-size: 1.5vh; background: rgba({$this->color_bred},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
+
+
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .slidesfound { font-size: 1.2vh; text-align: right; background: rgba({$this->color_white},1); color: rgba({$this->color_zackgrey},1); padding: 1vh .3vw 0 0; border-top: 1px solid rgba({$this->color_zackgrey},1);  }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowHolder { padding: .3vh 0 ; }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowBacker:nth-child(even) { background: rgba({$this->color_grey},1);  }
@@ -201,17 +209,41 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box;  }
 .slide .slidefreshdsp { font-size: 1.2vh; color: rgba({$this->color_bred},1); font-weight: bold; text-align: center; }
 
 
+#workBenchDisplayHolder {position: relative;  }
+
 #workBenchHolding { width: 83.8vw; height: 85vh; box-sizing: border-box;  }
 #workBenchPrelimInfoHold { width: 35vw; padding: 0 .4vw 0 0;  box-sizing: border-box; height: 85vh; overflow: hidden; }
 #divWorkBenchPrelimInfo {border: 1px solid rgba({$this->color_zackgrey},1); max-height: 42vh; overflow: auto;  }
-#divWorkBenchPathRptDsp {border: 1px solid rgba({$this->color_zackgrey},1); height: 85vh; }
-#hprPathRptTextDsp { height: 79vh; overflow: auto; padding: .8vh .3vw .8vh .3vw; box-sizing: border-box; font-size: 1.3vh; line-height: 1.8em; text-align: justify; }
 
+
+
+#divWorkBenchPathRptDsp {border: 1px solid rgba({$this->color_zackgrey},1); display: block; }
+#reviewersWorkBenchConfirm { display: none; }
+#reviewersWorkBenchAdd { display: none; }
+#reviewersWorkBenchDeny { display: none; }
+#reviewersWorkBenchIncon { display: none; }
+#reviewersWorkBenchUnuse { display: none; }
+
+
+
+
+#hprPathRptTextDsp { height: 82vh; overflow: auto; padding: .8vh .3vw 1vh .3vw; box-sizing: border-box; font-size: 1.3vh; line-height: 1.8em; text-align: justify; }
+#allSegmentDsp { margin-top: .8vh; border: 1px solid rgba({$this->color_zackgrey},1); }
+#allSegHolder { height: 11vh; overflow: auto; }
+#constituentTbl tr:nth-child(odd) { background: rgba({$this->color_grey},1); }
+#constituentTbl .conDataCell { font-size: 1.2vh; padding: .5vh .3vw .5vh .3vw; border-bottom: 1px solid rgba({$this->color_mgrey},1); }
+
+#pastHPRDsp { margin-top: .8vh; border: 1px solid rgba({$this->color_zackgrey},1); }
+.prntbtn { font-size: 1.6vh; }
+.prntbtn:hover { cursor: pointer; color: rgba({$this->color_neongreen},1); } 
 
 .littleFieldLabel { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); padding: .5vh 0 .5vh .3vw; border-right: 1px solid rgba({$this->color_mgrey},1);} 
 .littleFieldLabelEnd { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); padding: .5vh 0 .5vh .3vw; } 
 .dataFieldDsp { font-size: 1.2vh; background: rgba({$this->color_white},1); padding: .8vh .3vw; border-bottom: 1px solid rgba({$this->color_mgrey},1); border-right: 1px solid rgba({$this->color_mgrey},1);  }
 .dataFieldDspEnd { font-size: 1.2vh; background: rgba({$this->color_white},1); padding: .8vh .3vw; border-bottom: 1px solid rgba({$this->color_mgrey},1);   }
+
+.hoverRow:hover {background: rgba({$this->color_lamber},1); cursor: pointer; }
+
 
 STYLESHEET;
 return $rtnThis;

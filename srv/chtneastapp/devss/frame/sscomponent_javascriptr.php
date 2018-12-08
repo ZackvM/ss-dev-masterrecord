@@ -490,13 +490,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
+  if (byId('btnConfirmHPR')) { 
+    byId('btnConfirmHPR').addEventListener('click', function() {  changeReviewDisplay('reviewersWorkBenchConfirm'); } , false);
+  }
+
+  if (byId('btnAddHPR')) { 
+    byId('btnAddHPR').addEventListener('click', function() {  changeReviewDisplay('reviewersWorkBenchAdd'); } , false);
+  }
+
+  if (byId('btnDenyHPR')) { 
+    byId('btnDenyHPR').addEventListener('click', function() {  changeReviewDisplay('reviewersWorkBenchDeny'); } , false);
+  }
+
+  if (byId('btnUnusableHPR')) { 
+    byId('btnUnusableHPR').addEventListener('click', function() {  changeReviewDisplay('reviewersWorkBenchUnuse'); } , false);
+  }
+
+  if (byId('btnInconHPR')) { 
+    byId('btnInconHPR').addEventListener('click', function() {  changeReviewDisplay('reviewersWorkBenchIncon'); } , false);
+  }
+
+
+  if (byId('btnPathReportDsp')) { 
+    byId('btnPathReportDsp').addEventListener('click', function() {  changeReviewDisplay('divWorkBenchPathRptDsp'); } , false);
+  }
+
 }, false);
 
 
-function requestSegmentInfo(whichsegment) { 
+function changeReviewDisplay(whichdisplay) {
+  if (byId('reviewersWorkBenchConfirm')) { byId('reviewersWorkBenchConfirm').style.display = 'none'; }
+  if (byId('reviewersWorkBenchAdd')) { byId('reviewersWorkBenchAdd').style.display = 'none'; }
+  if (byId('reviewersWorkBenchDeny')) { byId('reviewersWorkBenchDeny').style.display = 'none'; }
+  if (byId('reviewersWorkBenchIncon')) { byId('reviewersWorkBenchIncon').style.display = 'none'; }
+  if (byId('reviewersWorkBenchUnuse')) { byId('reviewersWorkBenchUnuse').style.display = 'none'; } 
+  if (byId('divWorkBenchPathRptDsp')) { byId('divWorkBenchPathRptDsp').style.display = 'none'; }
+  if (byId(whichdisplay)) { byId(whichdisplay).style.display = 'block'; }
+}
+
+function requestSegmentInfo(whichsegment, whichpbiosample) { 
   if (whichsegment.trim() !== "") {  
       var dta = new Object();
       dta['segmentid'] = whichsegment;
+      dta['pbiosample'] = whichpbiosample;
       var passdata = JSON.stringify(dta);
       var mlURL = "/data-doers/hpr-workbench-builder";
       universalAJAX("POST",mlURL,passdata,answerHPRWorkBenchSegmentLookup,1);
