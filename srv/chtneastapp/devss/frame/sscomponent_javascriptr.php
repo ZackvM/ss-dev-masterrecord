@@ -484,39 +484,8 @@ JAVASCR;
             
 document.addEventListener('DOMContentLoaded', function() {  
 
-  if (byId('btnNewHPRReview')) { 
-    byId('btnNewHPRReview').addEventListener('click',function() { 
-      navigateSite('hpr-review');
-    }, false);
-  }
-
-  if (byId('btnConfirmHPR')) { 
-    byId('btnConfirmHPR').addEventListener('click', function() {  changeReviewDisplay('reviewersWorkBenchConfirm'); } , false);
-  }
-
-  if (byId('btnAddHPR')) { 
-    byId('btnAddHPR').addEventListener('click', function() {  changeReviewDisplay('reviewersWorkBenchAdd'); } , false);
-  }
-
-  if (byId('btnDenyHPR')) { 
-    byId('btnDenyHPR').addEventListener('click', function() {  changeReviewDisplay('reviewersWorkBenchDeny'); } , false);
-  }
-
-  if (byId('btnUnusableHPR')) { 
-    byId('btnUnusableHPR').addEventListener('click', function() {  changeReviewDisplay('reviewersWorkBenchUnuse'); } , false);
-  }
-
-  if (byId('btnInconHPR')) { 
-    byId('btnInconHPR').addEventListener('click', function() {  changeReviewDisplay('reviewersWorkBenchIncon'); } , false);
-  }
-
-
-  if (byId('btnPathReportDsp')) { 
-    byId('btnPathReportDsp').addEventListener('click', function() {  changeReviewDisplay('divWorkBenchPathRptDsp'); } , false);
-  }
 
 }, false);
-
 
 function changeReviewDisplay(whichdisplay) {
   if (byId('reviewersWorkBenchConfirm')) { byId('reviewersWorkBenchConfirm').style.display = 'none'; }
