@@ -430,6 +430,8 @@ function hprreview($rqststr) {
     //THIS IS THE JAVASCRIPT FOR THE QUERY GRID PAGE
     $rtnthis = <<<JAVASCR
             
+        
+            
 document.addEventListener('DOMContentLoaded', function() {  
 
   if (byId('fldHPRScan')) { 
@@ -481,7 +483,7 @@ JAVASCR;
   } else { 
     //THIS IS THE JAVASCRIPT FOR THE RESULTS-WORK PAGE
     $rtnthis = <<<JAVASCR
-            
+                        
 document.addEventListener('DOMContentLoaded', function() {  
 
 
@@ -524,8 +526,103 @@ function answerHPRWorkBenchSegmentLookup(rtnData) {
    }
 }
 
+function fillField(whichfield, whichvalue, whichdisplay) { 
+  if (byId(whichfield)) { 
+     byId(whichfield).value = whichdisplay; 
+     if (byId(whichfield+'Value')) { 
+        byId(whichfield+'Value').value = whichvalue;    
+     }
+  }       
+}            
             
+function triggerMolecularFill(menuid, menuval, valuedsp) { 
 
+   if (menuid === 0) { 
+     //CLEAR FIELD
+       byId('hprFldMoleTestValue').value = "";
+       byId('hprFldMoleTest').value = "";     
+       byId('hprFldMoleResult').value = "";
+       byId('hprFldMoleResultValue').value = "";    
+   } else { 
+       byId('hprFldMoleTestValue').value = menuval;
+       byId('hprFldMoleTest').value = valuedsp;    
+       var mlURL = "/immuno-mole-result-list/" + menuid;
+      universalAJAX("GET",mlURL,'',answerHPRTriggerMolecularFill,1);            
+   }
+            
+}
+            
+function answerHPRTriggerMolecularFill(rtnData) {
+   var resultTbl = "";         
+   if (parseInt(rtnData['responseCode']) !== 200) {             
+   } else { 
+   
+     var dta = JSON.parse(rtnData['responseText']);
+     var resultTbl = "<table border=0 class=\"menuDropTbl\">";
+     resultTbl += "<tr><td onclick=\"fillField('hprFldMoleResult','','');\" align=right class=ddMenuClearOption>[clear]</td></tr>";            
+     dta['DATA'].forEach(function(element) { 
+       //element['menuvalue']      
+       resultTbl += "<tr><td class=ddMenuItem onclick=\"fillField('hprFldMoleResult','"+element['menuvalue']+"','"+element['dspvalue']+"');\">"+element['dspvalue']+"</td></tr>";
+     });  
+     resultTbl += "</table>";    
+        
+   }
+   if (byId('moleResultDropDown')) { 
+     byId('moleResultDropDown').innerHTML = resultTbl;         
+   }
+}
+            
+            
+function manageMoleTest(addIndicator, referencenumber) { 
+ 
+  if (byId('molecularTestJsonHolderConfirm')) { 
+   
+   if (byId('molecularTestJsonHolderConfirm').value === "") { 
+     if (addIndicator === 1) { 
+        var hldVal = [];
+        hldVal.push(  [ byId('hprFldMoleTestValue').value,  byId('hprFldMoleTest').value, byId('hprFldMoleResultValue').value, byId('hprFldMoleResult').value, byId('hprFldMoleScale').value.trim()      ] );    
+        byId('molecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);
+      }
+    } else { 
+      if (addIndicator === 1) { 
+        var hldVal = JSON.parse(byId('molecularTestJsonHolderConfirm').value);
+        hldVal.push(  [ byId('hprFldMoleTestValue').value,  byId('hprFldMoleTest').value, byId('hprFldMoleResultValue').value, byId('hprFldMoleResult').value, byId('hprFldMoleScale').value.trim()      ] );    
+        byId('molecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);
+      }
+      if (addIndicator === 0) { 
+         var hldVal = JSON.parse(byId('molecularTestJsonHolderConfirm').value);             
+         var newVal = [];
+         var key = 0;   
+         hldVal.forEach(function(ele) { 
+            if (key !== referencenumber) {
+              newVal.push(ele);    
+            }
+            key++;
+         });
+         hldVal = newVal;
+         byId('molecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);   
+      }      
+    }
+    
+         byId('hprFldMoleTestValue').value = "";
+         byId('hprFldMoleTest').value = "";
+         byId('hprFldMoleResultValue').value = "";
+         byId('hprFldMoleResult').value = "";
+         byId('hprFldMoleScale').value = "";            
+    var moleTestTbl = "<table cellspacing=0 cellpadding=0>";
+    var cntr = 0;         
+    hldVal.forEach(function(element) {
+            
+            moleTestTbl += "<tr onclick=\"manageMoleTest(0,"+cntr+");\"><td><td>"+element[1]+"</td><td>"+element[3]+"</td><td>"+element[4]+"</td></tr>";
+            cntr++;
+     });
+     moleTestTbl += "</table>";
+     byId('dspDefinedMolecularTestsConfirm').innerHTML = moleTestTbl;       
+            
+  }
+
+}
+           
 JAVASCR;
 
   }
@@ -554,6 +651,7 @@ function openRightClickMenu(whichmenu, whichelementclicked) {
       var bg = byId(whichelementclicked).dataset.biogroup;
       var sg = byId(whichelementclicked).dataset.bgslabel;
       var sh = byId(whichelementclicked).dataset.shipdoc;
+      console.log(sh);  
 //      byId('EDITBGDSP').innerHTML = "Edit Biogroup "+bg; 
 //      byId('EDITSEGDSP').innerHTML = "Edit Segment "+sg;  
       if (parseInt(sh) === 0) { 

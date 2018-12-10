@@ -424,6 +424,50 @@ PAGEHERE;
     return $rtnthis;
 }
 
+function reports($rqststr, $whichusr) { 
+    
+  $topBtnBar = generatePageTopBtnBar('reportscreen');
+  $accesslvl = $whichusr->accessnbr;
+  if (trim($rqststr[2]) === "") { 
+      //GET ALL REPORT LIST
+      
+  } else { 
+      //GET CRITERIA FOR THIS REPORT
+      if (trim($rqststr[3]) === "") {
+          //GET REPORTS IN MODULE ($rqststr[2]) 
+          
+      } else { 
+          //GET REPORT PARAMETERS
+          $reportParameters = $rqststr[3];       
+          
+      }
+      
+  }
+  
+  
+  
+  $rtnthis = <<<PAGEHERE
+{$topBtnBar} 
+
+{$reportParameters}
+PAGEHERE;
+return $rtnthis;    
+}
+
+function scienceserverhelp($rqststr, $whichusr) { 
+    
+    
+    
+
+  $rtnthis = <<<PAGEHERE
+
+          SCIENCESERVER HELP
+
+PAGEHERE;
+return $rtnthis;    
+}
+
+
 function datacoordinator($rqststr, $whichusr) { 
     if ((int)$whichusr->allowcoord !== 1) { 
      $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE COORDINATOR SCREEN";        
@@ -1116,14 +1160,31 @@ PAGECONTENT;
 }
 
 function buildHPRConfirmGrid($biogroupnbr, $slidenbr, $designation) {
+  $si = serverIdent;
+  $sp = serverpw;
+  $site = strtoupper(trim($designation['site']));
+  $subsite = strtoupper(trim($designation['subsite']));
+  $dx = strtoupper(trim($designation['dx']));
+  $dxm = strtoupper(trim($designation['dxmod'])); 
+  $spc = strtoupper(trim($designation['specimencategory'])); 
+  $mets = strtoupper(trim($designation['metssite'])); 
+  $metsdx = strtoupper(trim($designation['metssitedx'])); 
 
-$site = strtoupper(trim($designation['site']));
-$subsite = strtoupper(trim($designation['subsite']));
-$dx = strtoupper(trim($designation['dx']));
-$dxm = strtoupper(trim($designation['dxmod'])); 
-$spc = strtoupper(trim($designation['specimencategory'])); 
-$mets = strtoupper(trim($designation['metssite'])); 
-$metsdx = strtoupper(trim($designation['metssitedx'])); 
+  $techacc = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-technician-accuracy",$si,$sp),true);
+  $tacc = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('hprFldTechAcc','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  foreach ($techacc['DATA'] as $procval) { 
+    $tacc .= "<tr><td onclick=\"fillField('hprFldTechAcc','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+  }
+  $tacc .= "</table>";
+  
+  $moletest = json_decode(callrestapi("GET", dataTree . "/immuno-mole-testlist",$si,$sp),true);
+  $molemnu = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"triggerMolecularFill(0,'','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  foreach ($moletest['DATA'] as $moleval) { 
+    $molemnu .= "<tr><td onclick=\"triggerMolecularFill({$moleval['menuid']},'{$moleval['menuvalue']}','{$moleval['dspvalue']}');\" class=ddMenuItem>{$moleval['dspvalue']}</td></tr>";
+  }
+  $molemnu .= "</table>";
+  
+
 
 $pg = <<<CONFIRMFRM
 <form id=frmConfirmation>
@@ -1150,13 +1211,13 @@ $pg = <<<CONFIRMFRM
     <tr><td class=fieldHolder><input type=text id=hprFldMetsSiteConfirm value="{$mets}" READONLY></td><td class=fieldHolder><input type=text id=hprFldMetsDXConfirm value="{$metsdx}" READONLY></td></tr>
   </table>
 
-  <table border=0 cellspacing=0 cellpadding=0 width=100%>
+  <table border=1 cellspacing=0 cellpadding=0 width=100%>
   <tr><td class=workbenchheaderconfirm><table width=100% cellpadding=0 cellspacing=0><tr><td><center>Biosample Configuration Annotation</td></tr></table> </td></tr>
   </table>
 
- <table border=1 width=100% cellspacing=0 cellpadding=0>
- <tr><td width=33%>Percentages</td><td width=33%>Test Results</td><td width=33%>Comments</td></tr>
- <tr><td rowspan=3 valign=top>
+ <table border=0 width=100% cellspacing=0 cellpadding=0> 
+ <tr>
+ <td valign=top width=33%>
   <table border=0 cellspacing=0 cellpadding=0>
     <tr><td class=littleFieldLabelWork>Tumor</td><td class=littleFieldLabelWork>Tumor Cellularity</td></tr>
     <tr><td class=fieldHolder><input type=text id=hprFldPRCTumorConfirm value=""></td>
@@ -1171,20 +1232,26 @@ $pg = <<<CONFIRMFRM
     <tr><td class=fieldHolder><input type=text id=hprFldPRCEpiCellConfirm value=""></td>
         <td class=fieldHolder><input type=text id=hprFldPRCInflamConfirm value=""></td></tr> 
   </table>
-
   </td>
-  <td rowspan=3 valign=top> <!-- TEST RESULTS //--> </td>
-  <td valign=top>
-    <table border=0>
-      <tr><td class=littleFieldLabelWork>Biosample Comment</td></tr>
-      <tr><td><TEXTAREA id=hprFldBSCommentsConfirm></textarea></td></tr>
-      <tr><td class=littleFieldLabelWork>Rare Reason</td></tr>
-      <tr><td><TEXTAREA id=hprFldRareCommentsConfirm></textarea></td></tr>
+  <td colspan=2 valign=top width=66%> 
+    
+   <table border=0 width=100% cellpadding=0 cellspacing=0>
+       <tr><td class=littleFieldLabelWork colspan=2>Indicated Immuno/Molecular Test Results</td><td rowspan=4><table class=tblBtn onclick="manageMoleTest(1);"><tr><td><i class="material-icons">playlist_add</i></td></tr></table></td></tr>
+       <tr><td class=fieldHolder  valign=top colspan=2><div class=menuHolderDiv><input type=hidden id=hprFldMoleTestValue><input type=text id=hprFldMoleTest READONLY><div class=valueDropDown id=moleTestDropDown>{$molemnu}</div></div></td></tr>
+       <tr><td class=littleFieldLabelWork>Result Index</td><td class=littleFieldLabelWork>Scale Degree</td></tr>
+       <tr><td class=fieldHolder  valign=top><div class=menuHolderDiv><input type=hidden id=hprFldMoleResultValue><input type=text id=hprFldMoleResult READONLY><div class=valueDropDown id=moleResultDropDown> </div></div></td><td class=fieldHolder  valign=top><input type=text id=hprFldMoleScale></td></tr>
+       <tr><td colspan=3 class=fieldHolder  valign=top>
+           <input type=hidden id=molecularTestJsonHolderConfirm>
+           <div id=dspDefinedMolecularTestsConfirm>
+           </div>
     </table>
-   </td>
-</tr>
-<tr><td>Technician Grading</td></tr>
-<tr><td> <!-- TECH GRADING //-->     </td></tr>
+   </td> </tr>
+       
+  <tr>
+      <tr><td class=littleFieldLabelWork>Biosample Comment</td><td class=littleFieldLabelWork>Rare Reason</td><td class=littleFieldLabelWork>Technician Accuracy</td></tr>
+      <tr><td class=fieldHolder  valign=top><TEXTAREA id=hprFldBSCommentsConfirm></textarea></td>
+      <td class=fieldHolder  valign=top><TEXTAREA id=hprFldRareCommentsConfirm></textarea></td>
+<td class=fieldHolder  valign=top><div class=menuHolderDiv><input type=hidden id=hprFldTechAccValue><input type=text id=hprFldTechAcc READONLY><div class=valueDropDown id=TechAccDropDown>{$tacc}</div></div></td></tr>
 </table>
 
 
@@ -1506,6 +1573,14 @@ function generatePageTopBtnBar($whichpage) {
 //TODO: MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
 
 switch ($whichpage) { 
+    
+case 'reportscreen':
+$innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer><tr><td><i class="material-icons">layers_clear</i></td><td>Clear Grid</td></tr></table></td>
+</tr>
+BTNTBL;
+break;    
 case 'coordinatorCriteriaGrid':
 $innerBar = <<<BTNTBL
 <tr>
@@ -1570,7 +1645,9 @@ function generateContextMenu($whichpage) {
 switch ($whichpage) { 
 case 'coordinatorResultGrid':
 $innerBar = <<<BTNTBL
-<tr><td class=contextOptionHolder><table id=cntxPrntSD><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText id=PRINTSD>View Documents/Shipment Document</td></tr></table></td></tr>     
+<tr>
+    <td class=contextOptionHolder><table id=cntxPrntSD><tr><td><i class="material-icons cmOptionIcon">file_copy</i></td><td class=cmOptionText id=PRINTSD>View Documents/Shipment Document</td></tr></table></td>
+</tr>     
 BTNTBL;
     break;
 }

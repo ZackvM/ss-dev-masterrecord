@@ -32,7 +32,6 @@ class stylesheets {
   
 function globalstyles($mobileInd) {
 
- 
  $rtnThis = <<<STYLESHEET
 
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
@@ -46,7 +45,6 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 #systemDialogClose:hover {cursor: pointer; color: rgba({$this->color_bred},1); }
 
 #systemDialogTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 1.3vh; padding: .3vh .3vw; }
-
 
 .material-icons {font-size: 2.3vh; }
 #topMenuHolder {position: fixed; top: 0; left: 0; width: 100vw; z-index: 50; border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
@@ -125,7 +123,7 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 .calBtmLineClear { font-size: 1vh; padding: 8px 0; }
 .calBtmLineClear:hover { color: rgba({$this->color_bred},1); }
 
-#pageTopButtonBar {width: 100%; box-sizing: border-box; background: rgba({$this->color_zackgrey},1); position: fixed; top: 0; z-index: 49;}
+#pageTopButtonBar {width: 100%; box-sizing: border-box; background: rgba({$this->color_zackgrey},1); position: fixed; top: 0; left: 0; z-index: 49;}
 #pageTopButtonBar .topBtnHolderCell {border-right: 1px solid rgba({$this->color_white},1); padding: 0 .5vw 0 .5vw; } 
 #topBtnBarVerticalSpacer {height: 6.5vh; }
 #topBtnBarHorizontalSpacer {width: .5vw; }
@@ -143,6 +141,15 @@ STYLESHEET;
  return $rtnThis;
   }
 
+function reports($mobileind) { 
+      $rtnThis = <<<STYLESHEET
+
+body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
+              
+STYLESHEET;
+return $rtnThis;    
+}
+  
 function root($mobileind) { 
 
       $rtnThis = <<<STYLESHEET
@@ -269,6 +276,19 @@ input:focus, input:active {background: rgba({$this->color_lamber},.5); border: 1
 #hprFldPRCEpiCellConfirm {width: 7vw; text-align: right; }
 #hprFldPRCInflamConfirm {width: 7vw; text-align: right; }
 
+#hprFldTechAcc {width: 16vw; }
+#TechAccDropDown {width: 16vw;  font-size: 1.5vh;}
+#hprFldBSCommentsConfirm { width: 16vw; height: 9vh; font-size: 1.3vh; }
+#hprFldRareCommentsConfirm { width: 16vw; height: 9vh; font-size: 1.3vh; }
+#hprFldMoleTest {width: 31vw; }
+#moleTestDropDown {width: 31vw; }
+#hprFldMoleResult {width: 15.5vw; }
+#moleResultDropDown {width: 15vw; }
+#hprFldMoleScale {width: 15vw; }
+
+.moleaddbtn:hover {color: rgba({$this->color_darkgreen},1); cursor: pointer; }
+
+#dspDefinedMolecularTestsConfirm { border: 1px solid rgba({$this->color_mgrey},1);  overflow: auto;  width: 31vw; box-sizing: border-box; height: 12vh;  }
 
 STYLESHEET;
 return $rtnThis;

@@ -217,11 +217,53 @@ function hprtraylist($whichobj, $rqst) {
     while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
         $dta[] = $r;
     }
+    $responseCode = 200;
     $rows['statusCode'] = $responseCode; 
     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
     return $rows;  
 }
 
+function immunomoleresultlist($whichobj,$rqst) { 
+    session_start();
+    $responseCode = 500;
+    $msg = "status message " . session_id();
+    $msg = $whichobj;
+    $itemsfound = 0;
+    $dta = array(); 
+    if (trim($whichobj) !== "") { 
+      require(serverkeys . "/sspdo.zck"); 
+      $sql = "SELECT menuvalue, ifnull(dspvalue,'') as dspvalue  FROM four.sys_master_menus where parentid = :parentid and dspind = 1 order by menuvalue";
+      $rs = $conn->prepare($sql); 
+      $rs->execute(array(':parentid' => $whichobj)); 
+      $itemsfound = $rs->rowCount();
+      while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+          $dta[] = $r;
+      }    
+      $responseCode = 200;
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+    return $rows;  
+}       
+
+function immunomoletestlist($whichobj,$rqst) { 
+    session_start();
+    $responseCode = 500;
+    $msg = "status message " . session_id();
+    $itemsfound = 0;
+    $dta = array(); 
+    require(serverkeys . "/sspdo.zck");
+    $sql = "SELECT menuid, menuvalue, concat(ifnull(dspvalue,''),  concat(' (', ifnull(longvalue,''), ')')) as dspvalue  FROM four.sys_master_menus where menu like 'MOLECULARTEST' and dspind = 1 order by menuvalue";
+    $rs = $conn->prepare($sql); 
+    $rs->execute(); 
+    while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+        $dta[] = $r;
+    }    
+    $responseCode = 200;
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+    return $rows;  
+}       
 
 function template($whichobj,$rqst) { 
     session_start();
@@ -493,7 +535,6 @@ function hprrequestcode($whichobj, $rqst) {
 }
 
 }
-
 
 class globalMenus {
 
