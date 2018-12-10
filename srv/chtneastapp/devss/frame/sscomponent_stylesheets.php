@@ -170,9 +170,11 @@ $rtnThis = <<<STYLESHEET
 
 body { margin: 0; margin-top: 8vh; box-sizing: border-box;  }
 
+input {width: 25vw; box-sizing: border-box; font-family: Roboto; font-size: 1.4vh;color: rgba({$this->color_zackgrey},1); padding: .8vh .5vw .8vh .5vw; border: 1px solid rgba({$this->color_mgrey},1);  }
+input:focus, input:active {background: rgba({$this->color_lamber},.5); border: 1px solid rgba({$this->color_dblue},.5);  outline: none;  }
+
 #hprInnerScan { position: absolute; width: 25vw; height: 16vh; left: 50%; top: 50%; transform: translate(-50%, -50%);  }
 #hprInnerScan table tr th {font-size: 1.5vh; text-align: left; }
-
 #hprwbHeadErrorHolder { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); Text-align: center; } 
 
 #masterWorkBenchTbl { width: 99vw; height: 90vh; }
@@ -210,13 +212,13 @@ body { margin: 0; margin-top: 8vh; box-sizing: border-box;  }
 #workBenchTD { width: 35vw; box-sizing: border-box; height: 85vh; overflow: hidden; }
 #divWorkBenchPrelimInfo {border: 1px solid rgba({$this->color_zackgrey},1); height: 45vh; overflow: auto;  }
 
-#workBenchDisplayHolder {position: relative; width: 50vw; box-sizing: border-box;  }
+#workBenchDisplayHolder {position: relative; box-sizing: border-box;  }
 #divWorkBenchPathRptDsp {border: 1px solid rgba({$this->color_zackgrey},1); display: block; width: 50vw; }
-#reviewersWorkBenchConfirm { display: none; width: 50vw;}
-#reviewersWorkBenchAdd { display: none; width: 50vw; }
-#reviewersWorkBenchDeny { display: none; width: 50vw; }
-#reviewersWorkBenchIncon { display: none; width: 50vw; }
-#reviewersWorkBenchUnuse { display: none; width: 50vw; }
+#reviewersWorkBenchConfirm { display: none;}
+#reviewersWorkBenchAdd { display: none;}
+#reviewersWorkBenchDeny { display: none; }
+#reviewersWorkBenchIncon { display: none; }
+#reviewersWorkBenchUnuse { display: none; }
 
 #hprPathRptTextDsp { height: 86vh; overflow: auto; padding: .8vh .3vw 1vh .3vw; box-sizing: border-box; font-size: 1.3vh; line-height: 1.8em; text-align: justify; }
 #allSegmentDsp { margin-top: .8vh; border: 1px solid rgba({$this->color_zackgrey},1); }
@@ -236,7 +238,7 @@ body { margin: 0; margin-top: 8vh; box-sizing: border-box;  }
 
 
 .hoverRow:hover {background: rgba({$this->color_lamber},1); cursor: pointer; }
-.fieldHolder {padding: 0 0 .5vh .4vw; }
+.fieldHolder {padding: 0 0 .5vh .1vw; }
 
 #divHPRConfirm {border: 1px solid rgba({$this->color_zackgrey},1); width: 50vw; }
 
@@ -249,12 +251,23 @@ body { margin: 0; margin-top: 8vh; box-sizing: border-box;  }
 .sideActionBtn:hover .iconGraphic .material-icons { color: rgba({$this->color_darkgreen},1); }
 .sideActionBtn:hover .btnExplainer { display: block;  }
 
-#hprFldSiteConfirm { width: 24.4vw; }
-#hprFldSubSiteConfirm {width: 24.4vw; }
-#hprFldDiagnosisConfirm {width: 24.4vw; }
-#hprFldDXModifierConfirm {width: 24.4vw; }
-#hprFldMetsSiteConfirm {width: 24.4vw; }
-#hprFldMetsDXConfirm {width: 24.4vw; }
+#hprFldSiteConfirm { width: 24vw; }
+#hprFldSubSiteConfirm {width: 12vw; }
+#hprFldSpecCatConfirm { width: 13vw; }
+
+#hprFldDiagnosisConfirm {width: 24.8vw; }
+#hprFldDXModifierConfirm {width: 24.7vw; }
+#hprFldMetsSiteConfirm {width: 20.8vw; }
+#hprFldMetsDXConfirm {width: 28.8vw; }
+
+#hprFldPRCTumorConfirm {width: 7vw; text-align: right; }
+#hprFldPRCCellConfirm {width: 7vw; text-align: right; }
+#hprFldPRCNecroConfirm {width: 7vw; text-align: right; }
+#hprFldPRCNeoPlasticConfirm {width: 7vw; text-align: right; }
+#hprFldPRCNonNeoConfirm {width: 7vw; text-align: right; }
+#hprFldPRCACellConfirm {width: 7vw; text-align: right; }
+#hprFldPRCEpiCellConfirm {width: 7vw; text-align: right; }
+#hprFldPRCInflamConfirm {width: 7vw; text-align: right; }
 
 
 STYLESHEET;

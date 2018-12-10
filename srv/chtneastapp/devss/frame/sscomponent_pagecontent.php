@@ -1136,8 +1136,8 @@ $pg = <<<CONFIRMFRM
   </table>
 
   <table border=0 width=100% cellspacing=0 cellpadding=0>
-    <tr><td class=littleFieldLabelWork>Site</td><td class=littleFieldLabelWork>Sub-Site</td></tr>
-    <tr><td class=fieldHolder><input type=text id=hprFldSiteConfirm value="{$site}" READONLY></td><td class=fieldHolder><input type=text id=hprFldSubSiteConfirm value="{$subsite}" READONLY></td></tr>
+    <tr><td class=littleFieldLabelWork>Specimen Category</td><td class=littleFieldLabelWork>Site</td><td class=littleFieldLabelWork>Sub-Site</td></tr>
+    <tr><td class=fieldHolder><input type=text id=hprFldSpecCatConfirm value="{$spc}" READONLY></td><td class=fieldHolder><input type=text id=hprFldSiteConfirm value="{$site}" READONLY></td><td class=fieldHolder><input type=text id=hprFldSubSiteConfirm value="{$subsite}" READONLY></td></tr>
   </table>
 
   <table border=0 width=100% cellspacing=0 cellpadding=0>
@@ -1146,14 +1146,48 @@ $pg = <<<CONFIRMFRM
   </table>
  
   <table border=0 width=100% cellspacing=0 cellpadding=0>
-    <tr><td class=littleFieldLabelWork>Specimen Category</td></tr>
-    <tr><td class=fieldHolder><input type=text id=hprFldSiteConfirm value="{$spc}" READONLY></td></tr>
-  </table>
-
-  <table border=0 width=100% cellspacing=0 cellpadding=0>
     <tr><td class=littleFieldLabelWork>Metastatic Site</td><td class=littleFieldLabelWork>Metastatic Diagnosis</td></tr>
     <tr><td class=fieldHolder><input type=text id=hprFldMetsSiteConfirm value="{$mets}" READONLY></td><td class=fieldHolder><input type=text id=hprFldMetsDXConfirm value="{$metsdx}" READONLY></td></tr>
   </table>
+
+  <table border=0 cellspacing=0 cellpadding=0 width=100%>
+  <tr><td class=workbenchheaderconfirm><table width=100% cellpadding=0 cellspacing=0><tr><td><center>Biosample Configuration Annotation</td></tr></table> </td></tr>
+  </table>
+
+ <table border=1 width=100% cellspacing=0 cellpadding=0>
+ <tr><td width=33%>Percentages</td><td width=33%>Test Results</td><td width=33%>Comments</td></tr>
+ <tr><td rowspan=3 valign=top>
+  <table border=0 cellspacing=0 cellpadding=0>
+    <tr><td class=littleFieldLabelWork>Tumor</td><td class=littleFieldLabelWork>Tumor Cellularity</td></tr>
+    <tr><td class=fieldHolder><input type=text id=hprFldPRCTumorConfirm value=""></td>
+        <td class=fieldHolder><input type=text id=hprFldPRCCellConfirm value=""></td></tr>
+    <tr><td class=littleFieldLabelWork>Tumor Necrosis</td><td class=littleFieldLabelWork>Acellular Mucin</td></tr>
+    <tr><td class=fieldHolder><input type=text id=hprFldPRCNecroConfirm value=""></td>
+        <td class=fieldHolder><input type=text id=hprFldPRCACellConfirm value=""></td></tr> 
+    <tr><td class=littleFieldLabelWork>Neoplastic Stroma</td><td class=littleFieldLabelWork>Non Neoplastic</td></tr>
+    <tr><td class=fieldHolder><input type=text id=hprFldPRCNeoPlasticConfirm value=""></td>
+        <td class=fieldHolder><input type=text id=hprFldPRCNonNeoConfirm value=""></td></tr> 
+    <tr><td class=littleFieldLabelWork>Epithelial Cell</td><td class=littleFieldLabelWork>Inflammation</td></tr>
+    <tr><td class=fieldHolder><input type=text id=hprFldPRCEpiCellConfirm value=""></td>
+        <td class=fieldHolder><input type=text id=hprFldPRCInflamConfirm value=""></td></tr> 
+  </table>
+
+  </td>
+  <td rowspan=3 valign=top> <!-- TEST RESULTS //--> </td>
+  <td valign=top>
+    <table border=0>
+      <tr><td class=littleFieldLabelWork>Biosample Comment</td></tr>
+      <tr><td><TEXTAREA id=hprFldBSCommentsConfirm></textarea></td></tr>
+      <tr><td class=littleFieldLabelWork>Rare Reason</td></tr>
+      <tr><td><TEXTAREA id=hprFldRareCommentsConfirm></textarea></td></tr>
+    </table>
+   </td>
+</tr>
+<tr><td>Technician Grading</td></tr>
+<tr><td> <!-- TECH GRADING //-->     </td></tr>
+</table>
+
+
 
 </div>
 </form>

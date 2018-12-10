@@ -497,6 +497,10 @@ function hprrequestcode($whichobj, $rqst) {
 
 class globalMenus {
 
+    function hprtechnicianaccuracy() { 
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'HPRTECHACCURACY' order by mnu.dspOrder";
+    }
+    
     function devmenuhprinventoryoverride() { 
       return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'DEVIATIONREASON_HPROVERRIDE' order by mnu.dspOrder";
     }
