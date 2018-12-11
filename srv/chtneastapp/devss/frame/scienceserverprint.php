@@ -86,6 +86,7 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $dt = "PATHOLOGY REPORT";
             $docIdElem = explode("-", $unencry);
             $docid = $docIdElem[0];
+            //TODO:  TURN INTO WEBSERVICE
             $prSQL = "select dnpr_nbr bgnbr from masterrecord.qcpathreports where prid = :prid"; 
             $prR = $conn->prepare($prSQL);
             $prR->execute(array(':prid' => $docid));
@@ -100,12 +101,15 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $dt = "SHIPMENT MANIFEST";
             $docIdElem = explode("-", $unencry);
             $docid = $docIdElem[0];
+            //TODO: TURN INTO WEBSERVICE
             $prSQL = "select shipdocrefid FROM masterrecord.ut_shipdoc sd where shipdocrefid = :prid"; 
             $prR = $conn->prepare($prSQL);
             $prR->execute(array(':prid' => $docid));
             $pr = $prR->fetch(PDO::FETCH_ASSOC);
             $bgnbr = '';                  
             break;
+         
+
         default: 
             //RETURN ERROR
     }    
@@ -161,7 +165,7 @@ function pagetabs($docobject) {
       $thisTab = "{$docobject['bgnbr']} (Pathology Report)";
     break;
     default: 
-      $thisTab = "CHTN Eastern Division"; 
+      $thisTab =  substr(('000000' . $docobject['documentid']),-6) . " Shipment Document"; 
     break; 
   }
   return $thisTab;
@@ -169,7 +173,6 @@ function pagetabs($docobject) {
 
 function documenttext($docobject, $orginalURI) { 
     $doctext = "";
-    //{"document":"PATHOLOGY REPORT","documentid":"41468","bgnbr":"82200T","donor":""} 
     switch($docobject['document']) { 
     case 'PATHOLOGY REPORT': 
         $doctext = getPathReportText($docobject['documentid'], $orginalURI);
@@ -208,7 +211,8 @@ function getShipmentDocument($sdid, $originalURL) {
         $sidebcode = base64file("{$vbcode}", "sidebarcode", "png", true, "  ");
         //********************END BARCODE CREATION
     
-        
+
+        //TODO:  TURN THIS INTO A WEBSERVICE
         $topSQL = "SELECT ifnull(sdstatus,'NEW') as sdstatus, date_format(statusdate, '%m/%d/%Y') as statusdate, ifnull(shipmenttrackingnbr,'') as trackingnbr, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as shipdate, ifnull(investcode,'') as invcode, ifnull(investname,'') as investname, ifnull(shipaddy,'') as shipaddress, ifnull(billaddy,'') as billaddress, ifnull(investemail,'') as invemail, ifnull(ponbr,'') as ponbr, ifnull(salesorder,'') as salesorder, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as tolab, ifnull(acceptedby,'') as acceptedby, ifnull(acceptedbyemail,'') as acceptedbyemail, ifnull(comments,'') as comments, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
         
         $topR = $conn->prepare($topSQL);
@@ -250,7 +254,7 @@ function getShipmentDocument($sdid, $originalURL) {
               $iname = "[{$sd['investname']}]";
             }
             
-            
+            //TODO: Turn this into a webservice 
             $dtlSQL = "SELECT ifnull(sg.qty,0) as qty, ifnull(sg.bgs,'') as bgs, ifnull(bs.pxiage,'') as pxiage, ifnull(bs.pxirace,'') as pxirace, ifnull(bs.pxigender,'') as pxigender, ifnull(bs.anatomicsite,'') as site, ifnull(bs.subsite,'') as subsite, ifnull(bs.diagnosis,'') as dx, ifnull(bs.subdiagnos,'') as subdx, ifnull(bs.tisstype,'') as specimencategory, ifnull(sg.hourspost,0) as hrpst, ifnull(sg.prepmethod,'') as prepmet , ifnull(sg.preparation,'') as preparation, ifnull(sg.metric,0) as metric, ifnull(mt.longvalue,'') as metricuom, ifnull(cx.dspvalue,'') as chemo, ifnull(rx.dspvalue,'') as rad FROM masterrecord.ut_shipdocdetails sdd left join masterrecord.ut_procure_segment sg on sdd.segid = sg.segmentid left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample left join (SELECT  menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') mt on sg.metricUOM = mt.menuvalue left join (SELECT  menuvalue, dspvalue FROM four.sys_master_menus where menu = 'CX') cx on bs.chemoind = cx.menuvalue  left join (SELECT  menuvalue, dspvalue FROM four.sys_master_menus where menu = 'RX') rx on bs.radind = rx.menuvalue  where sdd.shipdocrefid = :sdnbr order by sg.bgs";
             $dtlR = $conn->prepare($dtlSQL); 
             $dtlR->execute(array(':sdnbr' => $sdid)); 
@@ -467,7 +471,8 @@ function getPathReportText($pathrptid, $orginalURI) {
     $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
     require(serverkeys . "/sspdo.zck");  
     session_start();
-    
+
+    //TODO:  TURN THIS INTO A WEBSERVICE
     $sql = "select pathreport, pxiid, dnpr_nbr as bgnbr from masterrecord.qcpathreports pr where prid = :prid";
     $prR = $conn->prepare($sql);
     $prR->execute(array(':prid' => $pathrptid));
@@ -537,8 +542,12 @@ SQLSTMT;
 </table>
 BSTBL;
         }
-        
-        //GET HPR PERCENTAGES
+
+        //TODO:  GET MOLECULAR TESTS
+
+
+        //GET HPR PERCENTAGES 
+        //TODO: TURN THIS INTO A WEBSERVICE
         $hprSQL = "select ifnull(prctype,'') prctype, ifnull(prcvalue,'') prcvalue from  (SELECT hpr.biohpr FROM masterrecord.ut_hpr_biosample hpr where bgs like :bgNbr  order by reviewedon desc limit 1) hpr left join masterrecord.ut_hpr_percentages prc on hpr.biohpr = prc.biohpr"; 
     $hprR = $conn->prepare($hprSQL);
     $hprR->execute(array(':bgNbr' => "{$bg}%"));
@@ -720,3 +729,8 @@ function prntbarcode( $filepath="", $text="0", $size="20", $orientation="horizon
 		imagedestroy($image);
 	}
 }
+
+
+
+
+

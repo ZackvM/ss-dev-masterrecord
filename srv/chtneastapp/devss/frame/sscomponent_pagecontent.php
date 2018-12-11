@@ -430,16 +430,23 @@ function reports($rqststr, $whichusr) {
   $accesslvl = $whichusr->accessnbr;
   if (trim($rqststr[2]) === "") { 
       //GET ALL REPORT LIST
-      
+      $pg = <<<CONTENT
+GET REPORTS BY MODULE AND PLACE THEM HERE
+CONTENT;
+
   } else { 
       //GET CRITERIA FOR THIS REPORT
       if (trim($rqststr[3]) === "") {
           //GET REPORTS IN MODULE ($rqststr[2]) 
-          
+      $pg = <<<CONTENT
+GET MODULE REPORT LIST AND PLACE THEM HERE
+CONTENT;
       } else { 
           //GET REPORT PARAMETERS
-          $reportParameters = $rqststr[3];       
-          
+          $reportParameters = bldReportParameterScreen($rqststr[3], $whichusr);        
+          $pg = <<<CONTENT
+{$reportParameters}
+CONTENT;
       }
       
   }
@@ -449,7 +456,7 @@ function reports($rqststr, $whichusr) {
   $rtnthis = <<<PAGEHERE
 {$topBtnBar} 
 
-{$reportParameters}
+{$pg}
 PAGEHERE;
 return $rtnthis;    
 }
@@ -1660,4 +1667,80 @@ RTNTHIS;
 return $rtnthis;
 }
 
+function bldReportParameterScreen($whichrpt, $usr) { 
 
+//{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"groupingname":"INVENTORY","groupingurl":"Inventory","reportname":"Daily Barcode Run","reportdescription":"This report generates a sheet with printable barcodes for use in the freezers","accesslvl":3,"allowgriddsp":0,"allowpdfdsp":1,"bywhom":"proczack","rptcreation":"December 10, 2018","criteria":[{"parameterid":1,"requiredind":0,"sqltextline":"subtbl.pbiosample = :pbiosample","paratype":"int","constraints":"number","menuind":0,"menuname":"","ondemandmenu":"","equivalancyoptions":"EQUAL","editableind":1},{"parameterid":5,"requiredind":0,"sqltextline":"subtbl.pbiosample between :pbiosamplestart and :pbiosampleend","paratype":"int","constraints":"range-only","menuind":0,"menuname":"","ondemandmenu":"","equivalancyoptions":"RANGE","editableind":1},{"parameterid":2,"requiredind":0,"sqltextline":"subtbl.procurementdate between :procdatestart and :procdateend","paratype":"date","constraints":"range-only","menuind":0,"menuname":"","ondemandmenu":"","equivalancyoptions":"RANGE","editableind":1},{"parameterid":3,"requiredind":0,"sqltextline":"subtbl.scanloccode = :inventoryscancode","paratype":"string","constraints":"code-only","menuind":1,"menuname":"inventory-scancodes","ondemandmenu":"","equivalancyoptions":"EQUAL","editableind":1},{"parameterid":4,"requiredind":1,"sqltextline":"procurementinstitution = :institution","paratype":"string","constraints":"code-only","menuind":1,"menuname":"","ondemandmenu":"usersinstitutions","equivalancyoptions":"EQUAL","editableind":1}]}}     
+$rptarr = json_decode(callrestapi("GET", dataTree . "/report-definition/{$whichrpt}",serverIdent, serverpw), true);
+$rpt = $rptarr['DATA'];
+$rptaccesslvl = $rpt['accesslvl'];
+$uaccess = $usr->accessnbr;
+$uid = $usr->userid;
+//CHECK ACCESS LEVEL IS CORRECT
+if ($rptaccesslvl > $uaccess) { 
+    $rtnpage = "<h1>ACCESS DENIED TO USER ({$uid}/Access Level: {$uaccess})";
+} else { 
+
+  $rptgroupingname = $rpt['groupingname'];
+  $rptgroupurl = $rpt['groupingurl'];
+  $rptname = $rpt['reportname'];
+  $rptdesc = $rpt['reportdescription']; 
+  $rptallowgriddsp = $rpt['allowgriddsp'];
+  $rptallowpdf = $rpt['allowpdfdsp'];
+  $rptbywhom = $rpt['bywhom'];
+  $rptcreation = $rpt['rptcreation'];
+
+  $hdTbl = <<<TBLTBL
+      <table border=0 cellspacing=0 cellpadding=0 id=defHead>
+        <tr onclick="navigateSite('reports/{$rptgroupurl}');"><td>Module:&nbsp;</td><td>&nbsp;{$rptgroupingname}</td><td>&nbsp;(Click for reports in module)</td></tr>
+        <tr><td>Name: &nbsp;</td><td colspan=2>&nbsp;{$rptname}</td></tr>
+        <tr><td>Description: &nbsp;</td><td colspan=2>&nbsp;{$rptdesc}</td></tr>
+        <tr><td>Created: &nbsp;</td><td colspan=2>&nbsp;{$rptbywhom} / {$rptcreation}</td></tr>
+      </table>
+TBLTBL;
+
+  //BUILD CRITERIA
+  if (count($rpt['criteria']) < 1) { 
+    $paraTbl = "<h1>NO CRITERIA PARAMETERS ARE LISTED FOR THIS REPORT";
+  } else {
+
+    $paraTbl = "<table border=1>";
+    foreach ($rpt['criteria'] as $key => $value) { 
+
+        //MARK REQUIRED CRITERIA
+        $chkbox = ((int)$value['requiredind'] !== 1) ? "<input type=checkbox>" : "<input type=checkbox  disabled=\"disabled\" checked=\"checked\">";
+        preg_match_all("/:\b[a-zA-Z]{1,}\b/", $value['sqltextline'], $out);
+
+        $rowOne = "";
+        $rowTwo = "";
+        foreach($out[0] as $critval) { 
+          $flddef = str_replace(":","",$critval); 
+          $rptfld = json_decode(callrestapi("GET", dataTree . "/report-criteria-field-definition/{$flddef}",serverIdent, serverpw), true);
+          $rowOne .= "<td>{$rptfld['DATA'][0]['flddisplay']}</td>";
+          $rowTwo .= "<td>" . $critval . "</td>";
+        }
+        $critTbl = "<table><tr>{$rowOne}</tr><tr>{$rowTwo}</tr></table>";
+        $paraTbl .= "<tr><td>{$chkbox}</td><td>{$value['sqltextline']}</td><td>{$critTbl}</td></tr>"; 
+    }
+    $paraTbl .= "</table>";
+
+  }
+
+//END BUILD CRITERIA
+  
+$gridBtn = ((int)$rptallowgriddsp === 1) ? "<table class=tblBtn><tr><td>View Data</td></tr></table>" : "";
+$pdfBtn = ((int)$rptallowpdf === 1) ? "<table class=tblBtn><tr><td>Print Report</td></tr></table>" : "";
+  $ftTbl = <<<TBLTBL
+<table width=100%><tr><td><center><table><tr><td>{$gridBtn}</td><td>{$pdfBtn}</td></tr></table></td></tr></table>
+TBLTBL;
+
+
+$rtnpage = <<<PAGESTUFF
+<table border=0 id=reportDefinitionTbl>
+<tr><td valign=top id=reportIdentification>{$hdTbl}</td></tr>
+<tr><td valign=top> {$paraTbl} </td></tr>
+<tr><td valign=bottom id=reportFooterBar>{$ftTbl}</td></tr>
+</table>
+PAGESTUFF;
+}
+return $rtnpage;
+}

@@ -422,6 +422,18 @@ JAVASCR;
 return $rtnThis;    
 }
 
+function reports($rqststr) { 
+
+    $sp = serverpw; 
+
+    $rtnthis = <<<JAVASCR
+
+//{$sp}
+
+JAVASCR;
+return $rtnthis;
+}
+
 function hprreview($rqststr) { 
 
   $sp = serverpw;    

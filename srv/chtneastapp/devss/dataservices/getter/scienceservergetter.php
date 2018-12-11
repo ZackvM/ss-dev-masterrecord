@@ -35,6 +35,74 @@ class objgetter {
 
 class objlisting { 
 
+ function reportcriteriafielddefinition($request, $urirqst) { 
+   $rows = array(); 
+   $dta = array(); 
+   $responseCode = 400; 
+   $msg = "BAD REQUEST";
+   $itemsfound = 0;
+   $rq = explode("/",$urirqst); 
+   if (trim($rq[3]) !== "") { 
+      require(serverkeys . "/sspdo.zck");
+      $sql = "SELECT ifnull(flddisplay,'') flddisplay, ifnull(typeoffield,'string') as typeoffield, ifnull(menuurl,'') as menuurl, ifnull(ondemandmenu,'') as ondemandmenu, ifnull(fieldnote,'') as fieldnote FROM four.ut_report_parameterfielddefinitions where fldname = :fld";
+      $rs = $conn->prepare($sql); 
+      $rs->execute(array(':fld' => trim($rq[3])));
+      if ($rs->rowCount() === 1) { 
+        $dta[] = $rs->fetch(PDO::FETCH_ASSOC);
+        $responseCode = 200; 
+        $msg = "";
+        $itemsfound = 1;
+      }
+   }
+   $rows['statusCode'] = $responseCode; 
+   $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+   return $rows;    
+ } 
+
+ function reportdefinition($request, $urirqst) { 
+    $rows = array(); 
+    $dta = array(); 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $itemsfound = 0;
+    $rq = explode("/",$urirqst);
+    if (trim($rq[3]) !== "") { 
+      require(serverkeys . "/sspdo.zck");
+      $rptSQL = "SELECT ifnull(rptgrp.groupingname,'') groupingname, ifnull(rptgrp.groupingurl,'') groupingurl, ifnull(rptlst.reportname,'ERROR') reportname, ifnull(rptlst.reportdescription,'') reportdescription, ifnull(rptlst.accesslvl,100) as accesslvl, ifnull(rptlst.allowgriddsp,0) allowgriddsp, ifnull(rptlst.allowpdf,0) allowpdf, ifnull(rptlst.changecritind,0) changecritind, ifnull(rptlst.bywhom,'') bywhom, ifnull(date_format(rptlst.onwhen,'%M %d, %Y'),'') as rptcriteriacreation FROM four.ut_reportlist rptlst left join four.ut_reportgrouping rptgrp on rptlst.groupingid = rptgrp.groupid where urlpath = :rpturlid and rptlst.dspind = 1"; 
+      $rs = $conn->prepare($rptSQL); 
+      $rs->execute(array(':rpturlid' => $rq[3]));
+      if ($rs->rowCount() <> 1) {
+      } else {
+        $r = $rs->fetch(PDO::FETCH_ASSOC);
+
+        $crit = array();
+        $critsql = "SELECT parameterid, ifnull(requiredind,1) as requiredind, ifnull(sqltextline,'') as sqltextline FROM four.ut_report_parameterlisting where reporturl = :rpturlid and dspind = 1 order by dsporder";
+        $critRS = $conn->prepare($critsql);
+        $critRS->execute(array(':rpturlid' => $rq[3]));
+        while ($c = $critRS->fetch(PDO::FETCH_ASSOC)) { 
+          $crit[] = $c;
+        }        
+        $dta['groupingname'] = $r['groupingname'];
+        $dta['groupingurl'] = $r['groupingurl'];
+        $dta['reportname'] = $r['reportname'];
+        $dta['reportdescription'] = $r['reportdescription'];
+        $dta['accesslvl'] = $r['accesslvl'];
+        $dta['allowgriddsp'] = $r['allowgriddsp'];
+        $dta['allowpdfdsp'] = $r['allowpdf'];
+        $dta['bywhom'] = $r['bywhom'];
+        $dta['rptcreation'] = $r['rptcriteriacreation'];
+        $dta['criteria'] = $crit;  
+
+        $responseCode = 200; 
+        $msg = "";
+        $itemsfound = 1;
+      }
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;    
+ }
+
  //do = Data Object
  function pasthprbysegment($request, $urirqst) { 
     $rows = array(); 

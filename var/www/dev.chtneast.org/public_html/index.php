@@ -152,8 +152,6 @@ echo $pg;
                header('HTTP/1.0 401 Unauthorized');
         }
 
-
-
         header('Content-type: application/json; charset=utf8');
         header('Access-Control-Allow-Origin: *'); 
         header('Access-Control-Allow-Header: Origin, X-Requested-With, Content-Type, Accept');
@@ -162,7 +160,6 @@ echo $pg;
         http_response_code($responseCode);
         echo $data;
         break;        
-
 
     case 'printobj': 
       //PRINT OBJECT - GET ONLY  

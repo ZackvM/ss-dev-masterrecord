@@ -95,7 +95,7 @@ input[type=checkbox] { width: 2vw; }
 input[type=checkbox] + label { color: rgba({$this->color_lblue},1); }
 input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-weight: bold; }
 
-.tblBtn tr td { font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
+.tblBtn tr td { font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); }
 .tblBtn tr td:hover { background: rgba({$this->color_mblue},1); color: rgba({$this->color_white},1); cursor: pointer; }
 .tblBtn tr td.active { background: rgba({$this->color_darkgreen},1); }
 
@@ -145,6 +145,12 @@ function reports($mobileind) {
       $rtnThis = <<<STYLESHEET
 
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
+
+#reportDefinitionTbl { width: 98vw; height: 85vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1);  }
+#reportIdentification { background: rgba({$this->color_grey},1); height: .2vh; }
+#defHead { font-size: 1.8vh;  }
+#reportFooterBar { background: rgba({$this->color_grey},1); height: .2vh; }
+
               
 STYLESHEET;
 return $rtnThis;    
