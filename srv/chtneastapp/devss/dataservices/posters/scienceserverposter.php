@@ -35,7 +35,6 @@ function __construct() {
 class datadoers {
 
     function grabreportdata($request, $passdata) { 
-      
       $responseCode = 400; 
       $error = 0;
       $msg = "";
@@ -44,58 +43,52 @@ class datadoers {
       $msgArr = array();
       $pdta = json_decode($passdata,true);
       require(serverkeys . "/sspdo.zck");  
-
-      session_start();        
-      $usrSQL = "SELECT originalAccountName, allowcoord, accessnbr FROM four.sys_userbase where sessionid = :sessionid";
-      $usrR = $conn->prepare($usrSQL);
-      $usrR->execute(array(':sessionid' =>session_id()));
-      if ($usrR->rowCount() < 1) { 
-        $msgArr[] = "SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN"; 
-        $error = 1;
-        $responseCode = 401;
-      } else { 
-        $u = $usrR->fetch(PDO::FETCH_ASSOC);
-      } 
-
-      if ( ($u['accessnbr'] < $pdta['DATA']['rqaccesslvl']) || ((int)$u['allowcoord'] <> 1)) {
-        $msgArr[] = "USER NOT ALLOWED FUNCTION"; 
-        $error = 1;
-        $responseCode = 401;
-      }
-
+//      session_start();        
+//      $usrSQL = "SELECT originalAccountName, allowcoord, accessnbr FROM four.sys_userbase where sessionid = :sessionid";
+//      $usrR = $conn->prepare($usrSQL);
+//      $usrR->execute(array(':sessionid' =>session_id()));
+//      if ($usrR->rowCount() < 1) { 
+//        $msgArr[] = "SESSION KEY IS INVALID (" . session_id() . ").  LOG OUT OF SCIENCESERVER AND LOG BACK IN"; 
+//        $error = 1;
+//        $responseCode = 401;
+//      } else { 
+//        $u = $usrR->fetch(PDO::FETCH_ASSOC);
+//      } 
+//      if ( ($u['accessnbr'] < $pdta['DATA']['rqaccesslvl']) || ((int)$u['allowcoord'] <> 1)) {
+//        $msgArr[] = "USER NOT ALLOWED FUNCTION"; 
+//        $error = 1;
+//        $responseCode = 401;
+//      }
 
       if ($error === 0) { 
-        //RUN FUNCTION
-        $r = $pdta['DATA']['requestjson'];
+        $rqjson = json_decode($pdta['DATA']['requestjson'], true);
+        if ( count($rqjson['request']['wherelist']) < 1) { 
+          $msgArr[] = "NO PARAMETER/CRITERIA WAS SPECIFIED IN WHERE CLAUSE - SEE CHTNED IT STAFF FOR ASSISTANCE";
+          $msg = $msgArr;
+        } else { 
+            
+          $select = $rqjson['request']['rptsql']['selectclause'];
+          $from = $rqjson['request']['rptsql']['fromclause'];
+          $orderby = $rqjson['request']['rptsql']['orderby'];
+          $where = "where 1=1 ";
+          foreach ($rqjson['request']['wherelist'] as $val) { 
+            $where .= " and ({$val}) ";
+          }
+          //TODO:  ADD THESE COMPONENTS IN TO SQL
+//        $groupby = $r['rptsql']['groupbyclause'];
+//        $summaryfield = $r['rptsql']['summaryfield'];
 
-        $dta[] = $r;
-
-//        if ( count($r['request']['wherelist']) < 1) { 
-//          $msgArr[] = "NO PARAMETER/CRITERIA WAS SPECIFIED IN WHERE CLAUSE - SEE CHTNED IT STAFF FOR ASSISTANCE";
-//          $msg = $msgArr;
-//        } else { 
-//          $select = $r['rptsql'];
-//          $from = $r['rptsql']['fromclause'];
-//          $orderby = $r['rptsql']['orderby'];
-//          $where = "where 1=1 ";
-//          foreach ($r['wherelist'] as $val) { 
-//            $where .= " and ({$val}) ";
-//          }
-//          //TODO:  ADD THESE COMPONENTS IN TO SQL
-//          $groupby = $r['rptsql']['groupbyclause'];
-//          $summaryfield = $r['rptsql']['summaryfield'];
-//          $sqlstmt = "SELECT {$select} FROM {$from} {$where} {$orderby}";
-//          $valuelist = $r['valuelist'];
-//          $rtnDataTbl = $sqlstmt . " -- " . $valuelist;
-//
-//          $dta[] = $rtnDataTbl;
-
-
-
-
+          $sqlstmt = "SELECT {$select} FROM {$from} {$where} {$orderby}";
+          $valuelist = $rqjson['request']['valuelist'];
+          $rs = $conn->prepare($sqlstmt); 
+          $rs->execute($valuelist);
+          $itemsfound = $rs->rowCount();  
+          while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+            $dta[] = $r;
+          }
           $responseCode = 200;
           $msg = "";
-//        }
+        }
       } else { 
         $msg = $msgArr;
       }

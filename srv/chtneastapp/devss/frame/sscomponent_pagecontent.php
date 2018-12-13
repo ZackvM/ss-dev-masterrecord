@@ -1719,15 +1719,25 @@ if ($rptaccesslvl > $uaccess) {
     $rtnpage = "<h1>ACCESS DENIED TO USER ({$uid}/Access Level: {$uaccess})";
 } else { 
     
-//$pdta = json_encode(array('srchTrm' => $dta['DATA'][0]));
-//$sidedta = json_decode(callrestapi("POST", dataTree . "/data-doers/hpr-workbench-side-panel",serverIdent, serverpw, $pdta), true);           
-    //$resultTbl = grabRptData($rptarr['DATA']['requestjson']);
-$resultTbl = json_encode($rptarr); 
-
-$rtnpage = <<<PAGESTUFF
+  $pdta = json_encode($rptarr);
+  $tbldta = json_decode(callrestapi("POST", dataTree . "/data-doers/grab-report-data",serverIdent, serverpw, $pdta), true);           
+  $resultTbl = "<table><tr><td>Records Found: {$tbldta['ITEMSFOUND']}</td></tr></table>";
+  foreach ($tbldta['DATA'] as $records) { 
+    $rowTbl .= "<tr>"; 
+    $headRow = "<tr>";
+    foreach ($records as $constitKey => $constitVal) {
+      $columnvalue = preg_replace('/\_/','&nbsp;',$constitKey);  
+      $headRow .= "<th>{$columnvalue}</th>";  
+      $rowTbl .= "<td>{$constitVal}&nbsp;</td>";
+    }
+    $rowTbl .= "</tr>";
+    $headRow .= "</tr>";
+  }  
+  $resultTbl .= "<table border=1>{$headRow}{$rowTbl}</table>";
+  $rtnpage = <<<PAGESTUFF
 <table border=0 id=reportDefinitionTbl>
 <tr><td valign=top id=reportIdentification>{$hdTbl}</td></tr>
-<tr><td valign=top> {$resultTbl} </td></tr>
+<tr><td valign=top><div id=recordsDisplay>{$resultTbl}</div></td></tr>
 <tr><td valign=bottom id=reportFooterBar>{$ftTbl}</td></tr>
 </table>
 PAGESTUFF;

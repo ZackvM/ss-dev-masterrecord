@@ -11,7 +11,7 @@ class printobject {
     public $style = "";
     public $bodycontent = "";
 
-    private $registeredPages = array('pathologyreport','shipmentmanifest'); //chartreview when that is built 
+    private $registeredPages = array('pathologyreport','shipmentmanifest','reports'); //chartreview when that is built 
     //pxchart = Patient Chart
     
     function __construct() { 		  
@@ -51,7 +51,7 @@ class printobject {
         $elArr['object'] =  (method_exists($conDoc,'unencryptedDocID') ? $conDoc->unencryptedDocID($docType, $docId) : "");
         $elArr['pagetitle'] = (method_exists($conDoc,'pagetabs') ? $conDoc->pagetabs($elArr['object']) : "");        
         $elArr['headr'] = (method_exists($conDoc,'generateheader') ? $conDoc->generateheader() : ""); 
-        $elArr['tabicon'] =   (method_exists($conDoc,'faviconBldr') ? $conDoc->faviconBldr($elArr['object']) : "");
+        $elArr['tabicon'] = (method_exists($conDoc,'faviconBldr') ? $conDoc->faviconBldr($elArr['object']) : "");
         $elArr['style'] = (method_exists($conDoc,'globalstyles') ? $conDoc->globalstyles() : "");        
 
         $elArr['bodycontent'] = $elArr['object']['documentid'];
@@ -93,8 +93,7 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $pr = $prR->fetch(PDO::FETCH_ASSOC);
             $bgnbr = $pr['bgnbr'];
             break;
-        case 'chartreview':
-            
+        case 'chartreview':     
             ///PATIENT CHART
             break;
         case 'shipmentmanifest':
@@ -108,7 +107,12 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $pr = $prR->fetch(PDO::FETCH_ASSOC);
             $bgnbr = '';                  
             break;
-         
+        case 'reports': 
+            $dt = "SCIENCESERVER PRINTABLE REPORTS";
+            $docIdElem = explode("-", $unencry);
+            $docid = $docIdElem[0];
+            $bgnbr = '';                  
+           break; 
 
         default: 
             //RETURN ERROR
@@ -163,7 +167,10 @@ function pagetabs($docobject) {
   switch($docobject['document']) { 
     case 'PATHOLOGY REPORT':
       $thisTab = "{$docobject['bgnbr']} (Pathology Report)";
-    break;
+      break;
+    case 'SCIENCESERVER PRINTABLE REPORTS':
+      $thisTab = "ScienceServer Printable Reports";
+      break; 
     default: 
       $thisTab =  substr(('000000' . $docobject['documentid']),-6) . " Shipment Document"; 
     break; 
@@ -180,11 +187,46 @@ function documenttext($docobject, $orginalURI) {
     case 'SHIPMENT MANIFEST':
         $doctext = getShipmentDocument($docobject['documentid'], $orginalURI);
         break;
+    case 'SCIENCESERVER PRINTABLE REPORTS':
+        $doctext = getPrintableReport($docobject['documentid'],$originalURI);
+        break;
     }
     return $doctext;
 }
+ 
+}
 
-    
+
+function getPrintableReport($sdid, $originalURL) { 
+  $rptarr = json_decode(callrestapi("GET", dataTree . "/report-parts/{$sdid}",serverIdent, serverpw), true);
+  $reportnme = $rptarr['DATA']['reportname'];
+  $responseCode = 404;
+  $format = 'HTML';
+
+  $printrptsfromdata = new reportprintables(); 
+  if (  method_exists( $printrptsfromdata,   $reportnme )) { 
+    $sDocFile = $printrptsfromdata->$reportnme($rptarr);
+    $docText = $sDocFile;
+    $responseCode = 200;
+  } else { 
+    $sDocFile = "THIS PRINTABLE DOES NOT EXISTS: {$reportnme} ";
+    $docText = $sDocFile;
+  } 
+
+  //IF RESPONSECODE IS 200 CONVERT TO PDF
+  if ($responseCode === 200) { 
+    $filehandle = generateRandomString();                
+    $sdDocFile = genAppFiles . "/tmp/sdz{$filehandle}.html";
+    $sdDhandle = fopen($sdDocFile, 'w');
+    fwrite($sdDhandle, $docText);
+    fclose;
+    $sdPDF = genAppFiles . "/publicobj/documents/shipdoc/shipdoc{$filehandle}.pdf";
+    $linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED DAILY BARCODE RUN\"  {$sdDocFile} {$sdPDF}";
+    $output = shell_exec($linuxCmd);
+    $format = "pdf";    
+  }
+
+  return array('status' => $responseCode, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => $format);
 }
 
 function getShipmentDocument($sdid, $originalURL) { 
@@ -731,6 +773,67 @@ function prntbarcode( $filepath="", $text="0", $size="20", $orientation="horizon
 }
 
 
+class reportprintables { 
 
+    function barcoderun($rptdef) {     
+      $at = genAppFiles;
+      $tt = treeTop;
+      require("{$at}/extlibs/bcodeLib/qrlib.php");
+      $tempDir = "{$at}/tmp/";
+      $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+      $pdta = json_encode($rptdef);
+      $tbldta = json_decode(callrestapi("POST", dataTree . "/data-doers/grab-report-data",serverIdent, serverpw, $pdta), true);           
+
+  $cellCntr = 0;
+  foreach ($tbldta['DATA'] as $records) {
+    if ($cellCntr === 2) { 
+        $rowTbl .= "</tr><tr>";
+        $cellCntr = 0;
+    }
+        //****************CREATE BARCODE
+        $codeContents = "{$records['Biosample_Label']}";
+        $fileName = 'bc' . generateRandomString() . '.png';
+        $pngAbsoluteFilePath = $tempDir.$fileName;
+        if (!file_exists($pngAbsoluteFilePath)) {
+          QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+        } 
+        $qrcode = base64file("{$pngAbsoluteFilePath}", "", "png", true," style=\"height: 1in;\" ");
+        //********************END BARCODE CREATION
+
+    $lblTbl = <<<LBLLBL
+<table border=0 cellpadding=0 cellspacing=0 style="width: 4in; height: 5.21in; border: 1px solid #000000; box-sizing: border-box;">
+<tr><td style="padding: 0 0 0 4px;">{$favi}</td><td align=right valign=bottom> 
+
+    <table>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 14pt; color: #000084; font-weight: bold; text-align: right;">CHTNEastern Biosample</td></tr>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 10pt; color: #000084; font-weight: bold; text-align: right;">3400 Spruce Street, DULLES 565<br>Philadelphia, PA 19104</td></tr>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 9pt; color: #000084; font-weight: bold; text-align: right;">(215) 662-4570</td></tr>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 9pt; color: #000084; font-weight: bold; text-align: right;">https://www.chtneast.org</td>
+     </tr></table>
+
+</td></tr>
+<tr><td colspan=2><center>{$qrcode}</td></tr>
+<tr><td colspan=2 style="font-size: 9pt; border-bottom: 1px solid #d3d3d3; font-weight: bold; padding: 4px 0 0 4px;">Biosample Number</td></tr>
+<tr><td colspan=2 style="font-size: 11pt; text-align: center;">{$records['Biosample_Label']}</td></tr>
+<tr><td colspan=2 style="font-size: 9pt; border-bottom: 1px solid #d3d3d3; font-weight: bold; padding: 4px 0 0 4px;">Diagnosis Designation</td></tr>
+<tr><td colspan=2 style="font-size: 11pt; text-align: center;">{$records['Diagnosis_Designation']}</td></tr>
+<tr><td colspan=2 style="font-size: 9pt; border-bottom: 1px solid #d3d3d3; font-weight: bold; padding: 4px 0 0 4px;">Preparation</td></tr>
+<tr><td colspan=2 style="font-size: 11pt; text-align: center;">{$records['Preparation']}</td></tr>
+<tr><td colspan=2 style="max-height: 3in;">&nbsp;</td></tr>
+</table>
+LBLLBL;
+    $rowTbl .= "<td>{$lblTbl}</td>";
+    $cellCntr++;
+  }  
+  $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$rowTbl}</tr></table>"; 
+       return $resultTbl;    
+    }
+
+
+}
 
 

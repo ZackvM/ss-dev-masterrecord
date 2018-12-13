@@ -430,7 +430,6 @@ function reports($rqststr) {
     $rtnthis = <<<JAVASCR
 
 
-
 document.addEventListener('DOMContentLoaded', function() {  
 
   if (byId('btnClearRptGrid')) { 

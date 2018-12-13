@@ -150,7 +150,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #reportIdentification { background: rgba({$this->color_grey},1); height: .2vh; }
 #defHead { font-size: 1.8vh;  }
 #reportFooterBar { background: rgba({$this->color_grey},1); height: .2vh; }
-
+#recordsDisplay { width: 98vw; box-sizing: border-box; height: 74vh; overflow: auto; }
               
 STYLESHEET;
 return $rtnThis;    
