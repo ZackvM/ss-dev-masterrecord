@@ -32,7 +32,146 @@ function __construct() {
 
 }
 
-class datadoers { 
+class datadoers {
+
+    function grabreportdata($request, $passdata) { 
+      
+      $responseCode = 400; 
+      $error = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $dta = array();
+      $msgArr = array();
+      $pdta = json_decode($passdata,true);
+      require(serverkeys . "/sspdo.zck");  
+
+      session_start();        
+      $usrSQL = "SELECT originalAccountName, allowcoord, accessnbr FROM four.sys_userbase where sessionid = :sessionid";
+      $usrR = $conn->prepare($usrSQL);
+      $usrR->execute(array(':sessionid' =>session_id()));
+      if ($usrR->rowCount() < 1) { 
+        $msgArr[] = "SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN"; 
+        $error = 1;
+        $responseCode = 401;
+      } else { 
+        $u = $usrR->fetch(PDO::FETCH_ASSOC);
+      } 
+
+      if ( ($u['accessnbr'] < $pdta['DATA']['rqaccesslvl']) || ((int)$u['allowcoord'] <> 1)) {
+        $msgArr[] = "USER NOT ALLOWED FUNCTION"; 
+        $error = 1;
+        $responseCode = 401;
+      }
+
+
+      if ($error === 0) { 
+        //RUN FUNCTION
+        $r = $pdta['DATA']['requestjson'];
+
+        $dta[] = $r;
+
+//        if ( count($r['request']['wherelist']) < 1) { 
+//          $msgArr[] = "NO PARAMETER/CRITERIA WAS SPECIFIED IN WHERE CLAUSE - SEE CHTNED IT STAFF FOR ASSISTANCE";
+//          $msg = $msgArr;
+//        } else { 
+//          $select = $r['rptsql'];
+//          $from = $r['rptsql']['fromclause'];
+//          $orderby = $r['rptsql']['orderby'];
+//          $where = "where 1=1 ";
+//          foreach ($r['wherelist'] as $val) { 
+//            $where .= " and ({$val}) ";
+//          }
+//          //TODO:  ADD THESE COMPONENTS IN TO SQL
+//          $groupby = $r['rptsql']['groupbyclause'];
+//          $summaryfield = $r['rptsql']['summaryfield'];
+//          $sqlstmt = "SELECT {$select} FROM {$from} {$where} {$orderby}";
+//          $valuelist = $r['valuelist'];
+//          $rtnDataTbl = $sqlstmt . " -- " . $valuelist;
+//
+//          $dta[] = $rtnDataTbl;
+
+
+
+
+          $responseCode = 200;
+          $msg = "";
+//        }
+      } else { 
+        $msg = $msgArr;
+      }
+      $rows['statusCode'] = $responseCode;   
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+
+    function createreportobj($request, $passdata) { 
+      $responseCode = 400; 
+      $error = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $dta = array();
+      $msgArr = array();
+      $pdta = json_decode($passdata,true);
+      require(serverkeys . "/sspdo.zck");  
+      //{"request":{"valuelist":{":bcrpbiosample":"82555",":bcrinstitution":"HUP"},"wherelist":{"0":"subtbl.pbiosample = :bcrpbiosample","1":"procurementinstitution = :bcrinstitution"},"typeofrequest":"PDF","requestedreporturl":"barcoderun"}}
+      foreach ($pdta['request']['valuelist'] as $key => $value) { 
+        if (trim($value) === "") {     
+          $msgArr[] .= "Selected criteria ({$key}) must have a specified value";
+          $error = 1;
+        }
+      }
+
+      $rpt = explode("/",$pdta['request']['requestedreporturl']);
+      if (count($rpt) === 2) { 
+      $rptsqlSQL = "SELECT ifnull(selectClause,'') as selectclause, ifnull(fromClause,'') as fromclause, ifnull(summaryfield,'') as summaryfield, ifnull(groupbyClause,'') as groupbyclause, ifnull(orderbyClause,'') as orderby, ifnull(accesslvl,100) as accesslevel, ifnull(allowgriddsp,0) as allowgriddsp, ifnull(allowpdf,0) as allowpdf FROM four.ut_reportlist where urlpath = :rpturl";
+      $rptsqlRS = $conn->prepare($rptsqlSQL); 
+      $rptsqlRS->execute(array(':rpturl' => $rpt[1])); 
+      if ($rptsqlRS->rowCount() <> 1) { 
+        $error = 1; 
+        $msgArr[] = "MAL-FORMED REPORT URL - SEE A CHTNED IT PERSON";
+      } else { 
+        $rptsql = $rptsqlRS->fetch(PDO::FETCH_ASSOC);
+        $pdta['request']['rptsql'] = $rptsql;
+      }
+      } else { 
+        $error = 1; 
+        $msgArr[] = "REPORT URL IN REQUEST DOES NOT CONTAIN ALL COMPONENTS"; 
+      }
+
+      session_start();        
+      $usrSQL = "SELECT originalAccountName, allowcoord, accessnbr FROM four.sys_userbase where sessionid = :sessionid";
+      $usrR = $conn->prepare($usrSQL);
+      $usrR->execute(array(':sessionid' =>session_id()));
+      if ($usrR->rowCount() < 1) { 
+        $msgArr[] = "SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN"; 
+        $error = 1;
+        $responseCode = 401;
+      } 
+      //TODO:CHECK ACCESS LEVEL and COORDINATOR ALLOWED
+      //TODO:CHECK OTHER DATA ELEMENTS (PROPER DATES, NUMBERS, ETC...)
+      //TODO:CHECK THAT REQUIRED FIELDS HAVE VALUES AND HAVE NOT SOMEHOW BEEN UNCHECKED
+
+      if ($error === 0) { 
+          //SAVE REQUEST
+          $objid = strtolower( generateRandomString() );
+          $u = $usrR->fetch(PDO::FETCH_ASSOC);
+          $insSQL = "insert into four.objsrchdocument (objid, bywho, onwhen, doctype, reportmodule, reportname, requestjson, typeofreportrequested) value (:objid,:whoby,now(),:doctype,:reportmodule,:reportname,:requestjson,:typeofreportrequested)";
+          $insR = $conn->prepare($insSQL);
+          $insR->execute(array(':objid' => $objid, ':whoby' => $u['originalAccountName'], ':doctype' => 'REPORTREQUEST', ':reportmodule' => $rpt[0], ':reportname' => $rpt[1], ':requestjson' => json_encode($pdta), ':typeofreportrequested'=> $pdta['request']['typeofrequest']));
+          $dta['reportobject'] = $objid;
+          $dta['reportobjectency'] = cryptservice($objid, 'e');
+          $dta['typerequested'] = $pdta['request']['typeofrequest'];
+          $dta['reportmodule'] = $rpt[0];
+          $dta['reportname'] = $rpt[1];
+          $itemsfound = 1;
+          $responseCode = 200;                       
+      } else { 
+        $msg = $msgArr;
+      }
+      $rows['statusCode'] = $responseCode;   
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    } 
 
     function hprworkbenchbuilder($request, $passdata) {  
       $responseCode = 400; 

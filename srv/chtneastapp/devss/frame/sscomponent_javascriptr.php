@@ -425,10 +425,127 @@ return $rtnThis;
 function reports($rqststr) { 
 
     $sp = serverpw; 
+    $tt = treeTop;
 
     $rtnthis = <<<JAVASCR
 
-//{$sp}
+
+
+document.addEventListener('DOMContentLoaded', function() {  
+
+  if (byId('btnClearRptGrid')) { 
+    byId('btnClearRptGrid').addEventListener('click', function() {
+      clearRptParameterGrid();
+    }, false);
+  }
+
+  if (byId('btnGenRptData')) { 
+    byId('btnGenRptData').addEventListener('click', function() {
+      makeReportDataRequest();
+    }, false);
+  }
+
+  if (byId('btnGenRptPDF')) { 
+    byId('btnGenRptPDF').addEventListener('click', function() {
+      makeReportPDFRequest();
+    }, false);
+  }
+
+}, false);        
+
+function makeRequestArray() {
+  var valuearr = new Object();
+  var wherearr = new Object();
+  var returnarr = new Object(); 
+  if (byId('reportParameterGrid')) {
+    var elearr = byId('reportParameterGrid').elements;
+    var foundcount = 0;
+    for (var i = 0; i < elearr.length; i++) {
+      if (elearr[i].type == 'checkbox' && elearr[i].checked == true) {
+        var fldnbr = elearr[i].id.replace('fldParaChkBx','');
+        for (var j = 0; j < elearr.length; j++ ) {
+          if (fldnbr == elearr[j].dataset.paracount) { 
+            valuearr[elearr[j].dataset.criterianame] = elearr[j].value;           
+          }
+        }
+        wherearr[foundcount] = elearr[i].dataset.sqlwhere;
+        foundcount++;
+      }
+    }
+  }
+  returnarr['valuelist'] = valuearr; 
+  returnarr['wherelist'] = wherearr;
+  return returnarr;
+}
+
+function makeReportDataRequest() { 
+  var requestArr = makeRequestArray();
+  requestArr['typeofrequest'] = 'TABULAR';
+  requestArr['requestedreporturl'] = byId('reporturlname').value;
+  sendMakeReportReq(requestArr);
+}
+
+function makeReportPDFRequest() { 
+  var requestArr = makeRequestArray();
+  requestArr['typeofrequest'] = 'PDF';
+  requestArr['requestedreporturl'] = byId('reporturlname').value;
+  sendMakeReportReq(requestArr);
+}
+
+function sendMakeReportReq(requestArray) { 
+  var dta = new Object(); 
+  dta['request'] = requestArray;
+  var passdata = JSON.stringify(dta);
+  var mlURL = "/data-doers/create-report-obj";
+  universalAJAX("POST",mlURL,passdata,answerSendMakeReportReq,1);
+}
+
+function answerSendMakeReportReq(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("REPORT OBJECT CREATION ERRORS:\\n"+dspMsg);  //DSIPLAY ERROR MESSAGE
+   } else {  
+     //https://dev.chtneast.org/print-obj/shipment-manifest/NXJYK0VMWDRzUHphcjc0aVIrczFxZz09
+     //https://dev.chtneast.org/reports/inventory/barcode-run
+     var prts = JSON.parse(rtnData['responseText']);
+     switch (prts['DATA']['typerequested']) { 
+       case 'TABULAR':
+         navigateSite("reports/report-results/"+prts['DATA']['reportobject']);
+       break;
+       case 'PDF':
+         openOutSidePage("{$tt}/print-obj/reports/"+prts['DATA']['reportobjectency']);
+       break;  
+     }
+   }
+}
+
+function clearRptParameterGrid() { 
+  if (byId('reportParameterGrid')) {
+    var elearr = byId('reportParameterGrid').elements;
+    for (var i = 0; i < elearr.length; i++) {
+      if (elearr[i].type == 'checkbox' && elearr[i].disabled == false) { 
+       elearr[i].checked = false;
+      }
+      if (elearr[i].type == 'text' || elearr[i].type == 'hidden') { 
+        elearr[i].value = "";
+      }
+    }
+  }
+}
+
+function fillField(whichfield, whichvalue, whichdisplay) { 
+  if (byId(whichfield)) { 
+     byId(whichfield).value = whichdisplay; 
+     if (byId(whichfield+'Value')) { 
+        byId(whichfield+'Value').value = whichvalue;    
+     }
+  }       
+}
+
 
 JAVASCR;
 return $rtnthis;

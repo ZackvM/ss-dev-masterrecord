@@ -426,46 +426,62 @@ PAGEHERE;
 
 function reports($rqststr, $whichusr) { 
     
-  $topBtnBar = generatePageTopBtnBar('reportscreen');
-  $accesslvl = $whichusr->accessnbr;
-  if (trim($rqststr[2]) === "") { 
-      //GET ALL REPORT LIST
-      $pg = <<<CONTENT
-GET REPORTS BY MODULE AND PLACE THEM HERE
-CONTENT;
+  if ((int)$whichusr->allowcoord !== 1) { 
+    $pg = "<h1>USER IS NOT ALLOWED TO USE THE REPORT SCREEN";        
+  } else {    
+   
+   $accesslvl = $whichusr->accessnbr;
 
-  } else { 
-      //GET CRITERIA FOR THIS REPORT
-      if (trim($rqststr[3]) === "") {
-          //GET REPORTS IN MODULE ($rqststr[2]) 
-      $pg = <<<CONTENT
+   if (trim($rqststr[2]) === "") { 
+     //GET ALL REPORT LIST
+     $pg = <<<CONTENT
+GET MODULE LIST AND PLACE THEM HERE
+CONTENT;
+   }
+
+   if ( trim($rqststr[2]) === 'reportresults' &&  trim($rqststr[3]) !== "") {
+     //TABULAR REPORT RESULTS   
+     $topBtnBar = generatePageTopBtnBar('reportresultsscreen');
+     $pgContent = bldReportResultsScreen(trim($rqststr[3]), $whichusr);
+     $pg = <<<CONTENT
+{$pgContent}
+CONTENT;
+   }   
+
+   //GET CRITERIA FOR THIS REPORT
+   if ( (trim($rqststr[2]) !== "" && trim($rqststr[2]) !== 'reportresults' ) && trim($rqststr[3]) === "") {
+       //GET REPORTS IN MODULE ($rqststr[2]) 
+       $pg = <<<CONTENT
 GET MODULE REPORT LIST AND PLACE THEM HERE
 CONTENT;
-      } else { 
-          //GET REPORT PARAMETERS
-          $reportParameters = bldReportParameterScreen($rqststr[3], $whichusr);        
-          $pg = <<<CONTENT
+     }  
+     
+     if ( trim($rqststr[2]) !== 'reportresults' && trim($rqststr[3]) !== "") {
+  //GET REPORT PARAMETERS
+           $topBtnBar = generatePageTopBtnBar('reportscreen');
+           $reportParameters = bldReportParameterScreen($rqststr[3], $whichusr);        
+           $pg = <<<CONTENT
 {$reportParameters}
 CONTENT;
-      }
+     }
+
+
       
-  }
-  
-  
-  
+   }
+    
   $rtnthis = <<<PAGEHERE
 {$topBtnBar} 
 
 {$pg}
 PAGEHERE;
+
+
+
 return $rtnthis;    
 }
 
 function scienceserverhelp($rqststr, $whichusr) { 
     
-    
-    
-
   $rtnthis = <<<PAGEHERE
 
           SCIENCESERVER HELP
@@ -1580,11 +1596,17 @@ function generatePageTopBtnBar($whichpage) {
 //TODO: MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
 
 switch ($whichpage) { 
-    
+case 'reportresultsscreen':
+$innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnRRExport><tr><td><i class="material-icons">import_export</i></td><td>Export</td></tr></table></td>
+</tr>
+BTNTBL;
+break;    
 case 'reportscreen':
 $innerBar = <<<BTNTBL
 <tr>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer><tr><td><i class="material-icons">layers_clear</i></td><td>Clear Grid</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnClearRptGrid><tr><td><i class="material-icons">layers_clear</i></td><td>Clear Grid</td></tr></table></td>
 </tr>
 BTNTBL;
 break;    
@@ -1667,9 +1689,55 @@ RTNTHIS;
 return $rtnthis;
 }
 
+function bldReportResultsScreen($whichrpt, $usr) { 
+  $rptarr = json_decode(callrestapi("GET", dataTree . "/report-parts/{$whichrpt}",serverIdent, serverpw), true);
+  $whorequested = $rptarr['DATA']['bywho'];
+  $onwhen = $rptarr['DATA']['onwhen'];
+  $rptmod = $rptarr['DATA']['reportmodule'];
+  $rptCreated = "{$rptarr['DATA']['rptcreator']} / {$rptarr['DATA']['rptcreatedon']}";
+  $rptdesc = $rptarr['DATA']['dspreportdescription'];
+  $dsprptname = $rptarr['DATA']['dspreportname'];
+  $modDsp = $rptarr['DATA']['groupingname'];
+  $modlink = $rptarr['DATA']['reportmodule'];
+  $rptaccesslvl = $rptarr['DATA']['rqaccesslvl'];
+  $uaccess = $usr->accessnbr;
+  $uid = $usr->userid;
+
+$hdTbl = <<<HEADTBL
+<table>
+<tr><td>Module: </td><td>{$modDsp}</td><td onclick="navigateSite('reports/{$modlink}');">(Click for reports in module)</td></tr>
+<tr><td>Name: </td><td colspan=2>{$dsprptname}</td></tr>
+<tr><td>Description: </td><td colspan=2>{$rptdesc}</td></tr>
+<tr><td>Created: </td><td colspan=2>{$rptCreated}</td></tr>
+<tr><td>Requested By: </td><td colspan=2>{$whorequested}</td></tr>
+<tr><td>Requested On: </td><td colspan=2>{$onwhen}</td></tr>
+</table>
+HEADTBL;
+
+//CHECK ACCESS LEVEL IS CORRECT
+if ($rptaccesslvl > $uaccess) { 
+    $rtnpage = "<h1>ACCESS DENIED TO USER ({$uid}/Access Level: {$uaccess})";
+} else { 
+    
+//$pdta = json_encode(array('srchTrm' => $dta['DATA'][0]));
+//$sidedta = json_decode(callrestapi("POST", dataTree . "/data-doers/hpr-workbench-side-panel",serverIdent, serverpw, $pdta), true);           
+    //$resultTbl = grabRptData($rptarr['DATA']['requestjson']);
+$resultTbl = json_encode($rptarr); 
+
+$rtnpage = <<<PAGESTUFF
+<table border=0 id=reportDefinitionTbl>
+<tr><td valign=top id=reportIdentification>{$hdTbl}</td></tr>
+<tr><td valign=top> {$resultTbl} </td></tr>
+<tr><td valign=bottom id=reportFooterBar>{$ftTbl}</td></tr>
+</table>
+PAGESTUFF;
+}
+
+return $rtnpage;
+}
+
 function bldReportParameterScreen($whichrpt, $usr) { 
 
-//{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"groupingname":"INVENTORY","groupingurl":"Inventory","reportname":"Daily Barcode Run","reportdescription":"This report generates a sheet with printable barcodes for use in the freezers","accesslvl":3,"allowgriddsp":0,"allowpdfdsp":1,"bywhom":"proczack","rptcreation":"December 10, 2018","criteria":[{"parameterid":1,"requiredind":0,"sqltextline":"subtbl.pbiosample = :pbiosample","paratype":"int","constraints":"number","menuind":0,"menuname":"","ondemandmenu":"","equivalancyoptions":"EQUAL","editableind":1},{"parameterid":5,"requiredind":0,"sqltextline":"subtbl.pbiosample between :pbiosamplestart and :pbiosampleend","paratype":"int","constraints":"range-only","menuind":0,"menuname":"","ondemandmenu":"","equivalancyoptions":"RANGE","editableind":1},{"parameterid":2,"requiredind":0,"sqltextline":"subtbl.procurementdate between :procdatestart and :procdateend","paratype":"date","constraints":"range-only","menuind":0,"menuname":"","ondemandmenu":"","equivalancyoptions":"RANGE","editableind":1},{"parameterid":3,"requiredind":0,"sqltextline":"subtbl.scanloccode = :inventoryscancode","paratype":"string","constraints":"code-only","menuind":1,"menuname":"inventory-scancodes","ondemandmenu":"","equivalancyoptions":"EQUAL","editableind":1},{"parameterid":4,"requiredind":1,"sqltextline":"procurementinstitution = :institution","paratype":"string","constraints":"code-only","menuind":1,"menuname":"","ondemandmenu":"usersinstitutions","equivalancyoptions":"EQUAL","editableind":1}]}}     
 $rptarr = json_decode(callrestapi("GET", dataTree . "/report-definition/{$whichrpt}",serverIdent, serverpw), true);
 $rpt = $rptarr['DATA'];
 $rptaccesslvl = $rpt['accesslvl'];
@@ -1683,6 +1751,7 @@ if ($rptaccesslvl > $uaccess) {
   $rptgroupingname = $rpt['groupingname'];
   $rptgroupurl = $rpt['groupingurl'];
   $rptname = $rpt['reportname'];
+  $rpturl = "{$rptgroupurl}/{$rpt['reporturl']}";
   $rptdesc = $rpt['reportdescription']; 
   $rptallowgriddsp = $rpt['allowgriddsp'];
   $rptallowpdf = $rpt['allowpdfdsp'];
@@ -1692,7 +1761,7 @@ if ($rptaccesslvl > $uaccess) {
   $hdTbl = <<<TBLTBL
       <table border=0 cellspacing=0 cellpadding=0 id=defHead>
         <tr onclick="navigateSite('reports/{$rptgroupurl}');"><td>Module:&nbsp;</td><td>&nbsp;{$rptgroupingname}</td><td>&nbsp;(Click for reports in module)</td></tr>
-        <tr><td>Name: &nbsp;</td><td colspan=2>&nbsp;{$rptname}</td></tr>
+        <tr><td>Name: &nbsp;</td><td colspan=2>&nbsp;{$rptname} <input type=hidden id=reporturlname value="{$rpturl}"></td></tr>
         <tr><td>Description: &nbsp;</td><td colspan=2>&nbsp;{$rptdesc}</td></tr>
         <tr><td>Created: &nbsp;</td><td colspan=2>&nbsp;{$rptbywhom} / {$rptcreation}</td></tr>
       </table>
@@ -1702,37 +1771,52 @@ TBLTBL;
   if (count($rpt['criteria']) < 1) { 
     $paraTbl = "<h1>NO CRITERIA PARAMETERS ARE LISTED FOR THIS REPORT";
   } else {
-
-    $paraTbl = "<table border=1>";
+    $parameterCntr = 0;  
+    $paraTbl = "<form id=reportParameterGrid><table border=0><tr><td colspan=2>REPORT OPTION PARAMETER LISTING</td></tr>";
     foreach ($rpt['criteria'] as $key => $value) { 
-
         //MARK REQUIRED CRITERIA
-        $chkbox = ((int)$value['requiredind'] !== 1) ? "<input type=checkbox>" : "<input type=checkbox  disabled=\"disabled\" checked=\"checked\">";
+        $chkbox = ((int)$value['requiredind'] !== 1) ? "<input type=checkbox id=\"fldParaChkBx{$parameterCntr}\" id=\"fldParaChkBx{$parameterCntr}\" data-sqlwhere=\"{$value['sqltextline']}\">" : "<input type=checkbox disabled=\"disabled\" checked=\"checked\" id=\"fldParaChkBx{$parameterCntr}\" data-sqlwhere=\"{$value['sqltextline']}\">";
         preg_match_all("/:\b[a-zA-Z]{1,}\b/", $value['sqltextline'], $out);
-
         $rowOne = "";
         $rowTwo = "";
         foreach($out[0] as $critval) { 
           $flddef = str_replace(":","",$critval); 
           $rptfld = json_decode(callrestapi("GET", dataTree . "/report-criteria-field-definition/{$flddef}",serverIdent, serverpw), true);
-          $rowOne .= "<td>{$rptfld['DATA'][0]['flddisplay']}</td>";
-          $rowTwo .= "<td>" . $critval . "</td>";
+          if ((int)$rptfld['ITEMSFOUND'] === 1) {
+            $fld = "";  
+            switch ($rptfld['DATA'][0]['typeoffield']) {
+              case 'int':
+                $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='int' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw; text-align: right;\">";
+                break;
+              case 'date':
+                $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='date' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw;\">";
+                break;
+              case 'string':
+                $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='string' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw;\">";
+                break;
+              case 'menu':
+                  $fld = ( trim($rptfld['DATA'][0]['menuurl']) !== "" ) ? getRptParaMenu( trim($rptfld['DATA'][0]['menuurl']), $flddef, $parameterCntr, $critval, $rptfld['DATA'][0]['flddspwidth'] ) : "";
+                break;
+            }
+            $rowOne .= "<td>{$rptfld['DATA'][0]['flddisplay']}</td>";
+            $rowTwo .= "<td>{$fld}</td>";
+          } else { 
+            $rowOne .= "<td>ERROR</td>";
+            $rowTwo .= "<td>FIELD DEFINITION MISSING (DO NOT RUN!)</td>"; 
+          } 
         }
         $critTbl = "<table><tr>{$rowOne}</tr><tr>{$rowTwo}</tr></table>";
-        $paraTbl .= "<tr><td>{$chkbox}</td><td>{$value['sqltextline']}</td><td>{$critTbl}</td></tr>"; 
+        $paraTbl .= "<tr><td>{$chkbox}</td><td>{$critTbl}</td></tr>"; 
+        $parameterCntr++;
     }
-    $paraTbl .= "</table>";
-
+    $paraTbl .= "</table></form>";
   }
-
 //END BUILD CRITERIA
-  
-$gridBtn = ((int)$rptallowgriddsp === 1) ? "<table class=tblBtn><tr><td>View Data</td></tr></table>" : "";
-$pdfBtn = ((int)$rptallowpdf === 1) ? "<table class=tblBtn><tr><td>Print Report</td></tr></table>" : "";
+$gridBtn = ((int)$rptallowgriddsp === 1) ? "<table class=tblBtn id=btnGenRptData><tr><td>View Data</td></tr></table>" : "";
+$pdfBtn = ((int)$rptallowpdf === 1) ? "<table class=tblBtn id=btnGenRptPDF><tr><td>Print Report</td></tr></table>" : "";
   $ftTbl = <<<TBLTBL
 <table width=100%><tr><td><center><table><tr><td>{$gridBtn}</td><td>{$pdfBtn}</td></tr></table></td></tr></table>
 TBLTBL;
-
 
 $rtnpage = <<<PAGESTUFF
 <table border=0 id=reportDefinitionTbl>
@@ -1744,3 +1828,28 @@ PAGESTUFF;
 }
 return $rtnpage;
 }
+
+function generateRptParaMenu() { 
+//NOT PRESENTLY ACTIVE  PLANNED USE:  GENERATE MENUS BASED ON USER PROFILE 
+}
+
+function getRptParaMenu($whichmenuurl , $flddef, $paracnt, $criteriavalue, $dspwidth) { 
+  $si = serverIdent;
+  $sp = serverpw;
+  $mnuarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/{$whichmenuurl}",$si,$sp),true);
+  $menu = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPara{$flddef}','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  foreach ($mnuarr['DATA'] as $mnuval) { 
+    $menu .= "<tr><td onclick=\"fillField('fldPara{$flddef}','{$mnuval['codevalue']}','{$mnuval['menuvalue']}');\" class=ddMenuItem>{$mnuval['menuvalue']}</td></tr>";
+  }
+  $menu .= "</table>";
+ 
+  $rtnThis = <<<RTNTHIS
+<div class=menuHolderDiv>
+   <input type=hidden id="fldPara{$flddef}Value" data-datatype='menu' data-paracount='{$paracnt}' data-criterianame='{$criteriavalue}'>
+   <input type=text id="fldPara{$flddef}" READONLY class="inputFld" style="width: {$dspwidth}vw;">
+<div class=valueDropDown style="width: {$dspwidth}vw;">{$menu}</div>
+</div>
+RTNTHIS;
+   return $rtnThis;
+}
+

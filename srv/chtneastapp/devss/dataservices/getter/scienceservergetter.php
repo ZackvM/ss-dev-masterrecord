@@ -44,7 +44,7 @@ class objlisting {
    $rq = explode("/",$urirqst); 
    if (trim($rq[3]) !== "") { 
       require(serverkeys . "/sspdo.zck");
-      $sql = "SELECT ifnull(flddisplay,'') flddisplay, ifnull(typeoffield,'string') as typeoffield, ifnull(menuurl,'') as menuurl, ifnull(ondemandmenu,'') as ondemandmenu, ifnull(fieldnote,'') as fieldnote FROM four.ut_report_parameterfielddefinitions where fldname = :fld";
+      $sql = "SELECT ifnull(flddisplay,'') flddisplay, ifnull(typeoffield,'string') as typeoffield, ifnull(menuurl,'') as menuurl, ifnull(ondemandmenu,'') as ondemandmenu, ifnull(fielddspwidth,20) as flddspwidth, ifnull(fieldnote,'') as fieldnote FROM four.ut_report_parameterfielddefinitions where fldname = :fld";
       $rs = $conn->prepare($sql); 
       $rs->execute(array(':fld' => trim($rq[3])));
       if ($rs->rowCount() === 1) { 
@@ -59,6 +59,51 @@ class objlisting {
    return $rows;    
  } 
 
+ function reportparts($request, $urirqst) { 
+    $rows = array(); 
+    $dta = array(); 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $itemsfound = 0;
+    $rq = explode("/",$urirqst); 
+    if (trim($rq[3]) !== "") { 
+      require(serverkeys . "/sspdo.zck");
+      $objsql = <<<SQLSTMT
+SELECT 
+ifnull(ob.bywho,'') as bywho
+, ifnull(date_format(ob.onwhen,'%m/%d/%Y'),'') onwhen
+, ifnull(ob.reportmodule,'') reportmodule
+, ifnull(ob.reportname,'') reportname
+, ifnull(ob.requestjson,'') requestjson
+, ifnull(ob.typeofreportrequested,'') typeofreportrequested
+, ifnull(rl.reportname,'') as dspreportname
+, ifnull(rl.reportdescription,'') as dspreportdescription
+, ifnull(rl.bywhom,'') as rptcreator
+, ifnull(date_format(rl.onwhen,'%M %d, %Y'),'') as rptcreatedon
+, ifnull(rl.accesslvl,100) as rqaccesslvl
+, ifnull(rg.groupingname,'') as groupingname 
+FROM four.objsrchdocument ob 
+left join four.ut_reportlist rl on ob.reportname = rl.urlpath 
+left join four.ut_reportgrouping rg on rl.groupingid = rg.groupid 
+where objid = :objid 
+and doctype = :doctype 
+and rl.dspind = 1
+SQLSTMT;
+      $objRS = $conn->prepare($objsql); 
+      $objRS->execute(array(':objid' => trim($rq[3]), ':doctype' => 'REPORTREQUEST')); 
+      if ($objRS->rowCount() <> 1) {
+      } else {
+        $dta = $objRS->fetch(PDO::FETCH_ASSOC);
+        $responseCode = 200; 
+        $msg = "";
+        $itemsfound = 1;
+      }
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;    
+ }
+
  function reportdefinition($request, $urirqst) { 
     $rows = array(); 
     $dta = array(); 
@@ -68,7 +113,7 @@ class objlisting {
     $rq = explode("/",$urirqst);
     if (trim($rq[3]) !== "") { 
       require(serverkeys . "/sspdo.zck");
-      $rptSQL = "SELECT ifnull(rptgrp.groupingname,'') groupingname, ifnull(rptgrp.groupingurl,'') groupingurl, ifnull(rptlst.reportname,'ERROR') reportname, ifnull(rptlst.reportdescription,'') reportdescription, ifnull(rptlst.accesslvl,100) as accesslvl, ifnull(rptlst.allowgriddsp,0) allowgriddsp, ifnull(rptlst.allowpdf,0) allowpdf, ifnull(rptlst.changecritind,0) changecritind, ifnull(rptlst.bywhom,'') bywhom, ifnull(date_format(rptlst.onwhen,'%M %d, %Y'),'') as rptcriteriacreation FROM four.ut_reportlist rptlst left join four.ut_reportgrouping rptgrp on rptlst.groupingid = rptgrp.groupid where urlpath = :rpturlid and rptlst.dspind = 1"; 
+      $rptSQL = "SELECT ifnull(rptgrp.groupingname,'') groupingname, ifnull(rptgrp.groupingurl,'') groupingurl, ifnull(rptlst.urlpath,'') as rpturl, ifnull(rptlst.reportname,'ERROR') reportname, ifnull(rptlst.reportdescription,'') reportdescription, ifnull(rptlst.accesslvl,100) as accesslvl, ifnull(rptlst.allowgriddsp,0) allowgriddsp, ifnull(rptlst.allowpdf,0) allowpdf, ifnull(rptlst.changecritind,0) changecritind, ifnull(rptlst.bywhom,'') bywhom, ifnull(date_format(rptlst.onwhen,'%M %d, %Y'),'') as rptcriteriacreation FROM four.ut_reportlist rptlst left join four.ut_reportgrouping rptgrp on rptlst.groupingid = rptgrp.groupid where urlpath = :rpturlid and rptlst.dspind = 1"; 
       $rs = $conn->prepare($rptSQL); 
       $rs->execute(array(':rpturlid' => $rq[3]));
       if ($rs->rowCount() <> 1) {
@@ -84,6 +129,7 @@ class objlisting {
         }        
         $dta['groupingname'] = $r['groupingname'];
         $dta['groupingurl'] = $r['groupingurl'];
+        $dta['reporturl'] = $r['rpturl'];
         $dta['reportname'] = $r['reportname'];
         $dta['reportdescription'] = $r['reportdescription'];
         $dta['accesslvl'] = $r['accesslvl'];
@@ -605,6 +651,10 @@ function hprrequestcode($whichobj, $rqst) {
 }
 
 class globalMenus {
+
+    function inventorylocationsphysical() { 
+      return "Select lvl1.scancode as codevalue, concat(ifnull(lvl4.inventoryloc,'') , ' :: ',  ifnull(lvl3.inventoryloc,'') , ' :: ', ifnull(lvl2.inventoryloc,'') , ' :: ' , ifnull(lvl1.locationnote,''), ' [' ,ifnull(lvl1.typeOLocation,'') , ']') as menuvalue, lvl1.locationid as useasdefault, lvl3.freezerelprocode as lookupvalue FROM four.sys_inventoryLocations lvl1 left join (select locationid, ifnull(locationnote,'') as inventoryloc, parentid from four.sys_inventoryLocations) as lvl2 on lvl1.parentid = lvl2.locationid left join (select locationid, ifnull(locationnote,'') as inventoryloc, parentid, FreezerELPROCode from four.sys_inventoryLocations) as lvl3 on lvl2.parentid = lvl3.locationid left join (select locationid, ifnull(locationnote,'') as inventoryloc, parentid from four.sys_inventoryLocations) as lvl4 on lvl3.parentid = lvl4.locationid where lvl1.hierarchyBottomInd = 1 and lvl1.physicalLocationInd = 1 and activelocation = 1 order by lvl4.inventoryloc, lvl3.inventoryloc, lvl1.typeolocation desc, lvl1.locationnote";
+    }
 
     function hprtechnicianaccuracy() { 
       return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'HPRTECHACCURACY' order by mnu.dspOrder";
