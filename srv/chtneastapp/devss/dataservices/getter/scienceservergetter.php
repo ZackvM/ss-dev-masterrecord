@@ -35,6 +35,27 @@ class objgetter {
 
 class objlisting { 
 
+ function reportgrouplisting($request, $urirqst) { 
+   $rows = array(); 
+   $dta = array(); 
+   $responseCode = 400; 
+   $msg = "BAD REQUEST";
+   $itemsfound = 0;
+   require(serverkeys . "/sspdo.zck");
+   $sql = "SELECT groupingurl, groupingname, groupingdescriptions FROM four.ut_reportgrouping where dspind = 1 order by orderind";
+   $rs = $conn->prepare($sql); 
+   $rs->execute();
+   $itemsfound = $rs->rowCount(); 
+   while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+     $dta[] = $r;
+   }
+   $responseCode = 200;
+   $msg = "";
+   $rows['statusCode'] = $responseCode; 
+   $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+   return $rows;    
+ } 
+
  function reportcriteriafielddefinition($request, $urirqst) { 
    $rows = array(); 
    $dta = array(); 
@@ -121,7 +142,7 @@ SQLSTMT;
         $r = $rs->fetch(PDO::FETCH_ASSOC);
 
         $crit = array();
-        $critsql = "SELECT parameterid, ifnull(requiredind,1) as requiredind, ifnull(sqltextline,'') as sqltextline FROM four.ut_report_parameterlisting where reporturl = :rpturlid and dspind = 1 order by dsporder";
+        $critsql = "SELECT parameterid, ifnull(requiredind,1) as requiredind, ifnull(includenondsp,0) as includenondsp, ifnull(dsponinclude,'') as dsponinclude, ifnull(sqltextline,'') as sqltextline FROM four.ut_report_parameterlisting where reporturl = :rpturlid and dspind = 1 order by dsporder";
         $critRS = $conn->prepare($critsql);
         $critRS->execute(array(':rpturlid' => $rq[3]));
         while ($c = $critRS->fetch(PDO::FETCH_ASSOC)) { 

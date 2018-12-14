@@ -425,19 +425,36 @@ PAGEHERE;
 }
 
 function reports($rqststr, $whichusr) { 
-    
+
+    //$rqststr[2] = Module Listing
+    //$rqststr[2] = also denotes reportresults
+    //$rqststr[3] = report name
+    //$rqststr[4] = object id
+
   if ((int)$whichusr->allowcoord !== 1) { 
     $pg = "<h1>USER IS NOT ALLOWED TO USE THE REPORT SCREEN";        
   } else {    
    
    $accesslvl = $whichusr->accessnbr;
-
    if (trim($rqststr[2]) === "") { 
-     //GET ALL REPORT LIST
+       $dta = json_decode(callrestapi("GET", dataTree . "/report-group-listing", serverIdent, serverpw),true);
+       $itemsfound = $dta['ITEMSFOUND'];      
+       $dspTbl = "<table border=1><tr>";
+       foreach ($dta['DATA'] as $grpKey => $grpVal) { 
+         $dspTbl .= "<td onclick=\"navigateSite('reports/{$grpVal['groupingurl']}');\">{$grpVal['groupingname']} {$grpVal['groupingdescriptions']}</td>";
+       }
+       $dspTbl .= "</tr></table>";
      $pg = <<<CONTENT
-GET MODULE LIST AND PLACE THEM HERE
+{$dspTbl}
 CONTENT;
    }
+
+   if ( (trim($rqststr[2]) !== "" && trim($rqststr[2]) !== 'reportresults' ) && trim($rqststr[3]) === "") {
+       //GET REPORTS IN MODULE ($rqststr[2]) 
+       $pg = <<<CONTENT
+GET MODULE REPORT LIST AND PLACE THEM HERE
+CONTENT;
+     }  
 
    if ( trim($rqststr[2]) === 'reportresults' &&  trim($rqststr[3]) !== "") {
      //TABULAR REPORT RESULTS   
@@ -446,36 +463,22 @@ CONTENT;
      $pg = <<<CONTENT
 {$pgContent}
 CONTENT;
-   }   
-
-   //GET CRITERIA FOR THIS REPORT
-   if ( (trim($rqststr[2]) !== "" && trim($rqststr[2]) !== 'reportresults' ) && trim($rqststr[3]) === "") {
-       //GET REPORTS IN MODULE ($rqststr[2]) 
-       $pg = <<<CONTENT
-GET MODULE REPORT LIST AND PLACE THEM HERE
-CONTENT;
-     }  
+   }
      
      if ( trim($rqststr[2]) !== 'reportresults' && trim($rqststr[3]) !== "") {
-  //GET REPORT PARAMETERS
-           $topBtnBar = generatePageTopBtnBar('reportscreen');
-           $reportParameters = bldReportParameterScreen($rqststr[3], $whichusr);        
-           $pg = <<<CONTENT
+       //GET REPORT PARAMETERS
+       $topBtnBar = generatePageTopBtnBar('reportscreen');
+       $reportParameters = bldReportParameterScreen($rqststr[3], $whichusr);        
+       $pg = <<<CONTENT
 {$reportParameters}
 CONTENT;
      }
-
-
-      
    }
     
   $rtnthis = <<<PAGEHERE
 {$topBtnBar} 
-
 {$pg}
 PAGEHERE;
-
-
 
 return $rtnthis;    
 }
@@ -1785,36 +1788,46 @@ TBLTBL;
     $paraTbl = "<form id=reportParameterGrid><table border=0><tr><td colspan=2>REPORT OPTION PARAMETER LISTING</td></tr>";
     foreach ($rpt['criteria'] as $key => $value) { 
         //MARK REQUIRED CRITERIA
-        $chkbox = ((int)$value['requiredind'] !== 1) ? "<input type=checkbox id=\"fldParaChkBx{$parameterCntr}\" id=\"fldParaChkBx{$parameterCntr}\" data-sqlwhere=\"{$value['sqltextline']}\">" : "<input type=checkbox disabled=\"disabled\" checked=\"checked\" id=\"fldParaChkBx{$parameterCntr}\" data-sqlwhere=\"{$value['sqltextline']}\">";
+        $chkbox = ((int)$value['requiredind'] !== 1 && (int)$value['includenondsp'] !== 1) ? "<input type=checkbox id=\"fldParaChkBx{$parameterCntr}\" id=\"fldParaChkBx{$parameterCntr}\" data-sqlwhere=\"{$value['sqltextline']}\">" : "<input type=checkbox disabled=\"disabled\" checked=\"checked\" id=\"fldParaChkBx{$parameterCntr}\" data-sqlwhere=\"{$value['sqltextline']}\">";
         preg_match_all("/:\b[a-zA-Z]{1,}\b/", $value['sqltextline'], $out);
-        $rowOne = "";
-        $rowTwo = "";
-        foreach($out[0] as $critval) { 
-          $flddef = str_replace(":","",$critval); 
-          $rptfld = json_decode(callrestapi("GET", dataTree . "/report-criteria-field-definition/{$flddef}",serverIdent, serverpw), true);
-          if ((int)$rptfld['ITEMSFOUND'] === 1) {
-            $fld = "";  
-            switch ($rptfld['DATA'][0]['typeoffield']) {
-              case 'int':
-                $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='int' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw; text-align: right;\">";
-                break;
-              case 'date':
-                $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='date' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw;\">";
-                break;
-              case 'string':
-                $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='string' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw;\">";
-                break;
-              case 'menu':
+
+
+        $rowOne = "&nbsp;";
+        $rowTwo = "&nbsp;";
+        if ((int)$value['includenondsp'] === 1) { 
+          $rowOne = "";
+          $rowTwo = "{$value['dsponinclude']}";
+        } else { 
+          foreach($out[0] as $critval) { 
+            $flddef = str_replace(":","",$critval); 
+            $rptfld = json_decode(callrestapi("GET", dataTree . "/report-criteria-field-definition/{$flddef}",serverIdent, serverpw), true);
+            if ((int)$rptfld['ITEMSFOUND'] === 1) {
+              $fld = "";  
+              switch ($rptfld['DATA'][0]['typeoffield']) {
+                case 'int':
+                  $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='int' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw; text-align: right;\">";
+                  break;
+                case 'date':
+                  $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='date' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw;\">";
+                  break;
+                case 'string':
+                  $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='string' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw;\">";
+                  break;
+                case 'menu':
                   $fld = ( trim($rptfld['DATA'][0]['menuurl']) !== "" ) ? getRptParaMenu( trim($rptfld['DATA'][0]['menuurl']), $flddef, $parameterCntr, $critval, $rptfld['DATA'][0]['flddspwidth'] ) : "";
-                break;
-            }
-            $rowOne .= "<td>{$rptfld['DATA'][0]['flddisplay']}</td>";
-            $rowTwo .= "<td>{$fld}</td>";
-          } else { 
-            $rowOne .= "<td>ERROR</td>";
-            $rowTwo .= "<td>FIELD DEFINITION MISSING (DO NOT RUN!)</td>"; 
-          } 
+                  break;
+              }
+              $rowOne .= "<td>{$rptfld['DATA'][0]['flddisplay']}</td>";
+              $rowTwo .= "<td>{$fld}</td>";
+            } else { 
+              $rowOne .= "<td>ERROR</td>";
+              $rowTwo .= "<td>FIELD DEFINITION MISSING (DO NOT RUN!)</td>"; 
+            } 
+          }
         }
+
+
+
         $critTbl = "<table><tr>{$rowOne}</tr><tr>{$rowTwo}</tr></table>";
         $paraTbl .= "<tr><td>{$chkbox}</td><td>{$critTbl}</td></tr>"; 
         $parameterCntr++;
