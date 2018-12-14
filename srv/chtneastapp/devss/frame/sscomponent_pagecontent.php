@@ -439,9 +439,15 @@ function reports($rqststr, $whichusr) {
    if (trim($rqststr[2]) === "") { 
        $dta = json_decode(callrestapi("GET", dataTree . "/report-group-listing", serverIdent, serverpw),true);
        $itemsfound = $dta['ITEMSFOUND'];      
-       $dspTbl = "<table border=1><tr>";
+       $dspTbl = "<table border=0><tr>";
+       $cellCntr = 0;
        foreach ($dta['DATA'] as $grpKey => $grpVal) { 
-         $dspTbl .= "<td onclick=\"navigateSite('reports/{$grpVal['groupingurl']}');\">{$grpVal['groupingname']} {$grpVal['groupingdescriptions']}</td>";
+         if ($cellCntr === 8) { 
+             $dspTbl .= "</tr><tr>";
+             $cellCntr = 0;
+         }  
+         $dspTbl .= "<td class=rptGroupBtn onclick=\"navigateSite('reports/{$grpVal['groupingurl']}');\"><table class=rptGrpTitleBox><tr><td class=rptGrpTitle>{$grpVal['groupingname']}</td></tr><tr><td class=rptGrpDesc>{$grpVal['groupingdescriptions']}</td></tr></table></td>";
+         $cellCntr++;
        }
        $dspTbl .= "</tr></table>";
      $pg = <<<CONTENT
@@ -451,8 +457,26 @@ CONTENT;
 
    if ( (trim($rqststr[2]) !== "" && trim($rqststr[2]) !== 'reportresults' ) && trim($rqststr[3]) === "") {
        //GET REPORTS IN MODULE ($rqststr[2]) 
+       $dta = json_decode(callrestapi("GET", dataTree . "/group-report-listing/{$rqststr[2]}", serverIdent, serverpw),true);
+       $rptsFound = count($dta['DATA'][0]['rptlist']);
+       $dspTbl = "<table border=0 id=reportListBox><tr><td id=bigTitle>{$dta['DATA'][0]['groupname']}</td></tr><tr><td id=bigDesc>{$dta['DATA'][0]['groupdesc']}</td></tr><tr><td id=bigFound>Reports Found: {$rptsFound}</td></tr><tr><td>";
+       if ((int)$rptsFound > 0) { 
+                 $innerTbl = "<table border=0><tr>";
+                 $innerCellCntr = 0;
+                 foreach ($dta['DATA'][0]['rptlist'] as $k => $v) { 
+                     if ($innerCellCntr === 10) { 
+                         $innerTbl .= "</tr><tr>"; 
+                         $innerCellCntr = 0;
+                     }
+                     $innerTbl .= "<td onclick=\"navigateSite('reports/{$v['groupingurl']}/{$v['urlpath']}');\" class=reportListBtn><table class=reportDefInnerTbl><tr><td class=rptTitle>{$v['reportname']}</td></tr><tr><td class=rptDescription>{$v['reportdescription']}</td></tr></table></td>";
+                 }                 
+                 $innerTbl .= "</tr></table>";
+                 $dspTbl .= $innerTbl;
+                 $innerCellCntr++;
+       }
+       $dspTbl .= "</td></tr></table>";       
        $pg = <<<CONTENT
-GET MODULE REPORT LIST AND PLACE THEM HERE
+{$dspTbl}
 CONTENT;
      }  
 
@@ -1724,7 +1748,11 @@ if ($rptaccesslvl > $uaccess) {
     
   $pdta = json_encode($rptarr);
   $tbldta = json_decode(callrestapi("POST", dataTree . "/data-doers/grab-report-data",serverIdent, serverpw, $pdta), true);           
-  $resultTbl = "<table><tr><td>Records Found: {$tbldta['ITEMSFOUND']}</td></tr></table>";
+  
+  $jsonToExport = json_encode( $tbldta['DATA'] );
+  
+  
+  $resultTbl = "<table><tr><td id=reportresultitemfound>Records Found: {$tbldta['ITEMSFOUND']}</td></tr></table><div id=jsonToExport>"  . $jsonToExport . "</div>";
   foreach ($tbldta['DATA'] as $records) { 
     $rowTbl .= "<tr>"; 
     $headRow = "<tr>";
@@ -1736,7 +1764,8 @@ if ($rptaccesslvl > $uaccess) {
     $rowTbl .= "</tr>";
     $headRow .= "</tr>";
   }  
-  $resultTbl .= "<table border=1>{$headRow}{$rowTbl}</table>";
+  //TODO: ADD TFOOTER AT SOME POINT IN THE FUTURE FOR TOTALS
+  $resultTbl .= "<table border=0 id=reportResultDataTbl><thead>{$headRow}</thead><tbody>{$rowTbl}</tbody></table>";
   $rtnpage = <<<PAGESTUFF
 <table border=0 id=reportDefinitionTbl>
 <tr><td valign=top id=reportIdentification>{$hdTbl}</td></tr>
@@ -1808,7 +1837,7 @@ TBLTBL;
                   $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='int' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw; text-align: right;\">";
                   break;
                 case 'date':
-                  $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='date' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw;\">";
+                  $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='date' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw;\"><br>Dates Must be YYYY-mm-dd";
                   break;
                 case 'string':
                   $fld = "<input type=text id=\"fldPara{$flddef}\" data-datatype='string' data-paracount=\"{$parameterCntr}\" data-criterianame=\"{$critval}\" style=\"width: {$rptfld['DATA'][0]['flddspwidth']}vw;\">";

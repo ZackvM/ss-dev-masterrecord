@@ -34,6 +34,43 @@ class objgetter {
 }
 
 class objlisting { 
+    
+ function groupreportlisting($request, $urirqst) { 
+   $rows = array(); 
+   $dta = array(); 
+   $responseCode = 400; 
+   $msg = "BAD REQUEST";
+   $itemsfound = 0;
+   require(serverkeys . "/sspdo.zck");
+   $headSQL = "SELECT groupid, groupingname, groupingdescriptions FROM four.ut_reportgrouping rg where replace(groupingurl,'-','') = :groupurl and dspind = 1";
+   $headRS = $conn->prepare($headSQL);
+   $headRS->execute(array(':groupurl' => $request)); 
+   if ($headRS->rowCount() === 1) { 
+      $head = $headRS->fetch(PDO::FETCH_ASSOC);
+      $grpid = $head['groupid'];
+      $grpname = $head['groupingname']; 
+      $grpdesc = $head['groupingdescriptions'];
+      
+      $subSQL = "SELECT ifnull(rg.groupingurl,'') as groupingurl,  ifnull(rl.urlpath,'') as urlpath, ifnull(rl.reportname,'') as reportname, ifnull(rl.reportdescription,'') as reportdescription, ifnull(rl.bywhom,'') as bywhom, date_format(rl.onwhen, '%m/%d/%Y') as onwhen FROM four.ut_reportlist rl left join four.ut_reportgrouping rg on rl.groupingid = rg.groupid  where rl.groupingid = :groupid and rl.dspind = 1 order by rl.dsporder";
+      $subRS = $conn->prepare($subSQL);
+      $subRS->execute(array(':groupid' => $grpid));
+      $rptlist = array(); 
+      while ($rr = $subRS->fetch(PDO::FETCH_ASSOC)) { 
+          $rptlist[] = $rr;
+      }
+       $dta[] = array(
+                       'groupid ' => $grpid 
+                       ,'groupname' => $grpname
+                       ,'groupdesc' => $grpdesc
+                       ,'rptlist' => $rptlist
+               );
+       $msg = "";
+       $responseCode = 200;
+   } 
+   $rows['statusCode'] = $responseCode; 
+   $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+   return $rows;      
+ }   
 
  function reportgrouplisting($request, $urirqst) { 
    $rows = array(); 

@@ -151,7 +151,41 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #defHead { font-size: 1.8vh;  }
 #reportFooterBar { background: rgba({$this->color_grey},1); height: .2vh; }
 #recordsDisplay { width: 98vw; box-sizing: border-box; height: 74vh; overflow: auto; }
-              
+
+.rptGroupBtn { width:  12vw; height: 10vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1);   }
+.rptGroupBtn:hover {background: rgba({$this->color_cornflowerblue},1); cursor: pointer; }
+.rptGroupBtn:hover .rptGrpTitle  { color: rgba({$this->color_white},1); }
+.rptGroupBtn:hover .rptGrpDesc  { color: rgba({$this->color_white},1); }
+.rptGrpTitleBox {width: 12vw; }
+.rptGrpTitle {font-size: 1.5vh; text-align: center; rgba({$this->color_dblue},1); }
+.rptGrpDesc { font-size: 1.1vh; rgba({$this->color_dblue},1); text-align: center; }
+
+#reportListBox {width: 98vw; border-collapse: collapse; }
+#reportListBox #bigTitle {font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_ddrwgrey},1); }
+#reportListBox #bigDesc {font-size: 1.5vh; color: rgba({$this->color_ddrwgrey},1); border-bottom: 2px solid rgba({$this->color_ddrwgrey},1); }
+#reportListBox #bigFound {font-size: 1.2vh; color: rgba({$this->color_ddrwgrey},1); text-align: right;  }
+
+.reportListBtn { width:  10vw; height: 9vh; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1);   }
+.reportListBtn:hover {background: rgba({$this->color_cornflowerblue},1); cursor: pointer; }
+.reportDefInnerTbl {border-collapse: collapse; }
+.reportDefInnerTbl .rptTitle  {font-size: 1.3vh; font-weight: bold; color: rgba({$this->color_dblue},1); text-align: center;}
+.reportDefInnerTbl .rptDescription {font-size: 1.1vh; color: rgba({$this->color_dblue},1); text-align: center; padding: 0 .5vw 0 .5vw;}
+
+.reportListBtn:hover .reportDefInnerTbl .rptTitle {color: rgba({$this->color_white},1); }
+.reportListBtn:hover .reportDefInnerTbl .rptDescription { color: rgba({$this->color_white},1); }
+
+
+
+#reportResultDataTbl { font-size: 1.4vh; border-collapse: collapse;    }
+#reportResultDataTbl th {background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .4vh .4vw;border-bottom: 1px solid rgba({$this->color_white},1); border-right: 1px solid rgba({$this->color_white},1);}
+#reportResultDataTbl tbody tr:nth-child(even) {background: rgba({$this->color_lightgrey},1); }
+#reportResultDataTbl tbody td {border-bottom: 1px solid rgba({$this->color_grey},1); border-right: 1px solid rgba({$this->color_grey},1); padding: .5vh .4vw; }
+
+#reportresultitemfound { font-size: 1.3vh; color: rgba({$this->color_ddrwgrey},1); }
+
+#jsonToExport {display: none; }
+
+
 STYLESHEET;
 return $rtnThis;    
 }

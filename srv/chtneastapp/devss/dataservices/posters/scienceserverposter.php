@@ -69,16 +69,16 @@ class datadoers {
             
           $select = $rqjson['request']['rptsql']['selectclause'];
           $from = $rqjson['request']['rptsql']['fromclause'];
-          $orderby = $rqjson['request']['rptsql']['orderby'];
+          $orderby =  (trim($rqjson['request']['rptsql']['orderby']) === '') ? '' :  " ORDER BY {$rqjson['request']['rptsql']['orderby']}";
           $where = "where 1=1 ";
           foreach ($rqjson['request']['wherelist'] as $val) { 
             $where .= " and ({$val}) ";
           }
           //TODO:  ADD THESE COMPONENTS IN TO SQL
-//        $groupby = $r['rptsql']['groupbyclause'];
+         $groupby =  (trim($rqjson['request']['rptsql']['groupbyclause']) === '') ? '' : " GROUP BY {$rqjson['request']['rptsql']['groupbyclause']}";
 //        $summaryfield = $r['rptsql']['summaryfield'];
 
-          $sqlstmt = "SELECT {$select} FROM {$from} {$where} {$orderby}";
+          $sqlstmt = "SELECT {$select} FROM {$from} {$where} {$groupby} {$orderby}";
           $valuelist = $rqjson['request']['valuelist'];
           $rs = $conn->prepare($sqlstmt); 
           $rs->execute($valuelist);

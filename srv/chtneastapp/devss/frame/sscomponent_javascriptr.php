@@ -449,6 +449,15 @@ document.addEventListener('DOMContentLoaded', function() {
       makeReportPDFRequest();
     }, false);
   }
+            
+  if (byId('btnRRExport')) { 
+    byId('btnRRExport').addEventListener('click', function() {
+      if (byId('jsonToExport')) {         
+        var jsonToExport = byId('jsonToExport').innerHTML;
+         JSONToCSVConvertor(jsonToExport, 'ScienceServer Report Results', false);       
+      }
+    }, false);
+  }
 
 }, false);        
 
