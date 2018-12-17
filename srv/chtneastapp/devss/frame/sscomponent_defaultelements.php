@@ -131,6 +131,9 @@ function pagetabs($whichpage) {
     case 'hprreview':
         $thisTab = "HPR Review @ CHTNEastern";
         break;
+    case 'procurebiosample':
+        $thisTab = "Biosample Sample Procurement (Pristine)";
+        break;
     default: 
       $thisTab = "CHTN Eastern Division"; 
     break; 

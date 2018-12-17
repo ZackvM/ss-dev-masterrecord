@@ -422,13 +422,35 @@ JAVASCR;
 return $rtnThis;    
 }
 
-function reports($rqststr) { 
+function procurebiosample($rqstrstr) { 
 
     $sp = serverpw; 
     $tt = treeTop;
 
     $rtnthis = <<<JAVASCR
 
+document.addEventListener('DOMContentLoaded', function() {  
+
+  if (byId('btnClearRptGrid')) { 
+    byId('btnClearRptGrid').addEventListener('click', function() {
+      clearRptParameterGrid();
+    }, false);
+  }
+
+
+}, false);        
+
+JAVASCR;
+return $rtnthis;
+
+}
+
+function reports($rqststr) { 
+
+    $sp = serverpw; 
+    $tt = treeTop;
+
+    $rtnthis = <<<JAVASCR
 
 document.addEventListener('DOMContentLoaded', function() {  
 

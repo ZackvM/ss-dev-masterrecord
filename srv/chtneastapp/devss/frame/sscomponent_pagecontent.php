@@ -424,6 +424,28 @@ PAGEHERE;
     return $rtnthis;
 }
 
+function procurebiosample($rqststr, $whichusr) { 
+
+if (trim($rqststr[2]) === "") { 
+  //BUILD BASIC COLLECTION SCREEN
+  $topBtnBar = generatePageTopBtnBar('procurebiosample');
+  $pg = "PAGE GOES HERE";
+} 
+
+if (trim($rqststr[2]) !== "") { 
+   //BUILD EDIT COLLECTION SCREEN
+   //$topBtnBar = generatePageTopBtnBar('procurebiosample');
+   //$pg = "PAGE GOES HERE";
+} 
+
+$rtnthis = <<<PAGEHERE
+{$topBtnBar} 
+{$pg}
+PAGEHERE;
+return $rtnthis;    
+
+}
+
 function reports($rqststr, $whichusr) { 
 
     //$rqststr[2] = Module Listing
@@ -1623,6 +1645,16 @@ function generatePageTopBtnBar($whichpage) {
 //TODO: MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
 
 switch ($whichpage) { 
+
+case 'procurebiosample':
+$innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell>
+    <table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td>   </td><td>Clear Grid</td></tr></table>
+  </td>
+</tr>
+BTNTBL;
+break;
 case 'reportresultsscreen':
 $innerBar = <<<BTNTBL
 <tr>

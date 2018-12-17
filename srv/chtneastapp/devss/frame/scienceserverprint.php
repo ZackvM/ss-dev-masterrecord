@@ -207,6 +207,14 @@ function getPrintableReport($sdid, $originalURL) {
   if (  method_exists( $printrptsfromdata,   $reportnme )) { 
     $sDocFile = $printrptsfromdata->$reportnme($rptarr);
     $docText = $sDocFile;
+    
+    $cmds = new whtmltopdfcommands(); 
+    if ( method_exists( $cmds, $reportnme )) { 
+      $linuxcmd = $cmds->$reportnme();
+    } else { 
+      //default
+      $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED PRINTABLE REPORT MODULE\" ";
+    }    
     $responseCode = 200;
   } else { 
     $sDocFile = "THIS PRINTABLE DOES NOT EXISTS: {$reportnme} ";
@@ -221,13 +229,15 @@ function getPrintableReport($sdid, $originalURL) {
     fwrite($sdDhandle, $docText);
     fclose;
     $sdPDF = genAppFiles . "/publicobj/documents/shipdoc/shipdoc{$filehandle}.pdf";
-    $linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED DAILY BARCODE RUN\"  {$sdDocFile} {$sdPDF}";
+
+    $linuxCmd = "wkhtmltopdf --load-error-handling ignore {$linuxcmd} {$sdDocFile} {$sdPDF}";
     $output = shell_exec($linuxCmd);
     $format = "pdf";    
   }
 
   return array('status' => $responseCode, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => $format);
 }
+
 
 function getShipmentDocument($sdid, $originalURL) { 
     $at = genAppFiles;
@@ -772,8 +782,61 @@ function prntbarcode( $filepath="", $text="0", $size="20", $orientation="horizon
 	}
 }
 
+class whtmltopdfcommands { 
 
-class reportprintables { 
+    function masterrecordprocurementlisting() { 
+      $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"Masterrecord Procurement Listing\" ";
+      return $linuxcmd;
+    }
+
+    function barcoderun() { 
+        $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"Daily Barcode Run\" ";
+        return $linuxcmd;
+    }
+
+}
+
+class reportprintables {
+
+    function masterrecordprocurementlisting($rptdef) { 
+      $at = genAppFiles;
+      $tt = treeTop;
+      $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+      $pdta = json_encode($rptdef);
+      $tbldta = json_decode(callrestapi("POST", dataTree . "/data-doers/grab-report-data",serverIdent, serverpw, $pdta), true);           
+
+      $introTbl = <<<HEADERTBL
+<table border=0 cellpadding=0 cellspacing=0 width=100%> 
+<tr><td style="font-family: Tahoma, verdana; font-size: 12pt; text-align: center; color: #000084; border-bottom: 2px solid #000084;">Daily Procurement Log Sheet (master-record)</td></tr>
+<tr><td style="font-family: tahoma, verdana; font-size: 10pt; color: #000000; text-align: justify; line-height: 1.5em; padding: 8px 4px 5px 4px;">This is the daily procurement log sheet for the data transferred to the primary database of the CHTN-Eastern (master-record).  This is NOT the pristine procurement record (for that data, print the daily procurement sheet marked 'Pristine'.  This report shows all procurement across all CHTNED primary and remote sites.  </td></tr>
+</table>
+HEADERTBL;
+
+      $rowTbl = "<table border=1 style=\"font-family: tahoma, verdana; font-size: 8pt; border-collapse: collapse; width: 100%;\"><thead><tr><th>Biosample</th><th>Specimen Category</th><th>Site</th><th>Diagnosis</th><th>METS</th><th>PHI</th></tr></thead><tr><td></td></tr><tr><td>";
+      $bioline = "";
+      $collectorTbl = "<table border=1 style=\"font-family: tahoma, verdana; font-size: 8pt; border-collapse: collapse; width: 100%;\">";
+      foreach($tbldta['DATA'] as $records) {  
+          if ($records['Biosample_Nbr'] !== $bioline) { 
+              //close old entry - Start New entry
+              $collectorTbl .= "</table>";     
+              $rowTbl .= "{$collectorTbl}</td></tr><tr><td style=\"{$topline}\">{$records['Biosample_Nbr']}</td><td style=\"{$topline}\">{$records['Specimen_Category']}</td><td style=\"{$topline}\">{$records['Site_Designation']}</td><td style=\"{$topline}\">{$records['DX_Designation']}</td><td style=\"{$topline}\">{$records['Mets Designation']}</td><td>{$records['PHI_Age']} / {$records['PHI_Race']} / {$records['PHI_Sex']}</td>      </tr><tr><td colspan=6>";
+              //RESETS
+              $bioline = $records['Biosample_Nbr']; 
+              $collectorTbl = "<table border=1 style=\"font-family: tahoma, verdana; font-size: 8pt; border-collapse: collapse; width: 100%;\"><tr><td>{$records['Sample_Label']}</td></tr>";
+          } else { 
+            //ADD TO ENTRY
+              $collectorTbl .= "<tr><td>{$records['Sample_Label']}</td></tr>";
+          }
+      }
+      $collectorTbl .= "</table>";     
+      $rowTbl .= "{$collectorTbl}</td></tr>";
+      $rowTbl .= "</table>";
+
+      $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$introTbl} {$rowTbl}</tr></table>"; 
+      return $resultTbl;    
+    }
+
+
 
     function barcoderun($rptdef) {     
       $at = genAppFiles;
@@ -829,8 +892,8 @@ LBLLBL;
     $rowTbl .= "<td>{$lblTbl}</td>";
     $cellCntr++;
   }  
-  $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$rowTbl}</tr></table>"; 
-       return $resultTbl;    
+      $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$rowTbl}</tr></table>"; 
+      return $resultTbl;    
     }
 
 
