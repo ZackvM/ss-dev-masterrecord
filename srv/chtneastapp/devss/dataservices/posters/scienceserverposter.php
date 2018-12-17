@@ -43,6 +43,7 @@ class datadoers {
       $msgArr = array();
       $pdta = json_decode($passdata,true);
       require(serverkeys . "/sspdo.zck");  
+      //TODO:  REINSERT SECURITY!
 //      session_start();        
 //      $usrSQL = "SELECT originalAccountName, allowcoord, accessnbr FROM four.sys_userbase where sessionid = :sessionid";
 //      $usrR = $conn->prepare($usrSQL);

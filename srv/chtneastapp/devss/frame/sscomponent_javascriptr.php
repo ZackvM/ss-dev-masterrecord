@@ -437,9 +437,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
-
 }, false);        
 
+var lastRequestCalendarDiv = "";
+function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
+  var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;
+  lastRequestCalendarDiv = whichdiv;
+  universalAJAX("GET",mlURL,"",answerGetCalendar,modalCtl);
+}
+
+function answerGetCalendar(rtnData) {
+  if (parseInt(rtnData['responseCode']) === 200) {     
+    var rcd = JSON.parse(rtnData['responseText']);
+    byId(lastRequestCalendarDiv).innerHTML = rcd['DATA']; 
+  } else { 
+    alert("ERROR");  
+  }
+}   
+            
+            
 JAVASCR;
 return $rtnthis;
 

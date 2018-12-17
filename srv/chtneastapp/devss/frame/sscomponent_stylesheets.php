@@ -147,9 +147,11 @@ $rtnThis = <<<STYLESHEET
 
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
 
-
-
 #btnPBClearGrid { width: 2vw; }
+
+        
+#procurementAddHoldingTbl { height: 86vh; box-sizing: border-box; }
+#procurementAddHoldingTbl .sidePanel {width: 20vw; height: 43vh;  }
 
 STYLESHEET;
 return $rtnThis;
@@ -472,6 +474,8 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #sdcInvestBillingAddress {width: 29.7vw; height: 18vh; resize:none; }
 #sdcBillPhone { width: 29.7vw;  }
 #sdcBillEmail { width: 14.8vw; }
+
+#sdcSegmentListDiv {border: none; height: 72vh; overflow: auto; }
 
 #segmentListHolder { width: 20vw; border-left: 1px solid rgba({$this->color_zackgrey},1); }
 

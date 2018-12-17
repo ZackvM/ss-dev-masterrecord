@@ -254,6 +254,23 @@ if ((int)$nextMonth === 13) {
 
 //******FORMATTING
     switch (strtolower($whichcalendar)) {
+     case 'procedureprocurequery':
+        $calTblId = "pqcTbl";
+        $leftBtnId = "pqcLeft";
+        $calTitle = "pqcTitle";
+        $rightBtnId = "pqcRight";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $btmSpacer = "btmSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmLine = "pqcBtmLine";
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        $leftBtnAction  = " onclick=\"getCalendar('procedureprocurequery','procureProcedureCalendar','{$lastMonth}','{$lastYear}');\" ";
+        $rightBtnAction = " onclick=\"getCalendar('procedureprocurequery','procureProcedureCalendar','{$nextMonth}','{$nextYear}');\" "; 
+        break;        
       case 'procquery':
         $calTblId = "pqcTbl";
         $leftBtnId = "pqcLeft";
@@ -271,7 +288,7 @@ if ((int)$nextMonth === 13) {
         $topBarClass = "ddMenuCalTopRow";
         $topCtlBtnClass= "smallCtlBtn";
         $leftBtnAction  = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" ";
-        $rightBtnAction = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" "; 
+        $rightBtnAction = " onclick=\"getcalendar('procquery','{$nextMonth}','{$nextYear}');\" "; 
         break;
       case 'biosamplequeryfrom':
         $calTblId = "bsqTbl";
@@ -425,6 +442,11 @@ while ($currentDay <= $numberOfDays) {
    $currentDayDsp = str_pad($currentDay,2,"00",STR_PAD_LEFT);
 //INDIVIDUAL BUTTON ACTION HERE
     switch (strtolower($whichcalendar)) {
+        case 'procedureprocurequery':
+         $sqrID = "daySqr{$currentDayDsp}";
+         $action = " onclick=\" fillField('fldPRCProcedureDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
+         $dayDsp = $currentDayDsp;
+         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('fldPRCProcedureDate','','');\" ><center>[clear]</td></tr>";         break;
        case 'procquery':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\"fillTopDate('{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";

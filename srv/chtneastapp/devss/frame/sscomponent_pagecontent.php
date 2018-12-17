@@ -270,7 +270,7 @@ CALENDAR;
           $po .= "</table>";
 
           $segListR = json_decode($passedData, true);    
-          $segmentTbl = "<table><tr><th>Segments To Add To Shipdoc</th></tr>";
+          $segmentTbl = "<table><tr><th>Segments To Add To Shipdoc (Scroll!)</th></tr>";
           $rowCount = 0;
           foreach($segListR as $sgK => $sgV) { 
             if (trim($sgK) !== 'inv') {
@@ -290,7 +290,7 @@ CALENDAR;
             <td><div class=menuHolderDiv><input type=text id=sdcPurchaseOrder value=""><div class=valueDropDown style="width: 20vw;">{$po}</div></div></td>
             <td>{$shpCalendar}</td>
             <td>{$labCalendar}</td>
-           <td rowspan=4 valign=top id=segmentListHolder><!-- SEGMENT LISTING //--> {$segmentTbl} </td></tr>
+           <td rowspan=4 valign=top id=segmentListHolder><div id=sdcSegmentListDiv><!-- SEGMENT LISTING //--> {$segmentTbl}</div> </td></tr>
     <tr><td colspan=6> <table><tr><td>Public Comments</td></tr><tr><td><TEXTAREA id=sdcPublicComments></textarea></td></tr></table> </td></tr>         
 
 <tr><td valign=top colspan=6>
@@ -429,7 +429,7 @@ function procurebiosample($rqststr, $whichusr) {
 if (trim($rqststr[2]) === "") { 
   //BUILD BASIC COLLECTION SCREEN
   $topBtnBar = generatePageTopBtnBar('procurebiosample');
-  $pg = "PAGE GOES HERE";
+  $pg = bldBiosampleProcurement( $whichusr );
 } 
 
 if (trim($rqststr[2]) !== "") { 
@@ -1310,6 +1310,7 @@ $pg = <<<CONFIRMFRM
    <table border=0 width=100% cellpadding=0 cellspacing=0>
        <tr><td class=littleFieldLabelWork colspan=2>Indicated Immuno/Molecular Test Results</td><td rowspan=4><table class=tblBtn onclick="manageMoleTest(1);"><tr><td><i class="material-icons">playlist_add</i></td></tr></table></td></tr>
        <tr><td class=fieldHolder  valign=top colspan=2><div class=menuHolderDiv><input type=hidden id=hprFldMoleTestValue><input type=text id=hprFldMoleTest READONLY><div class=valueDropDown id=moleTestDropDown>{$molemnu}</div></div></td></tr>
+       <!-- TODO:  BIOSAMPLE ANALYTIC TESTING DATE (BAT) //-->
        <tr><td class=littleFieldLabelWork>Result Index</td><td class=littleFieldLabelWork>Scale Degree</td></tr>
        <tr><td class=fieldHolder  valign=top><div class=menuHolderDiv><input type=hidden id=hprFldMoleResultValue><input type=text id=hprFldMoleResult READONLY><div class=valueDropDown id=moleResultDropDown> </div></div></td><td class=fieldHolder  valign=top><input type=text id=hprFldMoleScale></td></tr>
        <tr><td colspan=3 class=fieldHolder  valign=top>
@@ -1809,6 +1810,53 @@ PAGESTUFF;
 
 return $rtnpage;
 }
+
+function bldSidePanelORSched($institution, $procedureDate) { 
+
+$prcCalendarMaker = buildcalendar('procedureprocurequery'); 
+$prcCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder>
+      <input type=hidden id=fldPRCProcedureDateValue>
+       <input type=text READONLY id=fldPRCProcedureDate class="inputFld" style="width: 17vw;"></div>
+  <div class=valueDropDown style="min-width: 17vw;" id=procedurecal><div id=procureProcedureCalendar>{$prcCalendarMaker}</div></div>
+</div>
+CALENDAR;
+
+
+return "{$prcCalendar}   {$institution} :: {$procedureDate}";
+    
+}
+
+function bldBiosampleProcurement($usr) { 
+    // {"statusCode":200,"loggedsession":"4tlt57qhpjfkugau1seif6glo0","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":58,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"menuvalue":"Procure Biosample","pagesource":"procure-biosample","additionalcode":""}]],["433","DATA COORDINATOR","",[{"menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""},{"menuvalue":"Consult Library","pagesource":"val-consult-library","additionalcode":""},{"menuvalue":"Slide Image Library","pagesource":"image-library","additionalcode":""},{"menuvalue":"QMS Actions","pagesource":"qms-actions","additionalcode":""}]],["472","REPORTS","",[{"menuvalue":"All Reports","pagesource":"reports","additionalcode":""},{"menuvalue":"Barcode Run","pagesource":"reports\/inventory\/barcode-run","additionalcode":""},{"menuvalue":"Daily Procurement Sheet","pagesource":"reports\/procurement\/daily-procurement-sheet","additionalcode":""}]],["473","UTILITIES","",[{"menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]],"lastlogin":{"lastlogdate":"Mon Dec 17th, 2018 at 14:59","fromip":"170.212.0.91"},"accessnbr":"43"} 
+    if ((int)$usr->allowprocure <> 1) { 
+      //USER NOT ALLOWED TO PROCURE
+      $holdingTbl = "<h1>USER NOT ALLOWED TO PROCURE BIOSAMPLES";
+    } else { 
+      $today = new DateTime('now');
+      $tdydte = $today->format('m/d/Y');
+      $orsched = bldSidePanelORSched( $usr->presentinstitution, $tdydte );
+    
+      
+    
+    
+    
+    
+    $holdingTbl = <<<HOLDINGTBL
+            <table border=1 width=100% id=procurementAddHoldingTbl>
+                   <tr>
+                      <td rowspan=2>Collection Grid</td><td class=sidePanel valign=top>Today's Collection Summary</td>
+                   </tr>
+                   <tr>
+                       <td class=sidePanel valign=top>{$orsched}</td>
+                   </tr>
+            </table> 
+HOLDINGTBL;
+    }
+    return $holdingTbl;
+}
+
 
 function bldReportParameterScreen($whichrpt, $usr) { 
 

@@ -812,20 +812,22 @@ class reportprintables {
 </table>
 HEADERTBL;
 
-      $rowTbl = "<table border=1 style=\"font-family: tahoma, verdana; font-size: 8pt; border-collapse: collapse; width: 100%;\"><thead><tr><th>Biosample</th><th>Specimen Category</th><th>Site</th><th>Diagnosis</th><th>METS</th><th>PHI</th></tr></thead><tr><td></td></tr><tr><td>";
+      $rowTbl = "<table border=0 style=\"font-family: tahoma, verdana; font-size: 7pt; border-collapse: collapse; width: 100%; border: 1px solid #000;\"><thead><tr><th style=\"background: #000; color: #fff; padding: 4px;\">Biosample</th><th style=\"background: #000; color: #fff; padding: 4px;\">Specimen Category</th><th style=\"background: #000; color: #fff; padding: 4px;\">Site</th><th style=\"background: #000; color: #fff; padding: 4px;\">Diagnosis</th><th style=\"background: #000; color: #fff; padding: 4px;\">METS</th><th style=\"background: #000; color: #fff; padding: 4px;\">PHI</th></tr></thead><tr><td colspan=6></td></tr><tr><td colspan=6>";
       $bioline = "";
-      $collectorTbl = "<table border=1 style=\"font-family: tahoma, verdana; font-size: 8pt; border-collapse: collapse; width: 100%;\">";
+      $collectorTbl = "<table border=0 style=\"font-family: tahoma, verdana; font-size: 7pt; border-collapse: collapse; width: 100%;\">";
       foreach($tbldta['DATA'] as $records) {  
           if ($records['Biosample_Nbr'] !== $bioline) { 
               //close old entry - Start New entry
               $collectorTbl .= "</table>";     
+              $topline = "border-top: 1px solid #b5b5b5; padding: 5px 3px 0 3px;";
               $rowTbl .= "{$collectorTbl}</td></tr><tr><td style=\"{$topline}\">{$records['Biosample_Nbr']}</td><td style=\"{$topline}\">{$records['Specimen_Category']}</td><td style=\"{$topline}\">{$records['Site_Designation']}</td><td style=\"{$topline}\">{$records['DX_Designation']}</td><td style=\"{$topline}\">{$records['Mets Designation']}</td><td>{$records['PHI_Age']} / {$records['PHI_Race']} / {$records['PHI_Sex']}</td>      </tr><tr><td colspan=6>";
               //RESETS
               $bioline = $records['Biosample_Nbr']; 
-              $collectorTbl = "<table border=1 style=\"font-family: tahoma, verdana; font-size: 8pt; border-collapse: collapse; width: 100%;\"><tr><td>{$records['Sample_Label']}</td></tr>";
+              $segTopper = "background: #b5b5b5; padding: 2px;font-size: 6pt; ";
+              $collectorTbl = "<table border=0 style=\"font-family: tahoma, verdana; font-size: 7pt; border-collapse: collapse; width: 100%;\"><thead><tr><th></th><th style=\"{$segTopper}\">Label</th><th style=\"{$segTopper}\">Preparation</th><th style=\"{$segTopper}\">Preparation Modifier</th><th style=\"{$segTopper}\">Metric</th><th style=\"{$segTopper}\">HP</th><th style=\"{$segTopper}\">Slide/Block</th><th style=\"{$segTopper}\">HPR Indicator</th><th style=\"{$segTopper}\">QTY</th><th style=\"{$segTopper}\">Technician/Institution</th></tr></thead><tr><td>&nbsp;</td><td>{$records['Sample_Label']}</td><td>{$records['Preparation']}</td><td>{$records['Preparation_Modifier']}</td><td>{$records['Metric']}</td><td>{$records['Hours_Post_Excision']}</td><td>{$records['Slide_From_Block']}</td><td>{$records['HPR_Block_Indicator']}</td><td>{$records['Segment_Quantity']}</td><td>{$records['Procuring_Technician']}@{$records['Institution_Procured_At']}</td></tr>";
           } else { 
             //ADD TO ENTRY
-              $collectorTbl .= "<tr><td>{$records['Sample_Label']}</td></tr>";
+              $collectorTbl .= "<tr><td>&nbsp;</td><td>{$records['Sample_Label']}</td><td>{$records['Preparation']}</td><td>{$records['Preparation_Modifier']}</td><td>{$records['Metric']}</td><td>{$records['Hours_Post_Excision']}</td><td>{$records['Slide_From_Block']}</td><td>{$records['HPR_Block_Indicator']}</td><td>{$records['Segment_Quantity']}</td><td>{$records['Procuring_Technician']}@{$records['Institution_Procured_At']}</td></tr>";
           }
       }
       $collectorTbl .= "</table>";     
