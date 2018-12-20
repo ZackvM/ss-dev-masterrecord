@@ -34,7 +34,65 @@ class objgetter {
 }
 
 class objlisting { 
-    
+
+  function simpleorschedulewrapper($request, $urirqst) { 
+   $rows = array(); 
+   $dta = array(); 
+   $orlist = array();
+   $responseCode = 400; 
+   $msg = "BAD REQUEST";
+   $itemsfound = 0;
+   require(serverkeys . "/sspdo.zck");
+   $orrqst = explode("/", $urirqst);
+   session_start(); 
+   $usr = chkUserBySession(session_id());
+   if ((int)$usr['allowind'] === 1 && (int)$usr['allowproc'] === 1) { 
+     $inst = $usr['presentinstitution'];
+     $rtndta = self::simpleorschedule("","/data-service/simple-or-schedule/{$inst}/{$orrqst[3]}");
+     $itemsfound = $rtndta['data']['ITEMSFOUND'];
+     $dta = $rtndta['data']['DATA'];
+     $msg = "";
+     $responseCode = 200;
+   }
+   $rows['statusCode'] = $responseCode; 
+   $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+   return $rows;      
+  }
+
+  function simpleorschedule($request, $urirqst) { 
+   $rows = array(); 
+   $dta = array(); 
+   $orlist = array();
+   $responseCode = 400; 
+   $msg = "BAD REQUEST";
+   $itemsfound = 0;
+   require(serverkeys . "/sspdo.zck");
+   $orrqst = explode("/", $urirqst);
+
+   if (trim($orrqst[3]) !== "" && trim($orrqst[4]) !== "") { 
+
+       //TODO: MAKE CHECKS OF DATA TYPE OF REQUEST
+       //TODO: MAKE SURE USER HAS RIGHT TO SEE INSTITUTION
+
+       $orSQL = "SELECT ifnull(pxicode,'ERROR') as pxicode, ifnull(targetind,'') as targetind, ifnull(infcind,0) as informedconsentindicator , if(linkeddonor = 1 or delinkeddonor = 1,'X','-') as linkage, ifnull(pxiini,'NO INITIALS') as pxiinitials, trim(concat(ifnull(pxiage,'-'), '/', ucase(substr(ifnull(pxirace,'-'),1,4)), '/', ifnull(pxisex,'-'))) as ars, ifnull(starttime,'') starttime, ifnull(room,'') room, ifnull(surgeons,'') surgeon, trim(ifnull(proctext,'')) as proceduretext FROM four.tmp_ORListing ors where date_format(listdate,'%Y%m%d') = :ordate and location = :orinstitution order by pxiini";
+       $orR = $conn->prepare($orSQL);
+       $orR->execute(array(':ordate' => $orrqst[4], ':orinstitution' => $orrqst[3])); 
+       $itemsfound = $orR->rowCount();    
+       $dta['requestDate'] = $orrqst[4];
+       $dta['institution'] = $orrqst[3];
+       while ($r = $orR->fetch(PDO::FETCH_ASSOC)) { 
+         $orlist[] = $r;
+       }
+       $dta['orlisting'] = $orlist;
+       $responseCode = 200;
+       $msg = "";
+   }
+
+   $rows['statusCode'] = $responseCode; 
+   $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+   return $rows;      
+  }
+
  function groupreportlisting($request, $urirqst) { 
    $rows = array(); 
    $dta = array(); 
@@ -834,6 +892,19 @@ class globalMenus {
       return "SELECT rsts.actionid as codevalue, rsts.reviewaction as menuvalue, 0 as useasdefault, '' as lookupvalue FROM pfc.appdata_project_reviewerstatus rsts where rsts.furtheractionind = 0 order by rsts.dspOrd";
     }
 
+}
+
+function chkUserBySession($givensessionid) {
+   require(serverkeys . "/sspdo.zck");
+   $usrArr = array();
+   $usrSQL = "SELECT allowcoord, allowlinux, allowind, allowhpr, allowinvtry, allowproc, presentinstitution, TIMESTAMPDIFF(MINUTE,now(),sessionexpire) minutesuntilsessionexpiration, sessionexpire, TIMESTAMPDIFF(DAY, now(), passwordexpiredate) daysuntilpasswordexpire, passwordexpiredate, emailaddress FROM four.sys_userbase where sessionid = :sessionid";
+   $usrR = $conn->prepare($usrSQL);
+   $usrR->execute(array(':sessionid' => $givensessionid));
+   if ($usrR->rowCount() === 1) { 
+     $usrArr = $usrR->fetch(PDO::FETCH_ASSOC);
+   } else { 
+   } 
+   return $usrArr;
 }
 
 function runbiogroupsearchquery($srchrqstjson) {

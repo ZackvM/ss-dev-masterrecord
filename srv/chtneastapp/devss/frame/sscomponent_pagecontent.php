@@ -1811,21 +1811,31 @@ PAGESTUFF;
 return $rtnpage;
 }
 
-function bldSidePanelORSched($institution, $procedureDate) { 
-
+function bldSidePanelORSched($institution, $procedureDate, $procedureDateValue) { 
 $prcCalendarMaker = buildcalendar('procedureprocurequery'); 
 $prcCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
   <div class=valueHolder>
-      <input type=hidden id=fldPRCProcedureDateValue>
-       <input type=text READONLY id=fldPRCProcedureDate class="inputFld" style="width: 17vw;"></div>
+      <input type=hidden id=fldPRCProcedureDateValue value="{$procedureDateValue}">
+      <input type=text READONLY id=fldPRCProcedureDate class="inputFld" value="{$procedureDate}"></div>
   <div class=valueDropDown style="min-width: 17vw;" id=procedurecal><div id=procureProcedureCalendar>{$prcCalendarMaker}</div></div>
 </div>
 CALENDAR;
+return "{$prcCalendar}";
+}
 
-
-return "{$prcCalendar}   {$institution} :: {$procedureDate}";
-    
+function bldORScheduleTbl($orarray) { 
+  $institution = $orarray['DATA']['institution'];
+  $ordate = $orarray['DATA']['requestDate'];
+  foreach ($orarray['DATA']['orlisting'] as $ky => $val) { 
+    $target = $val['targetind'];
+    $informed = $val['informedconsentindicator'];
+    $addeddonor = $val['linkage'];
+    $innerTbl .= "<tr onclick=\"alert('{$val['pxicode']}');\"><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspORSARS>{$val['ars']}</td><td valign=top class=procedureTxt>{$val['proceduretext']}</td></tr>";
+  }
+  //<table><tr><td colspan=5>Procedures: {$orarray['ITEMSFOUND']}</td></tr></table>
+  $rtnTbl = "<table border=1 id=PXIDspTbl><thead><th class=dspORTarget>T</th><th class=dspORInformed>IC</th><th class=dspORAdded>A</th><th class=dspORInitials>Initials</th><th class=dspORSARS>A/R/S</th><th>Procedure</th></thead><tbody>{$innerTbl}</tbody></table>";
+  return $rtnTbl;
 }
 
 function bldBiosampleProcurement($usr) { 
@@ -1836,20 +1846,24 @@ function bldBiosampleProcurement($usr) {
     } else { 
       $today = new DateTime('now');
       $tdydte = $today->format('m/d/Y');
-      $orsched = bldSidePanelORSched( $usr->presentinstitution, $tdydte );
-    
-      
-    
-    
-    
-    
+      $tdydtev = $today->format('Y-m-d');
+      $orscheddater = bldSidePanelORSched( $usr->presentinstitution, $tdydte, $tdydtev );
+      $tdydtev = '20180507';
+      $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
+ 
+   //<div id=dspORListing>   ... </div> 
     $holdingTbl = <<<HOLDINGTBL
             <table border=1 width=100% id=procurementAddHoldingTbl>
                    <tr>
                       <td rowspan=2>Collection Grid</td><td class=sidePanel valign=top>Today's Collection Summary</td>
                    </tr>
                    <tr>
-                       <td class=sidePanel valign=top>{$orsched}</td>
+                       <td class=sidePanel valign=top>
+                          <table border=0 width=100% cellspacing=0 cellpadding=0><tr><td>Procedure Date</td></tr>
+                            <tr><td>{$orscheddater}</td></tr>
+                            <tr><td>{$orlistTbl}</td></tr>
+                          </table>
+                      </td>
                    </tr>
             </table> 
 HOLDINGTBL;

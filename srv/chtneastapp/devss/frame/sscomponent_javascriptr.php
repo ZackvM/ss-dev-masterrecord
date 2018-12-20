@@ -428,7 +428,6 @@ function procurebiosample($rqstrstr) {
     $tt = treeTop;
 
     $rtnthis = <<<JAVASCR
-
 document.addEventListener('DOMContentLoaded', function() {  
 
   if (byId('btnClearRptGrid')) { 
@@ -454,8 +453,46 @@ function answerGetCalendar(rtnData) {
     alert("ERROR");  
   }
 }   
+
+function fillField(whichfield, whichvalue, whichdisplay) { 
+  if (byId(whichfield)) { 
+     byId(whichfield).value = whichdisplay; 
+     if (byId(whichfield+'Value')) { 
+        byId(whichfield+'Value').value = whichvalue;    
+     }
+  }
+  switch (whichfield) {
+    case 'fldPRCProcedureDate':
+      updateORSched(); 
+    break;
+  }        
+}            
+
+function updateORSched() {
+  if (byId('fldPRCProcedureDateValue')) { 
+    var mlURL = "/simple-or-schedule-wrapper/" + byId('fldPRCProcedureDateValue').value;
+    universalAJAX("GET",mlURL,"",answerUpdateORSched,1);            
+  }
+}
+
+function answerUpdateORSched(rtnData) {
+  if (parseInt(rtnData['responseCode']) === 200) {     
+    var rcd = JSON.parse(rtnData['responseText']);
+    if (parseInt(rcd['ITEMSFOUND']) > 0) { 
+      //"{\"MESSAGE\":\"\",\"ITEMSFOUND\":212,\"DATA\":{\"requestDate\":\"20180501\",\"institution\":\"HUP\",\"orlisting\":[{\"pxicode\":\"4f3ec32d-a967-41c3-9516-93b752212ed8\",\"targetind\":\"-\",\"informedconsentindicator\":0,\"linkage\":\"-\",\"pxiinitials\":\"A.A\",\"ars\":\"24\\/-\\/F\",\"starttime\":\"2:00\",\"room\":\"78\",\"surgeon\":\"\",\"proceduretext\":\"M1 BREATH HYDROGEN TESTLRB NA\"}
             
-            
+      
+
+      console.log(rtnData);
+    } else { 
+      //NO OR SCHED ITEMS FOUND
+    }
+  } else { 
+    var rcd = JSON.parse(rtnData['responseText']);
+    alert(rcd['MESSAGE']);  
+  }
+}
+
 JAVASCR;
 return $rtnthis;
 

@@ -151,7 +151,25 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
         
 #procurementAddHoldingTbl { height: 86vh; box-sizing: border-box; }
-#procurementAddHoldingTbl .sidePanel {width: 20vw; height: 43vh;  }
+#procurementAddHoldingTbl .sidePanel { width: 20vw; height: 43vh; box-sizing: border-box;  }
+
+
+#fldPRCProcedureDate { width: 8vw; }
+#dspORListing { height: 36vh; overflow: auto; }
+
+#PXIDspTbl { width: 20vw; box-sizing: border-box; border-collapse: collapse;border: 0; }
+#PXIDspTbl tr { display: flex; }
+#PXIDspTbl td { flex: 1 auto; border: 1px solid #aaa; width: 1px; word-wrap: break-word; }
+#PXIDspTbl thead tr:after { content: ''; overflow-y: scroll; visibility: hidden; height: 0;}
+#PXIDspTbl thead th { flex: 1 auto; display: block; border: 1px solid #000; }
+#PXIDspTbl tbody { display: block; width: 100%;overflow-y: auto; height: 32vh; }
+#PXIDspTbl .dspORTarget { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; }
+#PXIDspTbl .dspORInformed { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; }
+#PXIDspTbl .dspORAdded { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; } 
+#PXIDspTbl .dspORInitials { max-width: 2.8vw; padding: .2vw .2vh; box-sizing: border-box; } 
+#PXIDspTbl .dspORSARS { max-width: 3.5vw; padding: .2vw .2vh; box-sizing: border-box; } 
+
+
 
 STYLESHEET;
 return $rtnThis;
