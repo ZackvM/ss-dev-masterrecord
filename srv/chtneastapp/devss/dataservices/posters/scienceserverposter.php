@@ -34,6 +34,39 @@ function __construct() {
 
 class datadoers {
 
+ function generatesubmenu($request, $passdata) { 
+   $rows = array(); 
+   $dta = array(); 
+   $responseCode = 400; 
+   $msg = "BAD REQUEST";
+   $itemsfound = 0;
+   require(serverkeys . "/sspdo.zck");
+   $pdta = json_decode($passdata,true);
+   //{"whichdropdown":"PRCCollectionType","whichmenu":"COLLECTIONT","lookupvalue":"S"}
+   $dspmenu = $pdta['whichdropdown'];
+   $rqstedMenu = $pdta['whichmenu'];
+   $lookupvalue = $pdta['lookupvalue'];
+
+
+   //TODO:  CHECK THAT VALUES ARE VALID
+
+   $sql = "SELECT  menuvalue, dspvalue, useasdefault, menuid as lookupvalue FROM four.sys_master_menus where dspind = 1 and  menu = :rqstmenu and parentvalue = :givenlookupvalue order by dsporder";
+   $rs = $conn->prepare($sql);
+   $rs->execute(array( ':rqstmenu' => $rqstedMenu, ':givenlookupvalue' => $lookupvalue ));
+   $itemsfound = $rs->rowCount();
+   while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+     $dta[] = $r;
+   }
+   $dta['dspmenu'] = $dspmenu;
+   $msg = "";
+   $responseCode = 200;
+
+   $rows['statusCode'] = $responseCode; 
+   $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+   return $rows;    
+ } 
+
+
     function grabreportdata($request, $passdata) { 
       $responseCode = 400; 
       $error = 0;

@@ -1783,8 +1783,7 @@ if ($rptaccesslvl > $uaccess) {
   $tbldta = json_decode(callrestapi("POST", dataTree . "/data-doers/grab-report-data",serverIdent, serverpw, $pdta), true);           
   
   $jsonToExport = json_encode( $tbldta['DATA'] );
-  
-  
+    
   $resultTbl = "<table><tr><td id=reportresultitemfound>Records Found: {$tbldta['ITEMSFOUND']}</td></tr></table><div id=jsonToExport>"  . $jsonToExport . "</div>";
   foreach ($tbldta['DATA'] as $records) { 
     $rowTbl .= "<tr>"; 
@@ -1831,12 +1830,81 @@ function bldORScheduleTbl($orarray) {
     $target = $val['targetind'];
     $informed = $val['informedconsentindicator'];
     $addeddonor = $val['linkage'];
-    $innerTbl .= "<tr onclick=\"alert('{$val['pxicode']}');\"><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspORSARS>{$val['ars']}</td><td valign=top class=procedureTxt>{$val['proceduretext']}</td></tr>";
+ 
+    $proc = "{$val['proceduretext']}<p><b>Surgeon</b>: {$val['surgeon']}<br><b>Start</b>: {$val['starttime']}<br><b>OR</b>: {$val['room']}";
+   
+    $innerTbl .= "<tr onclick=\"alert('{$val['pxicode']}');\"><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspORSARS>{$val['ars']}</td><td valign=top class=procedureTxt>{$proc}</td></tr>";
   }
   //<table><tr><td colspan=5>Procedures: {$orarray['ITEMSFOUND']}</td></tr></table>
-  $rtnTbl = "<table border=1 id=PXIDspTbl><thead><th class=dspORTarget>T</th><th class=dspORInformed>IC</th><th class=dspORAdded>A</th><th class=dspORInitials>Initials</th><th class=dspORSARS>A/R/S</th><th>Procedure</th></thead><tbody>{$innerTbl}</tbody></table>";
+  $rtnTbl = "<table border=0 id=PXIDspTbl><thead><th class=dspORTarget>T</th><th class=dspORInformed>IC</th><th class=dspORAdded>A</th><th class=dspORInitials>Initials</th><th class=dspORSARS>A/R/S</th><th>Procedure</th></thead><tbody id=PXIDspBody>{$innerTbl}</tbody></table>";
   return $rtnTbl;
 }
+
+function bldProcurementGrid($usr) {   
+  $si = serverIdent;
+  $sp = serverpw;
+  //DROP MENU BUILDER ********************************************************************************* //
+  $proctypearr = json_decode(callrestapi("GET", dataTree . "/globalmenu/fourmenuprcproceduretype",$si,$sp),true);
+  $proct = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCProcedureType','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  $procTDefaultValue = "";
+  $procTDefaultDsp = "";
+  foreach ($proctypearr['DATA'] as $procval) {
+      if ( (int)$procval['useasdefault'] === 1 ) {
+        $procTDefaultValue = $procval['lookupvalue']; 
+        $procTDefaultDsp = $procval['menuvalue'];
+      }
+    $proct .= "<tr><td onclick=\"fillField('fldPRCProcedureType','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+  }
+  $proct .= "</table>";
+  $procedureType = "<div class=menuHolderDiv><input type=hidden id=fldPRCProcedureTypeValue value=\"{$procTDefaultValue}\"><input type=text id=fldPRCProcedureType READONLY class=\"inputFld\" value=\"{$procTDefaultDsp}\"><div class=valueDropDown id=ddPRCProcedureType>{$proct}</div></div>";
+
+  $collectionTypeDropMenu = "&nbsp;";
+  if (trim($procTDefaultValue) !== "") { 
+      $pdta = array(); 
+      $pdta['whichdropdown'] = 'PRCCollectionType';
+      $pdta['whichmenu'] = 'COLLECTIONT';
+      $pdta['lookupvalue'] = trim($procTDefaultValue);
+      $passdata = json_encode($pdta);
+      $submenudta = json_decode(callrestapi("POST", dataTree . "/data-doers/generate-sub-menu",serverIdent, serverpw, $passdata), true);
+      //{"MESSAGE":"","ITEMSFOUND":2,"DATA":{"0":{"menuvalue":"EXC","dspvalue":"Excision","useasdefault":1,"lookupvalue":55},"1":{"menuvalue":"INTRA","dspvalue":"IntraOperative","useasdefault":0,"lookupvalue":57},"dspmenu":"PRCCollectionType"}} 
+      if ((int)$submenudta['ITEMSFOUND'] > 0 ) { 
+        $ctTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCCollectionType','','');\" class=ddMenuClearOption>[clear]</td></tr>";  
+        $collectionDefaultValue = ""; 
+        $collectionDefaultDsp = "";  
+        foreach($submenudta['DATA'] as $ctkey => $ctval) {
+          if (is_numeric($ctkey)) { 
+              if ((int)$ctval['useasdefault'] === 1) { 
+                $collectionDefaultValue = $ctval['menuvalue'];
+                $collectionDefaultDsp = $ctval['dspvalue'];
+              } 
+              $ctTbl .= "<tr><td onclick=\"fillField('fldPRCCollectionType','{$ctval['menuvalue']}','{$ctval['dspvalue']}');\" class=ddMenuItem>{$ctval['dspvalue']}</td></tr>";
+          }
+        }
+        $ctTbl .= "</table>";
+        $collectionTypeDropMenu = $ctTbl;
+      }  
+  }
+  $collectionType = "<div class=menuHolderDiv><input type=hidden id=fldPRCCollectionTypeValue value=\"{$collectionDefaultValue}\"><input type=text id=fldPRCCollectionType READONLY class=\"inputFld\" value=\"{$collectionDefaultDsp}\"><div class=valueDropDown id=ddPRCCollectionType>{$collectionTypeDropMenu}</div></div>";
+
+   //DROP DOWN MENU BUILDER END ******************************************************************** //
+
+
+  $inst = $usr->presentinstitution;
+  $tech = strtoupper($usr->userid);
+
+
+
+
+
+//Procurement Grid  
+$rtnTbl = <<<RTNTBL
+<table><tr><td>Biogroup Number</td><td>Procedure Type</td><td>Collection Type</td><td>Technician/Institution</td></tr>
+<tr><td><input type=text id=fldPRCBGNbr value="" READONLY></td><td>{$procedureType}</td><td>{$collectionType}</td><td><input type=text id=fldPRCTechInstitute value="{$tech}@{$inst}" READONLY></td></tr>
+</table>
+RTNTBL;
+  return $rtnTbl;    
+}
+
 
 function bldBiosampleProcurement($usr) { 
     // {"statusCode":200,"loggedsession":"4tlt57qhpjfkugau1seif6glo0","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":58,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"menuvalue":"Procure Biosample","pagesource":"procure-biosample","additionalcode":""}]],["433","DATA COORDINATOR","",[{"menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""},{"menuvalue":"Consult Library","pagesource":"val-consult-library","additionalcode":""},{"menuvalue":"Slide Image Library","pagesource":"image-library","additionalcode":""},{"menuvalue":"QMS Actions","pagesource":"qms-actions","additionalcode":""}]],["472","REPORTS","",[{"menuvalue":"All Reports","pagesource":"reports","additionalcode":""},{"menuvalue":"Barcode Run","pagesource":"reports\/inventory\/barcode-run","additionalcode":""},{"menuvalue":"Daily Procurement Sheet","pagesource":"reports\/procurement\/daily-procurement-sheet","additionalcode":""}]],["473","UTILITIES","",[{"menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]],"lastlogin":{"lastlogdate":"Mon Dec 17th, 2018 at 14:59","fromip":"170.212.0.91"},"accessnbr":"43"} 
@@ -1848,14 +1916,16 @@ function bldBiosampleProcurement($usr) {
       $tdydte = $today->format('m/d/Y');
       $tdydtev = $today->format('Y-m-d');
       $orscheddater = bldSidePanelORSched( $usr->presentinstitution, $tdydte, $tdydtev );
+      //TODO:REMOVE THIS LINE TO DEFAULT TO TODAY'S DATE
       $tdydtev = '20180507';
       $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
- 
-   //<div id=dspORListing>   ... </div> 
+
+      $procGrid = bldProcurementGrid($usr);
+
     $holdingTbl = <<<HOLDINGTBL
             <table border=1 width=100% id=procurementAddHoldingTbl>
                    <tr>
-                      <td rowspan=2>Collection Grid</td><td class=sidePanel valign=top>Today's Collection Summary</td>
+                      <td rowspan=2 valign=top>{$procGrid}</td><td class=sidePanel valign=top>Today's Collection Summary</td>
                    </tr>
                    <tr>
                        <td class=sidePanel valign=top>

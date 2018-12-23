@@ -465,8 +465,49 @@ function fillField(whichfield, whichvalue, whichdisplay) {
     case 'fldPRCProcedureDate':
       updateORSched(); 
     break;
+    case 'fldPRCProcedureType':
+      if (byId('fldPRCCollectionTypeValue')) { 
+        byId('fldPRCCollectionTypeValue').value = "";
+      }
+      if (byId('fldPRCCollectionType')) { 
+        byId('fldPRCCollectionType').value = "";
+      }
+      if (byId('ddPRCCollectionType')) { 
+        byId('ddPRCCollectionType').innerHTML = "&nbsp;";
+      } 
+      updateSubMenu('PRCCollectionType','COLLECTIONT',whichvalue);
+    break;
   }        
 }            
+
+function updateSubMenu(whichdropdown, whichmenu, lookupvalue) {  
+  var mlURL = "/data-doers/generate-sub-menu"; 
+  var dta = new Object();
+  dta['whichdropdown'] = whichdropdown;
+  dta['whichmenu'] = whichmenu;
+  dta['lookupvalue'] = lookupvalue;
+  var passdta = JSON.stringify(dta);
+  universalAJAX("POST",mlURL,passdta,answerUpdateSubMenu,1);            
+}
+
+function answerUpdateSubMenu(rtnData) {
+  //{ responseCode: 200, responseText: "{\"MESSAGE\":\"\",\"ITEMSFOUND\":2,\"DATA\":{\"0\":{\"menuvalue\":\"EXC\",\"dspvalue\":\"Excision\",\"useasdefault\":1,\"lookupvalue\":55},\"1\":{\"menuvalue\":\"INTRA\",\"dspvalue\":\"IntraOperative\",\"useasdefault\":0,\"lookupvalue\":57},\"dspmenu\":\"PRCCollectionType\"}}" }
+  if (parseInt(rtnData['responseCode']) === 200) {
+
+
+    var dta = JSON.parse( rtnData['responseText'] );
+    if (parseInt(dta['ITEMSFOUND']) > 0) {
+      var dspList = dta['DATA'];
+      console.log(dspList[0]['dspvalue']);  
+
+    } else {
+      //DO NOTHING
+    }
+  } else {      
+    //ERROR
+    console.log(rtnData);    
+  }
+}
 
 function updateORSched() {
   if (byId('fldPRCProcedureDateValue')) { 
@@ -478,12 +519,18 @@ function updateORSched() {
 function answerUpdateORSched(rtnData) {
   if (parseInt(rtnData['responseCode']) === 200) {     
     var rcd = JSON.parse(rtnData['responseText']);
-    if (parseInt(rcd['ITEMSFOUND']) > 0) { 
-      //"{\"MESSAGE\":\"\",\"ITEMSFOUND\":212,\"DATA\":{\"requestDate\":\"20180501\",\"institution\":\"HUP\",\"orlisting\":[{\"pxicode\":\"4f3ec32d-a967-41c3-9516-93b752212ed8\",\"targetind\":\"-\",\"informedconsentindicator\":0,\"linkage\":\"-\",\"pxiinitials\":\"A.A\",\"ars\":\"24\\/-\\/F\",\"starttime\":\"2:00\",\"room\":\"78\",\"surgeon\":\"\",\"proceduretext\":\"M1 BREATH HYDROGEN TESTLRB NA\"}
-            
-      
-
-      console.log(rtnData);
+    if (parseInt(rcd['ITEMSFOUND']) > 0) {  
+     var innerRows = "";
+     rcd['DATA']['orlisting'].forEach(function(element) { 
+       var target = element['targetind'];
+       var informed = element['informedconsentindicator'];
+       var addeddonor = element['linkage'];
+       var proc = element['proceduretext'] +"<p><b>Surgeon</b>: "+element['surgeon']+"<br><b>Start</b>: "+element['starttime']+"<br><b>OR</b>: "+element['room']+"";
+       innerRows += "<tr onclick=\"alert('"+element['pxicode']+"');\"><td valign=top class=dspORTarget>"+target+"</td><td valign=top class=dspORInformed>"+informed+"</td><td valign=top class=dspORAdded>"+addeddonor+"</td><td valign=top class=dspORInitials>"+element['pxiinitials']+"</td><td valign=top class=dspORSARS>"+element['ars']+"</td><td valign=top class=procedureTxt>"+proc+"</td></tr>";
+     });
+     if (byId('PXIDspBody')) { 
+       byId('PXIDspBody').innerHTML = innerRows;
+     }
     } else { 
       //NO OR SCHED ITEMS FOUND
     }

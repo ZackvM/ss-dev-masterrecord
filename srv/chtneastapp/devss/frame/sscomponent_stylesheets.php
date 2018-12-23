@@ -155,6 +155,15 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
 
 #fldPRCProcedureDate { width: 8vw; }
+#fldPRCBGNbr { width: 8vw; }
+#fldPRCTechInstitute { width: 15vw; }
+#fldPRCProcedureType { width: 10vw; }
+#ddPRCProcedureType { width: 10vw; }
+#fldPRCCollectionType { width: 10vw; }
+#ddPRCCollectionType { width: 10vw; }
+
+
+
 #dspORListing { height: 36vh; overflow: auto; }
 
 #PXIDspTbl { width: 20vw; box-sizing: border-box; border-collapse: collapse;border: 0; }
@@ -168,6 +177,10 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #PXIDspTbl .dspORAdded { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; } 
 #PXIDspTbl .dspORInitials { max-width: 2.8vw; padding: .2vw .2vh; box-sizing: border-box; } 
 #PXIDspTbl .dspORSARS { max-width: 3.5vw; padding: .2vw .2vh; box-sizing: border-box; } 
+
+
+
+
 
 
 
