@@ -104,6 +104,13 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 .menuHolderDiv:hover .valueDropDown { display: block; cursor: pointer; }
 .valueDropDown {background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .1vh; min-height: 15vh; max-height: 33vh; overflow: auto; display: none; z-index: 25; }
 .menuDropTbl { font-size: 1.8vh; padding: .6vh .1vw .6vh .1vw; white-space: nowrap; background: rgba({$this->color_white},1); width: 100%; }
+
+.valueDisplayHolder { position: relative; } 
+.valueDisplayDiv { background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .1vh; min-height: 15vh; max-height: 33vh; overflow: auto; display: none; z-index: 25; }
+
+
+
+
 .ddMenuItem {padding: .3vh .2vw;}
 .ddMenuItem:hover { cursor: pointer;  background: rgba({$this->color_lblue},1); color: rgba({$this->color_white},1);  }
 .ddMenuClearOption { font-size: 1.1vh; }
@@ -148,11 +155,10 @@ $rtnThis = <<<STYLESHEET
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
 
 #btnPBClearGrid { width: 2vw; }
-
-        
+ 
 #procurementAddHoldingTbl { height: 86vh; box-sizing: border-box; }
-#procurementAddHoldingTbl .sidePanel { width: 20vw; height: 43vh; box-sizing: border-box;  }
-
+#procurementAddHoldingTbl .sidePanel { width: 30vw; box-sizing: border-box;  }
+#procurementAddHoldingTbl #procGridHolderCell { width: 65vw; border-right: 1px solid rgba({$this->color_ddrwgrey},1);    }
 
 #fldPRCProcedureDate { width: 8vw; }
 #fldPRCBGNbr { width: 8vw; }
@@ -161,17 +167,31 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #ddPRCProcedureType { width: 10vw; }
 #fldPRCCollectionType { width: 10vw; }
 #ddPRCCollectionType { width: 10vw; }
+#fldPRCInitialMetric { width: 5vw; text-align: right; }
+#fldPRCMetricUOM {width: 6vw; }
+#ddPRCMetricUOM {width: 6vw; }
+#fldPRCSpecCat {width: 13vw; }
+#ddPRCSpecCat {width: 13vw; }
+#fldPRCUnknownMet {width: 4vw; }
+#ddPRCUnknownMet {width: 4vw; }
+#fldPRCUnInvolved { width: 4vw; }
+#ddPRCUnInvolved { width: 4vw; }
+#fldPRCSitePositions { width: 15vw; }
+#ddPRCSitePositions { width: 15vw; }
+#fldPRCDiagnosisDesignation { width: 25vw; }
 
 
+#fldPRCPathRpt { width: 5vw; }
+#ddPRCPathRpt { width: 5vw; }
 
 #dspORListing { height: 36vh; overflow: auto; }
 
-#PXIDspTbl { width: 20vw; box-sizing: border-box; border-collapse: collapse;border: 0; }
+#PXIDspTbl { width: 30vw; box-sizing: border-box; border-collapse: collapse;border: 0; }
 #PXIDspTbl tr { display: flex; }
 #PXIDspTbl td { flex: 1 auto; border: 1px solid #aaa; width: 1px; word-wrap: break-word; }
 #PXIDspTbl thead tr:after { content: ''; overflow-y: scroll; visibility: hidden; height: 0;}
 #PXIDspTbl thead th { flex: 1 auto; display: block; border: 1px solid #000; }
-#PXIDspTbl tbody { display: block; width: 100%;overflow-y: auto; height: 32vh; }
+#PXIDspTbl tbody { display: block; width: 100%;overflow-y: auto; height: 45vh; }
 #PXIDspTbl .dspORTarget { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; }
 #PXIDspTbl .dspORInformed { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; }
 #PXIDspTbl .dspORAdded { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; } 

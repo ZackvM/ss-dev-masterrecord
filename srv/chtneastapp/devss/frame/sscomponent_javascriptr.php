@@ -436,6 +436,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
+  if (byId('fldPRCDiagnosisDesignation')) { 
+    byId('fldPRCDiagnosisDesignation').addEventListener('keyup', function() { 
+      if ( parseInt(byId('fldPRCDiagnosisDesignation').value.trim().length) > 2) {
+        if ( byId('fldPRCSpecCat').value.trim() !== "") {
+          var mlURL = "/data-doers/procurement-diagnosis-designation-search"; 
+          var dta = new Object();
+          dta['speccat'] = byId('fldPRCSpecCat').value.trim();
+          dta['searchterm'] = byId('fldPRCDiagnosisDesignation').value.trim();
+          var passdta = JSON.stringify(dta);
+          universalAJAX("POST",mlURL,passdta,answerVocabularySearch,1);            
+        } else { 
+          alert('You must first specify a specimen category in the diagnosis designation');
+          return null;
+        }
+      }
+    }, false);
+  }
+
 }, false);        
 
 var lastRequestCalendarDiv = "";
@@ -453,6 +471,10 @@ function answerGetCalendar(rtnData) {
     alert("ERROR");  
   }
 }   
+
+function answerVocabularySearch(rtnData) { 
+  console.log(rtnData);
+}
 
 function fillField(whichfield, whichvalue, whichdisplay) { 
   if (byId(whichfield)) { 
@@ -491,21 +513,32 @@ function updateSubMenu(whichdropdown, whichmenu, lookupvalue) {
 }
 
 function answerUpdateSubMenu(rtnData) {
-  //{ responseCode: 200, responseText: "{\"MESSAGE\":\"\",\"ITEMSFOUND\":2,\"DATA\":{\"0\":{\"menuvalue\":\"EXC\",\"dspvalue\":\"Excision\",\"useasdefault\":1,\"lookupvalue\":55},\"1\":{\"menuvalue\":\"INTRA\",\"dspvalue\":\"IntraOperative\",\"useasdefault\":0,\"lookupvalue\":57},\"dspmenu\":\"PRCCollectionType\"}}" }
   if (parseInt(rtnData['responseCode']) === 200) {
-
-
     var dta = JSON.parse( rtnData['responseText'] );
+    var rquestFld = dta['MESSAGE'];
     if (parseInt(dta['ITEMSFOUND']) > 0) {
       var dspList = dta['DATA'];
-      console.log(dspList[0]['dspvalue']);  
-
+      var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fld"+rquestFld+"','','');\" class=ddMenuClearOption>[clear]</td></tr>"; 
+      var defaultValue = "";
+      var defaultDsp = "";
+      dspList.forEach( function(element) { 
+        if (parseInt(element['useasdefault']) === 1) { 
+          defaultValue = element['menuvalue'];
+          defaultDsp = element['dspvalue'];
+        }
+        menuTbl += "<tr><td onclick=\"fillField('fld"+rquestFld+"','"+element['menuvalue']+"','"+element['dspvalue']+"');\" class=ddMenuItem>"+element['dspvalue']+"</td></tr>";
+      });
+      menuTbl += "</table>";
+      byId('dd'+rquestFld).innerHTML = menuTbl;
+      byId('fld'+rquestFld).value = defaultDsp;
+      byId('fld'+rquestFld+"Value").value = defaultValue;
     } else {
       //DO NOTHING
+      //console.log(rquestFld);
     }
   } else {      
-    //ERROR
-    console.log(rtnData);    
+    //ERROR - DISPLAY ERROR
+    //console.log(rtnData);    
   }
 }
 

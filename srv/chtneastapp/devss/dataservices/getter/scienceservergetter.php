@@ -768,6 +768,18 @@ function hprrequestcode($whichobj, $rqst) {
 
 class globalMenus {
 
+    function vocabularypositions() { 
+       return "SELECT distinct trim(ifnull(position,'')) as codevalue, trim(ifnull(position,'')) as menuvalue, 0 as useasdefault, trim(ifnull(position,'')) as lookupvalue FROM four.voc_anatomic_site_position order by codevalue";
+    }
+
+    function vocabularyspecimencategory() { 
+      return "SELECT distinct trim(ifnull(specimencategory,'')) as codevalue, trim(ifnull(specimencategory,'')) as menuvalue, 0 as useasdefault, trim(ifnull(specimencategory,'')) as lookupvalue FROM four.voc_chtn_all where trim(ifnull(specimenCategory,'')) <> '' order by codevalue";
+    }
+
+    function fourmenuprcpathologyreport() { 
+      return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'PRpt' and queriable = 1 and dspind = 1 order by dsporder";
+    }
+
     function fourmenuprcproceduretype() { 
       return "SELECT ifnull(menuid,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'PROCTYPE' and dspind = 1 order by dsporder";
     }
@@ -816,12 +828,20 @@ class globalMenus {
       return "SELECT distinct ucase(trim(ifnull(tisstype,''))) as codevalue, ucase(trim(ifnull(tisstype,''))) as menuvalue, 0 as useasdefault FROM masterrecord.ut_procure_biosample where trim(ifnull(tisstype,'')) <> '' order by codevalue";
     }
 
+    function metricuomslong() {
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.longvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'METRIC' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
     function metricuoms() {
       return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'METRIC' and mnu.dspInd = 1 order by mnu.dsporder";
     }
 
     function qmsstatus() {
       return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'QMSStatus' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function fouryesno() {
+      return "SELECT ifnull(mnu.menuvalue,0) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'YESNO' and mnu.dspInd = 1 order by mnu.dsporder";
     }
 
     function yesno() {

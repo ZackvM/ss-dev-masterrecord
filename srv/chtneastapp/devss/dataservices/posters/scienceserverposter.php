@@ -34,6 +34,22 @@ function __construct() {
 
 class datadoers {
 
+ function procurementdiagnosisdesignationsearch($request, $passdata) { 
+   $rows = array(); 
+   $dta = array(); 
+   $responseCode = 400; 
+   $msg = "BAD REQUEST";
+   $itemsfound = 0;
+   require(serverkeys . "/sspdo.zck");
+   $pdta = json_decode($passdata,true);
+   //$msg = $pdta['speccat'];
+   $msg = $pdta['searchterm'];
+
+   $rows['statusCode'] = $responseCode; 
+   $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+   return $rows;    
+ } 
+
  function generatesubmenu($request, $passdata) { 
    $rows = array(); 
    $dta = array(); 
@@ -57,8 +73,8 @@ class datadoers {
    while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
      $dta[] = $r;
    }
-   $dta['dspmenu'] = $dspmenu;
-   $msg = "";
+   //$dta['dspmenu'] = $dspmenu;
+   $msg = $dspmenu;
    $responseCode = 200;
 
    $rows['statusCode'] = $responseCode; 
