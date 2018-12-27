@@ -33,6 +33,65 @@ function __construct() {
 }
 
 class datadoers {
+    
+   function diagnosisdownstream($request, $passdata) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400; 
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     $spc = $pdta['specimencategory'];
+     $ste = $pdta['site'];   
+     $sql = "SELECT distinct ifnull(dx,'') as dx, ifnull(modifier,'') as modifier, concat(ifnull(dx,'') , if( ifnull(modifier,'') = '','', concat(' :: ',ifnull(modifier,'')))) as dspdx FROM four.voc_chtn_all where specimenCategory = :spc and concat(ifnull(site,''), if ( ifnull(subsite,'') = '' , '' , concat(' :: ', ifnull(subsite,'')))) = :givensite order by dx, modifier";     
+     $rs = $conn->prepare($sql); 
+     $rs->execute(array(':spc' => $spc, ':givensite' => $ste)); 
+     if ($rs->rowCount() > 0) { 
+       $itemsfound = $rs->rowCount(); 
+       while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+           $dta[] = $r;
+       }
+       $responseCode = 200;
+       $msg = "";
+     } else { 
+       $responseCode = 404; 
+       $msg = "NO SITES FOUND";
+     }
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   } 
+    
+  function   sitesbyspecimencategory($request, $passdata) { 
+   $rows = array(); 
+   $dta = array(); 
+   $responseCode = 400; 
+   $msg = "BAD REQUEST";
+   $itemsfound = 0;
+   require(serverkeys . "/sspdo.zck");
+   $pdta = json_decode($passdata,true);
+   $spc = $pdta['specimencategory'];
+   
+   $sql = "SELECT distinct ifnull(site,'') as site, ifnull(subsite,'') as subsite, concat(ifnull(site,''), if ( ifnull(subsite,'') = '' , '' , concat(' :: ', ifnull(subsite,'')))) dspsite  FROM four.voc_chtn_all vocall where specimenCategory = :specimencategory and site <> '<NONE>' order by site, subsite";     
+   $rs = $conn->prepare($sql); 
+   $rs->execute(array(':specimencategory' => $spc)); 
+   if ($rs->rowCount() > 0) { 
+       $itemsfound = $rs->rowCount(); 
+       while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+           $dta[] = $r;
+       }
+       $responseCode = 200;
+       $msg = "";
+   } else { 
+       $responseCode = 404; 
+       $msg = "NO SITES FOUND";
+   }
+   $rows['statusCode'] = $responseCode; 
+   $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+   return $rows;          
+  }
+    
 
  function procurementdiagnosisdesignationsearch($request, $passdata) { 
    $rows = array(); 

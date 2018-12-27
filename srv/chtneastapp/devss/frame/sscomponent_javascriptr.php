@@ -430,6 +430,12 @@ function procurebiosample($rqstrstr) {
     $rtnthis = <<<JAVASCR
 document.addEventListener('DOMContentLoaded', function() {  
 
+  clearGrid();
+            
+  if (byId('btnPBClearGrid')) { 
+     byId('btnPBClearGrid').addEventListener('click', function() { clearGrid(); }, false);          
+  }
+            
   if (byId('btnClearRptGrid')) { 
     byId('btnClearRptGrid').addEventListener('click', function() {
       clearRptParameterGrid();
@@ -483,9 +489,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
-
 }, false);        
 
+function clearGrid() { 
+  
+   //TODO:  RESET DEFAULT FIELD VALUES
+       
+
+   fillField('fldPRCSpecCat','','');
+   
+}
+
+function fillPXIInformation(pxiid, pxiinitials, pxiage, pxirace, pxisex    ) { 
+
+   //TODO:  CHECK FIELD EXISTANCE
+   //TODO:  BLANK FIELDS FIRST
+   byId('fldPRCPXIId').value = "";
+   byId('fldPRCPXIInitials').value = "";            
+   byId('fldPRCPXIAge').value = "";
+   byId('fldPRCPXIRace').value = "";            
+   byId('fldPRCPXISex').value = "";                        
+
+   byId('fldPRCPXIId').value = pxiid;
+   byId('fldPRCPXIInitials').value = pxiinitials;         
+   byId('fldPRCPXIAge').value = pxiage;
+   byId('fldPRCPXIRace').value = pxirace;                        
+   byId('fldPRCPXISex').value = pxisex;             
+
+}
+         
 function closeMETSVocabDsp() { 
   byId('displayMETSVocabulary').innerHTML = "";
   byId('displayMETSVocabulary').style.display = 'none';
@@ -495,8 +527,7 @@ function closeVocabDsp() {
   byId('displayVocabulary').innerHTML = "";
   byId('displayVocabulary').style.display = 'none';
 }
-
-
+            
 function fillMETSVocabValue(site, dx, sdx) { 
   var vocabDspValue = "";
   if (site.trim() !== "") { 
@@ -644,13 +675,93 @@ function fillField(whichfield, whichvalue, whichdisplay) {
       updateSubMenu('PRCCollectionType','COLLECTIONT',whichvalue);
     break;
     case 'fldPRCSpecCat':
-      byId('displayVocabulary').innerHTML = "";
-      byId('displayVocabulary').style.display = 'none';
-      byId('fldPRCDiagnosisDesignation').value = ""; 
+       //GET SITES
+       byId('ddPRCSiteSubsite').innerHTML = "";
+       byId('fldPRCSiteSubsiteValue').value = "";
+       byId('fldPRCSiteSubsite').value = "";         
+       byId('fldPRCDXOverride').checked = false;     
+       byId('ddPRCDXMod').innnerHTML = "";
+       byId('fldPRCDXMod').value = "";
+       byId('fldPRCDXModValue').value = "";             
+       updateSiteMenu();             
     break;
+    case 'fldPRCSiteSubsite':
+       byId('fldPRCDXOverride').checked = false;          
+       byId('ddPRCDXMod').innerHTML = "<center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div>";
+       byId('fldPRCDXMod').value = "";
+       byId('fldPRCDXModValue').value = "";           
+       updateDiagnosisMenu();                       
+     break;
   }        
 }            
 
+function updateDiagnosisMenu() { 
+       var mlURL = "/data-doers/diagnosis-downstream"; 
+       var dta = new Object();
+       dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
+       dta['site'] = byId('fldPRCSiteSubsiteValue').value.trim();            
+       var passdta = JSON.stringify(dta);    
+       universalAJAX("POST",mlURL,passdta,answerUpdateDiagnosisMenu,1);                 
+}
+
+function answerUpdateDiagnosisMenu(rtnData) { 
+  if (parseInt(rtnData['responseCode']) === 200) {
+    var dta = JSON.parse( rtnData['responseText'] );
+    var rquestFld = dta['MESSAGE'];
+    if (parseInt(dta['ITEMSFOUND']) > 0) {
+      var dspList = dta['DATA'];
+      var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCDXMod','','');\" class=ddMenuClearOption>[clear]</td></tr>";      
+      dspList.forEach( function(element) {          
+          menuTbl += "<tr><td onclick=\"fillField('fldPRCDXMod','"+element['dspdx']+"','"+element['dspdx']+"');\" class=ddMenuItem>"+element['dspdx']+"</td></tr>";            
+      });
+      menuTbl += "</table>";      
+   } else {
+      var menuTbl =  "<center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div>";     
+    }
+    byId('ddPRCDXMod').innerHTML = menuTbl        
+  } else {      
+    //ERROR - DISPLAY ERROR
+    //console.log(rtnData);    
+  }            
+}
+            
+function updateSiteMenu() { 
+
+   if ( byId('fldPRCSpecCatValue') ) {
+     if ( byId('fldPRCSpecCatValue').value.trim() !== "") {     
+       var mlURL = "/data-doers/sites-by-specimen-category"; 
+       var dta = new Object();
+       dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
+       var passdta = JSON.stringify(dta);
+       universalAJAX("POST",mlURL,passdta,answerUpdateSiteMenu,1);               
+     } else { 
+       //NOTHING SELECTED
+     }
+   }
+   
+}
+            
+function answerUpdateSiteMenu(rtnData) { 
+  if (parseInt(rtnData['responseCode']) === 200) {
+    var dta = JSON.parse( rtnData['responseText'] );
+    var rquestFld = dta['MESSAGE'];
+    if (parseInt(dta['ITEMSFOUND']) > 0) {
+      var dspList = dta['DATA'];
+      var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCSiteSubsite','','');\" class=ddMenuClearOption>[clear]</td></tr>";      
+      dspList.forEach( function(element) {          
+          menuTbl += "<tr><td onclick=\"fillField('fldPRCSiteSubsite','"+element['dspsite']+"','"+element['dspsite']+"');\" class=ddMenuItem>"+element['dspsite']+"</td></tr>";            
+      });
+      menuTbl += "</table>";      
+   } else {
+      var menuTbl =  "<center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div>";     
+    }
+    byId('ddPRCSiteSubsite').innerHTML = menuTbl        
+  } else {      
+    //ERROR - DISPLAY ERROR
+    //console.log(rtnData);    
+  }
+}           
+            
 function updateSubMenu(whichdropdown, whichmenu, lookupvalue) {  
   var mlURL = "/data-doers/generate-sub-menu"; 
   var dta = new Object();
@@ -671,11 +782,11 @@ function answerUpdateSubMenu(rtnData) {
       var defaultValue = "";
       var defaultDsp = "";
       dspList.forEach( function(element) { 
-        if (parseInt(element['useasdefault']) === 1) { 
-          defaultValue = element['menuvalue'];
-          defaultDsp = element['dspvalue'];
-        }
-        menuTbl += "<tr><td onclick=\"fillField('fld"+rquestFld+"','"+element['menuvalue']+"','"+element['dspvalue']+"');\" class=ddMenuItem>"+element['dspvalue']+"</td></tr>";
+      if (parseInt(element['useasdefault']) === 1) { 
+        defaultValue = element['menuvalue'];
+        defaultDsp = element['dspvalue'];
+      }
+      menuTbl += "<tr><td onclick=\"fillField('fld"+rquestFld+"','"+element['menuvalue']+"','"+element['dspvalue']+"');\" class=ddMenuItem>"+element['dspvalue']+"</td></tr>";
       });
       menuTbl += "</table>";
       byId('dd'+rquestFld).innerHTML = menuTbl;

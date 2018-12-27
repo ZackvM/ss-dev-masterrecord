@@ -575,7 +575,7 @@ $dataTbl .= <<<TOPROW
    <th></th>
    <th></th>
    <th>Label</th>
-   <th>Status</th>
+   <th>Status / <br>Status Date </th>
    <th class="cnttxt">QMS</th>
    <th class="groupingstart">Category</th>
    <th>Site-Subsite</th>
@@ -595,7 +595,7 @@ $dataTbl .= <<<TOPROW
    <th class="cnttxt">HP</th>
    <th>Metric</th>
    <th class="cnttxt">Qty</th>
-   <th class=groupingstart>Ship Doc</th>
+   <th class=groupingstart>Ship Doc /<br>Ship Date</th>
    <th>Investigator</th>
    <th>Request</th>
 </tr>
@@ -1830,13 +1830,23 @@ function bldORScheduleTbl($orarray) {
     $target = $val['targetind'];
     $informed = $val['informedconsentindicator'];
     $addeddonor = $val['linkage'];
- 
     $proc = "{$val['proceduretext']}<p><b>Surgeon</b>: {$val['surgeon']}<br><b>Start</b>: {$val['starttime']}<br><b>OR</b>: {$val['room']}";
-   
-    $innerTbl .= "<tr onclick=\"alert('{$val['pxicode']}');\"><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspORSARS>{$val['ars']}</td><td valign=top class=procedureTxt>{$proc}</td></tr>";
+    $innerTbl .= "<tr onclick=\"fillPXIInformation('{$val['pxicode']}','{$val['pxiinitials']}','{$val['pxiage']}','{$val['pxirace']}','{$val['pxisex']}'        );\"><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspORSARS>{$val['ars']}</td><td valign=top class=procedureTxt>{$proc}</td></tr>";
   }
-  //<table><tr><td colspan=5>Procedures: {$orarray['ITEMSFOUND']}</td></tr></table>
-  $rtnTbl = "<table border=0 id=PXIDspTbl><thead><th class=dspORTarget>T</th><th class=dspORInformed>IC</th><th class=dspORAdded>A</th><th class=dspORInitials>Initials</th><th class=dspORSARS>A/R/S</th><th>Procedure</th></thead><tbody id=PXIDspBody>{$innerTbl}</tbody></table>";
+  $rtnTbl = <<<ORSCHEDTBL
+          <table border=0 id=PXIDspTbl>
+              <thead><tr>
+                              <th class=dspORTarget>T</th>
+                              <th class=dspORInformed>IC</th>
+                               <th class=dspORAdded>A</th>
+                               <th class=dspORInitials>Initials</th>
+                               <th class=dspORSARS>A/R/S</th>
+                               <th>Procedure</th></tr></thead>
+               <tbody id=PXIDspBody>{$innerTbl}</tbody>
+               </table>
+               <center>
+               <table><tr><td> Add PXI Btn</td><td>|</td><td> Add Delinked </td></tr></table>
+ORSCHEDTBL;
   return $rtnTbl;
 }
 
@@ -1921,7 +1931,6 @@ function bldProcurementGrid($usr) {
    $spositions .= "</table>";
    $spositionsmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSitePositionsValue value=\"\"><input type=text id=fldPRCSitePositions READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSitePositions>{$spositions}</div></div>";
 
-
    //PATHOLOGY REPORT
    $prptarr = json_decode(callrestapi("GET", dataTree . "/global-menu/four-menu-prc-pathology-report",$si,$sp),true);
    //<tr><td align=right onclick=\"fillField('fldPRCPathRpt','','');\" class=ddMenuClearOption>[clear]</td></tr>
@@ -1954,7 +1963,6 @@ function bldProcurementGrid($usr) {
    $unknmt .= "</table>";
    $unknmtmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCUnknownMetValue value=\"{$unknmtDefaultValue}\"><input type=text id=fldPRCUnknownMet READONLY class=\"inputFld\" value=\"{$unknmtDefaultDsp}\"><div class=valueDropDown id=ddPRCUnknownMet>{$unknmt}</div></div>";
 
-
    //UNINVOLVED
    //<tr><td align=right onclick=\"fillField('fldPRCUnknownMet','','');\" class=ddMenuClearOption>[clear]</td></tr>
    $uninv = "<table border=0 class=menuDropTbl>";
@@ -1970,10 +1978,21 @@ function bldProcurementGrid($usr) {
    $uninv .= "</table>";
    $uninvmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCUnInvolvedValue value=\"{$uninvDefaultValue}\"><input type=text id=fldPRCUnInvolved READONLY class=\"inputFld\" value=\"{$uninvDefaultDsp}\"><div class=valueDropDown id=ddPRCUnInvolved>{$uninv}</div></div>";
 
+   //SYSTEMIC DX
+   $sysdarr = json_decode(callrestapi("GET", dataTree . "/global-menu/systemic-diagnosis",$si,$sp),true);
+   $sysd = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCSystemicDX','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+   foreach ($sysdarr['DATA'] as $sysdval) {
+    $sysd .= "<tr><td onclick=\"fillField('fldPRCSystemicDX','{$sysdval['lookupvalue']}','{$sysdval['menuvalue']}');\" class=ddMenuItem>{$sysdval['menuvalue']}</td></tr>";
+   }
+   $sysd .= "</table>";
+   $sysdmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSystemicDXValue value=\"\"><input type=text id=fldPRCSystemicDX READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSystemicDX>{$sysd}</div></div>";
 
-
-
-
+   //BASE SITE-SUBSITE MENU
+   $sitesubsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSiteSubsiteValue value=\"\"><input type=text id=fldPRCSiteSubsite READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSiteSubsite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>";
+   
+   //BASE DX-MOD Menu
+   $dxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCDXModValue value=\"\"><input type=text id=fldPRCDXMod READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCDXMod><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category & Site)</div></div></div>";
+   
    //DROP DOWN MENU BUILDER END ******************************************************************** //
 
   $inst = $usr->presentinstitution;
@@ -1981,6 +2000,7 @@ function bldProcurementGrid($usr) {
 
 
 //Procurement Grid  
+  //<div class=valueDisplayHolder><input type=text id=fldPRCDiagnosisDesignation><div class=valueDisplayDiv id=displayVocabulary></div></div>
 $rtnTbl = <<<RTNTBL
 <table>
   <tr><td>Biogroup Number</td><td>Procedure Type</td><td>Collection Type</td><td>Technician/Institution</td><td colspan=2>Initial Metric</td></tr>
@@ -1988,14 +2008,34 @@ $rtnTbl = <<<RTNTBL
 </table>
 
 <table>
-<tr><td colspan=2>Diagnosis Designation</td><td>Position</td><td>Uninvolved</td><td>Unknown Met</td><td>Pathology Rpt</td></tr>
-<tr><td> {$spcmenu} </td><td><div class=valueDisplayHolder><input type=text id=fldPRCDiagnosisDesignation><div class=valueDisplayDiv id=displayVocabulary></div></div></td><td>{$spositionsmenu}</td><td>{$uninvmenu}</td><td>{$unknmtmenu}</td><td>{$prptmenu}</td></tr>
+<tr><td colspan=4>Diagnosis Designation</td></tr>
+<tr><td> {$spcmenu} </td><td>{$sitesubsite}</td><td><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></td><td>{$dxmod}</tr>
 </table>
 
 <table>
-<tr><td>Metastic Designation (from)</td><td>Systemic Diagnosis</td></tr>
-<tr><td><div class=valueDisplayHolder><input type=text id=fldPRCMETSDesignation><div class=valueDisplayDiv id=displayMETSVocabulary></div></div></td>
+<tr><td>Position</td><td>Uninvolved</td><td>Unknown Met</td><td>Pathology Rpt</td></tr>
+<tr><td>{$spositionsmenu}</td><td>{$uninvmenu}</td><td>{$unknmtmenu}</td><td>{$prptmenu}</td></tr>
 </table>
+
+
+<table>
+<tr><td>Metastic Designation (from)</td><td>Systemic Diagnosis</td></tr>
+<tr><td><div class=valueDisplayHolder><input type=text id=fldPRCMETSDesignation><div class=valueDisplayDiv id=displayMETSVocabulary></div></div></td><td> {$sysdmenu} </td></tr>
+</table>
+
+<table>
+<tr><td>Initials</td><td>Age</td><td>Race</td><td>Sex</td><td>Informed Consent</td></tr>
+<tr>
+    <td><input type=text id=fldPRCPXIId READONLY><input type=text id=fldPRCPXIInitials READONLY></td>
+    <td><input type=text id=fldPRCPXIAge READONLY></td>
+    <td><input type=text id=fldPRCPXIRace READONLY></td>
+    <td><input type=text id=fldPRCPXISex READONLY></td>
+</tr>
+
+</table>
+
+
+
 
 RTNTBL;
   return $rtnTbl;    

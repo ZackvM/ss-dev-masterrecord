@@ -172,6 +172,11 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #ddPRCMetricUOM {width: 6vw; }
 #fldPRCSpecCat {width: 13vw; }
 #ddPRCSpecCat {width: 13vw; }
+
+#fldPRCSiteSubsite {width: 20vw; }
+
+
+
 #fldPRCUnknownMet {width: 4vw; }
 #ddPRCUnknownMet {width: 4vw; }
 #fldPRCUnInvolved { width: 4vw; }
@@ -179,8 +184,14 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #fldPRCSitePositions { width: 15vw; }
 #ddPRCSitePositions { width: 15vw; }
 #fldPRCDiagnosisDesignation { width: 25vw; }
+#fldPRCMETSDesignation {width: 32vw; }
+#fldPRCSystemicDX {width: 32vw; }
+#fldPRCPXISex {width: 5vw; }
 
-
+#fldPRCPXIId { display: none; }
+#fldPRCPXIInitials { width: 5vw; }
+#fldPRCPXIAge {width: 5vw; }
+#fldPRCPXIRace {width: 15vw; }
 
 #displayVocabulary { min-width: 25vw; overflow-x: hidden;}
 #displayMETSVocabulary { min-width: 25vw; overflow-x: hidden; }
