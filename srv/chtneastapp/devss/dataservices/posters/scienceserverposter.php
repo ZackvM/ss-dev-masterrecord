@@ -42,9 +42,39 @@ class datadoers {
    $itemsfound = 0;
    require(serverkeys . "/sspdo.zck");
    $pdta = json_decode($passdata,true);
-   //$msg = $pdta['speccat'];
-   $msg = $pdta['searchterm'];
-
+   $spc = $pdta['speccat'];
+   $keywords = preg_split("/[\s,]+/", trim($pdta['searchterm']));
+   $trmarr = array();
+   $rtnData = array(); 
+   //TODO:  MAKE SURE THAT SEARCH TERM IS MORE THAN 3 CHARACTERS - ERROR CHECK THE SEARCH REQUEST
+   $sql = "SELECT dxd, vocabularyversionnbr FROM four.voc_dxd_search where 1=1 ";
+   for ($i = 0; $i < count($keywords); $i++) {
+       $sqladd .= ($i === 0 ) ? " ( dxd like :trm{$i} ) " : " and ( dxd like :trm{$i} ) ";
+       $trmarr[":trm{$i}"] = ( $i === 0 ) ? "%{$keywords[$i]}%" : "%{$keywords[$i]}%";
+   }
+   $sqladd .= " and ( dxd like :trm{$i} ) ";
+   $trmarr[":trm{$i}"] = "%.. {$spc}%";
+   $sql .= " and ({$sqladd}) order by dxd";
+   $rs = $conn->prepare($sql); 
+   $rs->execute($trmarr); 
+   if ( $rs->rowCount() > 0 ) {
+     $itemsfound = $rs->rowCount();
+     $itemCount = 0;
+     while ($r = $rs->fetch(PDO::FETCH_ASSOC)) {
+        $rtnTerm = preg_split("/ .. /", $r['dxd']);
+        $dta[$itemCount]['site'] = (trim($rtnTerm[0]) !== "") ?  strtoupper(trim($rtnTerm[0])) : "";
+        $dta[$itemCount]['dx'] = (trim($rtnTerm[2]) !== "") ?  strtoupper(trim($rtnTerm[2])) : "";
+        $dta[$itemCount]['sdx'] = (trim($rtnTerm[3]) !== "") ?  strtoupper(trim($rtnTerm[3])) : "";
+        $dta[$itemCount]['specimencategory'] = (trim($rtnTerm[1]) !== "") ?  strtoupper(trim($rtnTerm[1])) : "";
+        $dta[$itemCount]['vocabVersionNbr'] = $r['vocabularyversionnbr'];
+        $itemCount++;
+     }
+     //$dta[] = $rtnData;
+     $msg = "";
+     $responseCode = 200;
+   } else { 
+     //NONE FOUND
+   }
    $rows['statusCode'] = $responseCode; 
    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
    return $rows;    
@@ -62,7 +92,6 @@ class datadoers {
    $dspmenu = $pdta['whichdropdown'];
    $rqstedMenu = $pdta['whichmenu'];
    $lookupvalue = $pdta['lookupvalue'];
-
 
    //TODO:  CHECK THAT VALUES ARE VALID
 

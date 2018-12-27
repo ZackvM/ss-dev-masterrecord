@@ -1992,6 +1992,11 @@ $rtnTbl = <<<RTNTBL
 <tr><td> {$spcmenu} </td><td><div class=valueDisplayHolder><input type=text id=fldPRCDiagnosisDesignation><div class=valueDisplayDiv id=displayVocabulary></div></div></td><td>{$spositionsmenu}</td><td>{$uninvmenu}</td><td>{$unknmtmenu}</td><td>{$prptmenu}</td></tr>
 </table>
 
+<table>
+<tr><td>Metastic Designation (from)</td><td>Systemic Diagnosis</td></tr>
+<tr><td><div class=valueDisplayHolder><input type=text id=fldPRCMETSDesignation><div class=valueDisplayDiv id=displayMETSVocabulary></div></div></td>
+</table>
+
 RTNTBL;
   return $rtnTbl;    
 }

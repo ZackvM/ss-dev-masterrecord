@@ -445,16 +445,115 @@ document.addEventListener('DOMContentLoaded', function() {
           dta['speccat'] = byId('fldPRCSpecCat').value.trim();
           dta['searchterm'] = byId('fldPRCDiagnosisDesignation').value.trim();
           var passdta = JSON.stringify(dta);
-          universalAJAX("POST",mlURL,passdta,answerVocabularySearch,1);            
+          universalAJAX("POST",mlURL,passdta,answerVocabularySearch,0);            
         } else { 
           alert('You must first specify a specimen category in the diagnosis designation');
           return null;
+        }
+      } else { 
+        if ( byId('displayVocabulary') ) { 
+          byId('displayVocabulary').innerHTML = "";
+          byId('displayVocabulary').style.display = 'none';
         }
       }
     }, false);
   }
 
+  if (byId('fldPRCMETSDesignation')) { 
+    byId('fldPRCMETSDesignation').addEventListener('keyup', function() { 
+      if ( parseInt(byId('fldPRCMETSDesignation').value.trim().length) > 2) {
+        if ( byId('fldPRCSpecCat').value.trim() === "MALIGNANT") {
+          var mlURL = "/data-doers/procurement-diagnosis-designation-search"; 
+          var dta = new Object();
+          dta['speccat'] = byId('fldPRCSpecCat').value.trim();
+          dta['searchterm'] = byId('fldPRCMETSDesignation').value.trim();
+          var passdta = JSON.stringify(dta);
+          universalAJAX("POST",mlURL,passdta,answerMETSVocabularySearch,0);            
+        } else { 
+          alert('Specimen Category must be equal to \'MALIGNANT\' to specify a Metastatic Designation');
+          byId('fldPRCMETSDesignation').value = "";
+          return null;
+        }
+      } else { 
+        if ( byId('displayVocabulary') ) { 
+          byId('displayVocabulary').innerHTML = "";
+          byId('displayVocabulary').style.display = 'none';
+        }
+      }
+    }, false);
+  }
+
+
 }, false);        
+
+function closeMETSVocabDsp() { 
+  byId('displayMETSVocabulary').innerHTML = "";
+  byId('displayMETSVocabulary').style.display = 'none';
+}
+
+function closeVocabDsp() { 
+  byId('displayVocabulary').innerHTML = "";
+  byId('displayVocabulary').style.display = 'none';
+}
+
+
+function fillMETSVocabValue(site, dx, sdx) { 
+  var vocabDspValue = "";
+  if (site.trim() !== "") { 
+    vocabDspValue = site.trim().toUpperCase();   
+  }
+
+  if ( dx.trim() !== "") { 
+    if (vocabDspValue.trim() !== "") { 
+      vocabDspValue += " :: " + dx.trim().toUpperCase();  
+    } else { 
+      vocabDspValue += dx.trim().toUpperCase();  
+    }
+  }
+
+  if ( sdx.trim() !== "") { 
+    if (vocabDspValue.trim() !== "") { 
+      vocabDspValue += " :: " + sdx.trim().toUpperCase();  
+    } else { 
+      vocabDspValue += sdx.trim().toUpperCase();  
+    }
+  }
+
+  if( byId('fldPRCMETSDesignation') ) { 
+    byId('fldPRCMETSDesignation').value = vocabDspValue;  
+    byId('displayMETSVocabulary').innerHTML = "";
+    byId('displayMETSVocabulary').style.display = 'none';
+  }
+}
+
+function fillVocabValue(site, dx, sdx) { 
+  var vocabDspValue = "";
+  if (site.trim() !== "") { 
+    vocabDspValue = site.trim().toUpperCase();   
+  }
+
+  if ( dx.trim() !== "") { 
+    if (vocabDspValue.trim() !== "") { 
+      vocabDspValue += " :: " + dx.trim().toUpperCase();  
+    } else { 
+      vocabDspValue += dx.trim().toUpperCase();  
+    }
+  }
+
+  if ( sdx.trim() !== "") { 
+    if (vocabDspValue.trim() !== "") { 
+      vocabDspValue += " :: " + sdx.trim().toUpperCase();  
+    } else { 
+      vocabDspValue += sdx.trim().toUpperCase();  
+    }
+  }
+
+  if( byId('fldPRCDiagnosisDesignation') ) { 
+    byId('fldPRCDiagnosisDesignation').value = vocabDspValue;  
+    byId('displayVocabulary').innerHTML = "";
+    byId('displayVocabulary').style.display = 'none';
+  }
+}
 
 var lastRequestCalendarDiv = "";
 function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
@@ -472,8 +571,53 @@ function answerGetCalendar(rtnData) {
   }
 }   
 
-function answerVocabularySearch(rtnData) { 
-  console.log(rtnData);
+function answerMETSVocabularySearch(rtnData) {
+  if (parseInt(rtnData['responseCode']) === 200) {     
+    if ( byId('displayMETSVocabulary') ) {
+      var rtn = JSON.parse(rtnData['responseText'])
+      var itemsfound = rtn['ITEMSFOUND'];
+      var vv = "";
+      var dsptbl = "<table id=vocabularyDspTable><thead><tr><th>Site</th><th>Diagnosis</th><th>Modifier</th></tr></thead><tbody>";
+      rtn['DATA'].forEach( function(element) {
+       vv = element['vocabVersionNbr']; 
+       dsptbl += "<tr class=vocabMenuItem onclick=\"fillMETSVocabValue('"+element['site']+"','"+element['dx']+"','"+element['sdx']+"');\"><td valign=top>"+element['site']+"</td><td valign=top>"+element['dx']+"</td><td valign=top>"+element['sdx']+"</td></tr>";       
+      });
+      dsptbl += "</tbody></table>";
+      byId('displayMETSVocabulary').innerHTML = "<table border=0 width=100%><tr><td id=vocabMETSRecordsFound>Records Found: "+ itemsfound +"</td><td id=vocabMETSVersionNbr>Vocabulary Version: " + vv + "</td><td onclick=\"closeMETSVocabDsp();\" id=vocabMETSCloseBtn>&times;</td></tr><tr><td colspan=3>" + dsptbl + "</td></tr></table>";
+      byId('displayMETSVocabulary').style.display = 'block';
+    }
+  } else { 
+    if ( byId('displayMETSVocabulary') ) { 
+      byId('displayMETSVocabulary').innerHTML = "";
+      byId('displayMETSVocabulary').style.display = 'none';
+    }
+    alert("NO DIAGNOSIS DESIGNATION FOUND MATCHING YOUR SEARCH TERM");  
+  }
+}
+
+function answerVocabularySearch(rtnData) {
+  if (parseInt(rtnData['responseCode']) === 200) {     
+    if ( byId('displayVocabulary') ) {
+      var rtn = JSON.parse(rtnData['responseText'])
+      var itemsfound = rtn['ITEMSFOUND'];
+      var vv = "";
+      var dsptbl = "<table id=vocabularyDspTable><thead><tr><th>Site</th><th>Diagnosis</th><th>Modifier</th></tr></thead><tbody>";
+      rtn['DATA'].forEach( function(element) {
+       vv = element['vocabVersionNbr']; 
+       dsptbl += "<tr class=vocabMenuItem onclick=\"fillVocabValue('"+element['site']+"','"+element['dx']+"','"+element['sdx']+"');\"><td valign=top>"+element['site']+"</td><td valign=top>"+element['dx']+"</td><td valign=top>"+element['sdx']+"</td></tr>";       
+      });
+      //<th>Specimen Category</th>  // <td>"+element['specimencategory']+"</td> // <td>"+element['vocabVersionNbr']+"</td>
+      dsptbl += "</tbody></table>";
+      byId('displayVocabulary').innerHTML = "<table border=0 width=100%><tr><td id=vocabRecordsFound>Records Found: "+ itemsfound +"</td><td id=vocabVersionNbr>Vocabulary Version: " + vv + "</td><td onclick=\"closeVocabDsp();\" id=vocabCloseBtn>&times;</td></tr><tr><td colspan=3>" + dsptbl + "</td></tr></table>";
+      byId('displayVocabulary').style.display = 'block';
+    }
+  } else { 
+    if ( byId('displayVocabulary') ) { 
+      byId('displayVocabulary').innerHTML = "";
+      byId('displayVocabulary').style.display = 'none';
+    }
+    alert("NO DIAGNOSIS DESIGNATION FOUND MATCHING YOUR SEARCH TERM");  
+  }
 }
 
 function fillField(whichfield, whichvalue, whichdisplay) { 
@@ -498,6 +642,11 @@ function fillField(whichfield, whichvalue, whichdisplay) {
         byId('ddPRCCollectionType').innerHTML = "&nbsp;";
       } 
       updateSubMenu('PRCCollectionType','COLLECTIONT',whichvalue);
+    break;
+    case 'fldPRCSpecCat':
+      byId('displayVocabulary').innerHTML = "";
+      byId('displayVocabulary').style.display = 'none';
+      byId('fldPRCDiagnosisDesignation').value = ""; 
     break;
   }        
 }            

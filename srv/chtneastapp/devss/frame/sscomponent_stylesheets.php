@@ -181,6 +181,19 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #fldPRCDiagnosisDesignation { width: 25vw; }
 
 
+
+#displayVocabulary { min-width: 25vw; overflow-x: hidden;}
+#displayMETSVocabulary { min-width: 25vw; overflow-x: hidden; }
+.vocabMenuItem:hover { cursor: pointer; background-color: rgba({$this->color_lblue},1); color: rgba({$this->color_white},1); }
+#vocabCloseBtn {font-size: 1.3vh; width: .5vw; text-align: right; padding: 0 .3vw 0 0; }
+#vocabCloseBtn:hover { cursor: pointer; color: rgba({$this->color_bred},1); }
+#vocabVersionNbr { font-size: 1.4vh; text-align: right; }
+#vocabRecordsFound { font-size: 1.4vh; font-weight: bold; }
+#vocabMETSCloseBtn {font-size: 1.3vh; width: .5vw; text-align: right; padding: 0 .3vw 0 0; }
+#vocabMETSCloseBtn:hover { cursor: pointer; color: rgba({$this->color_bred},1); }
+#vocabMETSVersionNbr { font-size: 1.4vh; text-align: right; }
+#vocabMETSRecordsFound { font-size: 1.4vh; font-weight: bold; }
+
 #fldPRCPathRpt { width: 5vw; }
 #ddPRCPathRpt { width: 5vw; }
 
@@ -199,7 +212,9 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #PXIDspTbl .dspORSARS { max-width: 3.5vw; padding: .2vw .2vh; box-sizing: border-box; } 
 
 
-
+#vocabularyDspTable { width: 100%; border-collapse: collapse; } 
+#vocabularyDspTable th { font-size: 1.4vh; font-weight: bold; white-space: nowrap; text-align: left; }
+#vocabularyDspTable td { font-size: 1.4vh; white-space: nowrap;  padding: 3px 8px 3px 5px;  }
 
 
 
