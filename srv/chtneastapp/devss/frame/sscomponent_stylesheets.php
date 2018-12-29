@@ -181,12 +181,10 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #fldPRCDXMod {width: 18vw; }
 #ddPRCDXMod { min-width: 18vw; }
 
-
-
 #fldPRCUnknownMet {width: 4vw; }
 #ddPRCUnknownMet {width: 4vw; }
 #fldPRCUnInvolved { width: 4vw; }
-#ddPRCUnInvolved { width: 4vw; }
+#ddPRCUnInvolved { min-width: 4vw; }
 #fldPRCSitePositions { width: 15vw; }
 #ddPRCSitePositions { width: 15vw; }
 #fldPRCDiagnosisDesignation { width: 25vw; }
@@ -198,6 +196,13 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #fldPRCPXIInitials { width: 5vw; }
 #fldPRCPXIAge {width: 5vw; }
 #fldPRCPXIRace {width: 15vw; }
+#fldPRCPXIInfCon {width: 5vw; }
+
+#metsFromDsp { display: none; }
+#fldPRCMETSSite { width: 15vw; }
+#ddPRCMETSSite { min-width: 15vw; }
+#fldPRCMETSDX { width: 18vw; }
+#ddPRCMETSDX { min-width: 18vw; }
 
 #displayVocabulary { min-width: 25vw; overflow-x: hidden;}
 #displayMETSVocabulary { min-width: 25vw; overflow-x: hidden; }

@@ -768,10 +768,9 @@ function hprrequestcode($whichobj, $rqst) {
 
 class globalMenus {
 
-    function uninvolvedindoptions() { 
-      
+    function uninvolvedindicatoroptions() { 
+      return "SELECT trim(ifnull(menuvalue,'')) as codevalue, trim(ifnull(longvalue,'')) as menuvalue, ifnull(useasdefault,0) as useasdefault, trim(ifnull(menuvalue,'')) as lookupvalue FROM four.sys_master_menus where menu = 'UNINVOLVEDIND' and dspind = 1 order by dsporder";      
     }
-
 
     function systemicdiagnosis() { 
         return "SELECT trim(ifnull(dx,'')) as codevalue, trim(ifnull(dx,'')) as menuvalue, 0 as useasdefault, trim(ifnull(dx,'')) as lookupvalue FROM four.voc_systemic_dx where dspind = 1 and trim(ifnull(dx,'')) <> '' order by dx";

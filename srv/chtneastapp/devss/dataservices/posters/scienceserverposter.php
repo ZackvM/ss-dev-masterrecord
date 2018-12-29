@@ -33,7 +33,39 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+   function diagnosismetsdownstream($request, $passdata) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400; 
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     //TODO: CHECK THAT A VALUE IS PASSED
+     $steid = $pdta['siteid']; 
+     if ( trim($steid) !== "" ) {
+     $sql = "SELECT distinct ifnull(dxid,'') as dxid, replace(ifnull(diagnosis,''),'\\\\','::') as diagnosis FROM four.sys_master_menu_vocabulary where catid = :spccat and siteid  = :givensite order by diagnosis";     
+     $rs = $conn->prepare($sql); 
+     $rs->execute(array(':givensite' => $steid , ':spccat' => 'C6' )); 
+     if ($rs->rowCount() > 0) { 
+       $itemsfound = $rs->rowCount(); 
+       while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+           $dta[] = $r;
+       }
+       $responseCode = 200;
+       $msg = "";
+     } else { 
+       $responseCode = 404; 
+       $msg = "NO SITES FOUND";
+     }
+     }
+
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
+
    function diagnosisdownstream($request, $passdata) { 
      $rows = array(); 
      $dta = array(); 
@@ -42,6 +74,7 @@ class datadoers {
      $itemsfound = 0;
      require(serverkeys . "/sspdo.zck");
      $pdta = json_decode($passdata,true);
+     //TODO: CHECK THAT VALUES WERE PASSED
      $spc = $pdta['specimencategory'];
      $ste = $pdta['site'];  
 
@@ -97,7 +130,6 @@ class datadoers {
      return $rows;          
    }
 
-
   function   sitesbyspecimencategory($request, $passdata) { 
    $rows = array(); 
    $dta = array(); 
@@ -127,7 +159,6 @@ class datadoers {
    return $rows;          
   }
     
-
  function procurementdiagnosisdesignationsearch($request, $passdata) { 
    $rows = array(); 
    $dta = array(); 
@@ -173,6 +204,8 @@ class datadoers {
    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
    return $rows;    
  } 
+
+    
 
  function generatesubmenu($request, $passdata) { 
    $rows = array(); 

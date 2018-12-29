@@ -527,7 +527,23 @@ function fillField(whichfield, whichvalue, whichdisplay) {
        var menuTbl =  "<center><div style=\"font-size: 1.4vh\">(Choose a Site)</div>";     
        byId('ddPRCDXMod').innerHTML = menuTbl        
        byId('ddPRCSSite').innerHTML = menuTbl;        
-       updateSiteMenu();             
+       updateSiteMenu();
+       if ( byId('fldPRCSpecCatValue').value === 'MALIGNANT') {
+         //TURN ON METS
+         if (byId('metsFromDsp')) { 
+           byId('metsFromDsp').style.display = 'block';
+         } 
+       } else { 
+         //TURN OFF METS
+         if (byId('metsFromDsp')) { 
+           byId('metsFromDsp').style.display = 'none';
+         } 
+       }  
+    break;
+    case 'fldPRCMETSSite':
+     if ( byId('fldPRCMETSSiteValue').value.trim() !== ""  ) { 
+       updateMETSDiagnosisMenu();
+     }
     break;
     case 'fldPRCSite':
        //byId('fldPRCDXOverride').checked = false;          
@@ -577,6 +593,38 @@ function answerUpdateSSiteMenu(rtnData) {
   byId('ddPRCSSite').innerHTML = menuTbl;        
 }           
 
+function updateMETSDiagnosisMenu() { 
+  var mlURL = "/data-doers/diagnosis-mets-downstream"; 
+  var dta = new Object();
+  dta['siteid'] = byId('fldPRCMETSSiteValue').value.trim();            
+  var passdta = JSON.stringify(dta);
+  universalAJAXStreamTwo("POST",mlURL,passdta,answerUpdateMETSDiagnosisMenu,0);                 
+}
+
+function answerUpdateMETSDiagnosisMenu(rtnData) { 
+
+  if (parseInt(rtnData['responseCode']) === 200) {
+    var dta = JSON.parse( rtnData['responseText'] );
+    var rquestFld = dta['MESSAGE'];
+    if (parseInt(dta['ITEMSFOUND']) > 0) {
+      var dspList = dta['DATA'];
+      var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCMETSDX','','');\" class=ddMenuClearOption>[clear]</td></tr>";      
+      dspList.forEach( function(element) {          
+          menuTbl += "<tr><td onclick=\"fillField('fldPRCMETSDX','"+element['dxid']+"','"+element['diagnosis']+"');\" class=ddMenuItem>"+element['diagnosis']+"</td></tr>";            
+      });
+      menuTbl += "</table>";      
+   } else {
+      var menuTbl =  "<center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div>";     
+    }
+    byId('ddPRCMETSDX').innerHTML = menuTbl        
+  } else {      
+    //ERROR - DISPLAY ERROR
+    //console.log(rtnData);    
+  }            
+
+
+}
+
 function updateDiagnosisMenu() { 
        var mlURL = "/data-doers/diagnosis-downstream"; 
        var dta = new Object();
@@ -608,7 +656,6 @@ function answerUpdateDiagnosisMenu(rtnData) {
 }
             
 function updateSiteMenu() { 
-
    if ( byId('fldPRCSpecCatValue') ) {
      if ( byId('fldPRCSpecCatValue').value.trim() !== "") {     
        var mlURL = "/data-doers/sites-by-specimen-category"; 
@@ -620,7 +667,6 @@ function updateSiteMenu() {
        //NOTHING SELECTED
      }
    }
-   
 }
 
 function setPathologyRptRequired(prMenuValue) { 
@@ -650,7 +696,6 @@ function answerUpdateSiteMenu(rtnData) {
     var rquestFld = dta['MESSAGE'];
     if (parseInt(dta['ITEMSFOUND']) > 0) {
       var dspList = dta['DATA'];
-      //<tr><td align=right onclick=\"fillField('fldPRCSiteSubsite','','');setPathologyRptRequired(2);\" class=ddMenuClearOption>[clear]</td></tr>
       var menuTbl = "<table border=0 class=menuDropTbl>";      
       dspList.forEach( function(element) {          
           menuTbl += "<tr><td onclick=\"fillField('fldPRCSite','"+element['siteid']+"','"+element['site']+"');setPathologyRptRequired("+element['pathrptrequiredvalue']+");\" class=ddMenuItem>"+element['site']+"</td></tr>";            

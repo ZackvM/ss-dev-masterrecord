@@ -1877,36 +1877,29 @@ function bldProcurementGrid($usr) {
   //PATHOLOGY REPORT
     $prptData = dropmenuPathRptAllowables();
     $prptmenu = $prptData['menuObj'];  
+  //UNINVOLVED SAMPLE
+    $univData = dropmenuUninvolvedIndicator();
+    $uninvmenu = $univData['menuObj'];
 
+  //UNKNOWNMET Unknown Metastatic Location
+  //THIS SHOULD BE PROGRAMMATICALLY ASSESSED - IF MALIGNANT AND NO METS FROM DETERMINES FIELD
 
+  //BASE SITE-SUBSITE MENU
+    $sitesubsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSiteValue value=\"\"><input type=text id=fldPRCSite READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>"; 
 
-
-
-   //UNKNOWNMET Unknown Metastatic Location
-   //THIS SHOULD BE PROGRAMMATICALLY ASSESSED - IF MALIGNANT AND NO METS FROM DETERMINES FIELD
-
-   //UNINVOLVED
-   $uninv = "<table border=0 class=menuDropTbl>";
-   $uninvDefaultValue = "";
-   $uninvDefaultDsp = "";
-   foreach ($unknmtarr['DATA'] as $uninvval) {
-      if ( (int)$uninvval['codevalue'] === 1 ) {
-        $uninvDefaultValue = $uninvval['codevalue']; 
-        $uninvDefaultDsp = $uninvval['menuvalue'];
-      }
-    $uninv .= "<tr><td onclick=\"fillField('fldPRCUnInvolved','{$uninvval['codevalue']}','{$uninvval['codevalue']}');\" class=ddMenuItem>{$uninvval['menuvalue']}</td></tr>";
-   }
-   $uninv .= "</table>";
-   $uninvmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCUnInvolvedValue value=\"{$uninvDefaultValue}\"><input type=text id=fldPRCUnInvolved READONLY class=\"inputFld\" value=\"{$uninvDefaultDsp}\"><div class=valueDropDown id=ddPRCUnInvolved>{$uninv}</div></div>";
-
-   //BASE SITE-SUBSITE MENU
-   $sitesubsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSiteValue value=\"\"><input type=text id=fldPRCSite READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>";
    $subsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSSiteValue value=\"\"><input type=text id=fldPRCSSite READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>";
    
    //BASE DX-MOD Menu
    //<div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div>
-   $dxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCDXModValue value=\"\"><input type=text id=fldPRCDXMod READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCDXMod><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category & Site)</div></div></div>";
-   
+     $dxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCDXModValue value=\"\"><input type=text id=fldPRCDXMod READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCDXMod><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category & Site)</div></div></div>";
+
+   //METASTATIC SITE MENU DROPDOWN
+     $metsData = dropmenuMetsMalignant();
+     $metssite = $metsData['menuObj'];
+     $metsdxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSDXValue value=\"\"><input type=text id=fldPRCMETSDX READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCMETSDX><center><div style=\"font-size: 1.4vh\">(Choose a Metastatic site)</div></div></div>";
+
+
+
    //DROP DOWN MENU BUILDER END ******************************************************************** //
 
   $inst = $usr->presentinstitution;
@@ -1928,6 +1921,7 @@ $rtnTbl = <<<RTNTBL
     <td><input type=text id=fldPRCPXIAge READONLY></td>
     <td><input type=text id=fldPRCPXIRace READONLY></td>
     <td><input type=text id=fldPRCPXISex READONLY></td>
+    <td><input type=text id=fldPRCPXIInfCon READONLY></td>
 </tr>
 
 </table>
@@ -1935,6 +1929,26 @@ $rtnTbl = <<<RTNTBL
 <table>
 <tr><td colspan=4>Diagnosis Designation</td><td>Uninvolved/NAT</td><td>Pathology Rpt</td></tr>
 <tr><td valign=top> {$spcmenu} </td><td valign=top> {$sitesubsite} </td><td> {$subsite} </td><td valign=top> {$dxmod} </td><td>{$uninvmenu}</td><td>{$prptmenu}</td></tr>
+<tr><td colspan=6> 
+
+<table><tr><td> 
+
+<table>
+<tr><td>Position</td><td>Systemic Diagnosis</td></tr>
+<tr><td>    </td><td> </td></tr>   
+</table>
+
+</td><td>   
+<div id=metsFromDsp>
+<table>
+  <tr><td>Metastatic From</td><td>Metastatic Diagnosis</td></tr>
+  <tr><td> {$metssite} </td><td> {$metsdxmod} </td> </tr>
+</table>
+</div>
+
+</td></tr></table>
+
+</td></tr>
 </table>
 
 
@@ -1993,10 +2007,49 @@ function dropmenuCollectionType($givenlookup) {
   return array('menuObj' => $collectionType,'defaultDspValue' => $collectionDefaultDsp, 'defaultLookupValue' => $collectionDefaultValue);
 } 
 
+function dropmenuMetsMalignant() { 
+  $pdta = array();  
+  $pdta['specimencategory'] = 'MALIGNANT';
+  $passdata = json_encode($pdta);
+  $menudtaarr = json_decode(callrestapi("POST",dataTree."/data-doers/sites-by-specimen-category",serverIdent,serverpw,$passdata), true);
+   $metsm = "<table border=0 class=menuDropTbl>";
+   $metsDefaultValue = "";
+   $metsDefaultDsp = "";
+   foreach ( $menudtaarr['DATA'] as $metsval) { 
+      $metsm .= "<tr><td onclick=\"fillField('fldPRCMETSSite','{$metsval['siteid']}','{$metsval['site']}');\" class=ddMenuItem>{$metsval['site']}</td></tr>";
+   } 
+   $metsm .= "</table>";
+
+   $metssite = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSSiteValue value=\"\"><input type=text id=fldPRCMETSSite READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCMETSSite> {$metsm} </div></div>";
+
+  return array('menuObj' => $metssite,'defaultDspValue' => $metsDefaultDsp, 'defaultLookupValue' => $metsDefaultValue);
+}
+
+function dropmenuUninvolvedIndicator() { 
+
+   $si = serverIdent;
+   $sp = serverpw;
+   $unknmtarr = json_decode(callrestapi("GET", dataTree . "/global-menu/uninvolved-indicator-options",$si,$sp),true);
+   $uninv = "<table border=0 class=menuDropTbl>";
+   $uninvDefaultValue = "";
+   $uninvDefaultDsp = "";
+   foreach ($unknmtarr['DATA'] as $uninvval) {
+      if ( (int)$uninvval['useasdefault'] === 1 ) {
+        $uninvDefaultValue = $uninvval['codevalue']; 
+        $uninvDefaultDsp = $uninvval['menuvalue'];
+      }
+    $uninv .= "<tr><td onclick=\"fillField('fldPRCUnInvolved','{$uninvval['codevalue']}','{$uninvval['menuvalue']}');\" class=ddMenuItem>{$uninvval['menuvalue']}</td></tr>";
+   }
+   $uninv .= "</table>";
+   $uninvmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCUnInvolvedValue value=\"{$uninvDefaultValue}\"><input type=text id=fldPRCUnInvolved READONLY class=\"inputFld\" value=\"{$uninvDefaultDsp}\"><div class=valueDropDown id=ddPRCUnInvolved>{$uninv}</div></div>";
+
+  return array('menuObj' => $uninvmenu,'defaultDspValue' => $uninvDefaultDsp, 'defaultLookupValue' => $uninvDefaultValue);
+
+}
+
 function dropmenuInitialMetric() { 
   $si = serverIdent;
   $sp = serverpw;
-
    $metricuomarr = json_decode(callrestapi("GET", dataTree . "/global-menu/metric-uoms-long",$si,$sp),true);
    $muom = "<table border=0 class=menuDropTbl>";
    $muomDefaultValue = "";
