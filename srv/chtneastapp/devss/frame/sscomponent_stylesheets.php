@@ -173,7 +173,13 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #fldPRCSpecCat {width: 13vw; }
 #ddPRCSpecCat {width: 13vw; }
 
-#fldPRCSiteSubsite {width: 20vw; }
+#fldPRCSite {width: 12vw; }
+#ddPRCSite { min-width: 15vw; }
+#fldPRCSSite {width: 12vw; }
+#ddPRCSSite { width: 12vw; }
+
+#fldPRCDXMod {width: 18vw; }
+#ddPRCDXMod { min-width: 18vw; }
 
 
 
@@ -210,18 +216,15 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
 #dspORListing { height: 36vh; overflow: auto; }
 
-#PXIDspTbl { width: 30vw; box-sizing: border-box; border-collapse: collapse;border: 0; }
-#PXIDspTbl tr { display: flex; }
-#PXIDspTbl td { flex: 1 auto; border: 1px solid #aaa; width: 1px; word-wrap: break-word; }
-#PXIDspTbl thead tr:after { content: ''; overflow-y: scroll; visibility: hidden; height: 0;}
-#PXIDspTbl thead th { flex: 1 auto; display: block; border: 1px solid #000; }
-#PXIDspTbl tbody { display: block; width: 100%;overflow-y: auto; height: 45vh; }
+#divORHolder {height: 45vh; overflow: auto; }
+.smallORTblLabel {width: 1vw; text-align: right; font-weight: bold; }
+#PXIDspTbl { width: 30vw; box-sizing: border-box; border-collapse: collapse;border: none; }
+#PXIDspTbl .dspProcCell { min-height: 5vh; }  
 #PXIDspTbl .dspORTarget { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; }
 #PXIDspTbl .dspORInformed { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; }
 #PXIDspTbl .dspORAdded { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; } 
 #PXIDspTbl .dspORInitials { max-width: 2.8vw; padding: .2vw .2vh; box-sizing: border-box; } 
 #PXIDspTbl .dspORSARS { max-width: 3.5vw; padding: .2vw .2vh; box-sizing: border-box; } 
-
 
 #vocabularyDspTable { width: 100%; border-collapse: collapse; } 
 #vocabularyDspTable th { font-size: 1.4vh; font-weight: bold; white-space: nowrap; text-align: left; }

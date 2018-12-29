@@ -45,6 +45,27 @@ req = new XMLHttpRequest();
 return req;
 }
 
+function universalAJAXStreamTwo(methd, url, passedDataJSON, callbackfunc, dspBacker) { 
+  if (dspBacker === 1) { 
+    byId('standardModalBacker').style.display = 'block';
+  }
+  var rtn = new Object();
+  var grandurl = dataPath+url;
+  httpageone.open(methd, grandurl, true); 
+  httpageone.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+  httpageone.onreadystatechange = function() { 
+    if (httpageone.readyState === 4) { 
+      rtn['responseCode'] = httpageone.status;
+      rtn['responseText'] = httpageone.responseText;
+      if (parseInt(dspBacker) < 2) { 
+        byId('standardModalBacker').style.display = 'none';
+      }
+      callbackfunc(rtn);
+    }
+  };
+  httpageone.send(passedDataJSON);
+}
+
 function universalAJAX(methd, url, passedDataJSON, callbackfunc, dspBacker) { 
   if (dspBacker === 1) { 
     byId('standardModalBacker').style.display = 'block';
@@ -430,78 +451,20 @@ function procurebiosample($rqstrstr) {
     $rtnthis = <<<JAVASCR
 document.addEventListener('DOMContentLoaded', function() {  
 
-  clearGrid();
+//  clearGrid();
             
-  if (byId('btnPBClearGrid')) { 
-     byId('btnPBClearGrid').addEventListener('click', function() { clearGrid(); }, false);          
-  }
+//  if (byId('btnPBClearGrid')) { 
+//     byId('btnPBClearGrid').addEventListener('click', function() { clearGrid(); }, false);          
+//  }
             
-  if (byId('btnClearRptGrid')) { 
-    byId('btnClearRptGrid').addEventListener('click', function() {
-      clearRptParameterGrid();
-    }, false);
-  }
-
-  if (byId('fldPRCDiagnosisDesignation')) { 
-    byId('fldPRCDiagnosisDesignation').addEventListener('keyup', function() { 
-      if ( parseInt(byId('fldPRCDiagnosisDesignation').value.trim().length) > 2) {
-        if ( byId('fldPRCSpecCat').value.trim() !== "") {
-          var mlURL = "/data-doers/procurement-diagnosis-designation-search"; 
-          var dta = new Object();
-          dta['speccat'] = byId('fldPRCSpecCat').value.trim();
-          dta['searchterm'] = byId('fldPRCDiagnosisDesignation').value.trim();
-          var passdta = JSON.stringify(dta);
-          universalAJAX("POST",mlURL,passdta,answerVocabularySearch,0);            
-        } else { 
-          alert('You must first specify a specimen category in the diagnosis designation');
-          return null;
-        }
-      } else { 
-        if ( byId('displayVocabulary') ) { 
-          byId('displayVocabulary').innerHTML = "";
-          byId('displayVocabulary').style.display = 'none';
-        }
-      }
-    }, false);
-  }
-
-  if (byId('fldPRCMETSDesignation')) { 
-    byId('fldPRCMETSDesignation').addEventListener('keyup', function() { 
-      if ( parseInt(byId('fldPRCMETSDesignation').value.trim().length) > 2) {
-        if ( byId('fldPRCSpecCat').value.trim() === "MALIGNANT") {
-          var mlURL = "/data-doers/procurement-diagnosis-designation-search"; 
-          var dta = new Object();
-          dta['speccat'] = byId('fldPRCSpecCat').value.trim();
-          dta['searchterm'] = byId('fldPRCMETSDesignation').value.trim();
-          var passdta = JSON.stringify(dta);
-          universalAJAX("POST",mlURL,passdta,answerMETSVocabularySearch,0);            
-        } else { 
-          alert('Specimen Category must be equal to \'MALIGNANT\' to specify a Metastatic Designation');
-          byId('fldPRCMETSDesignation').value = "";
-          return null;
-        }
-      } else { 
-        if ( byId('displayVocabulary') ) { 
-          byId('displayVocabulary').innerHTML = "";
-          byId('displayVocabulary').style.display = 'none';
-        }
-      }
-    }, false);
-  }
-
 }, false);        
 
 function clearGrid() { 
-  
    //TODO:  RESET DEFAULT FIELD VALUES
-       
-
    fillField('fldPRCSpecCat','','');
-   
 }
 
 function fillPXIInformation(pxiid, pxiinitials, pxiage, pxirace, pxisex    ) { 
-
    //TODO:  CHECK FIELD EXISTANCE
    //TODO:  BLANK FIELDS FIRST
    byId('fldPRCPXIId').value = "";
@@ -509,83 +472,13 @@ function fillPXIInformation(pxiid, pxiinitials, pxiage, pxirace, pxisex    ) {
    byId('fldPRCPXIAge').value = "";
    byId('fldPRCPXIRace').value = "";            
    byId('fldPRCPXISex').value = "";                        
-
    byId('fldPRCPXIId').value = pxiid;
    byId('fldPRCPXIInitials').value = pxiinitials;         
    byId('fldPRCPXIAge').value = pxiage;
    byId('fldPRCPXIRace').value = pxirace;                        
    byId('fldPRCPXISex').value = pxisex;             
-
 }
          
-function closeMETSVocabDsp() { 
-  byId('displayMETSVocabulary').innerHTML = "";
-  byId('displayMETSVocabulary').style.display = 'none';
-}
-
-function closeVocabDsp() { 
-  byId('displayVocabulary').innerHTML = "";
-  byId('displayVocabulary').style.display = 'none';
-}
-            
-function fillMETSVocabValue(site, dx, sdx) { 
-  var vocabDspValue = "";
-  if (site.trim() !== "") { 
-    vocabDspValue = site.trim().toUpperCase();   
-  }
-
-  if ( dx.trim() !== "") { 
-    if (vocabDspValue.trim() !== "") { 
-      vocabDspValue += " :: " + dx.trim().toUpperCase();  
-    } else { 
-      vocabDspValue += dx.trim().toUpperCase();  
-    }
-  }
-
-  if ( sdx.trim() !== "") { 
-    if (vocabDspValue.trim() !== "") { 
-      vocabDspValue += " :: " + sdx.trim().toUpperCase();  
-    } else { 
-      vocabDspValue += sdx.trim().toUpperCase();  
-    }
-  }
-
-  if( byId('fldPRCMETSDesignation') ) { 
-    byId('fldPRCMETSDesignation').value = vocabDspValue;  
-    byId('displayMETSVocabulary').innerHTML = "";
-    byId('displayMETSVocabulary').style.display = 'none';
-  }
-}
-
-function fillVocabValue(site, dx, sdx) { 
-  var vocabDspValue = "";
-  if (site.trim() !== "") { 
-    vocabDspValue = site.trim().toUpperCase();   
-  }
-
-  if ( dx.trim() !== "") { 
-    if (vocabDspValue.trim() !== "") { 
-      vocabDspValue += " :: " + dx.trim().toUpperCase();  
-    } else { 
-      vocabDspValue += dx.trim().toUpperCase();  
-    }
-  }
-
-  if ( sdx.trim() !== "") { 
-    if (vocabDspValue.trim() !== "") { 
-      vocabDspValue += " :: " + sdx.trim().toUpperCase();  
-    } else { 
-      vocabDspValue += sdx.trim().toUpperCase();  
-    }
-  }
-
-  if( byId('fldPRCDiagnosisDesignation') ) { 
-    byId('fldPRCDiagnosisDesignation').value = vocabDspValue;  
-    byId('displayVocabulary').innerHTML = "";
-    byId('displayVocabulary').style.display = 'none';
-  }
-}
-
 var lastRequestCalendarDiv = "";
 function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
   var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;
@@ -601,55 +494,6 @@ function answerGetCalendar(rtnData) {
     alert("ERROR");  
   }
 }   
-
-function answerMETSVocabularySearch(rtnData) {
-  if (parseInt(rtnData['responseCode']) === 200) {     
-    if ( byId('displayMETSVocabulary') ) {
-      var rtn = JSON.parse(rtnData['responseText'])
-      var itemsfound = rtn['ITEMSFOUND'];
-      var vv = "";
-      var dsptbl = "<table id=vocabularyDspTable><thead><tr><th>Site</th><th>Diagnosis</th><th>Modifier</th></tr></thead><tbody>";
-      rtn['DATA'].forEach( function(element) {
-       vv = element['vocabVersionNbr']; 
-       dsptbl += "<tr class=vocabMenuItem onclick=\"fillMETSVocabValue('"+element['site']+"','"+element['dx']+"','"+element['sdx']+"');\"><td valign=top>"+element['site']+"</td><td valign=top>"+element['dx']+"</td><td valign=top>"+element['sdx']+"</td></tr>";       
-      });
-      dsptbl += "</tbody></table>";
-      byId('displayMETSVocabulary').innerHTML = "<table border=0 width=100%><tr><td id=vocabMETSRecordsFound>Records Found: "+ itemsfound +"</td><td id=vocabMETSVersionNbr>Vocabulary Version: " + vv + "</td><td onclick=\"closeMETSVocabDsp();\" id=vocabMETSCloseBtn>&times;</td></tr><tr><td colspan=3>" + dsptbl + "</td></tr></table>";
-      byId('displayMETSVocabulary').style.display = 'block';
-    }
-  } else { 
-    if ( byId('displayMETSVocabulary') ) { 
-      byId('displayMETSVocabulary').innerHTML = "";
-      byId('displayMETSVocabulary').style.display = 'none';
-    }
-    alert("NO DIAGNOSIS DESIGNATION FOUND MATCHING YOUR SEARCH TERM");  
-  }
-}
-
-function answerVocabularySearch(rtnData) {
-  if (parseInt(rtnData['responseCode']) === 200) {     
-    if ( byId('displayVocabulary') ) {
-      var rtn = JSON.parse(rtnData['responseText'])
-      var itemsfound = rtn['ITEMSFOUND'];
-      var vv = "";
-      var dsptbl = "<table id=vocabularyDspTable><thead><tr><th>Site</th><th>Diagnosis</th><th>Modifier</th></tr></thead><tbody>";
-      rtn['DATA'].forEach( function(element) {
-       vv = element['vocabVersionNbr']; 
-       dsptbl += "<tr class=vocabMenuItem onclick=\"fillVocabValue('"+element['site']+"','"+element['dx']+"','"+element['sdx']+"');\"><td valign=top>"+element['site']+"</td><td valign=top>"+element['dx']+"</td><td valign=top>"+element['sdx']+"</td></tr>";       
-      });
-      //<th>Specimen Category</th>  // <td>"+element['specimencategory']+"</td> // <td>"+element['vocabVersionNbr']+"</td>
-      dsptbl += "</tbody></table>";
-      byId('displayVocabulary').innerHTML = "<table border=0 width=100%><tr><td id=vocabRecordsFound>Records Found: "+ itemsfound +"</td><td id=vocabVersionNbr>Vocabulary Version: " + vv + "</td><td onclick=\"closeVocabDsp();\" id=vocabCloseBtn>&times;</td></tr><tr><td colspan=3>" + dsptbl + "</td></tr></table>";
-      byId('displayVocabulary').style.display = 'block';
-    }
-  } else { 
-    if ( byId('displayVocabulary') ) { 
-      byId('displayVocabulary').innerHTML = "";
-      byId('displayVocabulary').style.display = 'none';
-    }
-    alert("NO DIAGNOSIS DESIGNATION FOUND MATCHING YOUR SEARCH TERM");  
-  }
-}
 
 function fillField(whichfield, whichvalue, whichdisplay) { 
   if (byId(whichfield)) { 
@@ -676,32 +520,70 @@ function fillField(whichfield, whichvalue, whichdisplay) {
     break;
     case 'fldPRCSpecCat':
        //GET SITES
-       byId('ddPRCSiteSubsite').innerHTML = "";
-       byId('fldPRCSiteSubsiteValue').value = "";
-       byId('fldPRCSiteSubsite').value = "";         
-       byId('fldPRCDXOverride').checked = false;     
-       byId('ddPRCDXMod').innnerHTML = "";
-       byId('fldPRCDXMod').value = "";
-       byId('fldPRCDXModValue').value = "";             
+       //byId('fldPRCDXOverride').checked = false;     
+       fillField('fldPRCSSite','','');
+       fillField('fldPRCSite','','');
+       fillField('fldPRCDXMod','','');
+       var menuTbl =  "<center><div style=\"font-size: 1.4vh\">(Choose a Site)</div>";     
+       byId('ddPRCDXMod').innerHTML = menuTbl        
+       byId('ddPRCSSite').innerHTML = menuTbl;        
        updateSiteMenu();             
     break;
-    case 'fldPRCSiteSubsite':
-       byId('fldPRCDXOverride').checked = false;          
-       byId('ddPRCDXMod').innerHTML = "<center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div>";
+    case 'fldPRCSite':
+       //byId('fldPRCDXOverride').checked = false;          
        byId('fldPRCDXMod').value = "";
-       byId('fldPRCDXModValue').value = "";           
+       byId('fldPRCDXModValue').value = "";
+       fillField('fldPRCSSite','',''); 
+       updateSubSiteMenu();          
        updateDiagnosisMenu();                       
      break;
   }        
 }            
 
+function updateSubSiteMenu() { 
+   if ( byId('fldPRCSpecCatValue') && byId('fldPRCSite') ) {
+     if ( byId('fldPRCSpecCatValue').value.trim() !== "" && byId('fldPRCSite').value.trim() !== "" ) {     
+       var mlURL = "/data-doers/subsites-by-specimen-category"; 
+       var dta = new Object();
+       dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
+       dta['site'] = byId('fldPRCSite').value.trim();
+       var passdta = JSON.stringify(dta);
+       universalAJAX("POST",mlURL,passdta,answerUpdateSSiteMenu,0);               
+     } else { 
+       //NOTHING SELECTED
+     }
+   }
+}
+
+function answerUpdateSSiteMenu(rtnData) { 
+  if (parseInt(rtnData['responseCode']) === 200) {
+    var dta = JSON.parse( rtnData['responseText'] );
+    var rquestFld = dta['MESSAGE'];
+    if (parseInt(dta['ITEMSFOUND']) > 0) {
+      var dspList = dta['DATA']; 
+      var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCSSite','','');\" class=ddMenuClearOption>[clear]</td></tr>";      
+      dspList.forEach( function(element) {          
+          menuTbl += "<tr><td onclick=\"fillField('fldPRCSSite','"+element['ssiteid']+"','"+element['subsite']+"');\" class=ddMenuItem>"+element['subsite']+"</td></tr>";            
+      });
+      menuTbl += "</table>";      
+   } else {
+      var menuTbl =  "<center><div style=\"font-size: 1.4vh\">No Subsite Listed</div>";     
+    }
+  } else {      
+    //ERROR - DISPLAY ERROR
+     var menuTbl =  "<center><div style=\"font-size: 1.4vh\">No Subsite Listed</div>";     
+    //console.log(rtnData);    
+  }
+  byId('ddPRCSSite').innerHTML = menuTbl;        
+}           
+
 function updateDiagnosisMenu() { 
        var mlURL = "/data-doers/diagnosis-downstream"; 
        var dta = new Object();
        dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
-       dta['site'] = byId('fldPRCSiteSubsiteValue').value.trim();            
-       var passdta = JSON.stringify(dta);    
-       universalAJAX("POST",mlURL,passdta,answerUpdateDiagnosisMenu,1);                 
+       dta['site'] = byId('fldPRCSiteValue').value.trim();            
+       var passdta = JSON.stringify(dta);
+       universalAJAXStreamTwo("POST",mlURL,passdta,answerUpdateDiagnosisMenu,0);                 
 }
 
 function answerUpdateDiagnosisMenu(rtnData) { 
@@ -712,7 +594,7 @@ function answerUpdateDiagnosisMenu(rtnData) {
       var dspList = dta['DATA'];
       var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCDXMod','','');\" class=ddMenuClearOption>[clear]</td></tr>";      
       dspList.forEach( function(element) {          
-          menuTbl += "<tr><td onclick=\"fillField('fldPRCDXMod','"+element['dspdx']+"','"+element['dspdx']+"');\" class=ddMenuItem>"+element['dspdx']+"</td></tr>";            
+          menuTbl += "<tr><td onclick=\"fillField('fldPRCDXMod','"+element['dxid']+"','"+element['diagnosis']+"');\" class=ddMenuItem>"+element['diagnosis']+"</td></tr>";            
       });
       menuTbl += "</table>";      
    } else {
@@ -733,12 +615,33 @@ function updateSiteMenu() {
        var dta = new Object();
        dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
        var passdta = JSON.stringify(dta);
-       universalAJAX("POST",mlURL,passdta,answerUpdateSiteMenu,1);               
+       universalAJAX("POST",mlURL,passdta,answerUpdateSiteMenu,0);               
      } else { 
        //NOTHING SELECTED
      }
    }
    
+}
+
+function setPathologyRptRequired(prMenuValue) { 
+  //TODO:  MAKE THIS DYNAMIC - TAKE AWAY HARD CODE VALUE CHECK FOR PATH RPT REQUIRED
+  var prMenuVal = prMenuValue;
+  var prMenuDsp = ""; 
+  switch (prMenuValue) { 
+    case 0:
+      prMenuDsp = "No";
+      prMenuVal = 0;
+    break;
+    default:
+      prMenuDsp = "Pending";
+      prMenuVal = 2;
+  }
+  if ( byId('fldPRCPathRptValue') ) { 
+    byId('fldPRCPathRptValue').value = prMenuVal;
+  } 
+  if ( byId('fldPRCPathRpt') ) { 
+    byId('fldPRCPathRpt').value = prMenuDsp;
+  }
 }
             
 function answerUpdateSiteMenu(rtnData) { 
@@ -747,15 +650,16 @@ function answerUpdateSiteMenu(rtnData) {
     var rquestFld = dta['MESSAGE'];
     if (parseInt(dta['ITEMSFOUND']) > 0) {
       var dspList = dta['DATA'];
-      var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCSiteSubsite','','');\" class=ddMenuClearOption>[clear]</td></tr>";      
+      //<tr><td align=right onclick=\"fillField('fldPRCSiteSubsite','','');setPathologyRptRequired(2);\" class=ddMenuClearOption>[clear]</td></tr>
+      var menuTbl = "<table border=0 class=menuDropTbl>";      
       dspList.forEach( function(element) {          
-          menuTbl += "<tr><td onclick=\"fillField('fldPRCSiteSubsite','"+element['dspsite']+"','"+element['dspsite']+"');\" class=ddMenuItem>"+element['dspsite']+"</td></tr>";            
+          menuTbl += "<tr><td onclick=\"fillField('fldPRCSite','"+element['siteid']+"','"+element['site']+"');setPathologyRptRequired("+element['pathrptrequiredvalue']+");\" class=ddMenuItem>"+element['site']+"</td></tr>";            
       });
       menuTbl += "</table>";      
    } else {
       var menuTbl =  "<center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div>";     
     }
-    byId('ddPRCSiteSubsite').innerHTML = menuTbl        
+    byId('ddPRCSite').innerHTML = menuTbl        
   } else {      
     //ERROR - DISPLAY ERROR
     //console.log(rtnData);    
@@ -769,7 +673,7 @@ function updateSubMenu(whichdropdown, whichmenu, lookupvalue) {
   dta['whichmenu'] = whichmenu;
   dta['lookupvalue'] = lookupvalue;
   var passdta = JSON.stringify(dta);
-  universalAJAX("POST",mlURL,passdta,answerUpdateSubMenu,1);            
+  universalAJAX("POST",mlURL,passdta,answerUpdateSubMenu,0);            
 }
 
 function answerUpdateSubMenu(rtnData) {
@@ -778,15 +682,16 @@ function answerUpdateSubMenu(rtnData) {
     var rquestFld = dta['MESSAGE'];
     if (parseInt(dta['ITEMSFOUND']) > 0) {
       var dspList = dta['DATA'];
-      var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fld"+rquestFld+"','','');\" class=ddMenuClearOption>[clear]</td></tr>"; 
+      //<tr><td align=right onclick=\"fillField('fld"+rquestFld+"','','');\" class=ddMenuClearOption>[clear]</td></tr>
+      var menuTbl = "<table border=0 class=menuDropTbl>"; 
       var defaultValue = "";
       var defaultDsp = "";
       dspList.forEach( function(element) { 
-      if (parseInt(element['useasdefault']) === 1) { 
-        defaultValue = element['menuvalue'];
-        defaultDsp = element['dspvalue'];
-      }
-      menuTbl += "<tr><td onclick=\"fillField('fld"+rquestFld+"','"+element['menuvalue']+"','"+element['dspvalue']+"');\" class=ddMenuItem>"+element['dspvalue']+"</td></tr>";
+        if (parseInt(element['useasdefault']) === 1) { 
+          defaultValue = element['menuvalue'];
+          defaultDsp = element['dspvalue'];
+        }
+        menuTbl += "<tr><td onclick=\"fillField('fld"+rquestFld+"','"+element['menuvalue']+"','"+element['dspvalue']+"');\" class=ddMenuItem>"+element['dspvalue']+"</td></tr>";
       });
       menuTbl += "</table>";
       byId('dd'+rquestFld).innerHTML = menuTbl;
