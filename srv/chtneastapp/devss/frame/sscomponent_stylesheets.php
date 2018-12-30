@@ -194,15 +194,27 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
 #fldPRCPXIId { display: none; }
 #fldPRCPXIInitials { width: 5vw; }
-#fldPRCPXIAge {width: 5vw; }
+#fldPRCPXIAge {width: 3vw; }
+#fldPRCPXIAgeMetric {width: 5vw;}
 #fldPRCPXIRace {width: 15vw; }
 #fldPRCPXIInfCon {width: 5vw; }
+#fldPRCPXILastFour {width: 5vw; }
+#fldPRCPXICX {width: 5vw; }
+#ddPRCPXICX {min-width: 5vw;}
+#fldPRCPXIRX {width: 5vw; }
+#ddPRCPXIRX {min-width: 5vw;}
 
 #metsFromDsp { display: none; }
 #fldPRCMETSSite { width: 15vw; }
 #ddPRCMETSSite { min-width: 15vw; }
 #fldPRCMETSDX { width: 18vw; }
 #ddPRCMETSDX { min-width: 18vw; }
+
+#fldPRCSitePosition { width: 15vw; }
+#ddPRCSitePosition { min-width: 15vw; }
+#fldPRCSystemList {width: 15vw; }
+#ddPRCSystemList {min-width: 15vw; }
+
 
 #displayVocabulary { min-width: 25vw; overflow-x: hidden;}
 #displayMETSVocabulary { min-width: 25vw; overflow-x: hidden; }

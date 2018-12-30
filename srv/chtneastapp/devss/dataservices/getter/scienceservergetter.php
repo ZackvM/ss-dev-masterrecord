@@ -768,17 +768,16 @@ function hprrequestcode($whichobj, $rqst) {
 
 class globalMenus {
 
-    function uninvolvedindicatoroptions() { 
-      return "SELECT trim(ifnull(menuvalue,'')) as codevalue, trim(ifnull(longvalue,'')) as menuvalue, ifnull(useasdefault,0) as useasdefault, trim(ifnull(menuvalue,'')) as lookupvalue FROM four.sys_master_menus where menu = 'UNINVOLVEDIND' and dspind = 1 order by dsporder";      
+    function vocabularysystemicdxlist() { 
+      return "SELECT distinct trim(ifnull(dxid,'')) as codevalue, trim(ifnull(diagnosis,'')) as menuvalue, 0 as useasdefault, trim(ifnull(diagnosis,'')) as lookupvalue FROM four.sys_master_menu_vocabulary where systemicindicator =1 order by menuvalue";
     }
 
-    function systemicdiagnosis() { 
-        return "SELECT trim(ifnull(dx,'')) as codevalue, trim(ifnull(dx,'')) as menuvalue, 0 as useasdefault, trim(ifnull(dx,'')) as lookupvalue FROM four.voc_systemic_dx where dspind = 1 and trim(ifnull(dx,'')) <> '' order by dx";
+    function uninvolvedindicatoroptions() { 
+      return "SELECT trim(ifnull(menuvalue,'')) as codevalue, trim(ifnull(longvalue,'')) as menuvalue, ifnull(useasdefault,0) as useasdefault, trim(ifnull(menuvalue,'')) as lookupvalue FROM four.sys_master_menus where menu = 'UNINVOLVEDIND' and dspind = 1 order by dsporder";
     }
-    
-    
-    function vocabularypositions() { 
-       return "SELECT distinct trim(ifnull(position,'')) as codevalue, trim(ifnull(position,'')) as menuvalue, 0 as useasdefault, trim(ifnull(position,'')) as lookupvalue FROM four.voc_anatomic_site_position order by codevalue";
+ 
+    function vocabularysitepositions() {
+      return "SELECT trim(ifnull(menuvalue,'')) as codevalue, trim(ifnull(longvalue,'')) as menuvalue, ifnull(useasdefault,0) as useasdefault, trim(ifnull(menuvalue,'')) as lookupvalue FROM four.sys_master_menus where menu = 'ASITEPOSITIONS' and dspind = 1 order by dsporder";
     }
 
     function vocabularyspecimencategory() { 

@@ -1880,6 +1880,18 @@ function bldProcurementGrid($usr) {
   //UNINVOLVED SAMPLE
     $univData = dropmenuUninvolvedIndicator();
     $uninvmenu = $univData['menuObj'];
+  //SITE POSITIONS
+    $asiteposData = dropmenuVocASitePositions(); 
+    $aspmenu = $asiteposData['menuObj'];
+  //SYSTEMIC LIST 
+    $sysData = dropmenuSystemicDXListing(); 
+    $sysdxmenu = $sysData['menuObj'];
+  //CHEMO MENU
+    $cxData = dropmenuCXIndicator(); 
+    $cxmenu = $cxData['menuObj'];
+  //CHEMO MENU
+    $rxData = dropmenuRXIndicator(); 
+    $rxmenu = $rxData['menuObj'];
 
   //UNKNOWNMET Unknown Metastatic Location
   //THIS SHOULD BE PROGRAMMATICALLY ASSESSED - IF MALIGNANT AND NO METS FROM DETERMINES FIELD
@@ -1898,13 +1910,10 @@ function bldProcurementGrid($usr) {
      $metssite = $metsData['menuObj'];
      $metsdxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSDXValue value=\"\"><input type=text id=fldPRCMETSDX READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCMETSDX><center><div style=\"font-size: 1.4vh\">(Choose a Metastatic site)</div></div></div>";
 
-
-
    //DROP DOWN MENU BUILDER END ******************************************************************** //
 
   $inst = $usr->presentinstitution;
   $tech = strtoupper($usr->userid);
-
 
 //Procurement Grid  
   //<div class=valueDisplayHolder><input type=text id=fldPRCDiagnosisDesignation><div class=valueDisplayDiv id=displayVocabulary></div></div>
@@ -1915,13 +1924,16 @@ $rtnTbl = <<<RTNTBL
 </table>
 
 <table>
-<tr><td>Initials</td><td>Age</td><td>Race</td><td>Sex</td><td>Informed Consent</td></tr>
+<tr><td>Initials</td><td>Age</td><td>Race</td><td>Sex</td><td>Last Four</td><td>Informed Consent</td><td>CX Indicator</td><td>RX Indicator</td></tr>
 <tr>
     <td><input type=text id=fldPRCPXIId READONLY><input type=text id=fldPRCPXIInitials READONLY></td>
-    <td><input type=text id=fldPRCPXIAge READONLY></td>
+    <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td><td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
     <td><input type=text id=fldPRCPXIRace READONLY></td>
     <td><input type=text id=fldPRCPXISex READONLY></td>
+    <td><input type=text id=fldPRCPXILastFour READONLY></td>
     <td><input type=text id=fldPRCPXIInfCon READONLY></td>
+    <td>{$cxmenu}</td>
+    <td>{$rxmenu}</td>
 </tr>
 
 </table>
@@ -1931,14 +1943,8 @@ $rtnTbl = <<<RTNTBL
 <tr><td valign=top> {$spcmenu} </td><td valign=top> {$sitesubsite} </td><td> {$subsite} </td><td valign=top> {$dxmod} </td><td>{$uninvmenu}</td><td>{$prptmenu}</td></tr>
 <tr><td colspan=6> 
 
-<table><tr><td> 
+<table cellpadding=0 cellspacing=0 border=0><tr><td> 
 
-<table>
-<tr><td>Position</td><td>Systemic Diagnosis</td></tr>
-<tr><td>    </td><td> </td></tr>   
-</table>
-
-</td><td>   
 <div id=metsFromDsp>
 <table>
   <tr><td>Metastatic From</td><td>Metastatic Diagnosis</td></tr>
@@ -1946,14 +1952,86 @@ $rtnTbl = <<<RTNTBL
 </table>
 </div>
 
-</td></tr></table>
+</td><td>  
 
+<table>
+<tr><td>Position</td><td>Systemic Diagnosis</td></tr>
+<tr><td> {$aspmenu} </td><td> {$sysdxmenu} </td></tr>   
+</table>
+
+</td></tr></table>
 </td></tr>
 </table>
 
 
 RTNTBL;
   return $rtnTbl;    
+}
+
+
+
+function dropmenuRXIndicator() { 
+  $si = serverIdent;
+  $sp = serverpw;
+  $asparr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-rx",$si,$sp),true);
+  $asp = "<table border=0 class=menuDropTbl>";
+  $aspDefaultValue = "";
+  $aspDefaultDsp = "";
+  foreach ($asparr['DATA'] as $aspval) {
+    $asp .= "<tr><td onclick=\"fillField('fldPRCPXIRX','{$aspval['codevalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
+  }
+  $asp .= "</table>";
+  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCPXIRXValue value=\"\"><input type=text id=fldPRCPXIRX READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCPXIRX>{$asp}</div></div>";
+  return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
+}
+
+function dropmenuCXIndicator() { 
+  $si = serverIdent;
+  $sp = serverpw;
+  $asparr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-cx",$si,$sp),true);
+  $asp = "<table border=0 class=menuDropTbl>";
+  $aspDefaultValue = "";
+  $aspDefaultDsp = "";
+  foreach ($asparr['DATA'] as $aspval) {
+    $asp .= "<tr><td onclick=\"fillField('fldPRCPXICX','{$aspval['codevalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
+  }
+  $asp .= "</table>";
+  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCPXICXValue value=\"\"><input type=text id=fldPRCPXICX READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCPXICX>{$asp}</div></div>";
+  return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
+}
+
+function dropmenuSystemicDXListing() { 
+  $si = serverIdent;
+  $sp = serverpw;
+  $asparr = json_decode(callrestapi("GET", dataTree . "/global-menu/vocabulary-systemic-dx-list",$si,$sp),true);
+  $asp = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCSystemList','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  $aspDefaultValue = "";
+  $aspDefaultDsp = "";
+  foreach ($asparr['DATA'] as $aspval) {
+    $asp .= "<tr><td onclick=\"fillField('fldPRCSystemList','{$aspval['codevalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
+  }
+  $asp .= "</table>";
+  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSystemListValue value=\"\"><input type=text id=fldPRCSystemList READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSystemList>{$asp}</div></div>";
+  return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
+}
+
+function dropmenuVocASitePositions() { 
+  $si = serverIdent;
+  $sp = serverpw;
+  $asparr = json_decode(callrestapi("GET", dataTree . "/global-menu/vocabulary-site-positions",$si,$sp),true);
+  $asp = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCSitePosition','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  $aspDefaultValue = "";
+  $aspDefaultDsp = "";
+  foreach ($asparr['DATA'] as $aspval) {
+      if ( (int)$aspval['useasdefault'] === 1 ) {
+        $aspDefaultValue = $aspval['lookupvalue']; 
+        $aspDefaultDsp = $aspval['menuvalue'];
+      }
+    $asp .= "<tr><td onclick=\"fillField('fldPRCSitePosition','{$aspval['lookupvalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
+  }
+  $asp .= "</table>";
+  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSitePositionValue value=\"{$aspDefaultValue}\"><input type=text id=fldPRCSitePosition READONLY class=\"inputFld\" value=\"{$aspDefaultDsp}\"><div class=valueDropDown id=ddPRCSitePosition>{$asp}</div></div>";
+  return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 }
 
 function dropmenuProcedureTypes() {  
@@ -2067,8 +2145,7 @@ function dropmenuInitialMetric() {
   return array('menuObj' => $muommenu,'defaultDspValue' => $muomDefaultDsp, 'defaultLookupValue' => $muomDefaultValue);
 }
 
-function dropmenuInitialSpecCat() { 
-  
+function dropmenuInitialSpecCat() {   
   $si = serverIdent;
   $sp = serverpw;
   $speccatarr = json_decode(callrestapi("GET", dataTree . "/global-menu/vocabulary-specimen-category",$si,$sp),true);
@@ -2103,11 +2180,6 @@ function dropmenuPathRptAllowables() {
   return array('menuObj' => $prptmenu, 'defaultDspValue' => $prptDefaultDsp, 'defaultLookupValue' => $prptDefaultValue);
 
 }
-
-
-
-
-
 
 function bldBiosampleProcurement($usr) { 
     // {"statusCode":200,"loggedsession":"4tlt57qhpjfkugau1seif6glo0","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":58,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"menuvalue":"Procure Biosample","pagesource":"procure-biosample","additionalcode":""}]],["433","DATA COORDINATOR","",[{"menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""},{"menuvalue":"Consult Library","pagesource":"val-consult-library","additionalcode":""},{"menuvalue":"Slide Image Library","pagesource":"image-library","additionalcode":""},{"menuvalue":"QMS Actions","pagesource":"qms-actions","additionalcode":""}]],["472","REPORTS","",[{"menuvalue":"All Reports","pagesource":"reports","additionalcode":""},{"menuvalue":"Barcode Run","pagesource":"reports\/inventory\/barcode-run","additionalcode":""},{"menuvalue":"Daily Procurement Sheet","pagesource":"reports\/procurement\/daily-procurement-sheet","additionalcode":""}]],["473","UTILITIES","",[{"menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]],"lastlogin":{"lastlogdate":"Mon Dec 17th, 2018 at 14:59","fromip":"170.212.0.91"},"accessnbr":"43"} 
