@@ -456,6 +456,18 @@ document.addEventListener('DOMContentLoaded', function() {
 //  if (byId('btnPBClearGrid')) { 
 //     byId('btnPBClearGrid').addEventListener('click', function() { clearGrid(); }, false);          
 //  }
+
+    if (byId('fldPRCDXOverride')) {
+      byId('fldPRCDXOverride').addEventListener('change', function() { 
+        if (byId('fldPRCDXOverride').checked) {
+          //LIST THE WHOLE DX HERE
+          alert('THIS OPERATION IS NON-FUNCIONAL AT THIS TIME');
+        } else {
+          //IF THE SPECCAT AND SITE FILLED IN MAKE THAT - IF NOT BLANK THE MENU
+          alert('THIS OPERATION IS NON-FUNCIONAL AT THIS TIME');
+        }
+      }, false);
+    }
             
 }, false);        
 
@@ -464,19 +476,26 @@ function clearGrid() {
    fillField('fldPRCSpecCat','','');
 }
 
-function fillPXIInformation(pxiid, pxiinitials, pxiage, pxirace, pxisex    ) { 
+function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxisex, pxiinformed, pxilastfour ) { 
    //TODO:  CHECK FIELD EXISTANCE
    //TODO:  BLANK FIELDS FIRST
+
    byId('fldPRCPXIId').value = "";
    byId('fldPRCPXIInitials').value = "";            
    byId('fldPRCPXIAge').value = "";
    byId('fldPRCPXIRace').value = "";            
    byId('fldPRCPXISex').value = "";                        
+
+
    byId('fldPRCPXIId').value = pxiid;
    byId('fldPRCPXIInitials').value = pxiinitials;         
    byId('fldPRCPXIAge').value = pxiage;
+   byId('fldPRCPXIAgeMetric').value = pxiageuom;
    byId('fldPRCPXIRace').value = pxirace;                        
-   byId('fldPRCPXISex').value = pxisex;             
+   byId('fldPRCPXISex').value = pxisex;  
+   byId('fldPRCPXILastFour').value = pxilastfour;  
+   byId('fldPRCPXIInfCon').value = ( pxiinformed == 0 ) ? 'NO' : 'PENDING';        
+
 }
          
 var lastRequestCalendarDiv = "";
@@ -520,7 +539,7 @@ function fillField(whichfield, whichvalue, whichdisplay) {
     break;
     case 'fldPRCSpecCat':
        //GET SITES
-       //byId('fldPRCDXOverride').checked = false;     
+       byId('fldPRCDXOverride').checked = false;     
        fillField('fldPRCSSite','','');
        fillField('fldPRCSite','','');
        fillField('fldPRCDXMod','','');
@@ -546,7 +565,7 @@ function fillField(whichfield, whichvalue, whichdisplay) {
      }
     break;
     case 'fldPRCSite':
-       //byId('fldPRCDXOverride').checked = false;          
+       byId('fldPRCDXOverride').checked = false;          
        byId('fldPRCDXMod').value = "";
        byId('fldPRCDXModValue').value = "";
        fillField('fldPRCSSite','',''); 

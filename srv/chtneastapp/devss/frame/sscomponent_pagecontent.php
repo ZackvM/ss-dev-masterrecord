@@ -1832,17 +1832,18 @@ function bldORScheduleTbl($orarray) {
     $addeddonor = $val['linkage'];
     $lastfour = $val['lastfourmrn'];
 
-
-
-
     $proc = <<<PROCCELL
-<table width=100%>
+<table width=98%>
   <tr><td valign=top class=smallORTblLabel><b>A-R-S</b>: </td><td valign=top>{$val['ars']}</td></tr><tr><td valign=top class=smallORTblLabel><b>Last Four</b>: </td><td valign=top>{$lastfour}</td></tr><tr><td valign=top class=smallORTblLabel><b>Procedure</b>: </td><td valign=top>{$val['proceduretext']}</td></tr><tr><td valign=top class=smallORTblLabel><b>Surgeon</b>: </td><td valign=top>{$val['surgeon']}</td></tr><tr><td valign=top class=smallORTblLabel><b>Start</b>: </td><td valign=top>{$val['starttime']}</td></tr><tr><td valign=top class=smallORTblLabel><b>OR</b>: <td>{$val['room']}</td></tr>
 </table>
 PROCCELL;
 
-$innerTbl .= "<tr onclick=\"fillPXIInformation('{$val['pxicode']}','{$val['pxiinitials']}','{$val['pxiage']}','{$val['pxirace']}','{$val['pxisex']}');\"><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspProcCell>{$proc}</td></tr>";
+    $ageuom = "yrs";
+
+$innerTbl .= "<tr onclick=\"fillPXIInformation('{$val['pxicode']}', '{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$val['pxirace']}','{$val['pxisex']}','{$informed}','{$lastfour}'    );\" class=displayRows><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspProcCell>{$proc}</td></tr>";
+
   }
+
   $rtnTbl = <<<ORSCHEDTBL
           <div id=divORHolder>
           <table border=0 id=PXIDspTbl>
@@ -1892,6 +1893,9 @@ function bldProcurementGrid($usr) {
   //CHEMO MENU
     $rxData = dropmenuRXIndicator(); 
     $rxmenu = $rxData['menuObj'];
+  //SOGI
+    $sogiData = dropmenuPennSOGI();
+    $sogimenu = $sogiData['menuObj'];
 
   //UNKNOWNMET Unknown Metastatic Location
   //THIS SHOULD BE PROGRAMMATICALLY ASSESSED - IF MALIGNANT AND NO METS FROM DETERMINES FIELD
@@ -1902,7 +1906,6 @@ function bldProcurementGrid($usr) {
    $subsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSSiteValue value=\"\"><input type=text id=fldPRCSSite READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>";
    
    //BASE DX-MOD Menu
-   //<div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div>
      $dxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCDXModValue value=\"\"><input type=text id=fldPRCDXMod READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCDXMod><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category & Site)</div></div></div>";
 
    //METASTATIC SITE MENU DROPDOWN
@@ -1915,16 +1918,29 @@ function bldProcurementGrid($usr) {
   $inst = $usr->presentinstitution;
   $tech = strtoupper($usr->userid);
 
-//Procurement Grid  
-  //<div class=valueDisplayHolder><input type=text id=fldPRCDiagnosisDesignation><div class=valueDisplayDiv id=displayVocabulary></div></div>
 $rtnTbl = <<<RTNTBL
+
+<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
+<tr><td colspan=2 class=procGridHoldingDecorationLine>
 <table>
-  <tr><td>Biogroup Number</td><td>Procedure Type</td><td>Collection Type</td><td>Technician/Institution</td><td colspan=2>Initial Metric</td></tr>
-  <tr><td><input type=text id=fldPRCBGNbr value="" READONLY></td><td>{$procedureType}</td><td>{$collectionType}</td><td><input type=text id=fldPRCTechInstitute value="{$tech} :: {$inst}" READONLY></td><td><table><tr><td><input type=text id=fldPRCInitialMetric value=0></td><td>{$muommenu}</td></tr></table></td></tr>
+  <tr><td class=prcFldLbl>Biogroup Number</td><td class=prcFldLbl>Procedure Type</td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician/Institution</td><td class=prcFldLbl>Initial Metric</td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td></tr>
+  <tr><td><input type=text id=fldPRCBGNbr value="" READONLY></td>
+      <td>{$procedureType}</td>
+      <td>{$collectionType}</td>
+      <td><input type=text id=fldPRCTechInstitute value="{$tech} :: {$inst}" READONLY></td>
+      <td><table><tr><td><input type=text id=fldPRCInitialMetric value=0></td><td>{$muommenu}</td></tr></table></td>
+      <td><input type=text id=fldSubjectNbr value=""></td>
+      <td><input type=text id=fldProtocolNbr value=""></td>
+  </tr>
+</table>
+</td></tr>
 </table>
 
+
+<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
+<tr><td colspan=2 class=procGridHoldingDecorationLine>
 <table>
-<tr><td>Initials</td><td>Age</td><td>Race</td><td>Sex</td><td>Last Four</td><td>Informed Consent</td><td>CX Indicator</td><td>RX Indicator</td></tr>
+<tr><td class=prcFldLbl>Initials</td><td class=prcFldLbl>Age</td><td class=prcFldLbl>Race</td><td class=prcFldLbl>Sex</td><td class=prcFldLbl>Last Four</td><td class=prcFldLbl>Informed Consent</td><td class=prcFldLbl>Chemo</td><td class=prcFldLbl>Radiation</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
 <tr>
     <td><input type=text id=fldPRCPXIId READONLY><input type=text id=fldPRCPXIInitials READONLY></td>
     <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td><td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
@@ -1934,20 +1950,23 @@ $rtnTbl = <<<RTNTBL
     <td><input type=text id=fldPRCPXIInfCon READONLY></td>
     <td>{$cxmenu}</td>
     <td>{$rxmenu}</td>
+    <td>{$sogimenu}</td>
 </tr>
-
+</table>
+</td></tr>
 </table>
 
+<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
+<tr><td colspan=2 class=procGridHoldingDecorationLine>
 <table>
-<tr><td colspan=4>Diagnosis Designation</td><td>Uninvolved/NAT</td><td>Pathology Rpt</td></tr>
+<tr><td colspan=3 class=prcFldLbl>Diagnosis Designation</td> <td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolved/NAT</td><td class=prcFldLbl>Pathology Rpt</td></tr>
 <tr><td valign=top> {$spcmenu} </td><td valign=top> {$sitesubsite} </td><td> {$subsite} </td><td valign=top> {$dxmod} </td><td>{$uninvmenu}</td><td>{$prptmenu}</td></tr>
 <tr><td colspan=6> 
 
 <table cellpadding=0 cellspacing=0 border=0><tr><td> 
-
 <div id=metsFromDsp>
 <table>
-  <tr><td>Metastatic From</td><td>Metastatic Diagnosis</td></tr>
+  <tr><td class=prcFldLbl>Metastatic From</td><td class=prcFldLbl>Metastatic Diagnosis</td></tr>
   <tr><td> {$metssite} </td><td> {$metsdxmod} </td> </tr>
 </table>
 </div>
@@ -1955,20 +1974,70 @@ $rtnTbl = <<<RTNTBL
 </td><td>  
 
 <table>
-<tr><td>Position</td><td>Systemic Diagnosis</td></tr>
+<tr><td class=prcFldLbl>Position</td><td class=prcFldLbl>Systemic Diagnosis</td></tr>
 <tr><td> {$aspmenu} </td><td> {$sysdxmenu} </td></tr>   
 </table>
 
 </td></tr></table>
 </td></tr>
 </table>
+</td></tr>
+</table>
 
+<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
+<tr><td colspan=2 class=procGridHoldingDecorationLine>
+
+<table>
+<tr><td class=prcFldLbl>Biosample Comments</td><td class=prcFldLbl>Question for HPR/QMS</td></tr>
+<tr><td><TEXTAREA id=fldPRCBSCmts></TEXTAREA></td><td><TEXTAREA id=fldPRCHPRQ></TEXTAREA></td></tr>
+</table>
+
+</td></tr>
+
+<tr><td colspan=2 align=right style="padding: .5vh .6vw 0 0;">
+
+
+  <table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td><center>Save</td></tr></table>
+
+</td></tr>
+</table>
+
+<!-- SEGMENT COLLECTION APPEARS 
+<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
+<tr><td class=procGridHoldingTitle>Segments</td><td class=procGridHoldingDecorationLineBU>&nbsp;</td></tr>
+<tr><td colspan=2>
+
+
+</td></tr>
+</table>
+//-->
 
 RTNTBL;
   return $rtnTbl;    
 }
 
 
+function dropmenuPennSOGI() { 
+//upennsogi
+  $si = serverIdent;
+  $sp = serverpw;
+  $asparr = json_decode(callrestapi("GET", dataTree . "/global-menu/upenn-sogi",$si,$sp),true);
+  //<tr><td align=right onclick=\"fillField('fldPRCUpennSOGI','','');\" class=ddMenuClearOption>[clear]</td></tr>
+  $asp = "<table border=0 class=menuDropTbl>";
+  $aspDefaultValue = "";
+  $aspDefaultDsp = "";
+  foreach ($asparr['DATA'] as $aspval) {
+      if ( (int)$aspval['useasdefault'] === 1 ) {
+        $aspDefaultValue = $aspval['lookupvalue']; 
+        $aspDefaultDsp = $aspval['menuvalue'];
+      }
+    $asp .= "<tr><td onclick=\"fillField('fldPRCUpennSOGI','{$aspval['lookupvalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
+  }
+  $asp .= "</table>";
+  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCUpennSOGIValue value=\"{$aspDefaultValue}\"><input type=text id=fldPRCUpennSOGI READONLY class=\"inputFld\" value=\"{$aspDefaultDsp}\"><div class=valueDropDown id=ddPRCUpennSOGI>{$asp}</div></div>";
+  return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
+
+}
 
 function dropmenuRXIndicator() { 
   $si = serverIdent;
@@ -2038,7 +2107,6 @@ function dropmenuProcedureTypes() {
   $si = serverIdent;
   $sp = serverpw;
   $proctypearr = json_decode(callrestapi("GET", dataTree . "/global-menu/four-menu-prc-proceduretype",$si,$sp),true);
-  //<tr><td align=right onclick=\"fillField('fldPRCProcedureType','','');\" class=ddMenuClearOption>[clear]</td></tr>
   $proct = "<table border=0 class=menuDropTbl>";
   $procTDefaultValue = "";
   $procTDefaultDsp = "";
@@ -2202,7 +2270,7 @@ function bldBiosampleProcurement($usr) {
                    <tr>
                       <td rowspan=2 valign=top id=procGridHolderCell>{$procGrid}</td>
                       <td class=sidePanel valign=top>
-                          <table border=0 width=100% cellspacing=0 cellpadding=0><tr><td>Procedure Date</td></tr>
+                          <table border=0 width=100% cellspacing=0 cellpadding=0><tr><td class=prcFldLbl style="border: none;">Procedure Date</td></tr>
                             <tr><td>{$orscheddater}</td></tr>
                             <tr><td>{$orlistTbl}</td></tr>
                           </table>
