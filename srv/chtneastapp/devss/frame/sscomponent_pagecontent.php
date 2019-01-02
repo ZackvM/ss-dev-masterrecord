@@ -935,15 +935,24 @@ function root($rqstStr, $whichUsr) {
     //$whichUsr THIS IS THE USER ARRAY {"statusCode":200,"loggedsession":"i46shslvmj1p672lskqs7anmu1","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":20,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"googleiconcode":"lock_open","menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"googleiconcode":"account_balance","menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""}]],["472","REPORTS","",[{"googleiconcode":"account_balance","menuvalue":"All Reports","pagesource":"all-reports","additionalcode":""}]],["473","UTILITIES","",[{"googleiconcode":"account_balance","menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474",null,null,[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]} 
   
   $d = date('M d, Y H:i'); 
+  
+  $fsCalendar = buildcalendar('mainroot'); 
+  
+  
   $rtnthis = <<<PAGEHERE
 
 <table border=0 width=100% id=rootTable>
   <tr>
-          <td>Welcome, {$whichUsr->userid} </td>
+          <td>Welcome {$whichUsr->username} ({$whichUsr->useremail} /{$whichUsr->userid}) </td>
           <td align=right>Now: {$d}</td>
   </tr>
   <td colspan=2>          
       <!-- Display Area //-->      
+          
+          {$fsCalendar} 
+          
+          
+      <!-- END Display Area //-->                
   </td>        
 </table>
 
@@ -1580,9 +1589,9 @@ $grid = <<<BSGRID
 <tr><td class=fldLabel>Biogroup Number</td><td class=fldLabel>Procuring Institution</td><td class=fldLabel>Segment Status</td><td class=fldLabel>HPR Status</td></tr>
 <tr>
   <td><input type=text id=qryBG class="inputFld" style="width: 20vw;"></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryProcInstValue><input type=text id=qryProcInst READONLY class="inputFld" style="width: 20vw;"><div class=valueDropDown style="width: 20vw;">{$proc}</div></div></td>
-<td><div class=menuHolderDiv><input type=hidden id=qrySegStatusValue><input type=text id=qrySegStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="width: 15vw;">{$seg}</div></div></td>
-<td><div class=menuHolderDiv><input type=hidden id=qryHPRStatusValue><input type=text id=qryHPRStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="width: 15vw;">{$hpr}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryProcInstValue><input type=text id=qryProcInst READONLY class="inputFld" style="width: 20vw;"><div class=valueDropDown style="min-width: 20vw;">{$proc}</div></div></td>
+<td><div class=menuHolderDiv><input type=hidden id=qrySegStatusValue><input type=text id=qrySegStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 15vw;">{$seg}</div></div></td>
+<td><div class=menuHolderDiv><input type=hidden id=qryHPRStatusValue><input type=text id=qryHPRStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 15vw;">{$hpr}</div></div></td>
 </tr>
 <tr><td>(Single, range or series)</td></tr>
 </table>
@@ -1611,8 +1620,8 @@ $grid = <<<BSGRID
 <table>
 <tr><td class=fldLabel>Diagnosis Designation Search Term</td><td class=fldLabel>Specimen Category</td></tr>
 <tr>
-  <td><input type=text id=qryDXDSite class="inputFld" style="width: 54vw;"></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryDXDSpecimenValue class="inputFld"><input type=text id=qryDXDSpecimen class="inputFld" style="width: 16vw;"><div class=valueDropDown style="width: 16vw;">{$spc}</div></div>     </td>
+  <td><input type=text id=qryDXDSite class="inputFld" style="min-width: 54vw;"></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryDXDSpecimenValue class="inputFld"><input type=text id=qryDXDSpecimen class="inputFld" style="width: 16.5vw;"><div class=valueDropDown style="min-width: 16.5vw;">{$spc}</div></div>     </td>
 </tr>
 <tr><td colspan=2>(Read instructions in 'help' to query in 'Diagnosis Designation Search Term'.  Delimit with ; [semi-colon] / - [hyphen] to denote blank fields  / 'like' match indicator ^ [caret]. Order: (site-subsite);(diagnosis-modifier);(metssite))</td></tr>
 </table>
@@ -1621,11 +1630,11 @@ $grid = <<<BSGRID
 <tr><td class=fldLabel>PHI-Age</td><td class=fldLabel>Race</td><td class=fldLabel>Sex</td><td class=fldLabel>Procedure</td><td colspan=2 class=fldLabel>Preparation</td></tr>
 <tr>
   <td><input type=text id=phiAge class="inputFld" style="width: 6vw;"></td>
-  <td><div class=menuHolderDiv><input type=hidden id=phiRaceValue><input type=text id=phiRace READONLY class="inputFld" style="width: 12vw;"><div class=valueDropDown style="width: 12vw;">{$race}</div></div></td>
-  <td><div class=menuHolderDiv><input type=hidden id=phiSexValue><input type=text id=phiSex READONLY class="inputFld" style="width: 6vw;"><div class=valueDropDown style="width: 6vw;">{$sex}</div></div></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryProcTypeValue><input type=text id=qryProcType READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="width: 8vw;">{$ptype}</div></div></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationMethodValue><input type=text id=qryPreparationMethod READONLY class="inputFld" style="width: 18.3vw;"><div class=valueDropDown style="width: 18.3vw;">{$prp}</div></div></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationValue><input type=text id=qryPreparation READONLY class="inputFld" style="width: 19vw;"><div class=valueDropDown style="width: 19vw;" id=preparationDropDown>&nbsp;</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=phiRaceValue><input type=text id=phiRace READONLY class="inputFld" style="width: 12vw;"><div class=valueDropDown style="min-width: 12vw;">{$race}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=phiSexValue><input type=text id=phiSex READONLY class="inputFld" style="width: 6vw;"><div class=valueDropDown style="min-width: 6vw;">{$sex}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryProcTypeValue><input type=text id=qryProcType READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="min-width: 8vw;">{$ptype}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationMethodValue><input type=text id=qryPreparationMethod READONLY class="inputFld" style="width: 18.3vw;"><div class=valueDropDown style="min-width: 18.3vw;">{$prp}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationValue><input type=text id=qryPreparation READONLY class="inputFld" style="width: 19vw;"><div class=valueDropDown style="min-width: 19vw;" id=preparationDropDown>&nbsp;</div></div></td>
 </tr>
 <tr><td>(Single or Range)</td></tr>
 </table>
@@ -1824,37 +1833,43 @@ return "{$prcCalendar}";
 }
 
 function bldORScheduleTbl($orarray) { 
-  $institution = $orarray['DATA']['institution'];
+
+    $institution = $orarray['DATA']['institution'];
   $ordate = $orarray['DATA']['requestDate'];
   foreach ($orarray['DATA']['orlisting'] as $ky => $val) { 
     $target = $val['targetind'];
     $informed = $val['informedconsentindicator'];
     $addeddonor = $val['linkage'];
     $lastfour = $val['lastfourmrn'];
+    $prace = (trim($val['pxirace']) === "-") ? "" : trim($val['pxirace']);
 
     $proc = <<<PROCCELL
-<table width=98%>
-  <tr><td valign=top class=smallORTblLabel><b>A-R-S</b>: </td><td valign=top>{$val['ars']}</td></tr><tr><td valign=top class=smallORTblLabel><b>Last Four</b>: </td><td valign=top>{$lastfour}</td></tr><tr><td valign=top class=smallORTblLabel><b>Procedure</b>: </td><td valign=top>{$val['proceduretext']}</td></tr><tr><td valign=top class=smallORTblLabel><b>Surgeon</b>: </td><td valign=top>{$val['surgeon']}</td></tr><tr><td valign=top class=smallORTblLabel><b>Start</b>: </td><td valign=top>{$val['starttime']}</td></tr><tr><td valign=top class=smallORTblLabel><b>OR</b>: <td>{$val['room']}</td></tr>
+<table class=procedureSpellOutTbl border=0>
+  <tr><td valign=top class=smallORTblLabel>A-R-S </td><td valign=top>{$val['ars']}</td></tr><tr><td valign=top class=smallORTblLabel>Last Four </td><td valign=top>{$lastfour}</td></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top>{$val['proceduretext']}</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>{$val['surgeon']}</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>{$val['starttime']}</td></tr><tr><td valign=top class=smallORTblLabel>OR <td>{$val['room']}</td></tr>
 </table>
 PROCCELL;
-
-    $ageuom = "yrs";
-
-$innerTbl .= "<tr onclick=\"fillPXIInformation('{$val['pxicode']}', '{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$val['pxirace']}','{$val['pxisex']}','{$informed}','{$lastfour}'    );\" class=displayRows><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspProcCell>{$proc}</td></tr>";
-
-  }
+$ageuom = "yrs";
+$innerTbl .= "<tr onclick=\"fillPXIInformation('{$val['pxicode']}', '{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$prace}','{$val['pxisex']}','{$informed}','{$lastfour}'    );\" class=displayRows><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspProcCell> {$proc} </td></tr>";
+}
 
   $rtnTbl = <<<ORSCHEDTBL
           <div id=divORHolder>
-          <table border=0 id=PXIDspTbl>
+           <div id=headerTbl>
+           <table border=0 id=PXIDspTblHD>
               <thead><tr><th class=dspORTarget>T</th><th class=dspORInformed>IC</th><th class=dspORAdded>A</th><th class=dspORInitials>Initials</th><th>Procedure</th></tr></thead>
-               <tbody id=PXIDspBody>{$innerTbl}</tbody>
-               </table>
-              </div>
-               <center>
-               <table><tr><td> Add PXI Btn</td><td>|</td><td> Add Delinked </td></tr></table>
+           </table>
+           </div>
+          <div id=dataPart>
+          <table id=procDataDsp>
+               <tbody>
+                {$innerTbl}
+               </tbody>
+          </table>
+          </div>
+          </div>
 ORSCHEDTBL;
-  return $rtnTbl;
+return $rtnTbl;
+
 }
 
 function bldProcurementGrid($usr) {   
@@ -2262,17 +2277,17 @@ function bldBiosampleProcurement($usr) {
       //TODO:REMOVE THIS LINE TO DEFAULT TO TODAY'S DATE
       $tdydtev = '20180507';
       $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
-
       $procGrid = bldProcurementGrid($usr);
 
     $holdingTbl = <<<HOLDINGTBL
             <table border=0 width=100% id=procurementAddHoldingTbl>
                    <tr>
                       <td rowspan=2 valign=top id=procGridHolderCell>{$procGrid}</td>
-                      <td class=sidePanel valign=top>
-                          <table border=0 width=100% cellspacing=0 cellpadding=0><tr><td class=prcFldLbl style="border: none;">Procedure Date</td></tr>
+                      <td class=sidePanel valign=top style="height: 40vh;">
+                          <table border=0 width=100% cellspacing=0 cellpadding=0>
+                            <tr><td class=prcFldLbl style="border: none;">Procedure Date</td><td rowspan=2 align=right> <table><tr><td> <table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td><center>Add PHI</td></tr></table></td><td><table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td><center>Delink</td></tr></table></td></tr></table></td></tr>
                             <tr><td>{$orscheddater}</td></tr>
-                            <tr><td>{$orlistTbl}</td></tr>
+                            <tr><td colspan=2>{$orlistTbl}</td></tr>
                           </table>
                       </td>
                    </tr>

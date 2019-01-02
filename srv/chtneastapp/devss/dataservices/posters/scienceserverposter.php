@@ -33,6 +33,34 @@ function __construct() {
 }
 
 class datadoers {
+    
+   function alldownstreamdiagnosis($request, $passdata) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400; 
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+       $sql = "SELECT distinct dxid, replace(ifnull(diagnosis,''),'\\\\','::') diagnosis FROM four.sys_master_menu_vocabulary where trim(ifnull(dxid,'')) <> '' order by diagnosis";     
+       $rs = $conn->prepare($sql); 
+       $rs->execute(); 
+       if ($rs->rowCount() > 0) { 
+         $itemsfound = $rs->rowCount(); 
+         while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+           $dta[] = $r;
+         }
+         $responseCode = 200;
+         $msg = "";
+      } else { 
+       $responseCode = 404; 
+       $msg = "NO SITES FOUND";
+     }
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
+    
+    
 
    function diagnosismetsdownstream($request, $passdata) { 
      $rows = array(); 

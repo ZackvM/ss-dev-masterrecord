@@ -85,7 +85,7 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 #hlpText { width: 100%; font-family: Roboto; font-size: 1.8vh; line-height: 1.6em; text-align: justify; padding: 1vh 0 0 0; }
 
 /* GENERAL CONTROLS */
-.fldLabel {font-family: Roboto; font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding-top: 1vh; }
+.fldLabel {font-family: Roboto; font-size: 1.4vh;  color: rgba({$this->color_zackgrey},1); padding-top: 1vh; }
 input {width: 25vw; box-sizing: border-box; font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_mgrey},1);  }
 input:focus, input:active {background: rgba({$this->color_lamber},.5); border: 1px solid rgba({$this->color_dblue},.5);  outline: none;  }
 textarea { box-sizing: border-box; font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_mgrey},1); resize: none; }
@@ -160,8 +160,6 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #procurementAddHoldingTbl .sidePanel { width: 30vw; box-sizing: border-box;  }
 #procurementAddHoldingTbl #procGridHolderCell { width: 65vw; border-right: 1px solid rgba({$this->color_ddrwgrey},1);    }
 
-
-
 .procGridHoldingTable {width: 67vw; }
 .procGridHoldingTitle {font-size: 1.7vh; color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border-bottom: 2px solid rgba({$this->color_ddrwgrey},1); padding: .5vh 0 0 0; } 
 .procGridHoldingDecorationLine { padding: 1vh 0 0 0;  }
@@ -186,7 +184,7 @@ textarea { font-size: 1.3vh; }
 #fldProtocolNbr {width: 10vw;}
 
 #fldPRCSpecCat {width: 13vw; }
-#ddPRCSpecCat {width: 13vw; }
+#ddPRCSpecCat {min-width: 13vw; }
 #fldPRCSite {width: 12vw; }
 #ddPRCSite { min-width: 15vw; }
 #fldPRCSSite {width: 11vw; }
@@ -245,23 +243,26 @@ textarea { font-size: 1.3vh; }
 #fldPRCPathRpt { width: 5vw; }
 #ddPRCPathRpt { width: 5vw; }
 
-#dspORListing { height: 36vh; overflow: auto; }
 
-#divORHolder {height: 45vh; overflow: auto; border: 1px solid rgba({$this->color_zackgrey},1); margin-top: .2vh;  }
-.smallORTblLabel {width: 1vw; text-align: right; font-weight: bold; }
-#PXIDspTbl { width: 28vw; box-sizing: border-box; border-collapse: collapse;border: none; font-size: 1.3vh;}
-#PXIDspTbl thead th { font-size: 1vh; border-bottom: 1px solid rgba({$this->color_grey},1); }
+#divORHolder { width: 30vw; border: 1px solid rgba({$this->color_zackgrey},1); margin-top: .2vh; position: relative; box-sizing: border-box; font-size: 1.3vh;  }
+#headerTbl { border-bottom: 1px solid  rgba({$this->color_grey},1); background: rgba({$this->color_cornflowerblue},1);  }
+#headerTbl th { padding: .4vh 0 .4vh 0; } 
+#PXIDspTblHD {width: 30vw; box-sizing: border-box; border-collapse: collapse;}
+#dataPart {  height: 40vh; overflow-y: scroll; } 
+.procedureSpellOutTbl { border-collapse: collapse; width: 23vw;  }
 
+.dspORTarget { width: 1vw; text-align: center; }
+.dspORInformed {width: 1vw; text-align: center; }
+.dspORAdded {width: 1vw; text-align: center;}
+.dspORInitials {width: 3vw; text-align: left; }
 
-#PXIDspTbl tbody .displayRows:nth-child(even) {background: rgba({$this->color_lightgrey},1); }
-#PXIDspTbl tbody .displayRows:hover {background: rgba({$this->color_lamber},1); cursor: pointer; }
+.smallORTblLabel { width: 3.5vw; font-weight: bold; }
 
-#PXIDspTbl .dspProcCell { min-height: 5vh; }  
-#PXIDspTbl .dspORTarget { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; }
-#PXIDspTbl .dspORInformed { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; }
-#PXIDspTbl .dspORAdded { max-width: .8vw; padding: .2vw .2vh; box-sizing: border-box; } 
-#PXIDspTbl .dspORInitials { max-width: 2.8vw; padding: .2vw .2vh; box-sizing: border-box; } 
-#PXIDspTbl .dspORSARS { max-width: 3.5vw; padding: .2vw .2vh; box-sizing: border-box; } 
+#procDataDsp {border-collapse: collapse; width: 30vw;}
+.displayRows {background: rgba({$this->color_white},1); }
+.displayRows:nth-child(even) { background: rgba({$this->color_lightgrey},1); }
+.displayRows:hover {cursor: pointer; background: rgba({$this->color_lamber},1); }
+
 
 #vocabularyDspTable { width: 100%; border-collapse: collapse; } 
 #vocabularyDspTable th { font-size: 1.4vh; font-weight: bold; white-space: nowrap; text-align: left; }

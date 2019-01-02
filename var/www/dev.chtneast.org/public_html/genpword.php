@@ -1,8 +1,8 @@
 <?php
 
 //$randomBytes = bin2hex(random_bytes(8));
-$randomBytes = 'chtn@reading';
-//$randomBytes = "CHTN2587";
+//$randomBytes = '';
+$randomBytes = "Welcome2CHTN";
 $options = [
     'cost' => 12,
 ];

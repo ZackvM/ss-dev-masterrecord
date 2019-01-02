@@ -449,6 +449,7 @@ function procurebiosample($rqstrstr) {
     $tt = treeTop;
 
     $rtnthis = <<<JAVASCR
+            
 document.addEventListener('DOMContentLoaded', function() {  
 
 //  clearGrid();
@@ -461,10 +462,21 @@ document.addEventListener('DOMContentLoaded', function() {
       byId('fldPRCDXOverride').addEventListener('change', function() { 
         if (byId('fldPRCDXOverride').checked) {
           //LIST THE WHOLE DX HERE
-          alert('THIS OPERATION IS NON-FUNCIONAL AT THIS TIME');
+          byId('ddPRCDXMod').innerHTML = ""; 
+          byId('fldPRCDXMod').value = "";
+          byId('fldPRCDXModValue').value = "";            
+          allDiagnosisMenu();
         } else {
           //IF THE SPECCAT AND SITE FILLED IN MAKE THAT - IF NOT BLANK THE MENU
-          alert('THIS OPERATION IS NON-FUNCIONAL AT THIS TIME');
+          if ( byId('fldPRCSpecCat').value.trim() !== "" && byId('fldPRCSite').value.trim() !== "") { 
+             byId('fldPRCDXMod').value = "";
+             byId('fldPRCDXModValue').value = "";
+             updateDiagnosisMenu();  
+          } else { 
+             byId('fldPRCDXMod').value = "";
+             byId('fldPRCDXModValue').value = "";
+             byId('ddPRCDXMod').innerHTML = "";  
+          }
         }
       }, false);
     }
@@ -485,8 +497,9 @@ function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxi
    byId('fldPRCPXIAge').value = "";
    byId('fldPRCPXIRace').value = "";            
    byId('fldPRCPXISex').value = "";                        
-
-
+   byId('fldPRCPXILastFour').value = "";
+   byId('fldPRCPXIInfCon').value = "";        
+            
    byId('fldPRCPXIId').value = pxiid;
    byId('fldPRCPXIInitials').value = pxiinitials;         
    byId('fldPRCPXIAge').value = pxiage;
@@ -644,6 +657,11 @@ function answerUpdateMETSDiagnosisMenu(rtnData) {
 
 }
 
+function allDiagnosisMenu() { 
+       var mlURL = "/data-doers/all-downstream-diagnosis"; 
+       universalAJAXStreamTwo("POST",mlURL,"",answerUpdateDiagnosisMenu,0);                 
+}            
+                       
 function updateDiagnosisMenu() { 
        var mlURL = "/data-doers/diagnosis-downstream"; 
        var dta = new Object();
@@ -654,6 +672,7 @@ function updateDiagnosisMenu() {
 }
 
 function answerUpdateDiagnosisMenu(rtnData) { 
+            console.log(rtnData);
   if (parseInt(rtnData['responseCode']) === 200) {
     var dta = JSON.parse( rtnData['responseText'] );
     var rquestFld = dta['MESSAGE'];

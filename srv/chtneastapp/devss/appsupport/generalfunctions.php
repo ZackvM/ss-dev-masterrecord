@@ -254,6 +254,23 @@ if ((int)$nextMonth === 13) {
 
 //******FORMATTING
     switch (strtolower($whichcalendar)) {
+     case 'mainroot':
+        $calTblId = "mainRootTbl";
+        $leftBtnId = "mainRootLeftCtl";
+        $calTitle = "mainRootCalTitle";
+        $rightBtnId = "mainRootRightCtl";
+        $dayHeadClass = "mainRootCalHeadDay";
+        $topSpacer = "mainRootTopSpacer";
+        $btmSpacer = "mainRootBtmSpacer";
+        $daySquare = "mnuMainRootDaySquare";
+        $btmLine = "mainRootBtmLine";
+        $calendarClass = "ddMainRootMenuCalendar";
+        $calTitleClass = "ddMainRootMenuCalTitle";
+        $topBarClass = "ddMainRootMenuCalTopRow";
+        $topCtlBtnClass= "smallMainRootCtlBtn";
+        $leftBtnAction  = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$lastMonth}','{$lastYear}');\" ";
+        $rightBtnAction = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$nextMonth}','{$nextYear}');\" ";          
+         break;
      case 'procedureprocurequery':
         $calTblId = "pqcTbl";
         $leftBtnId = "pqcLeft";
@@ -488,6 +505,12 @@ while ($currentDay <= $numberOfDays) {
          $action = " onclick=\" fillField('shpQryToDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
          $dayDsp = $currentDayDsp;
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('shpQryToDate','','');\" ><center>[clear]</td></tr>";
+         break;
+        case 'mainroot': 
+         $sqrID = "daySqr{$currentDayDsp}";
+         $action = " onclick=\"alert('{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
+         $dayDsp = $currentDayDsp;
+         $btmLineDsp = "";
          break;
        default: 
          $sqrID = "daySqr{$currentDayDsp}";

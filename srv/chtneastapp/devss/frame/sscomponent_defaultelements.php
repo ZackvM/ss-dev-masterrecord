@@ -10,6 +10,11 @@ $hlpfile = buildHelpFiles($whichpage, $rqststr);
 
 if ($whichpage !== "login") { 
   $tt = treeTop;    
+  
+  $at = genAppFiles;
+  //$profpic = base64file("{$at}/publicobj/graphics/usrprofile/{$whichUsr->profilepicturefile}", "userprofilepicture", "png", false);   
+  
+  
   $thisAcct = <<<THISMENU
 
 <div id=appcard_useraccount class=appcard> 
@@ -17,6 +22,7 @@ if ($whichpage !== "login") {
   </div>   
     <div id=usrAccountDspDiv>
       <table border=1>
+        <tr><td colspan=2></td></tr> 
         <tr><td>Login Name: </td><td>{$whichUsr->useremail}</td></tr>
         <tr><td>DB ID: </td><td>{$whichUsr->userid}</td></tr>
         <tr><td>User's Name: </td><td>{$whichUsr->username}</td></tr>
