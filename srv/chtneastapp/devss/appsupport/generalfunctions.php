@@ -285,8 +285,8 @@ if ((int)$nextMonth === 13) {
         $calTitleClass = "ddMenuCalTitle";
         $topBarClass = "ddMenuCalTopRow";
         $topCtlBtnClass= "smallCtlBtn";
-        $leftBtnAction  = " onclick=\"getCalendar('procedureprocurequery','procureProcedureCalendar','{$lastMonth}','{$lastYear}');\" ";
-        $rightBtnAction = " onclick=\"getCalendar('procedureprocurequery','procureProcedureCalendar','{$nextMonth}','{$nextYear}');\" "; 
+        $leftBtnAction  = " onclick=\"getCalendar('procedureprocurequery','procureProcedureCalendar','{$lastMonth}/{$lastYear}');\" ";
+        $rightBtnAction = " onclick=\"getCalendar('procedureprocurequery','procureProcedureCalendar','{$nextMonth}/{$nextYear}');\" "; 
         break;        
       case 'procquery':
         $calTblId = "pqcTbl";
@@ -463,7 +463,9 @@ while ($currentDay <= $numberOfDays) {
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('fldPRCProcedureDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
          $dayDsp = $currentDayDsp;
-         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('fldPRCProcedureDate','','');\" ><center>[clear]</td></tr>";         break;
+         //         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('fldPRCProcedureDate','','');\" ><center>[clear]</td></tr>";         
+         $btmLineDsp = "<tr><td colspan=7></td></tr>";          
+         break;
        case 'procquery':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\"fillTopDate('{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";

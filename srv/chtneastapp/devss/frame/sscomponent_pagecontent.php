@@ -14,6 +14,11 @@ public $checkBtn = "<i class=\"material-icons\">check</i>";
 function sysDialogBuilder($whichdialog, $passedData) {
  
     switch($whichdialog) {
+      case 'procureBiosampleEditDonor':
+        $titleBar = "Edit Donor Record";
+        //$footerBar = "DONOR RECORD";
+        $innerDialog = $passedData['phicode'];
+      break;
       case 'dataCoordinatorHPROverride':
 
         if ( count($passedData) > 0 ) {   
@@ -674,11 +679,12 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
           $dtedspthis = "<br><span class=tinyText>&nbsp;</span>";
         }
 
+        $sdencry = ( trim($val['shipdocnbr']) !== "" ) ? cryptservice($val['shipdocnbr']) : "";
         $dspSD = "<div class=ttholder>" . substr(('000000' . $val['shipdocnbr']),-6) . $dtedspthis;
         if (trim($val['sdstatus']) === "") { 
             $dspSD .= "<div class=tt>&nbsp;</div>";
         } else { 
-            $dspSD .= "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]</div>";
+            $dspSD .= "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]<br><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">file_copy</i> View Ship-Doc (" . substr(('000000' . $val['shipdocnbr']),-6) . ")</div></div>";
         }
         $dspSD .= "</div>";
     }
@@ -697,9 +703,13 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     //$sgencry = cryptservice($val['segmentid']);
     $sgencry = cryptservice($val['segmentid']);
     $bgencry = cryptservice($val['pbiosample']);
-    $sdencry = ( trim($val['shipdocnbr']) !== "" ) ? cryptservice($val['shipdocnbr']) : "";
     $moreInfo = ( trim($cmtDsp) !== "" ) ? "<div class=ttholder><div class=infoIconDiv><i class=\"material-icons informationalicon\">error_outline</i></div><div class=infoTxtDspDiv>{$cmtDsp}</div></div>" : "";
-    
+
+
+    $prDocId = ((int)$val['pathologyrptdocid'] > 0) ? cryptservice( (int)$val['pathologyrptdocid'], "e" ) : 0;
+    $pRptDsp = (trim($val['pathologyrptind']) === "Y") ? "<div class=ttholder>{$val['pathologyrptind']}<div class=tt><div class=quickLink onclick=\"displayPRpt(event,'{$prDocId}');\"><i class=\"material-icons qlSmallIcon\">file_copy</i> View Pathology Report</div></div></div>" : "{$val['pathologyrptind']}" ;
+
+
     
 $dataTbl .=  <<<LINEITEM
    <tr 
@@ -732,7 +742,7 @@ $dataTbl .=  <<<LINEITEM
   <td valign=top class="cntr">{$val['phigender']}</td>
   <td valign=top class="cntr">{$val['cxind']}</td>
   <td valign=top class="cntr">{$val['rxind']}</td>
-  <td valign=top class="cntr">{$val['pathologyrptind']}</td>
+  <td valign=top class="cntr">{$pRptDsp}</td>
   <td valign=top class="cntr">{$val['informedconsentind']}</td>
   <td valign=top>{$val['preparationmethod']}</td>
   <td valign=top>{$val['preparation']}</td>
@@ -1659,9 +1669,10 @@ switch ($whichpage) {
 case 'procurebiosample':
 $innerBar = <<<BTNTBL
 <tr>
-  <td class=topBtnHolderCell>
-    <table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td>   </td><td>Clear Grid</td></tr></table>
-  </td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBORSched border=0><tr><td><!--ICON //--></td><td>OR Schedule</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBAddPHI border=0><tr><td><!--ICON //--></td><td>Add PHI</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBAddDelink border=0><tr><td><!--ICON //--></td><td>Add Delink</td></tr></table></td>
 </tr>
 BTNTBL;
 break;
@@ -1834,7 +1845,7 @@ return "{$prcCalendar}";
 
 function bldORScheduleTbl($orarray) { 
 
-    $institution = $orarray['DATA']['institution'];
+  $institution = $orarray['DATA']['institution'];
   $ordate = $orarray['DATA']['requestDate'];
   foreach ($orarray['DATA']['orlisting'] as $ky => $val) { 
     $target = $val['targetind'];
@@ -1846,10 +1857,11 @@ function bldORScheduleTbl($orarray) {
     $proc = <<<PROCCELL
 <table class=procedureSpellOutTbl border=0>
   <tr><td valign=top class=smallORTblLabel>A-R-S </td><td valign=top>{$val['ars']}</td></tr><tr><td valign=top class=smallORTblLabel>Last Four </td><td valign=top>{$lastfour}</td></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top>{$val['proceduretext']}</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>{$val['surgeon']}</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>{$val['starttime']}</td></tr><tr><td valign=top class=smallORTblLabel>OR <td>{$val['room']}</td></tr>
+<tr><td colspan=2><div class=btnEditPHIRecord onclick="editPHIRecord(event,'{$val['pxicode']}');">Edit Record</div></td></tr>
 </table>
 PROCCELL;
 $ageuom = "yrs";
-$innerTbl .= "<tr onclick=\"fillPXIInformation('{$val['pxicode']}', '{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$prace}','{$val['pxisex']}','{$informed}','{$lastfour}'    );\" class=displayRows><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspProcCell> {$proc} </td></tr>";
+$innerTbl .= "<tr oncontextmenu=\"alert('{$val['pxicode']}');return false;\" onclick=\"fillPXIInformation('{$val['pxicode']}', '{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$prace}','{$val['pxisex']}','{$informed}','{$lastfour}'    );\" class=displayRows><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspProcCell> {$proc} </td></tr>";
 }
 
   $rtnTbl = <<<ORSCHEDTBL
@@ -1861,7 +1873,7 @@ $innerTbl .= "<tr onclick=\"fillPXIInformation('{$val['pxicode']}', '{$val['pxii
            </div>
           <div id=dataPart>
           <table id=procDataDsp>
-               <tbody>
+               <tbody id=PXIDspBody>
                 {$innerTbl}
                </tbody>
           </table>
@@ -2285,7 +2297,7 @@ function bldBiosampleProcurement($usr) {
                       <td rowspan=2 valign=top id=procGridHolderCell>{$procGrid}</td>
                       <td class=sidePanel valign=top style="height: 40vh;">
                           <table border=0 width=100% cellspacing=0 cellpadding=0>
-                            <tr><td class=prcFldLbl style="border: none;">Procedure Date</td><td rowspan=2 align=right> <table><tr><td> <table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td><center>Add PHI</td></tr></table></td><td><table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td><center>Delink</td></tr></table></td></tr></table></td></tr>
+                            <tr><td class=prcFldLbl style="border: none;">Procedure Date</td><td rowspan=2 align=right> </td></tr>
                             <tr><td>{$orscheddater}</td></tr>
                             <tr><td colspan=2>{$orlistTbl}</td></tr>
                           </table>

@@ -74,7 +74,7 @@ class objlisting {
        //TODO: MAKE CHECKS OF DATA TYPE OF REQUEST
        //TODO: MAKE SURE USER HAS RIGHT TO SEE INSTITUTION
 
-       $orSQL = "SELECT ifnull(pxicode,'ERROR') as pxicode, ifnull(targetind,'') as targetind, ifnull(infcind,0) as informedconsentindicator , if(linkeddonor = 1 or delinkeddonor = 1,'X','-') as linkage, ifnull(pxiini,'NO INITIALS') as pxiinitials, ifnull(lastfourmrn,'0000') as lastfourmrn, ifnull(pxiage,'') as pxiage, ifnull(pxirace,'') as pxirace, ifnull(pxisex,'') as pxisex, trim(concat(ifnull(pxiage,'-'), '/', ucase(substr(ifnull(pxirace,'-'),1,4)), '/', ifnull(pxisex,'-'))) as ars, ifnull(starttime,'') starttime, ifnull(room,'') room, ifnull(surgeons,'') surgeon, trim(ifnull(proctext,'')) as proceduretext FROM four.tmp_ORListing ors where date_format(listdate,'%Y%m%d') = :ordate and location = :orinstitution order by pxiini";
+       $orSQL = "SELECT ifnull(pxicode,'ERROR') as pxicode, ifnull(targetind,'') as targetind, ifnull(infcind,0) as informedconsentindicator , if(linkeddonor = 1 or delinkeddonor = 1,'X','-') as linkage, ucase(ifnull(pxiini,'NO INITIALS')) as pxiinitials, ifnull(lastfourmrn,'0000') as lastfourmrn, ifnull(pxiage,'') as pxiage, ucase(ifnull(pxirace,'')) as pxirace, ucase(ifnull(pxisex,'')) as pxisex, trim(concat(ifnull(pxiage,'-'), '/', ucase(substr(ifnull(pxirace,'-'),1,4)), '/', ucase(ifnull(pxisex,'-')))) as ars, ifnull(starttime,'') starttime, ifnull(room,'') room, ucase(ifnull(surgeons,'')) surgeon, trim(ifnull(proctext,'')) as proceduretext FROM four.tmp_ORListing ors where date_format(listdate,'%Y%m%d') = :ordate and location = :orinstitution order by pxiini";
        $orR = $conn->prepare($orSQL);
        $orR->execute(array(':ordate' => $orrqst[4], ':orinstitution' => $orrqst[3])); 
        $itemsfound = $orR->rowCount();    
@@ -1283,6 +1283,7 @@ select bs.pbiosample
       , substr(ifnull(mnucx.dspvalue,''),1,1) as cxind
       , substr(ifnull(mnurx.dspvalue,''),1,1) as rxind
       , substr(ifnull(mnupr.dspvalue,''),1,1) as pathologyrptind
+      , ifnull(bs.pathreportid,0) as pathologyrptdocid 
       , substr(ifnull(mnuinfc.dspvalue,''),1,1) as informedconsentind
       , ifnull(bs.associd,'') as associd
       , ifnull(bs.biosamplecomment,'') as bscomment

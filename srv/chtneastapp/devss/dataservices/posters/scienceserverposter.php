@@ -1010,6 +1010,40 @@ class datadoers {
        return $rows;      
     }
 
+    function preprocessphiedit($request, $passdata) { 
+      $responseCode = 400; 
+      require(serverkeys . "/sspdo.zck");  
+      $error = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $data = array();
+      $errorInd = 0;
+      $pdta = json_decode($passdata, true);
+
+      //MAKE CHECKS HERE 
+      if ( 1 !== 1) { 
+        $errorInd = 1;
+        $msgArr[] .= "User not allowed edit function on this donor record";
+        $msgArr[] .= $pdta['phicode'];
+      }               
+
+      if (trim($pdta['phicode']) === "") { 
+        $errorInd = 1;
+        $msgArr[] .= "Missing Donor Record ID.  See a CHTNEastern Informatics Staff.";
+      } 
+      //END CHECKS HERE
+
+      if ($errorInd === 0) { 
+        $responseCode = 200;
+        $dta = array('pagecontent' =>   bldDialog('procureBiosampleEditDonor', $pdta)); 
+      }
+
+      $msg = $msgArr;       
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+      return $rows;        
+    }
+
     function preprocessoverridehpr($request, $passdata) { 
       $responseCode = 400; 
       require(serverkeys . "/sspdo.zck");  
@@ -1027,10 +1061,8 @@ class datadoers {
             $bgArr[] = $value['biogroup'];
         }
       }
-
       //DATA CHECKS  
       ( count($bgArr) < 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "NO BIOGROUPS WERE SUBMITTED FOR QMS/HPR OVER-RIDE")) : "";
-
       if ($errorInd === 0) { 
         $responseCode = 200;
         $dta = array('pagecontent' =>  bldDialog('dataCoordinatorHPROverride', $bgArr));

@@ -159,6 +159,9 @@ function modalbackbuilder($whichpage) {
 function modaldialogbuilder($whichpage) {
    $thisModDialog = ""; 
    switch ($whichpage) { 
+       case 'procurebiosample': 
+           $thisModDialog = "<div id=standardModalDialog></div>";
+       break;
        case 'datacoordinator': 
            $thisModDialog = "<div id=standardModalDialog></div>";
        break;

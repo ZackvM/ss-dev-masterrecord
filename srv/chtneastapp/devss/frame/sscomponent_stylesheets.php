@@ -551,6 +551,10 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #contentMenuTbl .contextOptionHolder:hover .cmOptionIcon {color: rgba({$this->color_dblue},1); }
 #contentMenuTbl .contextOptionHolder:hover .cmOptionText {color: rgba({$this->color_dblue},1); }
 
+.quickLink { margin-top: .6vh; margin-bottom: .6vh; }
+.quickLink:hover { color: rgba({$this->color_neongreen},1); }
+.quickLink .qlSmallIcon {font-size: 1.2vh; }
+
 #resultHoldingDiv { position: relative; } 
 #resultHoldingDiv #recordResultDiv {  display: block;}
 #resultHoldingDiv #dspParameterGrid { display: none;}
