@@ -14,10 +14,15 @@ public $checkBtn = "<i class=\"material-icons\">check</i>";
 function sysDialogBuilder($whichdialog, $passedData) {
  
     switch($whichdialog) {
-      case 'procureBiosampleEditDonor':
-        $titleBar = "Edit Donor Record";
+      case 'dataCoordUploadPR':
+        $titleBar = "Quick-Upload Pathology Report Upload";
         //$footerBar = "DONOR RECORD";
-        $innerDialog = $passedData['phicode'];
+        $innerDialog = bldQuickPRUpload( $passedData );
+        break;
+      case 'procureBiosampleEditDonor':
+        $titleBar = "Quick-Edit Donor Record";
+        //$footerBar = "DONOR RECORD";
+        $innerDialog = bldQuickEditDonor( $passedData );
       break;
       case 'dataCoordinatorHPROverride':
 
@@ -181,8 +186,7 @@ BGTBL;
               $hprtTbl .= "<tr><td onclick=\"fillField('fldHPRTray','{$hprv['scancode']}','{$hprv['locationdsp']}');\">{$hprv['locationdsp']}</td></tr>";
               }
           }
-          $hprtTbl .= "</table>";
-          
+          $hprtTbl .= "</table>"; 
           $traylist = "<table border=0><tr><th align=left>Slide Tray</th></tr><tr><td><div class=menuHolderDiv><input type=hidden id=\"fldHPRTrayValue\"><input type=text id=\"fldHPRTray\" style=\"width: 15vw;\" READONLY><div class=valueDropDown style=\"width: 15vw;\">{$hprtTbl}</div></div></td></tr><tr><th align=left>Inventory User PIN</th></tr><tr><td><input type=password id=fldUsrPIN style=\"width: 15vw;\"></td></tr><tr><td align=right><table class=tblBtn id=btnHPRSendTray style=\"width: 6vw;\" onclick=\"sendHPRTray();\"><tr><td style=\"white-space: nowrap;\"><center>Send Tray</td></tr></table></td></tr><tr><td style=\"width: 15vw; text-align: justify;\"><b>CHTNEASTERN SOP DEVIATION NOTIFICATION</b>: This is NOT a standard inventory screen and should only be used in extenuating operating circumstances.  The use of this screen will be tracked as a deviation from standard operating procedures. Please enter a reason for the deviation below.</td></tr><tr><td><b>Deviation Reason</b></td></tr><tr><td><div class=menuHolderDiv><input type=text id=fldDeviationReason style=\"width: 15vw;\"><div class=valueDropDown>{$devm}</div></div></td></tr></table>";
           $biogroupTbl .= "<td valign=top>{$traylist}</td></tr>";
           $biogroupTbl .= "<tr><td valign=top>&nbsp;</td></tr><tr><td colspan=2>Slide Option Menu Legend: X = Slide has been used in QMS / H = Slide is part of HPR Group / A = Slide is assigned to investigator</td></tr></table></form>";
@@ -661,7 +665,10 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     }
 
     $sglabel = preg_replace( '/[Tt]_/','',$val['bgs']);
-    $stsDte = (trim($val['statusdate']) === "") ? "&nbsp;" : "(Status Date: {$val['statusdate']})";    
+    $stsDte = (trim($val['statusdate']) === "") ? "&nbsp;" : "Status Date: {$val['statusdate']}";
+    $stsDte .= (trim($val['statusby']) === "") ? "" : "<br>Status by: {$val['statusby']}";
+
+
     $assmnt = (strtoupper(substr($val['assignedinvestigator'],0,3)) === "INV") ?  "{$val['assignedinvestigatorlname']}, {$val['assignedinvestigatorfname']} ({$val['assignedinvestigator']})<br>{$val['assignedinvestigatorinstitute']}" : "" ;
     $subsitedsp = (trim($val['subsite']) === "") ? "" : ("::" . $val['subsite']);
     $modds = (trim($val['diagnosismodifier']) === "") ? "" : ("::" . $val['diagnosismodifier']);
@@ -705,9 +712,42 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $bgencry = cryptservice($val['pbiosample']);
     $moreInfo = ( trim($cmtDsp) !== "" ) ? "<div class=ttholder><div class=infoIconDiv><i class=\"material-icons informationalicon\">error_outline</i></div><div class=infoTxtDspDiv>{$cmtDsp}</div></div>" : "";
 
-
-    $prDocId = ((int)$val['pathologyrptdocid'] > 0) ? cryptservice( (int)$val['pathologyrptdocid'], "e" ) : 0;
-    $pRptDsp = (trim($val['pathologyrptind']) === "Y") ? "<div class=ttholder>{$val['pathologyrptind']}<div class=tt><div class=quickLink onclick=\"displayPRpt(event,'{$prDocId}');\"><i class=\"material-icons qlSmallIcon\">file_copy</i> View Pathology Report</div></div></div>" : "{$val['pathologyrptind']}" ;
+    switch (trim($val['pathologyrptind'])) { 
+      case 'Y':
+        if ((int)$val['pathologyrptdocid'] !== 0) {  
+          $prDocId = ((int)$val['pathologyrptdocid'] > 0) ? cryptservice( (int)$val['pathologyrptdocid'], "e" ) : 0;
+          $dspBG = substr($sglabel,0,5);
+          $pRptDsp = <<<PRPTNOTATION
+<div class=ttholder>{$val['pathologyrptind']}
+   <div class=tt>
+     <div class=quickLink onclick="printPRpt(event,'{$prDocId}');"><i class="material-icons qlSmallIcon">print</i> Print Pathology Report ({$dspBG})</div>
+     <div class=quickLink onclick="alert('here');"><i class="material-icons qlSmallIcon">file_copy</i> Edit Pathology Report ({$dspBG})</div>
+   </div>
+</div>
+PRPTNOTATION;
+        } else { 
+          $pRptDsp = <<<PRPTNOTATION
+<div class=ttholder>{$val['pathologyrptind']}
+   <div class=tt>
+     Biogroup has multiple pathology Report References.  See a CHTNEastern Informatics Staff Member
+   </div>
+</div>
+PRPTNOTATION;
+        }
+      break;
+      case 'P':
+        $dspBG = substr($sglabel,0,5);
+        $pRptDsp = <<<PRPTNOTATION
+<div class=ttholder>{$val['pathologyrptind']}
+   <div class=tt>
+     <div class=quickLink onclick="getUploadNewPathRpt(event,{$sglabel});"><i class="material-icons qlSmallIcon">file_copy</i> Upload Pathology Report (Biogroup: {$dspBG})</div>
+   </div>
+</div>
+PRPTNOTATION;
+      break; 
+      default: 
+        $pRptDsp = "{$val['pathologyrptind']}";
+    }
 
 
     
@@ -736,7 +776,7 @@ $dataTbl .=  <<<LINEITEM
   <td valign=top>{$val['diagnosis']}{$modds}</td>
   <td valign=top>{$val['metssite']}</td>
   <td valign=top class=groupingstart>{$val['procurementdate']}</td>
-  <td valign=top><div class=ttholder>{$val['procuringinstitutioncode']}<div class=tt>{$val['procuringinstitution']}</div></div></td>
+  <td valign=top align=right><div class=ttholder>{$val['procuringinstitutioncode']} / {$val['proctype']}<div class=tt align=left>{$val['procuringinstitution']}<br>Procedure: {$val['proctypedsp']}</div></div></td>
   <td valign=top class="groupingstart cntr">{$val['phiage']}</td>
   <td valign=top class="cntr"><div class=ttholder>{$val['phiracecode']}<div class=tt>{$val['phirace']}</div></div></td>
   <td valign=top class="cntr">{$val['phigender']}</td>
@@ -747,7 +787,7 @@ $dataTbl .=  <<<LINEITEM
   <td valign=top>{$val['preparationmethod']}</td>
   <td valign=top>{$val['preparation']}</td>
   <td valign=top class="cntr">{$val['hourspost']}</td>
-  <td valign=top>{$val['metric']} {$val['metricuom']}</td>
+  <td valign=top style="white-space:nowrap;">{$val['metric']}{$val['metricuom']}</td>
   <td valign=top class="cntr">{$val['qty']}</td>
   <td valign=top class=groupingstart>{$dspSD}</td>
   <td valign=top>{$assmnt}</td>
@@ -800,7 +840,7 @@ TBLPARAGRID;
 
 
 $dspTbl = <<<DSPTHIS
-<table border=0><tr><td>Items found: {$itemsfound} <input type=hidden value="{$rqststr[2]}" id=urlrequestid></td><td align=right>(right-click grid for context menu)</td></tr>
+<table border=0><tr><td>Items found: {$itemsfound} <input type=hidden value="{$rqststr[2]}" id=urlrequestid></td><td align=right>(Hover mouse on grid for context menu)</td></tr>
 <tr><td colspan=2>{$dataTbl}&nbsp;</td></tr>
 </table>
 DSPTHIS;
@@ -1841,6 +1881,106 @@ $prcCalendar = <<<CALENDAR
 </div>
 CALENDAR;
 return "{$prcCalendar}";
+}
+
+function bldQuickPRUpload($passeddata) { 
+//passeddata = {"user":"zacheryv@mail.med.upenn.edu","sessionid":"mjfk2f5lmcs92chkoet1143ab2","labelnbr":"83108001","pbiosample":83108,"pathreportind":2,"pathreportid":0,"site":"BRAIN (MALIGNANT)","diagnosis":"GLIOBLASTOMA MULTIFORME","procinstitution":"HUP","proceduredate":"03\/26\/2018"}
+    
+$pdta = $passeddata;
+$errorInd = 0;
+$errorMsg = "";
+
+if (trim($pdta['pbiosample']) === "" || !is_numeric($pdta['pbiosample'])) {  $errorInd = 1; $errorMsg .= "##Database Biogroup ID is incorrect.  See a CHTNEastern Informatics Staff Member"; }  
+if ( $pdta['pathreportind'] !== 2 ) {  $errorInd = 1; $errorMsg .= "##This biogroup is already marked as having a Pathology Report.  You should 'Edit' instead of uploading"; }  
+if ( $pdta['pathreportid'] !== 0 ) {  $errorInd = 1; $errorMsg .= "##This biogroup is already marked as having a Pathology Report.  You should 'Edit' instead of uploading"; }  
+if ($errorInd === 0) {
+
+$devarr = json_decode(callrestapi("GET", dataTree . "/global-menu/dev-menu-pathology-report-upload",serverIdent, serverpw), true);
+$devm = "<table border=0 class=menuDropTbl>";
+foreach ($devarr['DATA'] as $devval) {
+  $devm .= "<tr><td onclick=\"fillField('fldDialogPRUPDeviationReason','','{$devval['menuvalue']}');\" class=ddMenuItem>{$devval['menuvalue']}</td></tr>";
+}
+$devm .= "</table>";
+
+
+$bg = $pdta['pbiosample'];
+$rtnThis = <<<RTNTHIS
+<input type=hidden id=fldDialogPRUPLabelNbr value='{$pdta['labelnbr']}'>
+<input type=hidden id=fldDialogPRUPBG value='{$pdta['pbiosample']}'>
+<input type=hidden id=fldDialogPRUPUser value='{$pdta['user']}'>
+<input type=hidden id=fldDialogPRUPSess value='{$pdta['sessionid']}'>
+<input type=hidden id=fldDialogPRUPPXI value='{$pdta['pxiid']}'>
+<table border=0 id=PRUPHoldTbl cellspacing=0 cellpadding=0>
+<tr><td colspan=7 id=VERIFHEAD>INFORMATION VERIFICATION</td></tr>
+<tr><td class=lblThis style="width: 8vw;">Biogroup</td><td class=lblThis style="width: 15vw;">Site</td><td class=lblThis style="width: 15vw;">Diagnosis</td><td class=lblThis style="width: 8vw;">Institution</td><td class=lblThis style="width: 10vw;">Procedure Date</td><td class=lblThis style="width: 10vw;">A/R/S</td><td></td></tr>
+<tr><td class=dspVerif>{$bg}</td><td class=dspVerif>{$pdta['site']}</td><td class=dspVerif>{$pdta['diagnosis']}</td><td class=dspVerif>{$pdta['procinstitution']}</td><td class=dspVerif>{$pdta['proceduredate']}</td><td class=dspVerif>{$pdta['ars']}</td><td></td></tr>
+
+<tr><td colspan=7 class=headhead>Pathology Report Text</td></tr>
+<tr><td colspan=7 style="padding: 0 0 0 .4vw;"><TEXTAREA id=fldDialogPRUPPathRptTxt></TEXTAREA></td></tr>
+<tr><td colspan=7 style="padding: .4vh .8vw .4vh .8vw;"><input type=checkbox id=HIPAACertify><label for=HIPAACertify id=HIPAABoxLabel>By clicking this box, I ({$pdta['user']}) certify that this Pathology Report Text DOES NOT contain any HIPAA patient identifiers.  This includes:  names, birthdays, addresses, phone numbers, email addresses, physician names, pathology assistance names, technician names, institution names, dates, etc.  I have made myself familiar with the HIPAA identifiers and certify that ALL HIPAA idenitifers have been removed as per CHTNEastern Standard Operating Procedures.  This pathology report is redacted so that the donor/patient cannot be identified.</td></tr>
+
+<tr><td colspan=7><center>
+<table><tr><td class=headhead valign=bottom>Override PIN (Inventory PIN)</td><td style="width: 12vw;" valign=bottom> <div class="ttholder headhead">SOP DEVIATION (?)<div class=tt style="width: 25vw;">This is NOT a standard operational screen and should only be used in extenuating circumstances.  The use of this screen will be tracked as a deviation from standard operating procedures.<br>Please enter a reason for the deviation below.</div></div>   </td></tr>
+<tr><td style="padding: 0 0 0 .5vw;"><input type=password id=fldUsrPIN style="width: 11vw; font-size: 1.3vh;"></td><td style="padding: 0 0 0 .5vw;"><div class=menuHolderDiv><input type=text id=fldDialogPRUPDeviationReason style="font-size: 1.3vh; width: 13vw;"><div class=valueDropDown>{$devm}</div></div></td></tr>
+</table>
+</td></tr>
+
+<tr><td colspan=7 align=right style="padding: 0 20vw 0 0;"><table class=tblBtn id=btnUploadPR style="width: 6vw;" onclick="uploadPathologyReportText();"><tr><td style="white-space: nowrap;"><center>Upload</td></tr></table></td></tr>
+
+</table>
+RTNTHIS;
+} else { 
+  //ERROR DISPLAY GOES HERE
+    $rtnThis = <<<RTNTHIS
+{$errorMsg}
+RTNTHIS;
+}
+
+return $rtnThis;
+}
+
+function bldQuickEditDonor($passeddata) { 
+  $pdta = array();  
+  $pdta['donorid'] = cryptservice($passeddata['phicode'],'e');
+  $pdta['presentinstitution'] = $passeddata['presentinstitution'];
+  $pdta['sessionid'] = $passeddata['sessionid'];
+  $passdata = json_encode($pdta); 
+  //$doarr = callrestapi("POST",dataTree."/data-doers/anon-donor-object",serverIdent,serverpw,$passdata);
+  $doarr = json_decode( callrestapi("POST",dataTree."/data-doers/anon-donor-object",serverIdent,serverpw,$passdata), true );
+  if ((int)$doarr['ITEMSFOUND'] === 1) { 
+    //{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"pxicode":"311fd9c5-ff5e-4fcf-ae68-b49a9659bcaa","listdate":"05\/07\/2018","location":"HUP","locationname":"Hospital of The University of Pennsylvania","starttime":"2:30","surgeons":"GARCIA, FERMIN","donorinitials":"A.B","lastfour":"9228","donorage":"61","ageuom":"Years","donorrace":"-","donorsex":"M","proctext":"M1 ELECTROPHYSIOLOGIC EVALUATION TRANSEPTAL W TREATMENT OF ATRIAL FIBRILLATION BY PULMONARY VEIN ISOLATIONLRB NA","targetind":"-","informedind":0,"linkeddonor":"0","delinkeddonor":"0"}} 
+    $pxicode = $doarr['DATA']['pxicode'];
+    $ORDate = $doarr['DATA']['listdate'];
+    $locationdsp = $doarr['DATA']['locationname'];
+    $location = $doarr['DATA']['location'];
+    $starttime = $doarr['DATA']['starttime'];
+    $surgeons = $doarr['DATA']['surgeons'];
+    $donorinitials = $doarr['DATA']['donorinitials'];
+    $lastfour = $doarr['DATA']['lastfour'];
+    $donorage = $doarr['DATA']['donorage'];
+    $donorageuom = $doarr['DATA']['ageuom'];
+    $donorrace = $doarr['DATA']['donorrace'];
+    $donorsex = $doarr['DATA']['donorsex'];
+    $proceduretext = $doarr['DATA']['proctext'];
+    $targetind = $doarr['DATA']['targetind'];
+    $informedconsent = $doarr['DATA']['informedind'];
+    $linkeddonor = ((int)$doarr['DATA']['linkeddonor'] === 1) ? "Yes" : "";
+    $delinkeddonor = ((int)$doarr['DATA']['delinkeddonor'] === 1) ? "Yes" : "";
+    //{"notetext":"And another note goes here","bywho":"proczack","enteredon":"01\/04\/2019 08:32"},{"notetext":"Case Note: This is a test case Note","bywho":"proczack","enteredon":"01\/04\/2019 08:31"}]
+    $casenotes = $doarr['DATA']['casenotes'];
+    $rtnThis = <<<RTNTHIS
+<table>
+<tr><td>Donor Record ID: </td><td> {$pxicode} </td></tr>
+</table>
+RTNTHIS;
+  } else { 
+    //BUILD ERROR
+    $rtnThis = <<<RTNTHIS
+ERROR: NO DONOR RECORD FOUND.  SEE A CHTNEAST INFORMATICS STAFF MEMBER
+RTNTHIS;
+  } 
+   
+return $rtnThis;
 }
 
 function bldORScheduleTbl($orarray) { 

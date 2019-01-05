@@ -1246,39 +1246,6 @@ $rtnthis = <<<JAVASCR
 
 
 var rowidclick = "";
-function openRightClickMenu(whichmenu, whichelementclicked) { 
-//  if (byId('resultTblContextMenu')) { 
-//    if (byId('resultTblContextMenu').style.display === 'none' || byId('resultTblContextMenu').style.display === '') {
-//      rowidclick = whichelementclicked;
-//      var bg = byId(whichelementclicked).dataset.biogroup;
-//      var sg = byId(whichelementclicked).dataset.bgslabel;
-//      var sh = byId(whichelementclicked).dataset.shipdoc;
-//      console.log(sh);  
-//      byId('EDITBGDSP').innerHTML = "Edit Biogroup "+bg; 
-//      byId('EDITSEGDSP').innerHTML = "Edit Segment "+sg;  
-//      if (parseInt(sh) === 0) { 
-//        byId('EDITSHPDOC').innerHTML = "Segment is not on a Ship-Doc";
-//        byId('PRINTSD').innerHTML = "No Ship-Doc to Print"; 
-//      } else {
-//        var shpnbr = ("000000"+sh).substr(-6);
-//        byId('EDITSHPDOC').innerHTML = "Edit Ship-Doc "+shpnbr; 
-//        byId('PRINTSD').innerHTML = "Print Ship-doc "+shpnbr; 
-//      }
-//      byId('resultTblContextMenu').style.left = (mousex - 10) + "px";
-//      byId('resultTblContextMenu').style.top = (mousey - 10) + "px";
-//      byId('resultTblContextMenu').style.display = "block";
-//    } else { 
-//      rowidclick = "";
-//      byId('EDITBGDSP').innerHTML = "Edit Biogroup"; 
-//      byId('EDITSEGDSP').innerHTML = "Edit Segment"; 
-//      byId('EDITSHPDOC').innerHTML = "Edit Ship-Doc"; 
-//      byId('PRINTSD').innerHTML = "View/Print Ship-Doc"; 
-//      byId('resultTblContextMenu').style.left = "-999px";
-//      byId('resultTblContextMenu').style.top = "-999px";
-//      byId('resultTblContextMenu').style.display = "none";
-//    }
-//  }
-}    
 
 var key;         
 document.addEventListener('DOMContentLoaded', function() {  
@@ -1378,7 +1345,7 @@ document.addEventListener('DOMContentLoaded', function() {
       byId(element.id).addEventListener('contextmenu', function(e) { 
          e.preventDefault();
          openRightClickMenu('resultstable',element.id);
-      }, false)   ;       
+      }, false);       
     });
   }
 
@@ -1453,7 +1420,81 @@ function selectorInvestigator() {
 
 }
 
-function displayPRpt(e, pathrptencyption) { 
+function getUploadNewPathRpt(e, labelNbr) { 
+  e.stopPropagation();
+  if (labelNbr.toString().trim() !== "") { 
+    var mlURL = "/preprocess-pathology-rpt-upload/"+labelNbr.toString();
+    universalAJAX("GET",mlURL,"",answerGetUploadNewPathRpt, 1);
+  }
+}
+
+function answerGetUploadNewPathRpt(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("Pathology Report Upload Error:\\n"+dspMsg);
+   } else { 
+     //DISPLAY SHIPDOC CREATOR
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = 0;
+       byId('standardModalDialog').style.left = "8vw";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "3vh";
+       byId('systemDialogTitle').style.width = "82vw";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+   }        
+}
+
+function uploadPathologyReportText() { 
+  var dta = new Object(); 
+  dta['labelNbr'] = byId('fldDialogPRUPLabelNbr').value.trim();
+  dta['bg'] = byId('fldDialogPRUPBG').value.trim();
+  dta['user'] = byId('fldDialogPRUPUser').value.trim();
+  dta['pxiid'] = byId('fldDialogPRUPPXI').value.trim();
+  dta['sess'] = byId('fldDialogPRUPSess').value.trim();
+  dta['prtxt'] = byId('fldDialogPRUPPathRptTxt').value.trim();
+  dta['hipaacert'] = byId('HIPAACertify').checked;
+  dta['usrpin'] = window.btoa( encryptedString(key, byId('fldUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );
+  dta['deviation'] = byId('fldDialogPRUPDeviationReason').value.trim();
+  var passdata = JSON.stringify(dta); 
+  //TODO MAKE A 'PLEASE WAIT' INDICATION - AS THIS PROCESS CAN TAKE UP TO 10+ SECONDS 
+  var mlURL = "/data-doers/pathology-report-upload-override";
+  universalAJAX("POST",mlURL,passdata,answerPathologyReportUploadOverride,2);          
+}
+
+function answerPathologyReportUploadOverride(rtnData) { 
+  
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("PATHOLOGY REPORT UPLOAD ERROR:\\n"+dspMsg);
+   } else { 
+    //PATH REPORT HAS BEEN SAVED
+    alert('PATHOLOGY REPORT WAS SUCCESSFULLY UPLOADED');
+    byId('fldDialogPRUPLabelNbr').value = "";
+    byId('fldDialogPRUPBG').value = "";
+    byId('fldDialogPRUPUser').value = "";
+    byId('fldDialogPRUPSess').value = "";
+    byId('fldDialogPRUPPathRptTxt').value = "";
+    byId('HIPAACertify').checked = false;
+    byId('fldUsrPIN').value = "";
+    byId('fldDialogPRUPDeviationReason').value = ""; 
+    byId('standardModalDialog').style.display = 'none';
+    location.reload();
+  }
+}
+
+function printPRpt(e, pathrptencyption) { 
   e.stopPropagation();
   if (pathrptencyption == '0') { 
   } else { 
@@ -1604,7 +1645,7 @@ function clearCriteriaGrid() {
   }
 }
 
-function fillField(whichfield, whichvalue, whichdisplay) { 
+function fillField(whichfield, whichvalue, whichdisplay) {
   if (byId(whichfield)) { 
      byId(whichfield).value = whichdisplay; 
      if (byId(whichfield+'Value')) { 

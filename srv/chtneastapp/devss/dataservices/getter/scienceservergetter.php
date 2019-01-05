@@ -35,6 +35,68 @@ class objgetter {
 
 class objlisting { 
 
+
+  function preprocesspathologyrptupload($request, $urirqst) { 
+   $rows = array(); 
+   $dta = array(); 
+   $orlist = array();
+   $responseCode = 400; 
+   $msg = "BAD REQUEST";
+   $msgArr = array();
+   $itemsfound = 0;
+   require(serverkeys . "/sspdo.zck");
+   $orrqst = explode("/", $urirqst);
+   session_start(); 
+   $usr = chkUserBySession(session_id());
+
+   if ((int)$usr['allowind'] === 1 && (int)$usr['allowlinux'] === 1 && (int)$usr['allowcoord'] === 1  && (int)$usr['daysuntilpasswordexpire'] > 0 ) {
+     $usrident = $usr['emailaddress'];
+     if ( trim($orrqst[3]) <> "") {
+
+          $pdta['user'] = $usrident;
+          $pdta['sessionid'] = session_id();
+          $pdta['labelnbr'] = $orrqst[3];
+
+          $chkSQL = "SELECT sg.bgs, bs.pbiosample, bs.pathReport, ifnull(bs.pathreportid,0) as pathreportid, concat(trim(ifnull(bs.anatomicSite,'')), if(trim(ifnull(bs.tissType,''))='','', concat(' (',trim(ifnull(bs.tissType,'')),')'))) site, concat(trim(ifnull(bs.diagnosis,'')), if(trim(ifnull(bs.subdiagnos,''))='','', concat( ' :: ' , trim(ifnull(bs.subdiagnos,''))))) as diagnosis, ifnull(bs.procureInstitution,'') as procinstitution, ifnull(date_format(bs.procedureDate,'%m/%d/%Y'),'') as proceduredate, concat( if(trim(ifnull(bs.pxiAge,'')) = '', '-',trim(ifnull(bs.pxiAge,''))),'::',if(trim(ifnull(bs.pxiRace,''))='','-',ucase(trim(ifnull(bs.pxiRace,'')))),'::',if(trim(ifnull(bs.pxiGender,'')) = '','-',ucase(trim(ifnull(bs.pxiGender,''))))) ars, ifnull(bs.pxiid,'NOPXI') as pxiid FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where replace(bgs,'T_','') = :labelnbr";
+          $rs = $conn->prepare($chkSQL);
+          $rs->execute(array(':labelnbr' => trim($orrqst[3]))); 
+          if ($rs->rowCount() === 1) {
+            $r = $rs->fetch(PDO::FETCH_ASSOC);
+            $pdta['pbiosample'] = $r['pbiosample'];
+            $pdta['pathreportind'] = $r['pathReport'];
+            $pdta['pathreportid'] = $r['pathreportid'];
+            $pdta['site'] = $r['site'];
+            $pdta['diagnosis'] = $r['diagnosis'];
+            $pdta['procinstitution'] = $r['procinstitution'];
+            $pdta['proceduredate'] = $r['proceduredate'];
+            $pdta['ars'] = $r['ars'];
+            $pdta['pxiid'] = $r['pxiid'];
+          } else { 
+            $pdta['pbiosample'] = "";
+            $pdta['pathreportind'] = "";
+            $pdta['pathreportid'] = "";
+            $pdta['site'] = "";
+            $pdta['diagnosis'] = "";
+            $pdta['procinstitution'] = "";
+            $pdta['proceduredate'] = "";
+            $pdta['ars'] = "";
+          }
+          $dta = array('pagecontent' => bldDialogGetter('dataCoordUploadPR', $pdta) ); 
+          $responseCode = 200;
+
+     } else { 
+       $msgArr[] .= "The Biogroup Identifier is incorrect - See a CHTN Informatics Staff Member";
+     }
+   } else { 
+     $responseCode = 503; 
+     $msgArr[] .= "USER NOT ALLOWED";
+   }
+   $msg = $msgArr;
+   $rows['statusCode'] = $responseCode; 
+   $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+   return $rows;      
+  }
+
   function simpleorschedulewrapper($request, $urirqst) { 
    $rows = array(); 
    $dta = array(); 
@@ -804,6 +866,10 @@ class globalMenus {
       return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'DEVIATIONREASON_HPROVERRIDE' order by mnu.dspOrder";
     }
 
+    function devmenupathologyreportupload() { 
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'DEVIATIONREASON_PRUPLOAD' order by mnu.dspOrder";
+    }
+
     function chtnvocabularyspecimencategory() {
       return "select distinct catid as codevalue, specimencategory as menuvalue, 0 as useasdefault, catid as lookupvalue from four.sys_master_menu_vocabulary where trim(ifnull(catid,'')) <> '' order by specimencategory";
     }
@@ -1255,6 +1321,7 @@ select bs.pbiosample
       , ucase(ifnull(bs.pxirace,'')) as phirace
       , ifnull(bs.pxigender,'') as phigender
       , ifnull(bs.proctype,'') as proctype
+      , ifnull(mnuprctype.dspvalue,'') as proctypedsp
       , ifnull(date_format(sg.procurementdate,'%m/%d/%Y'),'') as procurementdate 
       , ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shipmentdate 
       , ifnull(sg.shipdocrefid,0) as shipdocnbr
@@ -1300,6 +1367,7 @@ left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'c
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'rx') as mnurx on bs.radind = mnurx.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') as mnupr on bs.pathreport = mnupr.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INFC') as mnuinfc on bs.informedconsent = mnuinfc.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PROCTYPE') as mnuprctype on bs.proctype = mnuprctype.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus mnu where mnu.menu = 'SEGMENTSTATUS') as mnuseg on sg.segstatus = mnuseg.menuvalue              
 where 1=1 and sg.voidind <> 1 and bs.voidind <> 1   {$sqlCritAdd} 
 order by sg.bgs
@@ -1333,3 +1401,14 @@ function runObjectSQL($sql, $id) {
     }
     return $obj;
 }
+
+function bldDialogGetter($whichdialog, $passedData) {  
+  $at = applicationTree; 
+  require("{$at}/sscomponent_pagecontent.php"); 
+  $bldr = new pagecontent(); 
+  $rtnDialog = $bldr->sysDialogBuilder($whichdialog, $passedData);
+  return $rtnDialog;
+}
+
+
+

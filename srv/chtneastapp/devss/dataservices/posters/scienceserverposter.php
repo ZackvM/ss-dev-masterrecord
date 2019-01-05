@@ -33,7 +33,150 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+   function pathologyreportuploadoverride($request, $passdata) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     //{"labelNbr":"83108001","bg":"83108","user":"zacheryv@mail.med.upenn.edu","sess":"mjfk2f5lmcs92chkoet1143ab2","prtxt":"This is pathology Report Text Here\n\nand some goes \nhere \n\nand more goes here","hipaacert":true,"usrpin":"v2Fy1YWcyVp92gNFlubMwOEOe+gbD85wxDcMvx5ep6Bw5WjiXa1XfcZvRZiL4DxFJH5We3oJdoAm4nWCCiuiEpMqhn8Q5GOk0l1HdO00FO2K6Ebur+TuRoPvGoIMskIVhcV01FA7+VaeNjjIYkb5GV4bq6mvt1FMlza3PMLmxviDc/OmQ8n2WBIHaskpPw4SpYiKmxFys0Hw0CCiJaaEyrQbleUmdZ4oliM75Wp3BPh26p7QAtAV6oHf57oXz7QQmfVkrdIDTs0c9AShBNbRfJHvqfdolSVq9dfOahl+IoWVq+hquyLWKp5iH4+Wn3jRyz+no1GKrOG9KkZ17MaxSw==","deviation":"Pathology Report Upload Not Working"}
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $sessid = session_id();
+     $usrpin = chtndecrypt($pdta['usrpin'], true);
+     $px = $pdta['pxiid'];
+     //DATA CHECKS  
+     ( trim($usrpin) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MUST ENTER YOUR OVERRIDE PIN TO SAVE THIS DOCUMENT")) : "";
+     ( !$pdta['hipaacert'] ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MUST CERTIFY THAT THERE IS NO HIPAA INFORMATION IN THE TEXT BY CLICKING THE HIPAA CERTIFY CHECK BOX")) : "";
+     ( $pdta['sess'] !== $sessid ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOUR SESSION DOESN'T MATCH THE PASSED SESSION.  LOG BACK INTO SCIENCESERVER")) : "";
+     ( $pdta['labelNbr'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU HAVE NOT SPECIFIED A BIOGROUP SEGMENT LABEL.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER")) : "";
+     ( $pdta['bg'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU HAVE NOT SPECIFIED A BIOGROUP.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER")) : "";
+     ( $pdta['user'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SCIENCESERVER DOES NOT RECOGNIZE YOUR USER NAME OR USER NAME IS MISSING")) : "";
+     ( trim($pdta['prtxt']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MUST SPECIFY SOME HIPAA REDACTED PATHOLOGY REPORT TEXT")) : "";
+     ( $pdta['deviation'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU ARE DEVIATING FROM CHTNEASTERN SOPs AND MUST THEREFORE SPECIFY A REASON")) : "";
+
+     if ( $errorInd === 0 ) { 
+        //CHECK USER
+        $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and emailaddress = :userid and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and inventorypinkey = :pinkey and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+        $rs = $conn->prepare($chkUsrSQL); 
+        $rs->execute(array(':userid' => $pdta['user'], ':sessid' => $sessid, ':pinkey' => $usrpin));
+        if ($rs->rowCount() === 1) { 
+          $usrrecord = $rs->fetch(PDO::FETCH_ASSOC);
+        } else { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+        }
+     }  
+
+     if ( $errorInd === 0 ) { 
+       //IF ERROR IS STILL ZERO - THEN WRITE PR
+       $htmlized = preg_replace('/\n\n/','<p>',$pdta['prtxt']);
+       $htmlized = preg_replace('/\r\n/','<p>', $htmlized);
+       $htmlized = preg_replace('/\n/','<br>',$htmlized);
+       $selector = strtoupper(generateRandomString(8));
+
+       $insSQL = "insert into masterrecord.qcpathreports(selector, pathreport, pxiid, uploadedby, uploadedon, biospecimen, dnpr_nbr) values(:selector, :pathreport, :pxiid, :uploadedby, now(), :biospecimen, :dnpr_nbr)";
+       $insR = $conn->prepare($insSQL); 
+       $insR->execute(array(":selector" => $selector,":pathreport" => "{$htmlized}",":pxiid" => $px,":uploadedby" => $usrrecord['originalaccountname'],":biospecimen" => $pdta['bg'],":dnpr_nbr" => $pdta['labelNbr'] ));
+       $prid = $conn->lastInsertId();
+       $bioUpd = "update masterrecord.ut_procure_biosample set pathreport = 1, pathreportid = :prid where pbiosample = :bg"; 
+       $bioUpdR = $conn->prepare($bioUpd); 
+       $bioUpdR->execute(array(':prid' => $prid, ':bg' => $pdta['bg']));
+       $responseCode = 200;
+     }
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   } 
+
+   function anondonorobject($request, $passdata) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400; 
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     $donorid = cryptservice( $pdta['donorid'] , 'd' );
+     $requestedInstitution = $pdta['presentinstitution']; 
+     $session = $pdta['sessionid'];
+
+     $donorSQL = <<<SQLSTMT
+    SELECT pxicode
+          , ifnull(date_format(listdate,'%m/%d/%Y'),'') listdate
+          , ifnull(location,'') as location
+          , ifnull(inst.institution,'') as dspinstitution
+          , ifnull(starttime,'') as starttime
+          , ifnull(surgeons,'') as surgeon
+          , ifnull(pxiini,'') as donorinitials
+          , ifnull(lastfourmrn,'') as lastfour
+          , ifnull(pxiage,'') as donorage
+          , ifnull(ageuom.dspValue,'') donorageuom
+          , ifnull(pxirace,'') as donorrace
+          , ifnull(pxisex,'') as donorsex
+          , ifnull(proctext,'') as proctext
+          , ifnull(targetind,0) as targetind
+          , ifnull(infcind,0) as infcind
+          , ifnull(linkeddonor,'') as linkeddonorind
+          , ifnull(linkby,'') as linkby
+          , ifnull(delinkeddonor,'') as delinkeddonorind
+          , ifnull(delinkby,'') as delinkedby 
+    FROM four.tmp_ORListing orl 
+    left join (SELECT menuvalue, ifnull(longvalue, dspvalue) as institution FROM four.sys_master_menus where menu = 'INSTITUTION') as inst on orl.location = inst.menuvalue
+    left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'ageuom') ageuom on orl.ageuomcode = ageuom.menuvalue 
+    where pxicode = :donorid and location = :usrpresentloc
+SQLSTMT;
+     $rs = $conn->prepare($donorSQL); 
+     $rs->execute(array(':donorid' => $donorid, ':usrpresentloc' => $requestedInstitution)); 
+ 
+     if ($rs->rowCount() === 1) { 
+       $r = $rs->fetch(PDO::FETCH_ASSOC);
+
+       $dta['pxicode'] = $r['pxicode'];
+       $dta['listdate'] = $r['listdate'];
+       $dta['location'] = $r['location'];
+       $dta['locationname'] = $r['dspinstitution'];
+       $dta['starttime'] = $r['starttime'];
+       $dta['surgeons'] = $r['surgeon']; 
+       $dta['donorinitials'] = $r['donorinitials'];
+       $dta['lastfour'] = $r['lastfour'];
+       $dta['donorage'] = $r['donorage'];
+       $dta['ageuom'] = $r['donorageuom'];
+       $dta['donorrace'] = $r['donorrace'];
+       $dta['donorsex'] = $r['donorsex'];
+       $dta['proctext'] = $r['proctext']; 
+       $dta['targetind'] = $r['targetind'];
+       $dta['informedind'] = $r['infcind']; 
+       $dta['linkeddonor'] = $r['linkeddonorind']; 
+       $dta['delinkeddonor'] = $r['delinkeddonorind'];
+
+       $noteSQL = "SELECT notetext, bywho, date_format(onwhen, '%m/%d/%Y %H:%i') as enteredon FROM four.tmp_ORListing_casenotes where donorphiid = :donorid and dspind = 1 order by enteredon desc";
+       $noteRS = $conn->prepare($noteSQL); 
+       $noteRS->execute(array(':donorid' => $donorid)); 
+       $notes = array(); 
+       while ($noteR = $noteRS->fetch(PDO::FETCH_ASSOC)) { 
+         $notes[] = $noteR;
+       }
+       $dta['casenotes'] = $notes;
+
+       $responseCode = 200; 
+       $msg = "";
+       $itemsfound = 1;
+     } else { 
+       $responseCode = 404; 
+       $msg = "DONOR NOT FOUND";
+     }
+     //$dta = $donorid ;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
+
    function alldownstreamdiagnosis($request, $passdata) { 
      $rows = array(); 
      $dta = array(); 
@@ -60,8 +203,6 @@ class datadoers {
      return $rows;                        
    }
     
-    
-
    function diagnosismetsdownstream($request, $passdata) { 
      $rows = array(); 
      $dta = array(); 
@@ -1034,8 +1175,21 @@ class datadoers {
       //END CHECKS HERE
 
       if ($errorInd === 0) { 
-        $responseCode = 200;
-        $dta = array('pagecontent' =>   bldDialog('procureBiosampleEditDonor', $pdta)); 
+        session_start();
+        $sessid = session_id();
+        $usrSQL = "SELECT presentinstitution FROM four.sys_userbase where sessionid = :sessid";
+        $usrRS = $conn->prepare($usrSQL);
+        $usrRS->execute(array(':sessid' => $sessid)); 
+        if ( $usrRS->rowCount() === 1 ) {       
+          $r = $usrRS->fetch(PDO::FETCH_ASSOC);
+          $pdta['presentinstitution'] = $r['presentinstitution'];
+          $pdta['sessionid'] = $sessid;
+          $dta = array('pagecontent' => bldDialog('procureBiosampleEditDonor', $pdta) ); 
+          $responseCode = 200;
+        } else {   
+          $errorInd = 1;
+          $msgArr[] .= "You are not a recognized user (USER KEY has expired).  Log back into scienceServer to continue.";
+        }
       }
 
       $msg = $msgArr;       
