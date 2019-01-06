@@ -34,6 +34,113 @@ function __construct() {
 
 class datadoers {
 
+   function pathologyreportcoordinatoredit( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $sessid = session_id();
+     //DATA CHECKS  
+     ( trim($usrpin) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MUST ENTER YOUR OVERRIDE PIN TO SAVE THIS DOCUMENT")) : "";
+     ( !$pdta['hipaacert'] ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MUST CERTIFY THAT THERE IS NO HIPAA INFORMATION IN THE TEXT BY CLICKING THE HIPAA CERTIFY CHECK BOX")) : "";
+     ( $pdta['sess'] !== $sessid ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOUR SESSION DOESN'T MATCH THE PASSED SESSION.  LOG BACK INTO SCIENCESERVER")) : "";
+     ( $pdta['labelNbr'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU HAVE NOT SPECIFIED A BIOGROUP SEGMENT LABEL.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER")) : "";
+     ( $pdta['bg'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU HAVE NOT SPECIFIED A BIOGROUP.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER")) : "";
+     ( $pdta['user'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SCIENCESERVER DOES NOT RECOGNIZE YOUR USER NAME OR USER NAME IS MISSING")) : "";
+     ( trim($pdta['prtxt']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MUST SPECIFY SOME HIPAA REDACTED PATHOLOGY REPORT TEXT")) : "";
+     ( trim($pdta['editreason']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU ARE EDITING A PATHOLOGY REPORT DOCUMENT.  YOU MUST PROVIDE A REASON FOR DOING SO.")) : "";
+
+
+
+
+
+
+
+
+
+      ///START HERE ... 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
+
+   function preprocesspathologyrptedit($request, $passdata) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $sessid = session_id();
+
+     $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+     $rs = $conn->prepare($chkUsrSQL); 
+     $rs->execute(array(':sessid' => $sessid));
+     if ($rs->rowCount() === 1) { 
+       $usrrecord = $rs->fetch(PDO::FETCH_ASSOC);
+     } else { 
+       (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+     }
+
+     if ($errorInd === 0) { 
+       $prid = cryptservice( $pdta['docid'], 'd');
+       
+       $pathrptSQL = "select qcpr.prid, qcpr.pathreport,  bs.read_Label as bgs, bs.pbiosample, bs.pathReport, ifnull(bs.pathreportid,0) as pathreportid, concat(trim(ifnull(bs.anatomicSite,'')), if(trim(ifnull(bs.tissType,''))='','', concat(' (',trim(ifnull(bs.tissType,'')),')'))) site, concat(trim(ifnull(bs.diagnosis, '')), if(trim(ifnull(bs.subdiagnos,''))='','', concat( ' :: ' , trim(ifnull(bs.subdiagnos,''))))) as diagnosis, ifnull(bs.procureInstitution,'') as procinstitution, ifnull(date_format(bs.procedureDate,'%m/%d/%Y'),'') as proceduredate, concat( if(trim(ifnull(bs.pxiAge,'')) = '', '-',trim(ifnull(bs.pxiAge,''))),'::',if(trim(ifnull(bs.pxiRace,''))='','-',ucase(trim(ifnull(bs.pxiRace,'')))),'::',if(trim(ifnull(bs.pxiGender,'')) = '','-',ucase(trim(ifnull(bs.pxiGender,''))))) ars, ifnull(bs.pxiid,'NOPXI') as pxiid from masterrecord.qcpathreports qcpr left join masterrecord.ut_procure_biosample bs on qcpr.prid = bs.pathreportid where qcpr.prid = :prid";
+       $pathrptRS = $conn->prepare($pathrptSQL); 
+       $pathrptRS->execute(array(':prid' => $prid));
+       if ( $pathrptRS->rowCount() === 1 ) {  
+            $r = $pathrptRS->fetch(PDO::FETCH_ASSOC);
+            $pdta['pbiosample'] = $r['pbiosample'];
+            $pdta['labelnbr'] = $r['bgs'];
+            $pdta['user'] = $usrrecord['originalaccountname'];
+            $pdta['sessionid'] = $sessid;
+            $pdta['pathreportind'] = $r['pathReport'];
+            $pdta['pathreportid'] = $r['pathreportid'];
+            $pdta['site'] = $r['site'];
+            $pdta['diagnosis'] = $r['diagnosis'];
+            $pdta['procinstitution'] = $r['procinstitution'];
+            $pdta['proceduredate'] = $r['proceduredate'];
+            $pdta['ars'] = $r['ars'];
+            $pdta['pxiid'] = $r['pxiid'];
+            $pdta['pathologyrpt'] = "{$r['pathreport']}";
+            $pdta['prid'] = $r['prid']; 
+            $dta = array('pagecontent' => bldDialogGetter('dataCoordEditPR', $pdta) ); 
+            $responseCode = 200;
+       } else { 
+         (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  PATHOLOGY REPORT NOT FOUND IN DATABASE."));
+       }
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }  
+
    function pathologyreportuploadoverride($request, $passdata) { 
      $rows = array(); 
      $dta = array(); 
@@ -43,7 +150,6 @@ class datadoers {
      $msg = "BAD REQUEST";
      $itemsfound = 0;
      require(serverkeys . "/sspdo.zck");
-     //{"labelNbr":"83108001","bg":"83108","user":"zacheryv@mail.med.upenn.edu","sess":"mjfk2f5lmcs92chkoet1143ab2","prtxt":"This is pathology Report Text Here\n\nand some goes \nhere \n\nand more goes here","hipaacert":true,"usrpin":"v2Fy1YWcyVp92gNFlubMwOEOe+gbD85wxDcMvx5ep6Bw5WjiXa1XfcZvRZiL4DxFJH5We3oJdoAm4nWCCiuiEpMqhn8Q5GOk0l1HdO00FO2K6Ebur+TuRoPvGoIMskIVhcV01FA7+VaeNjjIYkb5GV4bq6mvt1FMlza3PMLmxviDc/OmQ8n2WBIHaskpPw4SpYiKmxFys0Hw0CCiJaaEyrQbleUmdZ4oliM75Wp3BPh26p7QAtAV6oHf57oXz7QQmfVkrdIDTs0c9AShBNbRfJHvqfdolSVq9dfOahl+IoWVq+hquyLWKp5iH4+Wn3jRyz+no1GKrOG9KkZ17MaxSw==","deviation":"Pathology Report Upload Not Working"}
      $pdta = json_decode($passdata,true);
      session_start();      
      $sessid = session_id();
@@ -1916,8 +2022,6 @@ function bgsslide($whichbgs) {
   return array('responsecode' => $responseCode, 'data' => $dta);
 }
 
-
-
 /********** EMAIL TEXTING 
 AT&T: number@txt.att.net (SMS), number@mms.att.net (MMS)
 T-Mobile: number@tmomail.net (SMS & MMS)
@@ -1937,4 +2041,10 @@ C-Spire: number@cspire1.com
 Page Plus: number@vtext.com
  */
 
-
+function bldDialogGetter($whichdialog, $passedData) {  
+  $at = applicationTree; 
+  require("{$at}/sscomponent_pagecontent.php"); 
+  $bldr = new pagecontent(); 
+  $rtnDialog = $bldr->sysDialogBuilder($whichdialog, $passedData);
+  return $rtnDialog;
+}

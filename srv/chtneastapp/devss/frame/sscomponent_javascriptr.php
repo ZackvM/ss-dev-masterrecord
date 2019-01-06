@@ -1420,6 +1420,41 @@ function selectorInvestigator() {
 
 }
 
+function editPathRpt(e, docid) { 
+  e.stopPropagation();
+  if (docid.toString().trim() !== "") { 
+    var dta = new Object(); 
+    dta['docid'] = docid;
+    var passdata = JSON.stringify(dta);
+    var mlURL = "/data-doers/preprocess-pathology-rpt-edit";
+    universalAJAX("POST",mlURL,passdata,answerEditPathRpt, 1);
+  }
+}
+
+function answerEditPathRpt(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("Pathology Report Edit Error:\\n"+dspMsg);
+   } else { 
+     //DISPLAY SHIPDOC CREATOR
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = 0;
+       byId('standardModalDialog').style.left = "8vw";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "3vh";
+       byId('systemDialogTitle').style.width = "82vw";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+   }        
+}
+
 function getUploadNewPathRpt(e, labelNbr) { 
   e.stopPropagation();
   if (labelNbr.toString().trim() !== "") { 
@@ -1452,6 +1487,49 @@ function answerGetUploadNewPathRpt(rtnData) {
    }        
 }
 
+function editPathologyReportText() { 
+  var dta = new Object(); 
+  dta['labelNbr'] = byId('fldDialogPRUPLabelNbr').value.trim();
+  dta['bg'] = byId('fldDialogPRUPBG').value.trim();
+  dta['user'] = byId('fldDialogPRUPUser').value.trim();
+  dta['pxiid'] = byId('fldDialogPRUPPXI').value.trim();
+  dta['sess'] = byId('fldDialogPRUPSess').value.trim();
+  dta['prtxt'] = byId('fldDialogPRUPPathRptTxt').value.trim();
+  dta['prid'] = byId('fldDialogPRUPPRID').value.trim();
+  dta['hipaacert'] = byId('HIPAACertify').checked;
+  dta['usrpin'] = window.btoa( encryptedString(key, byId('fldUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );
+  dta['editreason'] = byId('fldDialogPRUPEditReason').value.trim();
+  var passdata = JSON.stringify(dta); 
+  //TODO MAKE A 'PLEASE WAIT' INDICATION - AS THIS PROCESS CAN TAKE UP TO 10+ SECONDS 
+  var mlURL = "/data-doers/pathology-report-coordinator-edit";
+  universalAJAX("POST",mlURL,passdata, answerEditPathologyReportText,2);          
+}
+
+function answerEditPathologyReportText(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("PATHOLOGY REPORT EDIT ERROR:\\n"+dspMsg);
+   } else { 
+    //PATH REPORT HAS BEEN SAVED
+    alert('PATHOLOGY REPORT WAS SUCCESSFULLY UPLOADED');
+    byId('fldDialogPRUPLabelNbr').value = "";
+    byId('fldDialogPRUPBG').value = "";
+    byId('fldDialogPRUPUser').value = "";
+    byId('fldDialogPRUPSess').value = "";
+    byId('fldDialogPRUPPathRptTxt').value = "";
+    byId('fldDialogPRUPPRID').value = "";
+    byId('HIPAACertify').checked = false;
+    byId('fldUsrPIN').value = "";
+    byId('fldDialogPRUPEditReason').value = ""; 
+    byId('standardModalDialog').style.display = 'none';
+    location.reload();
+  }
+}
+
 function uploadPathologyReportText() { 
   var dta = new Object(); 
   dta['labelNbr'] = byId('fldDialogPRUPLabelNbr').value.trim();
@@ -1466,11 +1544,10 @@ function uploadPathologyReportText() {
   var passdata = JSON.stringify(dta); 
   //TODO MAKE A 'PLEASE WAIT' INDICATION - AS THIS PROCESS CAN TAKE UP TO 10+ SECONDS 
   var mlURL = "/data-doers/pathology-report-upload-override";
-  universalAJAX("POST",mlURL,passdata,answerPathologyReportUploadOverride,2);          
+  universalAJAX("POST",mlURL,passdata, answerUploadPathologyReportText,2);          
 }
 
-function answerPathologyReportUploadOverride(rtnData) { 
-  
+function answerUploadPathologyReportText(rtnData) {   
    if (parseInt(rtnData['responseCode']) !== 200) { 
      var msgs = JSON.parse(rtnData['responseText']);
      var dspMsg = ""; 

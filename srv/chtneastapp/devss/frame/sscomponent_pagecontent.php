@@ -14,11 +14,19 @@ public $checkBtn = "<i class=\"material-icons\">check</i>";
 function sysDialogBuilder($whichdialog, $passedData) {
  
     switch($whichdialog) {
+
       case 'dataCoordUploadPR':
-        $titleBar = "Quick-Upload Pathology Report Upload";
+        $titleBar = "Quick Pathology Report Upload";
         //$footerBar = "DONOR RECORD";
         $innerDialog = bldQuickPRUpload( $passedData );
         break;
+
+      case 'dataCoordEditPR':
+        $titleBar = "Quick Pathology Report Editor";
+        //$footerBar = "DONOR RECORD";
+        $innerDialog = bldQuickPREdit( $passedData );
+        break;
+
       case 'procureBiosampleEditDonor':
         $titleBar = "Quick-Edit Donor Record";
         //$footerBar = "DONOR RECORD";
@@ -668,7 +676,6 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $stsDte = (trim($val['statusdate']) === "") ? "&nbsp;" : "Status Date: {$val['statusdate']}";
     $stsDte .= (trim($val['statusby']) === "") ? "" : "<br>Status by: {$val['statusby']}";
 
-
     $assmnt = (strtoupper(substr($val['assignedinvestigator'],0,3)) === "INV") ?  "{$val['assignedinvestigatorlname']}, {$val['assignedinvestigatorfname']} ({$val['assignedinvestigator']})<br>{$val['assignedinvestigatorinstitute']}" : "" ;
     $subsitedsp = (trim($val['subsite']) === "") ? "" : ("::" . $val['subsite']);
     $modds = (trim($val['diagnosismodifier']) === "") ? "" : ("::" . $val['diagnosismodifier']);
@@ -707,7 +714,6 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $cmtDsp .= ( trim($sgcmt) !== "" ) ? "<br><b>Segment Comments</b>: {$sgcmt}" : "";
     $cmtDsp .= ( trim($invloc) !== "" ) ?  (trim($cmtDsp) !== "") ?  "<br><b>Inventory Location</b>: {$invloc}" : "<b>Inventory Location</b>: {$invloc}" : "";
     
-    //$sgencry = cryptservice($val['segmentid']);
     $sgencry = cryptservice($val['segmentid']);
     $bgencry = cryptservice($val['pbiosample']);
     $moreInfo = ( trim($cmtDsp) !== "" ) ? "<div class=ttholder><div class=infoIconDiv><i class=\"material-icons informationalicon\">error_outline</i></div><div class=infoTxtDspDiv>{$cmtDsp}</div></div>" : "";
@@ -721,7 +727,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
 <div class=ttholder>{$val['pathologyrptind']}
    <div class=tt>
      <div class=quickLink onclick="printPRpt(event,'{$prDocId}');"><i class="material-icons qlSmallIcon">print</i> Print Pathology Report ({$dspBG})</div>
-     <div class=quickLink onclick="alert('here');"><i class="material-icons qlSmallIcon">file_copy</i> Edit Pathology Report ({$dspBG})</div>
+     <div class=quickLink onclick="editPathRpt(event,'{$prDocId}');"><i class="material-icons qlSmallIcon">file_copy</i> Edit Pathology Report ({$dspBG})</div>
    </div>
 </div>
 PRPTNOTATION;
@@ -1883,6 +1889,62 @@ CALENDAR;
 return "{$prcCalendar}";
 }
 
+function bldQuickPREdit($passeddata) { 
+
+$pdta = $passeddata;
+$errorInd = 0;
+$errorMsg = "";
+
+  (trim($pdta['pbiosample']) === "" || !is_numeric($pdta['pbiosample'])) ? (list( $errorInd, $msgArr[] ) = array(1 , "DATABASE BIOGROUP ID IS INCORRECT.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER.")) : "";
+
+if ($errorInd === 0) {
+  $devarr = json_decode(callrestapi("GET", dataTree . "/global-menu/dev-edit-pathrpt-reasons",serverIdent, serverpw), true);
+  $devm = "<table border=0 class=menuDropTbl>";
+  foreach ($devarr['DATA'] as $devval) {
+    $devm .= "<tr><td onclick=\"fillField('fldDialogPRUPEditReason','','{$devval['menuvalue']}');\" class=ddMenuItem>{$devval['menuvalue']}</td></tr>";
+  }
+  $devm .= "</table>";
+
+
+  $prTxt = preg_replace('/<p\s?\/?>/i',"\n\n",preg_replace('/<br\s?\/?>/i', "\n", $pdta['pathologyrpt']));
+
+
+$bg = $pdta['pbiosample'];
+$rtnThis = <<<RTNTHIS
+<input type=hidden id=fldDialogPRUPLabelNbr value='{$pdta['labelnbr']}'>
+<input type=hidden id=fldDialogPRUPBG value='{$pdta['pbiosample']}'>
+<input type=hidden id=fldDialogPRUPUser value='{$pdta['user']}'>
+<input type=hidden id=fldDialogPRUPSess value='{$pdta['sessionid']}'>
+<input type=hidden id=fldDialogPRUPPXI value='{$pdta['pxiid']}'>
+<input type=hidden id=fldDialogPRUPPRID value='{$pdta['prid']}'>
+<table border=0 id=PRUPHoldTbl cellspacing=0 cellpadding=0>
+<tr><td colspan=7 id=VERIFHEAD>INFORMATION VERIFICATION</td></tr>
+<tr><td class=lblThis style="width: 8vw;">Biogroup</td><td class=lblThis style="width: 15vw;">Site</td><td class=lblThis style="width: 15vw;">Diagnosis</td><td class=lblThis style="width: 8vw;">Institution</td><td class=lblThis style="width: 10vw;">Procedure Date</td><td class=lblThis style="width: 10vw;">A/R/S</td><td></td></tr>
+<tr><td class=dspVerif>{$bg}</td><td class=dspVerif>{$pdta['site']}</td><td class=dspVerif>{$pdta['diagnosis']}</td><td class=dspVerif>{$pdta['procinstitution']}</td><td class=dspVerif>{$pdta['proceduredate']}</td><td class=dspVerif>{$pdta['ars']}</td><td></td></tr>
+
+<tr><td colspan=7 class=headhead>Pathology Report Text</td></tr>
+<tr><td colspan=7 style="padding: 0 0 0 .4vw;"><TEXTAREA id=fldDialogPRUPPathRptTxt>{$prTxt}</TEXTAREA></td></tr>
+<tr><td colspan=7 style="padding: .4vh .8vw .4vh .8vw;"><input type=checkbox id=HIPAACertify><label for=HIPAACertify id=HIPAABoxLabel>By clicking this box, I ({$pdta['user']}) certify that this Pathology Report Text DOES NOT contain any HIPAA patient identifiers.  This includes:  names, birthdays, addresses, phone numbers, email addresses, physician names, pathology assistance names, technician names, institution names, dates, etc.  I have made myself familiar with the HIPAA identifiers and certify that ALL HIPAA idenitifers have been removed as per CHTNEastern Standard Operating Procedures.  This pathology report is redacted so that the donor/patient cannot be identified.</td></tr>
+
+<tr><td colspan=7><center>
+<table><tr><td class=headhead valign=bottom>Override PIN (Inventory PIN)</td><td valign=bottom class=headhead> Reason for Edit </td></tr>
+<tr><td style="padding: 0 0 0 .5vw;"><input type=password id=fldUsrPIN style="width: 11vw; font-size: 1.3vh;"></td><td style="padding: 0 0 0 .5vw;"><div class=menuHolderDiv><input type=text id=fldDialogPRUPEditReason style="font-size: 1.3vh; width: 13vw;"><div class=valueDropDown>{$devm}</div></div></td></tr>
+</table>
+</td></tr>
+
+<tr><td colspan=7 align=right style="padding: 0 20vw 0 0;"><table class=tblBtn id=btnUploadPR style="width: 6vw;" onclick="editPathologyReportText();"><tr><td style="white-space: nowrap;"><center>Save</td></tr></table></td></tr>
+
+</table>
+RTNTHIS;
+} else { 
+  //ERROR DISPLAY GOES HERE
+    $rtnThis = <<<RTNTHIS
+{$errorMsg}
+RTNTHIS;
+}
+  return $rtnThis;
+}
+
 function bldQuickPRUpload($passeddata) { 
 //passeddata = {"user":"zacheryv@mail.med.upenn.edu","sessionid":"mjfk2f5lmcs92chkoet1143ab2","labelnbr":"83108001","pbiosample":83108,"pathreportind":2,"pathreportid":0,"site":"BRAIN (MALIGNANT)","diagnosis":"GLIOBLASTOMA MULTIFORME","procinstitution":"HUP","proceduredate":"03\/26\/2018"}
     
@@ -1892,16 +1954,15 @@ $errorMsg = "";
 
 if (trim($pdta['pbiosample']) === "" || !is_numeric($pdta['pbiosample'])) {  $errorInd = 1; $errorMsg .= "##Database Biogroup ID is incorrect.  See a CHTNEastern Informatics Staff Member"; }  
 if ( $pdta['pathreportind'] !== 2 ) {  $errorInd = 1; $errorMsg .= "##This biogroup is already marked as having a Pathology Report.  You should 'Edit' instead of uploading"; }  
-if ( $pdta['pathreportid'] !== 0 ) {  $errorInd = 1; $errorMsg .= "##This biogroup is already marked as having a Pathology Report.  You should 'Edit' instead of uploading"; }  
+if ( $pdta['pathreportid'] !== 0 ) {  $errorInd = 1; $errorMsg .= "##This biogroup is already marked as having a Pathology Report.  You should 'Edit' instead of uploading"; } 
+
 if ($errorInd === 0) {
-
-$devarr = json_decode(callrestapi("GET", dataTree . "/global-menu/dev-menu-pathology-report-upload",serverIdent, serverpw), true);
-$devm = "<table border=0 class=menuDropTbl>";
-foreach ($devarr['DATA'] as $devval) {
-  $devm .= "<tr><td onclick=\"fillField('fldDialogPRUPDeviationReason','','{$devval['menuvalue']}');\" class=ddMenuItem>{$devval['menuvalue']}</td></tr>";
-}
-$devm .= "</table>";
-
+  $devarr = json_decode(callrestapi("GET", dataTree . "/global-menu/dev-menu-pathology-report-upload",serverIdent, serverpw), true);
+  $devm = "<table border=0 class=menuDropTbl>";
+  foreach ($devarr['DATA'] as $devval) {
+    $devm .= "<tr><td onclick=\"fillField('fldDialogPRUPDeviationReason','','{$devval['menuvalue']}');\" class=ddMenuItem>{$devval['menuvalue']}</td></tr>";
+  }
+  $devm .= "</table>";
 
 $bg = $pdta['pbiosample'];
 $rtnThis = <<<RTNTHIS
@@ -1935,8 +1996,7 @@ RTNTHIS;
 {$errorMsg}
 RTNTHIS;
 }
-
-return $rtnThis;
+  return $rtnThis;
 }
 
 function bldQuickEditDonor($passeddata) { 

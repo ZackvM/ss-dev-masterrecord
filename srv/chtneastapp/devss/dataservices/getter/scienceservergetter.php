@@ -35,7 +35,6 @@ class objgetter {
 
 class objlisting { 
 
-
   function preprocesspathologyrptupload($request, $urirqst) { 
    $rows = array(); 
    $dta = array(); 
@@ -48,15 +47,12 @@ class objlisting {
    $orrqst = explode("/", $urirqst);
    session_start(); 
    $usr = chkUserBySession(session_id());
-
    if ((int)$usr['allowind'] === 1 && (int)$usr['allowlinux'] === 1 && (int)$usr['allowcoord'] === 1  && (int)$usr['daysuntilpasswordexpire'] > 0 ) {
      $usrident = $usr['emailaddress'];
      if ( trim($orrqst[3]) <> "") {
-
           $pdta['user'] = $usrident;
           $pdta['sessionid'] = session_id();
           $pdta['labelnbr'] = $orrqst[3];
-
           $chkSQL = "SELECT sg.bgs, bs.pbiosample, bs.pathReport, ifnull(bs.pathreportid,0) as pathreportid, concat(trim(ifnull(bs.anatomicSite,'')), if(trim(ifnull(bs.tissType,''))='','', concat(' (',trim(ifnull(bs.tissType,'')),')'))) site, concat(trim(ifnull(bs.diagnosis,'')), if(trim(ifnull(bs.subdiagnos,''))='','', concat( ' :: ' , trim(ifnull(bs.subdiagnos,''))))) as diagnosis, ifnull(bs.procureInstitution,'') as procinstitution, ifnull(date_format(bs.procedureDate,'%m/%d/%Y'),'') as proceduredate, concat( if(trim(ifnull(bs.pxiAge,'')) = '', '-',trim(ifnull(bs.pxiAge,''))),'::',if(trim(ifnull(bs.pxiRace,''))='','-',ucase(trim(ifnull(bs.pxiRace,'')))),'::',if(trim(ifnull(bs.pxiGender,'')) = '','-',ucase(trim(ifnull(bs.pxiGender,''))))) ars, ifnull(bs.pxiid,'NOPXI') as pxiid FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where replace(bgs,'T_','') = :labelnbr";
           $rs = $conn->prepare($chkSQL);
           $rs->execute(array(':labelnbr' => trim($orrqst[3]))); 
@@ -83,7 +79,6 @@ class objlisting {
           }
           $dta = array('pagecontent' => bldDialogGetter('dataCoordUploadPR', $pdta) ); 
           $responseCode = 200;
-
      } else { 
        $msgArr[] .= "The Biogroup Identifier is incorrect - See a CHTN Informatics Staff Member";
      }
@@ -868,6 +863,10 @@ class globalMenus {
 
     function devmenupathologyreportupload() { 
       return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'DEVIATIONREASON_PRUPLOAD' order by mnu.dspOrder";
+    }
+
+    function deveditpathrptreasons() { 
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'PREDITREASON' order by mnu.dspOrder";
     }
 
     function chtnvocabularyspecimencategory() {

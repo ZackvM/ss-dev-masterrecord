@@ -622,7 +622,7 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 .sldassigninv { width: 1vw; text-align: center; }
 
 #PRUPHoldTbl { width: 84vw; }
-#PRUPHoldTbl #fldDialogPRUPPathRptTxt {width: 83vw; height: 48vh; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); }
+#PRUPHoldTbl #fldDialogPRUPPathRptTxt {width: 83vw; height: 48vh; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); line-height: 1.6em; text-align: justify; }
 #PRUPHoldTbl #VERIFHEAD { font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_cornflowerblue},1); text-align: center; padding: .5vh 0 .5vh 0; }
 #PRUPHoldTbl .lblThis {font-size: 1.3vh; white-space: nowrap; font-weight: bold; color: rgba({$this->color_zackgrey},1);border-right: 1px solid rgba({$this->color_grey},1); padding: 0 0 0 .2vw; }
 #PRUPHoldTbl .dspVerif {font-size: 1.3vh; white-space: nowrap; color: rgba({$this->color_zackgrey},1); padding: .8vh 1vw .8vh .2vw;border-right: 1px solid rgba({$this->color_grey},1); border-bottom: 1px solid rgba({$this->color_grey},1); }
