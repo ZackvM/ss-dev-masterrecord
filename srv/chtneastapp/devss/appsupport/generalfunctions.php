@@ -232,13 +232,18 @@ if (trim($pyear) === "") {
   $pyear = date('Y');
 }
 
-$daysofweek = array('M','T','W','Th','F','Sa','Su'); 
-$firstDayOfMonth = mktime(0,0,0,$pmonth,1,$year);
+$daysofweek = array('Su','M','T','W','Th','F','Sa'); 
+
+$firstDayOfMonth = mktime(0,0,0,$pmonth,1,$pyear);
 $numberOfDays = date('t',$firstDayOfMonth);
+
 $dateComponents = getdate($firstDayOfMonth);
 $monthName = $dateComponents['month'];
 $monthNbr = str_pad($dateComponents['mon'],2,"0", STR_PAD_LEFT);
 $dayOfWeek = $dateComponents['wday'];
+
+$dyr = $dateComponents['wday'];
+
 $lastMonth = substr(('00'.((int)$pmonth - 1)), -2);
 $lastYear = $pyear; 
 if ((int)$lastMonth === 0) { 
@@ -440,6 +445,7 @@ $rtnthiscalendar = <<<CALSTRT
        <td id="{$rightBtnId}" align=right><i class="material-icons {$topCtlBtnClass}" {$rightBtnAction}>keyboard_arrow_right</i></td>
     </tr>
 CALSTRT;
+
 $rtnthiscalendar .= "<tr>";
 foreach ($daysofweek as $day) { 
   $rtnthiscalendar .= "<th class=\"{$dayHeadClass}\">{$day}</th>";

@@ -2028,11 +2028,43 @@ function bldQuickEditDonor($passeddata) {
     $delinkeddonor = ((int)$doarr['DATA']['delinkeddonor'] === 1) ? "Yes" : "";
     //{"notetext":"And another note goes here","bywho":"proczack","enteredon":"01\/04\/2019 08:32"},{"notetext":"Case Note: This is a test case Note","bywho":"proczack","enteredon":"01\/04\/2019 08:31"}]
     $casenotes = $doarr['DATA']['casenotes'];
+
+
     $rtnThis = <<<RTNTHIS
 <table>
 <tr><td>Donor Record ID: </td><td> {$pxicode} </td></tr>
 </table>
+
+<table>
+<tr><td>Institution: </td><td> {$locationdsp} ({$location})</td><td>Procedure Date: </td><td>{$ORDate}</td></tr>
+</table>
+
+<table>
+<tr><td>Surgeon: </td><td> {$surgeons} </td><td>Start Time: </td><td> {$starttime} </td></tr>
+</table>
+
+<table>
+<tr><td>Procedure Description</td></tr>
+<tr><td> {$proceduretext} </td></tr>
+</table>
+
+<table>
+<tr><td>Target?</td><td>Informed Consent</td><td>Age</td><td>Race</td><td>Sex</td><td>Last Four</td></tr>
+<tr><td>Target?</td><td>Informed Consent</td><td>Age</td><td>Race</td><td>Sex</td><td>Last Four</td></tr>
+</table>
+
+<table><tr><td colspan=5>Case Notes</td></tr>
+<tr><td><TEXTAREA></TEXTAREA></td><td><table><tr><td>Entered Notes</td></tr><tr><td><div id=enteredNotes></div></td></tr></table></td></tr>
+</table>
+
+<table>
+<tr><td>Linked: </td><td>{$linkeddonor}</td></tr>
+<tr><td>De-Linked: </td><td>{$delinkeddonor}</td></tr>
+</table>
+
 RTNTHIS;
+
+
   } else { 
     //BUILD ERROR
     $rtnThis = <<<RTNTHIS
