@@ -46,7 +46,10 @@ class datadoers {
      $pdta = json_decode($passdata,true);
      session_start();      
      $sessid = session_id();
-     //DATA CHECKS  
+     $usrpin = chtndecrypt($pdta['usrpin'], true);
+
+     //DATA CHECKS 
+     //TODO: MAKE SURE ALL MENU VALUES ARE VALID 
      ( trim($usrpin) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MUST ENTER YOUR OVERRIDE PIN TO SAVE THIS DOCUMENT")) : "";
      ( !$pdta['hipaacert'] ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MUST CERTIFY THAT THERE IS NO HIPAA INFORMATION IN THE TEXT BY CLICKING THE HIPAA CERTIFY CHECK BOX")) : "";
      ( $pdta['sess'] !== $sessid ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOUR SESSION DOESN'T MATCH THE PASSED SESSION.  LOG BACK INTO SCIENCESERVER")) : "";
@@ -56,28 +59,44 @@ class datadoers {
      ( trim($pdta['prtxt']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MUST SPECIFY SOME HIPAA REDACTED PATHOLOGY REPORT TEXT")) : "";
      ( trim($pdta['editreason']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU ARE EDITING A PATHOLOGY REPORT DOCUMENT.  YOU MUST PROVIDE A REASON FOR DOING SO.")) : "";
 
+     if ( $errorInd === 0 ) { 
+        //CHECK USER
+        $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and originalaccountname = :userid and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and inventorypinkey = :pinkey and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+        $rs = $conn->prepare($chkUsrSQL); 
+        $rs->execute(array(':userid' => $pdta['user'], ':sessid' => $sessid, ':pinkey' => $usrpin));
+        if ($rs->rowCount() === 1) { 
+          $usrrecord = $rs->fetch(PDO::FETCH_ASSOC);
+        } else { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER ({$pdta['user']}) INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+        }
+     }  
 
+     //COPY ORIGINAL REPORT 
+     $copySQL = "insert into masterrecord.qcpathreports_history(prid, selector, pathreport, pxiid, uploadedBy, uploadedon, biospecimen, procedureMark, dnpr_nbr, deleteInd, div_code, lastedited, lasteditby, reasonforedit) select prid, selector, pathreport, pxiid, uploadedBy, uploadedon, biospecimen, procedureMark, dnpr_nbr, deleteInd, div_code, lastedited, lasteditby, reasonforedit from masterrecord.qcpathreports where prid = :prid"; 
+     $copyRS = $conn->prepare($copySQL); 
+     $copyRS->execute(array(':prid' => $pdta['prid']));
+     $rowsCopied = $copyRS->rowCount();   
+     if ($rowsCopied < 1) { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "DATABASE WAS UNABLE TO MAKE A COPY OF PATHOLOGY REPORT.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER."));
+     }
 
+     //SAVE EDITS
+     if ($errorInd === 0) {  
+       $htmlized = preg_replace('/\n\n/','<p>',$pdta['prtxt']);
+       $htmlized = preg_replace('/\r\n/','<p>', $htmlized);
+       $htmlized = preg_replace('/\n/','<br>',$htmlized);
 
-
-
-
-
-
-      ///START HERE ... 
-
-
-
-
-
-
-
-
-
-
-
-
-
+       $editSQL = "update masterrecord.qcpathreports set pathreport = :prtxt, lastedited = now(), lasteditby = :lasteditby, pxiid = :pxiid, biospecimen = :biospecimennbr, reasonforedit = :editreason where prid = :prid";
+       $editRS = $conn->prepare($editSQL); 
+       $editRS->execute(array(':prid' => $pdta['prid']
+                             ,':prtxt' => "{$htmlized}"
+                             ,':lasteditby' => $usrrecord['originalaccountname']
+                             ,':pxiid' => $pdta['pxiid']
+                             ,':biospecimennbr' => $pdta['bg']
+                             ,':editreason' => $pdta['editreason']
+                         ));
+       $responseCode = 200;
+     }
 
      $msg = $msgArr;
      $rows['statusCode'] = $responseCode; 

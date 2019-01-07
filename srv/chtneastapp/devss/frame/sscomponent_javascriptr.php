@@ -1514,8 +1514,7 @@ function answerEditPathologyReportText(rtnData) {
      });
      alert("PATHOLOGY REPORT EDIT ERROR:\\n"+dspMsg);
    } else { 
-    //PATH REPORT HAS BEEN SAVED
-    alert('PATHOLOGY REPORT WAS SUCCESSFULLY UPLOADED');
+    alert('PATHOLOGY REPORT WAS SUCCESSFULLY SAVED');
     byId('fldDialogPRUPLabelNbr').value = "";
     byId('fldDialogPRUPBG').value = "";
     byId('fldDialogPRUPUser').value = "";
