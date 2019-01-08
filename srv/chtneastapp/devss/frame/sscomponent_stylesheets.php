@@ -244,12 +244,13 @@ textarea { font-size: 1.3vh; }
 #ddPRCPathRpt { width: 5vw; }
 
 
-#divORHolder { width: 30vw; border: 1px solid rgba({$this->color_zackgrey},1); margin-top: .2vh; position: relative; box-sizing: border-box; font-size: 1.3vh;  }
+#divORHolder {  border: 1px solid rgba({$this->color_zackgrey},1); margin-top: .2vh; position: relative; box-sizing: border-box; font-size: 1.3vh;  }
 #headerTbl { border-bottom: 1px solid  rgba({$this->color_grey},1); background: rgba({$this->color_cornflowerblue},1);  }
 #headerTbl th { padding: .4vh 0 .4vh 0; } 
 #PXIDspTblHD {width: 30vw; box-sizing: border-box; border-collapse: collapse;}
-#dataPart {  height: 40vh; overflow-y: scroll; } 
-.procedureSpellOutTbl { border-collapse: collapse; width: 23vw;  }
+#dataPart {  height: 40vh; width: 31vw; overflow: auto; } 
+.procedureSpellOutTbl { border-collapse: collapse; width: 27vw;  }
+.procTxtDsp { line-height: 1.4em; text-align: justify; width: 10vw; padding: 0 .1vw 0 0; }
 
 .dspORTarget { width: 1vw; text-align: center; }
 .dspORInformed {width: 1vw; text-align: center; }
@@ -258,17 +259,35 @@ textarea { font-size: 1.3vh; }
 
 .smallORTblLabel { width: 3.5vw; font-weight: bold; }
 
-#procDataDsp {border-collapse: collapse; width: 30vw;}
+#procDataDsp {border-collapse: collapse; width: 20vw;}
 .displayRows {background: rgba({$this->color_white},1); }
 .displayRows:nth-child(even) { background: rgba({$this->color_lightgrey},1); }
 .displayRows:hover {cursor: pointer; background: rgba({$this->color_lamber},1); }
-
 
 #vocabularyDspTable { width: 100%; border-collapse: collapse; } 
 #vocabularyDspTable th { font-size: 1.4vh; font-weight: bold; white-space: nowrap; text-align: left; }
 #vocabularyDspTable td { font-size: 1.4vh; white-space: nowrap;  padding: 3px 8px 3px 5px;  }
 
 
+
+
+#fldDNRTarget { width: 6vw; }
+#ddDNRTargetValue {min-width: 6vw; }
+#fldDNRInformedConsent { width: 6vw; }
+#ddDNRInformedConsent { min-width: 6vw; }
+#fldDNRAge { width: 3vw; text-align: right; }
+#fldDNRAgeUOM {width: 6vw; }
+#ddDNRAgeUOM { min-width: 6vw; }
+#fldDNRRace { width: 10vw; }
+#ddDNRRace { min-width: 10vw; }
+#fldDNRSex { width: 5vw; }
+#ddDNRSex { min-width: 5vw; }
+#fldDNRLastFour {width: 4vw; }
+
+.DNRLbl { color: rgba({$this->color_zackgrey},1); font-weight: bold; font-size: 1.2vh; padding: .2vh .2vw; }
+.DNRLbl2 { color: rgba({$this->color_zackgrey},1); font-weight: bold; font-size: 1.1vh; padding: .2vh .2vw 0 0; border-bottom: 1px solid rgba({$this->color_darkgrey},1); }
+.DNRDta { color: rgba({$this->color_zackgrey},1); font-size: 1.2vh; padding: .2vh .2vw; border-bottom: 1px solid rgba({$this->color_zackgrey},1); min-width: 10vw;}
+.procedureTextDsp { color: rgba({$this->color_zackgrey},1); font-size: 1.2vh; padding: 0 .3vw .4vh .3vw; width: 41vw; text-align: justify; line-height: 1.4em; }
 
 
 STYLESHEET;
@@ -634,6 +653,8 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #PRUPHoldTbl .ttholder { position: relative; }
 #PRUPHoldTbl .ttholder:hover .tt { display: block; }
 #PRUPHoldTbl .tt { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; z-index: 40; }
+
+
 
 STYLESHEET;
 return $rtnThis;

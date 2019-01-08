@@ -246,7 +246,9 @@ class datadoers {
           , ifnull(pxisex,'') as donorsex
           , ifnull(proctext,'') as proctext
           , ifnull(targetind,0) as targetind
-          , ifnull(infcind,0) as infcind
+          , ucase(ifnull(trg.dspvalue,'')) as targetdsp
+          , if(ifnull(infcind,1)=0,1, ifnull(infcind,1))as infcind
+          , ic.menuvalue as icdsp
           , ifnull(linkeddonor,'') as linkeddonorind
           , ifnull(linkby,'') as linkby
           , ifnull(delinkeddonor,'') as delinkeddonorind
@@ -254,6 +256,8 @@ class datadoers {
     FROM four.tmp_ORListing orl 
     left join (SELECT menuvalue, ifnull(longvalue, dspvalue) as institution FROM four.sys_master_menus where menu = 'INSTITUTION') as inst on orl.location = inst.menuvalue
     left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'ageuom') ageuom on orl.ageuomcode = ageuom.menuvalue 
+    left join (SELECT menuvalue, dspvalue, useasdefault, menuvalue as lookupvalue FROM four.sys_master_menus where menu = 'pxTARGET') as trg on orl.targetind = trg.menuvalue
+    left join (SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ucase(ifnull(mnu.dspvalue,'')) as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where menu = 'infc') ic on if(ifnull(orl.infcind,1)=0,1, ifnull(orl.infcind,1)) = ic.codevalue
     where pxicode = :donorid and location = :usrpresentloc
 SQLSTMT;
      $rs = $conn->prepare($donorSQL); 
@@ -276,7 +280,9 @@ SQLSTMT;
        $dta['donorsex'] = $r['donorsex'];
        $dta['proctext'] = $r['proctext']; 
        $dta['targetind'] = $r['targetind'];
+       $dta['targetdsp'] = $r['targetdsp'];
        $dta['informedind'] = $r['infcind']; 
+       $dta['informeddsp'] = $r['icdsp']; 
        $dta['linkeddonor'] = $r['linkeddonorind']; 
        $dta['delinkeddonor'] = $r['delinkeddonorind'];
 

@@ -2005,7 +2005,6 @@ function bldQuickEditDonor($passeddata) {
   $pdta['presentinstitution'] = $passeddata['presentinstitution'];
   $pdta['sessionid'] = $passeddata['sessionid'];
   $passdata = json_encode($pdta); 
-  //$doarr = callrestapi("POST",dataTree."/data-doers/anon-donor-object",serverIdent,serverpw,$passdata);
   $doarr = json_decode( callrestapi("POST",dataTree."/data-doers/anon-donor-object",serverIdent,serverpw,$passdata), true );
   if ((int)$doarr['ITEMSFOUND'] === 1) { 
     //{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"pxicode":"311fd9c5-ff5e-4fcf-ae68-b49a9659bcaa","listdate":"05\/07\/2018","location":"HUP","locationname":"Hospital of The University of Pennsylvania","starttime":"2:30","surgeons":"GARCIA, FERMIN","donorinitials":"A.B","lastfour":"9228","donorage":"61","ageuom":"Years","donorrace":"-","donorsex":"M","proctext":"M1 ELECTROPHYSIOLOGIC EVALUATION TRANSEPTAL W TREATMENT OF ATRIAL FIBRILLATION BY PULMONARY VEIN ISOLATIONLRB NA","targetind":"-","informedind":0,"linkeddonor":"0","delinkeddonor":"0"}} 
@@ -2023,34 +2022,125 @@ function bldQuickEditDonor($passeddata) {
     $donorsex = $doarr['DATA']['donorsex'];
     $proceduretext = $doarr['DATA']['proctext'];
     $targetind = $doarr['DATA']['targetind'];
+    $targetdsp = $doarr['DATA']['targetdsp'];
     $informedconsent = $doarr['DATA']['informedind'];
+    $informedconsentdsp = $doarr['DATA']['informeddsp'];
     $linkeddonor = ((int)$doarr['DATA']['linkeddonor'] === 1) ? "Yes" : "";
     $delinkeddonor = ((int)$doarr['DATA']['delinkeddonor'] === 1) ? "Yes" : "";
     //{"notetext":"And another note goes here","bywho":"proczack","enteredon":"01\/04\/2019 08:32"},{"notetext":"Case Note: This is a test case Note","bywho":"proczack","enteredon":"01\/04\/2019 08:31"}]
     $casenotes = $doarr['DATA']['casenotes'];
 
+    //TODO: Check dynamically WHAT THE RECEIVED VALUE IS
+    if ($targetind === 'R') { 
+      $targetmnu = "[{$targetdsp}]";
+    } else { 
+      //TODO:  WRITE SCRIPT TO CONVERT ALL TARGETS NIGHTLY TO 'NOT RECEIVED'
+      $trgarr = json_decode(callrestapi("GET", dataTree . "/global-menu/allowed-technician-assignable-donor-targets",serverIdent, serverpw), true);
+      $trgm = "<table border=0 class=menuDropTbl>";
+      $givendspvalue = "";
+      $givendspcode = "";
+      foreach ($trgarr['DATA'] as $trgval) {
+        if ( $trgval['codevalue'] === $targetind ) { 
+          $givendspcode = $trgval['codevalue'];
+          $givendspvalue = $trgval['menuvalue'];
+        }
+        $trgm .= "<tr><td onclick=\"fillField('fldDNRTarget','{$trgval['codevalue']}','{$trgval['menuvalue']}');\" class=ddMenuItem>{$trgval['menuvalue']}</td></tr>";
+      }
+      $trgm .= "</table>";
+      $targetmnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRTargetValue value=\"{$givendspcode}\"><input type=text id=fldDNRTarget READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddDNRTargetValue>{$trgm}</div></div>";
+    }
+
+    //INFORMED CONSENT 
+    //TODO: Check dynamically WHAT THE RECEIVED VALUE IS
+    if ((int)$informedconsent === 2) { 
+      $infcmnu = $informedconsentdsp;
+    } else { 
+      $icarr = json_decode(callrestapi("GET", dataTree . "/global-menu/allowed-assignable-informed-consent",serverIdent, serverpw), true);
+      $icm = "<table border=0 class=menuDropTbl>";
+      $givenicdspvalue = "";
+      $givenicdspcode = "";
+      foreach ($icarr['DATA'] as $icval) {
+        if ((int)$icval['codevalue'] === (int)$informedconsent ) { 
+          $givenicdspcode = $icval['codevalue'];
+          $givenicdspvalue = $icval['menuvalue'];
+        }
+        $icm .= "<tr><td onclick=\"fillField('fldDNRInformedConsent','{$icval['codevalue']}','{$icval['menuvalue']}');\" class=ddMenuItem>{$icval['menuvalue']}</td></tr>";
+      }
+      $icm .= "</table>";
+      $infcmnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRInfomedConsentValue value=\"{$givenicdspcode}\"><input type=text id=fldDNRInformedConsent READONLY class=\"inputFld\" value=\"{$givenicdspvalue}\"><div class=valueDropDown id=ddDNRInformedConsent>{$icm}</div></div>";
+    }
+
+    //TODO:  MAKE A MENU BUILDER FUNCTION THAT WILL BUILD ALL SCIENCESERVER DROP DOWNS
+    $fldAge = "<input type=text id=fldDNRAge value=\"{$donorage}\">";
+    $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/age-uoms",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($agarr['DATA'] as $agval) {
+      if ((int)$agval['useasdefault'] === 1 ) { 
+          $givendspcode = $agval['codevalue'];
+          $givendspvalue = $agval['menuvalue'];
+        }
+        $agm .= "<tr><td onclick=\"fillField('fldDNRAgeUOM','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+      }
+      $agm .= "</table>";
+      $ageuommnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRAgeUOMValue value=\"{$givendspcode}\"><input type=text id=fldDNRAgeUOM READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddDNRAgeUOM>{$agm}</div></div>";
+
+    $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-race",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($agarr['DATA'] as $agval) {
+      if ($agval['menuvalue'] === $donorrace ) { 
+          $givendspcode = $agval['codevalue'];
+          $givendspvalue = $agval['menuvalue'];
+        }
+        $agm .= "<tr><td onclick=\"fillField('fldDNRRace','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+      }
+      $agm .= "</table>";
+      $racemnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRRaceValue value=\"{$givendspcode}\"><input type=text id=fldDNRRace READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddDNRRace>{$agm}</div></div>";
+
+    $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-sex",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($agarr['DATA'] as $agval) {
+      if ( substr(trim($agval['codevalue']),0,1) === $donorsex || trim($agval['codevalue']) === $donorsex ) { 
+          $givendspcode = $agval['codevalue'];
+          $givendspvalue = $agval['menuvalue'];
+        }
+        $agm .= "<tr><td onclick=\"fillField('fldDNRSex','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+      }
+      $agm .= "</table>";
+      $sexmnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRSexValue value=\"{$givendspcode}\"><input type=text id=fldDNRSex READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddDNRSex>{$agm}</div></div>";
+
+      $lFourVal = substr($lastfour,0,4);
+      $lastFourDsp = "<input type=text id=fldDNRLastFour value=\"$lFourVal\" maxlength=4>";
+
 
     $rtnThis = <<<RTNTHIS
 <table>
-<tr><td>Donor Record ID: </td><td> {$pxicode} </td></tr>
+<tr><td class=DNRLbl>Encounter Record ID: </td><td class=DNRDta>{$pxicode} </td></tr>
 </table>
 
 <table>
-<tr><td>Institution: </td><td> {$locationdsp} ({$location})</td><td>Procedure Date: </td><td>{$ORDate}</td></tr>
+<tr><td class=DNRLbl>Institution: </td><td class=DNRDta>{$locationdsp} ({$location})</td><td class=DNRLbl>Procedure Date: </td><td class=DNRDta>{$ORDate}</td></tr>
 </table>
 
 <table>
-<tr><td>Surgeon: </td><td> {$surgeons} </td><td>Start Time: </td><td> {$starttime} </td></tr>
+<tr><td class=DNRLbl>Surgeon: </td><td class=DNRDta>{$surgeons} </td><td class=DNRLbl>Start Time: </td><td class=DNRDta>{$starttime} </td></tr>
 </table>
 
 <table>
-<tr><td>Procedure Description</td></tr>
-<tr><td> {$proceduretext} </td></tr>
+<tr><td class=DNRLbl>Procedure Description</td></tr>
+<tr><td class=procedureTextDsp>{$proceduretext} </td></tr>
 </table>
 
+{$d}
+
 <table>
-<tr><td>Target?</td><td>Informed Consent</td><td>Age</td><td>Race</td><td>Sex</td><td>Last Four</td></tr>
-<tr><td>Target?</td><td>Informed Consent</td><td>Age</td><td>Race</td><td>Sex</td><td>Last Four</td></tr>
+<tr><td class=DNRLbl2>Target</td><td class=DNRLbl2>Informed Consent</td><td class=DNRLbl2>Age</td><td class=DNRLbl2>Race</td><td class=DNRLbl2>Sex</td><td class=DNRLbl2>Last Four</td></tr>
+<tr><td> {$targetmnu} </td><td> {$infcmnu} </td><td><table><tr><td>{$fldAge}</td><td>{$ageuommnu}</td></tr></table></td><td>{$racemnu}</td><td>{$sexmnu}</td><td>{$lastFourDsp}</td></tr>
 </table>
 
 <table><tr><td colspan=5>Case Notes</td></tr>
@@ -2058,8 +2148,8 @@ function bldQuickEditDonor($passeddata) {
 </table>
 
 <table>
-<tr><td>Linked: </td><td>{$linkeddonor}</td></tr>
-<tr><td>De-Linked: </td><td>{$delinkeddonor}</td></tr>
+<tr><td>Linked: </td><td> // -- //  </td></tr>
+<tr><td>De-Linked: </td><td> // -- // </td></tr>
 </table>
 
 RTNTHIS;
@@ -2088,7 +2178,7 @@ function bldORScheduleTbl($orarray) {
 
     $proc = <<<PROCCELL
 <table class=procedureSpellOutTbl border=0>
-  <tr><td valign=top class=smallORTblLabel>A-R-S </td><td valign=top>{$val['ars']}</td></tr><tr><td valign=top class=smallORTblLabel>Last Four </td><td valign=top>{$lastfour}</td></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top>{$val['proceduretext']}</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>{$val['surgeon']}</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>{$val['starttime']}</td></tr><tr><td valign=top class=smallORTblLabel>OR <td>{$val['room']}</td></tr>
+  <tr><td valign=top class=smallORTblLabel>A-R-S </td><td valign=top>{$val['ars']}</td></tr><tr><td valign=top class=smallORTblLabel>Last Four </td><td valign=top>{$lastfour}</td></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top class=procTxtDsp>{$val['proceduretext']}</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>{$val['surgeon']}</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>{$val['starttime']}</td></tr><tr><td valign=top class=smallORTblLabel>OR <td>{$val['room']}</td></tr>
 <tr><td colspan=2><div class=btnEditPHIRecord onclick="editPHIRecord(event,'{$val['pxicode']}');">Edit Record</div></td></tr>
 </table>
 PROCCELL;

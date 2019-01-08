@@ -564,8 +564,8 @@ function answerPreprocessPHIEdit(rtnData) {
      if (byId('standardModalDialog')) {
        var dta = JSON.parse(rtnData['responseText']); 
        byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
-//       byId('standardModalDialog').style.marginLeft = 0;
-//       byId('standardModalDialog').style.left = "10vw";
+       byId('standardModalDialog').style.marginLeft = "-25vw";
+       byId('standardModalDialog').style.left = "50%";
 //       byId('standardModalDialog').style.marginTop = 0;
 //       byId('standardModalDialog').style.top = "3vh";
 //       byId('standardModalDialog').style.width = "80vw";

@@ -35,6 +35,9 @@ class objgetter {
 
 class objlisting { 
 
+  
+
+
   function preprocesspathologyrptupload($request, $urirqst) { 
    $rows = array(); 
    $dta = array(); 
@@ -131,7 +134,7 @@ class objlisting {
        //TODO: MAKE CHECKS OF DATA TYPE OF REQUEST
        //TODO: MAKE SURE USER HAS RIGHT TO SEE INSTITUTION
 
-       $orSQL = "SELECT ifnull(pxicode,'ERROR') as pxicode, ifnull(targetind,'') as targetind, ifnull(infcind,0) as informedconsentindicator , if(linkeddonor = 1 or delinkeddonor = 1,'X','-') as linkage, ucase(ifnull(pxiini,'NO INITIALS')) as pxiinitials, ifnull(lastfourmrn,'0000') as lastfourmrn, ifnull(pxiage,'') as pxiage, ucase(ifnull(pxirace,'')) as pxirace, ucase(ifnull(pxisex,'')) as pxisex, trim(concat(ifnull(pxiage,'-'), '/', ucase(substr(ifnull(pxirace,'-'),1,4)), '/', ucase(ifnull(pxisex,'-')))) as ars, ifnull(starttime,'') starttime, ifnull(room,'') room, ucase(ifnull(surgeons,'')) surgeon, trim(ifnull(proctext,'')) as proceduretext FROM four.tmp_ORListing ors where date_format(listdate,'%Y%m%d') = :ordate and location = :orinstitution order by pxiini";
+       $orSQL = "SELECT ifnull(pxicode,'ERROR') as pxicode, ifnull(targetind,'') as targetind, if(ifnull(infcind,1)=0,1, ifnull(infcind,1))  as informedconsentindicator , if(linkeddonor = 1 or delinkeddonor = 1,'X','-') as linkage, ucase(ifnull(pxiini,'NO INITIALS')) as pxiinitials, ifnull(lastfourmrn,'0000') as lastfourmrn, ifnull(pxiage,'') as pxiage, ucase(ifnull(pxirace,'')) as pxirace, ucase(ifnull(pxisex,'')) as pxisex, trim(concat(ifnull(pxiage,'-'), '/', ucase(substr(ifnull(pxirace,'-'),1,4)), '/', ucase(ifnull(pxisex,'-')))) as ars, ifnull(starttime,'') starttime, ifnull(room,'') room, ucase(ifnull(surgeons,'')) surgeon, trim(ifnull(proctext,'')) as proceduretext FROM four.tmp_ORListing ors where date_format(listdate,'%Y%m%d') = :ordate and location = :orinstitution order by pxiini";
        $orR = $conn->prepare($orSQL);
        $orR->execute(array(':ordate' => $orrqst[4], ':orinstitution' => $orrqst[3])); 
        $itemsfound = $orR->rowCount();    
@@ -863,6 +866,14 @@ class globalMenus {
 
     function devmenupathologyreportupload() { 
       return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.dspInd = 1 and  mnu.menu = 'DEVIATIONREASON_PRUPLOAD' order by mnu.dspOrder";
+    }
+
+    function allowedassignableinformedconsent() { 
+      return "SELECT menu, ucase(ifnull(mnu.menuvalue,'')) as codevalue, ucase(ifnull(mnu.dspvalue,'')) as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where menu = 'infc' and queriable = 1 order by dspOrder";
+    }
+
+    function allowedtechnicianassignabledonortargets() { 
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ucase(ifnull(mnu.dspvalue,'')) as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'pxTARGET' and mnu.dspind = 1 order by mnu.dsporder";
     }
 
     function deveditpathrptreasons() { 
