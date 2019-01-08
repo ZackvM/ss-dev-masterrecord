@@ -519,8 +519,19 @@ function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxi
    byId('fldPRCPXIRace').value = pxirace;                        
    byId('fldPRCPXISex').value = pxisex;  
    byId('fldPRCPXILastFour').value = pxilastfour;  
-   byId('fldPRCPXIInfCon').value = ( pxiinformed == 0 ) ? 'NO' : 'PENDING';        
+   byId('fldPRCPXIInfCon').value = ( pxiinformed == 1) ? 'NO' : 'PENDING';        
 
+}
+
+function saveEncounterNote() { 
+  //SAVE ENCOUNTER NOTE
+  var dta = new Object(); 
+  dta['encyeid'] = byId('fldDNReid').value.trim(); 
+  dta['sessid'] = byId('fldDNRSess').value.trim();
+  dta['ecnote'] = byId('fldDNREncounterNote').value.trim();
+  dta['notetype'] = byId('fldDNREncNotesType').value.trim();
+  var passdta = JSON.stringify(dta);
+  console.log(passdta);
 }
          
 var lastRequestCalendarDiv = "";
@@ -566,10 +577,8 @@ function answerPreprocessPHIEdit(rtnData) {
        byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
        byId('standardModalDialog').style.marginLeft = "-25vw";
        byId('standardModalDialog').style.left = "50%";
-//       byId('standardModalDialog').style.marginTop = 0;
-//       byId('standardModalDialog').style.top = "3vh";
-//       byId('standardModalDialog').style.width = "80vw";
-//       byId('systemDialogTitle').style.width = "80vw";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "13vh";
        byId('standardModalBacker').style.display = 'block';
        byId('standardModalDialog').style.display = 'block';
      }  

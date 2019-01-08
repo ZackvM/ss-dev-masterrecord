@@ -2114,37 +2114,59 @@ function bldQuickEditDonor($passeddata) {
       $agm .= "</table>";
       $sexmnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRSexValue value=\"{$givendspcode}\"><input type=text id=fldDNRSex READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddDNRSex>{$agm}</div></div>";
 
+
+    $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/encounter-note-types",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($agarr['DATA'] as $agval) {
+      if ( (int)$agval['useasdefault'] === 1 ) { 
+          $givendspcode = $agval['codevalue'];
+          $givendspvalue = $agval['menuvalue'];
+        }
+        $agm .= "<tr><td onclick=\"fillField('fldDNREncNotesType','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+      }
+      $agm .= "</table>";
+      $enctypemnu = "<div class=menuHolderDiv><input type=hidden id=fldDNREncNotesTypeValue value=\"{$givendspcode}\"><input type=text id=fldDNREncNotesType READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddDNREncNotesType>{$agm}</div></div>";
+
       $lFourVal = substr($lastfour,0,4);
       $lastFourDsp = "<input type=text id=fldDNRLastFour value=\"$lFourVal\" maxlength=4>";
 
+      $caseNotesTbl = "<table border=0 cellspacing=0 cellpadding=0>"; 
+      foreach ($casenotes as $key => $csval) {
+        $lineTbl = "<table class=noteTextLineTbl border=0 cellpadding=0 cellspacing=0><tr><td class=noteTypeLine>{$csval['notetype']}</td></tr><tr><td class=noteTextLineText>{$csval['notetext']}</td></tr>";
+        $lineTbl .= "<tr><td class=noteTextLineEntry>{$csval['enteredon']} :: {$csval['bywho']}</td></tr></table>";
+        $caseNotesTbl .= "<tr><td>{$lineTbl}</td></tr>";
+      }
+      $caseNotesTbl .= "</table>";
+      $encyEID = cryptservice($passeddata['phicode'],'e');
+      $sessid = $passeddata['sessionid'];
 
-    $rtnThis = <<<RTNTHIS
-<table>
-<tr><td class=DNRLbl>Encounter Record ID: </td><td class=DNRDta>{$pxicode} </td></tr>
-</table>
+      $rtnThis = <<<RTNTHIS
+<input type=hidden id=fldDNReid value="{$encyEID}">
+<input type=hidden id=fldDNRSess value="{$sessid}">
 
-<table>
-<tr><td class=DNRLbl>Institution: </td><td class=DNRDta>{$locationdsp} ({$location})</td><td class=DNRLbl>Procedure Date: </td><td class=DNRDta>{$ORDate}</td></tr>
-</table>
+<table class=ENCHEAD><tr><td style="padding: 0 0 0 0;">ENCOUNTER SPECIFICS</td></tr></table>
 
-<table>
-<tr><td class=DNRLbl>Surgeon: </td><td class=DNRDta>{$surgeons} </td><td class=DNRLbl>Start Time: </td><td class=DNRDta>{$starttime} </td></tr>
-</table>
+<table><tr><td class=DNRLbl>Encounter Record ID: </td><td class=DNRDta>{$pxicode} </td></tr></table>
 
-<table>
-<tr><td class=DNRLbl>Procedure Description</td></tr>
-<tr><td class=procedureTextDsp>{$proceduretext} </td></tr>
-</table>
+<table><tr><td class=DNRLbl>Institution: </td><td class=DNRDta>{$locationdsp} ({$location})</td><td class=DNRLbl>Procedure Date: </td><td class=DNRDta>{$ORDate}</td></tr></table>
 
-{$d}
+<table><tr><td class=DNRLbl>Surgeon: </td><td class=DNRDta>{$surgeons} </td><td class=DNRLbl>Start Time: </td><td class=DNRDta>{$starttime} </td></tr></table>
 
-<table>
-<tr><td class=DNRLbl2>Target</td><td class=DNRLbl2>Informed Consent</td><td class=DNRLbl2>Age</td><td class=DNRLbl2>Race</td><td class=DNRLbl2>Sex</td><td class=DNRLbl2>Last Four</td></tr>
+<table><tr><td class=DNRLbl>Procedure Description</td></tr><tr><td class=procedureTextDsp>{$proceduretext} </td></tr></table>
+
+<table class=ENCHEAD><tr><td style="padding: 3vh 0 0 0;">DONOR SPECIFICS</td></tr></table>
+<table><tr><td class=DNRLbl2>Target</td><td class=DNRLbl2>Informed Consent</td><td class=DNRLbl2>Age</td><td class=DNRLbl2>Race</td><td class=DNRLbl2>Sex</td><td class=DNRLbl2>Last Four</td></tr>
 <tr><td> {$targetmnu} </td><td> {$infcmnu} </td><td><table><tr><td>{$fldAge}</td><td>{$ageuommnu}</td></tr></table></td><td>{$racemnu}</td><td>{$sexmnu}</td><td>{$lastFourDsp}</td></tr>
 </table>
 
-<table><tr><td colspan=5>Case Notes</td></tr>
-<tr><td><TEXTAREA></TEXTAREA></td><td><table><tr><td>Entered Notes</td></tr><tr><td><div id=enteredNotes></div></td></tr></table></td></tr>
+<table style="width: 41vw;"><tr><td align=right><table class=tblBtn id=btnDNRSaveEncounter style="width: 6vw;"><tr><td><center>Save</td></tr></table></td></tr></table>
+
+<table class=ENCHEAD><tr><td style="padding: 3vh 0 0 0;">ENCOUNTER NOTES</td></tr></table>
+<table>
+<tr><td><table style="width: 41vw;" border=0><tr><td class=DNRLbl2>Encounter Note</td><td class=DNRLbl2>Encounter Note Type</td> <td align=right rowspan=2 valign=bottom> <table class=tblBtn id=btnDNRSaveEncounterNote style="width: 6vw;" onclick="saveEncounterNote();"><tr><td><center>Save Note</td></tr></table> </td> </tr><td><input type=text id=fldDNREncounterNote></td><td>{$enctypemnu}</td></tr></table></td></tr>
+<tr><td class=DNRLbl2>Encounter Notes</td></tr><tr><td><div id=displayPreviousCaseNotes>{$caseNotesTbl}</div></td></tr>
 </table>
 
 <table>
