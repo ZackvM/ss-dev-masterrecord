@@ -2141,10 +2141,12 @@ function bldQuickEditDonor($passeddata) {
       $caseNotesTbl .= "</table>";
       $encyEID = cryptservice($passeddata['phicode'],'e');
       $sessid = $passeddata['sessionid'];
+      $presentinstitution = $passeddata['presentinstitution'];
 
       $rtnThis = <<<RTNTHIS
 <input type=hidden id=fldDNReid value="{$encyEID}">
 <input type=hidden id=fldDNRSess value="{$sessid}">
+<input type=hidden id=fldDNRPresInst value="{$presentinstitution}">
 
 <table class=ENCHEAD><tr><td style="padding: 0 0 0 0;">ENCOUNTER SPECIFICS</td></tr></table>
 
@@ -2159,9 +2161,14 @@ function bldQuickEditDonor($passeddata) {
 <table class=ENCHEAD><tr><td style="padding: 3vh 0 0 0;">DONOR SPECIFICS</td></tr></table>
 <table><tr><td class=DNRLbl2>Target</td><td class=DNRLbl2>Informed Consent</td><td class=DNRLbl2>Age</td><td class=DNRLbl2>Race</td><td class=DNRLbl2>Sex</td><td class=DNRLbl2>Last Four</td></tr>
 <tr><td> {$targetmnu} </td><td> {$infcmnu} </td><td><table><tr><td>{$fldAge}</td><td>{$ageuommnu}</td></tr></table></td><td>{$racemnu}</td><td>{$sexmnu}</td><td>{$lastFourDsp}</td></tr>
+<tr><td colspan=6> 
+<div id=notRcvdNoteDsp>
+<table><tr><td class=DNRLbl2>Not Received Reason</td></tr><tr><td><input type=text id=fldDNRNotReceivedNote></td></tr></table>
+</div>
+</td></tr>
 </table>
 
-<table style="width: 41vw;"><tr><td align=right><table class=tblBtn id=btnDNRSaveEncounter style="width: 6vw;"><tr><td><center>Save</td></tr></table></td></tr></table>
+<table style="width: 41vw;"><tr><td align=right><table class=tblBtn id=btnDNRSaveEncounter style="width: 6vw;" onclick="saveDonorSpecifics();"><tr><td><center>Save</td></tr></table></td></tr></table>
 
 <table class=ENCHEAD><tr><td style="padding: 3vh 0 0 0;">ENCOUNTER NOTES</td></tr></table>
 <table>

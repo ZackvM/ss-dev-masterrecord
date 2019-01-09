@@ -34,6 +34,114 @@ function __construct() {
 
 class datadoers {
 
+    function saveencounterdonor( $request, $passdata ) {
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+        //{"encyeid":"d2hsSi9MU2MxaHdOS2Y1dkZja0hyczlhdWptTmdubEVheFRPWm52YUltSTNVWWJhTjNkRzNSVFZ1Y01abEd5WA==","sessid":"i8flhql9h28fu1n7mmre5r8rf1","institution":"HUP","targetind":"NOT RECEIVED","targetindvalue":"N","informedind":"NO","informedindvalue":"1","age":"61","ageuom":"Years","ageuomvalue":"Years","race":"Hispanic","racevalue":"Hispanic","sex":"Male","sexvalue":"Male","lastfour":"9228","notrcvdnote":"This is a note"}
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+
+     
+     ( 1 === 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "{$authuser} {$authpw}")) : "";
+
+
+     //DATA-CHECKS
+     //1) IS USER VALID AND ALLOWED - BY INSTITUTION/SESSION/ALLOWED TECH
+     //2) DOES ENCOUNTER EXIST
+     //3) DO ALL FIELDS THAT HAVE VALUES HAVE TRUE VALUES
+     //4) IS AGE NUMERIC
+     //5) IF TARGET IS NOT RCVD THEN IS THERE A TARGET NOTE?
+
+
+
+
+
+
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
+
+   function saveencounternote( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+
+     $eid = cryptservice($pdta['encyeid'],'d');
+     $institution = $pdta['institution'];
+     $sess = $pdta['sessid'];
+     $locsess = session_id();
+     $notetype = $pdta['notetype'];
+     $notetext = $pdta['ecnote'];
+
+     //DATA CHECKS: Check Encounter NOT Blank/Exists; Check Encounter is AT institution; User By Session is AT institution; notetype is on the menu listing; notetext is not blank 
+     //( 1 === 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "{$eid}")) : "";
+     ( trim($eid) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ENCOUNTER DBID IS MISSING.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER.")) : "";
+     ( trim($institution) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ENCOUNTER INSTITUTION IS MISSING.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER.")) : "";
+     ( trim($sess) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER SESSION IS MISSING. CLOSE YOUR BROSWER AND RE-LOGIN")) : "";
+     ( trim($notetype) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "TO SAVE AN ENCOUNTER NOTE, YOU MUST SPECIFY A NOTE TYPE")) : "";
+     ( trim($notetext) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "TO SAVE AN ENCOUNTER NOTE, YOU MUST TYPE A NOTE")) : "";
+
+
+     ( $sess !== $locsess ) ? (list( $errorInd, $msgArr[] ) = array(1 , "No No No - Bad Boys and Girls!")) : "";
+     //Check USER
+     $usrSQL = "SELECT displayname, originalaccountname, presentinstitution FROM four.sys_userbase where sessionid = :sess AND TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0 and allowProc = 1";
+     $usrRS = $conn->prepare($usrSQL); 
+     $usrRS->execute(array(':sess' => $sess)); 
+     ( $usrRS->rowCount() < 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT LISTED AS A PROCUREMENT TECH, LISTED AS PRESENTLY AT THIS LOCATION OR HAS AN EXPIRED PASSWORD.")) : "";
+
+     if ($usrRS->rowCount() === 1) { 
+        $usr = $usrRS->fetch(PDO::FETCH_ASSOC); 
+        $presUserInst = $usr['presentinstitution'];
+        $oAccount = "{$usr['displayname']} ({$usr['originalaccountname']})";
+     }
+
+     //CHECK ENCOUNTER EXISTS
+     //TODO:CHANGE TIME RANGE TO LESS THAN 7  --- FOR REAL SCHEDULES
+     $encounterExistsSQL = "SELECT count(1) encountercount FROM four.tmp_ORListing where pxicode = :encounterid and location = :institution and TIMESTAMPDIFF(DAY, listdate, now()) < 365";
+     $encounterRS = $conn->prepare($encounterExistsSQL); 
+     $encounterRS->execute(array(':encounterid' => $eid, ':institution' => $presUserInst)); 
+     //$encounterRS->execute(array(':encounterid' => $eid, ':institution' => $institution)); 
+     ( $encounterRS->rowCount() < 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "ENCOUNTER DOES NOT EXIST IN THE DATABASE")) : "";
+
+     //CHECK MENU OPTION
+     $mnuSQL = "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, mnu.dspValue FROM four.sys_master_menus mnu where menu = :menuToQuery and dspInd = 1 and ucase(trim(dspvalue)) = :notetype";
+     $mnuRS = $conn->prepare($mnuSQL);
+     $mnuRS->execute(array(':menuToQuery' => 'caseNotesType', ':notetype' => strtoupper($notetype)));  
+     ( $mnuRS->rowCount() < 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE TYPE OF NOTE SPECIFIED IS NOT VALID")) : "";
+       
+    
+     if ($errorInd === 0) { 
+       $insSQL = "insert into four.tmp_ORListing_casenotes (donorphiid, notetype, notetext, dspind, bywho, onwhen)  values(:encounterid, :notetype, :notetext, 1, :bywho, now())";
+       $insRS = $conn->prepare($insSQL); 
+       $insRS->execute(array(':encounterid' => $eid, ':notetype' => $notetype, ':notetext' => $notetext, ':bywho' => $oAccount));       
+       $responseCode = 200;
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
+
+
    function pathologyreportcoordinatoredit( $request, $passdata ) { 
      $rows = array(); 
      $dta = array(); 

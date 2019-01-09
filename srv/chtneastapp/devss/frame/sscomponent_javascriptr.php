@@ -502,7 +502,6 @@ function clearGrid() {
 
 function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxisex, pxiinformed, pxilastfour ) { 
    //TODO:  CHECK FIELD EXISTANCE
-   //TODO:  BLANK FIELDS FIRST
 
    byId('fldPRCPXIId').value = "";
    byId('fldPRCPXIInitials').value = "";            
@@ -523,15 +522,74 @@ function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxi
 
 }
 
+function saveDonorSpecifics() { 
+  var dta = new Object();  
+  dta['encyeid'] = byId('fldDNReid').value.trim(); 
+  dta['sessid'] = byId('fldDNRSess').value.trim();
+  dta['institution'] = byId('fldDNRPresInst').value.trim();
+  dta['targetind'] = byId('fldDNRTarget').value.trim();
+  dta['targetindvalue'] = byId('fldDNRTargetValue').value.trim();
+  dta['informedind'] = byId('fldDNRInformedConsent').value.trim();
+  dta['informedindvalue'] = byId('fldDNRInfomedConsentValue').value.trim();
+  dta['age'] = byId('fldDNRAge').value.trim();
+  dta['ageuom'] = byId('fldDNRAgeUOM').value.trim();
+  dta['ageuomvalue'] = byId('fldDNRAgeUOMValue').value.trim();
+  dta['race'] = byId('fldDNRRace').value.trim();
+  dta['racevalue'] = byId('fldDNRRaceValue').value.trim();
+  dta['sex'] = byId('fldDNRSex').value.trim();
+  dta['sexvalue'] = byId('fldDNRSexValue').value.trim();
+  dta['lastfour'] = byId('fldDNRLastFour').value.trim();
+  dta['notrcvdnote'] = byId('fldDNRNotReceivedNote').value.trim();
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/save-encounter-donor";
+  universalAJAX("POST",mlURL,passdta,answerSaveDonorSpecifics,2);   
+}
+
+function answerSaveDonorSpecifics(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("ENCOUNTER DONOR SAVE ERROR:\\n"+dspMsg);
+   } else { 
+       alert('Encounter has been saved!');
+       //byId('standardModalBacker').style.display = 'none';
+       //byId('standardModalDialog').innerHTML = '';
+       //byId('standardModalDialog').style.display = 'none';
+   }        
+}
+
 function saveEncounterNote() { 
   //SAVE ENCOUNTER NOTE
   var dta = new Object(); 
   dta['encyeid'] = byId('fldDNReid').value.trim(); 
   dta['sessid'] = byId('fldDNRSess').value.trim();
+  dta['institution'] = byId('fldDNRPresInst').value.trim();
   dta['ecnote'] = byId('fldDNREncounterNote').value.trim();
   dta['notetype'] = byId('fldDNREncNotesType').value.trim();
   var passdta = JSON.stringify(dta);
-  console.log(passdta);
+  var mlURL = "/data-doers/save-encounter-note";
+  universalAJAX("POST",mlURL,passdta,answerSaveEncounterNote,2);   
+}
+
+function answerSaveEncounterNote(rtnData) { 
+
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("ENCOUNTER NOTE SAVE ERROR:\\n"+dspMsg);
+   } else { 
+       alert('Encounter Note has been saved!');
+       byId('standardModalBacker').style.display = 'none';
+       byId('standardModalDialog').innerHTML = '';
+       byId('standardModalDialog').style.display = 'none';
+   }        
+
 }
          
 var lastRequestCalendarDiv = "";
@@ -643,6 +701,16 @@ function fillField(whichfield, whichvalue, whichdisplay) {
        updateSubSiteMenu();          
        updateDiagnosisMenu();                       
      break;
+    case 'fldDNRTarget':
+    //TODO:  Make DYNAMIC for value check
+    if ( byId('fldDNRTarget').value === 'NOT RECEIVED') { 
+      byId('fldDNRNotReceivedNote').value = "";
+      byId('notRcvdNoteDsp').style.display = 'block';
+    } else { 
+      byId('fldDNRNotReceivedNote').value = "";
+      byId('notRcvdNoteDsp').style.display = 'none';
+    }
+    break;
   }        
 }            
 
@@ -991,8 +1059,6 @@ function answerSendMakeReportReq(rtnData) {
      });
      alert("REPORT OBJECT CREATION ERRORS:\\n"+dspMsg);  //DSIPLAY ERROR MESSAGE
    } else {  
-     //https://dev.chtneast.org/print-obj/shipment-manifest/NXJYK0VMWDRzUHphcjc0aVIrczFxZz09
-     //https://dev.chtneast.org/reports/inventory/barcode-run
      var prts = JSON.parse(rtnData['responseText']);
      switch (prts['DATA']['typerequested']) { 
        case 'TABULAR':

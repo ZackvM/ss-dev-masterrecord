@@ -285,6 +285,8 @@ textarea { font-size: 1.3vh; }
 #fldDNRLastFour {width: 4vw; }
 #fldDNREncNotesType { width: 10vw; }
 #fldDNREncounterNote { width: 24vw; }
+#fldDNRNotReceivedNote {width: 41vw; }
+#notRcvdNoteDsp {display: none; }
 
 .ENCHEAD { width: 78vh; border-bottom: 2px solid rgba({$this->color_cornflowerblue},1); }
 .ENCHEAD tr td { text-align: center; font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_zackgrey},1);  }
@@ -295,7 +297,7 @@ textarea { font-size: 1.3vh; }
 .procedureTextDsp { color: rgba({$this->color_zackgrey},1); font-size: 1.2vh; padding: 0 .3vw .4vh .3vw; width: 41vw; text-align: justify; line-height: 1.4em; }
 
 #displayPreviousCaseNotes { border: 1px solid rgba({$this->color_zackgrey},1); width: 41vw; height: 15vh; overflow: auto; background: rgba({$this->color_white},1);  }
-.noteTextLineTbl { width: 41vw; }
+.noteTextLineTbl { width: 40vw; }
 .noteTextLineText { font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw 0 .3vw; text-align: justify;   }
 .noteTextLineEntry { font-size: 1vh; color: rgba({$this->color_darkgrey},1); text-align: right; padding: 0 .3vw 0 .3vw; border-bottom: 1px solid rgba({$this->color_darkgrey},1); }
 .noteTypeLine { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_darkgrey},1); padding: .3vh .0 .1vh .2vw;  }
