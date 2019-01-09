@@ -2000,11 +2000,13 @@ RTNTHIS;
 }
 
 function bldQuickEditDonor($passeddata) { 
+    
   $pdta = array();  
   $pdta['donorid'] = cryptservice($passeddata['phicode'],'e');
   $pdta['presentinstitution'] = $passeddata['presentinstitution'];
   $pdta['sessionid'] = $passeddata['sessionid'];
   $passdata = json_encode($pdta); 
+  $at = genAppFiles;
   $doarr = json_decode( callrestapi("POST",dataTree."/data-doers/anon-donor-object",serverIdent,serverpw,$passdata), true );
   if ((int)$doarr['ITEMSFOUND'] === 1) { 
     //{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"pxicode":"311fd9c5-ff5e-4fcf-ae68-b49a9659bcaa","listdate":"05\/07\/2018","location":"HUP","locationname":"Hospital of The University of Pennsylvania","starttime":"2:30","surgeons":"GARCIA, FERMIN","donorinitials":"A.B","lastfour":"9228","donorage":"61","ageuom":"Years","donorrace":"-","donorsex":"M","proctext":"M1 ELECTROPHYSIOLOGIC EVALUATION TRANSEPTAL W TREATMENT OF ATRIAL FIBRILLATION BY PULMONARY VEIN ISOLATIONLRB NA","targetind":"-","informedind":0,"linkeddonor":"0","delinkeddonor":"0"}} 
@@ -2143,12 +2145,15 @@ function bldQuickEditDonor($passeddata) {
       $sessid = $passeddata['sessionid'];
       $presentinstitution = $passeddata['presentinstitution'];
 
+     $waitpic = base64file("{$at}/publicobj/graphics/zwait2.gif", "waitgif", "gif", true);         
       $rtnThis = <<<RTNTHIS
+              
+<div id=displayEncounterDiv>              
 <input type=hidden id=fldDNReid value="{$encyEID}">
 <input type=hidden id=fldDNRSess value="{$sessid}">
 <input type=hidden id=fldDNRPresInst value="{$presentinstitution}">
 
-<table class=ENCHEAD><tr><td style="padding: 0 0 0 0;">ENCOUNTER SPECIFICS</td></tr></table>
+<table class=ENCHEAD><tr><td style="padding: 0 0 0 0;">ENCOUNTER</td></tr></table>
 
 <table><tr><td class=DNRLbl>Encounter Record ID: </td><td class=DNRDta>{$pxicode} </td></tr></table>
 
@@ -2158,7 +2163,7 @@ function bldQuickEditDonor($passeddata) {
 
 <table><tr><td class=DNRLbl>Procedure Description</td></tr><tr><td class=procedureTextDsp>{$proceduretext} </td></tr></table>
 
-<table class=ENCHEAD><tr><td style="padding: 3vh 0 0 0;">DONOR SPECIFICS</td></tr></table>
+<table class=ENCHEAD><tr><td style="padding: .8vh 0 0 0;">DONOR SPECIFICS</td></tr></table>
 <table><tr><td class=DNRLbl2>Target</td><td class=DNRLbl2>Informed Consent</td><td class=DNRLbl2>Age</td><td class=DNRLbl2>Race</td><td class=DNRLbl2>Sex</td><td class=DNRLbl2>Last Four</td></tr>
 <tr><td> {$targetmnu} </td><td> {$infcmnu} </td><td><table><tr><td>{$fldAge}</td><td>{$ageuommnu}</td></tr></table></td><td>{$racemnu}</td><td>{$sexmnu}</td><td>{$lastFourDsp}</td></tr>
 <tr><td colspan=6> 
@@ -2170,17 +2175,21 @@ function bldQuickEditDonor($passeddata) {
 
 <table style="width: 41vw;"><tr><td align=right><table class=tblBtn id=btnDNRSaveEncounter style="width: 6vw;" onclick="saveDonorSpecifics();"><tr><td><center>Save</td></tr></table></td></tr></table>
 
-<table class=ENCHEAD><tr><td style="padding: 3vh 0 0 0;">ENCOUNTER NOTES</td></tr></table>
+<table class=ENCHEAD><tr><td style="padding: 3vh 0 0 0;">NOTES</td></tr></table>
 <table>
 <tr><td><table style="width: 41vw;" border=0><tr><td class=DNRLbl2>Encounter Note</td><td class=DNRLbl2>Encounter Note Type</td> <td align=right rowspan=2 valign=bottom> <table class=tblBtn id=btnDNRSaveEncounterNote style="width: 6vw;" onclick="saveEncounterNote();"><tr><td><center>Save Note</td></tr></table> </td> </tr><td><input type=text id=fldDNREncounterNote></td><td>{$enctypemnu}</td></tr></table></td></tr>
 <tr><td class=DNRLbl2>Encounter Notes</td></tr><tr><td><div id=displayPreviousCaseNotes>{$caseNotesTbl}</div></td></tr>
 </table>
 
 <table>
-<tr><td>Linked: </td><td> // -- //  </td></tr>
-<tr><td>De-Linked: </td><td> // -- // </td></tr>
+<tr><td>Linked: </td><td> &nbsp;  </td></tr>
+<tr><td>De-Linked: </td><td> &nbsp; </td></tr>
 </table>
-
+</div>
+<div id=waitIcon><center>
+{$waitpic}
+<div id=waitinstruction></div>
+   </div>
 RTNTHIS;
 
 

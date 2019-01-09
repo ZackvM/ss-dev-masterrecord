@@ -542,6 +542,16 @@ function saveDonorSpecifics() {
   dta['notrcvdnote'] = byId('fldDNRNotReceivedNote').value.trim();
   var passdta = JSON.stringify(dta);
   var mlURL = "/data-doers/save-encounter-donor";
+  //TODO:  Add a wait swirly   
+  if (byId('waitIcon')) {             
+     byId('waitIcon').style.display = 'block';  
+  }
+  if (byId('displayEncounterDiv')) { 
+      byId('displayEncounterDiv').style.display = 'none';
+  }
+  if (byId('waitinstruction')) { 
+    byId('waitinstruction').innerHTML = "Please Wait ... ScienceServer is fulfilling your request";    
+  }
   universalAJAX("POST",mlURL,passdta,answerSaveDonorSpecifics,2);   
 }
 
@@ -553,11 +563,18 @@ function answerSaveDonorSpecifics(rtnData) {
        dspMsg += "\\n - "+element;
      });
      alert("ENCOUNTER DONOR SAVE ERROR:\\n"+dspMsg);
+        if (byId('waitIcon')) {             
+          byId('waitIcon').style.display = 'none';  
+        }
+        if (byId('displayEncounterDiv')) { 
+          byId('displayEncounterDiv').style.display = 'block';
+       }               
    } else { 
        alert('Encounter has been saved!');
-       //byId('standardModalBacker').style.display = 'none';
-       //byId('standardModalDialog').innerHTML = '';
-       //byId('standardModalDialog').style.display = 'none';
+       byId('standardModalBacker').style.display = 'none';
+       byId('standardModalDialog').innerHTML = '';
+       byId('standardModalDialog').style.display = 'none';
+       updateORSched(); 
    }        
 }
 
@@ -616,6 +633,8 @@ function editPHIRecord(e, phiid) {
     dta['phicode'] = phiid; 
     var passdta = JSON.stringify(dta);
     var mlURL = "/data-doers/preprocess-phi-edit";
+            
+            
     universalAJAX("POST",mlURL,passdta,answerPreprocessPHIEdit,1);   
   }
 }
@@ -632,11 +651,17 @@ function answerPreprocessPHIEdit(rtnData) {
      //DISPLAY PHI EDIT
      if (byId('standardModalDialog')) {
        var dta = JSON.parse(rtnData['responseText']); 
+        if (byId('waitIcon')) {             
+          byId('waitIcon').style.display = 'none';  
+        }
+        if (byId('displayEncounterDiv')) { 
+          byId('displayEncounterDiv').style.display = 'block';
+       }            
        byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
        byId('standardModalDialog').style.marginLeft = "-25vw";
        byId('standardModalDialog').style.left = "50%";
        byId('standardModalDialog').style.marginTop = 0;
-       byId('standardModalDialog').style.top = "13vh";
+       byId('standardModalDialog').style.top = "7vh";
        byId('standardModalBacker').style.display = 'block';
        byId('standardModalDialog').style.display = 'block';
      }  

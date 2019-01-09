@@ -168,6 +168,9 @@ function base64file($path, $identifier, $expectedObject, $createObject = true, $
         case "bgurl":
           $object = " url('data:{$mime};base64,{$filecontent}') ";
           break; 
+        case 'gif':
+            $object = "<img id=\"{$identifier}\" src=\"data:{$mime};base64,{$filecontent}\" {$additionals}>";            
+            break;
         default:
           $object = "<img id=\"{$identifier}\" src=\"data:{$mime};base64,{$filecontent}\" {$additionals}>";
       } 

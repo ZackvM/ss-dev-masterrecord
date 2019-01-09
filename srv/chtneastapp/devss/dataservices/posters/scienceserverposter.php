@@ -45,28 +45,98 @@ class datadoers {
      require(serverkeys . "/sspdo.zck");
      $pdta = json_decode($passdata,true);
      session_start();      
-        //{"encyeid":"d2hsSi9MU2MxaHdOS2Y1dkZja0hyczlhdWptTmdubEVheFRPWm52YUltSTNVWWJhTjNkRzNSVFZ1Y01abEd5WA==","sessid":"i8flhql9h28fu1n7mmre5r8rf1","institution":"HUP","targetind":"NOT RECEIVED","targetindvalue":"N","informedind":"NO","informedindvalue":"1","age":"61","ageuom":"Years","ageuomvalue":"Years","race":"Hispanic","racevalue":"Hispanic","sex":"Male","sexvalue":"Male","lastfour":"9228","notrcvdnote":"This is a note"}
      $authuser = $_SERVER['PHP_AUTH_USER']; 
      $authpw = $_SERVER['PHP_AUTH_PW']; 
-
-
      
-     ( 1 === 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "{$authuser} {$authpw}")) : "";
-
-
      //DATA-CHECKS
      //1) IS USER VALID AND ALLOWED - BY INSTITUTION/SESSION/ALLOWED TECH
-     //2) DOES ENCOUNTER EXIST
-     //3) DO ALL FIELDS THAT HAVE VALUES HAVE TRUE VALUES
+     ( $pdta['sessid'] !== session_id() ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( checkPostingUser($pdta['sessid'],$authpw) !== 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+
+     $usrSQL = "SELECT displayname, originalaccountname, presentinstitution FROM four.sys_userbase where sessionid = :sess AND TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0 and allowProc = 1";
+     $usrRS = $conn->prepare($usrSQL); 
+     $usrRS->execute(array(':sess' => $authuser)); 
+     ( $usrRS->rowCount() < 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT LISTED AS A PROCUREMENT TECH, LISTED AS PRESENTLY AT THIS LOCATION OR HAS AN EXPIRED PASSWORD.")) : "";
+
+     if ($usrRS->rowCount() === 1) { 
+        $usr = $usrRS->fetch(PDO::FETCH_ASSOC); 
+        $presUserInst = $usr['presentinstitution'];
+        $oAccount = "{$usr['displayname']} ({$usr['originalaccountname']})";
+     }     
+
      //4) IS AGE NUMERIC
-     //5) IF TARGET IS NOT RCVD THEN IS THERE A TARGET NOTE?
+     ( !is_numeric($pdta['age'])) ? (list( $errorInd, $msgArr[] ) = array(1 , "The specified donor age must be numeric")) : "";
+     
+     //2) DOES ENCOUNTER EXIST
+     $eid = cryptservice($pdta['encyeid'], 'd');
+     ( trim($eid) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Encounter Id is missing - See a CHTNEastern Informatics Staff member")) : "";
+     $chkESQL = "SELECT * FROM four.tmp_ORListing where location = :loc and PXICode = :eid";
+     $chkERS = $conn->prepare($chkESQL); 
+     $chkERS->execute(array(':loc' => $presUserInst, ':eid' => $eid));
+     ( $chkERS->rowCount() !== 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Encounter Id Not Found in Data Tables.  See a CHTNEASTERN Informatics staff member")) : "";
 
+     //( 1 === 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "{$eid} {$oAccount} {$presUserInst}")) : "";
+     
+     //3) DO ALL FIELDS THAT HAVE VALUES HAVE TRUE VALUES
+     $mnuValueSQL = "SELECT * FROM four.sys_master_menus where menu = :whichmenu and menuvalue = :whichvalue and dspind = 1";
+     $mnuValueQSQL = "SELECT * FROM four.sys_master_menus where menu = :whichmenu and menuvalue = :whichvalue and queriable = 1 and dspind = 1";
+     $mnuDspSQL = "SELECT * FROM four.sys_master_menus where menu = :whichmenu and dspvalue = :whichvalue and dspind = 1";
+     $mnuValRS = $conn->prepare($mnuValueSQL);
+     $mnuValQRS = $conn->prepare($mnuValueQSQL);
+     $mnuDspRS = $conn->prepare($mnuDspSQL);
 
+     $mnuValRS->execute(array(':whichmenu' => 'INFC', ':whichvalue' => $pdta['informedindvalue']));
+     ( $mnuValRS->rowCount() !== 1) ?  (list( $errorInd, $msgArr[] ) = array(1 , "INFORMED CONSENT MENU VALUE IS INVALID" )) : "";  
 
+     $mnuValQRS->execute(array(':whichmenu' => 'pxTARGET', ':whichvalue' => $pdta['targetindvalue']));
+     ( $mnuValQRS->rowCount() !== 1) ?  (list( $errorInd, $msgArr[] ) = array(1 , "TARGET STATUS MENU VALUE IS INVALID" )) : "";  
 
+     $mnuDspRS->execute(array('whichmenu' => 'AGEUOM', ':whichvalue' => $pdta['ageuomvalue'] ));
+     ( $mnuDspRS->rowCount() !== 1) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE AGE-UOM IS INVALID" )) : "";  
 
-
-
+     $mnuValRS->execute(array(':whichmenu' => 'PXRACE', ':whichvalue' => $pdta['racevalue'] ));
+     ( $mnuValRS->rowCount() !== 1) ?  (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED DONOR RACE IS INVALID" )) : "";
+     
+     $mnuDspRS->execute(array( ':whichmenu' => 'PXSEX', ':whichvalue' => $pdta['sex'] ));
+     ( $mnuDspRS->rowCount() !== 1) ?  (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED DONOR SEX IS INVALID" )) : "";
+          
+     (  trim($pdta['targetindvalue']) === "N" &&  trim($pdta['notrcvdnote']) === ""  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFYING AN ENCOUNTER WAS NOT RECEIVED, YOU MUST SUPPLY A REASON" )) : "";
+     //The 'Last Four' field is Optional
+     
+     if ( $errorInd === 0 ) { 
+         //SAVE ENCOUNTER TO HISTORY
+         $copySQL = "insert into four.tmp_ORListing_history (location,ListDate,PXICode,startTime,room,surgeons,pxiIni,lastfourmrn,pxiAge,ageuomcode,pxiRace,pxiSex,procText,targetInd,infcInd, lastupdatedby, lastupdateon, ORListID,ORKey,linkedDonor,linkBy,delinkedDonor,delinkBy,BSNbr_old,oripxiRace_old,oriTargetInd_old,caseNotes_old)  SELECT * FROM four.tmp_ORListing where location = :loc and PXICode = :eid";
+         $copyRS = $conn->prepare($copySQL);
+         $copyRS->execute(array(':loc' => $presUserInst, ':eid' => $eid));
+//         $dta[] = $copyRS->debugDumpParams();
+         if ( $copyRS->rowCount() > 0) { 
+            //TODO:  FIX AGE UOM Value
+            $updSQL = "update four.tmp_ORListing set targetInd = :target, infcInd = :infc, pxiAge = :pxage, ageuomcode = :pxageuom, pxiRace = :pxrace, pxiSex = :pxsex, lastfourmrn = :lastfour, lastupdatedby = :lastby, lastupdateon = now() where location = :presInst and PXICode = :pxicode"; 
+            $updR = $conn->prepare($updSQL);
+            //TODO:  Make this dynamic
+            switch ($pdta['targetindvalue']) { 
+                case 'T': 
+                    $tg = 'T'; 
+                    break; 
+                case 'N':
+                    $tg = 'N'; 
+                break;
+                default:
+                    $tg = "";
+            }
+            $updR->execute(array( ':target' => $tg ,':infc' => $pdta['informedindvalue'], ':pxage' => $pdta['age'],':pxageuom' => $pdta['ageuomvalue'],':pxrace' => $pdta['racevalue'],':pxsex' => substr($pdta['sex'],0,1), ':lastfour' => $pdta['lastfour'], ':lastby' => $oAccount, ':presInst' => $presUserInst, ':pxicode' => $eid ));
+            if ($tg === 'N') { 
+                $noteInsSQL = "insert into  four.tmp_ORListing_casenotes (donorphiid, notetype, notetext, dspind, bywho, onwhen)  values (:donorphiid, :notetype, :notetext, 1, :bywho, now() ) "; 
+                $noteInsR = $conn->prepare($noteInsSQL); 
+                $noteInsR->execute(array(':donorphiid' => $eid, ':notetype' => 'Reason Not Received',  ':notetext' => $pdta['notrcvdnote'], ':bywho' => $oAccount ));
+            }
+           $responseCode = 200; 
+         } else { 
+             (list( $errorInd, $msgArr[] ) = array(1 , $copyRS->rowCount() ));
+         }
+     }
+     
      $msg = $msgArr;
      $rows['statusCode'] = $responseCode; 
      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);

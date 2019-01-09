@@ -248,9 +248,9 @@ textarea { font-size: 1.3vh; }
 #headerTbl { border-bottom: 1px solid  rgba({$this->color_grey},1); background: rgba({$this->color_cornflowerblue},1);  }
 #headerTbl th { padding: .4vh 0 .4vh 0; } 
 #PXIDspTblHD {width: 30vw; box-sizing: border-box; border-collapse: collapse;}
-#dataPart {  height: 40vh; width: 31vw; overflow: auto; } 
-.procedureSpellOutTbl { border-collapse: collapse; width: 27vw;  }
-.procTxtDsp { line-height: 1.4em; text-align: justify; width: 10vw; padding: 0 .1vw 0 0; }
+#dataPart {  height: 38vh; width: 30vw; overflow: auto; } 
+.procedureSpellOutTbl { border-collapse: collapse; width: 26vw;  }
+.procTxtDsp { line-height: 1.4em; text-align: justify; width: 10vw; padding: 0 .8vw 0 0; }
 
 .dspORTarget { width: 1vw; text-align: center; }
 .dspORInformed {width: 1vw; text-align: center; }
@@ -288,7 +288,7 @@ textarea { font-size: 1.3vh; }
 #fldDNRNotReceivedNote {width: 41vw; }
 #notRcvdNoteDsp {display: none; }
 
-.ENCHEAD { width: 78vh; border-bottom: 2px solid rgba({$this->color_cornflowerblue},1); }
+.ENCHEAD { width: 78vh; }
 .ENCHEAD tr td { text-align: center; font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_zackgrey},1);  }
 
 .DNRLbl { color: rgba({$this->color_zackgrey},1); font-weight: bold; font-size: 1.2vh; padding: .2vh .2vw; }
@@ -302,6 +302,10 @@ textarea { font-size: 1.3vh; }
 .noteTextLineEntry { font-size: 1vh; color: rgba({$this->color_darkgrey},1); text-align: right; padding: 0 .3vw 0 .3vw; border-bottom: 1px solid rgba({$this->color_darkgrey},1); }
 .noteTypeLine { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_darkgrey},1); padding: .3vh .0 .1vh .2vw;  }
 
+#waitgif { width: 2vw; padding: 2vh 0;}
+#waitIcon { display: none; width: 42.5vw; }
+#waitinstruction { font-size: 1.8vh; color: rgba({$this->color_dblue},1); font-weight: bold; }
+#displayEncounterDiv { display: block; }
 STYLESHEET;
 return $rtnThis;
 }
