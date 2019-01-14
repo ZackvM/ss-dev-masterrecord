@@ -108,9 +108,6 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 .valueDisplayHolder { position: relative; } 
 .valueDisplayDiv { background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .1vh; min-height: 15vh; max-height: 33vh; overflow: auto; display: none; z-index: 25; }
 
-
-
-
 .ddMenuItem {padding: .3vh .2vw;}
 .ddMenuItem:hover { cursor: pointer;  background: rgba({$this->color_lblue},1); color: rgba({$this->color_white},1);  }
 .ddMenuClearOption { font-size: 1.1vh; }
@@ -141,7 +138,7 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 
 #usrAccountTitle { font-size: 2vh; font-weight: bold; color: rgba({$this->color_lblue},1); }
 
-
+.helppicturecaption { font-size: 1.1vh; color: rgba({$this->color_darkgrey},1); font-weight: bold; font-style: italics; }
 STYLESHEET;
 
 //FOR CHECKBOXES AND RADIO BUTTONS https://www.w3schools.com/howto/howto_css_custom_checkbox.asp
@@ -206,8 +203,16 @@ textarea { font-size: 1.3vh; }
 
 #fldPRCPXIId { display: none; }
 #fldPRCPXIInitials { width: 5vw; }
+#fldADDPXIInitials { width: 5vw; }
 #fldPRCPXIAge {width: 3vw; }
+#fldADDPXIAge {width: 3vw; text-align: right; }
 #fldPRCPXIAgeMetric {width: 5vw;}
+#fldADDAgeUOM {width: 5vw;}
+#ddADDAgeUOM {min-width: 5vw; }
+
+
+
+
 #fldPRCPXIRace {width: 15.5vw; }
 #fldPRCPXIInfCon {width: 6vw; }
 #fldPRCPXILastFour {width: 6vw; }
@@ -273,15 +278,27 @@ textarea { font-size: 1.3vh; }
 
 #fldDNRTarget { width: 6vw; }
 #ddDNRTargetValue {min-width: 6vw; }
+#fldADDTarget { width: 6vw; }
+#ddADDTargetValue {min-width: 6vw; }
+
 #fldDNRInformedConsent { width: 6vw; }
 #ddDNRInformedConsent { min-width: 6vw; }
+#fldADDInformedConsent { width: 6vw; }
+#ddADDInformedConsent { min-width: 6vw; }
+
 #fldDNRAge { width: 3vw; text-align: right; }
 #fldDNRAgeUOM {width: 6vw; }
 #ddDNRAgeUOM { min-width: 6vw; }
 #fldDNRRace { width: 10vw; }
+#fldADDRace {width: 10vw; }
 #ddDNRRace { min-width: 10vw; }
+#ddADDRace {min-width: 10vw; }
+
 #fldDNRSex { width: 5vw; }
 #ddDNRSex { min-width: 5vw; }
+#fldADDSex { width: 5vw; }
+#ddADDSex { min-width: 5vw; }
+
 #fldDNRLastFour {width: 4vw; }
 #fldDNREncNotesType { width: 10vw; }
 #fldDNREncounterNote { width: 24vw; }
@@ -306,6 +323,65 @@ textarea { font-size: 1.3vh; }
 #waitIcon { display: none; width: 42.5vw; }
 #waitinstruction { font-size: 1.8vh; color: rgba({$this->color_dblue},1); font-weight: bold; }
 #displayEncounterDiv { display: block; }
+#waitgifADD { width: 1.6vw; padding: 2vh 0; }
+STYLESHEET;
+return $rtnThis;
+}
+
+function scienceserverhelp($mobileind) { 
+
+      $rtnThis = <<<STYLESHEET
+
+body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
+
+#sshHoldingTable { border-collapse: collapse; width: 97vw; height: 87vh; }
+#sshHoldingTable #head { height: 2vh; }
+#sshHoldingTable #topicDivHolder { width: 25vw; }
+#sshHoldingTable #divDspTopicList { height: 80vh; border-right: 1px solid rgba({$this->color_darkgrey},1); overflow: auto; }
+
+
+#ssHelpFilesHeaderDsp { font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); }
+.ssHlpModDiv { position: relative; }
+
+#ticketCHolder { width: 1vw; }
+#mainHelpFileHolder { position: relative; width: 25vw; }
+
+.hlpModuleTbl { font-size: 1.7vh; color: rgba({$this->color_zackgrey},1); }
+
+.iconholdercell {width: 1vw; }
+
+.topicicon {font-size: 1.6vh; padding: .3vh .3vw .3vh 1vw; }
+.hlpTopicDiv table tr td { padding: .5vh 0 .5vh 0; }
+.hlpTopicTbl { font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); width: 100%; }
+.hlpTopicTbl:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
+
+.hlpFunctionDiv table tr td {padding: .5vh 0 .5vh 0; }
+.hlpFuncTbl { font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); width: 100%; }
+.hlpFuncTbl:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
+
+.funcIcon {font-size: 1.8vh; padding: 0 0 0 2vw; }
+#instructionDiv { font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; padding: 10vh 0 3vh 0; }
+
+.helpticket { font-size: 1.5vh; }
+
+#hlpMainHolderDiv {padding: 0 1vw 0 1vw; height: 75vh; overflow: auto; } 
+#hlpMainTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; padding: .5vh 0 .8vh 0; }
+#hlpMainSubTitle { width: 100%; font-family: Roboto; font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; padding: .5vh 0 .8vh 0; }
+#hlpMainByLine { width: 100%; font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_darkgreen},1); text-align: right; padding: .8vh 0 .8vh 0; }
+#hlpMainText { width: 100%; font-family: Roboto; font-size: 1.8vh; line-height: 1.8em; text-align: justify; padding: 1vh 0 0 0; }
+
+#resultsSearchTbl { width: 100%; }
+#resultsSearchTbl #title { font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: 1vh 0 1vh 0; text-align: center; border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
+#resultsSearchTbl #itemsfound { font-size: 1.6vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: 1vh 0 1vh .8vw; } 
+#resultsSearchTbl #bywhowhen { font-size: 1.1vh; font-style: italic; color: rgba({$this->color_zackgrey},1); padding: 1vh 0 1vh .8vw; }
+
+#resultsSearchTbl .zoogleTbl { width: 100%;  }
+#resultsSearchTbl .zoogleTbl:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
+#resultsSearchTbl .zoogleTbl .zoogleTitle { font-size: 1.5vh; color: rgba({$this->color_cornflowerblue},1); font-weight: bold; padding: 1vh 3vw 0 5vw; }
+#resultsSearchTbl .zoogleTbl .zoogleURL { font-size: 1.1vh; color: rgba({$this->color_darkgreen},1); padding: 0 3vw .3vh 5vw; }
+#resultsSearchTbl .zoogleTbl .zoogleAbstract { font-size: 1.2vh; color: rgba({$this->color_zackgrey},1); padding: .3vh 25vw 1vh 5vw;text-align: justify; line-height: 1.8em; } 
+
+
 STYLESHEET;
 return $rtnThis;
 }

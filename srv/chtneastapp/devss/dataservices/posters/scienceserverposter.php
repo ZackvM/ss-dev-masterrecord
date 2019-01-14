@@ -33,6 +33,119 @@ function __construct() {
 }
 
 class datadoers {
+ 
+    function submithelpticket( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+
+     
+     //( 1 === 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , json_encode( $pdta )   )) : "";
+     //{"submitter":"Zack (proczack)","submitteremail":"zacheryv@mail.med.upenn.edu","reason":"","recreateind":"","description":""}
+     ( trim($pdta['submitter']) === "")  ? (list( $errorInd, $msgArr[] ) = array(1 , "Submitter's Name is Required (All Fields for a help ticket submission are required")) : ""; 
+     ( trim($pdta['submitteremail']) === "")  ? (list( $errorInd, $msgArr[] ) = array(1 , "Submitter's Email is Required (All Fields for a help ticket submission are required")) : ""; 
+     ( trim($pdta['reason']) === "")  ? (list( $errorInd, $msgArr[] ) = array(1 , "Ticket Reason is Required (All Fields for a help ticket submission are required")) : ""; 
+     ( trim($pdta['recreateind']) === "")  ? (list( $errorInd, $msgArr[] ) = array(1 , "Recreation Indicator is Required (All Fields for a help ticket submission are required")) : ""; 
+     ( trim($pdta['ssmodule']) === "")  ? (list( $errorInd, $msgArr[] ) = array(1 , "An affected ScienceServer Module is Required (All Fields for a help ticket submission are required")) : ""; 
+     ( trim($pdta['description']) === "")  ? (list( $errorInd, $msgArr[] ) = array(1 , "Description is Required (All Fields for a help ticket submission are required")) : ""; 
+
+     if ( $errorInd === 0 ) { 
+
+       $insTicketSQL = "insert into four.app_helpTicket(bywho, bywhoemail, onwhen, reasoncode, affectedSSModule, recreateind, description) values (:bywho, :bywhoemail, now(), :reasoncode, :module, :recreateind, :description)";
+       $insTicketRS = $conn->prepare($insTicketSQL);
+       $insTicketRS->execute(array(':bywho' => $pdta['submitter'], ':bywhoemail' => $pdta['submitteremail'], ':reasoncode' => $pdta['reason'], ':module' => $pdta['ssmodule'], ':recreateind' => $pdta['recreateind'], ':description' => $pdta['description']));
+       $ticketNbr = $conn->lastInsertId();   
+
+       $itStaff = "SELECT emailaddress FROM four.sys_userbase where informaticsind = :indicator";
+       $itStaffRS = $conn->prepare($itStaff); 
+       $itStaffRS->execute(array(':indicator' => 1)); 
+       $itEmailList = "\"zackvm.zv@gmail.com\",\"{$pdta['submitteremail']}\"";
+       while ($itr = $itStaffRS->fetch(PDO::FETCH_ASSOC)) { 
+         $itEmailList .= ",\"{$itr['emailaddress']}\""; 
+       }       
+
+
+       $dta['ticketnbr'] = substr(('000000' . $ticketNbr), -6);
+
+
+       $msg =  <<<MSGTXT
+    <table border=0>
+      <tr><td colspan=2>HELP TICKET REQUEST FROM SCIENCESERVER</td></tr>
+      <tr><td><b>Ticket #</b>:&nbsp;</td><td> {$dta['ticketnbr']} </td></tr>
+      <tr><td><b>Submited</b>:&nbsp;</td><td> {$pdta['submitter']} / {$pdta['submitteremail']} </td></tr>
+      <tr><td><b>Reason</b>:&nbsp;</td><td> {$pdta['reason']} </td></tr>
+      <tr><td><b>Module</b>:&nbsp;</td><td> {$pdta['ssmodule']} </td></tr>
+      <tr><td><b>Re-create</b>:&nbsp;</td><td> {$pdta['recreateind']} </td></tr>
+      <tr><td colspan=2><b>Issue Description</b></td></tr><tr><td colspan=2> {$pdta['description']} </td></tr>
+    </table>
+MSGTXT;
+       $sbjctLine = "SCIENCESERVER ISSUE TICKET {$dta['ticketnbr']}";
+       $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtLine, msgbody, htmlind, wheninput, bywho) value (:towhoaddressarray, :sbjtLine, :msgbody, 1, now(), 'SS-HELP-TICKET-SYSTEM')";
+       $emlRS = $conn->prepare($emlSQL);
+       $emlRS->execute(array(':towhoaddressarray' => "[{$itEmailList}]",':sbjtLine' => $sbjctLine, ':msgbody' => $msg));
+       $responseCode = 200;
+     } else { 
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+    } 
+
+    function submithelpsearch( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $searchTerm = $pdta['searchterm'];
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+     //( 1 === 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "{$searchTerm}")) : "";
+     ( trim($searchTerm) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The Search Term Field has been left blank")) : ""; 
+     //( checkPostingUser($pdta['sessid'],$authpw) !== 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     $usrSQL = "SELECT displayname, originalaccountname, emailaddress FROM four.sys_userbase where sessionid = :sess AND TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+     $usrRS = $conn->prepare($usrSQL); 
+     $usrRS->execute(array(':sess' => $authuser)); 
+
+     if ($usrRS->rowCount() === 1) { 
+        $usr = $usrRS->fetch(PDO::FETCH_ASSOC); 
+        $oAccount = "{$usr['displayname']} ({$usr['originalaccountname']})";
+        $eAccount = "{$usr['emailaddress']}";
+     } else { 
+       ( $usrRS->rowCount() !== 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT LISTED OR HAS AN EXPIRED PASSWORD.")) : "";
+     }    
+
+
+     if ( $errorInd === 0 ) { 
+       
+       $objid = strtolower( generateRandomString() );
+       $insSQL = "insert into four.objsrchdocument (objid, bywho, onwhen, srchterm, doctype) value (:objid,:whoby,now(),:srchtrm,:doctype)";
+       $insR = $conn->prepare($insSQL);
+       $insR->execute(array(':objid' => $objid, ':whoby' => $oAccount, ':srchtrm' => $passdata, ':doctype' => 'HELP-SEARCH-REQUEST'    ));
+       $dta['searchid'] = $objid;
+       $responseCode = 200;
+
+     } else { 
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+    } 
 
     function saveencounterdonor( $request, $passdata ) {
      $rows = array(); 
@@ -47,7 +160,7 @@ class datadoers {
      session_start();      
      $authuser = $_SERVER['PHP_AUTH_USER']; 
      $authpw = $_SERVER['PHP_AUTH_PW']; 
-     
+
      //DATA-CHECKS
      //1) IS USER VALID AND ALLOWED - BY INSTITUTION/SESSION/ALLOWED TECH
      ( $pdta['sessid'] !== session_id() ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
@@ -125,6 +238,8 @@ class datadoers {
                 default:
                     $tg = "";
             }
+
+//{"encyeid":"d2hsSi9MU2MxaHdOS2Y1dkZja0hyczlhdWptTmdubEVheFRPWm52YUltSTNVWWJhTjNkRzNSVFZ1Y01abEd5WA==","sessid":"mm6ka3ndrakkmeth8vblt60sh1","institution":"HUP","targetind":"TARGET","targetindvalue":"T","informedind":"PENDING","informedindvalue":"1","age":"61","ageuom":"Years","ageuomvalue":"Years","race":"American Indian","racevalue":"American Indian","sex":"Male","sexvalue":"Male","lastfour":"9228","notrcvdnote":""}
             $updR->execute(array( ':target' => $tg ,':infc' => $pdta['informedindvalue'], ':pxage' => $pdta['age'],':pxageuom' => $pdta['ageuomvalue'],':pxrace' => $pdta['racevalue'],':pxsex' => substr($pdta['sex'],0,1), ':lastfour' => $pdta['lastfour'], ':lastby' => $oAccount, ':presInst' => $presUserInst, ':pxicode' => $eid ));
             if ($tg === 'N') { 
                 $noteInsSQL = "insert into  four.tmp_ORListing_casenotes (donorphiid, notetype, notetext, dspind, bywho, onwhen)  values (:donorphiid, :notetype, :notetext, 1, :bywho, now() ) "; 

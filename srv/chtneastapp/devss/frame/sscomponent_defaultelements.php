@@ -165,6 +165,9 @@ function modaldialogbuilder($whichpage) {
        case 'datacoordinator': 
            $thisModDialog = "<div id=standardModalDialog></div>";
        break;
+       case 'scienceserverhelp':
+           $thisModDialog = "<div id=standardModalDialog></div>";
+       break;
    }
    return $thisModDialog;
 }    
@@ -181,47 +184,61 @@ function buildHelpFiles($whichpage, $request) {
     
     //TODO - PULL FROM A WEB SERVICE    
     require(genAppFiles . "/dataconn/sspdo.zck"); 
-    $hlpSQL = "SELECT ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt FROM four.base_ss7_help where screenreference = :pgename";
+    $hlpSQL = "SELECT ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt FROM four.base_ss7_help where screenreference = :pgename and helptype = :hlptype ";
     $hlpR = $conn->prepare($hlpSQL); 
-    $hlpR->execute(array(':pgename' => $whichpage));
+    $hlpR->execute(array(':pgename' => $whichpage, ':hlptype' => 'SCREEN'));
+
+
     if ($hlpR->rowCount() < 1) { 
-
+        //NO HELP FILE
         $rthis = <<<RTNTHIS
-
    <div id=hlpHolderDiv>
    <div id=clsBtnHold><table width=100%><tr><td></td><td id=closeBtn onclick="openAppCard('appcard_help');">&times;</td></tr></table></div>   
-   <div id=hlpTitle>ScienceServer v7 Help Files</div> 
-   <div id=hlpSubTitle>-Sub Title-</div>            
-   <div id=hlpByLine>zacheryv@mail.med.upenn.edu / September 25, 2018</div>             
+   <div id=hlpTitle>ScienceServer Help Files</div> 
+   <div id=hlpSubTitle>&nbsp;</div>            
+   <div id=hlpByLine>&nbsp;</div>             
    <div id=hlpText>
-       There is no help file for this ScienceServer screen.  ({$whichpage} -- {$request[1]} , {$request[2]}  {$c}  )  
-                
+       There is no help file for this ScienceServer screen. You can search the main help files by click the 'HELP' Menu on the main menu bar. <p> ({$whichpage})  
    </div>
    </div>                
 RTNTHIS;
     } else { 
-        
-    $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);
 
+/*
+ * NOTETOZACK: TO ADD PICTURES TO THE HELP FILE EMBED A JSON STRING INTO THE DATABASE FILE AS BELOW:
+ * PICTURE:{"picturefile": "help/elproDiagram.png","type":"png","useid":"pictElproDiagram","width":"10vw", "caption":"elpro monitor diagram", "holdingdivstyle":"float: left; margin-right: 10px; margin-bottom: 10px;"} 
+ * OR
+ * PICTURE:{"picturefile": "graphics/chtn_trans.png","type":"png","useid":"pictCHTNTrans","height":"10vh","holdingdivstyle":"float: right; border: 1px solid #000084;"}
+ *
+ * References must be single line json (no carriage returns) and are outlined as 
+ * picturefile (required) - under mainapp/publicobj ... directory/file
+ * useid (required) is the id that will be written to the HTML output
+ * height
+ * width 
+ * holdingdivstyle  these are in addition to position relative and display inline block
+ * caption is text that will be placed in grey under the picture
+ *
+ */
+        $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);
+        $ar = json_encode($hlp);
+    $hlpTitle = $hlp['hlpTitle'];
+    $hlpSubTitle = $hlp['hlpSubTitle'];
+    $hlpEmail = $hlp['byemail'];
+    $hlpDte = ( trim($hlp['initialdte']) !== "" ) ? " / {$hlp['initialdte']}" : "";
+    $hlpTxt = putPicturesInHelpText( $hlp['htmltxt'] );
         $rthis = <<<RTNTHIS
-
    <div id=hlpHolderDiv>
    <div id=clsBtnHold><table width=100%><tr><td></td><td id=closeBtn onclick="openAppCard('appcard_help');">&times;</td></tr></table></div>   
-   <div id=hlpTitle>{$hlp['hlpTitle']}</div> 
-   <div id=hlpSubTitle>{$hlp['hlpSubTitle']}</div>            
-   <div id=hlpByLine>{$hlp['byemail']} / {$hlp['initialdte']}</div>             
+   <div id=hlpTitle>{$hlpTitle}</div> 
+   <div id=hlpSubTitle>{$hlpSubTitle}</div>            
+   <div id=hlpByLine>{$hlpEmail} {$hlpDte}</div>             
    <div id=hlpText>
-    {$hlp['htmltxt']}
+        {$hlpTxt}
+        <p>&nbsp;
    </div>
    </div>         
 RTNTHIS;
-
     }
-
-
-
-
-
-
     return $rthis;
 }
+

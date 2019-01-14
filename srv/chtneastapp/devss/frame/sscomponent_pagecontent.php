@@ -14,7 +14,16 @@ public $checkBtn = "<i class=\"material-icons\">check</i>";
 function sysDialogBuilder($whichdialog, $passedData) {
  
     switch($whichdialog) {
-
+      case 'dialogHelpTicket':
+        $titleBar = "ScienceServer HelpTicket Submission";
+        //$footerBar = "DONOR RECORD";
+        $innerDialog = bldHelpTicketDialogBox($passedData);
+      break;  
+      case 'dialogPBAddDelink': 
+        $titleBar = "Add Delink PHI";
+        //$footerBar = "DONOR RECORD";
+        $innerDialog = bldQuickAddDelinkdialog();
+      break;
       case 'dataCoordUploadPR':
         $titleBar = "Quick Pathology Report Upload";
         //$footerBar = "DONOR RECORD";
@@ -547,12 +556,113 @@ return $rtnthis;
 }
 
 function scienceserverhelp($rqststr, $whichusr) { 
+
+$tt = treeTop; 
+$givenSearchTerm = "";  
+
+if ( trim($rqststr[2]) !== "" ) {
+    if ( trim($rqststr[2]) === "querysearch" ) { 
+      //GET SEARCH RESULTS
+      $rsltdta = json_decode(callrestapi("GET", dataTree . "/search-help-results/{$rqststr[3]}", serverIdent, serverpw),true);
+      $searchtermarr = json_decode($rsltdta['DATA']['head']['srchterm'], true);
+      $givenSearchTerm = $searchtermarr['searchterm'];
+      $itemsfound =$rsltdta['ITEMSFOUND']; 
+      $objid = $rsltdta['DATA']['head']['objid'];
+      $bywho = $rsltdta['DATA']['head']['bywho'];
+      $onwhen = $rsltdta['DATA']['head']['onwhendsp'];
+
+      foreach ($rsltdta['DATA']['searchresults'] as $rkey => $rval) { 
+        $inner .= "<tr><td colspan=2>";
+        $inner .= "<table class=zoogleTbl onclick=\"navigateSite('scienceserver-help/{$rval['helpurl']}');\">";
+        $inner .= "<tr><td class=zoogleTitle>{$rval['titledsp']}</td></tr>";
+        $inner .= "<tr><td class=zoogleURL>{$tt}/scienceserver-help/{$rval['urldsp']}</td></tr>";
+        $inner .= "<tr><td class=zoogleAbstract>{$rval['abstract']}</td></tr>";
+        //$inner .= "<tr><td align=right>Author: {$rval['byemail']} ({$rval['initialdate']})</td></tr>";
+        $inner .= "</table>";
+        $inner .= "</td></tr>";
+      }
+
+      $helpFile = <<<RTNTHIS
+<table border=0 cellspacing=0 cellpadding=0 id=resultsSearchTbl>
+<tr><td id=title colspan=2>Search Results</td></tr>
+<tr><td id=itemsfound>Items found: {$itemsfound}</td><td id=bywhowhen align=right valign=top> Query By: {$bywho} ({$onwhen}) </td></tr>
+{$inner}
+</table>
+RTNTHIS;
+    } else {
+      //GET HELP FILE
+      //TODO - PULL FROM A WEB SERVICE    
+      require(genAppFiles . "/dataconn/sspdo.zck"); 
+      $hlpSQL = "SELECT ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt , ifnull(helpurl,'') as helpurl FROM four.base_ss7_help where replace(helpurl,'-','') = :dataurl ";
+      $hlpR = $conn->prepare($hlpSQL); 
+      $hlpR->execute(array(':dataurl' => trim($rqststr[2])));
+      if ($hlpR->rowCount() < 1) { 
+      } else { 
+        $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);
+        $ar = json_encode($hlp);
+        $hlpTitle = $hlp['hlpTitle'];
+        $hlpSubTitle = $hlp['hlpSubTitle'];
+        $hlpEmail = $hlp['byemail'];
+        $hlpDte = ( trim($hlp['initialdte']) !== "" ) ? " / {$hlp['initialdte']}" : "";
+        $hlpTxt = putPicturesInHelpText( $hlp['htmltxt'] );
+        $hlpurl = $hlp['helpurl'];
+        $helpFile = <<<RTNTHIS
+<div id=hlpMainToolBar><table width=100% cellpadding=0 cellspacing=0><tr><td> <table class=tblBtn id=btnPrintThis onclick="openOutSidePage('{$tt}/print-obj/help-file/{$hlpurl}');" style="width: 6vw;"><tr><td><center><i class="material-icons helpticket">print</i></td></tr></table> </td></tr></table> </div>
+   <div id=hlpMainHolderDiv>
+   <div id=hlpMainTitle>{$hlpTitle}</div> 
+   <div id=hlpMainSubTitle>{$hlpSubTitle}</div>            
+   <div id=hlpMainByLine>{$hlpEmail} {$hlpDte}</div>             
+   <div id=hlpMainText>
+        {$hlpTxt}
+        <p>&nbsp;
+   </div>
+   </div>         
+RTNTHIS;
+      }
+    }
+} else { 
+  $helpFile = "<div id=instructionDiv>SELECT A SCIENCESERVER HELP FILE FROM THE OPTION LIST ON THE LEFT</div>";
+}
     
-  $rtnthis = <<<PAGEHERE
+$dta = json_decode(callrestapi("GET", dataTree . "/sshlp-topic-list", serverIdent, serverpw),true);
+$t = "<div id=mainHelpFileHolder>";
+$modCntr = 0;
+$topcCntr = 0;
+foreach ($dta['DATA'] as $key => $val) { 
+  $expnd = ((int)count($val['topics']) > 0) ? "E-" : "";  //HAS TOPICS AND SUB FUNCTION
+  $t .= "<div class=ssHlpModDiv><table cellspacing=0 cellpadding=0 class=hlpModuleTbl><tr><td><i class=\"material-icons\">keyboard_arrow_right</i></td><td>{$val['module']}</td></tr></table>";
+  if ((int)count($val['topics']) > 0) { 
+    foreach ( $val['topics'] as $tky => $tvl ) {
+      $topicon = ($tvl['topictype'] === "TOPIC") ? "<i class=\"material-icons topicicon\">library_books</i>" : "<i class=\"material-icons topicicon\">desktop_windows</i>"; 
+      $t .= "<div class=\"hlpTopicDiv\"><table cellspacing=0 cellpadding=0 onclick=\"navigateSite('scienceserver-help/{$tvl['topicurl']}');\" border=0 class=hlpTopicTbl><tr><td class=iconholdercell>{$topicon}</td><td>{$tvl['topictitle']}</td></tr></table>";
+      if ((int)count($tvl['functionslist']) > 0 ) { 
+        foreach ( $tvl['functionslist'] as $fky => $fvl ) { 
+          $t .= "<div class=\"hlpFunctionDiv\"><table cellspacing=0 cellpadding=0 onclick=\"navigateSite('scienceserver-help/{$fvl['helpurl']}');\" class=hlpFuncTbl border=0><tr><td class=iconholdercell><i class=\"material-icons funcIcon\">arrow_right</i></td><td>{$fvl['title']}</td></tr></table></div>";
+        }
+      }
+      $t .= "</div>";
+      $topcCntr++;
+    }
+  }
+  $t .= "</div>";
+  $modCntr++;
+}
+$t .= "</div>";
 
-          SCIENCESERVER HELP
-
+$rtnthis = <<<PAGEHERE
+<table border=0 id=sshHoldingTable>
+   <tr><td colspan=2 id=head> 
+       <table style="border-collapse: collapse;" width=100%><tr><td id=ssHelpFilesHeaderDsp> SCIENCESERVER HELP FILES </td>
+                 <td align=right>
+                   <table style="border-collapse: collapse;"><tr><td> <input type=text id=fldHlpSrch value="{$givenSearchTerm}"> </td>
+                              <td><table class=tblBtn id=btnSearchHelp style="width: 6vw;"><tr><td><center>Search</td></tr></table></td>
+                          <td><table class=tblBtn id=btnHelpTicket style="width: 6vw;"><tr><td><center><i class="material-icons helpticket">build</i></td></tr></table></td></tr></table>
+            </td></tr></table>
+        </td></tr>
+<tr><td valign=top id=topicDivHolder><div id=divDspTopicList>{$t}</div></td><td valign=top> {$helpFile}  </td></tr>
+</table>
 PAGEHERE;
+
 return $rtnthis;    
 }
 
@@ -1722,6 +1832,7 @@ $innerBar = <<<BTNTBL
 </tr>
 BTNTBL;
 break;
+
 case 'reportresultsscreen':
 $innerBar = <<<BTNTBL
 <tr>
@@ -1729,6 +1840,8 @@ $innerBar = <<<BTNTBL
 </tr>
 BTNTBL;
 break;    
+
+
 case 'reportscreen':
 $innerBar = <<<BTNTBL
 <tr>
@@ -1881,6 +1994,7 @@ $prcCalendarMaker = buildcalendar('procedureprocurequery');
 $prcCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
   <div class=valueHolder>
+      <input type=hidden id=fldPRCProcedureInstitutionValue value="{$institution}">
       <input type=hidden id=fldPRCProcedureDateValue value="{$procedureDateValue}">
       <input type=text READONLY id=fldPRCProcedureDate class="inputFld" value="{$procedureDate}"></div>
   <div class=valueDropDown style="min-width: 17vw;" id=procedurecal><div id=procureProcedureCalendar>{$prcCalendarMaker}</div></div>
@@ -1945,8 +2059,174 @@ RTNTHIS;
   return $rtnThis;
 }
 
+function bldHelpTicketDialogBox($passedData) { 
+    //GET USER 
+
+  //TODO:  MAKE THIS A WEBSERVICE  
+  require(serverkeys . "/sspdo.zck");
+  $pdta = json_decode($passedData,true);
+  $usrSQL = "SELECT originalaccountname, emailaddress, displayname FROM four.sys_userbase where sessionid = :sessid and allowind = 1";
+  $usrRS = $conn->prepare($usrSQL);
+  $usrRS->execute(array(':sessid' => $pdta['authuser']));
+  
+  if ($usrRS->rowCount() === 1) { 
+  
+    $u = $usrRS->fetch(PDO::FETCH_ASSOC);
+
+    $htrarr = json_decode(callrestapi("GET", dataTree . "/global-menu/help-ticket-reasons",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($htrarr['DATA'] as $agval) {
+        $agm .= "<tr><td onclick=\"fillField('fldHTR','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+    }
+    $agm .= "</table>";
+    $htrmnu = "<div class=menuHolderDiv><input type=hidden id=fldHTRValue value=\"{$givendspcode}\"><input type=text id=fldHTR READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddHTR>{$agm}</div></div>";
+
+    $ynarr = json_decode(callrestapi("GET", dataTree . "/global-menu/four-yes-no",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($ynarr['DATA'] as $agval) {
+        $agm .= "<tr><td onclick=\"fillField('fldRepYN','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+    }
+    $agm .= "</table>";
+    $repmnu = "<div class=menuHolderDiv><input type=hidden id=fldRepYNValue value=\"{$givendspcode}\"><input type=text id=fldRepYN READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddRepYN>{$agm}</div></div>";
+
+
+    $modarr = json_decode(callrestapi("GET", dataTree . "/global-menu/ss-modules-list",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($modarr['DATA'] as $agval) {
+        $agm .= "<tr><td onclick=\"fillField('fldMod','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+    }
+    $agm .= "</table>";
+    $modmnu = "<div class=menuHolderDiv><input type=hidden id=fldModValue value=\"{$givendspcode}\"><input type=text id=fldMod READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddMod>{$agm}</div></div>";
+
+
+
+
+
+
+$rtnThis = <<<RTNTHIS
+<style>
+#instrTbl { width: 40vw; font-size: 1.5vh; text-align: justify; line-height: 1.6em;  }
+.dialogLabels { font-size: 1.3vh; font-weight: bold; color: rgba(48,57,71,1); padding: .4vh .4vw; }
+
+#htSubmitter { width: 10vw; font-size: 1.3vh; }
+#htSubmitterEmail {  width: 29vw; font-size: 1.3vh; }
+#fldMod { width: 14vw; font-size: 1.3vh; }
+#ddMod { min-width: 14vw; }
+#fldHTR { width: 15vw; font-size: 1.3vh; } 
+#ddHTR {min-width: 15vw; }
+#fldRepYN { width: 9.5vw; font-size: 1.3vh; }
+#ddRepYN { min-width: 9.5vw; }
+#htDescription { width: 39vw; height: 15vh; }
+.cellholder {padding: 0 .1vw; }
+</style>
+
+<table id=instrTbl>
+<tr>
+   <td class=cellholder style="padding: .8vh .5vw;"><b>Instructions</b>: Fill out the form below to report a bug, an error or request a function be added to ScienceServer.  Each submission will be assigned a ticket number and immediately emailed to a CHTNEAST Informatics Staff person.</td></tr>
+</table>
+
+<table cellpadding=0 cellspacing=0 border=0><tr><td class=dialogLabels>Submitter</td><td class=dialogLabels>Submitter's Email</td></tr>
+<tr><td class=cellholder><input type=text id=htSubmitter READONLY value="{$u['displayname']} ({$u['originalaccountname']})"></td><td><input type=text READONLY id=htSubmitterEmail value="{$u['emailaddress']}"></td></tr>
+</table>
+
+<table cellpadding=0 cellspacing=0 border=0><tr><td class=dialogLabels>Module</td><td class=dialogLabels>Ticket Reason</td><td class=dialogLabels>Can you recreate error?</td></tr>
+<tr><td class=cellholder>{$modmnu}</td><td class=cellholder>{$htrmnu}</td><td class=cellholder>{$repmnu}</td></tr>
+</table>
+
+<table>
+<tr><td class=dialogLabels>Describe Error/Bug/Function Request.  Cut/Paste any relevent error messages etc.</td></tr>
+<tr><td class=cellholder><TEXTAREA id=htDescription></TEXTAREA></td></tr>
+</table>
+<table width=100%>
+<tr><td align=right> <table class=tblBtn id=btnUploadPR style="width: 6vw;" onclick="submitHelpTicket();"><tr><td style="white-space: nowrap;"><center>Save</td></tr></table> </td></tr>
+</table>
+
+RTNTHIS;
+  } else { 
+    $rtnThis = "USER ERROR!";
+  }
+  return $rtnThis;
+}
+
+function bldQuickAddDelinkdialog() { 
+
+    $at = genAppFiles;
+    $waitpic = base64file("{$at}/publicobj/graphics/zwait2.gif", "waitgifADD", "gif", true);         
+
+    $fldInitials = "<input type=text id=fldADDPXIInitials maxlength=3>";
+
+    $fldAge = "<input type=text id=fldADDPXIAge value=\"\">";
+    $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/age-uoms",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($agarr['DATA'] as $agval) {
+      if ((int)$agval['useasdefault'] === 1 ) { 
+          $givendspcode = $agval['codevalue'];
+          $givendspvalue = $agval['menuvalue'];
+        }
+        $agm .= "<tr><td onclick=\"fillField('fldADDAgeUOM','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+      }
+      $agm .= "</table>";
+      $ageuommnu = "<div class=menuHolderDiv><input type=hidden id=fldADDAgeUOMValue value=\"{$givendspcode}\"><input type=text id=fldADDAgeUOM READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddADDAgeUOM>{$agm}</div></div>";
+
+    $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-race",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($agarr['DATA'] as $agval) {
+      if ($agval['menuvalue'] === $donorrace ) { 
+          $givendspcode = $agval['codevalue'];
+          $givendspvalue = $agval['menuvalue'];
+        }
+        $agm .= "<tr><td onclick=\"fillField('fldADDRace','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+      }
+      $agm .= "</table>";
+      $racemnu = "<div class=menuHolderDiv><input type=hidden id=fldADDRaceValue value=\"{$givendspcode}\"><input type=text id=fldADDRace READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddADDRace>{$agm}</div></div>";
+
+    $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-sex",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($agarr['DATA'] as $agval) {
+        $agm .= "<tr><td onclick=\"fillField('fldADDSex','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+      }
+      $agm .= "</table>";
+      $sexmnu = "<div class=menuHolderDiv><input type=hidden id=fldADDSexValue value=\"\"><input type=text id=fldADDSex READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddDNRSex>{$agm}</div></div>";
+
+      $lastFourDsp = "<input type=text id=fldDNRLastFour value=\"\" maxlength=4>";
+
+$rtnThis = <<<RTNTHIS
+<div id=divAddDelink style="display: block;">
+<table> 
+<tr><td class=DNRLbl2>Initials *</td><td class=DNRLbl2>Age *</td><td class=DNRLbl2>Race *</td><td class=DNRLbl2>Sex *</td><td class=DNRLbl2>Last Four</td><td rowspan=2 valign=bottom><table class=tblBtn id=btnADDDelink style="width: 6vw;" onclick="saveDelink();"><tr><td style=" font-size: 1.2vh; "><center>Save</td></tr></table></td></tr>
+<tr>
+  <td>{$fldInitials}</td>
+  <td><table><tr><td>{$fldAge}</td><td>{$ageuommnu}</td></tr></table>
+  <td>{$racemnu}</td>
+  <td>{$sexmnu}</td>
+  <td>{$lastFourDsp}</td>
+</tr>
+<tr><td colspan=6 style="font-size: 1.1vh; font-weight: bold; color: rgba(237, 35, 0,1);">* required field</td></tr>
+
+</table>
+</div>
+<div id=addDelinkSwirly style="display: none; width: 40vw; font-size: 1.7vh; "><center>
+{$waitpic}
+<br>
+Please wait ... Saving delink donor information
+</div>
+RTNTHIS;
+return $rtnThis;
+}
+
 function bldQuickPRUpload($passeddata) { 
-//passeddata = {"user":"zacheryv@mail.med.upenn.edu","sessionid":"mjfk2f5lmcs92chkoet1143ab2","labelnbr":"83108001","pbiosample":83108,"pathreportind":2,"pathreportid":0,"site":"BRAIN (MALIGNANT)","diagnosis":"GLIOBLASTOMA MULTIFORME","procinstitution":"HUP","proceduredate":"03\/26\/2018"}
     
 $pdta = $passeddata;
 $errorInd = 0;
@@ -2069,7 +2349,7 @@ function bldQuickEditDonor($passeddata) {
         $icm .= "<tr><td onclick=\"fillField('fldDNRInformedConsent','{$icval['codevalue']}','{$icval['menuvalue']}');\" class=ddMenuItem>{$icval['menuvalue']}</td></tr>";
       }
       $icm .= "</table>";
-      $infcmnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRInfomedConsentValue value=\"{$givenicdspcode}\"><input type=text id=fldDNRInformedConsent READONLY class=\"inputFld\" value=\"{$givenicdspvalue}\"><div class=valueDropDown id=ddDNRInformedConsent>{$icm}</div></div>";
+      $infcmnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRInformedConsentValue value=\"{$givenicdspcode}\"><input type=text id=fldDNRInformedConsent READONLY class=\"inputFld\" value=\"{$givenicdspvalue}\"><div class=valueDropDown id=ddDNRInformedConsent>{$icm}</div></div>";
     }
 
     //TODO:  MAKE A MENU BUILDER FUNCTION THAT WILL BUILD ALL SCIENCESERVER DROP DOWNS
@@ -2145,7 +2425,7 @@ function bldQuickEditDonor($passeddata) {
       $sessid = $passeddata['sessionid'];
       $presentinstitution = $passeddata['presentinstitution'];
 
-     $waitpic = base64file("{$at}/publicobj/graphics/zwait2.gif", "waitgif", "gif", true);         
+      $waitpic = base64file("{$at}/publicobj/graphics/zwait2.gif", "waitgif", "gif", true);         
       $rtnThis = <<<RTNTHIS
               
 <div id=displayEncounterDiv>              

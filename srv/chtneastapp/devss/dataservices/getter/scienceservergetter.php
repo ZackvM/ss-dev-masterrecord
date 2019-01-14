@@ -35,7 +35,118 @@ class objgetter {
 
 class objlisting { 
 
-  
+  function gethelpticketdialog($whichobj, $urirqst) { 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $msgArr = array();
+    $itemsfound = 0;
+    $pdta['authuser'] = $_SERVER['PHP_AUTH_USER'];
+    $dta = array('pagecontent' => bldDialogGetter('dialogHelpTicket',json_encode($pdta)));
+    ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+    $msg = $msgArr;
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;      
+  }
+
+  function searchhelpresults($whichobj, $urirqst) { 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $msgArr = array();
+    $modArray = array();
+    $itemsfound = 0;
+    require(serverkeys . "/sspdo.zck");
+    $headSQL = "select  objid, bywho, date_format(onwhen, '%M %d, %Y %H:%i') as onwhendsp, srchterm from four.objsrchdocument where doctype = 'HELP-SEARCH-REQUEST' and objid = :objid"; 
+    $headR = $conn->prepare($headSQL);
+    $headR->execute(array(':objid' => $whichobj));
+    if ($headR->rowCount() < 1) { 
+      $responseCode = 404;
+      $msg = "BIOGROUP SEARCH ID OBJECT NOT FOUND";
+    } else { 
+      $dta['head'] = $headR->fetch(PDO::FETCH_ASSOC);
+      $searchTerm = $dta['head']['srchterm'];
+      $rsltArr = runhelpsearchquery($searchTerm); 
+      $dta['searchresults'] = $rsltArr;
+      $itemsfound = count($rsltArr);
+      $msg = "";
+      $responseCode = 200;
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;      
+  }
+
+  function sshlptopiclist($request, $urirqst) { 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $msgArr = array();
+    $modArray = array();
+    $itemsfound = 0;
+    require(serverkeys . "/sspdo.zck");
+    $modListSQL = "SELECT moduleid, module FROM four.base_ssv7_help_index_modulelist where dspind = 1 order by dsporder";
+    $modListRS = $conn->prepare($modListSQL); 
+    $modListRS->execute();
+    if ($modListRS->rowCount() > 0) { 
+    $modArrCnt = 0;
+      while ($modList = $modListRS->fetch(PDO::FETCH_ASSOC)) { 
+          $modArray[$modArrCnt]['moduleid'] = $modList['moduleid'];
+          $modArray[$modArrCnt]['module'] = $modList['module'];
+          $topicArray = array();
+          $topicSQL = "SELECT hlpid, helptype, helpurl, screenreference, title  FROM four.base_ss7_help where helpdspind = 1 and (helptype = 'SCREEN' or helptype = 'TOPIC') and belongstoindexid = :modIndex order by helpdsporder";
+          $topicRS = $conn->prepare($topicSQL);
+          $topicRS->execute(array(':modIndex' => $modList['moduleid'])); 
+          if ($topicRS->rowCount() > 0 ) { 
+              $topicCnt = 0;
+              while ($topics = $topicRS->fetch(PDO::FETCH_ASSOC)) { 
+                  $topicArray[$topicCnt]['helpid'] = $topics['hlpid'];
+                  $topicArray[$topicCnt]['topictype'] = $topics['helptype'];
+                  $topicArray[$topicCnt]['topicurl'] = $topics['helpurl'];
+                  $topicArray[$topicCnt]['screenref'] = $topics['screenreference'];
+                  $topicArray[$topicCnt]['topictitle'] = $topics['title'];
+                  $funcSQL = "SELECT hlpid, screenreference, title, helpurl FROM four.base_ss7_help where helpdspind = 1 and helptype = 'FUNCTIONALITYDESC' and belongstoindexid = :topicid order by helpdsporder";
+                  $funcRS = $conn->prepare($funcSQL); 
+                  $funcRS->execute(array(':topicid' => $topics['hlpid']));
+                  $funcArray = array();
+                  if ($funcRS->rowCount() > 0) { 
+                    $funcCnt = 0; 
+                    while ($func = $funcRS->fetch(PDO::FETCH_ASSOC)) { 
+                      $funcArray[] = $func;
+                    }
+                    $topicArray[$topicCnt]['functionslist'] = $funcArray;
+                  } else { 
+                    $topicArray[$topicCnt]['functionslist'] = $funcArray;
+                  }
+                $topicCnt++;
+              }
+              $modArray[$modArrCnt]['topics'] = $topicArray;
+          } else {
+              $modArray[$modArrCnt]['topics'] = $topicArray;
+          }
+        $modArrCnt++;
+      }
+      $dta = $modArray;
+    } 
+    $msg = $msgArr;
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;      
+  }
+
+  function preprocessdialogaddphi($request, $urirqst) { 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $msgArr = array();
+    $itemsfound = 0;
+    
+    $dta = array('pagecontent' => bldDialogGetter('dialogPBAddDelink','') );
+
+    ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+
+    $msg = $msgArr;
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;      
+  } 
 
 
   function preprocesspathologyrptupload($request, $urirqst) { 
@@ -827,6 +938,14 @@ function hprrequestcode($whichobj, $rqst) {
 }
 
 class globalMenus {
+    
+    function ssmoduleslist() { 
+      return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'SS5MODULES' and dspind = 1 order by dsporder";
+    }
+
+    function helpticketreasons() { 
+      return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'HELPTICKETREASON' and queriable = 1 and dspind = 1 order by dsporder";
+    }
 
     function vocabularysystemicdxlist() { 
       return "SELECT distinct trim(ifnull(dxid,'')) as codevalue, trim(ifnull(diagnosis,'')) as menuvalue, 0 as useasdefault, trim(ifnull(diagnosis,'')) as lookupvalue FROM four.sys_master_menu_vocabulary where systemicindicator =1 order by menuvalue";
@@ -1017,6 +1136,44 @@ function chkUserBySession($givensessionid) {
    } else { 
    } 
    return $usrArr;
+}
+
+function runhelpsearchquery($srchrqstjson) { 
+  require(serverkeys . "/sspdo.zck");
+  $rqstDta = json_decode($srchrqstjson, true);
+  $sql = "SELECT helpurl, screenreference, title, subtitle, txt, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte FROM four.base_ss7_help where 1=1 and ((ifnull(txt,'') like :textsrch) or (ifnull(title,'') like :titlesrch) or (ifnull(subtitle,'') like :subtitlesrch))";
+  $rs = $conn->prepare($sql); 
+  $rs->execute(array(":textsrch" => "%{$rqstDta['searchterm']}%", ":titlesrch" => "%{$rqstDta['searchterm']}%", ":subtitlesrch" => "%{$rqstDta['searchterm']}%"));
+  $rtnData = array();
+  if ( $rs->rowCount() > 0 ) {
+    $rsltCntr = 0;  
+    while ( $r = $rs->fetch(PDO::FETCH_ASSOC)) {
+      $rtnData[$rsltCntr]['matchesfound']       = $rs->rowCount();  
+      $rtnData[$rsltCntr]['helpurl']            = $r['helpurl'];
+      $urldsp                                   = preg_replace("/{$rqstDta['searchterm']}/i",'<b>$0</b>', $r['helpurl'] ); 
+      $rtnData[$rsltCntr]['urldsp']             = $urldsp;
+      $rtnData[$rsltCntr]['screenreference']    = $r['screenreference'];
+      $rtnData[$rsltCntr]['title']              = $r['title'];
+      $titleDsp                                 = preg_replace("/{$rqstDta['searchterm']}/i",'<b>$0</b>', $r['title'] );
+      $rtnData[$rsltCntr]['titledsp']           = $titleDsp;
+      $rtnData[$rsltCntr]['subtitle']           = $r['subtitle'];
+      $subtitleDsp                              = preg_replace("/{$rqstDta['searchterm']}/i",'<b>$0</b>', $r['subtitle'] );
+      $rtnData[$rsltCntr]['subtitledsp']        = $subtitleDsp;
+      $rtnData[$rsltCntr]['byemail']            = $r['byemail'];
+      $rtnData[$rsltCntr]['initialdate']        = $r['initialdte'];
+      $txtStr                                   = preg_replace('/(<[Pp]>)|(\\n)|(<[Bb][Rr]>)|(\\r)|(<[Bb]>)|(<\\[Bb][Rr])|(<\/br>)|(<\\[Bb]>)|(<\/[Bb]>)|(PICTURE:\{.{1,}\})/',' ', $r['txt']);
+      preg_match("/{$rqstDta['searchterm']}/i",$txtStr, $matches,  PREG_OFFSET_CAPTURE);
+      if ( (int)$matches[0][1] < 21) { 
+        $txtStr = substr($txtStr,0,350) . " ...";
+      } else { 
+        $txtStr = " ... " . substr($txtStr,(int)$matches[0][1] - 20, 350) . " ...";
+      }
+      $rtnData[$rsltCntr]['abstract']           = preg_replace("/{$rqstDta['searchterm']}/i","<b>$0</b>",$txtStr);
+      $rsltCntr++;
+    }
+  } else { 
+  }
+  return $rtnData; 
 }
 
 function runbiogroupsearchquery($srchrqstjson) {

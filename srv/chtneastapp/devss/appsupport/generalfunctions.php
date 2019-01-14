@@ -545,3 +545,42 @@ $rtnthiscalendar .= "</table>";
 return $rtnthiscalendar;    
 }
 
+function putPicturesInHelpText( $hlpTxt ) { 
+ 
+    $at = genAppFiles;
+    //$pattern = '/\bPICTURE:[^*?"<>|:.]{0,}\.[A-Za-z]{3}\b/'; ex.: PICTURE:pathname.threechar-ext
+    $pattern = '/\bPICTURE:(\{.{1,}\})/';
+    preg_match_all($pattern,$hlpTxt,$outlist,PREG_PATTERN_ORDER); 
+    //$o = $outlist[0][0];
+    if ( count($outlist[0]) > 0 ) { 
+      foreach ($outlist[0] as $pictDef) {
+        $pictureDef = preg_replace('/\bPICTURE:/','',$pictDef);
+        $pd = json_decode( $pictureDef , true); 
+        //BUILD THE PICTURE
+        //{"picturefile": "help/elproDiagram.png","type":"png","useid":"pictElproDiagram","width":"5vw","height":"5vh"}
+        $picfile = ( array_key_exists('picturefile',$pd) ) ? "{$pd['picturefile']}" : "";
+        $pictype = ( array_key_exists('type', $pd) ) ? $pd['type'] : "";
+        $useid = ( array_key_exists('useid', $pd) ) ? $pd['useid'] : "";
+
+        $additionals  = " style = \""; 
+        $additionals .= ( array_key_exists('width', $pd) ) ? "width: {$pd['width']};" : "";
+        $additionals .= ( array_key_exists('height', $pd) ) ?  "height: {$pd['height']};" : ""; 
+        $additionals .= "\"";
+         
+        $picturecode = base64file("{$at}/publicobj/{$picfile}", $useid, $pictype, true, $additionals);
+
+        $divstyle = ( array_key_exists('holdingdivstyle',$pd) ) ? " style = \"position: relative; display: inline-block; {$pd['holdingdivstyle']}\"" : " style = \"position: relative; display: inline-block; \"";   
+        $caption = ( array_key_exists('caption', $pd) ) ? $pd['caption'] : "";
+
+
+        $picturedsp = "<div class=helpPictureDisplay {$divstyle}>{$picturecode}<div class=helppicturecaption>{$caption}</div></div>";
+
+        $hlpTxt = str_replace($pictDef,$picturedsp,$hlpTxt);
+      }
+    }
+
+    return $hlpTxt;
+
+
+}
+

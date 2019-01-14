@@ -206,14 +206,137 @@ function JSONToCSVConvertor(JSONData, ReportTitle, ShowLabel) {
     document.body.removeChild(link);
 }
 
-
-
-
-
 JAVASCR;
 return $rtnThis;    
 }
- 
+
+function scienceserverhelp($rqststr) { 
+
+  session_start(); 
+  $tt = treeTop;
+  $ott = ownerTree;
+  $si = serverIdent;
+  $sp = serverpw;
+
+$rtnThis = <<<JAVASCR
+
+document.addEventListener('DOMContentLoaded', function() {  
+
+  if (byId('btnSearchHelp')) { 
+    byId('btnSearchHelp').addEventListener('click', function() {
+      submitSearch();
+    }, false);
+  }
+
+  if (byId('btnHelpTicket')) { 
+    byId('btnHelpTicket').addEventListener('click',function() { 
+      openHelpTicket();
+    }, false);
+  }
+
+}, false);        
+
+function openHelpTicket() { 
+  var mlURL = "/get-help-ticket-dialog";
+  universalAJAX("GET",mlURL,"",answerOpenHelpTicket, 1);
+}
+
+function answerOpenHelpTicket(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("HELP TICKET ERROR:\\n"+dspMsg);
+   } else { 
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+        if (byId('waitIcon')) {             
+          byId('waitIcon').style.display = 'none';  
+        }
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = "-25vw";
+       byId('standardModalDialog').style.left = "50%";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "15vh";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+   }        
+}
+
+function submitSearch() {
+  var dta = new Object(); 
+  dta['searchterm'] = byId('fldHlpSrch').value.trim();
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/submit-help-search";
+  universalAJAX("POST",mlURL,passdta,answerSubmitSearch,1);
+}
+
+function answerSubmitSearch(rtnData) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("SEARCH ERROR:\\n"+dspMsg);
+   } else { 
+     //SUCCESS
+     var rtn = JSON.parse(rtnData['responseText']);
+     navigateSite('scienceserver-help/query-search/'+rtn['DATA']['searchid']);
+   }        
+
+}
+
+function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) { 
+  if (byId(whichfield)) { 
+    if (byId(whichfield+'Value')) {
+      byId(whichfield+'Value').value = whatvalue;
+    }    
+    byId(whichfield).value = whatplaintext; 
+  }
+}
+
+function submitHelpTicket() { 
+  var dta = new Object(); 
+  dta['submitter'] = byId('htSubmitter').value.trim();
+  dta['submitteremail'] = byId('htSubmitterEmail').value.trim();
+  dta['reason'] = byId('fldHTR').value.trim(); 
+  dta['recreateind'] = byId('fldRepYN').value.trim();
+  dta['ssmodule'] = byId('fldMod').value.trim();
+  dta['description'] = byId('htDescription').value.trim();
+  var passdata = JSON.stringify(dta); 
+  var mlURL = "/data-doers/submit-help-ticket";
+  universalAJAX("POST",mlURL,passdata,answerSubmitHelpTicket,2);
+}
+
+function answerSubmitHelpTicket(rtnData) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("HELP TICKET SUBMISSION ERROR:\\n"+dspMsg);
+   } else {
+
+      var msgs = JSON.parse(rtnData['responseText']);
+      alert('TICKET NUMBER: '+msgs['DATA']['ticketnbr']+'\\n\\nPlease keep this number for reference');
+      byId('standardModalDialog').innerHTML = "";
+      byId('standardModalBacker').style.display = 'none';
+      byId('standardModalDialog').style.display = 'none';
+   }        
+}
+
+JAVASCR;
+return $rtnThis;
+
+}
+
 function login($rqstrstr) { 
 
   session_start(); 
@@ -467,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (byId('btnPBAddDelink')) { 
-
+      byId('btnPBAddDelink').addEventListener('click', function() { getAddPHIDialog(); }, false);          
     } 
 
     if (byId('fldPRCDXOverride')) {
@@ -519,18 +642,79 @@ function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxi
    byId('fldPRCPXISex').value = pxisex;  
    byId('fldPRCPXILastFour').value = pxilastfour;  
    byId('fldPRCPXIInfCon').value = ( pxiinformed == 1) ? 'NO' : 'PENDING';        
+}
 
+function saveDelink() { 
+  var dta = new Object();  
+  //TODO: CHECK FIELDS EXIST
+  dta['proceduredate'] = byId('fldPRCProcedureDateValue').value;
+  dta['delinkedind'] = 1;
+  dta['initials'] = byId('fldADDPXIInitials').value.trim();
+  dta['age'] = byId('fldADDPXIAge').value.trim();
+  dta['ageuom'] = byId('fldADDAgeUOMValue').value.trim();
+  dta['race'] = byId('fldADDRaceValue').value.trim();
+  dta['sex'] = byId('fldADDSexValue').value.trim();
+  dta['lastfour'] = byId('fldDNRLastFour').value.trim();
+  var hld = new Object(); 
+  hld['phicontainer'] = dta;
+  var passdta = JSON.stringify(hld);
+  var mlURL = "/data-doers/save-phi";
+  //TODO:  Add a wait swirly   
+  if (byId('addDelinkSwirly')) {             
+     byId('addDelinkSwirly').style.display = 'block';  
+  }
+  if (byId('divAddDelink')) { 
+      byId('divAddDelink').style.display = 'none';
+  }
+  universalAJAX("POST",mlURL,passdta,answerSaveDelink,2);   
+}
+
+function answerSaveDelink(rtnData) {
+  console.log('here');  
+  console.log(rtnData);
+}
+
+function getAddPHIDialog() { 
+  var mlURL = "/preprocess-dialog-add-phi";
+  universalAJAX("GET",mlURL,"",answerGetAddPHIDialog, 1);
+}
+
+function answerGetAddPHIDialog(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("Add PHI ERROR:\\n"+dspMsg);
+   } else { 
+     //DISPLAY PHI EDIT
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+        if (byId('waitIcon')) {             
+          byId('waitIcon').style.display = 'none';  
+        }
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = "-25vw";
+       byId('standardModalDialog').style.left = "50%";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "15vh";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+   }        
 }
 
 function saveDonorSpecifics() { 
   var dta = new Object();  
+  //TODO: CHECK FIELDS EXIST
   dta['encyeid'] = byId('fldDNReid').value.trim(); 
   dta['sessid'] = byId('fldDNRSess').value.trim();
   dta['institution'] = byId('fldDNRPresInst').value.trim();
   dta['targetind'] = byId('fldDNRTarget').value.trim();
   dta['targetindvalue'] = byId('fldDNRTargetValue').value.trim();
   dta['informedind'] = byId('fldDNRInformedConsent').value.trim();
-  dta['informedindvalue'] = byId('fldDNRInfomedConsentValue').value.trim();
+  dta['informedindvalue'] = byId('fldDNRInformedConsentValue').value.trim();
   dta['age'] = byId('fldDNRAge').value.trim();
   dta['ageuom'] = byId('fldDNRAgeUOM').value.trim();
   dta['ageuomvalue'] = byId('fldDNRAgeUOMValue').value.trim();
@@ -592,7 +776,6 @@ function saveEncounterNote() {
 }
 
 function answerSaveEncounterNote(rtnData) { 
-
    if (parseInt(rtnData['responseCode']) !== 200) { 
      var msgs = JSON.parse(rtnData['responseText']);
      var dspMsg = ""; 
@@ -606,9 +789,8 @@ function answerSaveEncounterNote(rtnData) {
        byId('standardModalDialog').innerHTML = '';
        byId('standardModalDialog').style.display = 'none';
    }        
-
 }
-         
+
 var lastRequestCalendarDiv = "";
 function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
   var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;
@@ -632,9 +814,7 @@ function editPHIRecord(e, phiid) {
     var dta = new Object();
     dta['phicode'] = phiid; 
     var passdta = JSON.stringify(dta);
-    var mlURL = "/data-doers/preprocess-phi-edit";
-            
-            
+    var mlURL = "/data-doers/preprocess-phi-edit";          
     universalAJAX("POST",mlURL,passdta,answerPreprocessPHIEdit,1);   
   }
 }
@@ -1540,7 +1720,6 @@ function answerEditPathRpt(rtnData) {
      });
      alert("Pathology Report Edit Error:\\n"+dspMsg);
    } else { 
-     //DISPLAY SHIPDOC CREATOR
      if (byId('standardModalDialog')) {
        var dta = JSON.parse(rtnData['responseText']); 
        byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
@@ -1572,7 +1751,6 @@ function answerGetUploadNewPathRpt(rtnData) {
      });
      alert("Pathology Report Upload Error:\\n"+dspMsg);
    } else { 
-     //DISPLAY SHIPDOC CREATOR
      if (byId('standardModalDialog')) {
        var dta = JSON.parse(rtnData['responseText']); 
        byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
