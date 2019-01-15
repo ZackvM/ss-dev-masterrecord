@@ -205,6 +205,14 @@ function JSONToCSVConvertor(JSONData, ReportTitle, ShowLabel) {
     link.click();
     document.body.removeChild(link);
 }
+   
+function inArray(needle, haystack) {
+    var length = haystack.length;
+    for(var i = 0; i < length; i++) {
+        if (haystack[i] == needle) return true;
+    }
+    return false;
+}   
 
 JAVASCR;
 return $rtnThis;    
@@ -1524,7 +1532,6 @@ function datacoordinator($rqststr) {
     
 $rtnthis = <<<JAVASCR
 
-
 var rowidclick = "";
 
 var key;         
@@ -1700,6 +1707,34 @@ function selectorInvestigator() {
 
 }
 
+function printallselectedpr(e) { 
+e.stopPropagation();
+var prlist = [];        
+if (byId('coordinatorResultTbl')) { 
+    for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) {  
+      if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
+         if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim() !== "" && !inArray( byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim(),prlist)) {
+           openOutSidePage('{$tt}/print-obj/pathology-report/'+byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim());  
+           prlist.push(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim());
+         }
+      } 
+    }
+  }           
+}
+        
+function printAllSelectedShipDoc(e) { 
+e.stopPropagation();
+if (byId('coordinatorResultTbl')) { 
+    for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) {  
+      if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
+         if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printsdid.trim() !== "") {
+           openOutSidePage('{$tt}/print-obj/shipment-manifest/'+byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printsdid.trim());  
+         }
+      } 
+    }
+  }          
+}
+   
 function editPathRpt(e, docid) { 
   e.stopPropagation();
   if (docid.toString().trim() !== "") { 

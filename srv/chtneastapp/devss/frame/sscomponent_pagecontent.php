@@ -808,7 +808,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
         if (trim($val['sdstatus']) === "") { 
             $dspSD .= "<div class=tt>&nbsp;</div>";
         } else { 
-            $dspSD .= "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]<br><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">file_copy</i> View Ship-Doc (" . substr(('000000' . $val['shipdocnbr']),-6) . ")</div></div>";
+            $dspSD .= "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]<p><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">print</i> Print Ship-Doc (" . substr(('000000' . $val['shipdocnbr']),-6) . ")</div><div onclick=\"printAllSelectedShipDoc(event);\" class=quickLink><i class=\"material-icons qlSmallIcon\">done_all</i> Print Selected Ship-Docs</div></div>";
         }
         $dspSD .= "</div>";
     }
@@ -828,6 +828,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $bgencry = cryptservice($val['pbiosample']);
     $moreInfo = ( trim($cmtDsp) !== "" ) ? "<div class=ttholder><div class=infoIconDiv><i class=\"material-icons informationalicon\">error_outline</i></div><div class=infoTxtDspDiv>{$cmtDsp}</div></div>" : "";
 
+    $prDocId = "";
     switch (trim($val['pathologyrptind'])) { 
       case 'Y':
         if ((int)$val['pathologyrptdocid'] !== 0) {  
@@ -838,6 +839,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
    <div class=tt>
      <div class=quickLink onclick="printPRpt(event,'{$prDocId}');"><i class="material-icons qlSmallIcon">print</i> Print Pathology Report ({$dspBG})</div>
      <div class=quickLink onclick="editPathRpt(event,'{$prDocId}');"><i class="material-icons qlSmallIcon">file_copy</i> Edit Pathology Report ({$dspBG})</div>
+     <div class=quickLink onclick="printallselectedpr(event);"><i class="material-icons qlSmallIcon">done_all</i> Print All Selected Pathology Reports </div>
    </div>
 </div>
 PRPTNOTATION;
@@ -865,7 +867,7 @@ PRPTNOTATION;
         $pRptDsp = "{$val['pathologyrptind']}";
     }
 
-
+//TODO: ADD ABILITY TO PULL ASSOCIATIVE RECORD    
     
 $dataTbl .=  <<<LINEITEM
    <tr 
@@ -879,6 +881,8 @@ $dataTbl .=  <<<LINEITEM
      data-segmentid="{$val['segmentid']}" 
      data-selected="false" 
      data-associd="{$val['associd']}" 
+     data-printprid = "{$prDocId}"
+     data-printsdid = "{$sdencry}"
      onclick="rowselector('sg{$val['segmentid']}');" 
      ondblclick="navigateSite('segment/{$sgencry}');"
   >

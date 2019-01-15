@@ -381,6 +381,7 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
 #resultsSearchTbl .zoogleTbl .zoogleURL { font-size: 1.1vh; color: rgba({$this->color_darkgreen},1); padding: 0 3vw .3vh 5vw; }
 #resultsSearchTbl .zoogleTbl .zoogleAbstract { font-size: 1.2vh; color: rgba({$this->color_zackgrey},1); padding: .3vh 25vw 1vh 5vw;text-align: justify; line-height: 1.8em; } 
 
+.screenShotDspDiv { position: relative; clear: left; }
 
 STYLESHEET;
 return $rtnThis;
@@ -631,7 +632,7 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #coordinatorResultTbl tbody .qmsiconholdern { text-align: center; background: rgba({$this->color_aqua}, 1); color: rgba({$this->color_zackgrey},1);} 
 
 #coordinatorResultTbl tbody .ttholder { position: relative; }
-#coordinatorResultTbl tbody .ttholder:hover .tt { display: block; }
+#coordinatorResultTbl tbody .ttholder:hover .tt { display: block; text-align: left; }
 #coordinatorResultTbl tbody .ttholder .infoIconDiv {float: left; }
 #coordinatorResultTbl tbody .ttholder .infoTxtDspDiv {position: absolute; background: rgba({$this->color_aqua},1); min-width: 20vw;  max-width: 35vw; z-index: 40; left: 2vw; display: none; padding: 8px; box-sizing: border-box; font-size: 1.8vh; }
 #coordinatorResultTbl tbody .ttholder .infoTxtDspDiv:after{content:'';position:absolute;border:15px solid transparent;border-top:15px solid rgba({$this->color_aqua},1); top:0px;left:-10px;}
