@@ -546,7 +546,23 @@ return $rtnthiscalendar;
 }
 
 function putPicturesInHelpText( $hlpTxt ) { 
- 
+
+/*
+ * NOTETOZACK: TO ADD PICTURES TO THE HELP FILE EMBED A JSON STRING INTO THE DATABASE FILE AS BELOW:
+ * PICTURE:{"picturefile": "help/elproDiagram.png","type":"png","useid":"pictElproDiagram","width":"10vw", "caption":"elpro monitor diagram", "holdingdivstyle":"float: left; margin-right: 10px; margin-bottom: 10px;"} 
+ * OR
+ * PICTURE:{"picturefile": "graphics/chtn_trans.png","type":"png","useid":"pictCHTNTrans","height":"10vh","holdingdivstyle":"float: right; border: 1px solid #000084;"}
+ *
+ * References must be single line json (no carriage returns) and are outlined as 
+ * picturefile (required) - under mainapp/publicobj ... directory/file
+ * useid (required) is the id that will be written to the HTML output
+ * height
+ * width 
+ * holdingdivstyle  these are in addition to position relative and display inline block
+ * caption is text that will be placed in grey under the picture
+ *
+ */
+
     $at = genAppFiles;
     //$pattern = '/\bPICTURE:[^*?"<>|:.]{0,}\.[A-Za-z]{3}\b/'; ex.: PICTURE:pathname.threechar-ext
     $pattern = '/\bPICTURE:(\{.{1,}\})/';
@@ -580,7 +596,6 @@ function putPicturesInHelpText( $hlpTxt ) {
     }
 
     return $hlpTxt;
-
 
 }
 

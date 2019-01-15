@@ -732,7 +732,7 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 .sldassignhpr { width: 1vw; text-align: center; }
 .sldassigninv { width: 1vw; text-align: center; }
 
-#PRUPHoldTbl { width: 84vw; }
+#PRUPHoldTbl {  }
 #PRUPHoldTbl #fldDialogPRUPPathRptTxt {width: 83vw; height: 48vh; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); line-height: 1.6em; text-align: justify; }
 #PRUPHoldTbl #VERIFHEAD { font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_cornflowerblue},1); text-align: center; padding: .5vh 0 .5vh 0; }
 #PRUPHoldTbl .lblThis {font-size: 1.3vh; white-space: nowrap; font-weight: bold; color: rgba({$this->color_zackgrey},1);border-right: 1px solid rgba({$this->color_grey},1); padding: 0 0 0 .2vw; }
