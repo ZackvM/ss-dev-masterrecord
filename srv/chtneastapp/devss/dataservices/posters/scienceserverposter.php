@@ -33,7 +33,165 @@ function __construct() {
 }
 
 class datadoers {
- 
+    
+    function savedelinkedphi($request, $passdata) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW'];
+
+     if ((int)checkPostingUser($authuser, $authpw) === 200) { 
+       //CHECK USER PRESENT LOCATION  
+       $pdta = json_decode($passdata,true);
+       ( !array_key_exists('phicontainer',$pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED DATA PAYLOAD. SEE CHTNEASTERN INFORMATICS STAFF.")) : ""; 
+       ( count($pdta['phicontainer']) === 0) ? (list( $errorInd, $msgArr[] ) = array(1 , "NO DONOR PHI PASSED TO SERVICE.  SEE CHTNEASTERN INFORMATICS STAFF.")) : ""; 
+       $ageUOMChkSQL = "SELECT ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'AGEUOM' and mnu.dspInd = 1";
+       $ageUOMChkRS = $conn->prepare($ageUOMChkSQL);
+       $ageUOMChkRS->execute(); 
+       $ageuom = array();
+       $cntr = 0;
+       while ($r = $ageUOMChkRS->fetch(PDO::FETCH_ASSOC)) { 
+        $ageuom[$cntr] = $r['lookupvalue'];
+        $cntr++;
+       }
+       $ageuom[$cntr] = "-";
+       $raceChkSQL = "SELECT mnu.menuvalue FROM four.sys_master_menus mnu where mnu.menu = :menu and  mnu.dspInd = 1";
+       $raceChkRS = $conn->prepare($raceChkSQL);
+       $raceChkRS->execute(array(':menu' => 'PXRACE')); 
+       $race = array();
+       $cntr = 0;
+       while ($r = $raceChkRS->fetch(PDO::FETCH_ASSOC)) { 
+        $race[$cntr] = $r['menuvalue'];
+        $cntr++;
+       }
+       $race[$cntr] = "-";
+       $sexChkSQL = "SELECT mnu.menuvalue FROM four.sys_master_menus mnu where mnu.menu = :menu and  mnu.dspInd = 1";
+       $sexChkRS = $conn->prepare($sexChkSQL);
+       $sexChkRS->execute(array(':menu' => 'PXSEX')); 
+       $sex = array();
+       $cntr = 0;
+       while ($r = $sexChkRS->fetch(PDO::FETCH_ASSOC)) { 
+        $sex[$cntr] = $r['menuvalue'];
+        $cntr++;
+       }
+       $sex[$cntr] = "-";
+       //START DATA CHECK
+       foreach ($pdta['phicontainer'] as $ky => $vl) { 
+         //DATA CHECK 1
+         ( !array_key_exists('proceduredate', $vl) || !array_key_exists('delinkedind', $vl) || !array_key_exists('initials', $vl) || !array_key_exists('age', $vl) || !array_key_exists('ageuom', $vl) || !array_key_exists('race', $vl) || !array_key_exists('sex', $vl) || !array_key_exists('lastfour', $vl) ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED DATA PAYLOAD. SEE CHTNEASTERN INFORMATICS STAFF.")) : ""; 
+         //DATA CHECK 2
+         if ( array_key_exists('proceduredate', $vl) ) { 
+            ( trim($vl['proceduredate']) === "" ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "MISSING PROCEDURE DATE PASSED")) : "";
+            ( !verifyDate( $vl['proceduredate'], 'Y-m-d') ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "INVALID PROCEDURE DATE PASSED")) : "";
+         }  
+         //DATA CHECK 3
+         if ( array_key_exists('initials', $vl) ) { 
+             ( strlen( trim($vl['initials']) ) > 4 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "VALUE FOR INITIALS MUST BE LESS THAN 5 CHARACTERS")) : "";
+             ( strlen( trim($vl['initials']) ) < 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "INITIALS MUST BE PROVIDED")) : "";
+         }  
+         //DATA CHECK 4
+         if ( array_key_exists('age', $vl) ) { 
+            ( !is_numeric( $vl['age'] )    ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "AGE MUST BE A NUMBER")) : "";
+            (  (int)$vl['age'] > 99  ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "INVALID AGE VALUE (0-99)")) : "";
+         }  
+         //DATA CHECK 5
+         if ( array_key_exists('ageuom',$vl)) { 
+             (  trim($vl['ageuom']) === "") ? (list( $errorInd, $msgArr[] ) = array(1 , "AGE UOM IS MISSING")) : "";
+             ( !in_array($vl['ageuom'], $ageuom) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "AGE UOM IS NOT VALID.  SEE A CHTNEASTERN INFORMATICS STAFF")) : "";
+         }
+         //DATA CHECK 6 
+         if ( array_key_exists('race',$vl)) { 
+             (  trim($vl['race']) === "") ? (list( $errorInd, $msgArr[] ) = array(1 , "DONOR RACE IS MISSING")) : "";
+             ( !in_array($vl['race'], $race) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "DONOR RACE IS INVALID.")) : "";
+         }
+         //DATA CHECK 7
+         if ( array_key_exists('sex',$vl)) { 
+             (  trim($vl['sex']) === "") ? (list( $errorInd, $msgArr[] ) = array(1 , "DONOR SEX IS MISSING")) : "";
+             ( !in_array($vl['sex'], $sex) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "DONOR SEX IS INVALID.")) : "";
+         }
+         ( $vl['delinkedind'] === 0 && !array_key_exists('proceduretext',$vl) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "PROCEDURE TEXT IS MISSING")) : "";
+         ( $vl['delinkedind'] === 0 && (array_key_exists('proceduretext',$vl)  && trim($vl['proceduretext']) === "")) ? (list( $errorInd, $msgArr[] ) = array(1 , "LINKED DONORS MUST HAVE A PROCEDURE TEXT COMPONENT")) : "";
+         ( $vl['delinkedind'] === 0 && !array_key_exists('surgeon',$vl) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SURGEON NAME IS MISSING")) : "";
+         ( $vl['delinkedind'] === 0 && !array_key_exists('room',$vl) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "OPERATING ROOM IS MISSING")) : "";
+         ( $vl['delinkedind'] === 0 && !array_key_exists('starttime',$vl) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "START TIME IS MISSING")) : "";
+         ( $vl['delinkedind'] === 0 && !array_key_exists('institution',$vl) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "LINKED INSTITUTION IS MISSING")) : "";
+         ( $vl['delinkedind'] === 0 && !array_key_exists('linuxpxicode',$vl) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "LINUX PXI CODE IS MISSING")) : "";
+
+         ( !array_key_exists('interface',$vl) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "DEFINED INTERFACE IS NOT SPECIFIED")) : "";
+       }
+       //END DATA CHECKS
+
+       if ($authuser <> 'chtneast') { 
+         $locationSQL = "SELECT originalaccountname, presentinstitution FROM four.sys_userbase where sessionid = :sessionid";
+         $locationRS = $conn->prepare($locationSQL);
+         $locationRS->execute(array(':sessionid' => $authuser));
+         if ($locationRS->rowCount() === 1) { 
+           $location = $locationRS->fetch(PDO::FETCH_ASSOC); 
+           $defaultlocation = $location['presentinstitution'];
+           $username = $location['originalaccountname'];
+         } else { 
+           //TODO:  CHECK THIS SOMEHOW
+             $defaultlocation = 'HUP';
+             $username = "----";
+         }
+       } else {
+         //TODO:  ERROR CHECK THIS MAKE SURE THAT THE INSTITUTION KEY IS FILLED IN 
+           $defaultlocation = 'HUP';
+           $username = "SCIENCESERVER-SYSTEM";
+       }
+
+       if ( $errorInd === 0 ) {
+           //{"phicontainer":[{"proceduredate":"2019-01-16","delinkedind":0,"initials":"zvm","age":"48","ageuom":"1","race":"White","sex":"M","lastfour":"1555","proceduretext":"PROCEDURE TEXT GOES HERE","surgeon":"DR. ZACK","room":"3434", "starttime":"14:25","institution":"HUP","linuxpxicode":"dsdsdsdsdsds","target":"","informedconsent":0,"orkey":"8s9sd899sd","interface":"LINUX"},{"proceduredate":"2019-01-16","delinkedind":1,"initials":"sy","age":"42","ageuom":"1","race":"White","sex":"M","lastfour":"1111","interface":"SS"}]}
+           //IF USER NOT CHTNEAST && DELINK = 1 - CHECK PRESENT LOCATION 
+           //CHECK FOR TARGET OTHERWISE = UNTARGETED
+           //CHECK FOR INFORMEDCONSENT = OTHERWISE = 0 
+           //1) RUN ORTMP CLEANER
+           $cleanSQL = "insert into four.tmp_ORListing_unused_bu SELECT * FROM four.tmp_ORListing where TIMESTAMPDIFF(month, listdate, now()) > 13 and (trim(ifnull(targetInd,'')) = '' or trim(ifnull(targetInd,'')) = '-')";
+           $cleanRS = $conn->prepare($cleanSQL); 
+           $cleanRS->execute();
+
+           $delinkSSSQL = "insert into four.tmp_ORListing (location, listdate, pxicode, pxiini, lastfourmrn, pxiage, ageuomcode, pxirace, pxisex, proctext ) values (:location, :listdate, :pxicode, :pxiini, :lastfourmrn, :pxiage, :ageuomcode, :pxirace, :pxisex, :proctext)";  
+           //, 'T', 0, :lastupdatedby, now(), 1, :delinkedby
+           //, targetind, infcind, lastupdatedby, lastupdateon, delinkeddonor, delinkedby
+           $delinkSSRS = $conn->prepare($delinkSSSQL);
+
+           foreach ($pdta['phicontainer'] as $dkey => $donor) { 
+             if ( $donor['delinkedind'] === 1 ) { 
+               switch ( $donor['interface'] ) { 
+                 case 'SS':
+                    $genPXICode = "DAD_" . generateRandomString(15);
+                    $dta = $genPXICode; 
+                    $delinkSSRS->execute(array(':location' => $defaultlocation, ':listdate' => $donor['proceduredate'], ':pxicode' => $genPXICode,':pxiini' => strtoupper( $donor['initials'] ) , ':lastfourmrn' => $donor['lastfour'], ':pxiage' => $donor['age'],':ageuomcode' => $donor['ageuom'],':pxirace' => $donor['race'], ':pxisex' => $donor['sex'], ':proctext' =>   "ADDED FROM ScienceServer Interface Donor Delink by {$username} " . date("Y-m-d H:i:s")     ));
+                   //, ':pxiage' => $donor['age'],':ageuomcode' => $donor['ageuom'],':pxirace' => $donor['race'] , ':lastupdatedby' => $username, ':delinkedby' => $username
+
+                 break;
+                 case 'LINUX':
+                     //TODO:  BUILD DELINKED DONOR FROM LINUX SERVER
+                 break;
+               }
+             } else { 
+                //LINKED DONOR FROM LINUXSERVER
+                //TODO:  INPUT LINKED DONOR RECORD FROM OR LINUX SCHEDULER
+             }
+           } 
+           //$responseCode = 200;
+       } else { 
+       }
+
+     }
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+    } 
+
     function submithelpticket( $request, $passdata ) { 
      $rows = array(); 
      $dta = array(); 
@@ -44,10 +202,6 @@ class datadoers {
      $itemsfound = 0;
      require(serverkeys . "/sspdo.zck");
      $pdta = json_decode($passdata,true);
-
-     
-     //( 1 === 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , json_encode( $pdta )   )) : "";
-     //{"submitter":"Zack (proczack)","submitteremail":"zacheryv@mail.med.upenn.edu","reason":"","recreateind":"","description":""}
      ( trim($pdta['submitter']) === "")  ? (list( $errorInd, $msgArr[] ) = array(1 , "Submitter's Name is Required (All Fields for a help ticket submission are required")) : ""; 
      ( trim($pdta['submitteremail']) === "")  ? (list( $errorInd, $msgArr[] ) = array(1 , "Submitter's Email is Required (All Fields for a help ticket submission are required")) : ""; 
      ( trim($pdta['reason']) === "")  ? (list( $errorInd, $msgArr[] ) = array(1 , "Ticket Reason is Required (All Fields for a help ticket submission are required")) : ""; 
@@ -69,11 +223,7 @@ class datadoers {
        while ($itr = $itStaffRS->fetch(PDO::FETCH_ASSOC)) { 
          $itEmailList .= ",\"{$itr['emailaddress']}\""; 
        }       
-
-
        $dta['ticketnbr'] = substr(('000000' . $ticketNbr), -6);
-
-
        $msg =  <<<MSGTXT
     <table border=0>
       <tr><td colspan=2>HELP TICKET REQUEST FROM SCIENCESERVER</td></tr>

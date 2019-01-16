@@ -20,7 +20,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $innerDialog = bldHelpTicketDialogBox($passedData);
       break;  
       case 'dialogPBAddDelink': 
-        $titleBar = "Add Delink PHI";
+        $titleBar = "Add Delinked Donor";
         //$footerBar = "DONOR RECORD";
         $innerDialog = bldQuickAddDelinkdialog();
       break;
@@ -808,7 +808,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
         if (trim($val['sdstatus']) === "") { 
             $dspSD .= "<div class=tt>&nbsp;</div>";
         } else { 
-            $dspSD .= "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]<p><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">print</i> Print Ship-Doc (" . substr(('000000' . $val['shipdocnbr']),-6) . ")</div><div onclick=\"printAllSelectedShipDoc(event);\" class=quickLink><i class=\"material-icons qlSmallIcon\">done_all</i> Print Selected Ship-Docs</div></div>";
+            $dspSD .= "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]<p><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">print</i> Print Ship-Doc (" . substr(('000000' . $val['shipdocnbr']),-6) . ")</div></div>";
         }
         $dspSD .= "</div>";
     }
@@ -839,7 +839,6 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
    <div class=tt>
      <div class=quickLink onclick="printPRpt(event,'{$prDocId}');"><i class="material-icons qlSmallIcon">print</i> Print Pathology Report ({$dspBG})</div>
      <div class=quickLink onclick="editPathRpt(event,'{$prDocId}');"><i class="material-icons qlSmallIcon">file_copy</i> Edit Pathology Report ({$dspBG})</div>
-     <div class=quickLink onclick="printallselectedpr(event);"><i class="material-icons qlSmallIcon">done_all</i> Print All Selected Pathology Reports </div>
    </div>
 </div>
 PRPTNOTATION;
@@ -1822,7 +1821,7 @@ return $grid;
 function generatePageTopBtnBar($whichpage) { 
 
 //TODO:  DUMP THE BUTTONS INTO A DATABASE AND GRAB WITH A WEBSERVICE    
-//TODO: MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
+//TODO:  MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
 
 switch ($whichpage) { 
 
@@ -1830,9 +1829,17 @@ case 'procurebiosample':
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBORSched border=0><tr><td><!--ICON //--></td><td>OR Schedule</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBAddPHI border=0><tr><td><!--ICON //--></td><td>Add PHI</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBAddDelink border=0><tr><td><!--ICON //--></td><td>Add Delink</td></tr></table></td>
+  <td class=topBtnHolderCell>
+         <div class=ttholder>                                                                                    
+           <table class=topBtnDisplayer id=btnPBPHI border=0><tr><td><!--ICON //--></td><td>Donor</td></tr></table>
+           <div class=tt> 
+             <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
+               <tr class=btnBarDropMenuItem id=btnPBAddDelink><td><i class="material-icons">arrow_right</i></td><td>Add Delinked Donor &nbsp;</td></tr>     
+               <tr class=btnBarDropMenuItem id=btnPBAddPHI><td><i class="material-icons">arrow_right</i></td><td>Add Donor (UPHS Only) &nbsp;</td></tr>     
+             </table>
+           </div>
+         </div>
+  </td>
 </tr>
 BTNTBL;
 break;
@@ -1879,6 +1886,17 @@ case 'coordinatorResultGrid':
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltNew><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
+  <td class=topBtnHolderCell>
+    <div class=ttholder><table class=topBtnDisplayer id=btnBarRsltPrintAction><tr><td><i class="material-icons">print</i></td><td>Print</td></tr></table>
+    <div class=tt>
+      <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
+        <tr class=btnBarDropMenuItem id=btnPrintAllPathologyRpts><td><i class="material-icons">arrow_right</i></td><td>Print Selected Pathology Reports</td></tr>     
+        <tr class=btnBarDropMenuItem id=btnPrintAllShipDocs><td><i class="material-icons">arrow_right</i></td><td>Print Selected Ship-Docs</td></tr>     
+        <tr class=btnBarDropMenuItem id=btnPrintAllLabels><td><i class="material-icons">arrow_right</i></td><td>Print Selected Labels</td></tr>     
+      </table>
+    </div>
+    </div>
+  </td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltExport><tr><td><i class="material-icons">import_export</i></td><td>Export Results</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltToggle><tr><td><i class="material-icons">get_app</i></td><td>Toggle Select</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltParams><tr><td><i class="material-icons">settings</i></td><td>View Parameters</td></tr></table></td>
@@ -2162,20 +2180,19 @@ function bldQuickAddDelinkdialog() {
 
     $at = genAppFiles;
     $waitpic = base64file("{$at}/publicobj/graphics/zwait2.gif", "waitgifADD", "gif", true);         
-
     $fldInitials = "<input type=text id=fldADDPXIInitials maxlength=3>";
-
     $fldAge = "<input type=text id=fldADDPXIAge value=\"\">";
+
     $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/age-uoms",serverIdent, serverpw), true);
     $agm = "<table border=0 class=menuDropTbl>";
     $givendspvalue = "";
     $givendspcode = "";
     foreach ($agarr['DATA'] as $agval) {
       if ((int)$agval['useasdefault'] === 1 ) { 
-          $givendspcode = $agval['codevalue'];
+          $givendspcode = $agval['lookupvalue'];
           $givendspvalue = $agval['menuvalue'];
         }
-        $agm .= "<tr><td onclick=\"fillField('fldADDAgeUOM','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+        $agm .= "<tr><td onclick=\"fillField('fldADDAgeUOM','{$agval['lookupvalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
       }
       $agm .= "</table>";
       $ageuommnu = "<div class=menuHolderDiv><input type=hidden id=fldADDAgeUOMValue value=\"{$givendspcode}\"><input type=text id=fldADDAgeUOM READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddADDAgeUOM>{$agm}</div></div>";
@@ -2199,7 +2216,7 @@ function bldQuickAddDelinkdialog() {
     $givendspvalue = "";
     $givendspcode = "";
     foreach ($agarr['DATA'] as $agval) {
-        $agm .= "<tr><td onclick=\"fillField('fldADDSex','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+        $agm .= "<tr><td onclick=\"fillField('fldADDSex','{$agval['lookupvalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
       }
       $agm .= "</table>";
       $sexmnu = "<div class=menuHolderDiv><input type=hidden id=fldADDSexValue value=\"\"><input type=text id=fldADDSex READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddDNRSex>{$agm}</div></div>";

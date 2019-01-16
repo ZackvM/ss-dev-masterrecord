@@ -129,6 +129,9 @@ echo $pg;
               $doer = new dataposters($originalRequest, $passedPayLoad);
               $responseCode = $doer->responseCode; 
               $data = $doer->rtnData;                
+            } else { 
+                $responseCode = 401;
+                $data = "USER NOT FOUND";
             } 
             break;
 

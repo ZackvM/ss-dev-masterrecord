@@ -580,7 +580,8 @@ function procurebiosample($rqstrstr) {
     $tt = treeTop;
 
     $rtnthis = <<<JAVASCR
-            
+
+
 document.addEventListener('DOMContentLoaded', function() {  
 
 //  if (byId('btnPBClearGrid')) { 
@@ -663,11 +664,13 @@ function saveDelink() {
   dta['race'] = byId('fldADDRaceValue').value.trim();
   dta['sex'] = byId('fldADDSexValue').value.trim();
   dta['lastfour'] = byId('fldDNRLastFour').value.trim();
-  var hld = new Object(); 
-  hld['phicontainer'] = dta;
+  dta['interface'] = 'SS';
+  var pc = []; 
+  pc.push(dta);
+  var hld = new Object();
+  hld['phicontainer'] = pc;
   var passdta = JSON.stringify(hld);
-  var mlURL = "/data-doers/save-phi";
-  //TODO:  Add a wait swirly   
+  var mlURL = "/data-doers/save-delinked-phi";
   if (byId('addDelinkSwirly')) {             
      byId('addDelinkSwirly').style.display = 'block';  
   }
@@ -678,8 +681,23 @@ function saveDelink() {
 }
 
 function answerSaveDelink(rtnData) {
-  console.log('here');  
-  console.log(rtnData);
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    if (byId('addDelinkSwirly')) {             
+     byId('addDelinkSwirly').style.display = 'none';  
+    }
+    if (byId('divAddDelink')) { 
+      byId('divAddDelink').style.display = 'block';
+    }
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ADD DELINKED DONOR ERROR:\\n"+dspMsg);
+   } else { 
+     //DISPLAY PHI EDIT
+     //DISPLAY NEW OR SCHED 
+   }        
 }
 
 function getAddPHIDialog() { 
@@ -1677,6 +1695,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
+  if (byId('btnPrintAllPathologyRpts')) { 
+    byId('btnPrintAllPathologyRpts').addEventListener('click', function() { 
+      var prlist = [];        
+      if (byId('coordinatorResultTbl')) { 
+        for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) {  
+          if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
+            if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim() !== "" && !inArray( byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim(),prlist)) {
+              openOutSidePage('{$tt}/print-obj/pathology-report/'+byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim());  
+              prlist.push(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim());
+            }
+          } 
+        }
+      }           
+    }, false);
+  }
+
+  if (byId('btnPrintAllShipDocs')) { 
+    byId('btnPrintAllShipDocs').addEventListener('click', function() { 
+      var sdlist = [];        
+      if (byId('coordinatorResultTbl')) { 
+        for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) {  
+          if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
+            if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printsdid.trim() !== "" && !inArray( byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printsdid.trim(),sdlist)) {
+              openOutSidePage('{$tt}/print-obj/shipment-manifest/'+byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printsdid.trim()); 
+              sdlist.push(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printsdid.trim()); 
+            }
+          } 
+        }
+      }          
+    }, false);
+  }
+
+  if (byId('btnPrintAllLabels')) { 
+    byId('btnPrintAllLabels').addEventListener('click', function() { 
+      alert('THIS FUNCTION DOESN\'T WORK YET.');
+    }, false);
+  }
+
   if (byId('qryInvestigator')) { 
     byId('qryInvestigator').addEventListener('keyup', function() {
       if (byId('qryInvestigator').value.trim().length > 3) { 
@@ -1706,35 +1762,7 @@ function selectorInvestigator() {
   }
 
 }
-
-function printallselectedpr(e) { 
-e.stopPropagation();
-var prlist = [];        
-if (byId('coordinatorResultTbl')) { 
-    for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) {  
-      if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
-         if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim() !== "" && !inArray( byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim(),prlist)) {
-           openOutSidePage('{$tt}/print-obj/pathology-report/'+byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim());  
-           prlist.push(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printprid.trim());
-         }
-      } 
-    }
-  }           
-}
-        
-function printAllSelectedShipDoc(e) { 
-e.stopPropagation();
-if (byId('coordinatorResultTbl')) { 
-    for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) {  
-      if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
-         if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printsdid.trim() !== "") {
-           openOutSidePage('{$tt}/print-obj/shipment-manifest/'+byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.printsdid.trim());  
-         }
-      } 
-    }
-  }          
-}
-   
+  
 function editPathRpt(e, docid) { 
   e.stopPropagation();
   if (docid.toString().trim() !== "") { 

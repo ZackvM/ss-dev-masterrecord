@@ -19,7 +19,8 @@ function checkPostingUser($usrname, $passwrd) {
       }
     } else { 
       //CHECK CODE IN DATABASE   
-      require(serverkeys . "/sspdo.zck");  
+      require(serverkeys . "/sspdo.zck"); 
+      //TODO: MAKE A WEBSERVICE
       $chkSQL = "SELECT sessid, accesscode FROM serverControls.ss_srvIdents where sessid = :usrsess and datediff(now(), onwhen) < 1";  
       $rs = $conn->prepare($chkSQL); 
       $rs->execute(array(':usrsess' => $usrname));

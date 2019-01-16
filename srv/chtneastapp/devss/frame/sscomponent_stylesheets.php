@@ -157,6 +157,12 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #procurementAddHoldingTbl .sidePanel { width: 30vw; box-sizing: border-box;  }
 #procurementAddHoldingTbl #procGridHolderCell { width: 65vw; border-right: 1px solid rgba({$this->color_ddrwgrey},1);    }
 
+.topBtnHolderCell .ttholder { position: relative; }
+.topBtnHolderCell .ttholder:hover .tt { display: block; text-align: left; }
+.topBtnHolderCell .tt { position: absolute; left: -.5vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); box-sizing: border-box; padding: 4px 3px; display: none; white-space: nowrap; z-index: 40; }
+.topBtnHolderCell .tt .btnBarDropMenuItems { font-size: 1.5vh; }
+.topBtnHolderCell .tt .btnBarDropMenuItems .btnBarDropMenuItem:hover { background: rgba({$this->color_lblue},1);  color: rgba({$this->color_white},1); cursor: pointer; } 
+
 .procGridHoldingTable {width: 67vw; }
 .procGridHoldingTitle {font-size: 1.7vh; color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border-bottom: 2px solid rgba({$this->color_ddrwgrey},1); padding: .5vh 0 0 0; } 
 .procGridHoldingDecorationLine { padding: 1vh 0 0 0;  }
@@ -165,7 +171,6 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 .prcFldLbl { font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); padding: .8vh 0 0 0; }
 input {font-size: 1.3vh; padding: 1vh .5vw; }
 textarea { font-size: 1.3vh; }
-
 
 #fldPRCProcedureDate { width: 8vw; }
 #fldPRCBGNbr { width: 7vw; }
@@ -641,6 +646,12 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #coordinatorResultTbl tbody .cntr { text-align: center; }
 #coordinatorResultTbl tbody .groupingstart {border-left: 3px solid rgba({$this->color_zackgrey},1); }
 #coordinatorResultTbl thead .groupingstart {border-left: 3px solid rgba({$this->color_white},1); }
+
+.topBtnHolderCell .ttholder { position: relative; }
+.topBtnHolderCell .ttholder:hover .tt { display: block; text-align: left; }
+.topBtnHolderCell .tt { position: absolute; left: -.5vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); box-sizing: border-box; padding: 4px 3px; display: none; white-space: nowrap; z-index: 40; }
+.topBtnHolderCell .tt .btnBarDropMenuItems { font-size: 1.5vh; }
+.topBtnHolderCell .tt .btnBarDropMenuItems .btnBarDropMenuItem:hover { background: rgba({$this->color_lblue},1);  color: rgba({$this->color_white},1); cursor: pointer; } 
 
 #selectorAssignInv {width: 10vw; }
 
