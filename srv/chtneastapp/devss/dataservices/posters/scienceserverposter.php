@@ -155,10 +155,7 @@ class datadoers {
            $cleanSQL = "insert into four.tmp_ORListing_unused_bu SELECT * FROM four.tmp_ORListing where TIMESTAMPDIFF(month, listdate, now()) > 13 and (trim(ifnull(targetInd,'')) = '' or trim(ifnull(targetInd,'')) = '-')";
            $cleanRS = $conn->prepare($cleanSQL); 
            $cleanRS->execute();
-
-           $delinkSSSQL = "insert into four.tmp_ORListing (location, listdate, pxicode, pxiini, lastfourmrn, pxiage, ageuomcode, pxirace, pxisex, proctext ) values (:location, :listdate, :pxicode, :pxiini, :lastfourmrn, :pxiage, :ageuomcode, :pxirace, :pxisex, :proctext)";  
-           //, 'T', 0, :lastupdatedby, now(), 1, :delinkedby
-           //, targetind, infcind, lastupdatedby, lastupdateon, delinkeddonor, delinkedby
+           $delinkSSSQL = "insert into four.tmp_ORListing (location, listdate, pxicode, pxiini, lastfourmrn, pxiage, ageuomcode, pxirace, pxisex, proctext, targetind, infcind, lastupdatedby , lastupdateon, delinkeddonor, delinkby) values (:location, :listdate, :pxicode, :pxiini, :lastfourmrn, :pxiage, :ageuomcode, :pxirace, :pxisex, :proctext, 'T', 0, :lastupdatedby, now(), 1, :delinkedby)";  
            $delinkSSRS = $conn->prepare($delinkSSSQL);
 
            foreach ($pdta['phicontainer'] as $dkey => $donor) { 
@@ -167,9 +164,7 @@ class datadoers {
                  case 'SS':
                     $genPXICode = "DAD_" . generateRandomString(15);
                     $dta = $genPXICode; 
-                    $delinkSSRS->execute(array(':location' => $defaultlocation, ':listdate' => $donor['proceduredate'], ':pxicode' => $genPXICode,':pxiini' => strtoupper( $donor['initials'] ) , ':lastfourmrn' => $donor['lastfour'], ':pxiage' => $donor['age'],':ageuomcode' => $donor['ageuom'],':pxirace' => $donor['race'], ':pxisex' => $donor['sex'], ':proctext' =>   "ADDED FROM ScienceServer Interface Donor Delink by {$username} " . date("Y-m-d H:i:s")     ));
-                   //, ':pxiage' => $donor['age'],':ageuomcode' => $donor['ageuom'],':pxirace' => $donor['race'] , ':lastupdatedby' => $username, ':delinkedby' => $username
-
+                    $delinkSSRS->execute(array(':location' => $defaultlocation, ':listdate' => $donor['proceduredate'], ':pxicode' => $genPXICode,':pxiini' => strtoupper( $donor['initials'] ) , ':lastfourmrn' => $donor['lastfour'], ':pxiage' => $donor['age'],':ageuomcode' => $donor['ageuom'],':pxirace' => $donor['race'], ':pxisex' => $donor['sex'], ':proctext' =>   "ADDED FROM ScienceServer Interface Donor Delink by {$username} " . date("Y-m-d H:i:s"), ':lastupdatedby' => $username, ':delinkedby' => $username     ));
                  break;
                  case 'LINUX':
                      //TODO:  BUILD DELINKED DONOR FROM LINUX SERVER
@@ -180,7 +175,7 @@ class datadoers {
                 //TODO:  INPUT LINKED DONOR RECORD FROM OR LINUX SCHEDULER
              }
            } 
-           //$responseCode = 200;
+           $responseCode = 200;
        } else { 
        }
 

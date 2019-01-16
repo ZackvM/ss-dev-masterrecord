@@ -682,12 +682,8 @@ function saveDelink() {
 
 function answerSaveDelink(rtnData) {
   if (parseInt(rtnData['responseCode']) !== 200) { 
-    if (byId('addDelinkSwirly')) {             
-     byId('addDelinkSwirly').style.display = 'none';  
-    }
-    if (byId('divAddDelink')) { 
-      byId('divAddDelink').style.display = 'block';
-    }
+    if (byId('addDelinkSwirly')) { byId('addDelinkSwirly').style.display = 'none'; }
+    if (byId('divAddDelink')) { byId('divAddDelink').style.display = 'block'; }
     var msgs = JSON.parse(rtnData['responseText']);
     var dspMsg = ""; 
     msgs['MESSAGE'].forEach(function(element) { 
@@ -695,8 +691,10 @@ function answerSaveDelink(rtnData) {
     });
     alert("ADD DELINKED DONOR ERROR:\\n"+dspMsg);
    } else { 
-     //DISPLAY PHI EDIT
-     //DISPLAY NEW OR SCHED 
+       byId('standardModalDialog').innerHTML = "";
+       byId('standardModalBacker').style.display = 'none';
+       byId('standardModalDialog').style.display = 'none';            
+       updateORSched(); 
    }        
 }
 
@@ -834,7 +832,7 @@ function answerGetCalendar(rtnData) {
 }   
 
 function editPHIRecord(e, phiid) { 
-  e.stopPropagation();
+  e.stopPropagation();     
   if (phiid.trim() !== "") { 
     //POP OPEN MODAL EDITOR
     var dta = new Object();
@@ -1155,34 +1153,26 @@ function updateORSched() {
 }
 
 function answerUpdateORSched(rtnData) {
+  //FUNCMUST:  MAKE EDIT RECORD BUTTON WORK - 20190116          
   if (parseInt(rtnData['responseCode']) === 200) {     
-
     var rcd = JSON.parse(rtnData['responseText']);
-    
     if (parseInt(rcd['ITEMSFOUND']) > 0) {  
      var innerRows = "";
      var ageuom = "yrs";
      rcd['DATA']['orlisting'].forEach(function(element) { 
-
        var target = element['targetind'];
        var informed = element['informedconsentindicator'];
        var addeddonor = element['linkage'];
        var lastfour = element['lastfourmrn'];
        var proc = "<table class=procedureSpellOutTbl border=0><tr><td valign=top class=smallORTblLabel>A-R-S </td><td valign=top>"+element['ars']+"</td></tr><tr><td valign=top class=smallORTblLabel>Last Four </td><td valign=top>"+lastfour+"</td></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top>"+element['proceduretext']+"</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>"+element['surgeon']+"</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>"+element['starttime']+"</td></tr><tr><td valign=top class=smallORTblLabel>OR <td>"+element['room']+"</td></tr><tr><td colspan=2> Edit Record </td></tr></table>";
        var prace = (element['pxirace'].trim() == "-") ? "" : element['pxirace'].trim();
-
        innerRows += "<tr oncontextmenu=\"alert('"+element['pxicode']+"'); return false;\"  onclick=\"fillPXIInformation('"+element['pxicode']+"','"+element['pxiinitials']+"','"+element['pxiage']+"','"+ageuom+"','"+prace+"','"+element['pxisex']+"','"+informed+"','"+lastfour+"');\" class=displayRows><td valign=top class=dspORTarget>"+target+"</td><td valign=top class=dspORInformed>"+informed+"</td><td valign=top class=dspORAdded>"+addeddonor+"</td><td valign=top class=dspORInitials>"+element['pxiinitials']+"</td><td valign=top class=procedureTxt>"+proc+"</td></tr>";
-
-
-
      });
-
      if (byId('PXIDspBody')) { 
        byId('PXIDspBody').innerHTML = innerRows;
      }
     } else { 
       //NO OR SCHED ITEMS FOUND
-
       byId('PXIDspBody').innerHTML = "&nbsp;";
     }
   } else { 

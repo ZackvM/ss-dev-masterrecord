@@ -2948,7 +2948,7 @@ function bldBiosampleProcurement($usr) {
       $tdydtev = $today->format('Y-m-d');
       $orscheddater = bldSidePanelORSched( $usr->presentinstitution, $tdydte, $tdydtev );
       //TODO:REMOVE THIS LINE TO DEFAULT TO TODAY'S DATE
-      $tdydtev = '20180507';
+      //$tdydtev = '20180507';
       $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
       $procGrid = bldProcurementGrid($usr);
 
