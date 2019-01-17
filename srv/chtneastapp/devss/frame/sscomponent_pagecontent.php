@@ -2012,15 +2012,21 @@ return $rtnpage;
 }
 
 function bldSidePanelORSched($institution, $procedureDate, $procedureDateValue) { 
-$prcCalendarMaker = buildcalendar('procedureprocurequery'); 
-$prcCalendar = <<<CALENDAR
+
+  $prcCalendarMaker = buildcalendar('procedureprocurequery'); 
+  //<td class=prcFldLbl>Display Order</td>
+  $prcCalendar = <<<CALENDAR
+<table border=0><tr><td class=prcFldLbl>Institution Code</td><td class=prcFldLbl>Date</td></tr>
+<tr><td><input type=text readonly id=fldPRCProcedureInstitutionValue value="{$institution}"></td><td>
 <div class=menuHolderDiv>
   <div class=valueHolder>
-      <input type=hidden id=fldPRCProcedureInstitutionValue value="{$institution}">
       <input type=hidden id=fldPRCProcedureDateValue value="{$procedureDateValue}">
       <input type=text READONLY id=fldPRCProcedureDate class="inputFld" value="{$procedureDate}"></div>
   <div class=valueDropDown style="min-width: 17vw;" id=procedurecal><div id=procureProcedureCalendar>{$prcCalendarMaker}</div></div>
 </div>
+</td><td>&nbsp;</td></tr>
+</table>
+
 CALENDAR;
 return "{$prcCalendar}";
 }
@@ -2225,8 +2231,10 @@ function bldQuickAddDelinkdialog() {
 
 $rtnThis = <<<RTNTHIS
 <div id=divAddDelink style="display: block;">
+<table class=ENCHEAD><tr><td style="padding: 0 0 0 0;">ADD DELINKED DONOR</td></tr></table>
+<table style="width: 40vw; font-size: 1.5vh; line-height: 1.6em; text-align: justify;padding: 1vh .4vw;"><tr><td>This dialog allows you to add donor information to TODAY's Operative Schedule.  This is a delinked donor - meaning that ScienceServer retains no link to the actual donor's information.  This dialog is primarily used at CHTNEastern Remote Collection Institutions.  If you are at the primary CHTNEast Institution (UPHS), please verify that THIS donor is not in the donor database before adding a delink.</td></tr></table>
 <table> 
-<tr><td class=DNRLbl2>Initials *</td><td class=DNRLbl2>Age *</td><td class=DNRLbl2>Race *</td><td class=DNRLbl2>Sex *</td><td class=DNRLbl2>Last Four</td><td rowspan=2 valign=bottom><table class=tblBtn id=btnADDDelink style="width: 6vw;" onclick="saveDelink();"><tr><td style=" font-size: 1.2vh; "><center>Save</td></tr></table></td></tr>
+<tr><td class=DNRLbl2>Initials *</td><td class=DNRLbl2>Age *</td><td class=DNRLbl2>Race *</td><td class=DNRLbl2>Sex *</td><td class=DNRLbl2>Callback Four</td><td rowspan=2 valign=bottom><table class=tblBtn id=btnADDDelink style="width: 6vw;" onclick="saveDelink();"><tr><td style=" font-size: 1.2vh; "><center>Save</td></tr></table></td></tr>
 <tr>
   <td>{$fldInitials}</td>
   <td><table><tr><td>{$fldAge}</td><td>{$ageuommnu}</td></tr></table>
@@ -2456,16 +2464,18 @@ function bldQuickEditDonor($passeddata) {
 
 <table class=ENCHEAD><tr><td style="padding: 0 0 0 0;">ENCOUNTER</td></tr></table>
 
-<table><tr><td class=DNRLbl>Encounter Record ID: </td><td class=DNRDta>{$pxicode} </td></tr></table>
+<table></table>
 
-<table><tr><td class=DNRLbl>Institution: </td><td class=DNRDta>{$locationdsp} ({$location})</td><td class=DNRLbl>Procedure Date: </td><td class=DNRDta>{$ORDate}</td></tr></table>
-
-<table><tr><td class=DNRLbl>Surgeon: </td><td class=DNRDta>{$surgeons} </td><td class=DNRLbl>Start Time: </td><td class=DNRDta>{$starttime} </td></tr></table>
+<table>
+       <tr><td class=DNRLbl>Encounter ID: </td><td class=DNRDta>{$pxicode} </td></tr>
+       <tr><td class=DNRLbl>Institution: </td><td class=DNRDta>{$locationdsp} ({$location})</td><td class=DNRLbl>Procedure Date: </td><td class=DNRDta>{$ORDate}</td></tr>
+       <tr><td class=DNRLbl>Surgeon: </td><td class=DNRDta>{$surgeons} </td><td class=DNRLbl>Start Time: </td><td class=DNRDta>{$starttime} </td></tr>
+</table>
 
 <table><tr><td class=DNRLbl>Procedure Description</td></tr><tr><td class=procedureTextDsp>{$proceduretext} </td></tr></table>
 
 <table class=ENCHEAD><tr><td style="padding: .8vh 0 0 0;">DONOR SPECIFICS</td></tr></table>
-<table><tr><td class=DNRLbl2>Target</td><td class=DNRLbl2>Informed Consent</td><td class=DNRLbl2>Age</td><td class=DNRLbl2>Race</td><td class=DNRLbl2>Sex</td><td class=DNRLbl2>Last Four</td></tr>
+<table><tr><td class=DNRLbl2>Target</td><td class=DNRLbl2>Informed Consent</td><td class=DNRLbl2>Age</td><td class=DNRLbl2>Race</td><td class=DNRLbl2>Sex</td><td class=DNRLbl2>Callback Ref</td></tr>
 <tr><td> {$targetmnu} </td><td> {$infcmnu} </td><td><table><tr><td>{$fldAge}</td><td>{$ageuommnu}</td></tr></table></td><td>{$racemnu}</td><td>{$sexmnu}</td><td>{$lastFourDsp}</td></tr>
 <tr><td colspan=6> 
 <div id=notRcvdNoteDsp>
@@ -2508,30 +2518,84 @@ function bldORScheduleTbl($orarray) {
 
   $institution = $orarray['DATA']['institution'];
   $ordate = $orarray['DATA']['requestDate'];
+
   foreach ($orarray['DATA']['orlisting'] as $ky => $val) { 
     $target = $val['targetind'];
+    switch ($target) { 
+      case 'T':
+          $target = "<i class=\"material-icons targeticon\">check_box_outline_blank</i>";
+          $targetBck = "targetwatch";
+          break;
+      case 'R':    
+          $target = "<i class=\"material-icons targeticon\">check_box</i>";
+          $targetBck = "targetrcvd";
+          break;
+      case 'N':    
+          $target = "<i class=\"material-icons targeticon\">indeterminate_check_box</i>";
+          $targetBck = "targetnot";
+          break;
+      default:
+          $target = "-";
+          $targetBck = "";
+    }
+
     $informed = $val['informedconsentindicator'];
-    $addeddonor = $val['linkage'];
+    switch ((int)$informed) { 
+      case 1: //NO
+          $icicon = "N";
+          break;
+      case 2: //YES
+          $icicon = "Y";
+          break;
+      case 3:  //PENDING
+          $icicon = "P";
+          break;
+      default:
+          $icicon = "";
+    } 
+    $addeddonor = ($val['linkage'] === "X") ? "<i class=\"material-icons addicon\">input</i>" : "";
     $lastfour = $val['lastfourmrn'];
     $prace = (trim($val['pxirace']) === "-") ? "" : trim($val['pxirace']);
+  
+    $roomdsp = ( trim($val['room']) !== "") ? " in OR {$val['room']}" : "";
 
     $proc = <<<PROCCELL
 <table class=procedureSpellOutTbl border=0>
-  <tr><td valign=top class=smallORTblLabel>A-R-S </td><td valign=top>{$val['ars']}</td></tr><tr><td valign=top class=smallORTblLabel>Last Four </td><td valign=top>{$lastfour}</td></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top class=procTxtDsp>{$val['proceduretext']}</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>{$val['surgeon']}</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>{$val['starttime']}</td></tr><tr><td valign=top class=smallORTblLabel>OR <td>{$val['room']}</td></tr>
-<tr><td colspan=2><div class=btnEditPHIRecord onclick="editPHIRecord(event,'{$val['pxicode']}');">Edit Record</div></td></tr>
+  <tr><td valign=top class=smallORTblLabel>A-R-S::Callback</td><td valign=top>{$val['ars']} :: {$lastfour}</td></tr>
+  <tr><td valign=top class=smallORTblLabel>Procedure</td><td valign=top class=procTxtDsp>{$val['proceduretext']}</td></tr>
+  <tr><td valign=top class=smallORTblLabel>Surgeon</td><td valign=top>{$val['surgeon']}</td></tr>
+  <tr><td valign=top class=smallORTblLabel>Start Time</td><td valign=top>{$val['starttime']} {$roomdsp}</td></tr>
+  <tr><td colspan=2><div class=btnEditPHIRecord onclick="editPHIRecord(event,'{$val['pxicode']}');">Edit Donor Record</div></td></tr>
 </table>
 PROCCELL;
-$ageuom = "yrs";
-$innerTbl .= "<tr oncontextmenu=\"alert('{$val['pxicode']}');return false;\" onclick=\"fillPXIInformation('{$val['pxicode']}', '{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$prace}','{$val['pxisex']}','{$informed}','{$lastfour}'    );\" class=displayRows><td valign=top class=dspORTarget>{$target}</td><td valign=top class=dspORInformed>{$informed}</td><td valign=top class=dspORAdded>{$addeddonor}</td><td valign=top class=dspORInitials>{$val['pxiinitials']}</td><td valign=top class=dspProcCell> {$proc} </td></tr>";
-}
+    $ageuom = "yrs";
+    //oncontextmenu=\"return false;\"
+    $innerTbl .= <<<ORLINE
+    <tr  onclick="fillPXIInformation('{$val['pxicode']}','{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$prace}','{$val['pxisex']}','{$informed}','{$lastfour}');" class=displayRows>
+      <td valign=top class=dspORInitials>{$val['pxiinitials']}</td>
+      <td valign=top class="dspORTarget {$targetBck}">{$target}</td>
+      <td valign=top class=dspORInformed>{$icicon}</td>
+      <td valign=top class=dspORAdded>{$addeddonor}</td>
+      <td valign=top class=dspProcCell> {$proc} </td>
+    </tr>
+ORLINE;
+  }
 
   $rtnTbl = <<<ORSCHEDTBL
           <div id=divORHolder>
+
            <div id=headerTbl>
            <table border=0 id=PXIDspTblHD>
-              <thead><tr><th class=dspORTarget>T</th><th class=dspORInformed>IC</th><th class=dspORAdded>A</th><th class=dspORInitials>Initials</th><th>Procedure</th></tr></thead>
+              <thead><tr>
+                       <th class=dspORInitials>INI</th>
+                       <th class=dspORTarget>TRG</th>
+                       <th class=dspORInformed>IC</th>
+                       <th class=dspORAdded>ADD</th>
+                       <th class=dspProcCell>PROCEDURE</th>
+                     </tr></thead>
            </table>
            </div>
+
           <div id=dataPart>
           <table id=procDataDsp>
                <tbody id=PXIDspBody>
@@ -2539,6 +2603,7 @@ $innerTbl .= "<tr oncontextmenu=\"alert('{$val['pxicode']}');return false;\" onc
                </tbody>
           </table>
           </div>
+
           </div>
 ORSCHEDTBL;
 return $rtnTbl;
@@ -2605,75 +2670,74 @@ function bldProcurementGrid($usr) {
 
   $inst = $usr->presentinstitution;
   $tech = strtoupper($usr->userid);
-
+  $tday = date('m/d/Y');
+  //<i class="material-icons">lock</i>
 $rtnTbl = <<<RTNTBL
-
 <table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
-<tr><td colspan=2 class=procGridHoldingDecorationLine>
-<table>
-  <tr><td class=prcFldLbl>Biogroup Number</td><td class=prcFldLbl>Procedure Type</td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician/Institution</td><td class=prcFldLbl>Initial Metric</td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td></tr>
-  <tr><td><input type=text id=fldPRCBGNbr value="" READONLY></td>
-      <td>{$procedureType}</td>
-      <td>{$collectionType}</td>
-      <td><input type=text id=fldPRCTechInstitute value="{$tech} :: {$inst}" READONLY></td>
-      <td><table><tr><td><input type=text id=fldPRCInitialMetric value=0></td><td>{$muommenu}</td></tr></table></td>
+<tr><td>BIOSAMPLE COLLECTION</td></tr>
+<tr><td>Sample Metrics</td></tr>
+<tr><td class=procGridHoldingDecorationLine>
+   <table border=0>
+     <tr><td class=prcFldLbl>Biogroup #</td><td class=prcFldLbl>Procurement Date</td><td class=prcFldLbl>Procedure Type</td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician/Institution</td><td class=prcFldLbl>Initial Metric</td><td>&nbsp;</td><td rowspan=2 id=BSLock><i class="material-icons bslockdsp">lock_open</i></td></tr>
+     <tr>
+       <td><input type=text id=fldPRCBGNbr value="" READONLY></td>
+       <td><input type=text readonly id=fldPRCProcDate value="{$tday}"></td>
+       <td>{$procedureType}</td>
+       <td>{$collectionType}</td>
+       <td><input type=text id=fldPRCTechInstitute value="{$tech} :: {$inst}" READONLY></td>
+       <td><table><tr><td><input type=text id=fldPRCInitialMetric value=0></td><td>{$muommenu}</td></tr></table></td>
+       <td></td>
+     </tr>
+   </table>
+</td></tr>
+
+<tr><td>Donor Metrics</td></tr>
+<tr><td class=procGridHoldingDecorationLine>
+   <table>
+    <tr><td class=prcFldLbl>Initials</td><td class=prcFldLbl>Age</td><td class=prcFldLbl>Race</td><td class=prcFldLbl>Sex</td><td class=prcFldLbl>Callback</td><td class=prcFldLbl>I-Consent</td><td class=prcFldLbl>Chemo</td><td class=prcFldLbl>Radiation</td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
+    <tr>
+      <td><input type=text id=fldPRCPXIId READONLY><input type=text id=fldPRCPXIInitials READONLY></td>
+      <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td><td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
+      <td><input type=text id=fldPRCPXIRace READONLY></td>
+      <td><input type=text id=fldPRCPXISex READONLY></td>
+      <td><input type=text id=fldPRCPXILastFour READONLY></td>
+      <td><input type=text id=fldPRCPXIInfCon READONLY></td>
+      <td>{$cxmenu}</td>
+      <td>{$rxmenu}</td>
       <td><input type=text id=fldSubjectNbr value=""></td>
       <td><input type=text id=fldProtocolNbr value=""></td>
-  </tr>
-</table>
+      <td>{$sogimenu}</td>
+    </tr>
+   </table>
+</td></tr>
+
+<tr><td>Diagnosis Designation</td></tr>
+<tr><td class=procGridHoldingDecorationLine>
+
+<table>
+  <tr><td colspan=3 class=prcFldLbl>Diagnosis Designation</td> <td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolved/NAT</td><td class=prcFldLbl>Pathology Rpt</td></tr>
+  <tr><td valign=top> {$spcmenu} </td><td valign=top> {$sitesubsite} </td><td> {$subsite} </td><td valign=top> {$dxmod} </td><td>{$uninvmenu}</td><td>{$prptmenu}</td></tr>
+  <tr><td colspan=6> 
+    <table cellpadding=0 cellspacing=0 border=0><tr><td> 
+     <div id=metsFromDsp>
+       <table>
+         <tr><td class=prcFldLbl>Metastatic From</td><td class=prcFldLbl>Metastatic Diagnosis</td></tr>
+         <tr><td> {$metssite} </td><td> {$metsdxmod} </td> </tr>
+       </table>
+     </div>
+    </td><td>  
+    <table>
+      <tr><td class=prcFldLbl>Position</td><td class=prcFldLbl>Systemic Diagnosis</td></tr>
+      <tr><td> {$aspmenu} </td><td> {$sysdxmenu} </td></tr>   
+    </table>
+    </td></tr></table>
 </td></tr>
 </table>
 
 
-<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
-<tr><td colspan=2 class=procGridHoldingDecorationLine>
-<table>
-<tr><td class=prcFldLbl>Initials</td><td class=prcFldLbl>Age</td><td class=prcFldLbl>Race</td><td class=prcFldLbl>Sex</td><td class=prcFldLbl>Last Four</td><td class=prcFldLbl>Informed Consent</td><td class=prcFldLbl>Chemo</td><td class=prcFldLbl>Radiation</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
-<tr>
-    <td><input type=text id=fldPRCPXIId READONLY><input type=text id=fldPRCPXIInitials READONLY></td>
-    <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td><td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
-    <td><input type=text id=fldPRCPXIRace READONLY></td>
-    <td><input type=text id=fldPRCPXISex READONLY></td>
-    <td><input type=text id=fldPRCPXILastFour READONLY></td>
-    <td><input type=text id=fldPRCPXIInfCon READONLY></td>
-    <td>{$cxmenu}</td>
-    <td>{$rxmenu}</td>
-    <td>{$sogimenu}</td>
-</tr>
-</table>
 </td></tr>
-</table>
-
-<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
-<tr><td colspan=2 class=procGridHoldingDecorationLine>
-<table>
-<tr><td colspan=3 class=prcFldLbl>Diagnosis Designation</td> <td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolved/NAT</td><td class=prcFldLbl>Pathology Rpt</td></tr>
-<tr><td valign=top> {$spcmenu} </td><td valign=top> {$sitesubsite} </td><td> {$subsite} </td><td valign=top> {$dxmod} </td><td>{$uninvmenu}</td><td>{$prptmenu}</td></tr>
-<tr><td colspan=6> 
-
-<table cellpadding=0 cellspacing=0 border=0><tr><td> 
-<div id=metsFromDsp>
-<table>
-  <tr><td class=prcFldLbl>Metastatic From</td><td class=prcFldLbl>Metastatic Diagnosis</td></tr>
-  <tr><td> {$metssite} </td><td> {$metsdxmod} </td> </tr>
-</table>
-</div>
-
-</td><td>  
-
-<table>
-<tr><td class=prcFldLbl>Position</td><td class=prcFldLbl>Systemic Diagnosis</td></tr>
-<tr><td> {$aspmenu} </td><td> {$sysdxmenu} </td></tr>   
-</table>
-
-</td></tr></table>
-</td></tr>
-</table>
-</td></tr>
-</table>
-
-<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
-<tr><td colspan=2 class=procGridHoldingDecorationLine>
+<tr><td>Comments</td></tr>
+<tr><td class=procGridHoldingDecorationLine>
 
 <table>
 <tr><td class=prcFldLbl>Biosample Comments</td><td class=prcFldLbl>Question for HPR/QMS</td></tr>
@@ -2682,23 +2746,18 @@ $rtnTbl = <<<RTNTBL
 
 </td></tr>
 
-<tr><td colspan=2 align=right style="padding: .5vh .6vw 0 0;">
+
+<tr><td align=right style="padding: .5vh .6vw 0 0;">
 
 
   <table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td><center>Save</td></tr></table>
 
 </td></tr>
+
+
 </table>
 
-<!-- SEGMENT COLLECTION APPEARS 
-<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
-<tr><td class=procGridHoldingTitle>Segments</td><td class=procGridHoldingDecorationLineBU>&nbsp;</td></tr>
-<tr><td colspan=2>
 
-
-</td></tr>
-</table>
-//-->
 
 RTNTBL;
   return $rtnTbl;    
@@ -2948,24 +3007,24 @@ function bldBiosampleProcurement($usr) {
       $tdydtev = $today->format('Y-m-d');
       $orscheddater = bldSidePanelORSched( $usr->presentinstitution, $tdydte, $tdydtev );
       //TODO:REMOVE THIS LINE TO DEFAULT TO TODAY'S DATE
-      //$tdydtev = '20180507';
+      $tdydtev = '20180507';
       $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
-      $procGrid = bldProcurementGrid($usr);
+      $procGrid = bldProcurementGrid($usr); //THIS IS THE PROCUREMENT GRID ELEMENTS
+
+
 
     $holdingTbl = <<<HOLDINGTBL
-            <table border=0 width=100% id=procurementAddHoldingTbl>
+            <table border=0 id=procurementAddHoldingTbl>
                    <tr>
-                      <td rowspan=2 valign=top id=procGridHolderCell>{$procGrid}</td>
+                      <td valign=top id=procGridHolderCell> {$procGrid}</td>
                       <td class=sidePanel valign=top style="height: 40vh;">
+
                           <table border=0 width=100% cellspacing=0 cellpadding=0>
-                            <tr><td class=prcFldLbl style="border: none;">Procedure Date</td><td rowspan=2 align=right> </td></tr>
                             <tr><td>{$orscheddater}</td></tr>
                             <tr><td colspan=2>{$orlistTbl}</td></tr>
                           </table>
+
                       </td>
-                   </tr>
-                   <tr>
-                       <td class=sidePanel valign=top>Today's Collection Summary</td>
                    </tr>
             </table> 
 HOLDINGTBL;

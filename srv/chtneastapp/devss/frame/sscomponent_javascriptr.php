@@ -1153,28 +1153,72 @@ function updateORSched() {
 }
 
 function answerUpdateORSched(rtnData) {
-  //FUNCMUST:  MAKE EDIT RECORD BUTTON WORK - 20190116          
   if (parseInt(rtnData['responseCode']) === 200) {     
     var rcd = JSON.parse(rtnData['responseText']);
+
     if (parseInt(rcd['ITEMSFOUND']) > 0) {  
+
      var innerRows = "";
      var ageuom = "yrs";
+
      rcd['DATA']['orlisting'].forEach(function(element) { 
        var target = element['targetind'];
+       switch (target) { 
+         case 'T':
+          target = "<i class=\"material-icons targeticon\">check_box_outline_blank</i>";
+          targetBck = "targetwatch";
+          break;
+         case 'R':    
+          target = "<i class=\"material-icons targeticon\">check_box</i>";
+          targetBck = "targetrcvd";
+          break;
+         case 'N':    
+          target = "<i class=\"material-icons targeticon\">indeterminate_check_box</i>";
+          targetBck = "targetnot";
+          break;
+         default:
+          target = "-";
+          targetBck = "";
+       }
        var informed = element['informedconsentindicator'];
+       switch (parseInt(informed)) { 
+         case 1: //NO
+          icicon = "N";
+          break;
+         case 2: //YES
+          icicon = "Y";
+          break;
+         case 3:  //PENDING
+          icicon = "P";
+          break;
+         default:
+          icicon = "";
+       } 
        var addeddonor = element['linkage'];
+       if (addeddonor === "X") {
+         addeddonor = "<i class=\"material-icons addicon\">input</i>";
+       } else { 
+         addeddonor = "&nbsp;";
+       }
        var lastfour = element['lastfourmrn'];
-       var proc = "<table class=procedureSpellOutTbl border=0><tr><td valign=top class=smallORTblLabel>A-R-S </td><td valign=top>"+element['ars']+"</td></tr><tr><td valign=top class=smallORTblLabel>Last Four </td><td valign=top>"+lastfour+"</td></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top>"+element['proceduretext']+"</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>"+element['surgeon']+"</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>"+element['starttime']+"</td></tr><tr><td valign=top class=smallORTblLabel>OR <td>"+element['room']+"</td></tr><tr><td colspan=2> Edit Record </td></tr></table>";
+       var ordsp = "";
+       if ( element['room'].trim() !== "" ) { 
+         ordsp = " in OR "+element['room'];
+       }
+       var proc = "<table class=procedureSpellOutTbl border=0><tr><td valign=top class=smallORTblLabel>A-R-S::Callback</td><td valign=top>"+element['ars']+"::"+lastfour+"</td></tr><tr></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top>"+element['proceduretext']+"</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>"+element['surgeon']+"</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>"+element['starttime']+" "+ordsp+"</td></tr><tr><td colspan=2> <div class=btnEditPHIRecord onclick=\"editPHIRecord(event,'"+element['pxicode']+"');\">Edit Record</div></td></tr></table>";
        var prace = (element['pxirace'].trim() == "-") ? "" : element['pxirace'].trim();
-       innerRows += "<tr oncontextmenu=\"alert('"+element['pxicode']+"'); return false;\"  onclick=\"fillPXIInformation('"+element['pxicode']+"','"+element['pxiinitials']+"','"+element['pxiage']+"','"+ageuom+"','"+prace+"','"+element['pxisex']+"','"+informed+"','"+lastfour+"');\" class=displayRows><td valign=top class=dspORTarget>"+target+"</td><td valign=top class=dspORInformed>"+informed+"</td><td valign=top class=dspORAdded>"+addeddonor+"</td><td valign=top class=dspORInitials>"+element['pxiinitials']+"</td><td valign=top class=procedureTxt>"+proc+"</td></tr>";
+       innerRows += "<tr oncontextmenu=\"return false;\" onclick=\"fillPXIInformation('"+element['pxicode']+"','"+element['pxiinitials']+"','"+element['pxiage']+"','"+ageuom+"','"+prace+"','"+element['pxisex']+"','"+informed+"','"+lastfour+"');\" class=displayRows><td valign=top class=dspORInitials>"+element['pxiinitials']+"</td><td valign=top class=\"dspORTarget "+targetBck+"\">"+target+"</td><td valign=top class=dspORInformed>"+icicon+"</td><td valign=top class=dspORAdded>"+addeddonor+"</td><td valign=top class=procedureTxt>"+proc+"</td></tr>";
      });
+
      if (byId('PXIDspBody')) { 
        byId('PXIDspBody').innerHTML = innerRows;
      }
+
     } else { 
       //NO OR SCHED ITEMS FOUND
       byId('PXIDspBody').innerHTML = "&nbsp;";
     }
+
   } else { 
     var rcd = JSON.parse(rtnData['responseText']);
     alert(rcd['MESSAGE']);  

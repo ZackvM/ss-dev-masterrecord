@@ -155,7 +155,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
  
 #procurementAddHoldingTbl { height: 86vh; box-sizing: border-box; }
 #procurementAddHoldingTbl .sidePanel { width: 30vw; box-sizing: border-box;  }
-#procurementAddHoldingTbl #procGridHolderCell { width: 65vw; border-right: 1px solid rgba({$this->color_ddrwgrey},1);    }
+#procurementAddHoldingTbl #procGridHolderCell { width: 68vw; border-right: 1px solid rgba({$this->color_ddrwgrey},1); box-sizing: border-box;   }
 
 .topBtnHolderCell .ttholder { position: relative; }
 .topBtnHolderCell .ttholder:hover .tt { display: block; text-align: left; }
@@ -163,27 +163,33 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 .topBtnHolderCell .tt .btnBarDropMenuItems { font-size: 1.5vh; }
 .topBtnHolderCell .tt .btnBarDropMenuItems .btnBarDropMenuItem:hover { background: rgba({$this->color_lblue},1);  color: rgba({$this->color_white},1); cursor: pointer; } 
 
-.procGridHoldingTable {width: 67vw; }
+.procGridHoldingTable {width: 67.5vw; box-sizing: border-box; }
 .procGridHoldingTitle {font-size: 1.7vh; color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border-bottom: 2px solid rgba({$this->color_ddrwgrey},1); padding: .5vh 0 0 0; } 
-.procGridHoldingDecorationLine { padding: 1vh 0 0 0;  }
+.procGridHoldingDecorationLine { padding: 0 0 0 0;  }
 .procGridHoldingDecorationLineBACKUP {border-left: 2px solid rgba({$this->color_ddrwgrey},1);border-top: 2px solid rgba({$this->color_ddrwgrey},1);}
 
-.prcFldLbl { font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); padding: .8vh 0 0 0; }
+.prcFldLbl { font-size: 1.3vh; color: rgba({$this->color_dblue},1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); padding: 0 0 0 0; font-weight: bold; }
 input {font-size: 1.3vh; padding: 1vh .5vw; }
 textarea { font-size: 1.3vh; }
 
-#fldPRCProcedureDate { width: 8vw; }
-#fldPRCBGNbr { width: 7vw; }
-#fldPRCProcedureType { width: 8vw; }
-#ddPRCProcedureType { min-width: 8vw; }
+#fldPRCProcedureDate { width: 8vw; font-size: 1.2vh; }
+#fldPRCProcedureInstitutionValue { width: 8vw; font-size: 1.2vh; }
+
+#BSLock { width: 4vw; text-align: center; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); }
+.bslockdsp { font-size: 4vh; color: rgba({$this->color_darkgreen},1); }
+
+#fldPRCBGNbr { width: 6vw; }
+#fldPRCProcDate { width: 10vw; }
+#fldPRCProcedureType { width: 10vw; }
+#ddPRCProcedureType { min-width: 10vw; }
 #fldPRCCollectionType { width: 10vw; }
 #ddPRCCollectionType { min-width: 10vw; }
-#fldPRCTechInstitute { width: 12vw; }
+#fldPRCTechInstitute { width: 15vw; }
 #fldPRCInitialMetric { width: 3vw; text-align: right; }
 #fldPRCMetricUOM {width: 5vw; }
 #ddPRCMetricUOM {min-width: 5vw; }
-#fldSubjectNbr {width: 10vw; }
-#fldProtocolNbr {width: 10vw;}
+#fldSubjectNbr {width: 8vw; }
+#fldProtocolNbr {width: 8vw;}
 
 #fldPRCSpecCat {width: 13vw; }
 #ddPRCSpecCat {min-width: 13vw; }
@@ -204,28 +210,24 @@ textarea { font-size: 1.3vh; }
 #fldPRCDiagnosisDesignation { width: 25vw; }
 #fldPRCMETSDesignation {width: 32vw; }
 #fldPRCSystemicDX {width: 32vw; }
-#fldPRCPXISex {width: 3vw; }
 
+#fldPRCPXISex {width: 2vw; text-align: center; }
 #fldPRCPXIId { display: none; }
-#fldPRCPXIInitials { width: 5vw; }
+#fldPRCPXIInitials { width: 3vw; }
 #fldADDPXIInitials { width: 5vw; }
-#fldPRCPXIAge {width: 3vw; }
+#fldPRCPXIAge {width: 2vw; text-align: right; }
 #fldADDPXIAge {width: 3vw; text-align: right; }
-#fldPRCPXIAgeMetric {width: 5vw;}
+#fldPRCPXIAgeMetric {width: 4vw;}
 #fldADDAgeUOM {width: 5vw;}
 #ddADDAgeUOM {min-width: 5vw; }
-
-
-
-
-#fldPRCPXIRace {width: 15.5vw; }
-#fldPRCPXIInfCon {width: 6vw; }
-#fldPRCPXILastFour {width: 6vw; }
-#fldPRCPXICX {width: 6vw; }
+#fldPRCPXIRace {width: 12vw; }
+#fldPRCPXIInfCon {width: 4vw; }
+#fldPRCPXILastFour {width: 4vw; }
+#fldPRCPXICX {width: 5vw; }
 #ddPRCPXICX {min-width: 6vw;}
-#fldPRCPXIRX {width: 6vw; }
+#fldPRCPXIRX {width: 5vw; }
 #ddPRCPXIRX {min-width: 6vw;}
-#fldPRCUpennSOGI { width: 9vw; }
+#fldPRCUpennSOGI { width: 6vw; }
 #ddPRCUpennSOGI { width: 9vw; }
 
 #metsFromDsp { display: none; }
@@ -254,22 +256,36 @@ textarea { font-size: 1.3vh; }
 #ddPRCPathRpt { width: 5vw; }
 
 
-#divORHolder {  border: 1px solid rgba({$this->color_zackgrey},1); margin-top: .2vh; position: relative; box-sizing: border-box; font-size: 1.3vh;  }
-#headerTbl { border-bottom: 1px solid  rgba({$this->color_grey},1); background: rgba({$this->color_cornflowerblue},1);  }
-#headerTbl th { padding: .4vh 0 .4vh 0; } 
-#PXIDspTblHD {width: 30vw; box-sizing: border-box; border-collapse: collapse;}
-#dataPart {  height: 38vh; width: 30vw; overflow: auto; } 
-.procedureSpellOutTbl { border-collapse: collapse; width: 26vw;  }
-.procTxtDsp { line-height: 1.4em; text-align: justify; width: 10vw; padding: 0 .8vw 0 0; }
+#divORHolder { margin-left: .1vw; margin-top: .2vh; position: relative; font-size: 1.3vh; border: 1px solid rgba({$this->color_zackgrey},1); }
 
-.dspORTarget { width: 1vw; text-align: center; }
-.dspORInformed {width: 1vw; text-align: center; }
-.dspORAdded {width: 1vw; text-align: center;}
-.dspORInitials {width: 3vw; text-align: left; }
+#divORHolder #headerTbl {  background: rgba({$this->color_cornflowerblue},1);  }
+#divORHolder #headerTbl th { padding: 4px 4px 4px 4px; } 
 
-.smallORTblLabel { width: 3.5vw; font-weight: bold; }
 
-#procDataDsp {border-collapse: collapse; width: 20vw;}
+#PXIDspTblHD {border-collapse: collapse;}
+#dataPart {  height: 78vh; overflow: auto; } 
+
+.procedureSpellOutTbl { border-collapse: collapse;  }
+.procTxtDsp { line-height: 1.4em; text-align: justify; padding: 0 .8vw 0 0; }
+
+.dspORTarget { width: 2vw; text-align: center; box-sizing: border-box; border-right: 1px solid  rgba({$this->color_grey},1); }
+.dspORInformed {width: 2vw; text-align: center;box-sizing: border-box; border-right: 1px solid  rgba({$this->color_grey},1); }
+.dspORAdded {width: 2vw; text-align: center; box-sizing: border-box; border-right: 1px solid  rgba({$this->color_grey},1);}
+.dspORInitials {width: 2vw; text-align: left;box-sizing: border-box; border-right: 1px solid  rgba({$this->color_grey},1); padding: 4px; }
+.dspProcCell { padding: 0 0 0 4px; }
+
+.targeticon {font-size: 1.8vh; color: rgba({$this->color_white},1); }
+.targetwatch { background: rgba({$this->color_cornflowerblue},1); }
+.targetrcvd { background: rgba({$this->color_darkgreen},1); }
+.targetnot { background: rgba({$this->color_bred},1); }
+.addicon { font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); }
+
+.btnEditPHIRecord { font-size: 1.4vh; color: rgba({$this->color_dblue},1); }
+.btnEditPHIRecord:hover {cursor: pointer; color: rgba({$this->color_bred},1); text-decoration: underline; }
+
+.smallORTblLabel { white-space: nowrap; font-weight: bold; }
+
+#procDataDsp {border-collapse: collapse;}
 .displayRows {background: rgba({$this->color_white},1); }
 .displayRows:nth-child(even) { background: rgba({$this->color_lightgrey},1); }
 .displayRows:hover {cursor: pointer; background: rgba({$this->color_lamber},1); }
@@ -304,7 +320,7 @@ textarea { font-size: 1.3vh; }
 #fldADDSex { width: 5vw; }
 #ddADDSex { min-width: 5vw; }
 
-#fldDNRLastFour {width: 4vw; }
+#fldDNRLastFour {width: 5vw; }
 #fldDNREncNotesType { width: 10vw; }
 #fldDNREncounterNote { width: 24vw; }
 #fldDNRNotReceivedNote {width: 41vw; }
