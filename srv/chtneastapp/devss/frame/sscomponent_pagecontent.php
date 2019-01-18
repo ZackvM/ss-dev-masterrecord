@@ -2336,8 +2336,9 @@ function bldQuickEditDonor($passeddata) {
     $targetdsp = $doarr['DATA']['targetdsp'];
     $informedconsent = $doarr['DATA']['informedind'];
     $informedconsentdsp = $doarr['DATA']['informeddsp'];
-    $linkeddonor = ((int)$doarr['DATA']['linkeddonor'] === 1) ? "Yes" : "";
-    $delinkeddonor = ((int)$doarr['DATA']['delinkeddonor'] === 1) ? "Yes" : "";
+    $linkeddonor = ((int)$doarr['DATA']['linkeddonor'] === 1) ? 1  : 0;
+    $delinkeddonor = ((int)$doarr['DATA']['delinkeddonor'] === 1) ? 1 : 0;
+    $delinkedby = trim($doarr['DATA']['delinkeddonorby']);
     //{"notetext":"And another note goes here","bywho":"proczack","enteredon":"01\/04\/2019 08:32"},{"notetext":"Case Note: This is a test case Note","bywho":"proczack","enteredon":"01\/04\/2019 08:31"}]
     $casenotes = $doarr['DATA']['casenotes'];
 
@@ -2494,7 +2495,7 @@ function bldQuickEditDonor($passeddata) {
 
 <table>
 <tr><td>Linked: </td><td> &nbsp;  </td></tr>
-<tr><td>De-Linked: </td><td> &nbsp; </td></tr>
+<tr><td>De-Linked By: </td><td> {$delinkedby}&nbsp; </td></tr>
 </table>
 </div>
 <div id=waitIcon><center>
@@ -2674,11 +2675,12 @@ function bldProcurementGrid($usr) {
   //<i class="material-icons">lock</i>
 $rtnTbl = <<<RTNTBL
 <table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
-<tr><td>BIOSAMPLE COLLECTION</td></tr>
-<tr><td>Sample Metrics</td></tr>
-<tr><td class=procGridHoldingDecorationLine>
+<tr><td id=BSDspMainHeader>Biosample Collection</td></tr>
+<tr><td class=BSDspSmallSpacer>&nbsp;</td></tr>
+<tr><td class=BSDspSectionHeader>Sample Metrics</td></tr>
+<tr><td class=procGridHoldingLine>
    <table border=0>
-     <tr><td class=prcFldLbl>Biogroup #</td><td class=prcFldLbl>Procurement Date</td><td class=prcFldLbl>Procedure Type</td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician/Institution</td><td class=prcFldLbl>Initial Metric</td><td>&nbsp;</td><td rowspan=2 id=BSLock><i class="material-icons bslockdsp">lock_open</i></td></tr>
+     <tr><td class=prcFldLbl>Biogroup #</td><td class=prcFldLbl>Procurement Date</td><td class=prcFldLbl>Procedure Type</td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician::Institution</td><td class=prcFldLbl>Initial Metric</td><td>&nbsp;</td><td rowspan=2 id=BSLock><div class=ttholder><i class="material-icons bslockdsp">lock_open</i><div class=tt>Biosample is currently editable</div></div></td></tr>
      <tr>
        <td><input type=text id=fldPRCBGNbr value="" READONLY></td>
        <td><input type=text readonly id=fldPRCProcDate value="{$tday}"></td>
@@ -2691,8 +2693,9 @@ $rtnTbl = <<<RTNTBL
    </table>
 </td></tr>
 
-<tr><td>Donor Metrics</td></tr>
-<tr><td class=procGridHoldingDecorationLine>
+<tr><td class=BSDspSpacer>&nbsp;</td></tr>
+<tr><td class=BSDspSectionHeader>Donor Metrics</td></tr>
+<tr><td class=procGridHoldingLine>
    <table>
     <tr><td class=prcFldLbl>Initials</td><td class=prcFldLbl>Age</td><td class=prcFldLbl>Race</td><td class=prcFldLbl>Sex</td><td class=prcFldLbl>Callback</td><td class=prcFldLbl>I-Consent</td><td class=prcFldLbl>Chemo</td><td class=prcFldLbl>Radiation</td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
     <tr>
@@ -2711,11 +2714,12 @@ $rtnTbl = <<<RTNTBL
    </table>
 </td></tr>
 
-<tr><td>Diagnosis Designation</td></tr>
-<tr><td class=procGridHoldingDecorationLine>
+<tr><td class=BSDspSpacer>&nbsp;</td></tr>
+<tr><td class=BSDspSectionHeader>Diagnosis Designation</td></tr>
+<tr><td class=procGridHoldingLine>
 
 <table>
-  <tr><td colspan=3 class=prcFldLbl>Diagnosis Designation</td> <td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolved/NAT</td><td class=prcFldLbl>Pathology Rpt</td></tr>
+  <tr><td class=prcFldLbl>Specimen Category</td><td class=prcFldLbl>Site</td><td class=prcFldLbl>Sub-Site</td><td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolved/NAT</td><td class=prcFldLbl>Pathology Rpt</td></tr>
   <tr><td valign=top> {$spcmenu} </td><td valign=top> {$sitesubsite} </td><td> {$subsite} </td><td valign=top> {$dxmod} </td><td>{$uninvmenu}</td><td>{$prptmenu}</td></tr>
   <tr><td colspan=6> 
     <table cellpadding=0 cellspacing=0 border=0><tr><td> 
@@ -2736,8 +2740,10 @@ $rtnTbl = <<<RTNTBL
 
 
 </td></tr>
-<tr><td>Comments</td></tr>
-<tr><td class=procGridHoldingDecorationLine>
+
+<tr><td class=BSDspSpacer>&nbsp;</td></tr>
+<tr><td class=BSDspSectionHeader>Comments</td></tr>
+<tr><td class=procGridHoldingLine>
 
 <table>
 <tr><td class=prcFldLbl>Biosample Comments</td><td class=prcFldLbl>Question for HPR/QMS</td></tr>
@@ -2747,10 +2753,10 @@ $rtnTbl = <<<RTNTBL
 </td></tr>
 
 
-<tr><td align=right style="padding: .5vh .6vw 0 0;">
+<tr><td align=right style="padding: .2vh .6vw 0 0;">
 
 
-  <table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td><center>Save</td></tr></table>
+  <table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table>
 
 </td></tr>
 
@@ -3007,7 +3013,7 @@ function bldBiosampleProcurement($usr) {
       $tdydtev = $today->format('Y-m-d');
       $orscheddater = bldSidePanelORSched( $usr->presentinstitution, $tdydte, $tdydtev );
       //TODO:REMOVE THIS LINE TO DEFAULT TO TODAY'S DATE
-      $tdydtev = '20180507';
+      //$tdydtev = '20180507';
       $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
       $procGrid = bldProcurementGrid($usr); //THIS IS THE PROCUREMENT GRID ELEMENTS
 

@@ -165,7 +165,6 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
 .procGridHoldingTable {width: 67.5vw; box-sizing: border-box; }
 .procGridHoldingTitle {font-size: 1.7vh; color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border-bottom: 2px solid rgba({$this->color_ddrwgrey},1); padding: .5vh 0 0 0; } 
-.procGridHoldingDecorationLine { padding: 0 0 0 0;  }
 .procGridHoldingDecorationLineBACKUP {border-left: 2px solid rgba({$this->color_ddrwgrey},1);border-top: 2px solid rgba({$this->color_ddrwgrey},1);}
 
 .prcFldLbl { font-size: 1.3vh; color: rgba({$this->color_dblue},1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); padding: 0 0 0 0; font-weight: bold; }
@@ -176,17 +175,20 @@ textarea { font-size: 1.3vh; }
 #fldPRCProcedureInstitutionValue { width: 8vw; font-size: 1.2vh; }
 
 #BSLock { width: 4vw; text-align: center; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); }
+#BSLock .ttholder { position: relative; }
+#BSLock .ttholder:hover .tt { display: block; text-align: left; }
+#BSLock .tt { position: absolute; left: .5vw; font-size: 1.3vh; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); box-sizing: border-box; padding: 4px 3px; display: none; white-space: nowrap; z-index: 40; }
 .bslockdsp { font-size: 4vh; color: rgba({$this->color_darkgreen},1); }
 
-#fldPRCBGNbr { width: 6vw; }
+#fldPRCBGNbr { width: 7vw; }
 #fldPRCProcDate { width: 10vw; }
 #fldPRCProcedureType { width: 10vw; }
 #ddPRCProcedureType { min-width: 10vw; }
 #fldPRCCollectionType { width: 10vw; }
 #ddPRCCollectionType { min-width: 10vw; }
-#fldPRCTechInstitute { width: 15vw; }
+#fldPRCTechInstitute { width: 15.5vw; }
 #fldPRCInitialMetric { width: 3vw; text-align: right; }
-#fldPRCMetricUOM {width: 5vw; }
+#fldPRCMetricUOM {width: 6vw; }
 #ddPRCMetricUOM {min-width: 5vw; }
 #fldSubjectNbr {width: 8vw; }
 #fldProtocolNbr {width: 8vw;}
@@ -195,51 +197,48 @@ textarea { font-size: 1.3vh; }
 #ddPRCSpecCat {min-width: 13vw; }
 #fldPRCSite {width: 12vw; }
 #ddPRCSite { min-width: 15vw; }
-#fldPRCSSite {width: 11vw; }
-#ddPRCSSite { min-width: 11vw; }
+#fldPRCSSite {width: 11.2vw; }
+#ddPRCSSite { min-width: 11.2vw; }
 #fldPRCDXMod {width: 19.3vw; }
 #ddPRCDXMod { min-width: 19.3vw; }
-#fldPRCBSCmts {width: 33vw; }
-#fldPRCHPRQ {width: 33vw; }
-#fldPRCUnknownMet {width: 4vw; }
-#ddPRCUnknownMet {width: 4vw; }
-#fldPRCUnInvolved { width: 5vw; }
+#fldPRCBSCmts {width: 33.6vw; height: 10vh; }
+#fldPRCHPRQ {width: 33.6vw; height: 10vh; }
+#fldPRCUnknownMet {width: 6vw; }
+#ddPRCUnknownMet {min-width: 6vw; }
+#fldPRCUnInvolved { width: 6vw; }
 #ddPRCUnInvolved { min-width: 4vw; }
 #fldPRCSitePositions { width: 15vw; }
 #ddPRCSitePositions { width: 15vw; }
 #fldPRCDiagnosisDesignation { width: 25vw; }
 #fldPRCMETSDesignation {width: 32vw; }
 #fldPRCSystemicDX {width: 32vw; }
-
-#fldPRCPXISex {width: 2vw; text-align: center; }
+#fldPRCPXISex {width: 3vw; text-align: center; }
 #fldPRCPXIId { display: none; }
 #fldPRCPXIInitials { width: 3vw; }
 #fldADDPXIInitials { width: 5vw; }
-#fldPRCPXIAge {width: 2vw; text-align: right; }
+#fldPRCPXIAge {width: 3vw; text-align: right; }
 #fldADDPXIAge {width: 3vw; text-align: right; }
 #fldPRCPXIAgeMetric {width: 4vw;}
 #fldADDAgeUOM {width: 5vw;}
 #ddADDAgeUOM {min-width: 5vw; }
-#fldPRCPXIRace {width: 12vw; }
+#fldPRCPXIRace {width: 11.8vw; }
 #fldPRCPXIInfCon {width: 4vw; }
 #fldPRCPXILastFour {width: 4vw; }
 #fldPRCPXICX {width: 5vw; }
 #ddPRCPXICX {min-width: 6vw;}
 #fldPRCPXIRX {width: 5vw; }
 #ddPRCPXIRX {min-width: 6vw;}
-#fldPRCUpennSOGI { width: 6vw; }
+#fldPRCUpennSOGI { width: 6.5vw; }
 #ddPRCUpennSOGI { width: 9vw; }
-
 #metsFromDsp { display: none; }
 #fldPRCMETSSite { width: 15.5vw; }
 #ddPRCMETSSite { min-width: 15.5vw; }
-#fldPRCMETSDX { width: 17.4vw; }
-#ddPRCMETSDX { min-width: 17.4vw; }
-#fldPRCSitePosition { width: 16vw; }
-#ddPRCSitePosition { min-width: 16vw; }
+#fldPRCMETSDX { width: 18vw; }
+#ddPRCMETSDX { min-width: 18vw; }
+#fldPRCSitePosition { width: 16.5vw; }
+#ddPRCSitePosition { min-width: 16.5vw; }
 #fldPRCSystemList {width: 16.5vw; }
 #ddPRCSystemList {min-width: 16.5vw; }
-
 #displayVocabulary { min-width: 25vw; overflow-x: hidden;}
 #displayMETSVocabulary { min-width: 25vw; overflow-x: hidden; }
 .vocabMenuItem:hover { cursor: pointer; background-color: rgba({$this->color_lblue},1); color: rgba({$this->color_white},1); }
@@ -251,10 +250,15 @@ textarea { font-size: 1.3vh; }
 #vocabMETSCloseBtn:hover { cursor: pointer; color: rgba({$this->color_bred},1); }
 #vocabMETSVersionNbr { font-size: 1.4vh; text-align: right; }
 #vocabMETSRecordsFound { font-size: 1.4vh; font-weight: bold; }
-
 #fldPRCPathRpt { width: 5vw; }
 #ddPRCPathRpt { width: 5vw; }
 
+
+#BSDspMainHeader { font-size: 2vh; text-align: center; font-variant: small-caps; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_cornflowerblue},1); padding: 1vh 1vw; border: 2px solid rgba({$this->color_dblue},1); }
+.BSDspSectionHeader { padding-top: 1vh; padding-bottom: 1vh; padding-left: .5vw; font-size: 1.4vh; background: rgba({$this->color_lgrey},1); color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border: 1px solid rgba({$this->color_grey},1);  }
+.BSDspSpacer { height: 1.3vh;  }
+.procGridHoldingLine {padding-top: .5vh; }
+.BSDspSmallSpacer { height: .2vh; font-size: .3vh; }
 
 #divORHolder { margin-left: .1vw; margin-top: .2vh; position: relative; font-size: 1.3vh; border: 1px solid rgba({$this->color_zackgrey},1); }
 

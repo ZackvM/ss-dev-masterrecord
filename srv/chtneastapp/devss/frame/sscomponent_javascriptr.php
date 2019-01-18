@@ -584,9 +584,9 @@ function procurebiosample($rqstrstr) {
 
 document.addEventListener('DOMContentLoaded', function() {  
 
-//  if (byId('btnPBClearGrid')) { 
-//     byId('btnPBClearGrid').addEventListener('click', function() { clearGrid(); }, false);          
-//  }
+    if (byId('btnPBClearGrid')) { 
+      byId('btnPBClearGrid').addEventListener('click', function() { clearGrid(); }, false);          
+    }
 
     if (byId('btnPBORSched')) {
       byId('btnPBORSched').addEventListener('click', function() { 
@@ -596,6 +596,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (byId('btnPBAddPHI')) { 
 
+    }
+
+    if (byId('btnProcureSaveBiosample')) { 
+      byId('btnProcureSaveBiosample').addEventListener('click', function() { 
+        masterSaveBiogroup();
+      }, false);
     }
 
     if (byId('btnPBAddDelink')) { 
@@ -629,7 +635,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function clearGrid() { 
    //TODO:  RESET DEFAULT FIELD VALUES
+   alert('CLEAR GRID');
    fillField('fldPRCSpecCat','','');
+}
+
+function masterSaveBiogroup() { 
+   alert('I\'m gonna save this biogroup ... eventually - I don\'t work at the moment');
 }
 
 function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxisex, pxiinformed, pxilastfour ) { 

@@ -723,6 +723,7 @@ SQLSTMT;
        $dta['informeddsp'] = $r['icdsp']; 
        $dta['linkeddonor'] = $r['linkeddonorind']; 
        $dta['delinkeddonor'] = $r['delinkeddonorind'];
+       $dta['delinkeddonorby'] = $r['delinkedby'];
 
        $noteSQL = "SELECT notetype, notetext, bywho, date_format(onwhen, '%m/%d/%Y %H:%i') as enteredon FROM four.tmp_ORListing_casenotes where donorphiid = :donorid and dspind = 1 order by enteredon desc";
        $noteRS = $conn->prepare($noteSQL); 
