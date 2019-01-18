@@ -1,0 +1,17 @@
+
+
+Code for PHI upload in /root/servercomponents/pxiupload
+  - 1) Must be made automatic
+  - 2) data checks must be made in main server /srv/chtneastapp/dataservices/posters/scienceserverposter.php (function: savelinuxorschedphi)
+  - 3) when scienceserver is updated to production - code in /root/servercomponents/pxiupload must be re-pointed at the production webservice
+
+
+Label printing - 
+  - 1) all labels must have payload of three items - bgs/subject/protocol 
+  - 2) each label selected must use payload to write label string and printer name to serverControls.lblToPrint table 
+  - 3) Webservice is created to be read from the main server to the linux server to be printed with the LPR command
+  - 4) Drop label string into a unique file and then issue the LPR command
+
+
+
+  

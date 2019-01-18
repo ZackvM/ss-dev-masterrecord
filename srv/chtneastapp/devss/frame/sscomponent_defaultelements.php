@@ -12,8 +12,20 @@ if ($whichpage !== "login") {
   $tt = treeTop;    
   
   $at = genAppFiles;
-  //$profpic = base64file("{$at}/publicobj/graphics/usrprofile/{$whichUsr->profilepicturefile}", "userprofilepicture", "png", false);   
+  //TODO:  ONLY ALLOW PNGs as profile pictures
+  $profpic = base64file("{$at}/publicobj/graphics/usrprofile/{$whichUsr->profilepicturefile}", "apptrayUserProfilePicture", "png", true);   
+ 
+  $directoryRS = json_decode(callrestapi("GET", dataTree .  "/chtn-staff-directory-listing", serverIdent, serverpw), true);  
+  $directory = "<table border=1>";
+  $inst = ""; 
   
+//START HERE 20190118!!!!!
+  
+  foreach ($directoryRS as $dicKey => $dicVal) { 
+      
+      
+  }
+  $directory .= "</table>";
   
   $thisAcct = <<<THISMENU
 
@@ -22,7 +34,11 @@ if ($whichpage !== "login") {
   </div>   
     <div id=usrAccountDspDiv>
       <table border=1>
-        <tr><td colspan=2></td></tr> 
+        <tr><td colspan=2>
+         <div class="circular--portrait">  
+          {$profpic}
+         </div>     
+        </td></tr> 
         <tr><td>Login Name: </td><td>{$whichUsr->useremail}</td></tr>
         <tr><td>DB ID: </td><td>{$whichUsr->userid}</td></tr>
         <tr><td>User's Name: </td><td>{$whichUsr->username}</td></tr>
@@ -40,6 +56,12 @@ if ($whichpage !== "login") {
  <div id=appcard_help class=appcard> 
  {$hlpfile}
 </div>   
+ 
+ <div id=appcard_chtndirectory class=appcard>
+ Directory Listing
+ <p>
+ 
+ </div>
  
 THISMENU;
 }

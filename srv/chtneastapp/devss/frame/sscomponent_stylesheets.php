@@ -39,6 +39,17 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
  
 .appcard { border-left: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 49; padding: 11vh 0 0 0; background: rgba({$this->color_lgrey},1); transition: 1s; }
 #standardModalBacker { position: fixed; top: 0; left: 0;  z-index: 100; background: rgba({$this->color_zackgrey},.7); height: 100vh; width: 100vw; display: none; }
+
+#apptrayUserProfilePicture { width: 18vh;  }
+.circular--portrait {
+  position: relative;
+  height: 18vh;
+  width: 10vw;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+
 #standardModalDialog {display: none; background: rgba({$this->color_lgrey},1); position: fixed; margin-left: -20vw; left: 50%; margin-top: -10vh; top: 50%; z-index: 101; border: 2px solid rgba({$this->color_white},1); }
 
 #systemDialogClose { width: .5vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 2vh;text-align: right; padding: .3vh .1vw; }
@@ -155,7 +166,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
  
 #procurementAddHoldingTbl { height: 86vh; box-sizing: border-box; }
 #procurementAddHoldingTbl .sidePanel { width: 30vw; box-sizing: border-box;  }
-#procurementAddHoldingTbl #procGridHolderCell { width: 68vw; border-right: 1px solid rgba({$this->color_ddrwgrey},1); box-sizing: border-box;   }
+#procurementAddHoldingTbl #procGridHolderCell { width: 67vw; border-right: 1px solid rgba({$this->color_ddrwgrey},1); box-sizing: border-box;   }
 
 .topBtnHolderCell .ttholder { position: relative; }
 .topBtnHolderCell .ttholder:hover .tt { display: block; text-align: left; }
@@ -163,7 +174,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 .topBtnHolderCell .tt .btnBarDropMenuItems { font-size: 1.5vh; }
 .topBtnHolderCell .tt .btnBarDropMenuItems .btnBarDropMenuItem:hover { background: rgba({$this->color_lblue},1);  color: rgba({$this->color_white},1); cursor: pointer; } 
 
-.procGridHoldingTable {width: 67.5vw; box-sizing: border-box; }
+.procGridHoldingTable {width: 66vw; box-sizing: border-box; }
 .procGridHoldingTitle {font-size: 1.7vh; color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border-bottom: 2px solid rgba({$this->color_ddrwgrey},1); padding: .5vh 0 0 0; } 
 .procGridHoldingDecorationLineBACKUP {border-left: 2px solid rgba({$this->color_ddrwgrey},1);border-top: 2px solid rgba({$this->color_ddrwgrey},1);}
 

@@ -35,6 +35,36 @@ class objgetter {
 
 class objlisting { 
 
+  function chtnstaffdirectorylisting($whichobj, $urirqst) { 
+       
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW'];
+     
+     if ($authuser === 'chtneast') {       
+        if ((int)checkPostingUser($authuser, $authpw) === 200) {
+            $directorySQL = "SELECT concat(ifnull(if(ifnull(inst.longvalue,'') = '', inst.dspvalue, inst.longvalue),''), ' (', ifnull(primaryinstcode,''), ')') as institution, substr(concat('00000',userid),-6) as userid , ifnull(emailaddress,'ERROR') as emailaddress, ifnull(originalaccountname,'') as originalaccountname, ifnull(username,'') as username, ifnull(profilephone,'') as profilephone, ifnull(profilepicurl,'') as profilepicurl, ifnull(dspAlternateInDir,0) as dspalternateindir , ifnull(profilealtemail,'') as profilealtemail, ifnull(altphone,'') as altphone, ifnull(altphonetype,'') as altphonetype, ifnull(dspjobtitle,'') as dsptitle FROM four.sys_userbase usr left join (SELECT * FROM four.sys_master_menus where menu = 'INSTITUTION') inst on usr.primaryInstCode = inst.menuValue where allowind = 1 and dspindirectory = 1 order by institution asc, dsporderindirectory";   
+            $directoryRS = $conn->prepare($directorySQL);
+            $directoryRS->execute(); 
+            while ($r = $directoryRS->fetch(PDO::FETCH_ASSOC)) { 
+               $rows[] = $r; 
+            }            
+            $dta = $rows;
+            $msg = "";
+            $responseCode = 200;
+        } 
+     }
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;       
+  }  
+    
   function gethelpticketdialog($whichobj, $urirqst) { 
     $responseCode = 400; 
     $msg = "BAD REQUEST";

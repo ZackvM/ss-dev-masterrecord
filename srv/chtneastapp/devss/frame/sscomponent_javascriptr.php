@@ -578,7 +578,7 @@ function procurebiosample($rqstrstr) {
 
     $sp = serverpw; 
     $tt = treeTop;
-
+    $linuxServer = phiserver;
     $rtnthis = <<<JAVASCR
 
 
@@ -587,7 +587,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (byId('btnPBClearGrid')) { 
       byId('btnPBClearGrid').addEventListener('click', function() { clearGrid(); }, false);          
     }
-
+            
+    if (byId('btnPBAddPHI')) { 
+     byId('btnPBAddPHI').addEventListener('click', function() { 
+       //GENERATE DUAL-AUTH CODE (AFTER CHECKING USER), DISPLAY CODE WITH OPEN WINDOW BUTTON, PASS BACK SINGLE USE CODE     
+       //openOutSidePage('{$linuxServer}'); 
+     }, false);
+   }
+            
     if (byId('btnPBORSched')) {
       byId('btnPBORSched').addEventListener('click', function() { 
         alert(byId('fldPRCProcedureDateValue').value); 
@@ -635,12 +642,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function clearGrid() { 
    //TODO:  RESET DEFAULT FIELD VALUES
-   alert('CLEAR GRID');
-   fillField('fldPRCSpecCat','','');
+   location.reload(true);   
 }
 
 function masterSaveBiogroup() { 
-   alert('I\'m gonna save this biogroup ... eventually - I don\'t work at the moment');
+   alert('I\'ma gonna save this biogroup ... eventually - I don\'t work at the moment');
 }
 
 function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxisex, pxiinformed, pxilastfour ) { 

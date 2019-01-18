@@ -34,6 +34,71 @@ function __construct() {
 
 class datadoers {
     
+    function savelinuxorschedphi($request, $passdata) { 
+     $rows = array(); 
+     //$dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW'];
+     
+     if ($authuser === 'chtneast') { 
+       if ((int)checkPostingUser($authuser, $authpw) === 200) { 
+           $philist = json_decode($passdata, true);
+           if (array_key_exists('philisting', $philist)) { 
+//{"philisting":[{"ORSchedid":"3768aab9-5f20-4214-b25c-7c1d19499ec2","ORDate":"2019-01-18","forLocation":"HUP","orschdtid":"018901f9-9862-4347-b8b2-666968bb5bcf","paini":"B.S.","starttime":"3:23","surgeon":"","room":"36","age":"73","race":"","sex":"M","procdetails":"(M1) COLONOSCOPY FLEXIBLE DIAGNOSTICLRB- N\/A_","proctargetstatus":"","informedconsent":"0","callbackref":"2879"},{"ORSchedid":"3768aab9-5f20-4214-b25c-7c1d19499ec2","ORDate":"2019-01-18","forLocation":"HUP","orschdtid":"01c59591-b796-4aa2-9b8e-f2f5832c2cd0","paini":"M.W.","starttime":"2:00","surgeon":"GOLDBERG, DAVID","room":"75","age":"50","race":"","sex":"F","procdetails":"(M1) COLONOSCOPY FLEXIBLE DIAGNOSTICLRB- N\/A_","proctargetstatus":"","informedconsent":"0","callbackref":"2748"},{"ORSchedid":"3768aab9-5f20-4214-b25c-7c1d19499ec2","ORDate":"2019-01-18","forLocation":"HUP","orschdtid":"0229409b-f613-4e67-8b4b-39099af546c4","paini":"D.L.","starttime":"2:05","surgeon":"","room":"36","age":"68","race":"","sex":"M","procdetails":"(M1) EGD FLEXIBLE TRANSORAL W\/ BIOPSYLRB- N\/A (p+) SIGMOIDOSCOPY FLEXIBLE W\/ BIOPSY SINGLE\/MULTIPLELRB- N\/A_","proctargetstatus":"","informedconsent":"0","callbackref":"9634"},{"ORSchedid":"3768aab9-5f20-4214-b25c-7c1d19499ec2","ORDate":"2019-01-18","forLocation":"HUP","orschdtid":"02738e0d-dc83-4f5a-9fd8-c2814aaadab4","paini":"R.M.","starttime":"10:30","surgeon":"BEWTRA, MEENAKSHI","room":"70","age":"78","race":"","sex":"F","procdetails":"(M1) COLONOSCOPY FLEXIBLE DIAGNOSTICLRB- N\/A_","proctargetstatus":"","informedconsent":"0","callbackref":"2181"},{"ORSchedid":"3768aab9-5f20-4214-b25c-7c1d19499ec2","ORDate":"2019-01-18","forLocation":"HUP","orschdtid":"02e8f374-3e91-4ffe-9385-3baf63b1bcfc","paini":"S.D.","starttime":"11:30","surgeon":"LICHTENSTEIN, GARY","room":"81","age":"56","race":"","sex":"M","procdetails":"(M1) COLONOSCOPY FLEXIBLE DIAGNOSTICLRB- N\/A_","proctargetstatus":"","informedconsent":"0","callbackref":"0130"}]}                 
+                 foreach ($philist['philisting'] as $ky => $val) { 
+                      //RUN THROUGH ONCE TO DO DATA CHECKS
+                      //TODO:  WRITE DATA CHECKS
+                 
+                 }
+                 
+                 if ($errorInd === 0 ) { 
+                    $cleanSQL = "insert into four.tmp_ORListing_unused_bu SELECT * FROM four.tmp_ORListing where TIMESTAMPDIFF(month, listdate, now()) > 13 and (trim(ifnull(targetInd,'')) = '' or trim(ifnull(targetInd,'')) = '-')";
+                    $cleanRS = $conn->prepare($cleanSQL); 
+                    $cleanRS->execute();
+                    $linkSSSQL = "insert into four.tmp_ORListing (location, listdate, starttime, room, surgeons, pxicode, pxiini, lastfourmrn, pxiage, ageuomcode, pxirace, pxisex, proctext, targetind, infcind, lastupdatedby , lastupdateon, ORKey, linkeddonor, linkby) values (:location, :listdate, :starttime, :room, :surgeons, :pxicode, :pxiini, :lastfourmrn, :pxiage, :ageuomcode, :pxirace, :pxisex, :proctext, :target, :ic, :lastupdatedby, now(), :orkey, 1, :delinkedby)";  
+                    $linkSSRS = $conn->prepare($linkSSSQL);                    
+                    $c = 0;
+                    foreach ($philist['philisting'] as $ky => $val) { 
+                      $linkSSRS->execute(
+                              array(
+                                 ':location' => $val['forLocation']
+                                ,':listdate' => $val['ORDate']
+                                ,':starttime' => $val['starttime']
+                                ,':room' => $val['room']
+                                ,':surgeons' => $val['surgeon']
+                                ,':pxicode' => $val['orschdtid']
+                                ,':pxiini' => $val['paini']
+                                ,':lastfourmrn' => $val['callbackref']
+                                ,':pxiage' => $val['age']
+                                ,':ageuomcode' => 1
+                                ,':pxirace' => $val['race']
+                                ,':pxisex' => $val['sex']
+                                ,':proctext' => $val['procdetails']
+                                ,':target' => $val['proctargetstatus']
+                                ,':ic' => $val['informedconsent']
+                                ,':lastupdatedby' => 'PHI-SYSTEM-UPDATE'
+                                ,':orkey' => $val['ORSchedid']
+                                ,':delinkedby' => 'PHI-SYSTEM-UPDATE'
+                              ));                                                
+                        $c++;
+                    }                 
+                    $responseCode = 200; 
+                 }                 
+           }
+       }
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;
+    }
+    
     function savedelinkedphi($request, $passdata) { 
      $rows = array(); 
      $dta = array(); 

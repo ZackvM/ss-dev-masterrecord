@@ -454,7 +454,7 @@ function procurebiosample($rqststr, $whichusr) {
 
 if (trim($rqststr[2]) === "") { 
   //BUILD BASIC COLLECTION SCREEN
-  $topBtnBar = generatePageTopBtnBar('procurebiosample');
+  $topBtnBar = generatePageTopBtnBar('procurebiosample' , $whichusr);
   $pg = bldBiosampleProcurement( $whichusr );
 } 
 
@@ -1818,7 +1818,7 @@ BSGRID;
 return $grid; 
 }
 
-function generatePageTopBtnBar($whichpage) { 
+function generatePageTopBtnBar($whichpage, $whichusr) { 
 
 //TODO:  DUMP THE BUTTONS INTO A DATABASE AND GRAB WITH A WEBSERVICE    
 //TODO:  MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
@@ -1826,6 +1826,12 @@ function generatePageTopBtnBar($whichpage) {
 switch ($whichpage) { 
 
 case 'procurebiosample':
+    $pxibtn = "";
+    foreach($whichusr as $key =>$val) { 
+      if ($key === 'allowpxi' && (int)$val === 1) {
+        $pxibtn = "<tr class=btnBarDropMenuItem id=btnPBAddPHI ><td><i class=\"material-icons\">arrow_right</i></td><td>Add Donor (HUP Only) &nbsp;</td></tr>";
+      }
+    }
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>
@@ -1835,7 +1841,7 @@ $innerBar = <<<BTNTBL
            <div class=tt> 
              <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
                <tr class=btnBarDropMenuItem id=btnPBAddDelink><td><i class="material-icons">arrow_right</i></td><td>Add Delinked Donor &nbsp;</td></tr>     
-               <tr class=btnBarDropMenuItem id=btnPBAddPHI><td><i class="material-icons">arrow_right</i></td><td>Add Donor (UPHS Only) &nbsp;</td></tr>     
+               {$pxibtn}     
              </table>
            </div>
          </div>
