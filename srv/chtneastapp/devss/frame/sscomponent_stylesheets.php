@@ -43,8 +43,8 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 #apptrayUserProfilePicture { width: 18vh;  }
 .circular--portrait {
   position: relative;
-  height: 18vh;
-  width: 10vw;
+  height: 17vh;
+  width: 9vw;
   overflow: hidden;
   border-radius: 50%;
 }
@@ -88,12 +88,62 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 .universeBtns:hover {color: rgba({$this->color_neongreen},1); cursor: pointer; }
 
 #hlpHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
+#directoryDisplay { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
 #clsBtnHold #closeBtn { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
 #clsBtnHold #closeBtn:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
 #hlpTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
 #hlpSubTitle { width: 100%; font-family: Roboto; font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
 #hlpByLine { width: 100%; font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_darkgreen},1); text-align: right; }
 #hlpText { width: 100%; font-family: Roboto; font-size: 1.8vh; line-height: 1.6em; text-align: justify; padding: 1vh 0 0 0; }
+
+
+.sidebarprofilepicture { height: 15.5vh; }
+.circularOverlay { position: relative; height: 15vh; width: 8vw; overflow: hidden; border-radius: 50%; }
+
+#directoryTbl { width: 46vw;   }
+#directoryTbl .institutionHeader { font-size: 1.5vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .8vh 0; border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
+#directoryTbl .directorySpacer { height: 1.2vh; }
+
+.profPicCell { width: 9vw; }
+.profileDetailDisplay { width: 23vw;  }
+.personCell {border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); padding: 10px 10px; } 
+
+.personLbl { font-size: 1.1vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); }
+.personData { font-size: 1.1vh;  color: rgba({$this->color_zackgrey},1); }
+
+#directoryHeaderTbl { width: 46vw; border-collapse: collapse;   }
+#directoryHeaderTblTitle { font-size: 2vh; color: rgba({$this->color_dblue},1); font-weight: bold;     }
+#closeBtnDirectory { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 1vw;  }
+#closeBtnDirectory:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
+
+#profTrayUserName { font-size: 2.8vh; font-weight: bold; color: rgba({$this->color_dblue},1); padding: 0 1vw; }
+#profTrayUserEmail {font-size: 1.8vh; color: rgba({$this->color_dblue},1); padding: 0 1vw; }
+#profTrayPictureHold {padding: 0 0 0 3vw; }
+
+#profTrayControlDivHoldTbl { width: 46vw; border-collapse: collapse; }
+#profTrayControlDivHolder {  }
+
+#profTrayControlAbtMe { padding: 10px; display: block; }
+#profTrayControlAccess { padding: 10px; display: none;  }
+#profTrayControlManage { padding: 10px; display: none; }
+
+#profTrayDisplayAltYN { width: 3vw; font-size: 1.3vh;  }
+#ddprofTrayDisplayAltYN {min-width: 3vw; }
+
+#profTrayAMEmail { font-size: 1.3vh; width: 15vw; }
+#profTrayAMDBID { font-size: 1.3vh; width: 5vw; }
+#profTrayOfficePhn { font-size: 1.3vh; width: 11vw; } 
+#profTrayAltPhone { font-size: 1.3vh; width: 11vw; }
+
+#profTrayAltEmail { font-size: 1.3vh; width: 11vw; }
+#profTrayAccessLvl { font-size: 1.3vh; width: 12vw; }
+#profTrayProfilePicture {font-size: 1.3vh; width: 15vw; }
+#profTrayCC {font-size: 1.3vh; width: 12vw; }
+#ddprofTrayCC { min-width: 12vw; }
+
+
+
+
 
 /* GENERAL CONTROLS */
 .fldLabel {font-family: Roboto; font-size: 1.4vh;  color: rgba({$this->color_zackgrey},1); padding-top: 1vh; }
@@ -147,7 +197,7 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 #topBtnBarTbl .topBtnDisplayer:hover {cursor: pointer; color: rgba({$this->color_neongreen}); }
 #topBtnBarTbl .topBtnDisplayer td {white-space: nowrap; }
 
-#usrAccountTitle { font-size: 2vh; font-weight: bold; color: rgba({$this->color_lblue},1); }
+.usrAccountTitle { font-size: 2vh; font-weight: bold; color: rgba({$this->color_dblue},1); }
 
 .helppicturecaption { font-size: 1.1vh; color: rgba({$this->color_darkgrey},1); font-weight: bold; font-style: italics; }
 STYLESHEET;

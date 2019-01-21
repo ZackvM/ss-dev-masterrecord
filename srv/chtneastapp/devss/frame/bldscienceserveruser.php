@@ -23,6 +23,7 @@ class bldssuser {
     public $accesslevel = "";
     public $profilepicturefile = "";
     public $officephone = ""; 
+    public $displayalternate = 0;
     public $alternateemail = ""; 
     public $alternatephone = "";
     public $alternatephntype = "";
@@ -55,6 +56,7 @@ class bldssuser {
           $this->accessnbr = $userelements['accessnbr'];
           $this->profilepicturefile = $userelements['profilepicturefile']; 
           $this->officephone = $userelements['officephone'];
+          $this->displayalternate = $userelements['displayindirectory'];
           $this->alternateemail = $userelements['alternateemail'];
           $this->alternatephone = $userelements['alternatephone'];
           $this->alternatephntype = $userelements['altphonetype']; 
@@ -75,7 +77,7 @@ class bldssuser {
                 . ", ifnull(allowproc,0) as allowprocurement, ifnull(allowcoord,0) as allowcoordination, ifnull(allowhpr,0) as allowhpr, ifnull(allowinvtry,0) as allowinventory"
                 . ", ifnull(presentinstitution,'') as presentinstitution, timestampdiff(MINUTE, now(), sessionexpire) minleftinsession, ifnull(username,'') as displayname, ifnull(primaryinstcode,'') as primaryinstcode, timestampdiff(DAY, now(), passwordExpireDate) daystopasswordexpire"
                 . ", ifnull(accesslevel,'') as accesslevel, ifnull(accessnbr,3) as accessnbr, ifnull(logcardid,'') as logcardid , ifnull(inventorypinkey,'') as inventorypinkey, timestampdiff(DAY, now(), logcardexpdte) daystoinventorycardexpire"
-                . ", ifnull(profilepicurl,'') as profilepicturefile, ifnull(profilephone,'') as profilephone, ifnull(profilealtemail,'') as profilealternateemail, ifnull(dlexpiredate,'') as dlexpiration, ifnull(altphone,'') as profilealternatephone, ifnull(altphonetype,'') as altphonetype, ifnull(altphonecellcarrier, '') as textingphonenbr "
+                . ", ifnull(profilepicurl,'') as profilepicturefile, ifnull(profilephone,'') as profilephone, ifnull(profilealtemail,'') as profilealternateemail, ifnull(dlexpiredate,'') as dlexpiration, ifnull(altphone,'') as profilealternatephone, ifnull(altphonetype,'') as altphonetype, ifnull(altphonecellcarrier, '') as textingphonenbr, ifnull(dspindirectory,0) displayindirectory "
                 . " FROM four.sys_userbase "
                 . " where sessionid = :sessionkey and allowind = 1 and timestampdiff(DAY, now(), passwordExpireDate) > -1 and  timestampdiff(minute, now(), sessionExpire) > 0";
         $userTopR = $conn->prepare($userTopSQL);
@@ -102,6 +104,7 @@ class bldssuser {
            $elArr['accessnbr'] = $ur['accessnbr'];
            $elArr['profilepicturefile'] = $ur['profilepicturefile']; 
            $elArr['officephone'] = $ur['profilephone'];
+           $elArr['displayindirectory'] = $ur['displayindirectory'];
            $elArr['alternateemail'] = $ur['profilealternateemail'];
            $elArr['alternatephone'] = $ur['profilealternatephone'];
            $elArr['altphonetype'] = $ur['altphonetype']; 
@@ -170,6 +173,7 @@ class bldssuser {
            $elArr['accesslevel'] = "";
            $elArr['profilepicturefile'] = ""; 
            $elArr['officephone'] = "";
+           $elArr['displayindirectory'] = 0;
            $elArr['alternateemail'] = "";
            $elArr['alternatephone'] = "";
            $elArr['altphonetype'] = ""; 

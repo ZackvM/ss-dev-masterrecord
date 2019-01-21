@@ -49,7 +49,7 @@ class objlisting {
      
      if ($authuser === 'chtneast') {       
         if ((int)checkPostingUser($authuser, $authpw) === 200) {
-            $directorySQL = "SELECT concat(ifnull(if(ifnull(inst.longvalue,'') = '', inst.dspvalue, inst.longvalue),''), ' (', ifnull(primaryinstcode,''), ')') as institution, substr(concat('00000',userid),-6) as userid , ifnull(emailaddress,'ERROR') as emailaddress, ifnull(originalaccountname,'') as originalaccountname, ifnull(username,'') as username, ifnull(profilephone,'') as profilephone, ifnull(profilepicurl,'') as profilepicurl, ifnull(dspAlternateInDir,0) as dspalternateindir , ifnull(profilealtemail,'') as profilealtemail, ifnull(altphone,'') as altphone, ifnull(altphonetype,'') as altphonetype, ifnull(dspjobtitle,'') as dsptitle FROM four.sys_userbase usr left join (SELECT * FROM four.sys_master_menus where menu = 'INSTITUTION') inst on usr.primaryInstCode = inst.menuValue where allowind = 1 and dspindirectory = 1 order by institution asc, dsporderindirectory";   
+            $directorySQL = "SELECT concat(ifnull(if(ifnull(inst.longvalue,'') = '', inst.dspvalue, inst.longvalue),''), ' (', ifnull(primaryinstcode,''), ')') as institution, substr(concat('00000',userid),-6) as userid , ifnull(emailaddress,'ERROR') as emailaddress, ifnull(originalaccountname,'') as originalaccountname, ifnull(username,'') as username, ifnull(profilephone,'') as profilephone, ifnull(profilepicurl,'') as profilepicurl, ifnull(dspAlternateInDir,0) as dspalternateindir, if( ifnull(dspAlternateInDir,0) = 1, ifnull(profilealtemail,''),'') as profilealtemail, if( ifnull(dspAlternateInDir,0) = 1, ifnull(altphone,''), '') as altphone, if( ifnull(dspAlternateInDir,0) = 1, ifnull(altphonetype,''), '') as altphonetype, ifnull(dspjobtitle,'') as dsptitle FROM four.sys_userbase usr left join (SELECT * FROM four.sys_master_menus where menu = 'INSTITUTION') inst on usr.primaryInstCode = inst.menuValue where allowind = 1 and dspindirectory = 1 order by institution asc, lastname";   
             $directoryRS = $conn->prepare($directorySQL);
             $directoryRS->execute(); 
             while ($r = $directoryRS->fetch(PDO::FETCH_ASSOC)) { 
@@ -968,7 +968,12 @@ function hprrequestcode($whichobj, $rqst) {
 }
 
 class globalMenus {
-    
+
+    function cellcarriers() { 
+      return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'CELLCARRIER' and dspind = 1 order by dsporder";
+
+    }
+
     function ssmoduleslist() { 
       return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'SS5MODULES' and dspind = 1 order by dsporder";
     }

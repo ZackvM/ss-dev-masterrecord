@@ -212,7 +212,24 @@ function inArray(needle, haystack) {
         if (haystack[i] == needle) return true;
     }
     return false;
-}   
+} 
+
+function changeProfControlDiv(whichDiv) { 
+  if (byId('profTrayControlAbtMe')) { byId('profTrayControlAbtMe').style.display = 'none'; }
+  if (byId('profTrayControlAccess')) { byId('profTrayControlAccess').style.display = 'none'; }
+  if (byId('profTrayControlManage')) { byId('profTrayControlManage').style.display = 'none'; }
+  if (byId('profTrayControl'+whichDiv)) { byId('profTrayControl'+whichDiv).style.display = 'block'; }
+} 
+
+
+function fillProfTrayField(whichfield, whichvalue, whichdisplay) { 
+  if (byId(whichfield)) { 
+     byId(whichfield).value = whichdisplay; 
+     if (byId(whichfield+'Value')) { 
+        byId(whichfield+'Value').value = whichvalue;    
+     }
+  }
+}
 
 JAVASCR;
 return $rtnThis;    
