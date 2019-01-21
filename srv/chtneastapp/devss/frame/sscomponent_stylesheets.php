@@ -37,7 +37,11 @@ function globalstyles($mobileInd) {
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
 html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh; color: rgba({$this->color_black},1);}
  
-.appcard { border-left: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 49; padding: 11vh 0 0 0; background: rgba({$this->color_lgrey},1); transition: 1s; }
+.appcard { border-left: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 49; padding: 11vh 0 0 0; background: rgba({$this->color_lgrey},1); transition: 1s; 
+-webkit-box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
+-moz-box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
+box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
+ }
 #standardModalBacker { position: fixed; top: 0; left: 0;  z-index: 100; background: rgba({$this->color_zackgrey},.7); height: 100vh; width: 100vw; display: none; }
 
 #apptrayUserProfilePicture { width: 18vh;  }
@@ -86,6 +90,7 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 .bigspacer { width: 30%;}
 .universeBtns { color: rgba({$this->color_white},1);  font-size: 1.8vh;  padding: 0 0 0 1vw;  white-space: nowrap; }
 .universeBtns:hover {color: rgba({$this->color_neongreen},1); cursor: pointer; }
+.universeFreeze { color: rgba({$this->color_cornflowerblue},1); }
 
 #hlpHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
 #directoryDisplay { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
@@ -95,7 +100,6 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 #hlpSubTitle { width: 100%; font-family: Roboto; font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
 #hlpByLine { width: 100%; font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_darkgreen},1); text-align: right; }
 #hlpText { width: 100%; font-family: Roboto; font-size: 1.8vh; line-height: 1.6em; text-align: justify; padding: 1vh 0 0 0; }
-
 
 .sidebarprofilepicture { height: 15.5vh; }
 .circularOverlay { position: relative; height: 15vh; width: 8vw; overflow: hidden; border-radius: 50%; }
@@ -116,33 +120,51 @@ html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh;
 #closeBtnDirectory { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 1vw;  }
 #closeBtnDirectory:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
 
+.profTrayFieldLabel { font-size: 1.3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); padding: 8px 0 0 0; }
+.dataDisplay { font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: .2vh 1vw 2vh .2vw; }
+.profTraySideFieldLabel { font-size: 1.3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: 8px 0 0 0; }
+.dataDisplay2 { font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 8px 0 0 5px; }  
+
 #profTrayUserName { font-size: 2.8vh; font-weight: bold; color: rgba({$this->color_dblue},1); padding: 0 1vw; }
 #profTrayUserEmail {font-size: 1.8vh; color: rgba({$this->color_dblue},1); padding: 0 1vw; }
 #profTrayPictureHold {padding: 0 0 0 3vw; }
 
 #profTrayControlDivHoldTbl { width: 46vw; border-collapse: collapse; }
-#profTrayControlDivHolder {  }
+#profTrayControlDivHolder { border-top: 1px solid rgba({$this->color_zackgrey},1); padding: 2.5vh 1.5vw;   }
 
 #profTrayControlAbtMe { padding: 10px; display: block; }
 #profTrayControlAccess { padding: 10px; display: none;  }
 #profTrayControlManage { padding: 10px; display: none; }
 
-#profTrayDisplayAltYN { width: 3vw; font-size: 1.3vh;  }
-#ddprofTrayDisplayAltYN {min-width: 3vw; }
+#profTrayDisplayAltYN { width: 6vw; font-size: 1.3vh;  }
+#ddprofTrayDisplayAltYN {min-width: 6vw; }
 
 #profTrayAMEmail { font-size: 1.3vh; width: 15vw; }
 #profTrayAMDBID { font-size: 1.3vh; width: 5vw; }
 #profTrayOfficePhn { font-size: 1.3vh; width: 11vw; } 
 #profTrayAltPhone { font-size: 1.3vh; width: 11vw; }
 
-#profTrayAltEmail { font-size: 1.3vh; width: 11vw; }
+#profTrayAltEmail { font-size: 1.3vh; width: 17vw; }
 #profTrayAccessLvl { font-size: 1.3vh; width: 12vw; }
-#profTrayProfilePicture {font-size: 1.3vh; width: 15vw; }
-#profTrayCC {font-size: 1.3vh; width: 12vw; }
-#ddprofTrayCC { min-width: 12vw; }
+#profTrayProfilePicture {font-size: 1.3vh; width: 25vw; }
+#profTrayCC {font-size: 1.3vh; width: 14vw; }
+#ddprofTrayCC { min-width: 14vw; }
 
+#profTrayPresentInst { font-size: 1.3vh; width: 18vw; }
+#profTrayDLExp { font-size: 1.3vh; width: 10vw;}
 
+#profTrayResetCode { font-size: 1.3vh; }
+#profTrayCurrentPW { font-size: 1.3vh; }
+#profTrayNewPW {font-size: 1.3vh; }
+#profTrayConfirmPW {font-size: 1.3vh; }
+#passwordexpireNotice { font-size: 1.5vh; color: rgba({$this->color_darkgreen},1); padding: 1vh 0 0 0; font-weight: bold; }
+#passwordexpireNoticeRed { font-size: 1.5vh; color: rgba({$this->color_bred},1); padding: 1vh 0 0 0; font-weight: bold; }
 
+.expireDayNoticeRed { color: rgba({$this->color_bred},1); font-weight: bold;text-decoration: underline overline;  }
+.expireDayNoticeGreen { color: rgba({$this->color_neongreen},1); }
+
+#changePWInstr { font-size: 1.3vh; }
+#profTrayAltUnlockCode { width: 17vw; font-size: 1.3vh; }
 
 
 /* GENERAL CONTROLS */

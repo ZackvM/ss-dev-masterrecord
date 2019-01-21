@@ -3,23 +3,19 @@
 class defaultpageelements {
 
 function appcarddisplay($whichpage, $whichUsr, $rqststr) { 
-//USER: {"statusCode":200,"loggedsession":"fhv3lfj32bcp5qbdd1egiqqjb6","dbuserid":1,"userid":"proczack","":"Zack von Menchhofen","useremail":null,"chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":21,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""}]],["434","HPR-QMS","",[]],["472","REPORTS","",[]],["473","UTILITIES","",[]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]}$thi
 $thisAcct = "";
 $hlpfile = buildHelpFiles($whichpage, $rqststr);
 
 if ($whichpage !== "login") { 
   $tt = treeTop;    
-  
-
   $usrProfile = buildUserProfileTray( $whichUsr ); 
   $directory = buildUserDirectory();
-
   $thisAcct = <<<THISMENU
 
 <div id=appcard_useraccount class=appcard> 
 {$usrProfile}
 </div>   
- 
+
 <div id=appcard_environmentals class=appcard> 
  ENVIRONMENTAL MONITORS
  <p>{$tt}       
@@ -37,7 +33,9 @@ THISMENU;
 }
 return $thisAcct;    
 }    
-    
+
+
+
 function menubuilder($whichpage, $whichUsr) {
 $thisMenu = "";    
 if ($whichpage !== "login") {
@@ -73,7 +71,11 @@ if ($whichpage !== "login") {
     $controlListUniverse = "<table border=0 cellspacing=0 cellpadding=0>";
     foreach ($uBtnsj['DATA'] as $unbr => $univval) { 
         if ($unbr !== "statusCode") {
-          $controlListUniverse .= "<td valign=bottom class=universeBtns align=right {$univval['explainerline']}><i class=\"material-icons universalbtns\">{$univval['googleiconcode']}</i></td>";
+            if ( trim($univval['googleiconcode']) === 'ac_unit') { 
+                $controlListUniverse .= "<td valign=bottom class=\"universeBtns universeFreeze\" align=right {$univval['explainerline']}><i class=\"material-icons universalbtns\">{$univval['googleiconcode']}</i></td>";
+            } else {     
+                $controlListUniverse .= "<td valign=bottom class=universeBtns align=right {$univval['explainerline']}><i class=\"material-icons universalbtns\">{$univval['googleiconcode']}</i></td>";
+            }    
         }
     }
     $controlListUniverse .= "</table>";
@@ -84,10 +86,12 @@ if ($whichpage !== "login") {
       }
     }
 
-    $expDay = ((int)$whichUsr->dayuntilpasswordexp < 1) ? "{$whichUsr->daysuntilpasswordexp} days" : "{$whichUsr->daysuntilpasswordexp} day";
-     
-    $lastlog = ( trim($whichUsr->lastlogin['lastlogdate']) !== "" ) ?  " <b>| Last Access</b>: {$whichUsr->lastlogin['lastlogdate']} from {$whichUsr->lastlogin['fromip']}" : " <b>| Last Access</b>: - ";
-    $dspUser = "<b>User</b>: {$whichUsr->userid} ({$whichUsr->username}) <b>| Email</b>: {$whichUsr->useremail} <b>| Password Expires</b>: {$expDay}{$lastlog} <b>| Present Institution</b>: {$igivendspvalue}";
+    $expDay = ((int)$whichUsr->daysuntilpasswordexp === 1) ? "{$whichUsr->daysuntilpasswordexp} day" : "{$whichUsr->daysuntilpasswordexp} days";
+    $expDayNotice = ( (int)$whichUsr->daysuntilpasswordexp < 10 ) ? "<span class=expireDayNoticeRed>{$expDay}</span>" : "<span class=expireDayNoticeGreen>{$expDay}</span>";
+
+    //$lastlog = ( trim($whichUsr->lastlogin['lastlogdate']) !== "" ) ?  " <b>| Last Access</b>: {$whichUsr->lastlogin['lastlogdate']} from {$whichUsr->lastlogin['fromip']}" : " <b>| Last Access</b>: - ";
+    $lastlog = ( trim($whichUsr->lastlogin['lastlogdate']) !== "" ) ?  " <b>| Last Access</b>: {$whichUsr->lastlogin['lastlogdate']} " : " <b>| Last Access</b>: - ";
+    $dspUser = "<b>User</b>: {$whichUsr->userid} ({$whichUsr->username}) <b>| Email</b>: {$whichUsr->useremail} <b>| Password Expires</b>: {$expDayNotice}{$lastlog} <b>| Present Institution</b>: {$igivendspvalue}";
      
     $topBar = <<<TBAR
           <div id=topMenuHolder>
@@ -196,24 +200,32 @@ function buildUserProfileTray( $whichUsr) {
   $insm .= "</table>";
   $insmnu = "<div class=menuHolderDiv><input type=hidden id=profTrayPresentInstValue value=\"{$igivendspcode}\"><input type=text id=profTrayPresentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\"><div class=valueDropDown id=ddprofTrayPresentInst>{$insm}</div></div>";
 
+  $daydsp = ( (int)$whichUsr->daysuntilpasswordexp === 1 ) ? " day" : " days";
+  $expirenotice = ( (int)$whichUsr->daysuntilpasswordexp < 15 ) ? "<div id=passwordexpireNoticeRed>Password Expires in {$whichUsr->daysuntilpasswordexp}{$daydsp}.</div>" : "<div id=passwordexpireNotice>Password Expires in {$whichUsr->daysuntilpasswordexp}{$daydsp}.</div>";
+
+
   $manageMyAccount = <<<MYACCESS
 <table border=0>
 <tr><td colspan=2 class=usrAccountTitle>Manage My Account</td></tr>
-<tr><td>Driver License Expiration</td><td><input type=text id=profTrayDLExp value="{$whichUsr->drvlicexp}"></td><td><table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Save</td></tr></table></td></tr>
-<tr><td>Present Institution</td><td>{$insmnu}</td><td><table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Set</td></tr></table></td></tr>
+<tr><td class=profTrayFieldLabel colspan=2>Driver License Expiration</td><td class=profTrayFieldLabel>Present Institution</td></tr>
+<tr>
+  <td><input type=text id=profTrayDLExp value="{$whichUsr->drvlicexp}"></td>
+  <td><table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Save</td></tr></table></td>
+  <td>{$insmnu}</td><td><table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Set</td></tr></table></td>
+</tr>
 </table>
-<hr>
+
 <div>
-Password Expires in {$whichUsr->daysuntilpasswordexp} days. <p>
-To change your password, click the "Request Code" button.  The server will send you a &laquo;password change code&raquo;.  Use this &laquo;password change code&raquo; along with your CURRENT password, new password and confirm new password fields to change your password for ScienceServer.
+{$expirenotice}<p>
+<div id=changePWInstr><b>Instructions</b>: To change your password, click the "Request Code" button.  The server will send you a &laquo;password change code&raquo;.  Use this &laquo;password change code&raquo; along with your CURRENT password, new password and confirm new password fields to change your password for ScienceServer.</div>
 <table>
-<tr><td colspan=2>Password Change Code</td></tr>
+<tr><td class=profTrayFieldLabel>Password Change Code</td></tr>
 <tr><td><input type=text id=profTrayResetCode></td><td><table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Request Code</td></tr></table></td></tr>
-<tr><td colspan=2>Current Password</td></tr>
+<tr><td class=profTrayFieldLabel>Current Password</td></tr>
 <tr><td><input type=password id=profTrayCurrentPW></td></tr>
-<tr><td colspan=2>New Password</td></tr>
+<tr><td class=profTrayFieldLabel>New Password</td></tr>
 <tr><td><input type=password id=profTrayNewPW></td></tr>
-<tr><td colspan=2>Confirm Password</td></tr>
+<tr><td class=profTrayFieldLabel>Confirm Password</td></tr>
 <tr><td><input type=password id=profTrayConfirmPW></td></tr>
 <tr><td align=right> <table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Change Password</td></tr></table></td></tr>
 
@@ -229,7 +241,7 @@ $allowinventory = ( (int)$whichUsr->allowinventory === 1 ) ? "Yes" : "No";
 
 $modcnt = 0;
 foreach ($whichUsr->allowedmodules as $modkey => $modval) {
-  $allowedModList .= ( $modcnt > 0) ? "; {$modval[1]}" : "{$modval[1]}";
+  $allowedModList .= ( $modcnt > 0) ? "<br>{$modval[1]}" : "{$modval[1]}";
   $modcnt++;
 }
 
@@ -238,17 +250,17 @@ $myAccessTbl = <<<MYACCESS
 <table border=0>
 <tr><td colspan=2 class=usrAccountTitle>My Access Allowances</td></tr>
 <tr><td colspan=2>
-<table>
-  <tr><td>Procurement</td><td>Data Coordination</td><td>UPHS PHI</td><td>HPR/QMS</td><td>Inventory</td><tr>
-  <tr><td>{$allowprocure}</td><td>{$allowdata}</td><td>{$allowphi}</td><td>{$allowhpr}</td><td>{$allowinventory}</td></tr>
-</table>
-</td></tr>
-<tr><td>Access </td><td>{$whichUsr->accesslevel}</td></tr>
-<tr><td>Access Nbr</td><td>{$whichUsr->accessnbr}</td></tr>
-<tr><td>Last Access</td><td>{$whichUsr->lastlogin['lastlogdate']}</td></tr>
-<tr><td>Last Access from</td><td>{$whichUsr->lastlogin['fromip']}</td></tr>
-<tr><td>SS Module List</td><td> {$allowedModList} </td></tr>
-<tr><td valign=top>Allowed Institutions</td><td> {$instList} </td></tr>
+<tr><td class=profTraySideFieldLabel>Procurement</td><td class=dataDisplay2>{$allowprocure}</td></tr>
+<tr><td class=profTraySideFieldLabel>Data Coordination</td><td class=dataDisplay2>{$allowdata}</td></tr>
+<tr><td class=profTraySideFieldLabel>UPHS PHI</td><td class=dataDisplay2>{$allowphi}</td></tr>
+<tr><td class=profTraySideFieldLabel>HPR/QMS</td><td class=dataDisplay2>{$allowhpr}</td></tr>
+<tr><td class=profTraySideFieldLabel>Inventory</td><td class=dataDisplay2>{$allowinventory}</td></tr>
+<tr><td class=profTraySideFieldLabel>Access </td><td class=dataDisplay2>{$whichUsr->accesslevel}</td></tr>
+<tr><td class=profTraySideFieldLabel>Access Nbr</td><td class=dataDisplay2>{$whichUsr->accessnbr}</td></tr>
+<tr><td class=profTraySideFieldLabel>Last Access</td><td class=dataDisplay2>{$whichUsr->lastlogin['lastlogdate']}</td></tr>
+<tr><td class=profTraySideFieldLabel>Last Access from</td><td class=dataDisplay2>{$whichUsr->lastlogin['fromip']}</td></tr>
+<tr><td class=profTraySideFieldLabel valign=top>SS Module List</td><td class=dataDisplay2> {$allowedModList} </td></tr>
+<tr><td class=profTraySideFieldLabel valign=top>Allowed Institutions</td><td class=dataDisplay2> {$instList} </td></tr>
 </table>
 MYACCESS;
 
@@ -287,42 +299,35 @@ $abtMeTbl = <<<ABTME
 
 <table border=0>
 <tr><td colspan=3 class=usrAccountTitle>About {$whichUsr->username} ...</td></tr>
-<tr><td>Login ID</td><td>DBID</td><td>Access Level</td><td>Primary Institution</td></tr>
-<tr>
-   <td>{$whichUsr->useremail}</td>
-   <td>{$usernbr}</td>
-   <td>{$whichUsr->accesslevel} / {$whichUsr->accessnbr}</td>
-   <td>{$primeinstdsp} ({$whichUsr->primaryinstitution})</td>
-</tr>
 </table>
-<hr>
-<table>
-<tr><td>Display in Directory: </td><td>{$ynmnu}</td></tr>
-</table>
-<table><tr><td>Office Phone</td><td>Alternate Phone (Cell)</td><td>Cell Carrier</td></tr>
-<tr><td><input type=text id=profTrayOfficePhn value="{$whichUsr->officephone}"></td><td><input type=text id=profTrayAltPhone value={$whichUsr->alternatephone}></td><td>{$ccmnu}</tr>
-</table>
-<table>
-<tr><td>Alternate Email: </td><td><input type=text id=profTrayAltEmail value={$whichUsr->alternateemail}></td></tr>
-<tr><td>Profile Picture: </td><td><input type=file id=profTrayProfilePicture accept=".png"></td></tr>
-<tr><td colspan=2 align=right>
+
+<table border=0>
+<tr><td class=profTrayFieldLabel>DBID</td><td class=profTrayFieldLabel>Login ID</td><td class=profTrayFieldLabel>Access Level</td><td class=profTrayFieldLabel>Primary Institution</td></tr>
+<tr><td class=dataDisplay valign=top>{$usernbr}</td><td class=dataDisplay valign=top>{$whichUsr->useremail}</td><td class=dataDisplay valign=top>{$whichUsr->accesslevel} / {$whichUsr->accessnbr}</td><td class=dataDisplay valign=top>{$primeinstdsp} ({$whichUsr->primaryinstitution})</td></tr>
+<tr><td class=profTrayFieldLabel>Directory Display</td><td class=profTrayFieldLabel>Office Phone</td><td class=profTrayFieldLabel>Alternate Phone (Cell)</td><td class=profTrayFieldLabel>Cell Carrier</td></tr>
+<tr><td style="padding-bottom: 2vh;">{$ynmnu}</td><td valign=top><input type=text id=profTrayOfficePhn value="{$whichUsr->officephone}"></td><td valign=top><input type=text id=profTrayAltPhone value={$whichUsr->alternatephone}></td><td valign=top>{$ccmnu}</tr>
+<tr><td class=profTrayFieldLabel colspan=2>Alternate Email</td><td class=profTrayFieldLabel colspan=2>Profile Picture</td></tr>
+<tr><td colspan=2><input type=text id=profTrayAltEmail value="{$whichUsr->alternateemail}"></td><td colspan=2><input type=file id=profTrayProfilePicture accept=".png"></td></tr>
+<tr><td class=profTrayFieldLabel colspan=2>Unlock Code</td><td colspan=2></td></tr>
+<tr><td colspan=2><input type=text id=profTrayAltUnlockCode></td><td> <table class=tblBtn id=btnAltUnlockCode style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Get Code</td></tr></table> </td></tr>
+<tr><td colspan=2></td><td>
   <table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Save</td></tr></table>
 </td></tr>
 </table>
-
 ABTME;
 
 $profTray = <<<PROFTRAY
   <div id=clsBtnHold>
-   <table width=99% border=0>
-      <tr><td></td><td></td><td id=closeBtn onclick="openAppCard('appcard_useraccount');" style="width: 1vw;">&times;</td></tr></table>
-  </div>   
-
-    <div id=usrAccountDspDiv>
+   <table width=95% border=0>
+      <tr><td> 
       <table border=0>
         <tr><td id=profTrayPictureHold><div class="circular--portrait">{$profpic}</div></td>
         <td> {$profDetails}  </td></tr> 
       </table>  
+      </td><td valign=top id=closeBtn onclick="openAppCard('appcard_useraccount');" style="width: 1vw;">&times;</td></tr></table>
+  </div>   
+
+    <div id=usrAccountDspDiv>
 <p>
      <table border=0 id=profTrayControlDivHoldTbl>
        <tr><td style="width: 6vw;">
