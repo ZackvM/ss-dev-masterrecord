@@ -106,7 +106,29 @@ document.addEventListener('mousemove', function(e) {
 document.addEventListener('DOMContentLoaded', function() {  
   bodyLoad();
   byId('standardModalBacker').style.display = 'none';
+
+  if ( byId('btnAltUnlockCode') ) { 
+    byId('btnAltUnlockCode').addEventListener('click', function() { 
+      var mlURL = "/data-doers/get-alternate-unlock-code";
+      universalAJAX("POST",mlURL,"",voidfunc,1);
+      alert('If you have a valid ScienceServer Account, you will receive an email with a change code.  You will need this code to change security information.  The code will expire in 5 hours.');
+    }, false);
+  }
+ 
+  if (byId('btnPWChangeCodeRequest')) { 
+    byId('btnPWChangeCodeRequest').addEventListener('click', function() { 
+      var mlURL = "/data-doers/get-pw-change-code";
+      universalAJAX("POST",mlURL,"",voidfunc,1);
+      alert('If you have a valid ScienceServer Account, you will receive an email with a change code.  You will need this code to change security information.  The code will expire in 5 hours.');
+    }, false);
+  }
+  
 }, false);
+
+function voidfunc(rtnData) {
+  console.log(rtnData); 
+  return null;
+}
 
 function openOutSidePage(whatAddress) {
     var myRand = parseInt(Math.random()*9999999999999);
@@ -662,8 +684,40 @@ function clearGrid() {
    location.reload(true);   
 }
 
-function masterSaveBiogroup() { 
-   alert('I\'ma gonna save this biogroup ... eventually - I don\'t work at the moment');
+function masterSaveBiogroup() {
+  var dta = new Object();
+  if (byId('initialBiogroupInfo')) {
+  byId('initialBiogroupInfo').querySelectorAll('*').forEach(function(node) {
+    if (node.type === 'text' || node.type === 'hidden' || node.type === 'checkbox' || node.type === 'textarea') {
+      if (node.type === 'checkbox') { 
+        dta[node.id.substr(3)] = node.checked;
+      } else { 
+        dta[node.id.substr(3)] = node.value.trim();
+      }
+    }
+  });
+  }
+  var passdata = JSON.stringify(dta);
+  //console.log(passdata);
+  var mlURL = "/data-doers/initial-bgroup-save";
+  universalAJAX("POST",mlURL,passdata,answerInitialBGroupSave,2);   
+}
+
+function answerInitialBGroupSave(rtnData) { 
+  console.log(rtnData);
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("Biogroup Save Error:\\n"+dspMsg);
+   } else { 
+       byId('standardModalDialog').innerHTML = "";
+       byId('standardModalBacker').style.display = 'none';
+       byId('standardModalDialog').style.display = 'none';  
+       //RELOAD WITH ENCRYPTED SELECTOR          
+   }        
 }
 
 function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxisex, pxiinformed, pxilastfour ) { 
@@ -1061,7 +1115,7 @@ function updateDiagnosisMenu() {
 }
 
 function answerUpdateDiagnosisMenu(rtnData) { 
-            console.log(rtnData);
+  //console.log(rtnData);
   if (parseInt(rtnData['responseCode']) === 200) {
     var dta = JSON.parse( rtnData['responseText'] );
     var rquestFld = dta['MESSAGE'];
@@ -2380,7 +2434,7 @@ function toggleSelect() {
 function exportResults() { 
   if (byId('urlrequestid')) {
    if (byId('urlrequestid').value.trim() !== "") {  
-     console.log(byId('urlrequestid').value);
+     //console.log(byId('urlrequestid').value);
      var mlURL = "/biogroup-search/"+byId('urlrequestid').value.trim();
      universalAJAX("GET",mlURL,"",answerExportResults,1);
    }

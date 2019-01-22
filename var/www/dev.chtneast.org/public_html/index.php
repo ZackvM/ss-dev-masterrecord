@@ -14,11 +14,6 @@
  * 
  */
 
-
-
-
-
-
 //START SESSSION FOR ALL TRACKING 
 session_start(); 
 //DEFINE APPLICATION PATH PARAMETERS
@@ -40,20 +35,20 @@ require(genAppFiles . "/extlibs/detectmobilelibrary.php");
 require(serverkeys . "/serverid.zck");
 
 //STOP INTERNET EXPLORER USE
-$browser = getBrowserZack($_SERVER['HTTP_USER_AGENT']) ;
+//$browser = getBrowserZack($_SERVER['HTTP_USER_AGENT']) ;
 //Mozilla Firefox, Google Chrome, Apple Safari
-if ( array_key_exists('name', $browser)  ) { 
-    if ( 
-            (!strtolower(trim($browser['name'])) === "mozilla firefox") 
-      && (!strtolower(trim($browser['name'])) === "google chrome") 
-      && (!strtolower(trim($browser['name'])) === "apple safari" )  
-    ) { 
-        //TODO:  REMOVE THIS RESTRICTION FOR THE INVESTIGATOR GATEWAY
-        echo "<h1>You must use either Firefox, Chrome or Safari to access this data application";
-    }
-} else { 
-    exit(1);
-}
+//if ( array_key_exists('name', $browser)  ) { 
+//    if ( 
+//            (!strtolower(trim($browser['name'])) === "mozilla firefox") 
+//      && (!strtolower(trim($browser['name'])) === "google chrome") 
+//      && (!strtolower(trim($browser['name'])) === "apple safari" )  
+//    ) { 
+//        //TODO:  REMOVE THIS RESTRICTION FOR THE INVESTIGATOR GATEWAY
+//        echo "<h1>You must use either Firefox, Chrome or Safari to access this data application";
+//    }
+//} else { 
+//    exit(1);
+//}
 
 
 define("serverIdent",$serverid);

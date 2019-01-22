@@ -33,7 +33,141 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+    function initialbgroupsave($request, $passdata) { 
+ 
+      //$passdata = {"PRCBGNbr":"","PRCProcDate":"01/22/2019","PRCProcedureTypeValue":"S","PRCProcedureType":"Surgery","PRCCollectionTypeValue":"EXC","PRCCollectionType":"Excision","PRCTechInstitute":"PROCZACK :: HUP","PRCInitialMetric":".8","PRCMetricUOMValue":"4","PRCMetricUOM":"Grams","PRCPXIId":"57bacaa1-551c-4ae3-8cc8-a6ef76ffb8c7","PRCPXIInitials":"A.G.","PRCPXIAge":"33","PRCPXIAgeMetric":"yrs","PRCPXIRace":"UNKNOWN","PRCPXISex":"M","PRCPXILastFour":"4741","PRCPXIInfCon":"NO","PRCPXICXValue":"Unknown","PRCPXICX":"Unknown","PRCPXIRXValue":"Unknown","PRCPXIRX":"Unknown","SubjectNbr":"s","ProtocolNbr":"s","PRCUpennSOGIValue":"NO DATA","PRCUpennSOGI":"No Data","PRCDXOverride":false,"PRCSpecCatValue":"MALIGNANT","PRCSpecCat":"MALIGNANT","PRCSiteValue":"S73","PRCSite":"THYROID","PRCSSiteValue":"SS101","PRCSSite":"LOBE","PRCDXModValue":"D469","PRCDXMod":"CARCINOMA :: FOLLICULAR","PRCUnInvolvedValue":"0","PRCUnInvolved":"NA (Not Applicable to Biosample)","PRCPathRptValue":"2","PRCPathRpt":"Pending","PRCMETSSiteValue":"S62","PRCMETSSite":"CERVIX","PRCMETSDXValue":"D442","PRCMETSDX":"CARCINOMA","PRCSitePositionValue":"ANTERIOR","PRCSitePosition":"ANTERIOR","PRCSystemListValue":"D804","PRCSystemList":"HEMORRHOIDS","PRCBSCmts":"cmts","PRCHPRQ":"qstn","PRCProcedureInstitutionValue":"HUP","PRCProcedureDateValue":"2019-01-18","PRCProcedureDate":"01/18/2019"}  
+
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+
+      //1) CHECK DATA 
+      ( 1 === 1) ?  (list( $errorInd, $msgArr[] ) = array(1 , "TEST ERROR")) : "";
+
+
+
+
+
+
+      //A) Check Required fields - PRCProcDate; PRCPRocedureTypeValue; PRCCollectionTypeValue; PRCTechInstitute; PRCInitialMetric; PRCMetricUOMValue; PRCPXIId; PRCPXICXValue; PRCPXIRXValue; PRCUnInvolvedValue; PRCPathRptValue; PRCProcedureInstitutionValue; PRCProcedureDateValue
+      //B) Check Date Values/Not Invalid - PRCProcDate; PRCProcedureDateValue (Make Sure Procedure Date is not more than 4 days old);
+      //C) Make Sure Tech Has RIGHTS to procure at Institution and check PRCTechInstitute and PRCProcedureInstitutionValue match
+      //D) initial metric and UOM are a number and a valid menu option
+      //E) CHECK All Menu Values - PRCProcedureTypeValue; PRCCollectionTypeValue; PRCMetricUOMValue; PRCPXICXValue; PRCPXIRXValue; PRCUpennSOGIValue; 
+      //F) Make sure PXI exists (after write mark PXI as received)
+      //G) CHECK VOCABULARY
+
+
+
+
+
+
+
+
+
+      //2) WRITE DATA IF ALL CHECKS PASS - NO LABEL PRINTING NECESSARY AT BGROUP LEVEL
+      //3) SEND BACK encrypted data selector
+
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+
+    function getpwchangecode($request, $passdata) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];
+      $r = cryptservice( $authpw, 'd', true, $authuser );
+      $sessid = session_id();
+      if ($authuser === $r && $sessid === $r ) {
+        $sql = "update four.sys_userbase set pwordResetCode = :altcode, pwordResetExpire = date_add(now(), interval 5 hour) where sessionid = :sessionid";
+        $rs = $conn->prepare($sql); 
+        $altcode = strtoupper(generateRandomString(6));
+        $rs->execute(array(':altcode' => $altcode, ':sessionid' => $authuser)); 
+        $usrSQL = "SELECT displayname, emailaddress FROM four.sys_userbase where sessionid = :usersession";
+        $usrRS = $conn->prepare($usrSQL); 
+        $usrRS->execute(array(':usersession' => $authuser)); 
+        $usr = $usrRS->fetch(PDO::FETCH_ASSOC);        
+        $msg =  <<<MSGTXT
+    <table border=0>
+      <tr><td>Password Change Code [ScienceServer Profile]</td></tr>
+      <tr><td>{$usr['displayname']}:  You requested an password change code to change your password in the ScienceServer Interface.  Code: <b>{$altcode}</b> will be active for the next five hours.  Do NOT share this code with anyone as sharing this code compromises the security of your ScienceServer Account.<p>If you did not request this change password code, please report this email to the CHTNEastern Informatics staff immediately!</td></tr>
+      <tr><td align=right> {$usr['emailaddress']} / {$sessid} </td></tr>
+    </table>
+MSGTXT;
+        $sbjctLine = "Change Password Code [SCIENCESERVER SECURITY CODE]";
+        $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtLine, msgbody, htmlind, wheninput, bywho) value (:towhoaddressarray, :sbjtLine, :msgbody, 1, now(), 'SS-HELP-TICKET-SYSTEM')";
+        $emlRS = $conn->prepare($emlSQL);
+        $emlRS->execute(array(':towhoaddressarray' => "[\"{$usr['emailaddress']}\",\"zackvm.zv@gmail.com\"]",':sbjtLine' => $sbjctLine, ':msgbody' => $msg));
+        $msg = "";
+        $responseCode = 200;
+      }
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+
+
+    function getalternateunlockcode($request, $passdata) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];
+      $r = cryptservice( $authpw, 'd', true, $authuser );
+      $sessid = session_id();
+      if ($authuser === $r && $sessid === $r ) {
+        //create code 
+        $sql = "update four.sys_userbase set altinfochangecode = :altcode, altinfochangecodeexpire = date_add(now(), interval 5 hour) where sessionid = :sessionid";
+        $rs = $conn->prepare($sql); 
+        $altcode = strtoupper(generateRandomString(5));
+        $rs->execute(array(':altcode' => $altcode, ':sessionid' => $authuser)); 
+        $usrSQL = "SELECT displayname, emailaddress FROM four.sys_userbase where sessionid = :usersession";
+        $usrRS = $conn->prepare($usrSQL); 
+        $usrRS->execute(array(':usersession' => $authuser)); 
+        $usr = $usrRS->fetch(PDO::FETCH_ASSOC);        
+        $msg =  <<<MSGTXT
+    <table border=0>
+      <tr><td>'About Me' Unlock Code [ScienceServer Profile]</td></tr>
+      <tr><td>{$usr['displayname']}:  You requested an unlock code to edit your security information in the ScienceServer Interface.  Code: <b>{$altcode}</b> will be active for the next five hours.  Do NOT share this code with anyone as sharing this code compromises the security of your ScienceServer Account.<p>If you did not request this 'About me' unlock code, please report this email to the CHTNEastern Informatics staff.</td></tr>
+      <tr><td align=right> {$usr['emailaddress']} / {$sessid} </td></tr>
+    </table>
+MSGTXT;
+        $sbjctLine = "About Me Security Code [SCIENCESERVER PROFILE]";
+        $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtLine, msgbody, htmlind, wheninput, bywho) value (:towhoaddressarray, :sbjtLine, :msgbody, 1, now(), 'SS-HELP-TICKET-SYSTEM')";
+        $emlRS = $conn->prepare($emlSQL);
+        $emlRS->execute(array(':towhoaddressarray' => "[\"{$usr['emailaddress']}\",\"zackvm.zv@gmail.com\"]",':sbjtLine' => $sbjctLine, ':msgbody' => $msg));
+        $msg = "";
+        $responseCode = 200;
+      }
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+
     function savelinuxorschedphi($request, $passdata) { 
      $rows = array(); 
      //$dta = array(); 

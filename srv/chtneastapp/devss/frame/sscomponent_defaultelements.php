@@ -220,7 +220,7 @@ function buildUserProfileTray( $whichUsr) {
 <div id=changePWInstr><b>Instructions</b>: To change your password, click the "Request Code" button.  The server will send you a &laquo;password change code&raquo;.  Use this &laquo;password change code&raquo; along with your CURRENT password, new password and confirm new password fields to change your password for ScienceServer.</div>
 <table>
 <tr><td class=profTrayFieldLabel>Password Change Code</td></tr>
-<tr><td><input type=text id=profTrayResetCode></td><td><table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Request Code</td></tr></table></td></tr>
+<tr><td><input type=text id=profTrayResetCode></td><td><table class=tblBtn id=btnPWChangeCodeRequest style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Request Code</td></tr></table></td></tr>
 <tr><td class=profTrayFieldLabel>Current Password</td></tr>
 <tr><td><input type=password id=profTrayCurrentPW></td></tr>
 <tr><td class=profTrayFieldLabel>New Password</td></tr>

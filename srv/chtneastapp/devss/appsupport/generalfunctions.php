@@ -121,7 +121,7 @@ function checkPostingUser($usrname, $passwrd) {
       $rs->execute(array(':usrsess' => $usrname));
       if ((int)$rs->rowCount() > 0) { 
           $r = $rs->fetch(PDO::FETCH_ASSOC);
-          if (cryptservice($passwrd,'d',true, $usrname) === $usrname) { 
+          if ( cryptservice( $passwrd, 'd', true, $usrname ) === $usrname ) { 
             $responseCode = 200;
           }
       }

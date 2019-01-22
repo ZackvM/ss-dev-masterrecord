@@ -335,7 +335,7 @@ textarea { font-size: 1.3vh; }
 #vocabMETSRecordsFound { font-size: 1.4vh; font-weight: bold; }
 #fldPRCPathRpt { width: 5vw; }
 #ddPRCPathRpt { width: 5vw; }
-
+.reqInd {font-size: 1.3vh; color: rgba({$this->color_bred},1); font-weight: bold; }
 
 #BSDspMainHeader { font-size: 2vh; text-align: center; font-variant: small-caps; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_cornflowerblue},1); padding: 1vh 1vw; border: 2px solid rgba({$this->color_dblue},1); }
 .BSDspSectionHeader { padding-top: 1vh; padding-bottom: 1vh; padding-left: .5vw; font-size: 1.4vh; background: rgba({$this->color_lgrey},1); color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border: 1px solid rgba({$this->color_grey},1);  }
@@ -380,9 +380,6 @@ textarea { font-size: 1.3vh; }
 #vocabularyDspTable { width: 100%; border-collapse: collapse; } 
 #vocabularyDspTable th { font-size: 1.4vh; font-weight: bold; white-space: nowrap; text-align: left; }
 #vocabularyDspTable td { font-size: 1.4vh; white-space: nowrap;  padding: 3px 8px 3px 5px;  }
-
-
-
 
 #fldDNRTarget { width: 6vw; }
 #ddDNRTargetValue {min-width: 6vw; }

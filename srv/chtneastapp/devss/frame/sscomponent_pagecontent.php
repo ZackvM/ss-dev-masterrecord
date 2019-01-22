@@ -1846,6 +1846,7 @@ $innerBar = <<<BTNTBL
            </div>
          </div>
   </td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVocabSrch border=0><tr><td><!--ICON //--></td><td>Vocabulary Search</td></tr></table></td>
 </tr>
 BTNTBL;
 break;
@@ -2686,7 +2687,7 @@ $rtnTbl = <<<RTNTBL
 <tr><td class=BSDspSectionHeader>Sample Metrics</td></tr>
 <tr><td class=procGridHoldingLine>
    <table border=0>
-     <tr><td class=prcFldLbl>Biogroup #</td><td class=prcFldLbl>Procurement Date</td><td class=prcFldLbl>Procedure Type</td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician::Institution</td><td class=prcFldLbl>Initial Metric</td><td>&nbsp;</td><td rowspan=2 id=BSLock><div class=ttholder><i class="material-icons bslockdsp">lock_open</i><div class=tt>Biosample is currently editable</div></div></td></tr>
+     <tr><td class=prcFldLbl>Biogroup #</td><td class=prcFldLbl>Procurement Date <span class=reqInd>*</span></td><td class=prcFldLbl>Procedure Type <span class=reqInd>*</span></td><td class=prcFldLbl>Collection Type <span class=reqInd>*</span></td><td class=prcFldLbl>Technician::Institution <span class=reqInd>*</span></td><td class=prcFldLbl>Initial Metric <span class=reqInd>*</span></td><td>&nbsp;</td><td rowspan=2 id=BSLock><div class=ttholder><i class="material-icons bslockdsp">lock_open</i><div class=tt>Biosample is currently editable</div></div></td></tr>
      <tr>
        <td><input type=text id=fldPRCBGNbr value="" READONLY></td>
        <td><input type=text readonly id=fldPRCProcDate value="{$tday}"></td>
@@ -2703,7 +2704,7 @@ $rtnTbl = <<<RTNTBL
 <tr><td class=BSDspSectionHeader>Donor Metrics</td></tr>
 <tr><td class=procGridHoldingLine>
    <table>
-    <tr><td class=prcFldLbl>Initials</td><td class=prcFldLbl>Age</td><td class=prcFldLbl>Race</td><td class=prcFldLbl>Sex</td><td class=prcFldLbl>Callback</td><td class=prcFldLbl>I-Consent</td><td class=prcFldLbl>Chemo</td><td class=prcFldLbl>Radiation</td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
+    <tr><td class=prcFldLbl>Initials <span class=reqInd>*</span></td><td class=prcFldLbl>Age <span class=reqInd>*</span></td><td class=prcFldLbl>Race <span class=reqInd>*</span></td><td class=prcFldLbl>Sex <span class=reqInd>*</span></td><td class=prcFldLbl>Callback</td><td class=prcFldLbl>I-Consent <span class=reqInd>*</span></td><td class=prcFldLbl>Chemo <span class=reqInd>*</span></td><td class=prcFldLbl>Radiation <span class=reqInd>*</span></td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
     <tr>
       <td><input type=text id=fldPRCPXIId READONLY><input type=text id=fldPRCPXIInitials READONLY></td>
       <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td><td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
@@ -2725,7 +2726,7 @@ $rtnTbl = <<<RTNTBL
 <tr><td class=procGridHoldingLine>
 
 <table>
-  <tr><td class=prcFldLbl>Specimen Category</td><td class=prcFldLbl>Site</td><td class=prcFldLbl>Sub-Site</td><td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolved/NAT</td><td class=prcFldLbl>Pathology Rpt</td></tr>
+  <tr><td class=prcFldLbl>Specimen Category</td><td class=prcFldLbl>Site</td><td class=prcFldLbl>Sub-Site</td><td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolv/NAT <span class=reqInd>*</span></td><td class=prcFldLbl>Path-Rpt <span class=reqInd>*</span></td></tr>
   <tr><td valign=top> {$spcmenu} </td><td valign=top> {$sitesubsite} </td><td> {$subsite} </td><td valign=top> {$dxmod} </td><td>{$uninvmenu}</td><td>{$prptmenu}</td></tr>
   <tr><td colspan=6> 
     <table cellpadding=0 cellspacing=0 border=0><tr><td> 
@@ -3025,7 +3026,8 @@ function bldBiosampleProcurement($usr) {
 
 
 
-    $holdingTbl = <<<HOLDINGTBL
+      $holdingTbl = <<<HOLDINGTBL
+            <div id=initialBiogroupInfo>
             <table border=0 id=procurementAddHoldingTbl>
                    <tr>
                       <td valign=top id=procGridHolderCell> {$procGrid}</td>
@@ -3039,6 +3041,7 @@ function bldBiosampleProcurement($usr) {
                       </td>
                    </tr>
             </table> 
+            </div>
 HOLDINGTBL;
     }
     return $holdingTbl;
