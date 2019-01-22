@@ -24,9 +24,11 @@ class bldssuser {
     public $profilepicturefile = "";
     public $officephone = ""; 
     public $displayalternate = 0;
+    public $alternateindirectory = 0;
     public $alternateemail = ""; 
     public $alternatephone = "";
     public $alternatephntype = "";
+    public $cellcarrierco = "";
     public $textingphone = ""; 
     public $drvlicexp = "";
     public $allowedmodules = "";
@@ -57,10 +59,12 @@ class bldssuser {
           $this->profilepicturefile = $userelements['profilepicturefile']; 
           $this->officephone = $userelements['officephone'];
           $this->displayalternate = $userelements['displayindirectory'];
+          $this->alternateindirectory = $userelements['alternateindirectory'];
           $this->alternateemail = $userelements['alternateemail'];
           $this->alternatephone = $userelements['alternatephone'];
           $this->alternatephntype = $userelements['altphonetype']; 
           $this->textingphone = $userelements['textingphonenumber'];
+          $this->cellcarrierco = $userelements['cellcarrierco'];
           $this->drvlicexp = $userelements['dlexpiration'];
           $this->allowedmodules = $userelements['modules'];
           $this->allowedinstitutions = $userelements['institutions'];
@@ -72,13 +76,38 @@ class bldssuser {
         $elArr = array();
         session_start(); 
         require_once(serverkeys . "/sspdo.zck"); 
-        $userTopSQL = "SELECT userid, ifnull(originalaccountname,'') as ssusername, lcase(ifnull(emailaddress,'')) as email , ifnull(changePWordInd,1) as changepwordind"
-                . ", ifnull(allowind,0) as allowind, ifnull(allowlinux,0) as allowlinux"
-                . ", ifnull(allowproc,0) as allowprocurement, ifnull(allowcoord,0) as allowcoordination, ifnull(allowhpr,0) as allowhpr, ifnull(allowinvtry,0) as allowinventory"
-                . ", ifnull(presentinstitution,'') as presentinstitution, timestampdiff(MINUTE, now(), sessionexpire) minleftinsession, ifnull(username,'') as displayname, ifnull(primaryinstcode,'') as primaryinstcode, timestampdiff(DAY, now(), passwordExpireDate) daystopasswordexpire"
-                . ", ifnull(accesslevel,'') as accesslevel, ifnull(accessnbr,3) as accessnbr, ifnull(logcardid,'') as logcardid , ifnull(inventorypinkey,'') as inventorypinkey, timestampdiff(DAY, now(), logcardexpdte) daystoinventorycardexpire"
-                . ", ifnull(profilepicurl,'') as profilepicturefile, ifnull(profilephone,'') as profilephone, ifnull(profilealtemail,'') as profilealternateemail, ifnull(dlexpiredate,'') as dlexpiration, ifnull(altphone,'') as profilealternatephone, ifnull(altphonetype,'') as altphonetype, ifnull(altphonecellcarrier, '') as textingphonenbr, ifnull(dspindirectory,0) displayindirectory "
-                . " FROM four.sys_userbase "
+        $userTopSQL = "SELECT ub.userid"
+                . ", ifnull(ub.originalaccountname,'') as ssusername"
+                . ", lcase(ifnull(ub.emailaddress,'')) as email "
+                . ", ifnull(ub.changePWordInd,1) as changepwordind"
+                . ", ifnull(ub.allowind,0) as allowind"
+                . ", ifnull(ub.allowlinux,0) as allowlinux"
+                . ", ifnull(ub.allowproc,0) as allowprocurement"
+                . ", ifnull(ub.allowcoord,0) as allowcoordination"
+                . ", ifnull(ub.allowhpr,0) as allowhpr"
+                . ", ifnull(ub.allowinvtry,0) as allowinventory"
+                . ", ifnull(ub.presentinstitution,'') as presentinstitution"
+                . ", timestampdiff(MINUTE, now(), ub.sessionexpire) minleftinsession"
+                . ", ifnull(ub.username,'') as displayname"
+                . ", ifnull(ub.primaryinstcode,'') as primaryinstcode"
+                . ", timestampdiff(DAY, now(), ub.passwordExpireDate) daystopasswordexpire"
+                . ", ifnull(ub.accesslevel,'') as accesslevel"
+                . ", ifnull(ub.accessnbr,3) as accessnbr"
+                . ", ifnull(ub.logcardid,'') as logcardid "
+                . ", ifnull(ub.inventorypinkey,'') as inventorypinkey"
+                . ", timestampdiff(DAY, now(), ub.logcardexpdte) daystoinventorycardexpire"
+                . ", ifnull(ub.profilepicurl,'') as profilepicturefile"
+                . ", ifnull(ub.profilephone,'') as profilephone"
+                . ", ifnull(ub.profilealtemail,'') as profilealternateemail"
+                . ", ifnull(ub.dlexpiredate,'') as dlexpiration"
+                . ", ifnull(ub.altphone,'') as profilealternatephone"
+                . ", ifnull(ub.altphonetype,'') as altphonetype"
+                . ", ifnull(ub.altphonecellcarrier, '') as textingphonenbr"
+                . ", ifnull(ub.dspindirectory,0) displayindirectory"
+                . ", ifnull(ub.dspAlternateInDir,0)  dspalternateindir"
+                . ", ifnull(cc.dspvalue,'') as ccarrier "
+                . " FROM four.sys_userbase ub "
+                . " left join (SELECT menuvalue, dspvalue  FROM four.sys_master_menus where menu = 'CELLCARRIER' ) cc on  ub.cellcarriercode = cc.menuvalue "
                 . " where sessionid = :sessionkey and allowind = 1 and timestampdiff(DAY, now(), passwordExpireDate) > -1 and  timestampdiff(minute, now(), sessionExpire) > 0";
         $userTopR = $conn->prepare($userTopSQL);
         $userTopR->execute(array(':sessionkey' => session_id()));
@@ -105,11 +134,13 @@ class bldssuser {
            $elArr['profilepicturefile'] = $ur['profilepicturefile']; 
            $elArr['officephone'] = $ur['profilephone'];
            $elArr['displayindirectory'] = $ur['displayindirectory'];
+           $elArr['alternateindirectory'] = $ur['dspalternateindir'];
            $elArr['alternateemail'] = $ur['profilealternateemail'];
            $elArr['alternatephone'] = $ur['profilealternatephone'];
            $elArr['altphonetype'] = $ur['altphonetype']; 
            $elArr['textingphonenumber'] = $ur['textingphonenbr'];
            $elArr['dlexpiration'] = $ur['dlexpiration'];           
+           $elArr['cellcarrierco'] = $ur['ccarrier'];
                      
            //GET ALLOWED MODULES
            $modSQL = "SELECT mods.moduleid, mm.module, mm.pagesource FROM four.sys_userbase_modules mods left join (SELECT menuid as modid, ucase(menuvalue) as module, ifnull(pagesource,'') as pagesource FROM four.sys_master_menus where menu = 'SS5MODULES' and dspInd = 1 order by dsporder) mm on mods.moduleid = mm.modid where userid = :userid and mods.onoffind = 1";
@@ -177,7 +208,9 @@ class bldssuser {
            $elArr['alternateemail'] = "";
            $elArr['alternatephone'] = "";
            $elArr['altphonetype'] = ""; 
+           $elArr['alternateindirectory'] = "";
            $elArr['textingphonenumber'] = "";
+           $elArr['cellcarrierco'] = "";
            $elArr['dlexpiration'] = "";
            $elArr['modules'] = "";
            $elArr['institutions'] = "";

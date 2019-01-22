@@ -276,17 +276,21 @@ PROFDET;
     $ccgivendspvalue = "";
     $ccgivendspcode = "";
     foreach ($cellcarriers['DATA'] as $ccval) {
+        if ($ccval['menuvalue'] === $whichUsr->cellcarrierco ) {
+          $ccgivendspvalue = $ccval['menuvalue'];
+          $ccgivendspcode = $ccval['codevalue'];            
+        }
         $ccm .= "<tr><td onclick=\"fillProfTrayField('profTrayCC','{$ccval['codevalue']}','{$ccval['menuvalue']}');\" class=ddMenuItem>{$ccval['menuvalue']}</td></tr>";
     }
     $ccm .= "</table>";
-    $ccmnu = "<div class=menuHolderDiv><input type=hidden id=profTrayCCValue value=\"{$givendspcode}\"><input type=text id=profTrayCC READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddprofTrayCC>{$ccm}</div></div>";
+    $ccmnu = "<div class=menuHolderDiv><input type=hidden id=profTrayCCValue value=\"{$ccgivendspcode}\"><input type=text id=profTrayCC READONLY class=\"inputFld\" value=\"{$ccgivendspvalue}\"><div class=valueDropDown id=ddprofTrayCC>{$ccm}</div></div>";
 
     $ynarr = json_decode(callrestapi("GET", dataTree . "/global-menu/four-yes-no",serverIdent, serverpw), true);
     $ynm = "<table border=0 class=menuDropTbl>";
     $givendspvalue = "";
     $givendspcode = "";
     foreach ($ynarr['DATA'] as $ynval) {
-        if ((int)$ynval['codevalue'] === (int)$whichUsr->displayalternate) { 
+        if ((int)$ynval['codevalue'] === (int)$whichUsr->alternateindirectory) { 
           $givendspvalue = $ynval['menuvalue']; 
           $givendspcode = $ynval['codevalue']; 
         }
@@ -304,10 +308,10 @@ $abtMeTbl = <<<ABTME
 <table border=0>
 <tr><td class=profTrayFieldLabel>DBID</td><td class=profTrayFieldLabel>Login ID</td><td class=profTrayFieldLabel>Access Level</td><td class=profTrayFieldLabel>Primary Institution</td></tr>
 <tr><td class=dataDisplay valign=top>{$usernbr}</td><td class=dataDisplay valign=top>{$whichUsr->useremail}</td><td class=dataDisplay valign=top>{$whichUsr->accesslevel} / {$whichUsr->accessnbr}</td><td class=dataDisplay valign=top>{$primeinstdsp} ({$whichUsr->primaryinstitution})</td></tr>
-<tr><td class=profTrayFieldLabel>Directory Display</td><td class=profTrayFieldLabel>Office Phone</td><td class=profTrayFieldLabel>Alternate Phone (Cell)</td><td class=profTrayFieldLabel>Cell Carrier</td></tr>
+<tr><td class=profTrayFieldLabel>Directory Display</td><td class=profTrayFieldLabel>Office Phone</td><td class=profTrayFieldLabel>Dual Authentication Cell</td><td class=profTrayFieldLabel>Cell Carrier</td></tr>
 <tr><td style="padding-bottom: 2vh;">{$ynmnu}</td><td valign=top><input type=text id=profTrayOfficePhn value="{$whichUsr->officephone}"></td><td valign=top><input type=text id=profTrayAltPhone value={$whichUsr->alternatephone}></td><td valign=top>{$ccmnu}</tr>
 <tr><td class=profTrayFieldLabel colspan=2>Alternate Email</td><td class=profTrayFieldLabel colspan=2>Profile Picture</td></tr>
-<tr><td colspan=2><input type=text id=profTrayAltEmail value="{$whichUsr->alternateemail}"></td><td colspan=2><input type=file id=profTrayProfilePicture accept=".png"></td></tr>
+<tr><td colspan=2><input type=text id=profTrayAltEmail value="{$whichUsr->alternateemail}"></td><td colspan=2><input type=file id=profTrayProfilePicture accept=".png"><input type=hidden id=profTrayBase64Pic></td></tr>
 <tr><td class=profTrayFieldLabel colspan=2>Unlock Code</td><td colspan=2></td></tr>
 <tr><td colspan=2><input type=text id=profTrayAltUnlockCode></td><td> <table class=tblBtn id=btnAltUnlockCode style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Get Code</td></tr></table> </td></tr>
 <tr><td colspan=2></td><td>
@@ -337,7 +341,7 @@ $profTray = <<<PROFTRAY
            <table class=tblBtn id=btnProfileTrayAccess style="width: 7vw;" onclick="changeProfControlDiv('Access');"><tr><td style="font-size: 1.3vh; text-align: center;">My Access</td></tr></table>
            </td>
            <td style="width: 6vw;"> 
-           <table class=tblBtn id=btnProfileTrayManagament style="width: 7vw;" onclick="changeProfControlDiv('Manage');"><tr><td style="font-size: 1.3vh; text-align: center;">Manage Account</td></tr></table>
+           <table class=tblBtn id=btnProfileTrayManagament style="width: 7vw;white-space: nowrap;" onclick="changeProfControlDiv('Manage');"><tr><td style="font-size: 1.3vh; text-align: center;">Manage Account</td></tr></table>
            </td><td></td></tr>
        <tr><td colspan=4>
     <div id=profTrayControlDivHolder>

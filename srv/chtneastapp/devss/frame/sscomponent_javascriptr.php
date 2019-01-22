@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if ( byId('btnAltUnlockCode') ) { 
     byId('btnAltUnlockCode').addEventListener('click', function() { 
       var mlURL = "/data-doers/get-alternate-unlock-code";
-      universalAJAX("POST",mlURL,"",voidfunc,1);
+      universalAJAX("POST",mlURL,"",voidfunction,1);
       alert('If you have a valid ScienceServer Account, you will receive an email with a change code.  You will need this code to change security information.  The code will expire in 5 hours.');
     }, false);
   }
@@ -118,14 +118,57 @@ document.addEventListener('DOMContentLoaded', function() {
   if (byId('btnPWChangeCodeRequest')) { 
     byId('btnPWChangeCodeRequest').addEventListener('click', function() { 
       var mlURL = "/data-doers/get-pw-change-code";
-      universalAJAX("POST",mlURL,"",voidfunc,1);
+      universalAJAX("POST",mlURL,"",voidfunction,1);
       alert('If you have a valid ScienceServer Account, you will receive an email with a change code.  You will need this code to change security information.  The code will expire in 5 hours.');
     }, false);
   }
   
+  if (byId('profTrayProfilePicture')) { 
+     byId('profTrayProfilePicture').addEventListener('change', function() {        
+      var reader = new FileReader();
+      reader.readAsDataURL(byId('profTrayProfilePicture').files[0]);
+      reader.onload = function () {
+        byId('profTrayBase64Pic').value = reader.result;
+      };
+      reader.onerror = function (error) {
+         console.log('Error: ', error);
+      };             
+      }, false);
+  }
+  
+  if (byId('btnSaveAbtMe')) { 
+    byId('btnSaveAbtMe').addEventListener('click', function() { 
+      var dta = new Object(); 
+      dta['directorydisplay'] = byId('profTrayDisplayAltYNValue').value; 
+      dta['officephone'] = byId('profTrayOfficePhn').value; 
+      dta['alternatephone'] = byId('profTrayAltPhone').value;    
+      dta['cellcarrier'] = byId('profTrayCCValue').value;             
+      dta['alternateemail'] = byId('profTrayAltEmail').value;   
+      dta['unlockcode'] = byId('profTrayAltUnlockCode').value;   
+      dta['base64picture'] = byId('profTrayBase64Pic').value;   
+      var passdata = JSON.stringify(dta);
+      //console.log(passdata);
+      var mlURL = "/data-doers/update-about-me";
+      universalAJAX("POST",mlURL,passdata,answerUpdateAboutMe,1);   
+   }, false); 
+  }
+  
 }, false);
 
-function voidfunc(rtnData) {
+function answerUpdateAboutMe(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+      var msgs = JSON.parse(rtnData['responseText']);
+      var dspMsg = ""; 
+      msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+      });
+      alert("ABOUT ME UPDATE ERROR:\\n"+dspMsg);
+   } else { 
+
+   }        
+}
+   
+function voidfunction(rtnData) {
   console.log(rtnData); 
   return null;
 }
@@ -243,7 +286,6 @@ function changeProfControlDiv(whichDiv) {
   if (byId('profTrayControl'+whichDiv)) { byId('profTrayControl'+whichDiv).style.display = 'block'; }
 } 
 
-
 function fillProfTrayField(whichfield, whichvalue, whichdisplay) { 
   if (byId(whichfield)) { 
      byId(whichfield).value = whichdisplay; 
@@ -253,6 +295,8 @@ function fillProfTrayField(whichfield, whichvalue, whichdisplay) {
   }
 }
 
+
+      
 JAVASCR;
 return $rtnThis;    
 }
@@ -1802,6 +1846,7 @@ document.addEventListener('DOMContentLoaded', function() {
       dta['shipdocstatus'] = byId('qryShpStatusValue').value.trim();
       dta['site'] = byId('qryDXDSite').value.trim();
       dta['specimencategory'] = byId('qryDXDSpecimen').value.trim(); 
+      dta['diagnosis'] = byId('qryDXDDiagnosis').value.trim();  
       dta['phiage'] = byId('phiAge').value.trim(); 
       dta['phirace'] = byId('phiRaceValue').value.trim(); 
       dta['phisex'] = byId('phiSexValue').value.trim(); 
@@ -2190,7 +2235,14 @@ function fillField(whichfield, whichvalue, whichdisplay) {
      if (byId(whichfield+'Value')) { 
         byId(whichfield+'Value').value = whichvalue;    
      }
-  }       
+  } 
+ 
+  switch (whichfield) { 
+     case 'qryDXDSite':
+     //alert('HERE');
+     break;
+  }
+   
 }
 
 var lastRequestCalendarDiv = "";

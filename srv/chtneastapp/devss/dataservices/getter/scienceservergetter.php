@@ -1371,85 +1371,24 @@ function runbiogroupsearchquery($srchrqstjson) {
             break;
 
         case 'site':
-
-            if (strpos($fldvalue,";") !== false) { 
-              //DELIMITED STRING
-              $dxdp = explode(";",$fldvalue); 
-
-
-              $c = 0; 
-              foreach ($dxdp as $dxdpv) { 
-                switch ($c) { 
-                  case 0;
-                    if ((trim($dxdpv) !== "") && (trim($dxdvp) !== "-")) { 
-                      if (strpos($dxdpv,"^") !== false) {                       
-                       $truval = str_replace("^","",$dxdpv);
-                       $sqlCritAdd .= " and ( bs.anatomicsite like :asite or bs.subsite like :ssite ) ";
-                       $qryArr += [':asite' => "%{$truval}%"];
-                       $qryArr += [':ssite' => "%{$truval}%"];
-                      } else {  
-                       $sqlCritAdd .= " and ( bs.anatomicsite = :asite or bs.subsite = :ssite ) ";
-                       $qryArr += [':asite' => "{$dxdpv}"];
-                       $qryArr += [':ssite' => "{$dxdpv}"];
-                      }
-                    }
-                  break;
-                  case 1;
-                    if ((trim($dxdpv) !== "") && (trim($dxdvp) !== "-")) { 
-                      if (strpos($dxdpv,"^") !== false) {                       
-                       $truval = str_replace("^","",$dxdpv);
-                       $sqlCritAdd .= " and ( bs.diagnosis like :dx or bs.subdiagnos like :sdx ) ";
-                       $qryArr += [':dx' => "%{$truval}%"];
-                       $qryArr += [':sdx' => "%{$truval}%"];
-                      } else {  
-                       $sqlCritAdd .= " and ( bs.diagnosis = :dx or bs.subdiagnos = :sdx ) ";
-                       $qryArr += [':dx' => "{$dxdpv}"];
-                       $qryArr += [':sdx' => "{$dxdpv}"];
-                      }
-                    }
-                  break;
-                  case 2: 
-                    if ((trim($dxdpv) !== "") && (trim($dxdvp) !== "-")) { 
-                      if (strpos($dxdpv,"^") !== false) {                       
-                       $truval = str_replace("^","",$dxdpv);
-                       $sqlCritAdd .= " and ( bs.metssite like :msite ) ";
-                       $qryArr += [':msite' => "%{$truval}%"];
-                      } else {  
-                       $sqlCritAdd .= " and ( bs.metssite = :msite ) ";
-                       $qryArr += [':msite' => "{$dxdpv}"];
-                      }
-                    }
-                  break;
-                }
-                $c++;
-              }
-              $fieldsQueried++;
-            } else { 
-              
-               if (strpos($fldvalue,"^") !== false) { 
-                   //LIKE MATCH
-                 $truval = str_replace("^","",$fldvalue);
-                 $sqlCritAdd .= " and ( bs.anatomicsite like :asite or bs.subsite like :ssite or bs.diagnosis like :dx or bs.subdiagnos like :sdx or bs.metssite like :msite ) ";
-                 $qryArr += [':asite' => "{$truval}%"];
-                 $qryArr += [':ssite' => "{$truval}%"];
-                 $qryArr += [':msite' => "{$truval}%"];
-                 $qryArr += [':dx' => "{$truval}%"];
-                 $qryArr += [':sdx' => "{$truval}%"];
-                 $fieldsQueried++;
-               } else {      
-                 $sqlCritAdd .= " and ( bs.anatomicsite = :asite or bs.subsite = :ssite or bs.diagnosis = :dx or bs.subdiagnos = :sdx  or bs.metssite = :msite ) ";
-                 $qryArr += [':asite' => "{$fldvalue}"];
-                 $qryArr += [':ssite' => "{$fldvalue}"];
-                 $qryArr += [':msite' => "{$fldvalue}"];
-                 $qryArr += [':dx' => "{$fldvalue}"];
-                 $qryArr += [':sdx' => "{$fldvalue}"];
-                 $fieldsQueried++;
-               }
-
-            }
-            $fieldsQueried++;
+            $siteparts = explode(" :: ", $fldvalue);
+            if (trim($siteparts[0]) !== "") { 
+              $sqlCritAdd .= " and ( bs.anatomicsite = :sitesite or bs.metssite = :metssite ) ";
+              $qryArr += [':sitesite' => "{$siteparts[0]}", ':metssite' => "{$siteparts[0]}"];
+              $fieldsQueried++;                  
+            }   
+            if (trim($siteparts[1]) !== "") { 
+              $sqlCritAdd .= " and ( bs.subsite = :subsite) ";
+              $qryArr += [':subsite' => "{$siteparts[1]}"];
+              $fieldsQueried++;                  
+            }                       
             break;
 
+        case 'diagnosis':
+              $sqlCritAdd .= " and ( bs.diagnosis like :dx or bs.subdiagnos like :sdx ) ";
+              $qryArr += [':dx' => "%{$fldvalue}%", ':sdx' => "%{$fldvalue}%"];
+              $fieldsQueried++;                    
+        break;    
         case 'specimencategory':
             $sqlCritAdd .= " and ( bs.tisstype = :speccat ) ";
             $qryArr += [':speccat' => "{$fldvalue}"];
@@ -1618,3 +1557,78 @@ function bldDialogGetter($whichdialog, $passedData) {
 
 
 
+/*  OLD GOOGLE STYLE SITE SEARCH 
+ *            if (strpos($fldvalue,";") !== false) { 
+              //DELIMITED STRING
+              $dxdp = explode(";",$fldvalue); 
+              $c = 0; 
+              foreach ($dxdp as $dxdpv) { 
+                switch ($c) { 
+                  case 0;
+                    if ((trim($dxdpv) !== "") && (trim($dxdvp) !== "-")) { 
+                      if (strpos($dxdpv,"^") !== false) {                       
+                       $truval = str_replace("^","",$dxdpv);
+                       $sqlCritAdd .= " and ( bs.anatomicsite like :asite or bs.subsite like :ssite ) ";
+                       $qryArr += [':asite' => "%{$truval}%"];
+                       $qryArr += [':ssite' => "%{$truval}%"];
+                      } else {  
+                       $sqlCritAdd .= " and ( bs.anatomicsite = :asite or bs.subsite = :ssite ) ";
+                       $qryArr += [':asite' => "{$dxdpv}"];
+                       $qryArr += [':ssite' => "{$dxdpv}"];
+                      }
+                    }
+                  break;
+                  case 1;
+                    if ((trim($dxdpv) !== "") && (trim($dxdvp) !== "-")) { 
+                      if (strpos($dxdpv,"^") !== false) {                       
+                       $truval = str_replace("^","",$dxdpv);
+                       $sqlCritAdd .= " and ( bs.diagnosis like :dx or bs.subdiagnos like :sdx ) ";
+                       $qryArr += [':dx' => "%{$truval}%"];
+                       $qryArr += [':sdx' => "%{$truval}%"];
+                      } else {  
+                       $sqlCritAdd .= " and ( bs.diagnosis = :dx or bs.subdiagnos = :sdx ) ";
+                       $qryArr += [':dx' => "{$dxdpv}"];
+                       $qryArr += [':sdx' => "{$dxdpv}"];
+                      }
+                    }
+                  break;
+                  case 2: 
+                    if ((trim($dxdpv) !== "") && (trim($dxdvp) !== "-")) { 
+                      if (strpos($dxdpv,"^") !== false) {                       
+                       $truval = str_replace("^","",$dxdpv);
+                       $sqlCritAdd .= " and ( bs.metssite like :msite ) ";
+                       $qryArr += [':msite' => "%{$truval}%"];
+                      } else {  
+                       $sqlCritAdd .= " and ( bs.metssite = :msite ) ";
+                       $qryArr += [':msite' => "{$dxdpv}"];
+                      }
+                    }
+                  break;
+                }
+                $c++;
+              }
+              $fieldsQueried++;
+            } else { 
+              
+               if (strpos($fldvalue,"^") !== false) { 
+                   //LIKE MATCH
+                 $truval = str_replace("^","",$fldvalue);
+                 $sqlCritAdd .= " and ( bs.anatomicsite like :asite or bs.subsite like :ssite or bs.diagnosis like :dx or bs.subdiagnos like :sdx or bs.metssite like :msite ) ";
+                 $qryArr += [':asite' => "{$truval}%"];
+                 $qryArr += [':ssite' => "{$truval}%"];
+                 $qryArr += [':msite' => "{$truval}%"];
+                 $qryArr += [':dx' => "{$truval}%"];
+                 $qryArr += [':sdx' => "{$truval}%"];
+                 $fieldsQueried++;
+               } else {      
+                 $sqlCritAdd .= " and ( bs.anatomicsite = :asite or bs.subsite = :ssite or bs.diagnosis = :dx or bs.subdiagnos = :sdx  or bs.metssite = :msite ) ";
+                 $qryArr += [':asite' => "{$fldvalue}"];
+                 $qryArr += [':ssite' => "{$fldvalue}"];
+                 $qryArr += [':msite' => "{$fldvalue}"];
+                 $qryArr += [':dx' => "{$fldvalue}"];
+                 $qryArr += [':sdx' => "{$fldvalue}"];
+                 $fieldsQueried++;
+               }
+
+            }
+ */

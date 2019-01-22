@@ -945,7 +945,7 @@ $parameterGrid = <<<TBLPARAGRID
 <tr><td class=columnQParamName>Request Code: </td>          <td class=ColumnDataObj>{$srchtrm['requestNbr']}</td></tr>
 <tr><td class=columnQParamName>Shipment Document: </td>     <td class=ColumnDataObj>{$srchtrm['shipdocnbr']}</td></tr>
 <tr><td class=columnQParamName>Shipment Document Status:</td><td class=ColumnDataObj>{$srchtrm['shipdocstatus']}</td></tr>
-<tr><td class=columnQParamName>Diagnosis Designation:</td>  <td class=ColumnDataObj>{$srchtrm['site']}</td></tr>
+<tr><td class=columnQParamName>Diagnosis Designation:</td>  <td class=ColumnDataObj>{$srchtrm['site']} / {$srchtrm['diagnosis']}</td></tr>
 <tr><td class=columnQParamName>Specimen Category: </td>     <td class=ColumnDataObj>{$srchtrm['specimencategory']}</td></tr>
 <tr><td class=columnQParamName>Age (PHI): </td>             <td class=ColumnDataObj>{$srchtrm['phiage']}</td></tr>
 <tr><td class=columnQParamName>Race (PHI): </td>            <td class=ColumnDataObj>{$srchtrm['phirace']}</td></tr>
@@ -1708,6 +1708,13 @@ function buildBSGrid() {
   }
   $spc .= "</table>";
 
+  $sitearr = json_decode(callrestapi("POST", dataTree . "/data-doers/live-masterrecord-site-listing",serverIdent, serverpw, ""), true);
+    $sitemnu = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryDXDSite','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  foreach ($sitearr['DATA'] as $siteval) {
+    $sitemnu .= "<tr><td onclick=\"fillField('qryDXDSite','{$siteval['sitesubsite']}','{$siteval['sitesubsite']}');\" class=ddMenuItem>{$siteval['sitesubsite']}</td></tr>";
+  }
+  $sitemnu .= "</table>";
+ 
 $shpstatusarr = json_decode( callrestapi("GET", dataTree . "/globalmenu/allshipdocstatus",$si,$sp) , true);
 $shps = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryShpStatus','','');\" class=ddMenuClearOption>[clear]</td></tr>";
 foreach ($shpstatusarr['DATA'] as $shpval) { 
@@ -1787,12 +1794,12 @@ $grid = <<<BSGRID
 </table>
 
 <table>
-<tr><td class=fldLabel>Diagnosis Designation Search Term</td><td class=fldLabel>Specimen Category</td></tr>
+<tr><td class=fldLabel>Specimen Category</td><td class=fldLabel>Site/Sub-Site (METS)</td><td class=fldLabel>Diagnosis Search Term (like Match)</td></tr>
 <tr>
-  <td><input type=text id=qryDXDSite class="inputFld" style="min-width: 54vw;"></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryDXDSpecimenValue class="inputFld"><input type=text id=qryDXDSpecimen class="inputFld" style="width: 16.5vw;"><div class=valueDropDown style="min-width: 16.5vw;">{$spc}</div></div>     </td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryDXDSpecimenValue READONLY class="inputFld"><input type=text id=qryDXDSpecimen class="inputFld" style="width: 16.5vw;"><div class=valueDropDown style="min-width: 16.5vw;">{$spc}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryDXDSiteValue class="inputFld"><input type=text id=qryDXDSite READONLY class="inputFld" style="width: 27vw;"><div class=valueDropDown style="min-width: 16.5vw;">{$sitemnu}</div></div></td>
+  <td><input type=text id=qryDXDDiagnosis class="inputFld" style="width: 27vw;"></td>
 </tr>
-<tr><td colspan=2>(Read instructions in 'help' to query in 'Diagnosis Designation Search Term'.  Delimit with ; [semi-colon] / - [hyphen] to denote blank fields  / 'like' match indicator ^ [caret]. Order: (site-subsite);(diagnosis-modifier);(metssite))</td></tr>
 </table>
 
 <table>
@@ -2687,7 +2694,7 @@ $rtnTbl = <<<RTNTBL
 <tr><td class=BSDspSectionHeader>Sample Metrics</td></tr>
 <tr><td class=procGridHoldingLine>
    <table border=0>
-     <tr><td class=prcFldLbl>Biogroup #</td><td class=prcFldLbl>Procurement Date <span class=reqInd>*</span></td><td class=prcFldLbl>Procedure Type <span class=reqInd>*</span></td><td class=prcFldLbl>Collection Type <span class=reqInd>*</span></td><td class=prcFldLbl>Technician::Institution <span class=reqInd>*</span></td><td class=prcFldLbl>Initial Metric <span class=reqInd>*</span></td><td>&nbsp;</td><td rowspan=2 id=BSLock><div class=ttholder><i class="material-icons bslockdsp">lock_open</i><div class=tt>Biosample is currently editable</div></div></td></tr>
+     <tr><td class=prcFldLbl>Biogroup #</td><td class=prcFldLbl>Procurement Date <span class=reqInd>*</span></td><td class=prcFldLbl>Procedure Type <span class=reqInd>*</span></td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician::Institution <span class=reqInd>*</span></td><td class=prcFldLbl>Initial Metric <span class=reqInd>*</span></td><td>&nbsp;</td><td rowspan=2 id=BSLock><div class=ttholder><i class="material-icons bslockdsp">lock_open</i><div class=tt>Biosample is currently editable</div></div></td></tr>
      <tr>
        <td><input type=text id=fldPRCBGNbr value="" READONLY></td>
        <td><input type=text readonly id=fldPRCProcDate value="{$tday}"></td>
@@ -2722,7 +2729,7 @@ $rtnTbl = <<<RTNTBL
 </td></tr>
 
 <tr><td class=BSDspSpacer>&nbsp;</td></tr>
-<tr><td class=BSDspSectionHeader>Diagnosis Designation</td></tr>
+<tr><td class=BSDspSectionHeader>Diagnosis Designation <span class=reqInd>*</span></td></tr>
 <tr><td class=procGridHoldingLine>
 
 <table>
