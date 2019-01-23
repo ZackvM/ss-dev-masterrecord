@@ -90,9 +90,8 @@ class datadoers {
       $sessid = session_id();
       $me = json_decode($passdata, true);        
       
-      //{"directorydisplay":"1","officephone":"215-662-4570 x10","alternatephone":"215-990-3771","cellcarrier":"VERIZON","alternateemail":"zackvm@zacheryv.com","unlockcode":"v3vpc","base64picture":""}     
       ( trim($me['alternateemail']) !== "" && !filter_var(trim($me['alternateemail']), FILTER_VALIDATE_EMAIL)) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE ALTERNATE EMAIL APPEARS TO BE AN INVALID EMAIL ADDRESS")) : "";
-      ( trim($me['officephone']) !== "" && !preg_match('/^\d{3}-\d{3}-\d{4}(\s[x]\d{1,7})?$/',trim($me['officephone']))) ? (list( $errorInd,$msgArr[] )=array( 1 ,"THE OFFICE PHONE NUMBER IS IN AN INVALID FORMAT.  FORMAT IS: 123-456-7890 x0000 (Extensions are optional)")) : ""; 
+      ( trim($me['officephone']) !== "" && !preg_match('/^\d{3}-\d{3}-\d{4}(\s[x]\d{1,7})?$/',trim($me['officephone']))) ? (list( $errorInd,$msgArr[] )=array( 1 ,"THE OFFICE PHONE NUMBER IS IN AN INVALID FORMAT. FORMAT IS: 123-456-7890 x0000 (Extensions are optional)")):""; 
       ( trim($me['alternatephone']) !== "" && !preg_match('/^\d{3}-\d{3}-\d{4}$/',trim($me['alternatephone']))) ? (list( $errorInd,$msgArr[] )=array( 1 ,"THE ALTERNATE PHONE NUMBER IS IN AN INVALID FORMAT.  FORMAT IS: 123-456-7890 AND MUST BE A CELL NUMBER WITH SMS CAPABILITIES.")) : ""; 
       ( (int)$me['directorydisplay'] !== 0 && (int)$me['directorydisplay'] !== 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "MALFORMED DATA (directory display).  SEE A CHTNEASTERN INFORMATICS STAFF.")) : "";
       
@@ -101,7 +100,7 @@ class datadoers {
       $ccCheckRS->execute(array(':cc' => $me['cellcarrier']));
       ( $ccCheckRS->rowCount() !== 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "MALFORMED DATA (Cell Carrier).  SEE A CHTNEASTERN INFORMATICS STAFF.")) : "";
       
-      $usrChkSQL = "SELECT userid FROM four.sys_userbase where sessionid = :sessid and altinfochangecode = BINARY :altchange and TIMESTAMPDIFF(MINUTE, now(), altinfochangecodeexpire) > 0";
+      $usrChkSQL = "SELECT userid FROM four.sys_userbase where sessionid = :sessid and altinfochangecode = BINARY :altchange and TIMESTAMPDIFF(MINUTE, now(), altinfochangecodeexpire) > 4";
       $usrChkRS = $conn->prepare($usrChkSQL);
       $usrChkRS->execute(array(':sessid' => $sessid, ':altchange' => $me['unlockcode']));
       ( $usrChkRS->rowCount() !== 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "INCORRECT 'UNLOCK CODE' OR THE CODE HAS EXPIRED.")) : "";
@@ -109,26 +108,37 @@ class datadoers {
       if (trim($me['base64picture']) !== "") { 
           //CHECK Picture
           ( !preg_match('/^data:image\/png/', $me['base64picture']) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "PICTURE DOESN'T SEEM TO BE A PNG FORMATTED PICTURE.")) : "";          
-         
          $image_parts = explode(";base64,", $me['base64picture']);          
          $data = base64_decode($image_parts[1]);
          $image = imagecreatefromstring($data); 
          $w = imagesx($image);
          $h = imagesy($image);
-          
-          (list( $errorInd, $msgArr[] ) = array( 1 , "{$h}x{$w}"));
-          //imagepng($im, "/path/where/you/want/save/the/png.png");
-          // frees image from memory
-          //imagedestroy($im);
+         ( (int)$w === 0 || (int)$h === 0 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "PICTURE DOESN'T SEEM TO HAVE DIMENSIONS.")) : "";
+         ( (int)$w > 1000 || (int)$h > 1000 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "PICTURE NEEDS TO BE APPROXIMATELY 500x500 PIXELS.  RESIZE PICTURE AND TRY AGAIN.")) : "";    
       }
-      
+
+      //removeprofilepic
+      (list( $errorInd, $msgArr[] ) = array( 1 , "{$me['removeprofilepic']}"));
+
+
+
       if ($errorInd === 0) { 
-         //SAVE CHANGES         
-         //$str="data:image/png;base64,"; 
-         //$data=str_replace($str,"",$_POST['image']); 
-         //$data = base64_decode($data);
-         //file_put_contents('tmp/'.mktime().'.png', $data);
-         
+        
+          if ( trim($me['base64picture']) !== "" ) {
+           $imagefilename = generateRandomString(8) . ".png";  
+           imagepng($image,  genAppFiles . "/publicobj/graphics/usrprofile/{$imagefilename}");
+           imagedestroy($im);
+          } else { 
+           $imagefilename = "";  
+          }
+
+   
+          //UPDATE SQL WITH PICTURE UPLOAD
+          //insert into four.sys_userbase_history SELECT * FROM four.sys_userbase where userid = 1
+         //update four.sys_userbase set altinfochangecode = null, altinfochangecodeexpire = null, dspAlternateInDir = 0, profileAltEmail = 'email', altphone = 'phone', cellcarriercode = 'Cellcode', altphonecellcarrier = 'GET CODE FROM DB', profilePicURL = 'filename', lastUpdatedBy = '', lastUpdatedBy = '' where sessionid = '' and altinfochangecode = '' and TIMESTAMPDIFF(MINUTE, now(), altinfochangecodeexpire) > 0 
+
+
+
       }                  
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 

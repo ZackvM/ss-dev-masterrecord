@@ -146,7 +146,7 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 
 #profTrayAltEmail { font-size: 1.3vh; width: 17vw; }
 #profTrayAccessLvl { font-size: 1.3vh; width: 12vw; }
-#profTrayProfilePicture {font-size: 1.3vh; width: 25vw; }
+#profTrayProfilePicture {font-size: 1.3vh; width: 19vw; }
 #profTrayCC {font-size: 1.3vh; width: 14vw; }
 #ddprofTrayCC { min-width: 14vw; }
 

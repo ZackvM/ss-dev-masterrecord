@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
       reader.readAsDataURL(byId('profTrayProfilePicture').files[0]);
       reader.onload = function () {
         byId('profTrayBase64Pic').value = reader.result;
+        byId('profTrayProfilePicRemove').checked = false;
       };
       reader.onerror = function (error) {
          console.log('Error: ', error);
@@ -145,12 +146,29 @@ document.addEventListener('DOMContentLoaded', function() {
       dta['cellcarrier'] = byId('profTrayCCValue').value;             
       dta['alternateemail'] = byId('profTrayAltEmail').value;   
       dta['unlockcode'] = byId('profTrayAltUnlockCode').value;   
-      dta['base64picture'] = byId('profTrayBase64Pic').value;   
+      dta['base64picture'] = byId('profTrayBase64Pic').value;  
+      dta['removeprofilepic'] = byId('profTrayProfilePicRemove').checked; 
       var passdata = JSON.stringify(dta);
       //console.log(passdata);
       var mlURL = "/data-doers/update-about-me";
       universalAJAX("POST",mlURL,passdata,answerUpdateAboutMe,1);   
    }, false); 
+  }
+
+  if (byId('btnClearPicFile')) {
+    byId('btnClearPicFile').addEventListener('click', function() { 
+        byId('profTrayBase64Pic').value = '';
+        byId('profTrayProfilePicture').value = null;
+    }, false);
+  }
+
+  if (byId('profTrayProfilePicRemove')) { 
+    byId('profTrayProfilePicRemove').addEventListener('change', function() { 
+      if ( byId('profTrayProfilePicRemove').checked === true) { 
+        byId('profTrayBase64Pic').value = '';
+        byId('profTrayProfilePicture').value = null;
+      } 
+     }, false);
   }
   
 }, false);

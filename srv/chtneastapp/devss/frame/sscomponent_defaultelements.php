@@ -311,8 +311,8 @@ $abtMeTbl = <<<ABTME
 <tr><td class=profTrayFieldLabel>Directory Display</td><td class=profTrayFieldLabel>Office Phone</td><td class=profTrayFieldLabel>Dual Authentication Cell</td><td class=profTrayFieldLabel>Cell Carrier</td></tr>
 <tr><td style="padding-bottom: 2vh;">{$ynmnu}</td><td valign=top><input type=text id=profTrayOfficePhn value="{$whichUsr->officephone}"></td><td valign=top><input type=text id=profTrayAltPhone value={$whichUsr->alternatephone}></td><td valign=top>{$ccmnu}</tr>
 <tr><td class=profTrayFieldLabel colspan=2>Alternate Email</td><td class=profTrayFieldLabel colspan=2>Profile Picture</td></tr>
-<tr><td colspan=2><input type=text id=profTrayAltEmail value="{$whichUsr->alternateemail}"></td><td colspan=2><input type=file id=profTrayProfilePicture accept=".png"><input type=hidden id=profTrayBase64Pic></td></tr>
-<tr><td class=profTrayFieldLabel colspan=2>Unlock Code</td><td colspan=2></td></tr>
+<tr><td colspan=2><input type=text id=profTrayAltEmail value="{$whichUsr->alternateemail}"></td><td colspan=2><table><tr><td><input type=file id=profTrayProfilePicture accept=".png"></td><td> <table class=tblBtn id=btnClearPicFile style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Clear File</td></tr></table> </td></tr></table><input type=hidden id=profTrayBase64Pic></td></tr>
+<tr><td class=profTrayFieldLabel colspan=2>Unlock Code</td><td colspan=2><input type=checkbox id=profTrayProfilePicRemove><label for=profTrayProfilePicRemove>Remove my Profile Picture</label></td></tr>
 <tr><td colspan=2><input type=text id=profTrayAltUnlockCode></td><td> <table class=tblBtn id=btnAltUnlockCode style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Get Code</td></tr></table> </td></tr>
 <tr><td colspan=2></td><td>
   <table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Save</td></tr></table>
