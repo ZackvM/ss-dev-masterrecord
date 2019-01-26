@@ -34,39 +34,6 @@ function __construct() {
 
 class datadoers {
 
-
-    function updatemypassword($request, $passdata) { 
-      $rows = array(); 
-      $responseCode = 400;
-      $msgArr = array(); 
-      $errorInd = 0;
-      $itemsfound = 0;
-      require(serverkeys . "/sspdo.zck");
-      session_start(); 
-      $sessid = session_id();
-      $me = json_decode($passdata, true);        
- 
-      $crdpass = json_decode(chtndecrypt($me['ency']), true);
-      //1) Check Current Password is correct
-      //2) check that new and confirm passwords match
-      //3) check the strength of the new password 
-      //4) make sure that the password is not a standard password word (password, qwerty, 12345 etc)
-
-       
-
-
-      //{\\\"currentpassword\\\":\\\"Zulu1kilo\\\",\\\"newpassword\\\":\\\"S33th3ory\\\",\\\"confirmpassword\\\":\\\"S3tth3ory\\\",\\\"changecode\\\":\\\"HFBUIO\\\"}      
-
-
-      $msgArr[] = $crdpass['currentpassword'];
-
-
-      $msg = $msgArr;
-      $rows['statusCode'] = $responseCode; 
-      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
-      return $rows;
-    } 
-
     function initialbgroupsave($request, $passdata) {       
       $rows = array(); 
       //$dta = array(); 
@@ -95,13 +62,6 @@ class datadoers {
       //G) CHECK VOCABULARY
 
 
-
-
-
-
-
-
-
       //2) WRITE DATA IF ALL CHECKS PASS - NO LABEL PRINTING NECESSARY AT BGROUP LEVEL
       //3) SEND BACK encrypted data selector
 
@@ -111,6 +71,109 @@ class datadoers {
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;
     }
+
+    function updatemypresentinstitution($request, $passdata) { 
+      $rows = array(); 
+      $institutionlist = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();
+      $me = json_decode($passdata, true);        
+
+      $myinstitutionsql = "SELECT indsp.menuvalue, indsp.dspvalue FROM four.sys_userbase usr left join four.sys_userbase_allowinstitution inst on usr.userid = inst.userid left join ( SELECT menuid, menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION' ) indsp on inst.institutionmenuid = indsp.menuid where usr.allowind = 1 and usr.sessionid = :sessid and TIMESTAMPDIFF(MINUTE, now(), usr.passwordExpireDate) > 5 and inst.onoffind = 1 and indsp.menuvalue = :institutionrequested ";
+      $myInstitutionRS = $conn->prepare($myinstitutionsql); 
+      $myInstitutionRS->execute(array(':sessid' => $sessid, ':institutionrequested' => $me['requestedInstitution'])); 
+      if ($myInstitutionRS->rowCount() === 1) { 
+        //ALLOW CHANGE
+        $myInst = $myInstitutionRS->fetch(PDO::FETCH_ASSOC);   
+         //BACKUP USER 
+         $backupSQL = "insert into four.sys_userbase_history SELECT * FROM four.sys_userbase where sessionid = :sessid";
+         $backupRS = $conn->prepare($backupSQL);
+         $backupRS->execute( array(':sessid' => $sessid ));
+         $updSQL = "update four.sys_userbase set presentinstitution = :changeinstto, lastUpdatedBy = 'SET-PRESENT-INST-FUNC', lastUpdatedOn = now() where sessionid = :sessid";
+         $updRS = $conn->prepare($updSQL); 
+         $updRS->execute(array(':changeinstto' =>  $myInst['menuvalue'], ':sessid' => $sessid)); 
+
+      } else { 
+        ( 1 === 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "USER IS NOT ALLOWED ACCESS TO THIS INSTITUTION/OR USER IS DISALLOWED ACCESS TO SCIENCESERVER" )) : "";
+      }
+      if ( $errorInd === 0 ) { 
+        //RELOAD
+        $responseCode = 200;    
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+
+    function updatemypassword($request, $passdata) { 
+      $rows = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();
+      $me = json_decode($passdata, true);        
+ 
+      $crd = json_decode(chtndecrypt($me['ency']), true);
+      //1) Check Current Password is correct
+      $usrChk = "SELECT fiveonepword FROM four.sys_userbase where allowind = 1 and sessionid = :sessid and pwordresetcode = BINARY :resetcode and datediff(passwordexpiredate, now()) > -1 and TIMESTAMPDIFF(MINUTE, now(), pwordResetExpire) > 5";
+      $usrChkR = $conn->prepare($usrChk); 
+      $usrChkR->execute(array(':sessid' => $sessid , ':resetcode' => $crd['changecode'])); 
+      if ( $usrChkR->rowCount() === 1 ) { 
+        $usr = $usrChkR->fetch(PDO::FETCH_ASSOC);
+        (!password_verify( $crd['currentpassword'], $usr['fiveonepword']) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "SPECIFIED CURRENT PASSWORD IS INCORRECT.")) : "";
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array( 1 , "USER NOT FOUND. YOU ARE EITHER NOT A VALID USER, YOUR RESET CODE IS INCORRECT OR YOUR PASSWORD HAS EXPIRED FOR TOO LONG."));
+      } 
+      //2) check that new and confirm passwords match
+      ( $crd['newpassword'] !== $crd['confirmpassword'] ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE 'NEW' AND 'CONFIRM' PASSWORD FIELDS DON'T MATCH.")) :"";
+      //3) check the strength of the new password 
+      ( (int)strlen( $crd['newpassword'] ) < 8 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "YOUR PASSWORD MUST BE MORE THAN 7 CHARACTERS LONG")) :""; 
+      ( !preg_match("/(?=[A-Z])/",$crd['newpassword'])) ? (list( $errorInd, $msgArr[] ) = array( 1 , "PASSWORDS ARE REQUIRED TO HAVE AT LEAST 1 UPPERCASE LETTER" )) :"";
+      ( !preg_match("/(?=[a-z])/",$crd['newpassword'])) ? (list( $errorInd, $msgArr[] ) = array( 1 , "PASSWORDS ARE REQUIRED TO HAVE AT LEAST 1 LOWERCASE LETTER" )) :"";
+      ( !preg_match("/(?=[0-9])/",$crd['newpassword'])) ? (list( $errorInd, $msgArr[] ) = array( 1 , "PASSWORDS ARE REQUIRED TO HAVE AT LEAST 1 NUMERIC CHARACTER" )) :"";
+      ( ctype_alnum($crd['newpassword']) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "PASSWORDS ARE REQUIRED TO HAVE ONE SPECIAL CHARACTER (Not a space)" )) :"";
+      // TODO:  WRITE THESE SECURITY CHECKS
+      // - make sure that password is not the same as last password
+      // - make sure that the password is not a standard password word (password, qwerty, 12345 etc)
+      // - check not a dictionary word
+      if ($errorInd === 0) { 
+         //WHEN PASSWORD HAS CHANGED BLANK RESET CODE IN DATABASE
+         $randomBytes = $crd['newpassword'];
+         $options = [ 'cost' => 12 ];
+         $npword =  password_hash( $randomBytes, PASSWORD_BCRYPT, $options );
+         //BACKUP USER 
+         $backupSQL = "insert into four.sys_userbase_history SELECT * FROM four.sys_userbase where sessionid = :sessid and pwordresetcode = BINARY :codechange";
+         $backupRS = $conn->prepare($backupSQL);
+         $backupRS->execute(array(':sessid' => $sessid, ':altchange' => $crd['changecode']));
+         $usrUpdSQL  = "update four.sys_userbase set fiveonepword = :newpword, pwordresetcode = NULL, pwordResetExpire = NULL, passwordexpiredate = date_add(now(), INTERVAL 6 month), lastUpdatedBy = 'CHANGE-PASSWORD-FUNC', lastUpdatedOn = now() where allowind = 1 and sessionid = :sessid and pwordresetcode = :resetcode and datediff(passwordexpiredate, now()) > -1 and TIMESTAMPDIFF(MINUTE, now(), pwordResetExpire) > 0";
+         $usrUpdR = $conn->prepare($usrUpdSQL);
+         $usrUpdR->execute(array( ':newpword' => $npword, ':sessid' => $sessid, ':resetcode' => $crd['changecode'])); 
+         $nbrofrows = $usrUpdR->rowCount(); 
+
+         //IF RowCount = 1 - Reset Session! 
+         if ( (int)$nbrofrows === 1) {  
+           session_regenerate_id(true);
+           //unset all session variables
+           session_unset();
+           // destroy the session
+           session_destroy();
+           $responseCode = 200;
+         }
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    } 
 
     function updateaboutme($request, $passdata) { 
       $rows = array(); 

@@ -81,7 +81,7 @@ if ($whichpage !== "login") {
     $controlListUniverse .= "</table>";
 
     foreach ($whichUsr->allowedinstitutions as $inskey => $insval) {
-      if ( trim($whichUsr->primaryinstitution) === $insval[0]) {
+      if ( trim($whichUsr->presentinstitution) === $insval[0]) {
         $igivendspvalue = "{$insval[1]} ({$insval[0]})";
       }
     }
@@ -194,7 +194,7 @@ function buildUserProfileTray( $whichUsr) {
   foreach ($whichUsr->allowedinstitutions as $inskey => $insval) {
     $instList .= ( $inscnt > 0 ) ? " <br> {$insval[1]} ({$insval[0]}) " : " {$insval[1]} ({$insval[0]}) ";
     $inscnt++;
-    if ( trim($whichUsr->primaryinstitution) === $insval[0]) {
+    if ( trim($whichUsr->presentinstitution) === $insval[0]) {
       $primeinstdsp = $insval[1];
       $igivendspvalue = "{$insval[1]} ({$insval[0]})";
       $igivendspcode = $insval[0];
@@ -211,11 +211,11 @@ function buildUserProfileTray( $whichUsr) {
   $manageMyAccount = <<<MYACCESS
 <table border=0>
 <tr><td colspan=2 class=usrAccountTitle>Manage My Account</td></tr>
-<tr><td class=profTrayFieldLabel colspan=2>Driver License Expiration</td><td class=profTrayFieldLabel>Present Institution</td></tr>
+<tr><!-- <td class=profTrayFieldLabel colspan=2>Driver License Expiration</td> //--><td class=profTrayFieldLabel>Present Institution</td></tr>
 <tr>
-  <td><input type=text id=profTrayDLExp value="{$whichUsr->drvlicexp}"></td>
-  <td><table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Save</td></tr></table></td>
-  <td>{$insmnu}</td><td><table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Set</td></tr></table></td>
+  <!-- <td><input type=text id=profTrayDLExp value="{$whichUsr->drvlicexp}"></td> //-->
+  <!-- <td> <table class=tblBtn id=btnUpdateDL style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Save</td></tr></table> </td> //-->
+  <td>{$insmnu}</td><td><table class=tblBtn id=btnSetPresentInst style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Set</td></tr></table></td>
 </tr>
 </table>
 
