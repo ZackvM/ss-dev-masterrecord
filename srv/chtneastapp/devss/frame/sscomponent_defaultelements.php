@@ -227,7 +227,7 @@ function buildUserProfileTray( $whichUsr) {
 <tr><td><input type=password id=profTrayNewPW></td></tr>
 <tr><td class=profTrayFieldLabel>Confirm Password</td></tr>
 <tr><td><input type=password id=profTrayConfirmPW></td></tr>
-<tr><td align=right> <table class=tblBtn id=btnSaveAbtMe style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Change Password</td></tr></table></td></tr>
+<tr><td align=right> <table class=tblBtn id=btnChangeMyPassword style="width: 6vw;"><tr><td style="font-size: 1.3vh; text-align: center;">Change Password</td></tr></table></td></tr>
 
 </table>
 </div>

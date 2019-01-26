@@ -136,6 +136,24 @@ document.addEventListener('DOMContentLoaded', function() {
       };             
       }, false);
   }
+
+  if (byId('btnChangeMyPassword')) { 
+    byId('btnChangeMyPassword').addEventListener('click', function() { 
+      var crd = new Object(); 
+      crd['currentpassword'] = byId('profTrayCurrentPW').value.trim(); 
+      crd['newpassword'] = byId('profTrayNewPW').value.trim(); 
+      crd['confirmpassword'] = byId('profTrayConfirmPW').value.trim(); 
+      crd['changecode'] = byId('profTrayResetCode').value.trim(); 
+      var cpass = JSON.stringify(crd);
+      var ciphertext = window.btoa( encryptedString(key, cpass, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) ); 
+      var dta = new Object(); 
+      dta['ency'] = ciphertext;
+      var passdata = JSON.stringify(dta);
+      //console.log(passdata);
+      var mlURL = "/data-doers/update-my-password";
+      universalAJAX("POST",mlURL,passdata,answerUpdateMyPassword,1);   
+    }, false);
+  }
   
   if (byId('btnSaveAbtMe')) { 
     byId('btnSaveAbtMe').addEventListener('click', function() { 
@@ -172,6 +190,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
 }, false);
+
+function answerUpdateMyPassword(rtnData) { 
+
+console.log(rtnData);
+
+} 
 
 function answerUpdateAboutMe(rtnData) { 
    if (parseInt(rtnData['responseCode']) !== 200) { 

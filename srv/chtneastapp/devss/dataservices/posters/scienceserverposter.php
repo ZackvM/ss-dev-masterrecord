@@ -34,6 +34,39 @@ function __construct() {
 
 class datadoers {
 
+
+    function updatemypassword($request, $passdata) { 
+      $rows = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();
+      $me = json_decode($passdata, true);        
+ 
+      $crdpass = json_decode(chtndecrypt($me['ency']), true);
+      //1) Check Current Password is correct
+      //2) check that new and confirm passwords match
+      //3) check the strength of the new password 
+      //4) make sure that the password is not a standard password word (password, qwerty, 12345 etc)
+
+       
+
+
+      //{\\\"currentpassword\\\":\\\"Zulu1kilo\\\",\\\"newpassword\\\":\\\"S33th3ory\\\",\\\"confirmpassword\\\":\\\"S3tth3ory\\\",\\\"changecode\\\":\\\"HFBUIO\\\"}      
+
+
+      $msgArr[] = $crdpass['currentpassword'];
+
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    } 
+
     function initialbgroupsave($request, $passdata) {       
       $rows = array(); 
       //$dta = array(); 
