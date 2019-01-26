@@ -180,7 +180,11 @@ function buildUserProfileTray( $whichUsr) {
 
   $at = genAppFiles;
   //TODO:  ONLY ALLOW PNGs as profile pictures
-  $profpic = base64file("{$at}/publicobj/graphics/usrprofile/{$whichUsr->profilepicturefile}", "apptrayUserProfilePicture", "png", true);  
+  if (trim($whichUsr->profilepicturefile) === 'avatar_male' || trim($whichUsr->profilepicturefile) === 'avatar_female' ) { 
+     $profpic = base64file("{$at}/publicobj/graphics/usrprofile/{$whichUsr->profilepicturefile}.png", "apptrayUserProfilePicture", "png", true);   
+  } else { 
+    $profpic = base64file("{$at}/publicobj/graphics/usrprofile/{$whichUsr->profilepicturefile}", "apptrayUserProfilePicture", "png", true);  
+  }
   $usernbr = substr("000000{$whichUsr->dbuserid}",-6); 
 
   $inscnt = 0;
