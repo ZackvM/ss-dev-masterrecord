@@ -206,7 +206,9 @@ function answerUpdateAboutMe(rtnData) {
       });
       alert("ABOUT ME UPDATE ERROR:\\n"+dspMsg);
    } else { 
-
+     openAppCard('appcard_useraccount');
+     byId('standardModalBacker').style.display = 'block';
+     location.reload(true);
    }        
 }
    

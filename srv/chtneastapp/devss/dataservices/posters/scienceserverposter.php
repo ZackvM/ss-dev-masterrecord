@@ -122,22 +122,35 @@ class datadoers {
       session_start(); 
       $sessid = session_id();
       $me = json_decode($passdata, true);        
+      $changecode =  ( array_key_exists('unlockcode', $me) ) ? $me['unlockcode'] : "";
       
       ( trim($me['alternateemail']) !== "" && !filter_var(trim($me['alternateemail']), FILTER_VALIDATE_EMAIL)) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE ALTERNATE EMAIL APPEARS TO BE AN INVALID EMAIL ADDRESS")) : "";
       ( trim($me['officephone']) !== "" && !preg_match('/^\d{3}-\d{3}-\d{4}(\s[x]\d{1,7})?$/',trim($me['officephone']))) ? (list( $errorInd,$msgArr[] )=array( 1 ,"THE OFFICE PHONE NUMBER IS IN AN INVALID FORMAT. FORMAT IS: 123-456-7890 x0000 (Extensions are optional)")):""; 
       ( trim($me['alternatephone']) !== "" && !preg_match('/^\d{3}-\d{3}-\d{4}$/',trim($me['alternatephone']))) ? (list( $errorInd,$msgArr[] )=array( 1 ,"THE ALTERNATE PHONE NUMBER IS IN AN INVALID FORMAT.  FORMAT IS: 123-456-7890 AND MUST BE A CELL NUMBER WITH SMS CAPABILITIES.")) : ""; 
       ( (int)$me['directorydisplay'] !== 0 && (int)$me['directorydisplay'] !== 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "MALFORMED DATA (directory display).  SEE A CHTNEASTERN INFORMATICS STAFF.")) : "";
       
-      $ccCheckSQL = "SELECT menuvalue, dspvalue  FROM four.sys_master_menus where menu = 'CELLCARRIER'  and menuvalue = BINARY :cc";
+      //TODO: Make a function to check menu values
+      $ccCheckSQL = "SELECT additionalInformation, menuvalue  FROM four.sys_master_menus where menu = 'CELLCARRIER'  and menuvalue = BINARY :cc";
       $ccCheckRS = $conn->prepare($ccCheckSQL); 
       $ccCheckRS->execute(array(':cc' => $me['cellcarrier']));
       ( $ccCheckRS->rowCount() !== 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "MALFORMED DATA (Cell Carrier).  SEE A CHTNEASTERN INFORMATICS STAFF.")) : "";
+      if ($ccCheckRS->rowCount() === 1) {
+          $cc = $ccCheckRS->fetch(PDO::FETCH_ASSOC);
+          $cellsuffix = $cc['additionalInformation'];
+          $cellCarrierCode = $cc['menuvalue'];
+      }
       
-      $usrChkSQL = "SELECT userid FROM four.sys_userbase where sessionid = :sessid and altinfochangecode = BINARY :altchange and TIMESTAMPDIFF(MINUTE, now(), altinfochangecodeexpire) > 4";
+      $usrChkSQL = "SELECT userid, sex FROM four.sys_userbase where sessionid = :sessid and altinfochangecode = BINARY :altchange and TIMESTAMPDIFF(MINUTE, now(), altinfochangecodeexpire) > 4";
       $usrChkRS = $conn->prepare($usrChkSQL);
-      $usrChkRS->execute(array(':sessid' => $sessid, ':altchange' => $me['unlockcode']));
+      $usrChkRS->execute(array(':sessid' => $sessid, ':altchange' => $changecode));
       ( $usrChkRS->rowCount() !== 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "INCORRECT 'UNLOCK CODE' OR THE CODE HAS EXPIRED.")) : "";
        
+      if ( $usrChkRS->rowCount() === 1 ) { 
+          $usr = $usrChkRS->fetch(PDO::FETCH_ASSOC);
+          $basicavatar = ($usr['sex'] === 'M') ? "avatar_male" : "avatar_female";          
+      }
+      
+      
       if (trim($me['base64picture']) !== "") { 
           //CHECK Picture
           ( !preg_match('/^data:image\/png/', $me['base64picture']) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "PICTURE DOESN'T SEEM TO BE A PNG FORMATTED PICTURE.")) : "";          
@@ -150,13 +163,11 @@ class datadoers {
          ( (int)$w > 1000 || (int)$h > 1000 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "PICTURE NEEDS TO BE APPROXIMATELY 500x500 PIXELS.  RESIZE PICTURE AND TRY AGAIN.")) : "";    
       }
 
-      //removeprofilepic
-      (list( $errorInd, $msgArr[] ) = array( 1 , "{$me['removeprofilepic']}"));
-
-
-
       if ($errorInd === 0) { 
         
+          $cellnbr = preg_replace('/[^0-9]/','', $me['alternatephone']) . $cellsuffix;
+          
+          //BUILD PICTURE
           if ( trim($me['base64picture']) !== "" ) {
            $imagefilename = generateRandomString(8) . ".png";  
            imagepng($image,  genAppFiles . "/publicobj/graphics/usrprofile/{$imagefilename}");
@@ -165,13 +176,47 @@ class datadoers {
            $imagefilename = "";  
           }
 
+          //BACKUP USER 
+          $backupSQL = "insert into four.sys_userbase_history SELECT * FROM four.sys_userbase where sessionid = :sessid and altinfochangecode = BINARY :altchange";
+          $backupRS = $conn->prepare($backupSQL);
+          $backupRS->execute(array(':sessid' => $sessid, ':altchange' => $changecode));
+          
+          //removeprofilepic
+          if ((int)$me['removeprofilepic'] === 1) {
+            //REMOVE PROFILE PICTURE
+                 $updSQL = <<<UPDSQL
+update four.sys_userbase set altinfochangecode = null, altinfochangecodeexpire = null, dspAlternateInDir = :dspindirectory, profileAltEmail = :profAltEmail, profilePhone = :officephone, altphone = :profAltPhone
+, cellcarriercode = :builtPhoneNumber, altphonecellcarrier = :cellcarriercode, profilePicURL = :getrightavatar, lastUpdatedBy = 'ABOUT-ME-SYSTEM-UPDATE', lastUpdatedOn = now()
+where sessionid = :sessid and altinfochangecode = BINARY :altchange
+UPDSQL;
+        $rs = $conn->prepare($updSQL);
+        $rs->execute(
+                array( ':dspindirectory' => (int)$me['directorydisplay'], ':profAltEmail' => trim($me['alternateemail']), ':officephone' =>  trim($me['officephone']), ':profAltPhone' => trim($me['alternatephone']) , ':builtPhoneNumber' => $cellCarrierCode, ':cellcarriercode' =>  $cellnbr, ':getrightavatar' => $basicavatar, ':sessid' => $sessid, ':altchange' => $changecode ));
+          } else { 
+          }
    
-          //UPDATE SQL WITH PICTURE UPLOAD
-          //insert into four.sys_userbase_history SELECT * FROM four.sys_userbase where userid = 1
-         //update four.sys_userbase set altinfochangecode = null, altinfochangecodeexpire = null, dspAlternateInDir = 0, profileAltEmail = 'email', altphone = 'phone', cellcarriercode = 'Cellcode', altphonecellcarrier = 'GET CODE FROM DB', profilePicURL = 'filename', lastUpdatedBy = '', lastUpdatedBy = '' where sessionid = '' and altinfochangecode = '' and TIMESTAMPDIFF(MINUTE, now(), altinfochangecodeexpire) > 0 
-
-
-
+          if ($imagefilename === "") { 
+              //NO PICTURE UPLOADED
+                 $updSQL = <<<UPDSQL
+update four.sys_userbase set altinfochangecode = null, altinfochangecodeexpire = null, dspAlternateInDir = :dspindirectory, profileAltEmail = :profAltEmail, profilePhone = :officephone, altphone = :profAltPhone, cellcarriercode = :builtPhoneNumber, altphonecellcarrier = :cellcarriercode, lastUpdatedBy = 'ABOUT-ME-SYSTEM-UPDATE', lastUpdatedOn = now()
+where sessionid = :sessid and altinfochangecode = BINARY :altchange
+UPDSQL;
+        $rs = $conn->prepare($updSQL);
+        $rs->execute(
+                array(':dspindirectory' => (int)$me['directorydisplay'], ':profAltEmail' => trim($me['alternateemail']), ':officephone' =>  trim($me['officephone']), ':profAltPhone' => trim($me['alternatephone']) , ':builtPhoneNumber' => $cellCarrierCode, ':cellcarriercode' =>  $cellnbr, ':sessid' => $sessid, ':altchange' => $changecode));                            
+          } else { 
+              //PICTURE UPLOADED
+                 $updSQL = <<<UPDSQL
+update four.sys_userbase 
+set altinfochangecode = null, altinfochangecodeexpire = null, dspAlternateInDir = :dspindirectory, profileAltEmail = :profAltEmail, profilePhone = :officephone, altphone = :profAltPhone, cellcarriercode = :builtPhoneNumber, altphonecellcarrier = :cellcarriercode, profilePicURL = :getrightavatar, lastUpdatedBy = 'ABOUT-ME-SYSTEM-UPDATE', lastUpdatedOn = now()
+where sessionid = :sessid and altinfochangecode = BINARY :altchange
+UPDSQL;
+        $rs = $conn->prepare($updSQL);
+        $rs->execute(
+                array(':dspindirectory' => (int)$me['directorydisplay'], ':profAltEmail' => trim($me['alternateemail']), ':officephone' =>  trim($me['officephone']), ':profAltPhone' => trim($me['alternatephone']), ':builtPhoneNumber' => $cellCarrierCode, ':cellcarriercode' =>  $cellnbr, ':getrightavatar' => $imagefilename, ':sessid' => $sessid, ':altchange' => $changecode));              
+          }          
+          //UPDATE SQL WITH PICTURE UPLOAD         
+          $responseCode = 200;
       }                  
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
