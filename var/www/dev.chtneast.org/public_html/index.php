@@ -187,8 +187,10 @@ echo $pg;
       //PRINT OBJECT - GET ONLY  
       if ($method === "GET") { 
         require(applicationTree . "/scienceserverprint.php");       
+
         $prnt = new  printobject($_SERVER['REQUEST_URI']);     
         http_response_code($prnt->httpresponse);
+                
         if ($prnt->httpresponse === 200) { 
           $pgTitle = (trim($prnt->pagetitle) !== "") ? "<title>" . $prnt->pagetitle . "</title>" : "<title>CHTN Eastern</title>";    
           $pgHead = (trim($prnt->headr) !== "") ? $prnt->headr : "";         

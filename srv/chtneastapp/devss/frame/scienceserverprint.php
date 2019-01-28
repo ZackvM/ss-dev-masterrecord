@@ -11,7 +11,7 @@ class printobject {
     public $style = "";
     public $bodycontent = "";
 
-    private $registeredPages = array('pathologyreport','shipmentmanifest','reports'); //chartreview when that is built 
+    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview'); //chartreview when that is built 
     //pxchart = Patient Chart
     
     function __construct() { 		  
@@ -94,7 +94,16 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $bgnbr = $pr['bgnbr'];
             break;
         case 'chartreview':     
-            ///PATIENT CHART
+            $dt = "CHART REVIEW";
+            $docIdElem = explode("-", $unencry);
+            $docid = $docIdElem[1];
+            //TODO:  TURN INTO WEBSERVICE
+            $prSQL = "SELECT chartid, pxi FROM masterrecord.ut_chartreview where chartid = :crid"; 
+            $prR = $conn->prepare($prSQL);
+            $prR->execute(array(':crid' => $docid));
+            $pr = $prR->fetch(PDO::FETCH_ASSOC);
+            $bgnbr = $pr['chartid'];            
+            $donor = $pr['pxi'];
             break;
         case 'shipmentmanifest':
             $dt = "SHIPMENT MANIFEST";
@@ -171,6 +180,10 @@ function pagetabs($docobject) {
     case 'SCIENCESERVER PRINTABLE REPORTS':
       $thisTab = "ScienceServer Printable Reports";
       break; 
+    case 'CHART REVIEW':
+        $dspdoc = 'CR-' . substr(('000000' . $docobject['documentid']),-6);
+        $thisTab = "Chart Review {$dspdoc}";
+    break;
     default: 
       $thisTab =  substr(('000000' . $docobject['documentid']),-6) . " Shipment Document"; 
     break; 
@@ -187,8 +200,11 @@ function documenttext($docobject, $orginalURI) {
     case 'SHIPMENT MANIFEST':
         $doctext = getShipmentDocument($docobject['documentid'], $orginalURI);
         break;
+    case 'CHART REVIEW': 
+        $doctext = getChartReview($docobject['documentid'], $orginalURI);
+        break;
     case 'SCIENCESERVER PRINTABLE REPORTS':
-        $doctext = getPrintableReport($docobject['documentid'],$originalURI);
+        $doctext = getPrintableReport($docobject['documentid'],$orginalURI);
         break;
     }
     return $doctext;
@@ -237,7 +253,6 @@ function getPrintableReport($sdid, $originalURL) {
 
   return array('status' => $responseCode, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => $format);
 }
-
 
 function getShipmentDocument($sdid, $originalURL) { 
     $at = genAppFiles;
@@ -515,6 +530,128 @@ $output = shell_exec($linuxCmd);
         
         }
     return array('status' => 200, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => 'pdf');
+}
+
+function getChartReview($chartreviewid, $originalURI) { 
+    $at = genAppFiles;
+    $tt = treeTop;
+    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+    require(serverkeys . "/sspdo.zck");  
+    session_start();
+    //TODO:  TURN THIS INTO A WEBSERVICE
+    $sql = "select pxi, chartid, chart from masterrecord.ut_chartreview cr where chartid = :crid";
+    $prR = $conn->prepare($sql);
+    $prR->execute(array(':crid' => $chartreviewid));
+    $sts = 404;
+    if ($prR->rowCount() === 1) {
+        $cr = $prR->fetch(PDO::FETCH_ASSOC);
+        $crnbr = 'CR-' . substr(('000000'.$cr['chartid']),-6);
+        $maincrtext = preg_replace('/\r\n/','<p>',preg_replace('/\n\n/','<p>',$cr['chart']));
+        $pxiid = $cr['pxi'];
+        //****************CREATE BARCODE
+        require ("{$at}/extlibs/bcodeLib/qrlib.php");
+        $tempDir = "{$at}/tmp/";
+        $codeContents = "{$tt}{$orginalURI}";
+        $fileName = 'cr' . generateRandomString() . '.png';
+        $pngAbsoluteFilePath = $tempDir.$fileName;
+        if (!file_exists($pngAbsoluteFilePath)) {
+          QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+        } 
+        $qrcode = base64file("{$pngAbsoluteFilePath}", "topqrcode", "png", true, " style=\"height: .7in;\"   ");
+        //********************END BARCODE CREATION
+       $metSQL = <<<SQLSTMT
+select replace(bs.read_Label,'T_','') as bgnbr, bs.pxiage, bs.pxirace, bs.pxigender, sx.dspvalue as donorsex, pt.proctypedsp, cx.cxindicator, rx.rxindicator 
+from masterrecord.ut_procure_biosample bs 
+left join (select menuvalue, dspvalue from four.sys_master_menus where menu= 'PXSEX') sx on bs.pxigender = sx.menuvalue
+left join (SELECT menuvalue, dspvalue as proctypedsp FROM four.sys_master_menus where menu = 'proctype') pt on bs.proctype = pt.menuvalue
+left join (SELECT menuvalue, dspvalue as cxindicator FROM four.sys_master_menus where menu = 'CX') cx on bs.chemoind = cx.menuvalue  
+left join (SELECT menuvalue, dspvalue as rxindicator FROM four.sys_master_menus where menu = 'RX') rx on bs.chemoind = rx.menuvalue  
+where pxiid = :pxiid
+SQLSTMT;
+        $metR = $conn->prepare($metSQL); 
+        $metR->execute(array(':pxiid' => $pxiid));
+        if ($metR->rowCount() > 0 ) { 
+            while ($r = $metR->fetch(PDO::FETCH_ASSOC)) { 
+                $pxiage = $r['pxiage'];
+                $pxisex = $r['donorsex'];
+                $pxirace = $r['pxirace'];
+                $proctypedsp = $r['proctypedsp'];
+                $cx = $r['cxindicator'];
+                $rx = $r['rxindicator'];
+                $bglisting .= ( trim($bglisting) === "") ? $r['bgnbr'] : " / {$r['bgnbr']}";
+            }
+            
+            //$met = $metR->fetch(PDO::FETCH_ASSOC); 
+            $metTbl = <<<BSTBL
+<table>
+<tr><td colspan=6 style="font-size: 12pt; font-weight: bold; padding: 10pt 0 10pt 0; ">Biosample Donor/Collection</td></tr>
+<tr>
+    <td style="font-size: 9pt; font-weight: bold; border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); padding: 0 2pt 0 2pt;  ">Donor Age</td>
+    <td style="font-size: 9pt; font-weight: bold; border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); padding: 0 2pt 0 2pt;  ">Donor Sex</td>
+    <td style="font-size: 9pt; font-weight: bold; border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); padding: 0 2pt 0 2pt;  ">Donor Race</td>
+    <td style="font-size: 9pt; font-weight: bold; border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); padding: 0 2pt 0 2pt;  ">Procedure</td>
+    <td style="font-size: 9pt; font-weight: bold; border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); padding: 0 2pt 0 2pt;  ">Chemotherapy</td>
+    <td style="font-size: 9pt; font-weight: bold; border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); padding: 0 2pt 0 2pt;  ">Radiation</td>
+    <td style="font-size: 9pt; font-weight: bold; border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); padding: 0 2pt 0 2pt;  ">Biogroup Reference</td></tr>                    
+<tr>
+    <td style="font-size: 9pt; padding: 5pt 2pt 5pt 2pt;border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); ">{$pxiage}</td>
+    <td style="font-size: 9pt; padding: 5pt 2pt 5pt 2pt;border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); ">{$pxisex}</td>
+    <td style="font-size: 9pt; padding: 5pt 2pt 5pt 2pt;border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); ">{$pxirace}</td>
+    <td style="font-size: 9pt; padding: 5pt 2pt 5pt 2pt;border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); ">{$proctypedsp}</td>
+    <td style="font-size: 9pt; padding: 5pt 2pt 5pt 2pt;border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); ">{$cx}</td>
+    <td style="font-size: 9pt; padding: 5pt 2pt 5pt 2pt;border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); ">{$rx}</td>
+    <td style="font-size: 9pt; padding: 5pt 2pt 5pt 2pt;border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); ">{$bglisting}</td>
+        </tr>
+    
+ <tr><td colspan=7 style="font-size: 6pt; font-weight: bold; text-align: right;">({$pxiid})</td></tr>
+<tr><td style="height: 5pt;"></td></tr>
+    
+</table>
+BSTBL;
+        }
+        
+        $printDte = date('m/d/Y H:i');
+        //#mastericon {height: 4vh; }
+        $docText = <<<PRTEXT
+             <html>
+                <head>
+                <style>
+                   @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
+                   html {margin: 0;}
+                   body { margin: 0; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1); }
+                   .line {border-bottom: 1px solid rgba(0,0,0,1); height: 2pt; }
+                </style>
+                </head>
+                <body>
+                <table border=0 width=100%>
+                <tr><td rowspan=2 valign=top style="width: 1in;">{$favi}</td><td style="font-size: 14pt; font-weight: bold; padding: 0 0 0 0; ">CHART REVIEW</td><td rowspan=2 align=right valign=top>{$qrcode}</td></tr>
+                <tr><td valign=top style=" font-size: 8pt;"><b>CHTN Eastern Division</b><br>Unversity of Pennsylvania Perelman School of Medicine<br>3400 Spruce Street, Dulles 565, Philadelphia, Pennsylvania 19104 <br>(215) 662 4570 | https://www.chtneast.org | email: chtnmail@uphs.upenn.edu</td></tr>
+                <tr><td colspan=3 class=line></td></tr>
+                <tr><td colspan=3 style="font-size: 10pt; text-align: justify; line-height: 1.4em;">&nbsp;<p>{$maincrtext}</td></tr>
+                
+                <tr><td>&nbsp;</td></tr>
+                <tr><td colspan=3 style="font-size: 14pt; font-weight: bold; ">CHTN Eastern Donor Metrics</td></tr> 
+                <tr><td colspan=3>{$metTbl}</td></tr>                    
+                <tr><td colspan=3 class=line></td></tr> 
+                <tr><td colspan=3 align=right style="font-size: 8pt; font-weight: bold; ">Print Date: {$printDte}</td></tr>
+                </table>
+                </body> 
+                </html>
+PRTEXT;
+
+$filehandle = generateRandomString();                
+$prDocFile = genAppFiles . "/tmp/prz{$filehandle}.html";
+$prDhandle = fopen($prDocFile, 'w');
+fwrite($prDhandle, $docText);
+fclose;
+$prPDF = genAppFiles . "/publicobj/documents/pathrpts/pxchart{$filehandle}.pdf";
+$linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED  {$crnbr}\"     {$prDocFile} {$prPDF}";
+$output = shell_exec($linuxCmd);
+                
+    } else { 
+        //Chart Review NOT FOUND
+    }
+    return array('status' => $sts, 'text' =>  '', 'pathtodoc' => genAppFiles . "/publicobj/documents/pathrpts/pxchart{$filehandle}.pdf", 'format' => 'pdf');
 }
 
 function getPathReportText($pathrptid, $orginalURI) { 

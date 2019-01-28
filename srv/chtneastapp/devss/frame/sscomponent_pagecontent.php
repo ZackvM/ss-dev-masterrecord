@@ -1053,8 +1053,8 @@ function documentlibrary($rqststr, $whichusr) {
               break;
               case 'pxchart':
                 $dspMark = substr("000000{$rs['dspmark']}",-6); 
-                $selector = cryptservice("CR-" . $rs['dspmark'], "e");  
-                $innerListing .= "<tr><td valign=top><table width=100%><tr><td><b>Chart #{$dspMark}</b></td><td class=prntIcon onclick=\"getDocumentText('{$selector}');\"><i class=\"material-icons\">pageview</i></td></tr><tr><td colspan=3>{$rs['abstract']}...</td></tr></table></td></tr>";
+                $cselector = cryptservice("CR-" . $rs['dspmark'], "e");  
+                $innerListing .= "<tr><td valign=top><table width=100%><tr><td><b>Chart #{$dspMark}</b></td><td class=prntIcon onclick=\"getDocumentText('{$selector}');\"><i class=\"material-icons\">pageview</i></td><td onclick=\"openOutSidePage('{$tt}/print-obj/{$printObj}/{$cselector}');\" class=prntIcon><i class=\"material-icons\">print</i></td></tr><tr><td colspan=3>{$rs['abstract']}...</td></tr></table></td></tr>";
               break;
             }
           }         
