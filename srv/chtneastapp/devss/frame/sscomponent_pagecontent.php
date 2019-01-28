@@ -1054,7 +1054,7 @@ function documentlibrary($rqststr, $whichusr) {
               case 'pxchart':
                 $dspMark = substr("000000{$rs['dspmark']}",-6); 
                 $cselector = cryptservice("CR-" . $rs['dspmark'], "e");  
-                $innerListing .= "<tr><td valign=top><table width=100%><tr><td><b>Chart #{$dspMark}</b></td><td class=prntIcon onclick=\"getDocumentText('{$selector}');\"><i class=\"material-icons\">pageview</i></td><td onclick=\"openOutSidePage('{$tt}/print-obj/{$printObj}/{$cselector}');\" class=prntIcon><i class=\"material-icons\">print</i></td></tr><tr><td colspan=3>{$rs['abstract']}...</td></tr></table></td></tr>";
+                $innerListing .= "<tr><td valign=top><table width=100%><tr><td><b>Chart #{$dspMark}</b></td><td class=prntIcon onclick=\"getDocumentText('{$cselector}');\"><i class=\"material-icons\">pageview</i></td><td onclick=\"openOutSidePage('{$tt}/print-obj/{$printObj}/{$cselector}');\" class=prntIcon><i class=\"material-icons\">print</i></td></tr><tr><td colspan=3>{$rs['abstract']}...</td></tr></table></td></tr>";
               break;
             }
           }         
@@ -1842,6 +1842,7 @@ case 'procurebiosample':
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Save BG</td></tr></table></td>        
   <td class=topBtnHolderCell>
          <div class=ttholder>                                                                                    
            <table class=topBtnDisplayer id=btnPBPHI border=0><tr><td><!--ICON //--></td><td>Donor</td></tr></table>
@@ -2680,6 +2681,23 @@ function bldProcurementGrid($usr) {
      $metsData = dropmenuMetsMalignant();
      $metssite = $metsData['menuObj'];
      $metsdxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSDXValue value=\"\"><input type=text id=fldPRCMETSDX READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCMETSDX><center><div style=\"font-size: 1.4vh\">(Choose a Metastatic site)</div></div></div>";
+     
+$inscnt = 0;
+  $insm = "<table border=0 class=menuDropTbl>";
+  $igivendspvalue = "";
+  $igivendspcode = "";
+  foreach ($usr->allowedinstitutions as $inskey => $insval) {
+    $instList .= ( $inscnt > 0 ) ? " <br> {$insval[1]} ({$insval[0]}) " : " {$insval[1]} ({$insval[0]}) ";
+    $inscnt++;
+    if ( trim($usr->presentinstitution) === $insval[0]) {
+      $primeinstdsp = $insval[1];
+      $igivendspvalue = "{$insval[1]} ({$insval[0]})";
+      $igivendspcode = $insval[0];
+    }
+    $insm .= "<tr><td onclick=\"fillField('fldPRCPresentInst','{$insval[0]}','{$insval[1]}');\" class=ddMenuItem>{$insval[1]} ({$insval[0]})</td></tr>";
+  }
+  $insm .= "</table>";
+  $insmnu = "<div class=menuHolderDiv><input type=hidden id=fldPRCPresentInstValue value=\"{$igivendspcode}\"><input type=text id=fldPRCPresentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\"><div class=valueDropDown id=ddfldPRCPresentInst>{$insm}</div></div>";     
 
    //DROP DOWN MENU BUILDER END ******************************************************************** //
 
@@ -2687,20 +2705,36 @@ function bldProcurementGrid($usr) {
   $tech = strtoupper($usr->userid);
   $tday = date('m/d/Y');
   //<i class="material-icons">lock</i>
+  /*
+   * <tr><td id=BSDspMainHeader>Biosample Collection</td></tr>
+<tr><td class=BSDspSmallSpacer>&nbsp;</td></tr>
+   * <tr><td align=right style="padding: .2vh .6vw 0 0;">
+
+
+  <table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table>
+
+</td></tr>
+   * 
+   * 
+   */
 $rtnTbl = <<<RTNTBL
 <table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
-<tr><td id=BSDspMainHeader>Biosample Collection</td></tr>
-<tr><td class=BSDspSmallSpacer>&nbsp;</td></tr>
-<tr><td class=BSDspSectionHeader>Sample Metrics</td></tr>
+<tr><td>
+    <table border=0>
+     <tr><td class=prcFldLbl>Biogroup #</td></tr>
+     <tr><td><input type=text id=fldPRCBGNbr value="" READONLY></td></tr>    
+     </table>
+</td></tr>        
+<tr><td class=BSDspSectionHeader>Biogroup Sample Metrics</td></tr>
 <tr><td class=procGridHoldingLine>
    <table border=0>
-     <tr><td class=prcFldLbl>Biogroup #</td><td class=prcFldLbl>Procurement Date <span class=reqInd>*</span></td><td class=prcFldLbl>Procedure Type <span class=reqInd>*</span></td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician::Institution <span class=reqInd>*</span></td><td class=prcFldLbl>Initial Metric <span class=reqInd>*</span></td><td>&nbsp;</td><td rowspan=2 id=BSLock><div class=ttholder><i class="material-icons bslockdsp">lock_open</i><div class=tt>Biosample is currently editable</div></div></td></tr>
-     <tr>
-       <td><input type=text id=fldPRCBGNbr value="" READONLY></td>
+     <tr><td rowspan=2 id=BSLock><div class=ttholder><i class="material-icons bslockdsp">lock_open</i><div class=tt>Biosample is currently editable</div></div></td><td class=prcFldLbl>Procuring Institution <span class=reqInd>*</span></td><td class=prcFldLbl>Procurement Date <span class=reqInd>*</span></td><td class=prcFldLbl>Procedure Type <span class=reqInd>*</span></td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician <span class=reqInd>*</span></td><td class=prcFldLbl>Initial Metric <span class=reqInd>*</span></td><td>&nbsp;</td></tr>
+     <tr>      
+       <td>{$insmnu}</td> 
        <td><input type=text readonly id=fldPRCProcDate value="{$tday}"></td>
        <td>{$procedureType}</td>
        <td>{$collectionType}</td>
-       <td><input type=text id=fldPRCTechInstitute value="{$tech} :: {$inst}" READONLY></td>
+       <td><input type=text id=fldPRCTechnician value="{$tech}" READONLY></td>
        <td><table><tr><td><input type=text id=fldPRCInitialMetric value=0></td><td>{$muommenu}</td></tr></table></td>
        <td></td>
      </tr>
@@ -2711,20 +2745,24 @@ $rtnTbl = <<<RTNTBL
 <tr><td class=BSDspSectionHeader>Donor Metrics</td></tr>
 <tr><td class=procGridHoldingLine>
    <table>
-    <tr><td class=prcFldLbl>Initials <span class=reqInd>*</span></td><td class=prcFldLbl>Age <span class=reqInd>*</span></td><td class=prcFldLbl>Race <span class=reqInd>*</span></td><td class=prcFldLbl>Sex <span class=reqInd>*</span></td><td class=prcFldLbl>Callback</td><td class=prcFldLbl>I-Consent <span class=reqInd>*</span></td><td class=prcFldLbl>Chemo <span class=reqInd>*</span></td><td class=prcFldLbl>Radiation <span class=reqInd>*</span></td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
+    <tr><td class=prcFldLbl>Initials <span class=reqInd>*</span></td><td class=prcFldLbl>Age <span class=reqInd>*</span></td><td class=prcFldLbl>Race <span class=reqInd>*</span></td><td class=prcFldLbl>Sex <span class=reqInd>*</span></td><td class=prcFldLbl>Callback</td></tr>
+        
     <tr>
       <td><input type=text id=fldPRCPXIId READONLY><input type=text id=fldPRCPXIInitials READONLY></td>
       <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td><td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
       <td><input type=text id=fldPRCPXIRace READONLY></td>
       <td><input type=text id=fldPRCPXISex READONLY></td>
       <td><input type=text id=fldPRCPXILastFour READONLY></td>
-      <td><input type=text id=fldPRCPXIInfCon READONLY></td>
+      
+    </tr></table>
+        <table>
+      <tr><td class=prcFldLbl>I-Consent <span class=reqInd>*</span></td><td class=prcFldLbl>Chemo <span class=reqInd>*</span></td><td class=prcFldLbl>Radiation <span class=reqInd>*</span></td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
+      <tr><td><input type=text id=fldPRCPXIInfCon READONLY></td>
       <td>{$cxmenu}</td>
       <td>{$rxmenu}</td>
       <td><input type=text id=fldSubjectNbr value=""></td>
       <td><input type=text id=fldProtocolNbr value=""></td>
-      <td>{$sogimenu}</td>
-    </tr>
+      <td>{$sogimenu}</td></tr>
    </table>
 </td></tr>
 
@@ -2765,15 +2803,6 @@ $rtnTbl = <<<RTNTBL
 </table>
 
 </td></tr>
-
-
-<tr><td align=right style="padding: .2vh .6vw 0 0;">
-
-
-  <table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table>
-
-</td></tr>
-
 
 </table>
 

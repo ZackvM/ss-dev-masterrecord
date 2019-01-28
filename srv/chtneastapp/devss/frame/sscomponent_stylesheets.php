@@ -250,7 +250,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 .procGridHoldingTitle {font-size: 1.7vh; color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border-bottom: 2px solid rgba({$this->color_ddrwgrey},1); padding: .5vh 0 0 0; } 
 .procGridHoldingDecorationLineBACKUP {border-left: 2px solid rgba({$this->color_ddrwgrey},1);border-top: 2px solid rgba({$this->color_ddrwgrey},1);}
 
-.prcFldLbl { font-size: 1.3vh; color: rgba({$this->color_dblue},1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); padding: 0 0 0 0; font-weight: bold; }
+.prcFldLbl { font-size: 1.3vh; color: rgba({$this->color_dblue},1);  padding: 0 0 0 0; font-weight: bold; }
 input {font-size: 1.3vh; padding: 1vh .5vw; }
 textarea { font-size: 1.3vh; }
 
@@ -264,12 +264,14 @@ textarea { font-size: 1.3vh; }
 .bslockdsp { font-size: 4vh; color: rgba({$this->color_darkgreen},1); }
 
 #fldPRCBGNbr { width: 7vw; }
-#fldPRCProcDate { width: 10vw; }
-#fldPRCProcedureType { width: 10vw; }
-#ddPRCProcedureType { min-width: 10vw; }
-#fldPRCCollectionType { width: 10vw; }
-#ddPRCCollectionType { min-width: 10vw; }
-#fldPRCTechInstitute { width: 15.5vw; }
+#fldPRCProcDate { width: 8vw; }
+#fldPRCPresentInst {width: 17vw; }
+#ddfldPRCPresentInst {min-width: 17vw; }
+#fldPRCProcedureType { width: 9vw; }
+#ddPRCProcedureType { min-width: 9vw; }
+#fldPRCCollectionType { width: 9vw; }
+#ddPRCCollectionType { min-width: 9vw; }
+#fldPRCTechnician{ width: 10vw; }
 #fldPRCInitialMetric { width: 3vw; text-align: right; }
 #fldPRCMetricUOM {width: 6vw; }
 #ddPRCMetricUOM {min-width: 5vw; }
@@ -284,8 +286,8 @@ textarea { font-size: 1.3vh; }
 #ddPRCSSite { min-width: 11.2vw; }
 #fldPRCDXMod {width: 19.3vw; }
 #ddPRCDXMod { min-width: 19.3vw; }
-#fldPRCBSCmts {width: 33.6vw; height: 10vh; }
-#fldPRCHPRQ {width: 33.6vw; height: 10vh; }
+#fldPRCBSCmts {width: 33.6vw; height: 6vh; }
+#fldPRCHPRQ {width: 33.6vw; height: 6vh; }
 #fldPRCUnknownMet {width: 6vw; }
 #ddPRCUnknownMet {min-width: 6vw; }
 #fldPRCUnInvolved { width: 6vw; }
@@ -297,13 +299,13 @@ textarea { font-size: 1.3vh; }
 #fldPRCSystemicDX {width: 32vw; }
 #fldPRCPXISex {width: 3vw; text-align: center; }
 #fldPRCPXIId { display: none; }
-#fldPRCPXIInitials { width: 3vw; }
+#fldPRCPXIInitials { width: 4vw; }
 #fldADDPXIInitials { width: 5vw; }
-#fldPRCPXIAge {width: 3vw; text-align: right; }
-#fldADDPXIAge {width: 3vw; text-align: right; }
-#fldPRCPXIAgeMetric {width: 4vw;}
-#fldADDAgeUOM {width: 5vw;}
-#ddADDAgeUOM {min-width: 5vw; }
+#fldPRCPXIAge {width: 4vw; text-align: right; }
+#fldADDPXIAge {width: 4vw; text-align: right; }
+#fldPRCPXIAgeMetric {width: 5vw;}
+#fldADDAgeUOM {width: 6vw;}
+#ddADDAgeUOM {min-width: 6vw; }
 #fldPRCPXIRace {width: 11.8vw; }
 #fldPRCPXIInfCon {width: 4vw; }
 #fldPRCPXILastFour {width: 4vw; }
@@ -338,7 +340,7 @@ textarea { font-size: 1.3vh; }
 .reqInd {font-size: 1.3vh; color: rgba({$this->color_bred},1); font-weight: bold; }
 
 #BSDspMainHeader { font-size: 2vh; text-align: center; font-variant: small-caps; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_cornflowerblue},1); padding: 1vh 1vw; border: 2px solid rgba({$this->color_dblue},1); }
-.BSDspSectionHeader { padding-top: 1vh; padding-bottom: 1vh; padding-left: .5vw; font-size: 1.4vh; background: rgba({$this->color_lgrey},1); color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border: 1px solid rgba({$this->color_grey},1);  }
+.BSDspSectionHeader { padding-top: .6vh; padding-bottom: .6vh; padding-left: 0vw; font-size: 1.4vh; background: rgba({$this->color_white},1); color: rgba({$this->color_darkgrey},1); font-weight: bold; border-top: 1px solid rgba({$this->color_grey},1);  }
 .BSDspSpacer { height: 1.3vh;  }
 .procGridHoldingLine {padding-top: .5vh; }
 .BSDspSmallSpacer { height: .2vh; font-size: .3vh; }
