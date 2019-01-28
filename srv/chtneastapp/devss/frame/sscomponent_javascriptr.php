@@ -136,6 +136,24 @@ document.addEventListener('DOMContentLoaded', function() {
       };             
       }, false);
   }
+
+  if (byId('btnChangeMyPassword')) { 
+    byId('btnChangeMyPassword').addEventListener('click', function() { 
+      var crd = new Object(); 
+      crd['currentpassword'] = byId('profTrayCurrentPW').value.trim(); 
+      crd['newpassword'] = byId('profTrayNewPW').value.trim(); 
+      crd['confirmpassword'] = byId('profTrayConfirmPW').value.trim(); 
+      crd['changecode'] = byId('profTrayResetCode').value.trim(); 
+      var cpass = JSON.stringify(crd);
+      var ciphertext = window.btoa( encryptedString(key, cpass, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) ); 
+      var dta = new Object(); 
+      dta['ency'] = ciphertext;
+      var passdata = JSON.stringify(dta);
+      //console.log(passdata);
+      var mlURL = "/data-doers/update-my-password";
+      universalAJAX("POST",mlURL,passdata,answerUpdateMyPassword,1);   
+    }, false);
+  }
   
   if (byId('btnSaveAbtMe')) { 
     byId('btnSaveAbtMe').addEventListener('click', function() { 
@@ -153,6 +171,22 @@ document.addEventListener('DOMContentLoaded', function() {
       var mlURL = "/data-doers/update-about-me";
       universalAJAX("POST",mlURL,passdata,answerUpdateAboutMe,1);   
    }, false); 
+  }
+
+  if (byId('btnSetPresentInst')) { 
+    byId('btnSetPresentInst').addEventListener('click', function() { 
+      var dta = new Object();
+      dta['requestedInstitution'] = byId('profTrayPresentInstValue').value.trim();
+      var passdata = JSON.stringify(dta); 
+      var mlURL = "/data-doers/update-my-present-institution";
+      universalAJAX("POST",mlURL,passdata,answerUpdateMyPresentInstitution,1);   
+    }, false);
+  }
+
+  if (byId('btnUpdateDL')) { 
+    byId('btnSetPresentInst').addEventListener('click', function() { 
+      alert('set Drivers License Expire');
+    }, false);
   }
 
   if (byId('btnClearPicFile')) {
@@ -173,6 +207,42 @@ document.addEventListener('DOMContentLoaded', function() {
   
 }, false);
 
+function answerUpdateMyPresentInstitution(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+      var msgs = JSON.parse(rtnData['responseText']);
+      var dspMsg = ""; 
+      msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+      });
+      alert("PRESENT INSTITUTION UPDATE ERROR:\\n"+dspMsg);
+   } else {
+      alert("Your present institution location has been changed."); 
+      openAppCard('appcard_useraccount');
+      byId('standardModalBacker').style.display = 'block';
+      location.reload(true);
+   }        
+}
+
+function answerUpdateMyPassword(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+      var msgs = JSON.parse(rtnData['responseText']);
+      var dspMsg = ""; 
+      msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+      });
+      alert("PASSWORD UPDATE ERROR:\\n"+dspMsg);
+   } else {
+      alert("Your password has been reset.  You will be logged off - and you can log in with the new password"); 
+      byId('profTrayCurrentPW').value = "";
+      byId('profTrayNewPW').value = "";
+      byId('profTrayConfirmPW').value = "";
+      byId('profTrayResetCode').value = "";
+      openAppCard('appcard_useraccount');
+      byId('standardModalBacker').style.display = 'block';
+      location.reload(true);
+   }        
+} 
+
 function answerUpdateAboutMe(rtnData) { 
    if (parseInt(rtnData['responseCode']) !== 200) { 
       var msgs = JSON.parse(rtnData['responseText']);
@@ -189,7 +259,7 @@ function answerUpdateAboutMe(rtnData) {
 }
    
 function voidfunction(rtnData) {
-  console.log(rtnData); 
+//  console.log(rtnData); 
   return null;
 }
 
