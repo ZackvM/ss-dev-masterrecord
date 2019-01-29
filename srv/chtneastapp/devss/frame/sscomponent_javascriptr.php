@@ -20,6 +20,8 @@ function globalscripts( $keypaircode, $usrid ) {
 
 $rtnThis = <<<JAVASCR
 
+
+        
 var byId = function( id ) { return document.getElementById( id ); };
 var treeTop = "{$tt}";
 var dataPath = "{$dtaTree}";
@@ -854,7 +856,7 @@ function answerInitialBGroupSave(rtnData) {
    }        
 }
 
-function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxisex, pxiinformed, pxilastfour ) { 
+function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxisex, pxiinformed, pxilastfour, sbjtNbr, protocolNbr, cx, rx, sogi ) { 
    //TODO:  CHECK FIELD EXISTANCE
 
    byId('fldPRCPXIId').value = "";
@@ -863,16 +865,28 @@ function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxi
    byId('fldPRCPXIRace').value = "";            
    byId('fldPRCPXISex').value = "";                        
    byId('fldPRCPXILastFour').value = "";
-   byId('fldPRCPXIInfCon').value = "";        
+   byId('fldPRCPXIInfCon').value = "";
+   byId('fldPRCPXIDspCX').value = "";       
+   byId('fldPRCPXIDspRX').value = "";
+   byId('fldPRCPXISubjectNbr').value = "";       
+   byId('fldPRCPXIProtocolNbr').value = "";
+   byId('fldPRCPXISOGI').value = "";
+       
             
    byId('fldPRCPXIId').value = pxiid;
-   byId('fldPRCPXIInitials').value = pxiinitials;         
-   byId('fldPRCPXIAge').value = pxiage;
-   byId('fldPRCPXIAgeMetric').value = pxiageuom;
-   byId('fldPRCPXIRace').value = pxirace;                        
-   byId('fldPRCPXISex').value = pxisex;  
+   byId('fldPRCPXIInitials').value = pxiinitials.toUpperCase().trim();         
+   byId('fldPRCPXIAge').value = pxiage.toUpperCase().trim();
+   byId('fldPRCPXIAgeMetric').value = pxiageuom.toLowerCase().trim();
+   byId('fldPRCPXIRace').value = pxirace.toUpperCase().trim();                        
+   byId('fldPRCPXISex').value = pxisex.toUpperCase().trim();  
    byId('fldPRCPXILastFour').value = pxilastfour;  
    byId('fldPRCPXIInfCon').value = ( pxiinformed == 1) ? 'NO' : 'PENDING';        
+   byId('fldPRCPXIDspCX').value = cx.toUpperCase().trim();       
+   byId('fldPRCPXIDspRX').value = rx.toUpperCase().trim();
+   byId('fldPRCPXISubjectNbr').value = sbjtNbr;       
+   byId('fldPRCPXIProtocolNbr').value = protocolNbr;
+   byId('fldPRCPXISOGI').value = sogi.toUpperCase().trim();
+       
 }
 
 function saveDelink() { 
@@ -970,6 +984,11 @@ function saveDonorSpecifics() {
   dta['sexvalue'] = byId('fldDNRSexValue').value.trim();
   dta['lastfour'] = byId('fldDNRLastFour').value.trim();
   dta['notrcvdnote'] = byId('fldDNRNotReceivedNote').value.trim();
+  dta['subjectnbr'] = byId('fldADDSubjectNbr').value.trim(); 
+  dta['protocolnbr'] = byId('fldADDProtocolNbr').value.trim();
+  dta['sogi'] = byId('fldPRCUpennSOGIValue').value.trim();
+  dta['cx'] = byId('fldPRCPXICXValue').value.trim(); 
+  dta['rx'] = byId('fldPRCPXIRXValue').value.trim();         
   var passdta = JSON.stringify(dta);
   var mlURL = "/data-doers/save-encounter-donor";
   //TODO:  Add a wait swirly   
@@ -1427,9 +1446,14 @@ function answerUpdateORSched(rtnData) {
        if ( element['room'].trim() !== "" ) { 
          ordsp = " in OR "+element['room'];
        }
-       var proc = "<table class=procedureSpellOutTbl border=0><tr><td valign=top class=smallORTblLabel>A-R-S::Callback</td><td valign=top>"+element['ars']+"::"+lastfour+"</td></tr><tr></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top>"+element['proceduretext']+"</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>"+element['surgeon']+"</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>"+element['starttime']+" "+ordsp+"</td></tr><tr><td colspan=2> <div class=btnEditPHIRecord onclick=\"editPHIRecord(event,'"+element['pxicode']+"');\">Edit Record</div></td></tr></table>";
+       
+       var studyNbrLineDsp = ( element['studysubjectnbr'].trim() !== "" || element['studyprotocolnbr'].trim() !== "") ? "<tr><td valign=top class=smallORTblLabel>Subject/Protocol </td><td valign=top>"+element['studysubjectnbr']+" :: "+element['studyprotocolnbr']+"</td></tr>" : "";
+       var cxrxDsp = ( element['cx'].trim() !== "" || element['rx'].trim() !== "") ? "<tr><td valign=top class=smallORTblLabel>CX/RX </td><td valign=top>"+element['cx'].toUpperCase().substring(0,1)+"::"+element['rx'].toUpperCase().substring(0,1)+"</td></tr>" : "";
+       
+       
+       var proc = "<table class=procedureSpellOutTbl border=0><tr><td valign=top class=smallORTblLabel>A-R-S::Callback</td><td valign=top>"+element['ars']+"::"+lastfour+"</td></tr>"+studyNbrLineDsp+cxrxDsp+"<tr></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top>"+element['proceduretext']+"</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>"+element['surgeon']+"</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>"+element['starttime']+" "+ordsp+"</td></tr><tr><td colspan=2> <div class=btnEditPHIRecord onclick=\"editPHIRecord(event,'"+element['pxicode']+"');\">Edit Record</div></td></tr></table>";
        var prace = (element['pxirace'].trim() == "-") ? "" : element['pxirace'].trim();
-       innerRows += "<tr oncontextmenu=\"return false;\" onclick=\"fillPXIInformation('"+element['pxicode']+"','"+element['pxiinitials']+"','"+element['pxiage']+"','"+ageuom+"','"+prace+"','"+element['pxisex']+"','"+informed+"','"+lastfour+"');\" class=displayRows><td valign=top class=dspORInitials>"+element['pxiinitials']+"</td><td valign=top class=\"dspORTarget "+targetBck+"\">"+target+"</td><td valign=top class=dspORInformed>"+icicon+"</td><td valign=top class=dspORAdded>"+addeddonor+"</td><td valign=top class=procedureTxt>"+proc+"</td></tr>";
+       innerRows += "<tr oncontextmenu=\"return false;\" onclick=\"fillPXIInformation('"+element['pxicode']+"','"+element['pxiinitials']+"','"+element['pxiage']+"','"+ageuom+"','"+prace+"','"+element['pxisex']+"','"+informed+"','"+lastfour+"','"+element['studysubjectnbr']+"','"+element['studyprotocolnbr']+"','"+element['cx']+"','"+element['rx']+"','"+element['sogi']+"');\" class=displayRows><td valign=top class=dspORInitials>"+element['pxiinitials']+"</td><td valign=top class=\"dspORTarget "+targetBck+"\">"+target+"</td><td valign=top class=dspORInformed>"+icicon+"</td><td valign=top class=dspORAdded>"+addeddonor+"</td><td valign=top class=procedureTxt>"+proc+"</td></tr>";
      });
 
      if (byId('PXIDspBody')) { 

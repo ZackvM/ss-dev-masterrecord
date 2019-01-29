@@ -791,19 +791,39 @@ MSGTXT;
      
      $mnuDspRS->execute(array( ':whichmenu' => 'PXSEX', ':whichvalue' => $pdta['sex'] ));
      ( $mnuDspRS->rowCount() !== 1) ?  (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED DONOR SEX IS INVALID" )) : "";
+     
+     //TODO - CHECK CX/RX/SOGI VALUES
+     
           
      (  trim($pdta['targetindvalue']) === "N" &&  trim($pdta['notrcvdnote']) === ""  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFYING AN ENCOUNTER WAS NOT RECEIVED, YOU MUST SUPPLY A REASON" )) : "";
      //The 'Last Four' field is Optional
      
      if ( $errorInd === 0 ) { 
          //SAVE ENCOUNTER TO HISTORY
-         $copySQL = "insert into four.tmp_ORListing_history (location,ListDate,PXICode,startTime,room,surgeons,pxiIni,lastfourmrn,pxiAge,ageuomcode,pxiRace,pxiSex,procText,targetInd,infcInd, lastupdatedby, lastupdateon, ORListID,ORKey,linkedDonor,linkBy,delinkedDonor,delinkBy,BSNbr_old,oripxiRace_old,oriTargetInd_old,caseNotes_old)  SELECT * FROM four.tmp_ORListing where location = :loc and PXICode = :eid";
+         $copySQL = "insert into four.tmp_ORListing_history SELECT * FROM four.tmp_ORListing where location = :loc and PXICode = :eid";
          $copyRS = $conn->prepare($copySQL);
          $copyRS->execute(array(':loc' => $presUserInst, ':eid' => $eid));
 //         $dta[] = $copyRS->debugDumpParams();
          if ( $copyRS->rowCount() > 0) { 
             //TODO:  FIX AGE UOM Value
-            $updSQL = "update four.tmp_ORListing set targetInd = :target, infcInd = :infc, pxiAge = :pxage, ageuomcode = :pxageuom, pxiRace = :pxrace, pxiSex = :pxsex, lastfourmrn = :lastfour, lastupdatedby = :lastby, lastupdateon = now() where location = :presInst and PXICode = :pxicode"; 
+            $updSQL = <<<UPDSQL
+                    update four.tmp_ORListing 
+                        set targetInd = :target
+                            , infcInd = :infc
+                            , pxiAge = :pxage
+                            , ageuomcode = :pxageuom
+                            , pxiRace = :pxrace
+                            , pxiSex = :pxsex
+                            , lastfourmrn = :lastfour
+                            , studysubjectnbr = :ssbjctnbr
+                            , studyprotocolnbr = :sprotnbr
+                            , chemotherapyind = :cxind
+                            , radiationind = :rxind
+                            , upennsogi = :sogi
+                            , lastupdatedby = :lastby
+                            , lastupdateon = now() 
+                            where location = :presInst and PXICode = :pxicode
+UPDSQL;
             $updR = $conn->prepare($updSQL);
             //TODO:  Make this dynamic
             switch ($pdta['targetindvalue']) { 
@@ -818,7 +838,24 @@ MSGTXT;
             }
 
 //{"encyeid":"d2hsSi9MU2MxaHdOS2Y1dkZja0hyczlhdWptTmdubEVheFRPWm52YUltSTNVWWJhTjNkRzNSVFZ1Y01abEd5WA==","sessid":"mm6ka3ndrakkmeth8vblt60sh1","institution":"HUP","targetind":"TARGET","targetindvalue":"T","informedind":"PENDING","informedindvalue":"1","age":"61","ageuom":"Years","ageuomvalue":"Years","race":"American Indian","racevalue":"American Indian","sex":"Male","sexvalue":"Male","lastfour":"9228","notrcvdnote":""}
-            $updR->execute(array( ':target' => $tg ,':infc' => $pdta['informedindvalue'], ':pxage' => $pdta['age'],':pxageuom' => $pdta['ageuomvalue'],':pxrace' => $pdta['racevalue'],':pxsex' => substr($pdta['sex'],0,1), ':lastfour' => $pdta['lastfour'], ':lastby' => $oAccount, ':presInst' => $presUserInst, ':pxicode' => $eid ));
+//TODO:  Make the CX/RX/SOGI VALUES BELOW DYNAMIC
+            $updR->execute(array( 
+                            ':target' => $tg 
+                           ,':infc' => $pdta['informedindvalue']
+                           ,':pxage' => $pdta['age']
+                           ,':pxageuom' => $pdta['ageuomvalue']
+                           ,':pxrace' => $pdta['racevalue']
+                           ,':pxsex' => substr($pdta['sex'],0,1)
+                           ,':lastfour' => $pdta['lastfour']
+                           ,':ssbjctnbr' => trim($pdta['subjectnbr'])
+                           ,':sprotnbr' => trim($pdta['protocolnbr'])
+                           ,':cxind' => ( trim($pdta['cx']) === "") ? "Unknown" : trim($pdta['cx'])
+                           ,':rxind' => ( trim($pdta['rx']) === "") ? "Unknown" : trim($pdta['rx'])
+                           ,':sogi' => ( trim($pdta['sogi']) === "") ? "NO DATA" : trim($pdta['sogi']) 
+                           ,':lastby' => $oAccount
+                           ,':presInst' => $presUserInst
+                           ,':pxicode' => $eid ));
+            
             if ($tg === 'N') { 
                 $noteInsSQL = "insert into  four.tmp_ORListing_casenotes (donorphiid, notetype, notetext, dspind, bywho, onwhen)  values (:donorphiid, :notetype, :notetext, 1, :bywho, now() ) "; 
                 $noteInsR = $conn->prepare($noteInsSQL); 
@@ -1120,6 +1157,11 @@ MSGTXT;
           , ucase(ifnull(trg.dspvalue,'')) as targetdsp
           , if(ifnull(infcind,1)=0,1, ifnull(infcind,1))as infcind
           , ic.menuvalue as icdsp
+          , ifnull(orl.studysubjectnbr,'') as studysubjectnbr
+          , ifnull(orl.studyprotocolnbr,'') as studyprotocolnbr   
+          , ifnull(orl.chemotherapyind,'') as cx
+          , ifnull(orl.radiationind,'') as rx 
+          , ifnull(orl.upennsogi,'') as sogi   
           , ifnull(linkeddonor,'') as linkeddonorind
           , ifnull(linkby,'') as linkby
           , ifnull(delinkeddonor,'') as delinkeddonorind
@@ -1154,6 +1196,12 @@ SQLSTMT;
        $dta['targetdsp'] = $r['targetdsp'];
        $dta['informedind'] = $r['infcind']; 
        $dta['informeddsp'] = $r['icdsp']; 
+       $dta['studysubjectnbr'] = $r['studysubjectnbr'];
+       $dta['studyprotocolnbr'] = $r['studyprotocolnbr'];
+       $dta['studyprotocolnbr'] = $r['studyprotocolnbr'];
+       $dta['cx'] = $r['cx'];
+       $dta['rx'] = $r['rx'];
+       $dta['sogi'] = $r['sogi'];
        $dta['linkeddonor'] = $r['linkeddonorind']; 
        $dta['delinkeddonor'] = $r['delinkeddonorind'];
        $dta['delinkeddonorby'] = $r['delinkedby'];

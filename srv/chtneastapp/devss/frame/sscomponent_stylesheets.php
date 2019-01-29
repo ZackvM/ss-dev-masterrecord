@@ -188,6 +188,11 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 .valueDropDown {background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .1vh; min-height: 15vh; max-height: 33vh; overflow: auto; display: none; z-index: 25; }
 .menuDropTbl { font-size: 1.8vh; padding: .6vh .1vw .6vh .1vw; white-space: nowrap; background: rgba({$this->color_white},1); width: 100%; }
 
+.inputiconcontainer { position: relative; }
+.inputmenuiconholder { position: absolute; top: 0; left: 0; width: 100%; height: 100%; text-align: right; padding: 9px 6px; box-sizing: border-box; }
+.menuDropIndicator { font-size: 2vh; color: rgba({$this->color_grey},1); }
+.menuHolderDiv:hover .menuDropIndicator { color: rgba({$this->color_cornflowerblue},1); }
+
 .valueDisplayHolder { position: relative; } 
 .valueDisplayDiv { background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .1vh; min-height: 15vh; max-height: 33vh; overflow: auto; display: none; z-index: 25; }
 
@@ -310,11 +315,16 @@ textarea { font-size: 1.3vh; }
 #ddADDAgeUOM {min-width: 6vw; }
 #fldPRCPXIRace {width: 10vw; border: none; padding: 0; }
 #fldPRCPXIInfCon {width: 4vw; border: none; padding: 0; }
-#fldPRCPXILastFour {width: 4vw; border: none; padding: 0; }
+#fldPRCPXILastFour {width: 3vw; border: none; padding: 0; }
+#fldPRCPXIDspCX {width: 4vw;border: none; padding: 0; }
 #fldPRCPXICX {width: 5vw; }
 #ddPRCPXICX {min-width: 6vw;}
-#fldPRCPXIRX {width: 5vw; }
+#fldPRCPXIDspRX {width: 4vw;border: none; padding: 0;  }
+#fldPRCPXIRX {width: 5vw;  }
 #ddPRCPXIRX {min-width: 6vw;}
+#fldPRCPXISubjectNbr { width: 9vw; border: none; padding: 0; }
+#fldPRCPXIProtocolNbr { width: 9vw; border: none; padding: 0; }
+#fldPRCPXISOGI {width: 5vw; border: none; padding: 0; }
 #fldPRCUpennSOGI { width: 10vw; }
 #ddPRCUpennSOGI { width: 10vw; }
 #metsFromDsp { display: none; }

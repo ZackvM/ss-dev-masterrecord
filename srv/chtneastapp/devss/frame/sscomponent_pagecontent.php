@@ -2329,6 +2329,7 @@ function bldQuickEditDonor($passeddata) {
   $pdta['donorid'] = cryptservice($passeddata['phicode'],'e');
   $pdta['presentinstitution'] = $passeddata['presentinstitution'];
   $pdta['sessionid'] = $passeddata['sessionid'];
+  
   $passdata = json_encode($pdta); 
   $at = genAppFiles;
   $doarr = json_decode( callrestapi("POST",dataTree."/data-doers/anon-donor-object",serverIdent,serverpw,$passdata), true );
@@ -2351,6 +2352,13 @@ function bldQuickEditDonor($passeddata) {
     $targetdsp = $doarr['DATA']['targetdsp'];
     $informedconsent = $doarr['DATA']['informedind'];
     $informedconsentdsp = $doarr['DATA']['informeddsp'];
+    $subjectnbr = $doarr['DATA']['studysubjectnbr'];
+    $protocolnbr = $doarr['DATA']['studyprotocolnbr'];
+    $cx = trim($doarr['DATA']['cx']);
+    $rx = trim($doarr['DATA']['rx']);
+    $sogi = trim($doarr['DATA']['sogi']);
+    $sogival = $doarr['DATA']['studyprotocolnbr'];
+    
     $linkeddonor = ((int)$doarr['DATA']['linkeddonor'] === 1) ? 1  : 0;
     $delinkeddonor = ((int)$doarr['DATA']['delinkeddonor'] === 1) ? 1 : 0;
     $delinkedby = trim($doarr['DATA']['delinkeddonorby']);
@@ -2417,12 +2425,22 @@ function bldQuickEditDonor($passeddata) {
     $agm = "<table border=0 class=menuDropTbl>";
     $givendspvalue = "";
     $givendspcode = "";
+    $dfltrce = "";
+    $dfltrceval = "";
     foreach ($agarr['DATA'] as $agval) {
-      if ($agval['menuvalue'] === $donorrace ) { 
+        if ($agval['menuvalue'] === $donorrace ) { 
           $givendspcode = $agval['codevalue'];
           $givendspvalue = $agval['menuvalue'];
         }
+        if ((int)$agval['useasdefault'] === 1) { 
+            $dfltrce = $agval['menuvalue'];
+            $dfltrceval = $agval['codevalue'];
+        }
         $agm .= "<tr><td onclick=\"fillField('fldDNRRace','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+      }
+      if ($givendspcode === "" && $dfltrce !== "") { 
+          $givendspcode = $dfltrceval;
+          $givendspvalue = $dfltrce;          
       }
       $agm .= "</table>";
       $racemnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRRaceValue value=\"{$givendspcode}\"><input type=text id=fldDNRRace READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddDNRRace>{$agm}</div></div>";
@@ -2471,13 +2489,13 @@ function bldQuickEditDonor($passeddata) {
       $presentinstitution = $passeddata['presentinstitution'];
 
       //SOGI
-      $sogiData = dropmenuPennSOGI();
+      $sogiData = dropmenuPennSOGI($sogi);
       $sogimenu = $sogiData['menuObj'];
       //CHEMO MENU
-      $cxData = dropmenuCXIndicator(); 
+      $cxData = dropmenuCXIndicator($cx); 
       $cxmenu = $cxData['menuObj'];
       //RAD MENU
-      $rxData = dropmenuRXIndicator(); 
+      $rxData = dropmenuRXIndicator($rx); 
       $rxmenu = $rxData['menuObj'];
 
       $waitpic = base64file("{$at}/publicobj/graphics/zwait2.gif", "waitgif", "gif", true);         
@@ -2525,15 +2543,12 @@ function bldQuickEditDonor($passeddata) {
 <td class=DNRLbl2>Rad</td>
 </tr>
 <tr>
-<td colspan=2><input type=text id=fldADDSubjectNbr value=""></td>
-<td><input type=text id=fldADDProtocolNbr value=""></td>
+<td colspan=2><input type=text id=fldADDSubjectNbr value="{$subjectnbr}"></td>
+<td><input type=text id=fldADDProtocolNbr value="{$protocolnbr}"></td>
 <td>{$sogimenu}</td>
 <td>{$cxmenu}</td>
 <td>{$rxmenu}</td>
 </tr>
-
-
-
 
 <tr><td colspan=6> 
 <div id=notRcvdNoteDsp>
@@ -2550,10 +2565,10 @@ function bldQuickEditDonor($passeddata) {
 <tr><td class=DNRLbl2>Encounter Notes</td></tr><tr><td><div id=displayPreviousCaseNotes>{$caseNotesTbl}</div></td></tr>
 </table>
 
-<table>
+<!-- <table>
 <tr><td>Linked: </td><td> &nbsp;  </td></tr>
 <tr><td>De-Linked By: </td><td> {$delinkedby}&nbsp; </td></tr>
-</table>
+</table> //-->
 </div>
 <div id=waitIcon><center>
 {$waitpic}
@@ -2614,12 +2629,15 @@ function bldORScheduleTbl($orarray) {
     $addeddonor = ($val['linkage'] === "X") ? "<i class=\"material-icons addicon\">input</i>" : "";
     $lastfour = $val['lastfourmrn'];
     $prace = (trim($val['pxirace']) === "-") ? "" : trim($val['pxirace']);
-  
     $roomdsp = ( trim($val['room']) !== "") ? " in OR {$val['room']}" : "";
-
+    $studyNbrLineDsp = ( trim($val['studysubjectnbr']) !== "" || trim($val['studyprotocolnbr']) !== "") ? "<tr><td valign=top class=smallORTblLabel>Subject/Protocol </td><td valign=top>{$val['studysubjectnbr']} :: {$val['studyprotocolnbr']}</td></tr>" : "";
+    $cxrxDsp = ( trim($val['cx']) !== "" || trim($val['rx']) !== "") ? "<tr><td valign=top class=smallORTblLabel>CX/RX </td><td valign=top>" . strtoupper(substr($val['cx'],0,1)) . "::" .  strtoupper(substr($val['rx'],0,1)) . "</td></tr>" : "";
+    
     $proc = <<<PROCCELL
 <table class=procedureSpellOutTbl border=0>
   <tr><td valign=top class=smallORTblLabel>A-R-S::Callback</td><td valign=top>{$val['ars']} :: {$lastfour}</td></tr>
+  {$studyNbrLineDsp}
+  {$cxrxDsp}
   <tr><td valign=top class=smallORTblLabel>Procedure</td><td valign=top class=procTxtDsp>{$val['proceduretext']}</td></tr>
   <tr><td valign=top class=smallORTblLabel>Surgeon</td><td valign=top>{$val['surgeon']}</td></tr>
   <tr><td valign=top class=smallORTblLabel>Start Time</td><td valign=top>{$val['starttime']} {$roomdsp}</td></tr>
@@ -2629,7 +2647,7 @@ PROCCELL;
     $ageuom = "yrs";
     //oncontextmenu=\"return false;\"
     $innerTbl .= <<<ORLINE
-    <tr  onclick="fillPXIInformation('{$val['pxicode']}','{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$prace}','{$val['pxisex']}','{$informed}','{$lastfour}');" class=displayRows>
+    <tr  onclick="fillPXIInformation('{$val['pxicode']}','{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$prace}','{$val['pxisex']}','{$informed}','{$lastfour}','{$val['studysubjectnbr']}', '{$val['studyprotocolnbr']}','{$val['cx']}','{$val['rx']}','{$val['sogi']}');" class=displayRows>
       <td valign=top class=dspORInitials>{$val['pxiinitials']}</td>
       <td valign=top class="dspORTarget {$targetBck}">{$target}</td>
       <td valign=top class=dspORInformed>{$icicon}</td>
@@ -2712,17 +2730,17 @@ function bldProcurementGrid($usr) {
   //THIS SHOULD BE PROGRAMMATICALLY ASSESSED - IF MALIGNANT AND NO METS FROM DETERMINES FIELD
 
   //BASE SITE-SUBSITE MENU
-    $sitesubsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSiteValue value=\"\"><input type=text id=fldPRCSite READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>"; 
+    $sitesubsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSite READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>"; 
 
-   $subsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSSiteValue value=\"\"><input type=text id=fldPRCSSite READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>";
+   $subsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSSite READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCSSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>";
    
    //BASE DX-MOD Menu
-     $dxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCDXModValue value=\"\"><input type=text id=fldPRCDXMod READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCDXMod><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category & Site)</div></div></div>";
+     $dxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCDXModValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCDXMod READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCDXMod><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category & Site)</div></div></div>";
 
    //METASTATIC SITE MENU DROPDOWN
      $metsData = dropmenuMetsMalignant();
      $metssite = $metsData['menuObj'];
-     $metsdxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSDXValue value=\"\"><input type=text id=fldPRCMETSDX READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCMETSDX><center><div style=\"font-size: 1.4vh\">(Choose a Metastatic site)</div></div></div>";
+     $metsdxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSDXValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCMETSDX READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCMETSDX><center><div style=\"font-size: 1.4vh\">(Choose a Metastatic site)</div></div></div>";
      
 $inscnt = 0;
   $insm = "<table border=0 class=menuDropTbl>";
@@ -2739,7 +2757,14 @@ $inscnt = 0;
     $insm .= "<tr><td onclick=\"fillField('fldPRCPresentInst','{$insval[0]}','{$insval[1]}');\" class=ddMenuItem>{$insval[1]} ({$insval[0]})</td></tr>";
   }
   $insm .= "</table>";
-  $insmnu = "<div class=menuHolderDiv><input type=hidden id=fldPRCPresentInstValue value=\"{$igivendspcode}\"><input type=text id=fldPRCPresentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\"><div class=valueDropDown id=ddfldPRCPresentInst>{$insm}</div></div>";     
+  $insmnu = "<div class=menuHolderDiv>"
+                      . "<input type=hidden id=fldPRCPresentInstValue value=\"{$igivendspcode}\">  "
+                      . "<div class=inputiconcontainer>"
+                              . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
+                              . "<input type=text id=fldPRCPresentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\">"
+                     . "</div>"
+                     . "<div class=valueDropDown id=ddfldPRCPresentInst>{$insm}</div>"
+                     . "</div>";     
 
    //DROP DOWN MENU BUILDER END ******************************************************************** //
 
@@ -2793,27 +2818,32 @@ $rtnTbl = <<<RTNTBL
       <td class=prcFldLbl>Race <span class=reqInd>*</span></td>       
       <td class=prcFldLbl>Sex <span class=reqInd>*</span></td>
       <td class=prcFldLbl>Consent <span class=reqInd>*</span></td>
+      <td class=prcFldLbl>Chemo <span class=reqInd>*</span></td>
+      <td class=prcFldLbl>Radiation <span class=reqInd>*</span></td>       
       <td class=prcFldLbl>Callback</td>
-
+      <td class=prcFldLbl>Subject #</td>
+      <td class=prcFldLbl>Protocol #</td>
+      <td class=prcFldLbl>UPenn-SOGI</td>
     </tr>      
     <tr>
       <td><input type=text id=fldPRCPXIId READONLY><input type=text id=fldPRCPXIInitials READONLY></td>
-      <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td> <td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
-      <td><input type=text id=fldPRCPXIRace READONLY></td><td><input type=text id=fldPRCPXISex READONLY></td>
+      <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td><td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
+      <td><input type=text id=fldPRCPXIRace READONLY></td>
+      <td><input type=text id=fldPRCPXISex READONLY></td>
       <td><input type=text id=fldPRCPXIInfCon READONLY></td>
+      <td><input type=text id=fldPRCPXIDspCX READONLY></td>
+      <td><input type=text id=fldPRCPXIDspRX READONLY></td>
       <td><input type=text id=fldPRCPXILastFour READONLY></td>
+      <td><input type=text id=fldPRCPXISubjectNbr READONLY></td>
+      <td><input type=text id=fldPRCPXIProtocolNbr READONLY></td> 
+      <td><input type=text id=fldPRCPXISOGI READONLY></td>       
+       
     </tr></table>
-
-        <table>
-      <tr><td class=prcFldLbl>Chemo <span class=reqInd>*</span></td><td class=prcFldLbl>Radiation <span class=reqInd>*</span></td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
-      <tr>
-      <td>&nbsp;</td>
-      <td>&nbsp;</td>
-      <td><input type=text id=fldSubjectNbr value="" READONLY></td>
+<!--       <td><input type=text id=fldSubjectNbr value="" READONLY></td>
       <td><input type=text id=fldProtocolNbr value="" READONLY></td>
-      <td> &nbsp; </td></tr>
-   </table>
-</td></tr>
+//-->
+
+ </td></tr>
 
 <tr><td class=BSDspSpacer>&nbsp;</td></tr>
 <tr><td class=BSDspSectionHeader>Diagnosis Designation <span class=reqInd>*</span></td></tr>
@@ -2862,7 +2892,7 @@ RTNTBL;
 }
 
 
-function dropmenuPennSOGI() { 
+function dropmenuPennSOGI( $dspvalue ) { 
 //upennsogi
   $si = serverIdent;
   $sp = serverpw;
@@ -2871,46 +2901,86 @@ function dropmenuPennSOGI() {
   $asp = "<table border=0 class=menuDropTbl>";
   $aspDefaultValue = "";
   $aspDefaultDsp = "";
+  $dfltVal = "";
+  $dfltCod = "";
   foreach ($asparr['DATA'] as $aspval) {
-      if ( (int)$aspval['useasdefault'] === 1 ) {
-        $aspDefaultValue = $aspval['lookupvalue']; 
-        $aspDefaultDsp = $aspval['menuvalue'];
-      }
-    $asp .= "<tr><td onclick=\"fillField('fldPRCUpennSOGI','{$aspval['lookupvalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
+    if ( strtoupper($aspval['menuvalue']) === strtoupper($dspvalue) ) { 
+      $aspDefaultValue = strtoupper($aspval['codevalue']);
+      $aspDefaultDsp = strtoupper($aspval['menuvalue']);        
+    }  
+     if ((int)$aspval['useasdefault'] === 1) { 
+      $dfltVal = strtoupper($aspval['menuvalue']);
+      $dfltCod = strtoupper($aspval['codevalue']);        
+    }
+    $asp .= "<tr><td onclick=\"fillField('fldPRCUpennSOGI','" . strtoupper($aspval['lookupvalue']) . "','" . strtoupper($aspval['menuvalue']) . "');\" class=ddMenuItem>" . strtoupper($aspval['menuvalue']) . "</td></tr>";
   }
   $asp .= "</table>";
+  if (trim($aspDefaultDsp) === "" && trim($dfltVal) !== "") { 
+      $aspDefaultValue = $dfltCod;
+      $aspDefaultDsp = $dfltVal;              
+  }
   $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCUpennSOGIValue value=\"{$aspDefaultValue}\"><input type=text id=fldPRCUpennSOGI READONLY class=\"inputFld\" value=\"{$aspDefaultDsp}\"><div class=valueDropDown id=ddPRCUpennSOGI>{$asp}</div></div>";
   return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 
 }
 
-function dropmenuRXIndicator() { 
+function dropmenuRXIndicator( $dspvalue ) { 
   $si = serverIdent;
   $sp = serverpw;
   $asparr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-rx",$si,$sp),true);
   $asp = "<table border=0 class=menuDropTbl>";
   $aspDefaultValue = "";
   $aspDefaultDsp = "";
+  $dfltVal = "";
+  $dfltCod = "";
   foreach ($asparr['DATA'] as $aspval) {
+    if ($aspval['menuvalue'] === $dspvalue ) { 
+      $aspDefaultValue = $aspval['codevalue'];
+      $aspDefaultDsp = $aspval['menuvalue'];        
+    }  
+     if ((int)$aspval['useasdefault'] === 1) { 
+      $dfltVal = $aspval['menuvalue'];
+      $dfltCod = $aspval['codevalue'];        
+    }
     $asp .= "<tr><td onclick=\"fillField('fldPRCPXIRX','{$aspval['codevalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
   }
   $asp .= "</table>";
-  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCPXIRXValue value=\"\"><input type=text id=fldPRCPXIRX READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCPXIRX>{$asp}</div></div>";
+  if (trim($aspDefaultDsp) === "" && trim($dfltVal) !== "") { 
+      $aspDefaultValue = $dfltCod;
+      $aspDefaultDsp = $dfltVal;              
+  }
+  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCPXIRXValue value=\"{$aspDefaultValue}\"><input type=text id=fldPRCPXIRX READONLY class=\"inputFld\" value=\"{$aspDefaultDsp}\"><div class=valueDropDown id=ddPRCPXIRX>{$asp}</div></div>";
   return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 }
 
-function dropmenuCXIndicator() { 
+function dropmenuCXIndicator( $dspvalue ) { 
   $si = serverIdent;
   $sp = serverpw;
   $asparr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-cx",$si,$sp),true);
   $asp = "<table border=0 class=menuDropTbl>";
   $aspDefaultValue = "";
   $aspDefaultDsp = "";
+  $dfltVal = "";
+  $dfltCod = "";
   foreach ($asparr['DATA'] as $aspval) {
+    if ($aspval['menuvalue'] === $dspvalue ) { 
+      $aspDefaultValue = $aspval['codevalue'];
+      $aspDefaultDsp = $aspval['menuvalue'];        
+    }  
+    if ((int)$aspval['useasdefault'] === 1) { 
+      $dfltVal = $aspval['menuvalue'];
+      $dfltCod = $aspval['codevalue'];        
+    }
     $asp .= "<tr><td onclick=\"fillField('fldPRCPXICX','{$aspval['codevalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
-  }
+  } 
   $asp .= "</table>";
-  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCPXICXValue value=\"\"><input type=text id=fldPRCPXICX READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCPXICX>{$asp}</div></div>";
+  if (trim($aspDefaultDsp) === "" && trim($dfltVal) !== "") { 
+      $aspDefaultValue = $dfltCod;
+      $aspDefaultDsp = $dfltVal;              
+  }
+  
+  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCPXICXValue value=\"{$aspDefaultValue}\"><input type=text id=fldPRCPXICX READONLY class=\"inputFld\" value=\"{$aspDefaultDsp}\"><div class=valueDropDown id=ddPRCPXICX>{$asp}</div></div>";
+ 
   return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 }
 
@@ -2925,7 +2995,8 @@ function dropmenuSystemicDXListing() {
     $asp .= "<tr><td onclick=\"fillField('fldPRCSystemList','{$aspval['codevalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
   }
   $asp .= "</table>";
-  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSystemListValue value=\"\"><input type=text id=fldPRCSystemList READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSystemList>{$asp}</div></div>";
+  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSystemListValue value=\"\">"
+          . "<div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSystemList READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCSystemList>{$asp}</div></div>";
   return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 }
 
@@ -2944,7 +3015,8 @@ function dropmenuVocASitePositions() {
     $asp .= "<tr><td onclick=\"fillField('fldPRCSitePosition','{$aspval['lookupvalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
   }
   $asp .= "</table>";
-  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSitePositionValue value=\"{$aspDefaultValue}\"><input type=text id=fldPRCSitePosition READONLY class=\"inputFld\" value=\"{$aspDefaultDsp}\"><div class=valueDropDown id=ddPRCSitePosition>{$asp}</div></div>";
+  $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSitePositionValue value=\"{$aspDefaultValue}\">"
+  . "<div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSitePosition READONLY class=\"inputFld\" value=\"{$aspDefaultDsp}\"></div><div class=valueDropDown id=ddPRCSitePosition>{$asp}</div></div>";
   return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 }
 
@@ -2963,7 +3035,14 @@ function dropmenuProcedureTypes() {
     $proct .= "<tr><td onclick=\"fillField('fldPRCProcedureType','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
   }
   $proct .= "</table>";
-  $procedureType = "<div class=menuHolderDiv><input type=hidden id=fldPRCProcedureTypeValue value=\"{$procTDefaultValue}\"><input type=text id=fldPRCProcedureType READONLY class=\"inputFld\" value=\"{$procTDefaultDsp}\"><div class=valueDropDown id=ddPRCProcedureType>{$proct}</div></div>";
+  $procedureType = "<div class=menuHolderDiv>"
+                                . "<input type=hidden id=fldPRCProcedureTypeValue value=\"{$procTDefaultValue}\">"
+                                . "<div class=inputiconcontainer>"
+                                . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
+                                . "<input type=text id=fldPRCProcedureType READONLY class=\"inputFld\" value=\"{$procTDefaultDsp}\">"
+                                . "</div>"
+                                        . "<div class=valueDropDown id=ddPRCProcedureType>{$proct}</div>"
+                                        . "</div>";
 
   return array('menuObj' => $procedureType,'defaultDspValue' => $procTDefaultDsp, 'defaultLookupValue' => $procTDefaultValue);
 }
@@ -2993,7 +3072,13 @@ function dropmenuCollectionType($givenlookup) {
         $collectionTypeDropMenu = $ctTbl;
       }  
   }
-  $collectionType = "<div class=menuHolderDiv><input type=hidden id=fldPRCCollectionTypeValue value=\"{$collectionDefaultValue}\"><input type=text id=fldPRCCollectionType READONLY class=\"inputFld\" value=\"{$collectionDefaultDsp}\"><div class=valueDropDown id=ddPRCCollectionType>{$collectionTypeDropMenu}</div></div>";
+  $collectionType = "<div class=menuHolderDiv><input type=hidden id=fldPRCCollectionTypeValue value=\"{$collectionDefaultValue}\">"
+  . "<div class=inputiconcontainer>"
+  . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
+  . "<input type=text id=fldPRCCollectionType READONLY class=\"inputFld\" value=\"{$collectionDefaultDsp}\">"
+  . "</div>"
+  . "<div class=valueDropDown id=ddPRCCollectionType>{$collectionTypeDropMenu}</div>"
+  . "</div>";
 
   return array('menuObj' => $collectionType,'defaultDspValue' => $collectionDefaultDsp, 'defaultLookupValue' => $collectionDefaultValue);
 } 
@@ -3011,7 +3096,7 @@ function dropmenuMetsMalignant() {
    } 
    $metsm .= "</table>";
 
-   $metssite = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSSiteValue value=\"\"><input type=text id=fldPRCMETSSite READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCMETSSite> {$metsm} </div></div>";
+   $metssite = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCMETSSite READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCMETSSite> {$metsm} </div></div>";
 
   return array('menuObj' => $metssite,'defaultDspValue' => $metsDefaultDsp, 'defaultLookupValue' => $metsDefaultValue);
 }
@@ -3032,7 +3117,8 @@ function dropmenuUninvolvedIndicator() {
     $uninv .= "<tr><td onclick=\"fillField('fldPRCUnInvolved','{$uninvval['codevalue']}','{$uninvval['menuvalue']}');\" class=ddMenuItem>{$uninvval['menuvalue']}</td></tr>";
    }
    $uninv .= "</table>";
-   $uninvmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCUnInvolvedValue value=\"{$uninvDefaultValue}\"><input type=text id=fldPRCUnInvolved READONLY class=\"inputFld\" value=\"{$uninvDefaultDsp}\"><div class=valueDropDown id=ddPRCUnInvolved>{$uninv}</div></div>";
+   $uninvmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCUnInvolvedValue value=\"{$uninvDefaultValue}\">"
+   . "<div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCUnInvolved READONLY class=\"inputFld\" value=\"{$uninvDefaultDsp}\"></div><div class=valueDropDown id=ddPRCUnInvolved>{$uninv}</div></div>";
 
   return array('menuObj' => $uninvmenu,'defaultDspValue' => $uninvDefaultDsp, 'defaultLookupValue' => $uninvDefaultValue);
 
@@ -3053,7 +3139,13 @@ function dropmenuInitialMetric() {
     $muom .= "<tr><td onclick=\"fillField('fldPRCMetricUOM','{$uomval['lookupvalue']}','{$uomval['menuvalue']}');\" class=ddMenuItem>{$uomval['menuvalue']}</td></tr>";
    }
    $muom .= "</table>";
-   $muommenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCMetricUOMValue value=\"{$muomDefaultValue}\"><input type=text id=fldPRCMetricUOM READONLY class=\"inputFld\" value=\"{$muomDefaultDsp}\"><div class=valueDropDown id=ddPRCMetricUOM>{$muom}</div></div>";
+   $muommenu = "<div class=menuHolderDiv>"
+           . "<input type=hidden id=fldPRCMetricUOMValue value=\"{$muomDefaultValue}\">"
+           . "<div class=inputiconcontainer>"
+  . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
+           . "<input type=text id=fldPRCMetricUOM READONLY class=\"inputFld\" value=\"{$muomDefaultDsp}\">"
+           . "</div>"
+           . "<div class=valueDropDown id=ddPRCMetricUOM>{$muom}</div></div>";
 
   return array('menuObj' => $muommenu,'defaultDspValue' => $muomDefaultDsp, 'defaultLookupValue' => $muomDefaultValue);
 }
@@ -3067,7 +3159,11 @@ function dropmenuInitialSpecCat() {
    $speccat .= "<tr><td onclick=\"fillField('fldPRCSpecCat','{$spcval['lookupvalue']}','{$spcval['menuvalue']}');\" class=ddMenuItem>{$spcval['menuvalue']}</td></tr>";
   }
   $speccat .= "</table>";
-  $spcmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSpecCatValue value=\"\"><input type=text id=fldPRCSpecCat READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSpecCat>{$speccat}</div></div>";
+  $spcmenu = "<div class=menuHolderDiv>"
+          . "<div class=inputiconcontainer>"
+  . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=hidden id=fldPRCSpecCatValue value=\"\">"
+          . "</div>"
+          . "<input type=text id=fldPRCSpecCat READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSpecCat>{$speccat}</div></div>";
 
   return array('menuObj' => $spcmenu, 'defaultDspValue' => '', 'defaultLookupValue' => '');
 }
@@ -3088,7 +3184,7 @@ function dropmenuPathRptAllowables() {
     $prpt .= "<tr><td onclick=\"fillField('fldPRCPathRpt','{$prptval['lookupvalue']}','{$prptval['menuvalue']}');\" class=ddMenuItem>{$prptval['menuvalue']}</td></tr>";
    }
    $prpt .= "</table>";
-   $prptmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCPathRptValue value=\"{$prptDefaultValue}\"><input type=text id=fldPRCPathRpt READONLY class=\"inputFld\" value=\"{$prptDefaultDsp}\"><div class=valueDropDown id=ddPRCPathRpt>{$prpt}</div></div>";
+   $prptmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCPathRptValue value=\"{$prptDefaultValue}\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCPathRpt READONLY class=\"inputFld\" value=\"{$prptDefaultDsp}\"></div><div class=valueDropDown id=ddPRCPathRpt>{$prpt}</div></div>";
 
   return array('menuObj' => $prptmenu, 'defaultDspValue' => $prptDefaultDsp, 'defaultLookupValue' => $prptDefaultValue);
 
