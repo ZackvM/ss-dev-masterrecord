@@ -40,9 +40,9 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $titleBar = "Quick-Edit Donor Record";
         //$footerBar = "DONOR RECORD";
         $innerDialog = bldQuickEditDonor( $passedData );
-      break;
-      case 'dataCoordinatorHPROverride':
+        break;
 
+      case 'dataCoordinatorHPROverride':
         if ( count($passedData) > 0 ) {   
           $biogroupTbl = "<form id=frmQMSSubmitter><table border=0><tr><td valign=top rowspan=2><table border=0 id=qmsSldListTbl><thead><tr><th></th><th>Biogroup</th><th>Designation</th><th>Path-Rpt</th><th>QMS Conclusion</th><th>Present Status</th><th>New Status</th><th>Slide Submitted</th></tr></thead><tbody>";
           $submittalCnt = 0;
@@ -2470,6 +2470,16 @@ function bldQuickEditDonor($passeddata) {
       $sessid = $passeddata['sessionid'];
       $presentinstitution = $passeddata['presentinstitution'];
 
+      //SOGI
+      $sogiData = dropmenuPennSOGI();
+      $sogimenu = $sogiData['menuObj'];
+      //CHEMO MENU
+      $cxData = dropmenuCXIndicator(); 
+      $cxmenu = $cxData['menuObj'];
+      //RAD MENU
+      $rxData = dropmenuRXIndicator(); 
+      $rxmenu = $rxData['menuObj'];
+
       $waitpic = base64file("{$at}/publicobj/graphics/zwait2.gif", "waitgif", "gif", true);         
       $rtnThis = <<<RTNTHIS
               
@@ -2483,24 +2493,56 @@ function bldQuickEditDonor($passeddata) {
 <table></table>
 
 <table>
-       <tr><td class=DNRLbl>Encounter ID: </td><td class=DNRDta>{$pxicode} </td></tr>
-       <tr><td class=DNRLbl>Institution: </td><td class=DNRDta>{$locationdsp} ({$location})</td><td class=DNRLbl>Procedure Date: </td><td class=DNRDta>{$ORDate}</td></tr>
-       <tr><td class=DNRLbl>Surgeon: </td><td class=DNRDta>{$surgeons} </td><td class=DNRLbl>Start Time: </td><td class=DNRDta>{$starttime} </td></tr>
+       <tr><td class=DNRLbl>Encounter ID: </td><td class=DNRDta>{$pxicode} </td><td class=DNRLbl>Institution: </td><td class=DNRDta>{$locationdsp} ({$location})</td></tr>
+       <tr><td class=DNRLbl>Procedure Date: </td><td class=DNRDta>{$ORDate} @ {$starttime}</td><td class=DNRLbl>Surgeon: </td><td class=DNRDta>{$surgeons} </td></tr>
 </table>
 
 <table><tr><td class=DNRLbl>Procedure Description</td></tr><tr><td class=procedureTextDsp>{$proceduretext} </td></tr></table>
 
 <table class=ENCHEAD><tr><td style="padding: .8vh 0 0 0;">DONOR SPECIFICS</td></tr></table>
-<table><tr><td class=DNRLbl2>Target</td><td class=DNRLbl2>Informed Consent</td><td class=DNRLbl2>Age</td><td class=DNRLbl2>Race</td><td class=DNRLbl2>Sex</td><td class=DNRLbl2>Callback Ref</td></tr>
-<tr><td> {$targetmnu} </td><td> {$infcmnu} </td><td><table><tr><td>{$fldAge}</td><td>{$ageuommnu}</td></tr></table></td><td>{$racemnu}</td><td>{$sexmnu}</td><td>{$lastFourDsp}</td></tr>
+<table border=0>
+  <tr>
+    <td class=DNRLbl2>Target</td>
+    <td class=DNRLbl2>Informed Consent</td>
+    <td class=DNRLbl2>Age</td>
+    <td class=DNRLbl2>Race</td>
+    <td class=DNRLbl2>Sex</td>
+    <td class=DNRLbl2>Callback Ref</td>
+  </tr>
+<tr>
+  <td> {$targetmnu} </td>
+  <td> {$infcmnu} </td>
+  <td><table><tr><td>{$fldAge}</td><td>{$ageuommnu}</td></tr></table></td>
+  <td>{$racemnu}</td>
+  <td>{$sexmnu}</td>
+  <td>{$lastFourDsp}</td>
+</tr>
+<tr>
+<td colspan=2 class=DNRLbl2>Study Subject #</td>
+<td class=DNRLbl2>Study Protocol #</td>
+<td class=DNRLbl2>UPenn SOGI</td>
+<td class=DNRLbl2>Chemo</td>
+<td class=DNRLbl2>Rad</td>
+</tr>
+<tr>
+<td colspan=2><input type=text id=fldADDSubjectNbr value=""></td>
+<td><input type=text id=fldADDProtocolNbr value=""></td>
+<td>{$sogimenu}</td>
+<td>{$cxmenu}</td>
+<td>{$rxmenu}</td>
+</tr>
+
+
+
+
 <tr><td colspan=6> 
 <div id=notRcvdNoteDsp>
 <table><tr><td class=DNRLbl2>Not Received Reason</td></tr><tr><td><input type=text id=fldDNRNotReceivedNote></td></tr></table>
 </div>
 </td></tr>
+<tr><td colspan=6 align=right>  <table class=tblBtn id=btnDNRSaveEncounter style="width: 6vw;" onclick="saveDonorSpecifics();"><tr><td><center>Save</td></tr></table>  </td></tr>    
 </table>
 
-<table style="width: 41vw;"><tr><td align=right><table class=tblBtn id=btnDNRSaveEncounter style="width: 6vw;" onclick="saveDonorSpecifics();"><tr><td><center>Save</td></tr></table></td></tr></table>
 
 <table class=ENCHEAD><tr><td style="padding: 3vh 0 0 0;">NOTES</td></tr></table>
 <table>
@@ -2657,14 +2699,14 @@ function bldProcurementGrid($usr) {
     $sysData = dropmenuSystemicDXListing(); 
     $sysdxmenu = $sysData['menuObj'];
   //CHEMO MENU
-    $cxData = dropmenuCXIndicator(); 
-    $cxmenu = $cxData['menuObj'];
+  //  $cxData = dropmenuCXIndicator(); 
+  //  $cxmenu = $cxData['menuObj'];
   //CHEMO MENU
-    $rxData = dropmenuRXIndicator(); 
-    $rxmenu = $rxData['menuObj'];
+  //  $rxData = dropmenuRXIndicator(); 
+  //  $rxmenu = $rxData['menuObj'];
   //SOGI
-    $sogiData = dropmenuPennSOGI();
-    $sogimenu = $sogiData['menuObj'];
+  //  $sogiData = dropmenuPennSOGI();
+  //  $sogimenu = $sogiData['menuObj'];
 
   //UNKNOWNMET Unknown Metastatic Location
   //THIS SHOULD BE PROGRAMMATICALLY ASSESSED - IF MALIGNANT AND NO METS FROM DETERMINES FIELD
@@ -2745,24 +2787,31 @@ $rtnTbl = <<<RTNTBL
 <tr><td class=BSDspSectionHeader>Donor Metrics</td></tr>
 <tr><td class=procGridHoldingLine>
    <table>
-    <tr><td class=prcFldLbl>Initials <span class=reqInd>*</span></td><td class=prcFldLbl>Age <span class=reqInd>*</span></td><td class=prcFldLbl>Race <span class=reqInd>*</span></td><td class=prcFldLbl>Sex <span class=reqInd>*</span></td><td class=prcFldLbl>Callback</td></tr>
-        
+    <tr>
+      <td class=prcFldLbl>Initials <span class=reqInd>*</span></td>
+      <td class=prcFldLbl>Age <span class=reqInd>*</span></td>
+      <td class=prcFldLbl>Race <span class=reqInd>*</span></td>       
+      <td class=prcFldLbl>Sex <span class=reqInd>*</span></td>
+      <td class=prcFldLbl>Consent <span class=reqInd>*</span></td>
+      <td class=prcFldLbl>Callback</td>
+
+    </tr>      
     <tr>
       <td><input type=text id=fldPRCPXIId READONLY><input type=text id=fldPRCPXIInitials READONLY></td>
-      <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td><td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
-      <td><input type=text id=fldPRCPXIRace READONLY></td>
-      <td><input type=text id=fldPRCPXISex READONLY></td>
+      <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td> <td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
+      <td><input type=text id=fldPRCPXIRace READONLY></td><td><input type=text id=fldPRCPXISex READONLY></td>
+      <td><input type=text id=fldPRCPXIInfCon READONLY></td>
       <td><input type=text id=fldPRCPXILastFour READONLY></td>
-      
     </tr></table>
+
         <table>
-      <tr><td class=prcFldLbl>I-Consent <span class=reqInd>*</span></td><td class=prcFldLbl>Chemo <span class=reqInd>*</span></td><td class=prcFldLbl>Radiation <span class=reqInd>*</span></td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
-      <tr><td><input type=text id=fldPRCPXIInfCon READONLY></td>
-      <td>{$cxmenu}</td>
-      <td>{$rxmenu}</td>
-      <td><input type=text id=fldSubjectNbr value=""></td>
-      <td><input type=text id=fldProtocolNbr value=""></td>
-      <td>{$sogimenu}</td></tr>
+      <tr><td class=prcFldLbl>Chemo <span class=reqInd>*</span></td><td class=prcFldLbl>Radiation <span class=reqInd>*</span></td><td class=prcFldLbl>Subject #</td><td class=prcFldLbl>Protocol #</td><td class=prcFldLbl>UPenn-SOGI</td></tr>
+      <tr>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td><input type=text id=fldSubjectNbr value="" READONLY></td>
+      <td><input type=text id=fldProtocolNbr value="" READONLY></td>
+      <td> &nbsp; </td></tr>
    </table>
 </td></tr>
 

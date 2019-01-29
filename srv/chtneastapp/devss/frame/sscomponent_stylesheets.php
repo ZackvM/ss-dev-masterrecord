@@ -275,8 +275,10 @@ textarea { font-size: 1.3vh; }
 #fldPRCInitialMetric { width: 3vw; text-align: right; }
 #fldPRCMetricUOM {width: 6vw; }
 #ddPRCMetricUOM {min-width: 5vw; }
-#fldSubjectNbr {width: 8vw; }
-#fldProtocolNbr {width: 8vw;}
+#fldSubjectNbr {width: 7vw; }
+#fldADDSubjectNbr { width: 12vw; }
+#fldProtocolNbr {width: 7vw;}
+#fldADDProtocolNbr {width: 9vw; }
 
 #fldPRCSpecCat {width: 13vw; }
 #ddPRCSpecCat {min-width: 13vw; }
@@ -297,24 +299,24 @@ textarea { font-size: 1.3vh; }
 #fldPRCDiagnosisDesignation { width: 25vw; }
 #fldPRCMETSDesignation {width: 32vw; }
 #fldPRCSystemicDX {width: 32vw; }
-#fldPRCPXISex {width: 3vw; text-align: center; }
+#fldPRCPXISex {width: 2vw; border: none; padding: 0;  }
 #fldPRCPXIId { display: none; }
-#fldPRCPXIInitials { width: 4vw; }
-#fldADDPXIInitials { width: 5vw; }
-#fldPRCPXIAge {width: 4vw; text-align: right; }
-#fldADDPXIAge {width: 4vw; text-align: right; }
-#fldPRCPXIAgeMetric {width: 5vw;}
-#fldADDAgeUOM {width: 6vw;}
+#fldPRCPXIInitials { width: 3vw; border: none; padding: 0; }
+#fldADDPXIInitials { width: 4vw; }
+#fldPRCPXIAge {width: 1.3vw; text-align: right; border: none; padding: 0; }
+#fldADDPXIAge {width: 3vw; text-align: right; }
+#fldPRCPXIAgeMetric {width: 2vw; border: none; padding: 0;}
+#fldADDAgeUOM {width: 5vw;}
 #ddADDAgeUOM {min-width: 6vw; }
-#fldPRCPXIRace {width: 11.8vw; }
-#fldPRCPXIInfCon {width: 4vw; }
-#fldPRCPXILastFour {width: 4vw; }
+#fldPRCPXIRace {width: 10vw; border: none; padding: 0; }
+#fldPRCPXIInfCon {width: 4vw; border: none; padding: 0; }
+#fldPRCPXILastFour {width: 4vw; border: none; padding: 0; }
 #fldPRCPXICX {width: 5vw; }
 #ddPRCPXICX {min-width: 6vw;}
 #fldPRCPXIRX {width: 5vw; }
 #ddPRCPXIRX {min-width: 6vw;}
-#fldPRCUpennSOGI { width: 6.5vw; }
-#ddPRCUpennSOGI { width: 9vw; }
+#fldPRCUpennSOGI { width: 10vw; }
+#ddPRCUpennSOGI { width: 10vw; }
 #metsFromDsp { display: none; }
 #fldPRCMETSSite { width: 15.5vw; }
 #ddPRCMETSSite { min-width: 15.5vw; }
