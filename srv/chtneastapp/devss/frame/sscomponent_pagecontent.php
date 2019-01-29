@@ -1842,7 +1842,7 @@ case 'procurebiosample':
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>
-<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Save BG</td></tr></table></td>        
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPRCSave border=0><tr><td><!--ICON //--></td><td>Save BG</td></tr></table></td>        
   <td class=topBtnHolderCell>
          <div class=ttholder>                                                                                    
            <table class=topBtnDisplayer id=btnPBPHI border=0><tr><td><!--ICON //--></td><td>Donor</td></tr></table>
@@ -2846,11 +2846,11 @@ $rtnTbl = <<<RTNTBL
  </td></tr>
 
 <tr><td class=BSDspSpacer>&nbsp;</td></tr>
-<tr><td class=BSDspSectionHeader>Diagnosis Designation <span class=reqInd>*</span></td></tr>
+<tr><td class=BSDspSectionHeader>Diagnosis Designation</td></tr>
 <tr><td class=procGridHoldingLine>
 
 <table>
-  <tr><td class=prcFldLbl>Specimen Category</td><td class=prcFldLbl>Site</td><td class=prcFldLbl>Sub-Site</td><td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolv/NAT <span class=reqInd>*</span></td><td class=prcFldLbl>Path-Rpt <span class=reqInd>*</span></td></tr>
+  <tr><td class=prcFldLbl>Specimen Category <span class=reqInd>*</span></td><td class=prcFldLbl>Site <span class=reqInd>*</span></td><td class=prcFldLbl>Sub-Site</td><td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolv/NAT <span class=reqInd>*</span></td><td class=prcFldLbl>Path-Rpt <span class=reqInd>*</span></td></tr>
   <tr><td valign=top> {$spcmenu} </td><td valign=top> {$sitesubsite} </td><td> {$subsite} </td><td valign=top> {$dxmod} </td><td>{$uninvmenu}</td><td>{$prptmenu}</td></tr>
   <tr><td colspan=6> 
     <table cellpadding=0 cellspacing=0 border=0><tr><td> 

@@ -45,21 +45,28 @@ class datadoers {
       require(serverkeys . "/sspdo.zck");
       session_start(); 
       $bg = json_decode($passdata, true);
+
+/*
+ * 
+ * PASSDATA = 
+ * {"PRCBGNbr":"","PRCPresentInstValue":"HUP","PRCPresentInst":"Hospital of The University of Pennsylvania (HUP)","PRCProcDate":"01/29/2019","PRCProcedureTypeValue":"S","PRCProcedureType":"Surgery","PRCCollectionTypeValue":"EXC","PRCCollectionType":"Excision","PRCTechnician":"PROCZACK","PRCInitialMetric":".3","PRCMetricUOMValue":"4","PRCMetricUOM":"Grams","PRCPXIId":"f969cf77-7a38-4cf9-9378-43bec942207f","PRCPXIInitials":"A.B.","PRCPXIAge":"56","PRCPXIAgeMetric":"yrs","PRCPXIRace":"UNKNOWN","PRCPXISex":"F","PRCPXIInfCon":"NO","PRCPXIDspCX":"UNKNOWN","PRCPXIDspRX":"UNKNOWN","PRCPXILastFour":"3919","PRCPXISubjectNbr":"12346","PRCPXIProtocolNbr":"09877","PRCPXISOGI":"NO DATA","PRCDXOverride":false,"PRCSpecCatValue":"BENIGN","PRCSpecCat":"BENIGN","PRCSiteValue":"S73","PRCSite":"THYROID","PRCSSiteValue":"","PRCSSite":"","PRCDXModValue":"","PRCDXMod":"","PRCUnInvolvedValue":"0","PRCUnInvolved":"NA (Not Applicable to Biosample)","PRCPathRptValue":"2","PRCPathRpt":"Pending","PRCMETSSiteValue":"","PRCMETSSite":"","PRCMETSDXValue":"","PRCMETSDX":"","PRCSitePositionValue":"","PRCSitePosition":"","PRCSystemListValue":"","PRCSystemList":"","PRCBSCmts":"These are Biosamples Comments for a MINIMUM DATA SET FOR A BG","PRCHPRQ":"These are Biosamples Comments for a MINIMUM DATA SET FOR A BG","PRCProcedureInstitutionValue":"HUP","PRCProcedureDateValue":"2019-01-29","PRCProcedureDate":"01/29/2019"}
+ *  
+ */
+
+
+      
       //1) CHECK DATA 
       //( 1 === 1) ? (list( $errorInd, $msgArr[] ) = array(1 , "TEST ERROR {$bg['PRCProcDate']}")) : "";
       //A) MAKE SURE ALL USED FIELDS EXISTS
-      $chkone = initialBGDataCheckOne($bg);
-      if ( $chkone['errorInd'] === 1) { $errorInd = 1; }
-      $msgArr = $chkone['msgarr'];
-      
+      if ( $errorInd === 0 ) { $chkone = initialBGDataCheckOne($bg); if ( (int)$chkone['errorind'] === 1) { $errorInd = 1; $msgArr = $chkone['msgarr']; } }
        //B) Check Required fields
-        
-      //B) Check Date Values/Not Invalid - PRCProcDate; PRCProcedureDateValue (Make Sure Procedure Date is not more than 4 days old);
-      //C) Make Sure Tech Has RIGHTS to procure at Institution and check PRCTechInstitute and PRCProcedureInstitutionValue match
-      //D) initial metric and UOM are a number and a valid menu option
-      //E) CHECK All Menu Values - PRCProcedureTypeValue; PRCCollectionTypeValue; PRCMetricUOMValue; PRCPXICXValue; PRCPXIRXValue; PRCUpennSOGIValue; 
-      //F) Make sure PXI exists (after write mark PXI as received)
-      //G) CHECK VOCABULARY
+      if ( $errorInd === 0 ) { $chktwo = initialBGDataCheckTwo($bg); if ( (int)$chktwo['errorind'] === 1) { $errorInd = 1; $msgArr = $chktwo['msgarr']; } }
+      //C) Check Date Values/Not Invalid - PRCProcDate; PRCProcedureDateValue (Make Sure Procedure Date is not more than 4 days old);
+      //D) Make Sure Tech Has RIGHTS to procure at Institution and check PRCTechInstitute and PRCProcedureInstitutionValue match
+      //E) initial metric and UOM are a number and a valid menu option 
+      //F) CHECK All Menu Values - PRCProcedureTypeValue; PRCCollectionTypeValue; PRCMetricUOMValue; PRCPXICXValue; PRCPXIRXValue; PRCUpennSOGIValue;  
+      //G) Make sure PXI exists (after write mark PXI as received)
+      //H) CHECK VOCABULARY
 
 
       //2) WRITE DATA IF ALL CHECKS PASS - NO LABEL PRINTING NECESSARY AT BGROUP LEVEL
@@ -3007,14 +3014,44 @@ function bldDialogGetter($whichdialog, $passedData) {
  * 
  */
 
+//( 1 === 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "CHECK TWO FAILURE!")) : "";
 function initialBGDataCheckTwo($bg) { 
     $errorInd = 0; 
     $msgArr = array(); 
-    ( array_key_exists('PRCProcDate', $bg) && trim($bg['PRCProcDate']) === "") ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCUREMENT DATE IS REQUIRED (ALL FIELDS WITH AN ASTERICK ARE REQUIRED)")) : "";
-    ( array_key_exists('PRCPRocedureTypeValue', $bg) && trim($bg['PRCProcDate']) === "") ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCUREMENT DATE IS REQUIRED (ALL FIELDS WITH AN ASTERICK ARE REQUIRED)")) : "";
+    //REQUIRED FIELDS
+    ( trim($bg['PRCBGNbr']) !== "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  BIOGROUP CANNOT EXIST ON INITIAL SAVE")) : "";
+    ( trim($bg['PRCPresentInstValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PRESENT INSTITUTION WHERE THE COLLECTION IS OCCURING IS REQUIRED")) : "";
+     ( trim($bg['PRCProcDate']) === "") ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCUREMENT DATE IS REQUIRED (ALL FIELDS WITH AN ASTERICK ARE REQUIRED)")) : "";
+    ( trim($bg['PRCProcedureTypeValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE TYPE OF PROCEDURE IS REQUIRED")) : "";
+    ( trim($bg['PRCTechnician']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCURING TECHNICIAN IS REQUIRED")) : "";
+    ( trim($bg['PRCInitialMetric']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC IS REQUIRED")) : "";    
+    ( !is_numeric(trim($bg['PRCInitialMetric']))  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC MEASURE MUST BE A NUMBER.")) : "";    
+    
+    //TODO: FIGURE OUT HOW TO CAST AS DOUBLE TO NON-NEG NON-ZERO
+    //( $bg['PRCInitialMetric'] === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC MEASURE MUST BE GREATER THAN ZERO.")) : "";    
+    
+    ( trim($bg['PRCMetricUOMValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC UOM MUST BE SPECIFIED")) : "";    
+    ( trim($bg['PRCPXIId']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A DONOR FROM THE OPERATIVE SCHEDULE MUST BE SPECIFIED.  CLICK A DONOR FROM THE LIST")) : "";
 
+     ( trim($bg['PRCPXIInitials']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S INITIALS ARE MISSING.  IF THIS IS A LINKED DONOR, SEE A CHTNEASTERN INFORMATICS PERSON.  FOR DELINKED DONORS, RE-ENTER THE DELINK.")) : "";        
+     ( trim($bg['PRCPXIAge']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S AGE IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";       
+     ( trim($bg['PRCPXIAgeMetric']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S AGE METRIC IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";            
+     ( trim($bg['PRCPXIRace']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S RACE IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";        
+     ( trim($bg['PRCPXISex']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S SEX IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";        
+     ( trim($bg['PRCPXIDspCX']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S CHEMOTHERAPY INDICATOR IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD.")) : "";        
+     ( trim($bg['PRCPXIDspRX']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S RADIATION INDICATOR IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD.")) : "";           
 
-
+    ( trim($bg['PRCSpecCatValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP'S SPECIMEN CATEGORY MUST BE SPECIFIED.")) : "";
+    ( trim($bg['PRCSiteValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP'S SITE MUST BE SPECIFIED.")) : "";
+    
+//( trim($bg['PRCSiteValue']) === "MALIGNANT" && trim($bg['PRCMETSSiteValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFIFYING MALIGNANT SAMPLES A METS FROM SITE SHOULD BE SPECIFIED")) : "";
+    ( trim($bg['PRCUnInvolvedValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP'S UNINVOLVED/NAT INDICATOR MUST BE SPECIFIED")) : "";
+    ( trim($bg['PRCPathRptValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP'S PATHOLOGY REPORT INDICATOR MUST BE SPECIFIED")) : "";
+    
+    ( trim($bg['PRCProcedureInstitutionValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCEDURE INSTITUTION MUST BE SPECIFIED.")) : "";
+    ( trim($bg['PRCProcedureInstitutionValue']) !== trim($bg['PRCPresentInstValue']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCEDURE INSTITUTION AND PROCURING INSTITUTION MUST BE THE SAME.")) : "";
+    
+     ( trim($bg['PRCProcedureDateValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCEDURE DATE MUST BE SPECIFIED.")) : "";
     
     return array('errorind' => $errorInd, 'msgarr' => $msgArr);    
 }
@@ -3022,11 +3059,13 @@ function initialBGDataCheckTwo($bg) {
 function initialBGDataCheckOne($bg) { 
     $errorInd = 0; 
     $msgArr = array(); 
+    //CHECK ARRAY KEYS EXIST IN PASSED DATA
       ( !array_key_exists('PRCBGNbr', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCBGNbr)")) : "";
+      ( !array_key_exists('PRCPresentInstValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPresentInstValue)")) : "";
       ( !array_key_exists('PRCProcDate', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCProcDate)")) : "";
       ( !array_key_exists('PRCProcedureTypeValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCProcedureTypeValue)")) : "";
       ( !array_key_exists('PRCCollectionTypeValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCCollectionTypeValue)")) : "";
-      ( !array_key_exists('PRCTechInstitute', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCTechInstitute)")) : "";
+      ( !array_key_exists('PRCTechnician', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCTechnician)")) : "";
       ( !array_key_exists('PRCInitialMetric', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCInitialMetric)")) : "";      
       ( !array_key_exists('PRCMetricUOMValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCInitialMetric)")) : "";            
       ( !array_key_exists('PRCPXIId', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIId)")) : "";      
@@ -3034,29 +3073,29 @@ function initialBGDataCheckOne($bg) {
       ( !array_key_exists('PRCPXIAge', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIAge)")) : "";      
       ( !array_key_exists('PRCPXIAgeMetric', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIAgeMetric)")) : "";      
       ( !array_key_exists('PRCPXIRace', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIRace)")) : "";      
-      ( !array_key_exists('PRCPXISex', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXISex)")) : "";      
-      ( !array_key_exists('PRCPXILastFour', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXILastFour)")) : "";            
+      ( !array_key_exists('PRCPXISex', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXISex)")) : "";            
       ( !array_key_exists('PRCPXIInfCon', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIInfCon)")) : "";      
-      ( !array_key_exists('PRCPXICXValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXICXValue)")) : "";
-      ( !array_key_exists('PRCPXIRXValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIRXValue)")) : "";
-      ( !array_key_exists('SubjectNbr', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: SubjectNbr)")) : "";      
-      ( !array_key_exists('ProtocolNbr', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: ProtocolNbr)")) : "";      
-      ( !array_key_exists('PRCUpennSOGIValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCUpennSOGIValue)")) : "";   
+      ( !array_key_exists('PRCPXIDspCX', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXICXValue)")) : "";
+      ( !array_key_exists('PRCPXIDspRX', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIRXValue)")) : "";
       ( !array_key_exists('PRCDXOverride', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCDXOverride)")) : "";      
-      ( !array_key_exists('PRCSpecCat', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCSpecCatValue)")) : "";      
-      ( !array_key_exists('PRCSite', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCSite)")) : "";      
-      ( !array_key_exists('PRCSSite', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCSSite)")) : "";      
-      ( !array_key_exists('PRCDXMod', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCDXMod)")) : "";
+      ( !array_key_exists('PRCSpecCatValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCSpecCatValue)")) : "";      
+      ( !array_key_exists('PRCSiteValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCSite)")) : "";      
+      ( !array_key_exists('PRCSSiteValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCSSite)")) : "";      
+      ( !array_key_exists('PRCDXModValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCDXMod)")) : "";
       ( !array_key_exists('PRCUnInvolvedValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCUnInvolvedValue)")) : "";
       ( !array_key_exists('PRCPathRptValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPathRptValue)")) : "";
-      ( !array_key_exists('PRCMETSSite', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCMETSSite)")) : "";      
+      ( !array_key_exists('PRCMETSSiteValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCMETSSite)")) : "";      
+      ( !array_key_exists('PRCMETSDXValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCMETSDX)")) : ""; 
       ( !array_key_exists('PRCMETSDX', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCMETSDX)")) : ""; 
-      ( !array_key_exists('PRCMETSDX', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCMETSDX)")) : ""; 
-      ( !array_key_exists('PRCSitePosition', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCSitePosition)")) : ""; 
-      ( !array_key_exists('PRCSystemList', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCSystemList)")) : "";
+      ( !array_key_exists('PRCSitePositionValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCSitePosition)")) : ""; 
+      ( !array_key_exists('PRCSystemListValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCSystemList)")) : "";
       ( !array_key_exists('PRCBSCmts', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCBSCmts)")) : "";
       ( !array_key_exists('PRCHPRQ', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCHPRQ)")) : "";
       ( !array_key_exists('PRCProcedureInstitutionValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCProcedureInstitutionValue)")) : "";
       ( !array_key_exists('PRCProcedureDateValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCProcedureDateValue)")) : "";
     return array('errorind' => $errorInd, 'msgarr' => $msgArr);    
+}
+
+function zeroOut($var){
+   return ($var < 0 ? 0 : $var);
 }

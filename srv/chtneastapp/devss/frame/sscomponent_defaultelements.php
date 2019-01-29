@@ -34,8 +34,6 @@ THISMENU;
 return $thisAcct;    
 }    
 
-
-
 function menubuilder($whichpage, $whichUsr) {
 $thisMenu = "";    
 if ($whichpage !== "login") {

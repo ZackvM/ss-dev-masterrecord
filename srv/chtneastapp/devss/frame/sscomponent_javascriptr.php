@@ -789,6 +789,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (byId('btnPBAddDelink')) { 
       byId('btnPBAddDelink').addEventListener('click', function() { getAddPHIDialog(); }, false);          
     } 
+       
+    if (byId('btnPRCSave')) { 
+      byId('btnPRCSave').addEventListener('click', function() { createInitialBG(); }, false);   
+    }
 
     if (byId('fldPRCDXOverride')) {
       byId('fldPRCDXOverride').addEventListener('change', function() { 
@@ -820,25 +824,34 @@ function clearGrid() {
    location.reload(true);   
 }
 
-function masterSaveBiogroup() {
-  var dta = new Object();
-  if (byId('initialBiogroupInfo')) {
-  byId('initialBiogroupInfo').querySelectorAll('*').forEach(function(node) {
-    if (node.type === 'text' || node.type === 'hidden' || node.type === 'checkbox' || node.type === 'textarea') {
-      if (node.type === 'checkbox') { 
-        dta[node.id.substr(3)] = node.checked;
-      } else { 
-        dta[node.id.substr(3)] = node.value.trim();
+function createInitialBG() { 
+    if (byId('initialBiogroupInfo')) { 
+      //COLLECT ELEMENTS
+      var dta = new Object();
+      if (byId('initialBiogroupInfo')) {
+      byId('initialBiogroupInfo').querySelectorAll('*').forEach(function(node) {
+        if (node.type === 'text' || node.type === 'hidden' || node.type === 'checkbox' || node.type === 'textarea') {
+          if (node.type === 'checkbox') { 
+            dta[node.id.substr(3)] = node.checked;
+          } else { 
+          dta[node.id.substr(3)] = node.value.trim();
+          }
+        }
+      });
       }
+      var passdata = JSON.stringify(dta);
+      var mlURL = "/data-doers/initial-bgroup-save";
+      byId('standardModalDialog').innerHTML = "";
+      byId('standardModalBacker').style.display = 'block';
+      byId('standardModalDialog').style.display = 'none';  
+      universalAJAX("POST",mlURL,passdata,answerInitialBGroupSave,2);
+      //console.log(passdata);       
+    } else { 
+      alert('ERROR-SEE A CHTNEASTERN INFORMATICS STAFF');
+      return null;  
     }
-  });
-  }
-  var passdata = JSON.stringify(dta);
-  //console.log(passdata);
-  var mlURL = "/data-doers/initial-bgroup-save";
-  universalAJAX("POST",mlURL,passdata,answerInitialBGroupSave,2);   
-}
-
+}       
+       
 function answerInitialBGroupSave(rtnData) { 
   console.log(rtnData);
   if (parseInt(rtnData['responseCode']) !== 200) { 
@@ -848,11 +861,15 @@ function answerInitialBGroupSave(rtnData) {
        dspMsg += "\\n - "+element;
     });
     alert("Biogroup Save Error:\\n"+dspMsg);
+    byId('standardModalDialog').innerHTML = "";
+    byId('standardModalBacker').style.display = 'none';
+    byId('standardModalDialog').style.display = 'none';         
    } else { 
        byId('standardModalDialog').innerHTML = "";
        byId('standardModalBacker').style.display = 'none';
        byId('standardModalDialog').style.display = 'none';  
        //RELOAD WITH ENCRYPTED SELECTOR          
+       console.log(httpage.responseText);
    }        
 }
 

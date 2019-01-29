@@ -279,7 +279,7 @@ textarea { font-size: 1.3vh; }
 #fldPRCTechnician{ width: 10vw; }
 #fldPRCInitialMetric { width: 3vw; text-align: right; }
 #fldPRCMetricUOM {width: 6vw; }
-#ddPRCMetricUOM {min-width: 5vw; }
+#ddPRCMetricUOM {min-width: 6vw; }
 #fldSubjectNbr {width: 7vw; }
 #fldADDSubjectNbr { width: 12vw; }
 #fldProtocolNbr {width: 7vw;}
