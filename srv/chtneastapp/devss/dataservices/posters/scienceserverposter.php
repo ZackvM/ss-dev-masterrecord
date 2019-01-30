@@ -56,12 +56,10 @@ class datadoers {
 
       
       //1) CHECK DATA 
-      //( 1 === 1) ? (list( $errorInd, $msgArr[] ) = array(1 , "TEST ERROR {$bg['PRCProcDate']}")) : "";
-      //A) MAKE SURE ALL USED FIELDS EXISTS
-      if ( $errorInd === 0 ) { $chkone = initialBGDataCheckOne($bg); if ( (int)$chkone['errorind'] === 1) { $errorInd = 1; $msgArr = $chkone['msgarr']; } }
-       //B) Check Required fields
-      if ( $errorInd === 0 ) { $chktwo = initialBGDataCheckTwo($bg); if ( (int)$chktwo['errorind'] === 1) { $errorInd = 1; $msgArr = $chktwo['msgarr']; } }
-      //C) Check Date Values/Not Invalid - PRCProcDate; PRCProcedureDateValue (Make Sure Procedure Date is not more than 4 days old);
+      if ( $errorInd === 0 ) { $chkone   = initialBGDataCheckOne($bg);   if ( (int)$chkone['errorind'] === 1)   { $errorInd = 1; $msgArr = $chkone['msgarr'];   } }
+      if ( $errorInd === 0 ) { $chktwo   = initialBGDataCheckTwo($bg);   if ( (int)$chktwo['errorind'] === 1)   { $errorInd = 1; $msgArr = $chktwo['msgarr'];   } }
+      if ( $errorInd === 0 ) { $chkthree = initialBGDataCheckThree($bg); if ( (int)$chkthree['errorind'] === 1) { $errorInd = 1; $msgArr = $chkthree['msgarr']; } }
+      //TODO: FINISH DATA CHECKS
       //D) Make Sure Tech Has RIGHTS to procure at Institution and check PRCTechInstitute and PRCProcedureInstitutionValue match
       //E) initial metric and UOM are a number and a valid menu option 
       //F) CHECK All Menu Values - PRCProcedureTypeValue; PRCCollectionTypeValue; PRCMetricUOMValue; PRCPXICXValue; PRCPXIRXValue; PRCUpennSOGIValue;  
@@ -69,10 +67,22 @@ class datadoers {
       //H) CHECK VOCABULARY
 
 
-      //2) WRITE DATA IF ALL CHECKS PASS - NO LABEL PRINTING NECESSARY AT BGROUP LEVEL
-      //3) SEND BACK encrypted data selector
+      if ($errorInd === 0) { 
+        //2) WRITE DATA IF ALL CHECKS PASS - NO LABEL PRINTING NECESSARY AT BGROUP LEVEL
+
+        //******** WRITE BIOGROUP GET NUMBER ************//  
+        $selector = strtolower(generateRandomString(15));
+        $bgNbr = createBGHeader( $selector, $bg );
+        $insDET = createBGDetail( $bgNbr, $bg );
+        $insDte = createBGDateDetails( $bgNbr, $bg );
+
+        ( 1 === 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , $bgNbr . " " . $selector   )) : "";
+        //3) SEND BACK encrypted data selector
 
 
+
+
+      }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -3014,49 +3024,113 @@ function bldDialogGetter($whichdialog, $passedData) {
  * 
  */
 
-//( 1 === 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "CHECK TWO FAILURE!")) : "";
+function createBGDateDetails( $bgNbr, $bg ) {
+  
+  require(serverkeys . "/sspdo.zck");
+  $dteSQL = "insert into four.ref_procureBiosample_dates (pbiosample, activeind, refdate, reffrommodule, datedesignation, refby, refon) values( :pbiosample, 1, :refdate, 'PROCUREMENT', :datedesignation, :refby, now())";
+  $dteRS = $conn->prepare($dteSQL);
+
+  //PROCEDURE DATE
+  $dteRS->execute(array(
+    ':pbiosample' => $bgNbr
+   ,':refdate' => $bg['PRCProcedureDateValue']
+   ,':datedesignation' => 'PROCEDURE'
+   ,':refby' => strtolower($bg['PRCTechnician'])
+  ));
+
+  //PROCUREMENT DATE
+  $pDte = DateTime::createFromFormat('m/d/Y', $bg['PRCProcDate'] );
+  $dteRS->execute(array(
+    ':pbiosample' => $bgNbr
+   ,':refdate' => $pDte->format('Y-m-d')
+   ,':datedesignation' => 'PROCUREMENT'
+   ,':refby' => strtolower($bg['PRCTechnician'])
+  ));
+
+  return 1;
+}
+
+function createBGDetail( $bgNbr, $bg ) { 
+  require(serverkeys . "/sspdo.zck");
+  $bgDetSQL = "insert into four.ref_procureBiosample_details ( activeInd, pbiosample, readLabel, procType, collectionMethod, uninvolvedInd, pathReportInd, initialmetric, initialUOM, fromLocation, byWho, inputOn, fromModule ) values ( 1, :pbiosample, :readLabel, :procType, :collectionMethod, :uninvolvedInd, :pathReportInd, :initialmetric, :initialUOM, :fromLocation, :byWho, now(), 'PROCUREMENT' )";
+  $bgDetRS = $conn->prepare($bgDetSQL);
+  $bgDetRS->execute(array(
+   ':pbiosample' =>  $bgNbr
+ , ':readLabel' => "{$bgNbr}T_"
+ , ':procType' => "{$bg['PRCProcedureTypeValue']}"
+ , ':collectionMethod' => "{$bg['PRCCollectionTypeValue']}" 
+ , ':uninvolvedInd' => $bg['PRCUnInvolvedValue']
+ , ':pathReportInd' => $bg['PRCPathRptValue']
+ , ':initialmetric' => $bg['PRCInitialMetric']
+ , ':initialUOM' => $bg['PRCMetricUOMValue']
+ , ':fromLocation' => $bg['PRCPresentInstValue']
+ , ':byWho' => strtolower($bg['PRCTechnician'])
+  ));
+ return 1;
+}
+
+function createBGHeader( $selector, $bg ) { 
+  require(serverkeys . "/sspdo.zck");
+  $bgNbrSQL = "insert into four.ut_procure_biosample ( selector, recordstatus, fromlocation, inputon, inputby ) values ( :selector, 2, :fromlocation, now(), :technician )";
+  $bgNbrRS = $conn->prepare($bgNbrSQL); 
+  $bgNbrRS->execute(array(':selector' => $selector, ':fromlocation' => $bg['PRCPresentInstValue'], ':technician' => strtolower($bg['PRCTechnician']) )); 
+  $bgNbr = $conn->lastInsertId();
+  return $bgNbr;
+}
+
+function initialBGDataCheckThree($bg) { 
+    //C) Check Date Values/Not Invalid - PRCProcDate; PRCProcedureDateValue (Make Sure Procedure Date is not more than 4 days old);
+    $errorInd = 0; 
+    $msgArr = array(); 
+    //( 1 === 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "{$bg['PRCProcDate']}")) : "";
+    ( !verifyDate( $bg['PRCProcDate'], 'm/d/Y') ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCUREMENT DATE IS NOT A VALID DATE")) : ""; 
+    ( !verifyDate( $bg['PRCProcedureDateValue'], 'Y-m-d') ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCEDURE DATE IS NOT A VALID DATE")) : ""; 
+
+    //$dateTime = DateTime::createFromFormat($format, $date);
+    //$proc_date = DateTime::createFromFormat('m/d/Y',$bg['PRCProcDate']);
+    //$current_date = new DateTime(); 
+    //( $proc_date <> $current_date ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCUREMENT DATE MUST BE TODAY")) : "";
+
+
+    return array('errorind' => $errorInd, 'msgarr' => $msgArr);    
+}
+
 function initialBGDataCheckTwo($bg) { 
+    //B) Check Required fields
     $errorInd = 0; 
     $msgArr = array(); 
     //REQUIRED FIELDS
     ( trim($bg['PRCBGNbr']) !== "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  BIOGROUP CANNOT EXIST ON INITIAL SAVE")) : "";
     ( trim($bg['PRCPresentInstValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PRESENT INSTITUTION WHERE THE COLLECTION IS OCCURING IS REQUIRED")) : "";
-     ( trim($bg['PRCProcDate']) === "") ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCUREMENT DATE IS REQUIRED (ALL FIELDS WITH AN ASTERICK ARE REQUIRED)")) : "";
+    ( trim($bg['PRCProcDate']) === "") ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCUREMENT DATE IS REQUIRED (ALL FIELDS WITH AN ASTERICK ARE REQUIRED)")) : "";
     ( trim($bg['PRCProcedureTypeValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE TYPE OF PROCEDURE IS REQUIRED")) : "";
     ( trim($bg['PRCTechnician']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCURING TECHNICIAN IS REQUIRED")) : "";
     ( trim($bg['PRCInitialMetric']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC IS REQUIRED")) : "";    
     ( !is_numeric(trim($bg['PRCInitialMetric']))  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC MEASURE MUST BE A NUMBER.")) : "";    
-    
     //TODO: FIGURE OUT HOW TO CAST AS DOUBLE TO NON-NEG NON-ZERO
     //( $bg['PRCInitialMetric'] === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC MEASURE MUST BE GREATER THAN ZERO.")) : "";    
-    
     ( trim($bg['PRCMetricUOMValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC UOM MUST BE SPECIFIED")) : "";    
     ( trim($bg['PRCPXIId']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A DONOR FROM THE OPERATIVE SCHEDULE MUST BE SPECIFIED.  CLICK A DONOR FROM THE LIST")) : "";
-
-     ( trim($bg['PRCPXIInitials']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S INITIALS ARE MISSING.  IF THIS IS A LINKED DONOR, SEE A CHTNEASTERN INFORMATICS PERSON.  FOR DELINKED DONORS, RE-ENTER THE DELINK.")) : "";        
-     ( trim($bg['PRCPXIAge']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S AGE IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";       
-     ( trim($bg['PRCPXIAgeMetric']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S AGE METRIC IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";            
-     ( trim($bg['PRCPXIRace']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S RACE IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";        
-     ( trim($bg['PRCPXISex']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S SEX IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";        
-     ( trim($bg['PRCPXIDspCX']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S CHEMOTHERAPY INDICATOR IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD.")) : "";        
-     ( trim($bg['PRCPXIDspRX']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S RADIATION INDICATOR IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD.")) : "";           
-
+    ( trim($bg['PRCPXIInitials']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S INITIALS ARE MISSING.  IF THIS IS A LINKED DONOR, SEE A CHTNEASTERN INFORMATICS PERSON.  FOR DELINKED DONORS, RE-ENTER THE DELINK.")) : "";        
+    ( trim($bg['PRCPXIAge']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S AGE IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";       
+    ( trim($bg['PRCPXIAgeMetric']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S AGE METRIC IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";            
+    ( trim($bg['PRCPXIRace']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S RACE IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";        
+    ( trim($bg['PRCPXISex']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S SEX IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD")) : "";        
+    ( trim($bg['PRCPXIDspCX']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S CHEMOTHERAPY INDICATOR IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD.")) : "";        
+    ( trim($bg['PRCPXIDspRX']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S RADIATION INDICATOR IS MISSING.  EDIT THE DONOR BEFORE SELECTING THAT RECORD.")) : "";           
     ( trim($bg['PRCSpecCatValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP'S SPECIMEN CATEGORY MUST BE SPECIFIED.")) : "";
     ( trim($bg['PRCSiteValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP'S SITE MUST BE SPECIFIED.")) : "";
-    
-//( trim($bg['PRCSiteValue']) === "MALIGNANT" && trim($bg['PRCMETSSiteValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFIFYING MALIGNANT SAMPLES A METS FROM SITE SHOULD BE SPECIFIED")) : "";
+    //( trim($bg['PRCSiteValue']) === "MALIGNANT" && trim($bg['PRCMETSSiteValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFIFYING MALIGNANT SAMPLES A METS FROM SITE SHOULD BE SPECIFIED")) : "";
     ( trim($bg['PRCUnInvolvedValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP'S UNINVOLVED/NAT INDICATOR MUST BE SPECIFIED")) : "";
     ( trim($bg['PRCPathRptValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP'S PATHOLOGY REPORT INDICATOR MUST BE SPECIFIED")) : "";
-    
     ( trim($bg['PRCProcedureInstitutionValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCEDURE INSTITUTION MUST BE SPECIFIED.")) : "";
-    ( trim($bg['PRCProcedureInstitutionValue']) !== trim($bg['PRCPresentInstValue']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCEDURE INSTITUTION AND PROCURING INSTITUTION MUST BE THE SAME.")) : "";
-    
-     ( trim($bg['PRCProcedureDateValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCEDURE DATE MUST BE SPECIFIED.")) : "";
-    
+    ( trim($bg['PRCProcedureInstitutionValue']) !== trim($bg['PRCPresentInstValue']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCEDURE INSTITUTION AND PROCURING INSTITUTION MUST BE THE SAME.")) : ""; 
+    ( trim($bg['PRCProcedureDateValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE PROCEDURE DATE MUST BE SPECIFIED.")) : "";
     return array('errorind' => $errorInd, 'msgarr' => $msgArr);    
 }
 
 function initialBGDataCheckOne($bg) { 
+    //A) MAKE SURE ALL USED FIELDS EXISTS
     $errorInd = 0; 
     $msgArr = array(); 
     //CHECK ARRAY KEYS EXIST IN PASSED DATA
@@ -3099,3 +3173,6 @@ function initialBGDataCheckOne($bg) {
 function zeroOut($var){
    return ($var < 0 ? 0 : $var);
 }
+
+
+
