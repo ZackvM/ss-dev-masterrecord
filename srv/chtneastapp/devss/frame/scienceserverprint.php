@@ -726,8 +726,10 @@ SQLSTMT;
     <td style="font-size: 9pt; padding: 5pt 2pt 5pt 2pt;border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); ">{$met['cxindicator']}</td>
     <td style="font-size: 9pt; padding: 5pt 2pt 5pt 2pt;border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); ">{$met['rxindicator']}</td></tr>
 <tr><td style="height: 5pt;"></td></tr>
+<!--  SECTION TAKEN OUT AS PER DEE'S REQUEST ON 20190130 
 <tr><td style="font-size: 9pt; font-weight: bold; border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); padding: 0 0 0 2;  " colspan=6>Collected Sample Designation</td></tr>
 <tr><td style="font-size: 9pt; padding: 5pt 2pt 5pt 2pt;border-bottom: 1px solid rgba(206,206,206,1);border-left: 1px solid rgba(206,206,206,1); " colspan=6>{$dxdgnos}</td></tr>
+//-->
 </table>
 BSTBL;
         }

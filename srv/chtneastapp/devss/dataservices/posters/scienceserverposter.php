@@ -71,10 +71,15 @@ class datadoers {
         //2) WRITE DATA IF ALL CHECKS PASS - NO LABEL PRINTING NECESSARY AT BGROUP LEVEL
 
         //******** WRITE BIOGROUP GET NUMBER ************//  
+        //******** THIS IS A NON-TRANSACTIONAL WRITE ****//
+        //TODO:  LOOK INTO MAKING THIS TRANSACTIONAL, IF POSSIBLE
+
         $selector = strtolower(generateRandomString(15));
         $bgNbr = createBGHeader( $selector, $bg );
         $insDET = createBGDetail( $bgNbr, $bg );
         $insDte = createBGDateDetails( $bgNbr, $bg );
+        $insCmt = createBGComment( $bgNbr, $bg); 
+
 
         ( 1 === 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , $bgNbr . " " . $selector   )) : "";
         //3) SEND BACK encrypted data selector
@@ -3023,6 +3028,20 @@ function bldDialogGetter($whichdialog, $passedData) {
  * PRCProcDate; PRCPRocedureTypeValue; PRCTechInstitute; PRCInitialMetric; PRCMetricUOMValue; PRCPXIId; PRCPXICXValue; PRCPXIRXValue; PRCUnInvolvedValue; PRCPathRptValue; PRCProcedureInstitutionValue; PRCProcedureDateValue
  * 
  */
+
+function createBGComment( $bgNbr, $bg ) { 
+
+  require(serverkeys . "/sspdo.zck");
+  $cmtSQL = "insert into four.ref_procureBiosample_comment (pbiosample, activeind, comment, reffrommodule, moduleReference, refby, refon, dspind) values(:pbiosample, 1, :comment, 'PROCUREMENT', :moduleReference, :refby, now(), 1)";
+  $cmtRS = $conn->prepare($cmtSQL); 
+  if ( trim($bg['PRCBSCmts']) !== "" ) { 
+    $cmtRS->execute(array(':pbiosample' => $bgNbr,':comment' => trim($bg['PRCBSCmts']),':moduleReference' => 'BIOSPECIMENCMT',':refby' => strtolower($bg['PRCTechnician'])));
+  }
+  if ( trim($bg['PRCHPRQ']) !== "" ) { 
+    $cmtRS->execute(array(':pbiosample' => $bgNbr,':comment' => trim($bg['PRCHPRQ']),':moduleReference' => 'HPRQUESTION',':refby' => strtolower($bg['PRCTechnician'])));
+  }
+  return 1;
+}
 
 function createBGDateDetails( $bgNbr, $bg ) {
   

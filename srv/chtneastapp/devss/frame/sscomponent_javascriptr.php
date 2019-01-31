@@ -1198,6 +1198,9 @@ function fillField(whichfield, whichvalue, whichdisplay) {
       byId('notRcvdNoteDsp').style.display = 'none';
     }
     break;
+    case 'fldPRCPresentInst':
+      alert('CHANGE Operative Schedule');
+    break;
   }        
 }            
 
