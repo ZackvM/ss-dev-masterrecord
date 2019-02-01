@@ -754,8 +754,11 @@ function procurebiosample($rqstrstr) {
     $sp = serverpw; 
     $tt = treeTop;
     $linuxServer = phiserver;
-    $rtnthis = <<<JAVASCR
+ 
+if (trim($rqstrstr[2]) === "") {
 
+
+    $rtnthis = <<<JAVASCR
 
 document.addEventListener('DOMContentLoaded', function() {  
 
@@ -829,7 +832,8 @@ function createInitialBG() {
       //COLLECT ELEMENTS
       var dta = new Object();
       if (byId('initialBiogroupInfo')) {
-      byId('initialBiogroupInfo').querySelectorAll('*').forEach(function(node) {
+//      byId('initialBiogroupInfo').querySelectorAll('*').forEach(function(node) {
+      document.querySelectorAll('*').forEach(function(node) {
         if (node.type === 'text' || node.type === 'hidden' || node.type === 'checkbox' || node.type === 'textarea') {
           if (node.type === 'checkbox') { 
             dta[node.id.substr(3)] = node.checked;
@@ -853,7 +857,7 @@ function createInitialBG() {
 }       
        
 function answerInitialBGroupSave(rtnData) { 
-  console.log(rtnData);
+  //console.log(rtnData);
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
     var dspMsg = ""; 
@@ -865,11 +869,12 @@ function answerInitialBGroupSave(rtnData) {
     byId('standardModalBacker').style.display = 'none';
     byId('standardModalDialog').style.display = 'none';         
    } else { 
-       byId('standardModalDialog').innerHTML = "";
-       byId('standardModalBacker').style.display = 'none';
-       byId('standardModalDialog').style.display = 'none';  
-       //RELOAD WITH ENCRYPTED SELECTOR          
-       console.log(httpage.responseText);
+    byId('standardModalDialog').innerHTML = "";
+    byId('standardModalBacker').style.display = 'none';
+    byId('standardModalDialog').style.display = 'none'; 
+    var ency = JSON.parse(rtnData['responseText']); 
+    navigateSite('procure-biosample/'+ency['DATA']);            
+
    }        
 }
 
@@ -1492,6 +1497,11 @@ function answerUpdateORSched(rtnData) {
 }
 
 JAVASCR;
+} else { 
+    //BIOGROUP SPECIFIED
+
+    $rtnthis = "";
+}
 return $rtnthis;
 
 }

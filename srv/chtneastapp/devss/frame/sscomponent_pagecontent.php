@@ -459,9 +459,10 @@ if (trim($rqststr[2]) === "") {
 } 
 
 if (trim($rqststr[2]) !== "") { 
+   $bgBldr = explode("/",$_SERVER['REQUEST_URI']); 
    //BUILD EDIT COLLECTION SCREEN
-   //$topBtnBar = generatePageTopBtnBar('procurebiosample');
-   //$pg = "PAGE GOES HERE";
+   $topBtnBar = generatePageTopBtnBar('procurebiosampleedit');
+   $pg = bldBiosampleProcurementEdit( $whichusr, cryptservice($bgBldr[2],'d',false) );
 } 
 
 $rtnthis = <<<PAGEHERE
@@ -1832,6 +1833,18 @@ function generatePageTopBtnBar($whichpage, $whichusr) {
 
 switch ($whichpage) { 
 
+case 'procurebiosampleedit':
+$pxibtn = "";
+$innerBar = <<<BTNTBL
+<tr>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPRCSaveEdit border=0><tr><td><!--ICON //--></td><td>Save Edit</td></tr></table></td>        
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVocabSrch border=0><tr><td><!--ICON //--></td><td>Vocabulary Search</td></tr></table></td>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCLock border=0><tr><td><!--ICON //--></td><td>Release BG</td></tr></table></td>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVoid border=0><tr><td><!--ICON //--></td><td>Void BG</td></tr></table></td>
+</tr>
+BTNTBL;
+    break;
 case 'procurebiosample':
     $pxibtn = "";
     foreach($whichusr as $key =>$val) { 
@@ -2686,6 +2699,61 @@ return $rtnTbl;
 
 }
 
+function bldProcurementGridEdit( $usr, $selector ) { 
+  $si = serverIdent;
+  $sp = serverpw;
+  $pdta['selector'] = $selector;
+  $payload = json_encode($pdta);
+  $bgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-biogroup",serverIdent, serverpw, $payload), true);
+  $bg = $bgdta['DATA'];
+
+  $jsonbg = json_encode($bg);
+
+$insmnu = "<input type=hidden id=fldPRCPresentInstValue value=\"{$bg['bgfromlocationcode']}\"><input type=text id=fldPRCPresentInst READONLY class=\"inputFld lockfield\" value=\"{$bg['bgfromlocation']}\">";
+$tday = $bg['bgprocurementdate'];
+
+
+//{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"bgnbr":85052,"bgmigratedind":0,"bgmigratedon":"","bgrecordstatus":2,"bgfromlocationcode":"HUP","bgvoidind":0,"bgvoidreason":""}}
+  $rtnTbl['grid'] = <<<GRIDTBL
+
+<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable >
+<tr><td>
+
+<table border=0 cellspacing=0 cellpadding=0 id=bgProcSideBarDspTbl>
+<tr><td id=dspBGN>{$bg['bgnbr']}</td></tr>
+</table>
+
+</td></tr>
+
+<tr><td class=BSDspSectionHeader>Biogroup Sample Metrics</td></tr>
+  <tr><td class=procGridHoldingLine>
+   <table border=0 cellspacing=10>
+     <tr><td class=prcFldLbl>Procuring Institution</td><td class=prcFldLbl>Procurement Date </td><td class=prcFldLbl>Procedure Type</td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician</td><td class=prcFldLbl>Initial Metric <span class=reqInd>*</span></td><td>&nbsp;</td></tr>
+     <tr>      
+       <td><input type=hidden id=fldPRCBGNbr value={$bg['bgnbr']} READONLY>{$insmnu}</td> 
+       <td><input type=text readonly id=fldPRCProcDate class=lockfield value="{$tday}"></td>
+       <td>{$procedureType}</td>
+       <td>{$collectionType}</td>
+       <td><input type=text id=fldPRCTechnician value="{$tech}" READONLY></td>
+       <td><table><tr><td><input type=text id=fldPRCInitialMetric value=0></td><td>{$muommenu}</td></tr></table></td>
+       <td></td>
+     </tr>
+   </table>
+ </td></tr>
+</table>
+
+{$jsonbg}
+
+GRIDTBL;
+
+  $rtnTbl['sidebar'] = <<<SIDEBAR
+<!-- SIDEBAR STUFF CAN GO HERE -- LOCK??? //-->
+
+SIDEBAR;
+
+  return $rtnTbl;    
+}
+
 function bldProcurementGrid($usr) {   
   $si = serverIdent;
   $sp = serverpw;
@@ -2771,33 +2839,15 @@ $inscnt = 0;
   $inst = $usr->presentinstitution;
   $tech = strtoupper($usr->userid);
   $tday = date('m/d/Y');
-  //<i class="material-icons">lock</i>
-  /*
-   * <tr><td id=BSDspMainHeader>Biosample Collection</td></tr>
-<tr><td class=BSDspSmallSpacer>&nbsp;</td></tr>
-   * <tr><td align=right style="padding: .2vh .6vw 0 0;">
-
-
-  <table class=tblBtn id=btnProcureSaveBiosample style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table>
-
-</td></tr>
-   * 
-   * 
-   */
+  
 $rtnTbl = <<<RTNTBL
-<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable>
-<tr><td>
-    <table border=0>
-     <tr><td class=prcFldLbl>Biogroup #</td></tr>
-     <tr><td><input type=text id=fldPRCBGNbr value="" READONLY></td></tr>    
-     </table>
-</td></tr>        
+<table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable >
 <tr><td class=BSDspSectionHeader>Biogroup Sample Metrics</td></tr>
 <tr><td class=procGridHoldingLine>
-   <table border=0>
-     <tr><td rowspan=2 id=BSLock><div class=ttholder><i class="material-icons bslockdsp">lock_open</i><div class=tt>Biosample is currently editable</div></div></td><td class=prcFldLbl>Procuring Institution <span class=reqInd>*</span></td><td class=prcFldLbl>Procurement Date <span class=reqInd>*</span></td><td class=prcFldLbl>Procedure Type <span class=reqInd>*</span></td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician <span class=reqInd>*</span></td><td class=prcFldLbl>Initial Metric <span class=reqInd>*</span></td><td>&nbsp;</td></tr>
+   <table border=0 cellspacing=10>
+     <tr><td class=prcFldLbl>Procuring Institution <span class=reqInd>*</span></td><td class=prcFldLbl>Procurement Date <span class=reqInd>*</span></td><td class=prcFldLbl>Procedure Type <span class=reqInd>*</span></td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician <span class=reqInd>*</span></td><td class=prcFldLbl>Initial Metric <span class=reqInd>*</span></td><td>&nbsp;</td></tr>
      <tr>      
-       <td>{$insmnu}</td> 
+       <td><input type=hidden id=fldPRCBGNbr value="" READONLY>{$insmnu}</td> 
        <td><input type=text readonly id=fldPRCProcDate value="{$tday}"></td>
        <td>{$procedureType}</td>
        <td>{$collectionType}</td>
@@ -2811,15 +2861,16 @@ $rtnTbl = <<<RTNTBL
 <tr><td class=BSDspSpacer>&nbsp;</td></tr>
 <tr><td class=BSDspSectionHeader>Donor Metrics</td></tr>
 <tr><td class=procGridHoldingLine>
-   <table>
+
+   <table border=0 cellspacing=10>
     <tr>
       <td class=prcFldLbl>Initials <span class=reqInd>*</span></td>
       <td class=prcFldLbl>Age <span class=reqInd>*</span></td>
       <td class=prcFldLbl>Race <span class=reqInd>*</span></td>       
       <td class=prcFldLbl>Sex <span class=reqInd>*</span></td>
-      <td class=prcFldLbl>Consent <span class=reqInd>*</span></td>
-      <td class=prcFldLbl>Chemo <span class=reqInd>*</span></td>
+      <td class=prcFldLbl>Chemo-Therapy <span class=reqInd>*</span></td>
       <td class=prcFldLbl>Radiation <span class=reqInd>*</span></td>       
+      <td class=prcFldLbl>Consent <span class=reqInd>*</span></td>
       <td class=prcFldLbl>Callback</td>
       <td class=prcFldLbl>Subject #</td>
       <td class=prcFldLbl>Protocol #</td>
@@ -2830,18 +2881,14 @@ $rtnTbl = <<<RTNTBL
       <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td><td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
       <td><input type=text id=fldPRCPXIRace READONLY></td>
       <td><input type=text id=fldPRCPXISex READONLY></td>
-      <td><input type=text id=fldPRCPXIInfCon READONLY></td>
       <td><input type=text id=fldPRCPXIDspCX READONLY></td>
-      <td><input type=text id=fldPRCPXIDspRX READONLY></td>
+      <td><input type=text id=fldPRCPXIDspRX READONLY></td> 
+      <td><input type=text id=fldPRCPXIInfCon READONLY></td>
       <td><input type=text id=fldPRCPXILastFour READONLY></td>
       <td><input type=text id=fldPRCPXISubjectNbr READONLY></td>
       <td><input type=text id=fldPRCPXIProtocolNbr READONLY></td> 
       <td><input type=text id=fldPRCPXISOGI READONLY></td>       
-       
     </tr></table>
-<!--       <td><input type=text id=fldSubjectNbr value="" READONLY></td>
-      <td><input type=text id=fldProtocolNbr value="" READONLY></td>
-//-->
 
  </td></tr>
 
@@ -2849,21 +2896,21 @@ $rtnTbl = <<<RTNTBL
 <tr><td class=BSDspSectionHeader>Diagnosis Designation</td></tr>
 <tr><td class=procGridHoldingLine>
 
-<table>
-  <tr><td class=prcFldLbl>Specimen Category <span class=reqInd>*</span></td><td class=prcFldLbl>Site <span class=reqInd>*</span></td><td class=prcFldLbl>Sub-Site</td><td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolv/NAT <span class=reqInd>*</span></td><td class=prcFldLbl>Path-Rpt <span class=reqInd>*</span></td></tr>
+<table border=0 cellspacing=10>
+  <tr><td class=prcFldLbl>Specimen Category <span class=reqInd>*</span></td><td class=prcFldLbl>Site <span class=reqInd>*</span></td><td class=prcFldLbl>Sub-Site</td><td><div><input type=checkbox id=fldPRCDXOverride><label for=fldPRCDXOverride>DX Override</label></div></td><td class=prcFldLbl>Uninvolve/NAT <span class=reqInd>*</span></td><td class=prcFldLbl>Path-Rpt <span class=reqInd>*</span></td></tr>
   <tr><td valign=top> {$spcmenu} </td><td valign=top> {$sitesubsite} </td><td> {$subsite} </td><td valign=top> {$dxmod} </td><td>{$uninvmenu}</td><td>{$prptmenu}</td></tr>
   <tr><td colspan=6> 
     <table cellpadding=0 cellspacing=0 border=0><tr><td> 
      <div id=metsFromDsp>
-       <table>
+       <table cellspacing=0 cellpadding=0 border=0>
          <tr><td class=prcFldLbl>Metastatic From</td><td class=prcFldLbl>Metastatic Diagnosis</td></tr>
-         <tr><td> {$metssite} </td><td> {$metsdxmod} </td> </tr>
+         <tr><td style="padding: 10px 10px 0 0;"> {$metssite} </td><td style="padding: 10px 10px 0 0;"> {$metsdxmod} </td> </tr>
        </table>
      </div>
     </td><td>  
-    <table>
+    <table cellpadding=0 cellspacing=0 border=0>
       <tr><td class=prcFldLbl>Position</td><td class=prcFldLbl>Systemic Diagnosis</td></tr>
-      <tr><td> {$aspmenu} </td><td> {$sysdxmenu} </td></tr>   
+      <tr><td style="padding: 10px 10px 0 0;"> {$aspmenu} </td><td style="padding: 10px 10px 0 0;"> {$sysdxmenu} </td></tr>   
     </table>
     </td></tr></table>
 </td></tr>
@@ -2876,7 +2923,7 @@ $rtnTbl = <<<RTNTBL
 <tr><td class=BSDspSectionHeader>Comments</td></tr>
 <tr><td class=procGridHoldingLine>
 
-<table>
+<table cellspacing=10 border=0>
 <tr><td class=prcFldLbl>Biosample Comments</td><td class=prcFldLbl>Question for HPR/QMS</td></tr>
 <tr><td><TEXTAREA id=fldPRCBSCmts></TEXTAREA></td><td><TEXTAREA id=fldPRCHPRQ></TEXTAREA></td></tr>
 </table>
@@ -3190,8 +3237,50 @@ function dropmenuPathRptAllowables() {
 
 }
 
+function bldBiosampleProcurementEdit($usr, $selector) { 
+// {"statusCode":200,"loggedsession":"4tlt57qhpjfkugau1seif6glo0","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":58,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"menuvalue":"Procure Biosample","pagesource":"procure-biosample","additionalcode":""}]],["433","DATA COORDINATOR","",[{"menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""},{"menuvalue":"Consult Library","pagesource":"val-consult-library","additionalcode":""},{"menuvalue":"Slide Image Library","pagesource":"image-library","additionalcode":""},{"menuvalue":"QMS Actions","pagesource":"qms-actions","additionalcode":""}]],["472","REPORTS","",[{"menuvalue":"All Reports","pagesource":"reports","additionalcode":""},{"menuvalue":"Barcode Run","pagesource":"reports\/inventory\/barcode-run","additionalcode":""},{"menuvalue":"Daily Procurement Sheet","pagesource":"reports\/procurement\/daily-procurement-sheet","additionalcode":""}]],["473","UTILITIES","",[{"menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]],"lastlogin":{"lastlogdate":"Mon Dec 17th, 2018 at 14:59","fromip":"170.212.0.91"},"accessnbr":"43"} 
+    if ((int)$usr->allowprocure <> 1) { 
+      //USER NOT ALLOWED TO PROCURE
+      $holdingTbl = "<h1>USER NOT ALLOWED TO PROCURE BIOSAMPLES";
+    } else { 
+      $today = new DateTime('now');
+      $tdydte = $today->format('m/d/Y');
+      $tdydtev = $today->format('Y-m-d');
+      $orscheddater = bldSidePanelORSched( $usr->presentinstitution, $tdydte, $tdydtev );
+      //TODO:REMOVE THIS LINE TO DEFAULT TO TODAY'S DATE
+      //$tdydtev = '20180507';
+      $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
+      
+      $procGrid = bldProcurementGridEdit($usr, $selector); //THIS IS THE PROCUREMENT GRID ELEMENTS
+
+      $holdingTbl = <<<HOLDINGTBL
+            <div id=initialBiogroupInfo>
+            <table border=0 id=procurementAddHoldingTbl>
+                   <tr>
+                      <td valign=top id=procbtnsidebar><center><div class=ttholder onclick="openAppCard('appcard_procphilisting');"><i class="material-icons">how_to_reg</i><div class=tt>Donor Information/Operative Schedule</div></div></td>
+                      <td valign=top id=procGridHolderCell> {$procGrid['grid']}</td>
+                      <td valign=top id=procGridBGDsp>{$procGrid['sidebar']}</td>
+                   </tr>
+            </table> 
+            </div>
+<div id=appcard_procphilisting class=appcard>
+<table>
+<tr><td class=sidePanel valign=top style="height: 39vh;">
+  <table border=0 width=100% cellspacing=0 cellpadding=0>
+    <tr><td>{$orscheddater}</td></tr>
+    <tr><td colspan=1>{$orlistTbl}</td></tr>
+  </table>
+</td></tr>
+</table> 
+</div>
+HOLDINGTBL;
+    }
+    return $holdingTbl;
+}
+
+
+
 function bldBiosampleProcurement($usr) { 
-    // {"statusCode":200,"loggedsession":"4tlt57qhpjfkugau1seif6glo0","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":58,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"menuvalue":"Procure Biosample","pagesource":"procure-biosample","additionalcode":""}]],["433","DATA COORDINATOR","",[{"menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""},{"menuvalue":"Consult Library","pagesource":"val-consult-library","additionalcode":""},{"menuvalue":"Slide Image Library","pagesource":"image-library","additionalcode":""},{"menuvalue":"QMS Actions","pagesource":"qms-actions","additionalcode":""}]],["472","REPORTS","",[{"menuvalue":"All Reports","pagesource":"reports","additionalcode":""},{"menuvalue":"Barcode Run","pagesource":"reports\/inventory\/barcode-run","additionalcode":""},{"menuvalue":"Daily Procurement Sheet","pagesource":"reports\/procurement\/daily-procurement-sheet","additionalcode":""}]],["473","UTILITIES","",[{"menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]],"lastlogin":{"lastlogdate":"Mon Dec 17th, 2018 at 14:59","fromip":"170.212.0.91"},"accessnbr":"43"} 
     if ((int)$usr->allowprocure <> 1) { 
       //USER NOT ALLOWED TO PROCURE
       $holdingTbl = "<h1>USER NOT ALLOWED TO PROCURE BIOSAMPLES";
@@ -3205,24 +3294,27 @@ function bldBiosampleProcurement($usr) {
       $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
       $procGrid = bldProcurementGrid($usr); //THIS IS THE PROCUREMENT GRID ELEMENTS
 
-
-
       $holdingTbl = <<<HOLDINGTBL
             <div id=initialBiogroupInfo>
             <table border=0 id=procurementAddHoldingTbl>
                    <tr>
+                      <td valign=top id=procbtnsidebar><center><div class=ttholder onclick="openAppCard('appcard_procphilisting');"><i class="material-icons">how_to_reg</i><div class=tt>Donor Information/Operative Schedule</div></div></td>
                       <td valign=top id=procGridHolderCell> {$procGrid}</td>
-                      <td class=sidePanel valign=top style="height: 40vh;">
-
-                          <table border=0 width=100% cellspacing=0 cellpadding=0>
-                            <tr><td>{$orscheddater}</td></tr>
-                            <tr><td colspan=2>{$orlistTbl}</td></tr>
-                          </table>
-
-                      </td>
+                      <td valign=top id=procGridBGDspNotDsp>&nbsp;</td>
                    </tr>
             </table> 
             </div>
+
+<div id=appcard_procphilisting class=appcard>
+<table>
+<tr><td class=sidePanel valign=top style="height: 39vh;">
+  <table border=0 width=100% cellspacing=0 cellpadding=0>
+    <tr><td>{$orscheddater}</td></tr>
+    <tr><td colspan=1>{$orlistTbl}</td></tr>
+  </table>
+</td></tr>
+</table> 
+</div>
 HOLDINGTBL;
     }
     return $holdingTbl;

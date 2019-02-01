@@ -34,10 +34,10 @@ function globalstyles($mobileInd) {
 
  $rtnThis = <<<STYLESHEET
 
-@import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
+@import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Bungee);
 html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh; color: rgba({$this->color_black},1);}
  
-.appcard { border-left: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 49; padding: 11vh 0 0 0; background: rgba({$this->color_lgrey},1); transition: 1s; 
+.appcard { border-left: 1px solid rgba({$this->color_zackgrey},1); height: 100vh; width: 50vw; position: fixed; top: 0; left: 101vw; z-index: 48; padding: 11vh 0 0 0; background: rgba({$this->color_lgrey},1); transition: 1s; 
 -webkit-box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 -moz-box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
@@ -238,103 +238,94 @@ function procurebiosample($mobileind) {
 $rtnThis = <<<STYLESHEET
 
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
-
-#btnPBClearGrid { width: 2vw; }
- 
+#btnPBClearGrid { width: 2vw; } 
 #procurementAddHoldingTbl { height: 86vh; box-sizing: border-box; }
 #procurementAddHoldingTbl .sidePanel { width: 30vw; box-sizing: border-box;  }
-#procurementAddHoldingTbl #procGridHolderCell { width: 67vw; border-right: 1px solid rgba({$this->color_ddrwgrey},1); box-sizing: border-box;   }
-
+#procurementAddHoldingTbl #procGridHolderCell { padding: 0 0 0 1.5vw;  }
 .topBtnHolderCell .ttholder { position: relative; }
 .topBtnHolderCell .ttholder:hover .tt { display: block; text-align: left; }
 .topBtnHolderCell .tt { position: absolute; left: -.5vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); box-sizing: border-box; padding: 4px 3px; display: none; white-space: nowrap; z-index: 40; }
 .topBtnHolderCell .tt .btnBarDropMenuItems { font-size: 1.5vh; }
 .topBtnHolderCell .tt .btnBarDropMenuItems .btnBarDropMenuItem:hover { background: rgba({$this->color_lblue},1);  color: rgba({$this->color_white},1); cursor: pointer; } 
-
 .procGridHoldingTable {width: 66vw; box-sizing: border-box; }
 .procGridHoldingTitle {font-size: 1.7vh; color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border-bottom: 2px solid rgba({$this->color_ddrwgrey},1); padding: .5vh 0 0 0; } 
 .procGridHoldingDecorationLineBACKUP {border-left: 2px solid rgba({$this->color_ddrwgrey},1);border-top: 2px solid rgba({$this->color_ddrwgrey},1);}
-
 .prcFldLbl { font-size: 1.3vh; color: rgba({$this->color_dblue},1);  padding: 0 0 0 0; font-weight: bold; }
 input {font-size: 1.3vh; padding: 1vh .5vw; }
 textarea { font-size: 1.3vh; }
-
 #fldPRCProcedureDate { width: 8vw; font-size: 1.2vh; }
 #fldPRCProcedureInstitutionValue { width: 8vw; font-size: 1.2vh; }
-
 #BSLock { width: 4vw; text-align: center; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); }
 #BSLock .ttholder { position: relative; }
 #BSLock .ttholder:hover .tt { display: block; text-align: left; }
 #BSLock .tt { position: absolute; left: .5vw; font-size: 1.3vh; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); box-sizing: border-box; padding: 4px 3px; display: none; white-space: nowrap; z-index: 40; }
 .bslockdsp { font-size: 4vh; color: rgba({$this->color_darkgreen},1); }
-
 #fldPRCBGNbr { width: 7vw; }
 #fldPRCProcDate { width: 8vw; }
-#fldPRCPresentInst {width: 17vw; }
+#fldPRCPresentInst {width: 20vw; }
 #ddfldPRCPresentInst {min-width: 17vw; }
-#fldPRCProcedureType { width: 9vw; }
-#ddPRCProcedureType { min-width: 9vw; }
-#fldPRCCollectionType { width: 9vw; }
-#ddPRCCollectionType { min-width: 9vw; }
-#fldPRCTechnician{ width: 10vw; }
+#fldPRCProcedureType { width: 11vw; }
+#ddPRCProcedureType { min-width: 11vw; }
+#fldPRCCollectionType { width: 11vw; }
+#ddPRCCollectionType { min-width: 11vw; }
+#fldPRCTechnician{ width: 13.5vw; }
 #fldPRCInitialMetric { width: 3vw; text-align: right; }
-#fldPRCMetricUOM {width: 6vw; }
-#ddPRCMetricUOM {min-width: 6vw; }
+#fldPRCMetricUOM {width: 8vw; }
+#ddPRCMetricUOM {min-width: 8vw; }
 #fldSubjectNbr {width: 7vw; }
 #fldADDSubjectNbr { width: 12vw; }
 #fldProtocolNbr {width: 7vw;}
 #fldADDProtocolNbr {width: 9vw; }
-
 #fldPRCSpecCat {width: 13vw; }
 #ddPRCSpecCat {min-width: 13vw; }
 #fldPRCSite {width: 12vw; }
 #ddPRCSite { min-width: 15vw; }
 #fldPRCSSite {width: 11.2vw; }
 #ddPRCSSite { min-width: 11.2vw; }
-#fldPRCDXMod {width: 19.3vw; }
-#ddPRCDXMod { min-width: 19.3vw; }
-#fldPRCBSCmts {width: 33.6vw; height: 6vh; }
-#fldPRCHPRQ {width: 33.6vw; height: 6vh; }
+#fldPRCDXMod {width: 23vw; }
+#ddPRCDXMod { min-width: 23vw; }
+#fldPRCBSCmts {width: 38.5vw; height: 10vh; }
+#fldPRCHPRQ {width: 38.5vw; height: 10vh; }
 #fldPRCUnknownMet {width: 6vw; }
 #ddPRCUnknownMet {min-width: 6vw; }
-#fldPRCUnInvolved { width: 6vw; }
-#ddPRCUnInvolved { min-width: 4vw; }
+#fldPRCUnInvolved { width: 10vw; }
+#ddPRCUnInvolved { min-width: 10vw; }
 #fldPRCSitePositions { width: 15vw; }
 #ddPRCSitePositions { width: 15vw; }
 #fldPRCDiagnosisDesignation { width: 25vw; }
 #fldPRCMETSDesignation {width: 32vw; }
 #fldPRCSystemicDX {width: 32vw; }
-#fldPRCPXISex {width: 2vw; border: none; padding: 0;  }
+#fldPRCPXISex {width: 4vw;  }
 #fldPRCPXIId { display: none; }
-#fldPRCPXIInitials { width: 3vw; border: none; padding: 0; }
+#fldPRCPXIInitials { width: 4vw;  }
 #fldADDPXIInitials { width: 4vw; }
-#fldPRCPXIAge {width: 1.3vw; text-align: right; border: none; padding: 0; }
+#fldPRCPXIAge {width: 2.8vw; text-align: right;  }
 #fldADDPXIAge {width: 3vw; text-align: right; }
-#fldPRCPXIAgeMetric {width: 2vw; border: none; padding: 0;}
+#fldPRCPXIAgeMetric {width: 2.8vw; }
 #fldADDAgeUOM {width: 5vw;}
 #ddADDAgeUOM {min-width: 6vw; }
-#fldPRCPXIRace {width: 10vw; border: none; padding: 0; }
-#fldPRCPXIInfCon {width: 4vw; border: none; padding: 0; }
-#fldPRCPXILastFour {width: 3vw; border: none; padding: 0; }
-#fldPRCPXIDspCX {width: 4vw;border: none; padding: 0; }
+#fldPRCPXIRace {width: 10vw;  }
+#fldPRCPXIInfCon {width: 5vw;  }
+#fldPRCPXILastFour {width: 4vw;  }
+#fldPRCPXIDspCX {width: 6vw;  }
 #fldPRCPXICX {width: 5vw; }
 #ddPRCPXICX {min-width: 6vw;}
-#fldPRCPXIDspRX {width: 4vw;border: none; padding: 0;  }
+#fldPRCPXIDspRX {width: 6vw;  }
 #fldPRCPXIRX {width: 5vw;  }
 #ddPRCPXIRX {min-width: 6vw;}
-#fldPRCPXISubjectNbr { width: 9vw; border: none; padding: 0; }
-#fldPRCPXIProtocolNbr { width: 9vw; border: none; padding: 0; }
-#fldPRCPXISOGI {width: 5vw; border: none; padding: 0; }
+#fldPRCPXISubjectNbr { width: 11vw;  }
+#fldPRCPXIProtocolNbr { width: 11vw; }
+#fldPRCPXISOGI {width: 5vw;  }
 #fldPRCUpennSOGI { width: 10vw; }
 #ddPRCUpennSOGI { width: 10vw; }
 #metsFromDsp { display: none; }
-#fldPRCMETSSite { width: 15.5vw; }
+#fldPRCMETSSite { width: 14vw; }
 #ddPRCMETSSite { min-width: 15.5vw; }
-#fldPRCMETSDX { width: 18vw; }
-#ddPRCMETSDX { min-width: 18vw; }
+#fldPRCMETSDX { width: 25vw; }
+#ddPRCMETSDX { min-width: 25vw; }
 #fldPRCSitePosition { width: 16.5vw; }
 #ddPRCSitePosition { min-width: 16.5vw; }
-#fldPRCSystemList {width: 16.5vw; }
+#fldPRCSystemList {width: 19vw; }
 #ddPRCSystemList {min-width: 16.5vw; }
 #displayVocabulary { min-width: 25vw; overflow-x: hidden;}
 #displayMETSVocabulary { min-width: 25vw; overflow-x: hidden; }
@@ -350,61 +341,46 @@ textarea { font-size: 1.3vh; }
 #fldPRCPathRpt { width: 5vw; }
 #ddPRCPathRpt { width: 5vw; }
 .reqInd {font-size: 1.3vh; color: rgba({$this->color_bred},1); font-weight: bold; }
-
 #BSDspMainHeader { font-size: 2vh; text-align: center; font-variant: small-caps; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_cornflowerblue},1); padding: 1vh 1vw; border: 2px solid rgba({$this->color_dblue},1); }
-.BSDspSectionHeader { padding-top: .6vh; padding-bottom: .6vh; padding-left: 0vw; font-size: 1.4vh; background: rgba({$this->color_white},1); color: rgba({$this->color_darkgrey},1); font-weight: bold; border-top: 1px solid rgba({$this->color_grey},1);  }
-.BSDspSpacer { height: 1.3vh;  }
+.BSDspSectionHeader { padding-top: .6vh; padding-bottom: .6vh; padding-left: 0vw; font-size: 1.4vh; background: rgba({$this->color_white},1); color: rgba({$this->color_darkgrey},1); border-bottom: 1px solid rgba({$this->color_darkgrey},1); font-weight: bold;  }
+.BSDspSpacer { height: 1.5vh;  }
 .procGridHoldingLine {padding-top: .5vh; }
 .BSDspSmallSpacer { height: .2vh; font-size: .3vh; }
-
 #divORHolder { margin-left: .1vw; margin-top: .2vh; position: relative; font-size: 1.3vh; border: 1px solid rgba({$this->color_zackgrey},1); }
-
 #divORHolder #headerTbl {  background: rgba({$this->color_cornflowerblue},1);  }
 #divORHolder #headerTbl th { padding: 4px 4px 4px 4px; } 
-
-
 #PXIDspTblHD {border-collapse: collapse;}
 #dataPart {  height: 78vh; overflow: auto; } 
-
 .procedureSpellOutTbl { border-collapse: collapse;  }
 .procTxtDsp { line-height: 1.4em; text-align: justify; padding: 0 .8vw 0 0; }
-
 .dspORTarget { width: 2vw; text-align: center; box-sizing: border-box; border-right: 1px solid  rgba({$this->color_grey},1); }
 .dspORInformed {width: 2vw; text-align: center;box-sizing: border-box; border-right: 1px solid  rgba({$this->color_grey},1); }
 .dspORAdded {width: 2vw; text-align: center; box-sizing: border-box; border-right: 1px solid  rgba({$this->color_grey},1);}
 .dspORInitials {width: 2vw; text-align: left;box-sizing: border-box; border-right: 1px solid  rgba({$this->color_grey},1); padding: 4px; }
 .dspProcCell { padding: 0 0 0 4px; }
-
 .targeticon {font-size: 1.8vh; color: rgba({$this->color_white},1); }
 .targetwatch { background: rgba({$this->color_cornflowerblue},1); }
 .targetrcvd { background: rgba({$this->color_darkgreen},1); }
 .targetnot { background: rgba({$this->color_bred},1); }
 .addicon { font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); }
-
 .btnEditPHIRecord { font-size: 1.4vh; color: rgba({$this->color_dblue},1); }
 .btnEditPHIRecord:hover {cursor: pointer; color: rgba({$this->color_bred},1); text-decoration: underline; }
-
 .smallORTblLabel { white-space: nowrap; font-weight: bold; }
-
 #procDataDsp {border-collapse: collapse;}
 .displayRows {background: rgba({$this->color_white},1); }
 .displayRows:nth-child(even) { background: rgba({$this->color_lightgrey},1); }
 .displayRows:hover {cursor: pointer; background: rgba({$this->color_lamber},1); }
-
 #vocabularyDspTable { width: 100%; border-collapse: collapse; } 
 #vocabularyDspTable th { font-size: 1.4vh; font-weight: bold; white-space: nowrap; text-align: left; }
 #vocabularyDspTable td { font-size: 1.4vh; white-space: nowrap;  padding: 3px 8px 3px 5px;  }
-
 #fldDNRTarget { width: 6vw; }
 #ddDNRTargetValue {min-width: 6vw; }
 #fldADDTarget { width: 6vw; }
 #ddADDTargetValue {min-width: 6vw; }
-
 #fldDNRInformedConsent { width: 6vw; }
 #ddDNRInformedConsent { min-width: 6vw; }
 #fldADDInformedConsent { width: 6vw; }
 #ddADDInformedConsent { min-width: 6vw; }
-
 #fldDNRAge { width: 3vw; text-align: right; }
 #fldDNRAgeUOM {width: 6vw; }
 #ddDNRAgeUOM { min-width: 6vw; }
@@ -412,37 +388,46 @@ textarea { font-size: 1.3vh; }
 #fldADDRace {width: 10vw; }
 #ddDNRRace { min-width: 10vw; }
 #ddADDRace {min-width: 10vw; }
-
 #fldDNRSex { width: 5vw; }
 #ddDNRSex { min-width: 5vw; }
 #fldADDSex { width: 5vw; }
 #ddADDSex { min-width: 5vw; }
-
 #fldDNRLastFour {width: 5vw; }
 #fldDNREncNotesType { width: 10vw; }
 #fldDNREncounterNote { width: 24vw; }
 #fldDNRNotReceivedNote {width: 41vw; }
 #notRcvdNoteDsp {display: none; }
-
 .ENCHEAD { width: 78vh; }
 .ENCHEAD tr td { text-align: center; font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_zackgrey},1);  }
-
 .DNRLbl { color: rgba({$this->color_zackgrey},1); font-weight: bold; font-size: 1.2vh; padding: .2vh .2vw; }
 .DNRLbl2 { color: rgba({$this->color_zackgrey},1); font-weight: bold; font-size: 1.1vh; padding: .2vh .2vw 0 0; border-bottom: 1px solid rgba({$this->color_darkgrey},1); }
 .DNRDta { color: rgba({$this->color_zackgrey},1); font-size: 1.2vh; padding: .2vh .2vw; border-bottom: 1px solid rgba({$this->color_zackgrey},1); min-width: 10vw;}
 .procedureTextDsp { color: rgba({$this->color_zackgrey},1); font-size: 1.2vh; padding: 0 .3vw .4vh .3vw; width: 41vw; text-align: justify; line-height: 1.4em; }
-
 #displayPreviousCaseNotes { border: 1px solid rgba({$this->color_zackgrey},1); width: 41vw; height: 15vh; overflow: auto; background: rgba({$this->color_white},1);  }
 .noteTextLineTbl { width: 40vw; }
 .noteTextLineText { font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw 0 .3vw; text-align: justify;   }
 .noteTextLineEntry { font-size: 1vh; color: rgba({$this->color_darkgrey},1); text-align: right; padding: 0 .3vw 0 .3vw; border-bottom: 1px solid rgba({$this->color_darkgrey},1); }
 .noteTypeLine { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_darkgrey},1); padding: .3vh .0 .1vh .2vw;  }
-
 #waitgif { width: 2vw; padding: 2vh 0;}
 #waitIcon { display: none; width: 42.5vw; }
 #waitinstruction { font-size: 1.8vh; color: rgba({$this->color_dblue},1); font-weight: bold; }
 #displayEncounterDiv { display: block; }
 #waitgifADD { width: 1.6vw; padding: 2vh 0; }
+#procbtnsidebar { width: 2.5vw; border-right: 1px solid rgba({$this->color_ddrwgrey}, 1); }
+#procbtnsidebar .ttholder { position: relative; color: rgba({$this->color_ddrwgrey},1);  }
+#procbtnsidebar .ttholder:hover { cursor: pointer; color: rgba({$this->color_zackgrey},1); }
+#procbtnsidebar .ttholder:hover .tt { display: block; text-align: left; }
+#procbtnsidebar .tt { position: absolute; left: -.5vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); box-sizing: border-box; padding: 4px 3px; display: none; white-space: nowrap; z-index: 40; }
+
+
+
+
+#procGridBGDsp { padding: 0 0 0 1vw; border-left: 1px solid rgba({$this->color_ddrwgrey},1); }
+#bgProcSideBarDspTbl {    }
+#dspBGN { font-family: Bungee; font-size: 3.5vh; color: rgba({$this->color_darkgreen},1);  }
+.lockfield { background: rgba({$this->color_grey},.5);   }
+.lockfield:focus, .lockfield:active { background: rgba({$this->color_grey},.5);    }
+
 STYLESHEET;
 return $rtnThis;
 }
@@ -917,7 +902,7 @@ $at = genAppFiles;
   $bgPic = base64file("{$at}/publicobj/graphics/bg.png","background","bgurl",true);
    $rtnThis = <<<STYLESHTS
 
-@import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
+@import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Fira+Sans);
 html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh; color: rgba({$this->color_black},1);}
 body {margin: 0; height: 100%; width: 100%; background: rgba({$this->color_white},1); background: {$bgPic} repeat; }
     

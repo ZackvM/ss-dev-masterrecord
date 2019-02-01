@@ -34,6 +34,62 @@ function __construct() {
 
 class datadoers {
 
+    
+    function getprocurementbiogroup( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $bg = json_decode($passdata, true);
+      $bgSQL = <<<BGSQLHERE
+SELECT bg.pbiosample
+, ifnull(migrated,0) as migratedind
+, ifnull(migratedon,'') as migratedon
+, recordstatus
+, fromlocation
+, institution.institutiondsp
+, pdate.procdate as procdate
+, ifnull(voidind,0) as voidind
+, ifnull(voidreason,'') as voidreason
+, ifnull(selector,'') as selector 
+FROM four.ut_procure_biosample bg
+left join (SELECT menuvalue, ifnull(longvalue, ifnull(dspvalue,'')) as institutiondsp FROM four.sys_master_menus where menu = 'INSTITUTION') institution on bg.fromlocation = institution.menuvalue
+left join (SELECT pbiosample, date_format(refdate,'%m/%d/%Y') as procdate  FROM four.ref_procureBiosample_dates where activeind = 1 and dateDesignation = 'PROCUREMENT') as pdate on bg.pbiosample = pdate.pbiosample 
+where selector = :objSelector
+BGSQLHERE;
+
+      $bgRS = $conn->prepare($bgSQL);
+      $bgRS->execute(array(':objSelector' => $bg['selector']));
+      if ($bgRS->rowCount() === 1) { 
+          //FOUND
+        $bg = $bgRS->fetch(PDO::FETCH_ASSOC); 
+        $dta['bgnbr'] = (int)$bg['pbiosample'];
+        $dta['bgfromlocationcode'] = $bg['fromlocation'];
+        $dta['bgfromlocation'] = $bg['institutiondsp'];
+        $dta['bgprocurementdate'] = $bg['procdate'];
+        
+
+        $dta['bgmigratedind'] = (int)$bg['migratedind'];
+        $dta['bgmigratedon'] = $bg['migratedon'];
+        $dta['bgrecordstatus'] = (int)$bg['recordstatus'];
+        $dta['bgvoidind'] = (int)$bg['voidind'];
+        $dta['bgvoidreason'] = $bg['voidreason'];
+
+      } else { 
+          //NOT FOUND ERROR
+          $responseCode = 404;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    } 
+
     function initialbgroupsave($request, $passdata) {       
       $rows = array(); 
       //$dta = array(); 
@@ -73,20 +129,18 @@ class datadoers {
         //******** WRITE BIOGROUP GET NUMBER ************//  
         //******** THIS IS A NON-TRANSACTIONAL WRITE ****//
         //TODO:  LOOK INTO MAKING THIS TRANSACTIONAL, IF POSSIBLE
-
-        $selector = strtolower(generateRandomString(15));
+        $selector = generateRandomString(15);
         $bgNbr = createBGHeader( $selector, $bg );
         $insDET = createBGDetail( $bgNbr, $bg );
         $insDte = createBGDateDetails( $bgNbr, $bg );
         $insCmt = createBGComment( $bgNbr, $bg); 
+        $insDXD = createBGDXD( $bgNbr, $bg );
+        $insPXI = createBGPXI( $bgNbr, $bg );
 
-
-        ( 1 === 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , $bgNbr . " " . $selector   )) : "";
+        //( 1 === 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , $bgNbr . " " . cryptservice($selector,'e',false) . " " . $insPXI )) : "";
         //3) SEND BACK encrypted data selector
-
-
-
-
+        $responseCode = 200;
+        $dta = cryptservice($selector,'e',false);
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
@@ -3028,6 +3082,142 @@ function bldDialogGetter($whichdialog, $passedData) {
  * PRCProcDate; PRCPRocedureTypeValue; PRCTechInstitute; PRCInitialMetric; PRCMetricUOMValue; PRCPXIId; PRCPXICXValue; PRCPXIRXValue; PRCUnInvolvedValue; PRCPathRptValue; PRCProcedureInstitutionValue; PRCProcedureDateValue
  * 
  */
+
+function createBGPXI( $bgNbr, $bg ) { 
+  require(serverkeys . "/sspdo.zck");
+  //GET ORSchedId, ProcedureDate, Institution from Schedule
+
+  $orsql = "SELECT orlistid, ifnull(orkey,'') as orkey FROM four.tmp_ORListing where date_format(listdate,'%Y-%m-%d') = :proceduredate and location = :givenlocation and pxicode = :pxicode";
+  $orrs = $conn->prepare($orsql); 
+  $orrs->execute(array(':proceduredate' => $bg['PRCProcedureDateValue'], ':givenlocation' => $bg['PRCProcedureInstitutionValue'], ':pxicode' => $bg['PRCPXIId'])); 
+  if ($orrs->rowCount() === 0) { 
+      //TODO: MAKE SURE THAT THERE IS A DATA CHECK FOR THIS IN THE DATA CHECK SECTION!!!! 
+      //THIS IS REALLY BAD ... REALLY REALLY BAD
+  } else { 
+    $or = $orrs->fetch(PDO::FETCH_ASSOC); 
+  }
+
+  //BUILD ASSOCIATIVE ID
+  $assChkSQL = "SELECT procedureAssocCode FROM four.ref_procureBiosample_PXI where pxiid = :pxiid and proceduredate = :proceduredte and fromInstitution = :fromlocation and orkey = :orkey";
+  $assChkR = $conn->prepare($assChkSQL); 
+  $assChkR->execute(array(':pxiid' => $bg['PRCPXIId'], ':proceduredte' => $bg['PRCProcedureDateValue'] , ':fromlocation' => $bg['PRCProcedureInstitutionValue'] , ':orkey' => $or['orkey'] ));
+  if ( $assChkR->rowCount() === 0 ) { 
+    $associd = generateRandomString(20);
+  } else { 
+    $ass = $assChkR->fetch(PDO::FETCH_ASSOC); 
+    $associd = $ass['procedureAssocCode'];
+  }
+
+
+  $cxvalsql = "SELECT menuvalue FROM four.sys_master_menus where menu = 'CX' and dspValue = :value";
+  $cxv = $conn->prepare($cxvalsql);
+  $cxv->execute(array(':value' => $bg['PRCPXICX'])); 
+  if ($cxv->rowCount() === 0) { 
+    $cx = 2; 
+  } else { 
+    $cxr = $cxv->fetch(PDO::FETCH_ASSOC); 
+    $cx = (int)$cxr['menuvalue'];
+  }
+
+  $rxvalsql = "SELECT menuvalue FROM four.sys_master_menus where menu = 'RX' and dspValue = :value";
+  $rxv = $conn->prepare($rxvalsql);
+  $rxv->execute(array(':value' => $bg['PRCPXIRX'])); 
+  if ($rxv->rowCount() === 0) { 
+    $rx = 2; 
+  } else { 
+    $rxr = $rxv->fetch(PDO::FETCH_ASSOC); 
+    $rx = (int)$rxr['menuvalue'];
+  }
+
+  $ivalsql = "SELECT menuvalue FROM four.sys_master_menus where menu = 'INFC' and dspValue = :value";
+  $ixv = $conn->prepare($ivalsql);
+  $ixv->execute(array(':value' => $bg['PRCPXIInfCon'])); 
+  if ($ixv->rowCount() === 0) { 
+    $ic = 1; 
+  } else { 
+    $ixr = $ixv->fetch(PDO::FETCH_ASSOC); 
+    $ic = (int)$ixr['menuvalue'];
+  }
+
+  //WRITE DATA
+  $insSQL = "insert into four.ref_procureBiosample_PXI (pbiosample, activeInd, proceduredate, fromInstitution, orkey, procedureAssocCode, pxiid, pxiInitials, pxiRace, pxiGender, pxiAge, pxiAgeUOM, SOGI, CX, RX, subjectnumber, protocolnumber, InformedConsent, byWho, inputOn, fromModule) values (:pbiosample, 1, :proceduredate, :fromInstitution, :orkey, :procedureAssocCode, :pxiid, :pxiInitials, :pxiRace, :pxiGender, :pxiAge, :pxiAgeUOM, :SOGI, :CX, :RX, :subjectnumber, :protocolnumber, :InformedConsent, :byWho, now(), 'PROCUREMENT')";
+  $insRS = $conn->prepare($insSQL); 
+  $insRS->execute(array(
+   ':pbiosample' => $bgNbr 
+  ,':proceduredate' => $bg['PRCProcedureDateValue']
+  ,':fromInstitution' => $bg['PRCProcedureInstitutionValue']
+  ,':orkey' => $or['orkey']
+  ,':procedureAssocCode' => $associd
+  ,':pxiid' => $bg['PRCPXIId']
+  ,':pxiInitials' => $bg['PRCPXIInitials']
+  ,':pxiRace' => $bg['PRCPXIRace']
+  ,':pxiGender' => $bg['PRCPXISex']
+  ,':pxiAge' => $bg['PRCPXIAge']
+  ,':pxiAgeUOM' => $bg['PRCPXIAgeMetric']
+  ,':SOGI' => $bg['PRCPXISOGI']
+  ,':CX' => $cx
+  ,':RX' => $rx
+  ,':subjectnumber' => $bg['PRCPXISubjectNbr']
+  ,':protocolnumber' => $bg['PRCPXIProtocolNbr']
+  ,':InformedConsent' => $ic
+  ,':byWho' => strtolower($bg['PRCTechnician'])
+  ));
+
+  //TODO:  UPDATE LINUX SERVER RECORD WHEN ONLINE
+  
+  //UPDATE ORSCHED (backup and then write received)
+  $copySQL = "insert into four.tmp_ORListing_history SELECT * FROM four.tmp_ORListing where ORListID = :orlistid";
+  $copyRS = $conn->prepare($copySQL);
+  $copyRS->execute(array(':orlistid' => $or['orlistid']));
+
+  $updPXISQL = "update four.tmp_ORListing set targetind = 'R', lastupdatedby = 'PROCUREMENT-MODULE-BG-CREATE', lastupdateon = now() where orlistid = :orlistid"; 
+  $updPXIRS = $conn->prepare($updPXISQL); 
+  $updPXIRS->execute(array(":orlistid" => $or['orlistid']));
+
+  return $or['orkey'] . " " . $or['orlistid'];
+}
+
+function createBGDXD( $bgNbr, $bg) { 
+  require(serverkeys . "/sspdo.zck");
+  ////GET CLASSIFICATION
+  $classChkSQL = "SELECT ucase(ifnull(classification,'')) as classification FROM four.sys_master_menu_vocabulary_site_classifications where site = :site"; 
+  $classChkRS = $conn->prepare($classChkSQL); 
+  $classChkRS->execute(array(':site' => $bg['PRCSite'])); 
+  $siteClass = "";
+  if ( $classChkRS->rowCount() === 1 ) { 
+    $classChk = $classChkRS->fetch(PDO::FETCH_ASSOC); 
+    $siteClass = $classChk['classification'];
+  }  
+  $dx = explode(" :: ", $bg['PRCDXMod']);
+  $unknownmet = 2; //DOESN'T APPLY
+  if ($bg['PRCSpecCatValue'] === "MALIGNANT") { 
+    if (trim($bg['PRCMETSSITE']) === "") { 
+       $unknownmet = 1; //UNKNOWN MET SITE
+    } else {
+       $unknownmet = 0; //KNOWN MET
+    }
+  }
+  $dxdOverride = ( $bg['PRCDXOverride'] ) ? 1 : 0; 
+  $dxdSQL = "insert into four.ref_procureBiosample_designation (pBioSample, activeInd, specCat, primarySite, classification, sitePosition, primarySubSite, diagnosis, diagnosisModifier, unknownMet, metsSite, metsDX, systemDiagnosis, refFromModule, refBy, refOn, dxdOverride) values(:pBioSample, 1, :specCat, :primarySite, :classification, :sitePosition, :primarySubSite, :diagnosis, :diagnosisModifier, :unknownMet, :metsSite, :metsDX, :systemDiagnosis, 'PROCUREMENT', :refBy, now(), :dxdOverride)";
+  $dxdRS = $conn->prepare($dxdSQL); 
+  $dxdRS->execute(array(
+                      ':pBioSample' => $bgNbr
+                    , ':specCat' => trim($bg['PRCSpecCatValue'])
+                    , ':primarySite' => trim($bg['PRCSite'])
+                    , ':classification' => trim($siteClass)
+                    , ':sitePosition' => trim($bg['PRCSitePosition'])
+                    , ':primarySubSite' => trim($bg['PRCSSite'])
+                    , ':diagnosis' => trim($dx[0])
+                    , ':diagnosisModifier' => trim($dx[1])
+                    , ':unknownMet' => (int)$unknownmet
+                    , ':metsSite' => trim($bg['PRCMETSSite'])
+                    , ':metsDX' => trim($bg['PRCMETSDX'])
+                    , ':systemDiagnosis' => trim($bg['PRCSystemList'])
+                    , ':refBy' => strtolower(trim($bg['PRCTechnician']))
+                    , ':dxdOverride' => (int)$dxdOverride
+                ));
+  return 1;
+}
 
 function createBGComment( $bgNbr, $bg ) { 
 
