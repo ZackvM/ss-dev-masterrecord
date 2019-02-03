@@ -1500,8 +1500,224 @@ JAVASCR;
 } else { 
     //BIOGROUP SPECIFIED
 
-    $rtnthis = "";
+    $rtnthis = <<<BGJAVASCRPT
+
+
+document.addEventListener('DOMContentLoaded', function() {  
+
+    if (byId('btnPBClearGrid')) { 
+      byId('btnPBClearGrid').addEventListener('click', function() { clearGrid(); }, false);          
+    }
+
+    if (byId('btnPRCSaveEdit')) { 
+      byId('btnPRCSaveEdit').addEventListener('click', function() { alert('This will save Edits to this biogroup (but not yet)'); }, false);          
+    }
+
+    if (byId('btnPBCVocabSrch')) { 
+      byId('btnPBCVocabSrch').addEventListener('click', function() { alert('This will help you search the official CHTN vocabulary (but not yet)'); }, false);          
+    }
+
+    if (byId('btnPBCLock')) { 
+      byId('btnPBCLock').addEventListener('click', function() { alert('This will release this biogroup to the coordinators to work with (but not yet)'); }, false);          
+    }
+
+    if (byId('btnPBCVoid')) { 
+      byId('btnPBCVoid').addEventListener('click', function() { alert('This will void this biogroup (but not yet)'); }, false); 
+    }
+
+    if (byId('btnPBCSegment')) { 
+      byId('btnPBCSegment').addEventListener('click', function() { addSegments(); }, false); 
+    }
+    
+   
+
+}, false); 
+
+function clearGrid() { 
+   //TODO:  RESET DEFAULT FIELD VALUES
+   navigateSite('procure-biosample'); 
 }
+
+function addSegments() { 
+  if (!byId('bgSelectorCode')) { 
+  } else { 
+    if (byId('bgSelectorCode').value.trim() !== "") {
+      var dta = new Object(); 
+      dta['bgrecordselector'] = byId('bgSelectorCode').value;
+      var passdta = JSON.stringify(dta);
+      //console.log(passdta);
+      byId('standardModalDialog').innerHTML = "";
+      byId('standardModalBacker').style.display = 'block';
+      byId('standardModalDialog').style.display = 'none';
+      var mlURL = "/data-doers/preprocess-add-bg-segments";
+      universalAJAX("POST",mlURL,passdta,answerAddSegmentsDialog,2);   
+    }
+  }
+}
+
+function answerAddSegmentsDialog(rtnData) { 
+  
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("Add Segment ERROR:\\n"+dspMsg);
+   } else { 
+     //DISPLAY PHI EDIT
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+        if (byId('waitIcon')) {             
+          byId('waitIcon').style.display = 'none';  
+        }
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = "-25vw";
+       byId('standardModalDialog').style.left = "50%";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "15vh";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+       if (byId('fldSEGHP')) { 
+         byId('fldSEGHP').focus();
+       }
+     }  
+   }        
+
+}
+
+function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxisex, pxiinformed, pxilastfour, sbjtNbr, protocolNbr, cx, rx, sogi ) { 
+
+alert('To change the donor, void the biogroup and re-create it (functionality will be added soon.)');
+
+}
+
+function updatePrepmenu(whatvalue) { 
+  byId('fldSEGPreparationValue').value = '';
+  byId('fldSEGPreparation').value = '';
+  byId('ddSEGPreparationDropDown').innerHTML = "&nbsp;"; 
+  if (whatvalue.trim() === "") { 
+  } else { 
+     var mlURL = "/sub-preparation-menu/"+whatvalue;
+     universalAJAX("GET",mlURL,"",answerUpdatePrepmenu,2);
+  }
+}
+
+function answerUpdatePrepmenu(rtnData) { 
+  byId('fldSEGPreparationValue').value = '';
+  byId('fldSEGPreparation').value = '';
+  byId('ddSEGPreparationDropDown').innerHTML = "&nbsp;"; 
+  var rsltTbl = "";
+  if (parseInt(rtnData['responseCode']) === 200 ) { 
+    var dta = JSON.parse(rtnData['responseText']);
+    if (parseInt( dta['ITEMSFOUND'] ) > 0 ) {
+      rsltTbl = "<table border=0 class=menuDropTbl>";
+      dta['DATA'].forEach(function(element) { 
+        rsltTbl += "<tr><td onclick=\"fillField('fldSEGPreparation','"+element['menuValue']+"','"+element['longValue']+"');\" class=ddMenuItem>"+element['longValue']+"</td></tr>";
+      }); 
+      rsltTbl += "</table>";  
+      byId('ddSEGPreparationDropDown').innerHTML = rsltTbl; 
+    } else { 
+      rsltTbl = "<table border=0 class=menuDropTbl>";
+      dta['DATA'].forEach(function(element) { 
+        rsltTbl += "<tr><td onclick=\"fillField('fldSEGPreparation','NOVAL','NO VALUE');\" class=ddMenuItem>NO VALUE</td></tr>";
+      }); 
+      rsltTbl += "</table>";  
+      byId('ddSEGPreparationDropDown').innerHTML = rsltTbl; 
+    }
+  }
+}
+
+function fillField(whichfield, whichvalue, whichdisplay) { 
+  if (byId(whichfield)) { 
+     byId(whichfield).value = whichdisplay; 
+     if (byId(whichfield+'Value')) { 
+        byId(whichfield+'Value').value = whichvalue;    
+     }
+  }
+  switch (whichfield) {
+    case 'fldPRCProcedureDate':
+      updateORSched(); 
+    break;
+    case 'fldPRCProcedureType':
+      if (byId('fldPRCCollectionTypeValue')) { 
+        byId('fldPRCCollectionTypeValue').value = "";
+      }
+      if (byId('fldPRCCollectionType')) { 
+        byId('fldPRCCollectionType').value = "";
+      }
+      if (byId('ddPRCCollectionType')) { 
+        byId('ddPRCCollectionType').innerHTML = "&nbsp;";
+      } 
+      updateSubMenu('PRCCollectionType','COLLECTIONT',whichvalue);
+    break;
+    case 'fldPRCSpecCat':
+       //GET SITES
+       byId('fldPRCDXOverride').checked = false;     
+       fillField('fldPRCSSite','','');
+       fillField('fldPRCSite','','');
+       fillField('fldPRCDXMod','','');
+       var menuTbl =  "<center><div style=\"font-size: 1.4vh\">(Choose a Site)</div>";     
+       byId('ddPRCDXMod').innerHTML = menuTbl        
+       byId('ddPRCSSite').innerHTML = menuTbl;        
+       updateSiteMenu();
+       if ( byId('fldPRCSpecCatValue').value === 'MALIGNANT') {
+         //TURN ON METS
+         if (byId('metsFromDsp')) { 
+           byId('metsFromDsp').style.display = 'block';
+         } 
+       } else { 
+         //TURN OFF METS
+         if (byId('metsFromDsp')) { 
+           byId('metsFromDsp').style.display = 'none';
+         } 
+       }  
+    break;
+    case 'fldPRCMETSSite':
+     if ( byId('fldPRCMETSSiteValue').value.trim() !== ""  ) { 
+       updateMETSDiagnosisMenu();
+     }
+    break;
+    case 'fldPRCSite':
+       byId('fldPRCDXOverride').checked = false;          
+       byId('fldPRCDXMod').value = "";
+       byId('fldPRCDXModValue').value = "";
+       fillField('fldPRCSSite','',''); 
+       updateSubSiteMenu();          
+       updateDiagnosisMenu();                       
+     break;
+    case 'fldDNRTarget':
+    //TODO:  Make DYNAMIC for value check
+    if ( byId('fldDNRTarget').value === 'NOT RECEIVED') { 
+      byId('fldDNRNotReceivedNote').value = "";
+      byId('notRcvdNoteDsp').style.display = 'block';
+    } else { 
+      byId('fldDNRNotReceivedNote').value = "";
+      byId('notRcvdNoteDsp').style.display = 'none';
+    }
+    break;
+    case 'fldPRCPresentInst':
+      alert('CHANGE Operative Schedule');
+    break;
+  }        
+}            
+
+function displayNOQMSReason() { 
+  if (byId('reasonNoQMSLine')) {
+    if ( byId('reasonNoQMSLine').style.display === 'none' ) { 
+      byId('reasonNoQMSLine').style.display = 'block';
+      //BLANK VALUE
+    } else { 
+      byId('reasonNoQMSLine').style.display = 'none';
+      //BLANK VALUE
+    }
+  }
+}
+
+BGJAVASCRPT;
+
+}
+
 return $rtnthis;
 
 }

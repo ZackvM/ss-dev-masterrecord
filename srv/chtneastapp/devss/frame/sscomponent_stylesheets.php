@@ -419,14 +419,16 @@ textarea { font-size: 1.3vh; }
 #procbtnsidebar .ttholder:hover .tt { display: block; text-align: left; }
 #procbtnsidebar .tt { position: absolute; left: -.5vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); box-sizing: border-box; padding: 4px 3px; display: none; white-space: nowrap; z-index: 40; }
 
-
-
-
 #procGridBGDsp { padding: 0 0 0 1vw; border-left: 1px solid rgba({$this->color_ddrwgrey},1); }
 #bgProcSideBarDspTbl {    }
-#dspBGN { font-family: Bungee; font-size: 3.5vh; color: rgba({$this->color_darkgreen},1);  }
+#dspBGN { font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1);  }
 .lockfield { background: rgba({$this->color_grey},.5);   }
 .lockfield:focus, .lockfield:active { background: rgba({$this->color_grey},.5);    }
+
+#segBGDXD { font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); font-weight: bold; padding: 1vh 0;  }
+#fldSEGHP {width: 5vw; text-align: right; }
+
+
 
 STYLESHEET;
 return $rtnThis;

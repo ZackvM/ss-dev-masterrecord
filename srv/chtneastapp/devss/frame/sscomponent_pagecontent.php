@@ -29,6 +29,12 @@ function sysDialogBuilder($whichdialog, $passedData) {
         //$footerBar = "DONOR RECORD";
         $innerDialog = bldQuickPRUpload( $passedData );
         break;
+      
+      case 'dialogAddBGSegments':
+        $titleBar = "Add Biogroup Segments";
+        //$footerBar = "DONOR RECORD";
+        $innerDialog = bldDialogAddSegment( $passedData );
+      break; 
 
       case 'dataCoordEditPR':
         $titleBar = "Quick Pathology Report Editor";
@@ -1811,7 +1817,7 @@ $grid = <<<BSGRID
   <td><div class=menuHolderDiv><input type=hidden id=phiSexValue><input type=text id=phiSex READONLY class="inputFld" style="width: 6vw;"><div class=valueDropDown style="min-width: 6vw;">{$sex}</div></div></td>
   <td><div class=menuHolderDiv><input type=hidden id=qryProcTypeValue><input type=text id=qryProcType READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="min-width: 8vw;">{$ptype}</div></div></td>
   <td><div class=menuHolderDiv><input type=hidden id=qryPreparationMethodValue><input type=text id=qryPreparationMethod READONLY class="inputFld" style="width: 18.3vw;"><div class=valueDropDown style="min-width: 18.3vw;">{$prp}</div></div></td>
-  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationValue><input type=text id=qryPreparation READONLY class="inputFld" style="width: 19vw;"><div class=valueDropDown style="min-width: 19vw;" id=preparationDropDown>&nbsp;</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=qryPreparationValue><input type=text id=qryPreparation READONLY class="inputFld" style="width: 19vw;"><div class=valueDropDown style="min-width: 19vw;" id=preparationDropDown><center>(Select a Preparation Method)</div></div></td>
 </tr>
 <tr><td>(Single or Range)</td></tr>
 </table>
@@ -1842,6 +1848,7 @@ $innerBar = <<<BTNTBL
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVocabSrch border=0><tr><td><!--ICON //--></td><td>Vocabulary Search</td></tr></table></td>
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCLock border=0><tr><td><!--ICON //--></td><td>Release BG</td></tr></table></td>
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVoid border=0><tr><td><!--ICON //--></td><td>Void BG</td></tr></table></td>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCSegment border=0><tr><td><!--ICON //--></td><td>Add Segment</td></tr></table></td>
 </tr>
 BTNTBL;
     break;
@@ -2283,6 +2290,117 @@ RTNTHIS;
 return $rtnThis;
 }
 
+
+
+function bldDialogAddSegment( $passeddata ) { 
+
+  $pdta = json_decode($passeddata, true);
+  $errorInd = 0;
+  $errorMsg = "";
+  //DATA CHECKS GO HERE
+
+
+
+  if ($errorInd === 0) {
+    $si = serverIdent;
+    $sp = serverpw;
+    $pdta['selector'] = $pdta['bgrecordselector'];
+    $payload = json_encode($pdta);
+    $bgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-biogroup",serverIdent, serverpw, $payload), true);
+    $bg = $bgdta['DATA'];
+    $jsonbg = json_encode($bg);
+    //$proctypearr = json_decode(callrestapi("GET", dataTree . "/global-menu/four-menu-prc-proceduretype",$si,$sp),true);
+    //{"bgnbr":85060,"bgfromlocationcode":"HUP","bgfromlocation":"Hospital of The University of Pennsylvania","bgprocurementdate":"02\/03\/2019","bgprocurementtypevalue":null,"bgprocurementtype":"Surgery","bgcollectiontypevalue":null,"bgcollectiontype":"Excision","bgproctech":"Zack (proczack)","bginitialmetric":"0","bginitialmetricuomvalue":"4","bginitialmetricuom":null,"bgpathreport":"Pending","bgdxoverride":0,"bgdxspeccat":"MALIGNANT","bgdxasite":"COLON","bgdxssite":"DESCENDING","bgdxdx":"CARCINOMA","bgdxmets":"BRAIN","bgdxmetsdx":"GLIOSARCOMA","bgdxsystemdx":"HEMORRHOIDS","bgdxsiteposition":"POSTERIOR","bgdxunknown":1,"bgdxuninv":"Yes (NAT To CA)","bgphiid":"5ef9fc7f-f8b2-4fe9-b1ea-826aef4312a7","bgphiproceduredate":"02\/01\/2019","bgphiinitials":"A.C.","bgphirace":"WHITE","bgphisex":"F","bgphiage":"69","bgphiageuom":"yrs","bgphicx":"UNKNOWN","bgphirx":"UNKNOWN","bgphicallback":"3921","bgphisogi":"LESBIAN","bgphisbjtnbr":"345545","bgphiprtclnbr":"123-45","bgphiinformed":"No","bgbcomments":"This is a biosample comment that goes here in this box","bgqcomments":"This is a QMS Question","bgmigratedind":0,"bgmigratedon":"","bgrecordstatus":2,"bgvoidind":0,"bgvoidreason":"","bgdbselector":"CRG4nKUf9Sx79e1"}  
+
+    $dxd = ( trim($bg['bgnbr']) !== "" ) ? "[{$bg['bgnbr']}]" : "";
+    $dxd .= ( trim($bg['bgdxspeccat']) !== "" ) ? " {$bg['bgdxspeccat']}" : "";
+    $dxd .= ( trim($bg['bgdxasite']) !== "" ) ? " {$bg['bgdxasite']}" : "";
+    $dxd .= ( trim($bg['bgdxssite']) !== "" ) ? " ({$bg['bgdxssite']})" : "";
+    $dxd .= ( trim($bg['bgdxdx']) !== "" ) ? " / {$bg['bgdxdx']}" : "";
+    $dxd .= ( trim($bg['bgdxmets']) !== "" ) ? " (METS: {$bg['bgdxmets']})" : "";
+
+  $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/all-preparation-methods",$si,$sp),true);
+  $prp = "<table border=0 class=menuDropTbl>";
+    //<tr><td align=right onclick=\"fillField('qryPreparationMethod','','');updatePrepmenu('');\" class=ddMenuClearOption>[clear]</td></tr>
+  foreach ($preparr['DATA'] as $prpval) {
+    $prp .= "<tr><td onclick=\"fillField('fldSEGPreparationMethod','{$prpval['lookupvalue']}','{$prpval['menuvalue']}');updatePrepmenu('{$prpval['lookupvalue']}');\" class=ddMenuItem>{$prpval['menuvalue']}</td></tr>";
+  }
+  $prp .= "</table>";
+
+
+  $prepconarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/preparation-containers",$si,$sp),true);
+  $prpcon = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldSEGPreparationContainer','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  foreach ($prepconarr['DATA'] as $prpconval) {
+    $prpcon .= "<tr><td onclick=\"fillField('fldSEGPreparationContainer','{$prpconval['lookupvalue']}','{$prpconval['menuvalue']}');\" class=ddMenuItem>{$prpconval['menuvalue']}</td></tr>";
+  }
+  $prpcon .= "</table>";
+
+  $metarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/metric-uoms-long",$si,$sp),true);
+  $met = "<table border=0 class=menuDropTbl>";
+  foreach ($metarr['DATA'] as $metval) {
+    $met .= "<tr><td onclick=\"fillField('fldSEGMetricUOM','{$metval['lookupvalue']}','{$metval['menuvalue']}');\" class=ddMenuItem>{$metval['menuvalue']}</td></tr>";
+  }
+  $met .= "</table>";
+
+
+//<td><table class=tblBtn id=btnADDNoQMS onclick="displayNOQMSReason();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>No QMS</td></tr></table></td>
+
+$rtnThis = <<<RTNTHIS
+<table border=0>
+<tr><td colspan=2 id=segBGDXD>{$dxd}</td></tr>
+<tr><td> 
+           <table border=0>
+           <tr><td class=prcFldLbl>Hours Post <span class=reqInd>*</span></td><td class=prcFldLbl>Metric <span class=reqInd>*</span></td></tr>
+           <tr><td><input type=text id=fldSEGHP></td><td> <table><tr><td><input type=text id=fldSEGHP></td><td> <div class=menuHolderDiv><input type=hidden id=fldSEGMetricUOMValue><input type=text id=fldSEGMetricUOM READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="min-width: 8vw;">{$met}</div></div></td></tr></table>  </td></tr>
+           </table>      
+ </td>
+<td align=right valign=bottom>
+
+  <table cellspacing=0 cellpadding=0 border=0><tr>
+    <td><table class=tblBtn id=btnADDQMSSegs style="width: 6vw;"><tr><td style=" font-size: 1.1vh; "><center>Add QMS</td></tr></table></td>
+    <td><table class=tblBtn id=btnSaveSeg style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Save Segment</td></tr></table></td>
+  </tr></table>
+
+</td></tr>
+<tr><td colspan=2>
+<div id=reasonNoQMSLine style="display: none;">
+--REASON NO QMS--
+</div>
+</td></tr>
+<tr><td colspan=2 style="padding: 1.5vh 0 0 0;">
+
+<table border=0>
+  <tr>
+    
+    <td class=prcFldLbl>Preparation Method <span class=reqInd>*</span></td>
+    <td class=prcFldLbl>Preparation <span class=reqInd>*</span></td>
+    <td class=prcFldLbl>Container</td>
+  </tr>
+  <tr>
+    <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationMethodValue><input type=text id=fldSEGPreparationMethod READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prp}</div></div></td>
+    <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationValue><input type=text id=fldSEGPreparation READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 15vw;" id=ddSEGPreparationDropDown><center>(Select a Preparation Method)</div></div></td>
+    <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationContainerValue><input type=text id=fldSEGPreparationContainer READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prpcon}</div></div></td>
+  </tr>
+  <tr>
+    <td> </td>
+    <td> </td>
+    <td> </td>
+  </tr>
+</table>
+
+</td></tr>
+</table>
+
+
+RTNTHIS;
+
+  }
+
+  return $rtnThis;
+}
+
+
+
 function bldQuickPRUpload($passeddata) { 
     
 $pdta = $passeddata;
@@ -2706,25 +2824,64 @@ function bldProcurementGridEdit( $usr, $selector ) {
   $payload = json_encode($pdta);
   $bgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-biogroup",serverIdent, serverpw, $payload), true);
   $bg = $bgdta['DATA'];
-
   $jsonbg = json_encode($bg);
 
 $insmnu = "<input type=hidden id=fldPRCPresentInstValue value=\"{$bg['bgfromlocationcode']}\"><input type=text id=fldPRCPresentInst READONLY class=\"inputFld lockfield\" value=\"{$bg['bgfromlocation']}\">";
 $tday = $bg['bgprocurementdate'];
+//DROP MENU BUILDER ********************************************************************** //
+  //Initial UOM Menu
+    $muomIData = dropmenuInitialMetric( $bg['bginitialmetricuomvalue'] ); 
+    $muommenu = $muomIData['menuObj'];
+  //SPECIMEN CATEGORY
+    //$spcData = dropmenuInitialSpecCat( $bg['bgdxspeccat'] );
+    //$spcmenu = $spcData['menuObj'];
+  //PATHOLOGY REPORT
+    //$prptData = dropmenuPathRptAllowables();
+    //$prptmenu = $prptData['menuObj'];  
+  //UNINVOLVED SAMPLE
+    //$univData = dropmenuUninvolvedIndicator();
+    //$uninvmenu = $univData['menuObj'];
+  //SITE POSITIONS
+    //$asiteposData = dropmenuVocASitePositions(); 
+    //$aspmenu = $asiteposData['menuObj'];
+  //SYSTEMIC LIST 
+    //$sysData = dropmenuSystemicDXListing(); 
+    //$sysdxmenu = $sysData['menuObj'];
 
+  //BASE SITE-SUBSITE MENU
+    //$sitesubsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSite READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>"; 
+
+   //$subsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSSite READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCSSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>";
+   
+   //BASE DX-MOD Menu
+     //$dxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCDXModValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCDXMod READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCDXMod><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category & Site)</div></div></div>";
+
+   //METASTATIC SITE MENU DROPDOWN
+     //$metsData = dropmenuMetsMalignant();
+     //$metssite = $metsData['menuObj'];
+     //$metsdxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSDXValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCMETSDX READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCMETSDX><center><div style=\"font-size: 1.4vh\">(Choose a Metastatic site)</div></div></div>";
+
+     $dxover = ( $bg['bgdxoverride'] === 0 ) ? "" : " CHECKED ";
+
+//DROP MENU BUILDER END ******************************************************************//
+
+$tech = $bg['bgproctech'];
+$giveSelector = $selector;
 
 //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"bgnbr":85052,"bgmigratedind":0,"bgmigratedon":"","bgrecordstatus":2,"bgfromlocationcode":"HUP","bgvoidind":0,"bgvoidreason":""}}
+
   $rtnTbl['grid'] = <<<GRIDTBL
 
 <table border=0 cellpadding=0 cellspacing=0 class=procGridHoldingTable >
 <tr><td>
 
 <table border=0 cellspacing=0 cellpadding=0 id=bgProcSideBarDspTbl>
-<tr><td id=dspBGN>{$bg['bgnbr']}</td></tr>
+<tr><td id=dspBGN>Biogroup: {$bg['bgnbr']} <input type=hidden id=bgSelectorCode value="{$giveSelector}"></td></tr>
 </table>
 
 </td></tr>
 
+<tr><td class=BSDspSpacer>&nbsp;</td></tr>
 <tr><td class=BSDspSectionHeader>Biogroup Sample Metrics</td></tr>
   <tr><td class=procGridHoldingLine>
    <table border=0 cellspacing=10>
@@ -2732,22 +2889,131 @@ $tday = $bg['bgprocurementdate'];
      <tr>      
        <td><input type=hidden id=fldPRCBGNbr value={$bg['bgnbr']} READONLY>{$insmnu}</td> 
        <td><input type=text readonly id=fldPRCProcDate class=lockfield value="{$tday}"></td>
-       <td>{$procedureType}</td>
-       <td>{$collectionType}</td>
-       <td><input type=text id=fldPRCTechnician value="{$tech}" READONLY></td>
-       <td><table><tr><td><input type=text id=fldPRCInitialMetric value=0></td><td>{$muommenu}</td></tr></table></td>
+       <td><input type=hidden id=fldPRCProcedureTypeValue value="{$bg['bgprocurementtypevalue']}"><input type=text id=fldPRCProcedureType READONLY class="inputFld lockfield" value="{$bg['bgprocurementtype']}"></td>
+       <td><input type=hidden id=fldPRCCollectionTypeValue value="{$bg['bgcollectiontypevalue']}"> <input type=text id=fldPRCCollectionType READONLY class="inputFld lockfield" value="{$bg['bgcollectiontype']}">   </td>
+       <td><input type=text id=fldPRCTechnician class=lockfield value="{$tech}" READONLY></td>
+       <td><table><tr><td><input type=text id=fldPRCInitialMetric readonly class=lockfield value={$bg['bginitialmetric']}></td><td> {$muommenu} </td></tr></table></td>
        <td></td>
      </tr>
    </table>
  </td></tr>
+
+
+<tr><td class=BSDspSpacer>&nbsp;</td></tr>
+<tr><td class=BSDspSectionHeader>Donor Metrics</td></tr>
+  <tr><td class=procGridHoldingLine>
+
+   <table border=0 cellspacing=10>
+    <tr>
+      <td class=prcFldLbl>Initials </td>
+      <td class=prcFldLbl>Age </td>
+      <td class=prcFldLbl>Race </td>       
+      <td class=prcFldLbl>Sex </td>
+      <td class=prcFldLbl>Chemo-Therapy </td>
+      <td class=prcFldLbl>Radiation </td>       
+      <td class=prcFldLbl>Consent </td>
+      <td class=prcFldLbl>Callback</td>
+      <td class=prcFldLbl>Subject #</td>
+      <td class=prcFldLbl>Protocol #</td>
+      <td class=prcFldLbl>UPenn-SOGI</td>
+    </tr>      
+    <tr>
+      <td><input type=text id=fldPRCPXIId READONLY value="{$bg['bgphiid']}">
+          <input type=text id=fldPRCPXIInitials READONLY value="{$bg['bgphiinitials']}" class=lockfield></td>
+      <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY value="{$bg['bgphiage']}" class=lockfield></td><td><input type=text id=fldPRCPXIAgeMetric READONLY value="{$bg['bgphiageuom']}" class=lockfield></td></tr></table></td>
+      <td><input type=text id=fldPRCPXIRace READONLY value="{$bg['bgphirace']}" class=lockfield></td>
+      <td><input type=text id=fldPRCPXISex READONLY value="{$bg['bgphisex']}" class=lockfield></td>
+      <td><input type=text id=fldPRCPXIDspCX READONLY value="{$bg['bgphicx']}" class=lockfield></td>
+      <td><input type=text id=fldPRCPXIDspRX READONLY value="{$bg['bgphirx']}" class=lockfield></td> 
+      <td><input type=text id=fldPRCPXIInfCon READONLY value="{$bg['bgphiinformed']}" class=lockfield></td>
+      <td><input type=text id=fldPRCPXILastFour READONLY value="{$bg['bgphicallback']}" class=lockfield></td>
+      <td><input type=text id=fldPRCPXISubjectNbr READONLY value="{$bg['bgphisbjtnbr']}" class=lockfield></td>
+      <td><input type=text id=fldPRCPXIProtocolNbr READONLY value="{$bg['bgphiprtclnbr']}" class=lockfield></td> 
+      <td><input type=text id=fldPRCPXISOGI READONLY value="{$bg['bgphisogi']}" class=lockfield></td>       
+    </tr>
+    <tr><td colspan=20 style="font-size: .8vh; font-weight: bold;">(PHI Refid: {$bg['bgphiid']} on {$bg['bgphiproceduredate']})</td></tr>
+  </table>
+
+  </td></tr>
+
+<tr><td class=BSDspSpacer>&nbsp;</td></tr>
+<tr><td class=BSDspSectionHeader>Diagnosis Designation</td></tr>
+<tr><td class=procGridHoldingLine>
+
+<table border=0 cellspacing=10>
+  <tr><td class=prcFldLbl>Specimen Category</td>
+      <td class=prcFldLbl>Site</td>
+      <td class=prcFldLbl>Sub-Site</td>
+      <td><div><input type=checkbox id=fldPRCDXOverride {$dxover} readonly><label for=fldPRCDXOverride>DX Override</label></div></td>
+      <td class=prcFldLbl>Uninvolve/NAT</td>
+      <td class=prcFldLbl>Path-Rpt </td></tr>
+  <tr><td valign=top><input type=text id=fldPRCSpecCat READONLY class="inputFld lockfield" value="{$bg['bgdxspeccat']}"></td>
+      <td valign=top><input type=text id=fldPRCSite READONLY class="inputFld lockfield" value="{$bg['bgdxasite']}"></td>
+      <td valign=top><input type=text id=fldPRCSSite READONLY class="inputFld lockfield" value="{$bg['bgdxssite']}"></td>
+      <td valign=top> <input type=text id=fldPRCDXMod READONLY class="inputFld lockfield" value="{$bg['bgdxdx']}"></td>
+      <td> <input type=text id=fldPRCUnInvolved READONLY class="inputFld lockfield" value="{$bg['bgdxuninv']}"></td>
+      <td><input type=text id=fldPRCPathRpt READONLY class="inputFld lockfield" value="{$bg['bgpathreport']}"></td></tr>
+  <tr><td colspan=6> 
+    <table cellpadding=0 cellspacing=0 border=0><tr><td> 
+     <div id=metsFromDsp style="display: block;">
+       <table cellspacing=0 cellpadding=0 border=0>
+         <tr><td class=prcFldLbl>Metastatic From</td><td class=prcFldLbl>Metastatic Diagnosis</td></tr>
+         <tr><td style="padding: 10px 10px 0 0;"><input type=text id=fldPRCMETSSite READONLY class="inputFld lockfield" value="{$bg['bgdxmets']}"> </td><td style="padding: 10px 10px 0 0;"><input type=text id=fldPRCMETSDX READONLY class="inputFld lockfield" value="{$bg['bgdxmetsdx']}"> </td> </tr>
+       </table>
+     </div>
+    </td><td>  
+    <table cellpadding=0 cellspacing=0 border=0>
+      <tr><td class=prcFldLbl>Position</td><td class=prcFldLbl>Systemic Diagnosis</td></tr>
+      <tr><td style="padding: 10px 10px 0 0;"><input type=text id=fldPRCSitePosition READONLY class="inputFld lockfield" value="{$bg['bgdxsiteposition']}"></td><td style="padding: 10px 10px 0 0;"><input type=text id=fldPRCSystemList READONLY class="inputFld lockfield" value="{$bg['bgdxsystemdx']}"></td></tr>   
+    </table>
+    </td></tr></table>
+</td></tr>
 </table>
 
-{$jsonbg}
+</td></tr>
+
+
+<tr><td class=BSDspSpacer>&nbsp;</td></tr>
+<tr><td class=BSDspSectionHeader>Comments</td></tr>
+<tr><td class=procGridHoldingLine>
+
+<table cellspacing=10 border=0>
+<tr><td class=prcFldLbl>Biosample Comments</td><td class=prcFldLbl>Question for HPR/QMS</td></tr>
+<tr><td valign=top><TEXTAREA id=fldPRCBSCmts class=lockfield style="height: 6vh;" READONLY>{$bg['bgbcomments']}</TEXTAREA></td><td valign=top><TEXTAREA id=fldPRCHPRQ class=lockfield style="height: 6vh;" READONLY>{$bg['bgqcomments']}</TEXTAREA></td></tr>
+</table>
+
+</td></tr>
+
+
+<tr><td class=BSDspSpacer>&nbsp;</td></tr>
+<tr><td class=BSDspSectionHeader>Segments</td></tr>
+<tr><td class=procGridHoldingLine>
+<!-- SEGMENTS //-->
+
+
+</td></tr>
+
+</table>
 
 GRIDTBL;
 
+$migrated = ( (int)$bg['bgmigratedind'] === 0 ) ? "No" : "Yes";
+$migratedOn = ( trim($bg['bgmigratedon']) === "" ) ? "" : $bg['migratedon'];
+$voided = ( (int)$bg['bgvoidind'] === 0 ) ? "No" : "Yes"; 
+$voidreason = trim($bg['bgvoidreason']);
+
+
   $rtnTbl['sidebar'] = <<<SIDEBAR
 <!-- SIDEBAR STUFF CAN GO HERE -- LOCK??? //-->
+
+<table border=0 style="font-size: 1vh;" width=100%>
+<tr><td colspan=2 style="border-bottom: 1px solid #000;"><center><b>Database Information</b></td></tr>
+<tr><td><b>Migrated</b>: </td><td> {$migrated} </td></tr>
+<tr><td><b>Migrated On</b>: </td><td> {$migratedOn} </td></tr>
+<tr><td><b>Record Selector<b>: </td><td> {$bg['bgdbselector']} </td></tr>
+<tr><td><b>Voided</b>: </td><td>{$voided}</td></tr>
+<tr><td><b>Void Reason</b>: </td><td>{$voidreason}</td></tr>
+</table>
 
 SIDEBAR;
 
@@ -3067,32 +3333,43 @@ function dropmenuVocASitePositions() {
   return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 }
 
-function dropmenuProcedureTypes() {  
+
+
+function dropmenuProcedureTypes($passvalue = "", $lock = 0 ) {  
   $si = serverIdent;
   $sp = serverpw;
   $proctypearr = json_decode(callrestapi("GET", dataTree . "/global-menu/four-menu-prc-proceduretype",$si,$sp),true);
-  $proct = "<table border=0 class=menuDropTbl>";
-  $procTDefaultValue = "";
-  $procTDefaultDsp = "";
-  foreach ($proctypearr['DATA'] as $procval) {
+
+  if ( $lock === 1 ) { 
+
+
+  } else {
+    $proct = "<table border=0 class=menuDropTbl>";
+    $procTDefaultValue = "";
+    $procTDefaultDsp = "";
+    foreach ($proctypearr['DATA'] as $procval) {
       if ( (int)$procval['useasdefault'] === 1 ) {
         $procTDefaultValue = $procval['lookupvalue']; 
         $procTDefaultDsp = $procval['menuvalue'];
       }
-    $proct .= "<tr><td onclick=\"fillField('fldPRCProcedureType','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+      $proct .= "<tr><td onclick=\"fillField('fldPRCProcedureType','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+    }
+    $proct .= "</table>";
+    $procedureType = "<div class=menuHolderDiv>"
+                   . "<input type=hidden id=fldPRCProcedureTypeValue value=\"{$procTDefaultValue}\">"
+                   . "<div class=inputiconcontainer>"
+                   . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
+                   . "<input type=text id=fldPRCProcedureType READONLY class=\"inputFld\" value=\"{$procTDefaultDsp}\">"
+                   . "</div>"
+                   . "<div class=valueDropDown id=ddPRCProcedureType>{$proct}</div>"
+                   . "</div>";
   }
-  $proct .= "</table>";
-  $procedureType = "<div class=menuHolderDiv>"
-                                . "<input type=hidden id=fldPRCProcedureTypeValue value=\"{$procTDefaultValue}\">"
-                                . "<div class=inputiconcontainer>"
-                                . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
-                                . "<input type=text id=fldPRCProcedureType READONLY class=\"inputFld\" value=\"{$procTDefaultDsp}\">"
-                                . "</div>"
-                                        . "<div class=valueDropDown id=ddPRCProcedureType>{$proct}</div>"
-                                        . "</div>";
 
   return array('menuObj' => $procedureType,'defaultDspValue' => $procTDefaultDsp, 'defaultLookupValue' => $procTDefaultValue);
 }
+
+
+
 
 function dropmenuCollectionType($givenlookup) { 
   $collectionTypeDropMenu = "&nbsp;";
@@ -3171,46 +3448,65 @@ function dropmenuUninvolvedIndicator() {
 
 }
 
-function dropmenuInitialMetric() { 
+function dropmenuInitialMetric( $passedvalue = "" ) { 
   $si = serverIdent;
   $sp = serverpw;
-   $metricuomarr = json_decode(callrestapi("GET", dataTree . "/global-menu/metric-uoms-long",$si,$sp),true);
+  $metricuomarr = json_decode(callrestapi("GET", dataTree . "/global-menu/metric-uoms-long",$si,$sp),true);
+
+
    $muom = "<table border=0 class=menuDropTbl>";
    $muomDefaultValue = "";
    $muomDefaultDsp = "";
+   $lock = "";
    foreach ($metricuomarr['DATA'] as $uomval) {
-      if ( (int)$uomval['useasdefault'] === 1 ) {
-        $muomDefaultValue = $uomval['lookupvalue']; 
-        $muomDefaultDsp = $uomval['menuvalue'];
-      }
+ 
+     if ( $passedvalue === "" ) {  
+       if ( (int)$uomval['useasdefault'] === 1 ) {
+         $muomDefaultValue = $uomval['lookupvalue']; 
+         $muomDefaultDsp = $uomval['menuvalue'];
+       }
+     } else { 
+       if ( (int)$uomval['lookupvalue'] === (int)$passedvalue ) { 
+         $lock = " lockfield";      
+         $muomDefaultValue = $uomval['lookupvalue']; 
+         $muomDefaultDsp = $uomval['menuvalue'];
+       }
+     }
+     
     $muom .= "<tr><td onclick=\"fillField('fldPRCMetricUOM','{$uomval['lookupvalue']}','{$uomval['menuvalue']}');\" class=ddMenuItem>{$uomval['menuvalue']}</td></tr>";
    }
    $muom .= "</table>";
    $muommenu = "<div class=menuHolderDiv>"
            . "<input type=hidden id=fldPRCMetricUOMValue value=\"{$muomDefaultValue}\">"
            . "<div class=inputiconcontainer>"
-  . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
-           . "<input type=text id=fldPRCMetricUOM READONLY class=\"inputFld\" value=\"{$muomDefaultDsp}\">"
+         . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
+           . "<input type=text id=fldPRCMetricUOM READONLY class=\"inputFld {$lock}\" value=\"{$muomDefaultDsp}\">"
            . "</div>"
            . "<div class=valueDropDown id=ddPRCMetricUOM>{$muom}</div></div>";
+
+
+
 
   return array('menuObj' => $muommenu,'defaultDspValue' => $muomDefaultDsp, 'defaultLookupValue' => $muomDefaultValue);
 }
 
-function dropmenuInitialSpecCat() {   
+function dropmenuInitialSpecCat( $passedvalue = "" ) {   
   $si = serverIdent;
   $sp = serverpw;
   $speccatarr = json_decode(callrestapi("GET", dataTree . "/global-menu/vocabulary-specimen-category",$si,$sp),true);
+
   $speccat = "<table border=0 class=menuDropTbl>";
   foreach ($speccatarr['DATA'] as $spcval) {
+
    $speccat .= "<tr><td onclick=\"fillField('fldPRCSpecCat','{$spcval['lookupvalue']}','{$spcval['menuvalue']}');\" class=ddMenuItem>{$spcval['menuvalue']}</td></tr>";
+
   }
   $speccat .= "</table>";
   $spcmenu = "<div class=menuHolderDiv>"
           . "<div class=inputiconcontainer>"
   . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=hidden id=fldPRCSpecCatValue value=\"\">"
           . "</div>"
-          . "<input type=text id=fldPRCSpecCat READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddPRCSpecCat>{$speccat}</div></div>";
+          . "<input type=text id=fldPRCSpecCat READONLY class=\"inputFld\" value=\"{$passedvalue}\"><div class=valueDropDown id=ddPRCSpecCat>{$speccat}</div></div>";
 
   return array('menuObj' => $spcmenu, 'defaultDspValue' => '', 'defaultLookupValue' => '');
 }
@@ -3257,7 +3553,7 @@ function bldBiosampleProcurementEdit($usr, $selector) {
             <div id=initialBiogroupInfo>
             <table border=0 id=procurementAddHoldingTbl>
                    <tr>
-                      <td valign=top id=procbtnsidebar><center><div class=ttholder onclick="openAppCard('appcard_procphilisting');"><i class="material-icons">how_to_reg</i><div class=tt>Donor Information/Operative Schedule</div></div></td>
+                      <td valign=top id=procbtnsidebar><center><div class=ttholder onclick="alert('You can\'t change the donor on a saved biogroup (for now).  Void the biogroup and recreate it!');openAppCard('appcard_procphilisting');"><i class="material-icons">how_to_reg</i><div class=tt>Donor Information/Operative Schedule</div></div></td>
                       <td valign=top id=procGridHolderCell> {$procGrid['grid']}</td>
                       <td valign=top id=procGridBGDsp>{$procGrid['sidebar']}</td>
                    </tr>
@@ -3447,4 +3743,5 @@ function getRptParaMenu($whichmenuurl , $flddef, $paracnt, $criteriavalue, $dspw
 RTNTHIS;
    return $rtnThis;
 }
+
 

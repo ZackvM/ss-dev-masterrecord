@@ -585,7 +585,7 @@ function subpreparationmenu($request) {
     $rtnData = array();
     if (trim($request) !== "") { 
       require(serverkeys . "/sspdo.zck");               
-      $SQL = "select pr.menuvalue, pr.longvalue, pr.dsporder  from (SELECT menuid FROM four.sys_master_menus where menu = 'PREPMETHOD' and menuvalue = :preparation) as pm left join (SELECT * FROM four.sys_master_menus where menu = 'PREPDETAIL' and dspind = 1) as pr on pm.menuid = pr.parentid order by pr.dsporder";   
+      $SQL = "select ifnull(pr.menuvalue,'') as menuvalue, pr.longvalue, pr.dsporder  from (SELECT menuid FROM four.sys_master_menus where menu = 'PREPMETHOD' and menuvalue = :preparation) as pm left join (SELECT * FROM four.sys_master_menus where menu = 'PREPDETAIL' and dspind = 1) as pr on pm.menuid = pr.parentid where trim(pr.menuvalue) <> '' order by pr.dsporder";   
       $rs = $conn->prepare($SQL); 
       $rs->execute(array(':preparation' => $request));
       if ($rs->rowCount() < 1) { 
@@ -1156,6 +1156,10 @@ class globalMenus {
 
     function pfrpactions() {
       return "SELECT rsts.actionid as codevalue, rsts.reviewaction as menuvalue, 0 as useasdefault, '' as lookupvalue FROM pfc.appdata_project_reviewerstatus rsts where rsts.furtheractionind = 0 order by rsts.dspOrd";
+    }
+
+    function preparationcontainers() { 
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'CONTAINER' and mnu.dspInd = 1 order by mnu.dsporder";
     }
 
 }

@@ -47,19 +47,66 @@ class datadoers {
       session_start(); 
       $bg = json_decode($passdata, true);
       $bgSQL = <<<BGSQLHERE
-SELECT bg.pbiosample
-, ifnull(migrated,0) as migratedind
-, ifnull(migratedon,'') as migratedon
-, recordstatus
-, fromlocation
-, institution.institutiondsp
+SELECT bg.pbiosample, ifnull(bg.migrated,0) as migratedind
+, ifnull(bg.migratedon,'') as migratedon, bg.recordstatus
+, concat(ifnull(usr.displayname,''), ' (',ifnull(bg.inputBy,'ERROR'),')') as procuretechnician
+, bg.fromlocation, institution.institutiondsp
 , pdate.procdate as procdate
-, ifnull(voidind,0) as voidind
-, ifnull(voidreason,'') as voidreason
-, ifnull(selector,'') as selector 
+, det.proctype as proctype, proctype.dspvalue as procurementtype, det.collectionmethod, colltype.dspvalue as collectiondsp
+, det.uninvolvedind, det.pathreportind, det.initialmetric, det.initialuom as bginitialuom, det.fromlocation, det.bywho
+, ifnull(bg.voidind,0) as voidind, ifnull(bg.voidreason,'') as voidreason
+, ifnull(bg.selector,'') as selector 
+, ifnull(phi.pxiid,'ERROR') as pxiid
+, ifnull(date_format(phi.proceduredate, '%m/%d/%Y'),'') as proceduredate
+, ifnull(phi.procedureassoccode,'') as associativecode
+, ifnull(phi.pxiinitials,'') as phiinitials
+, ifnull(phi.pxirace,'') as phirace
+, ifnull(phi.pxigender,'') as phisex
+, ifnull(phi.pxiage, '') as phiage
+, ifnull(phi.pxiageuom,'') as phiageuom
+, ucase(ifnull(cxm.dspvalue,'')) as cx
+, ucase(ifnull(rxm.dspvalue,'')) as rx
+
+, ifnull(phi.callback,'-') as callback
+, ucase(ifnull(phi.sogi,'')) as sogi
+, ifnull(phi.subjectnumber,'') as subjectnbr
+, ifnull(phi.protocolnumber,'') as protocolnbr
+, ifnull(phi.informedconsent,'') as informedconsentvalue
+, ifnull(icm.dspvalue,'') as informedconsentdsp
+
+, ifnull(bcmt.comment,'') as bgcomment
+, ifnull(hcmt.comment,'') as qmcomment
+
+, ifnull(dxd.dxdoverride,0) as dxdoverride
+, ifnull(dxd.specimencategory,'') as specimencategory
+, ifnull(dxd.asite,'') as asite
+, ifnull(dxd.ssite,'') as ssite
+, ifnull(dxd.dx,'') as dx
+, ifnull(dxd.metssite,'') as mets
+, ifnull(dxd.metsdx,'') as metssitedx
+, ifnull(dxd.systemdiagnosis,'') as systemdiagnosis
+, ifnull(dxd.siteposition,'') as siteposition
+, ifnull(dxd.unknownmet,2) as unknownmet
+, ifnull(uin.dspvalue,'') as unknownmetdsp
+, ifnull(prt.dspvalue,'') as pathreportdsp
+
 FROM four.ut_procure_biosample bg
+left join (SELECT originalaccountname, displayname FROM four.sys_userbase) as usr on bg.inputby = usr.originalaccountname
 left join (SELECT menuvalue, ifnull(longvalue, ifnull(dspvalue,'')) as institutiondsp FROM four.sys_master_menus where menu = 'INSTITUTION') institution on bg.fromlocation = institution.menuvalue
-left join (SELECT pbiosample, date_format(refdate,'%m/%d/%Y') as procdate  FROM four.ref_procureBiosample_dates where activeind = 1 and dateDesignation = 'PROCUREMENT') as pdate on bg.pbiosample = pdate.pbiosample 
+left join (SELECT pbiosample, date_format(refdate,'%m/%d/%Y') as procdate  FROM four.ref_procureBiosample_dates where activeind = 1 and dateDesignation = 'PROCUREMENT') as pdate on bg.pbiosample = pdate.pbiosample
+left join (SELECT * FROM four.ref_procureBiosample_details where activeind = 1) as det on bg.pbiosample = det.pbiosample
+left join (SELECT * FROM four.sys_master_menus where menu = 'PROCTYPE') as proctype on det.proctype = proctype.menuvalue
+left join (SELECT * FROM four.sys_master_menus where menu = 'COLLECTIONT') as colltype on det.collectionmethod = colltype.menuvalue
+left join (SELECT * FROM four.ref_procureBiosample_PXI where activeind = 1) as phi on bg.pBioSample = phi.pbiosample
+left join (SELECT * FROM four.sys_master_menus where menu = 'CX') cxm on phi.cx = cxm.menuvalue
+left join (SELECT * FROM four.sys_master_menus where menu = 'RX') rxm on phi.rx = rxm.menuvalue
+left join (SELECT * FROM four.sys_master_menus where menu = 'INFC') icm on phi.informedconsent = icm.menuvalue
+left join (SELECT pbiosample, comment FROM four.ref_procureBiosample_comment where activeind = 1 and moduleReference = 'BIOSPECIMENCMT' and trim(comment) <> '') as bcmt on bg.pBioSample = bcmt.pbiosample
+left join (SELECT pbiosample, comment FROM four.ref_procureBiosample_comment where activeind = 1 and moduleReference = 'HPRQUESTION' and trim(comment) <> '') as hcmt on bg.pBioSample = hcmt.pbiosample
+left join (SELECT pbiosample, dxdoverride, ifnull(speccat,'') as specimencategory, ifnull(primarysite,'') as asite, ifnull(primarysubsite,'') as ssite, concat( ifnull(diagnosis,''), if(ifnull(diagnosismodifier,'') ='' ,'', concat(' :: ',ifnull(diagnosismodifier,'')))) as dx, ifnull(metssite,'') as metssite, ifnull(metsdx,'') as metsdx, ifnull(systemdiagnosis,'') as systemdiagnosis, ifnull(siteposition,'') as siteposition, unknownmet FROM four.ref_procureBiosample_designation where activeind = 1 and reffrommodule = 'PROCUREMENT') as dxd on bg.pbiosample = dxd.pbiosample
+left join (SELECT * FROM four.sys_master_menus where menu = 'UNINVOLVEDIND') uin on dxd.unknownmet = uin.menuvalue
+left join (SELECT * FROM four.sys_master_menus where menu = 'PRpt') prt on det.pathreportind = prt.menuvalue
+
 where selector = :objSelector
 BGSQLHERE;
 
@@ -72,14 +119,56 @@ BGSQLHERE;
         $dta['bgfromlocationcode'] = $bg['fromlocation'];
         $dta['bgfromlocation'] = $bg['institutiondsp'];
         $dta['bgprocurementdate'] = $bg['procdate'];
-        
+        $dta['bgprocurementtypevalue'] = $bg['proctypevalue'];
+        $dta['bgprocurementtype'] = $bg['procurementtype'];
+        $dta['bgcollectiontypevalue'] = $bg['collectionmethod'];
+        $dta['bgcollectiontype'] = $bg['collectiondsp'];
+        $dta['bgproctech'] = $bg['procuretechnician'];
+        $dta['bginitialmetric'] = $bg['initialmetric'];
+        $dta['bginitialmetricuomvalue'] = $bg['bginitialuom'];
+        $dta['bginitialmetricuom'] = $bg['imetricuom'];
+        $dta['bgpathreport'] = $bg['pathreportdsp'];
+
+        $dta['bgdxoverride'] = $bg['dxdoverride'];
+        $dta['bgdxspeccat'] = $bg['specimencategory'];
+        $dta['bgdxasite'] = $bg['asite'];
+        $dta['bgdxssite'] = $bg['ssite'];
+        $dta['bgdxdx'] = $bg['dx'];
+        $dta['bgdxmets'] = $bg['mets'];
+        $dta['bgdxmetsdx'] = $bg['metssitedx'];
+        $dta['bgdxsystemdx'] = $bg['systemdiagnosis'];
+        $dta['bgdxsiteposition'] = $bg['siteposition'];
+        $dta['bgdxunknown'] = $bg['unknownmet'];
+        $dta['bgdxuninv'] = $bg['unknownmetdsp'];
+
+        $dta['bgphiid'] = $bg['pxiid'];
+        $dta['bgphiproceduredate'] = $bg['proceduredate'];
+        $dta['bgphiinitials'] = $bg['phiinitials'];
+
+        $dta['bgphirace'] = $bg['phirace'];
+        $dta['bgphisex'] = $bg['phisex'];
+        $dta['bgphiage'] = $bg['phiage'];
+        $dta['bgphiageuom'] = $bg['phiageuom'];
+        $dta['bgphicx'] = $bg['cx'];
+        $dta['bgphirx'] = $bg['rx'];
+
+        $dta['bgphicallback'] = $bg['callback'];
+        $dta['bgphisogi'] = $bg['sogi'];
+        $dta['bgphisbjtnbr'] = $bg['subjectnbr'];
+        $dta['bgphiprtclnbr'] = $bg['protocolnbr'];
+        $dta['bgphiinformed'] = $bg['informedconsentdsp'];
+
+        $dta['bgbcomments'] = $bg['bgcomment'];
+        $dta['bgqcomments'] = $bg['qmcomment'];
 
         $dta['bgmigratedind'] = (int)$bg['migratedind'];
         $dta['bgmigratedon'] = $bg['migratedon'];
         $dta['bgrecordstatus'] = (int)$bg['recordstatus'];
         $dta['bgvoidind'] = (int)$bg['voidind'];
         $dta['bgvoidreason'] = $bg['voidreason'];
+        $dta['bgdbselector'] = $bg['selector'];
 
+        $responseCode = 200;
       } else { 
           //NOT FOUND ERROR
           $responseCode = 404;
@@ -88,7 +177,23 @@ BGSQLHERE;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;
-    } 
+    }
+
+    function preprocessaddbgsegments($request, $passdata) { 
+      $responseCode = 400; 
+      $msg = "BAD REQUEST";
+      $msgArr = array();
+      $itemsfound = 0;
+    
+      $dta = array('pagecontent' => bldDialogGetter('dialogAddBGSegments',$passdata) );
+
+      ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;      
+    }
 
     function initialbgroupsave($request, $passdata) {       
       $rows = array(); 
@@ -3070,6 +3175,9 @@ function bldDialogGetter($whichdialog, $passedData) {
   return $rtnDialog;
 }
 
+
+
+
 /* INITIAL PRISTINE BIOGROUP CHECKS
  * //$passdata = {"PRCBGNbr":"","PRCProcDate":"01/22/2019","PRCProcedureTypeValue":"S","PRCProcedureType":"Surgery","PRCCollectionTypeValue":"EXC","PRCCollectionType":"Excision","PRCTechInstitute":"PROCZACK :: HUP","PRCInitialMetric":".8","PRCMetricUOMValue":"4","PRCMetricUOM":"Grams",
       //"PRCPXIId":"57bacaa1-551c-4ae3-8cc8-a6ef76ffb8c7","PRCPXIInitials":"A.G.","PRCPXIAge":"33","PRCPXIAgeMetric":"yrs","PRCPXIRace":"UNKNOWN"
@@ -3140,7 +3248,7 @@ function createBGPXI( $bgNbr, $bg ) {
   }
 
   //WRITE DATA
-  $insSQL = "insert into four.ref_procureBiosample_PXI (pbiosample, activeInd, proceduredate, fromInstitution, orkey, procedureAssocCode, pxiid, pxiInitials, pxiRace, pxiGender, pxiAge, pxiAgeUOM, SOGI, CX, RX, subjectnumber, protocolnumber, InformedConsent, byWho, inputOn, fromModule) values (:pbiosample, 1, :proceduredate, :fromInstitution, :orkey, :procedureAssocCode, :pxiid, :pxiInitials, :pxiRace, :pxiGender, :pxiAge, :pxiAgeUOM, :SOGI, :CX, :RX, :subjectnumber, :protocolnumber, :InformedConsent, :byWho, now(), 'PROCUREMENT')";
+  $insSQL = "insert into four.ref_procureBiosample_PXI (pbiosample, activeInd, proceduredate, fromInstitution, orkey, procedureAssocCode, pxiid, pxiInitials, pxiRace, pxiGender, pxiAge, pxiAgeUOM, SOGI, CX, RX, subjectnumber, protocolnumber, InformedConsent, callback, byWho, inputOn, fromModule) values (:pbiosample, 1, :proceduredate, :fromInstitution, :orkey, :procedureAssocCode, :pxiid, :pxiInitials, :pxiRace, :pxiGender, :pxiAge, :pxiAgeUOM, :SOGI, :CX, :RX, :subjectnumber, :protocolnumber, :InformedConsent, :callback, :byWho, now(), 'PROCUREMENT')";
   $insRS = $conn->prepare($insSQL); 
   $insRS->execute(array(
    ':pbiosample' => $bgNbr 
@@ -3160,6 +3268,7 @@ function createBGPXI( $bgNbr, $bg ) {
   ,':subjectnumber' => $bg['PRCPXISubjectNbr']
   ,':protocolnumber' => $bg['PRCPXIProtocolNbr']
   ,':InformedConsent' => $ic
+  , ':callback' => $bg['PRCPXILastFour']
   ,':byWho' => strtolower($bg['PRCTechnician'])
   ));
 
