@@ -377,7 +377,11 @@ MISSING INVESTIGATOR INFORMATION
 DIALOGINNER;
         $footerBar = "";
     }
-      break;
+        break;
+
+
+
+
       case 'dataCoordinatorBGSAssignment': 
         $titleBar = "Segment Assignment";
         $footerBar = "";
@@ -2301,33 +2305,33 @@ function bldDialogAddSegment( $passeddata ) {
 
 
 
-  if ($errorInd === 0) {
-    $si = serverIdent;
-    $sp = serverpw;
-    $pdta['selector'] = $pdta['bgrecordselector'];
-    $payload = json_encode($pdta);
-    $bgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-biogroup",serverIdent, serverpw, $payload), true);
-    $bg = $bgdta['DATA'];
-    $jsonbg = json_encode($bg);
-    //$proctypearr = json_decode(callrestapi("GET", dataTree . "/global-menu/four-menu-prc-proceduretype",$si,$sp),true);
-    //{"bgnbr":85060,"bgfromlocationcode":"HUP","bgfromlocation":"Hospital of The University of Pennsylvania","bgprocurementdate":"02\/03\/2019","bgprocurementtypevalue":null,"bgprocurementtype":"Surgery","bgcollectiontypevalue":null,"bgcollectiontype":"Excision","bgproctech":"Zack (proczack)","bginitialmetric":"0","bginitialmetricuomvalue":"4","bginitialmetricuom":null,"bgpathreport":"Pending","bgdxoverride":0,"bgdxspeccat":"MALIGNANT","bgdxasite":"COLON","bgdxssite":"DESCENDING","bgdxdx":"CARCINOMA","bgdxmets":"BRAIN","bgdxmetsdx":"GLIOSARCOMA","bgdxsystemdx":"HEMORRHOIDS","bgdxsiteposition":"POSTERIOR","bgdxunknown":1,"bgdxuninv":"Yes (NAT To CA)","bgphiid":"5ef9fc7f-f8b2-4fe9-b1ea-826aef4312a7","bgphiproceduredate":"02\/01\/2019","bgphiinitials":"A.C.","bgphirace":"WHITE","bgphisex":"F","bgphiage":"69","bgphiageuom":"yrs","bgphicx":"UNKNOWN","bgphirx":"UNKNOWN","bgphicallback":"3921","bgphisogi":"LESBIAN","bgphisbjtnbr":"345545","bgphiprtclnbr":"123-45","bgphiinformed":"No","bgbcomments":"This is a biosample comment that goes here in this box","bgqcomments":"This is a QMS Question","bgmigratedind":0,"bgmigratedon":"","bgrecordstatus":2,"bgvoidind":0,"bgvoidreason":"","bgdbselector":"CRG4nKUf9Sx79e1"}  
+if ($errorInd === 0) {
+  $si = serverIdent;
+  $sp = serverpw;
+  $pdta['selector'] = $pdta['bgrecordselector'];
+  $encySelector = cryptservice($pdta['selector'],'e',false);
+  $payload = json_encode($pdta);
+  $bgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-biogroup",serverIdent, serverpw, $payload), true);
+  $bg = $bgdta['DATA'];
+  $jsonbg = json_encode($bg);
+  //$proctypearr = json_decode(callrestapi("GET", dataTree . "/global-menu/four-menu-prc-proceduretype",$si,$sp),true);
 
-    $dxd = ( trim($bg['bgnbr']) !== "" ) ? "[{$bg['bgnbr']}]" : "";
-    $dxd .= ( trim($bg['bgdxspeccat']) !== "" ) ? " {$bg['bgdxspeccat']}" : "";
-    $dxd .= ( trim($bg['bgdxasite']) !== "" ) ? " {$bg['bgdxasite']}" : "";
-    $dxd .= ( trim($bg['bgdxssite']) !== "" ) ? " ({$bg['bgdxssite']})" : "";
-    $dxd .= ( trim($bg['bgdxdx']) !== "" ) ? " / {$bg['bgdxdx']}" : "";
-    $dxd .= ( trim($bg['bgdxmets']) !== "" ) ? " (METS: {$bg['bgdxmets']})" : "";
+  $dxd = ( trim($bg['bgnbr']) !== "" ) ? "[{$bg['bgnbr']}]" : "";
+  $dxd .= ( trim($bg['bgdxspeccat']) !== "" ) ? " {$bg['bgdxspeccat']}" : "";
+  $dxd .= ( trim($bg['bgdxasite']) !== "" ) ? " {$bg['bgdxasite']}" : "";
+  $dxd .= ( trim($bg['bgdxssite']) !== "" ) ? " ({$bg['bgdxssite']})" : "";
+  $dxd .= ( trim($bg['bgdxdx']) !== "" ) ? " / {$bg['bgdxdx']}" : "";
+  $dxd .= ( trim($bg['bgdxmets']) !== "" ) ? " (METS: {$bg['bgdxmets']})" : "";
+  $dxd .= " <input type=hidden id=segmentBGSelectorId value=\"{$encySelector}\"> ";
 
   $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/all-preparation-methods",$si,$sp),true);
   $prp = "<table border=0 class=menuDropTbl>";
     //<tr><td align=right onclick=\"fillField('qryPreparationMethod','','');updatePrepmenu('');\" class=ddMenuClearOption>[clear]</td></tr>
   foreach ($preparr['DATA'] as $prpval) {
-    $prp .= "<tr><td onclick=\"fillField('fldSEGPreparationMethod','{$prpval['lookupvalue']}','{$prpval['menuvalue']}');updatePrepmenu('{$prpval['lookupvalue']}');\" class=ddMenuItem>{$prpval['menuvalue']}</td></tr>";
+    $prp .= "<tr><td onclick=\"fillField('fldSEGPreparationMethod','{$prpval['lookupvalue']}','{$prpval['menuvalue']}');updatePrepmenu('{$prpval['lookupvalue']}');updatePrepAddDisplay('{$prpval['lookupvalue']}');\" class=ddMenuItem>{$prpval['menuvalue']}</td></tr>";
   }
   $prp .= "</table>";
-
-
+  
   $prepconarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/preparation-containers",$si,$sp),true);
   $prpcon = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldSEGPreparationContainer','','');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ($prepconarr['DATA'] as $prpconval) {
@@ -2342,61 +2346,76 @@ function bldDialogAddSegment( $passeddata ) {
   }
   $met .= "</table>";
 
-
-//<td><table class=tblBtn id=btnADDNoQMS onclick="displayNOQMSReason();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>No QMS</td></tr></table></td>
-
 $rtnThis = <<<RTNTHIS
+<div id=divSegmentAddHolder>
 <table border=0>
-<tr><td colspan=2 id=segBGDXD>{$dxd}</td></tr>
-<tr><td> 
-           <table border=0>
-           <tr><td class=prcFldLbl>Hours Post <span class=reqInd>*</span></td><td class=prcFldLbl>Metric <span class=reqInd>*</span></td></tr>
-           <tr><td><input type=text id=fldSEGHP></td><td> <table><tr><td><input type=text id=fldSEGHP></td><td> <div class=menuHolderDiv><input type=hidden id=fldSEGMetricUOMValue><input type=text id=fldSEGMetricUOM READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="min-width: 8vw;">{$met}</div></div></td></tr></table>  </td></tr>
-           </table>      
- </td>
-<td align=right valign=bottom>
+<tr><td id=segBGDXD>{$dxd}</td></tr>
+</table> 
+
+<table border=0>
+<tr><td class=prcFldLbl>Hours Post <span class=reqInd>*</span></td><td class=prcFldLbl>Metric <span class=reqInd>*</span></td><td class=prcFldLbl>Preparation Method <span class=reqInd>*</span></td><td class=prcFldLbl>Preparation <span class=reqInd>*</span></td><td class=prcFldLbl>Container</td></tr>
+<tr><td><input type=text id=fldSEGHP></td><td> <table><tr><td><input type=text id=fldSEGHP></td><td> <div class=menuHolderDiv><input type=hidden id=fldSEGMetricUOMValue><input type=text id=fldSEGMetricUOM READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="min-width: 8vw;">{$met}</div></div></td></tr></table>  </td><td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationMethodValue><input type=text id=fldSEGPreparationMethod READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prp}</div></div></td><td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationValue><input type=text id=fldSEGPreparation READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 20vw;" id=ddSEGPreparationDropDown><center>(Select a Preparation Method)</div></div></td><td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationContainerValue><input type=text id=fldSEGPreparationContainer READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prpcon}</div></div></td></tr>
+</table>      
+
+<table width=100% border=0>
+<tr>
+  <td><div id=preparationAdditions>Prep Additions</div></td>
+</tr>
+</table>
+
+
+<table border=0 id=assignTbl>
+  <tr>
+   <td class=prcFldLbl>Assignment</td>
+   <td class=prcFldLbl>Request #</td>
+   <td rowspan=2 valign=bottom> <table class=tblBtn id=btnSaveSeg onclick="markAsBank();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table>  </td>
+  </tr>
+  <tr>
+    <td valign=top>
+         <div class=suggestionHolder>
+          <input type=text id=fldSEGselectorAssignInv class="inputFld" onkeyup="selectorInvestigator(); byId('fldSEGselectorAssignReq').value = '';byId('requestDropDown').innerHTML = ''; ">
+          <div id=assignInvestSuggestion class=suggestionDisplay>&nbsp;</div>
+         </div>
+    </td>
+    <td valign=top>
+        <div class=menuHolderDiv onmouseover="byId('assignInvestSuggestion').style.display = 'none'; setAssignsRequests();">
+        <input type=text id=selectorAssignReq READONLY class="inputFld">
+        <div class=valueDropDown id=requestDropDown style="min-width: 10vw;"></div>
+        </div>
+    </td>
+   </tr>
+</table>
+
+
+<table width=100%>
+<tr><td align=right>
 
   <table cellspacing=0 cellpadding=0 border=0><tr>
-    <td><table class=tblBtn id=btnADDQMSSegs style="width: 6vw;"><tr><td style=" font-size: 1.1vh; "><center>Add QMS</td></tr></table></td>
-    <td><table class=tblBtn id=btnSaveSeg style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Save Segment</td></tr></table></td>
+    <td><table class=tblBtn id=btnADDQMSSegs style="width: 6vw;" onclick="addQMSSegments();"><tr><td style=" font-size: 1.1vh; "><center>Add QMS</td></tr></table></td>
+    <td><table class=tblBtn id=btnSaveSeg style="width: 6vw;" onclick="addDefinedSegment();"><tr><td style=" font-size: 1.1vh;"><center>Save Segment<!--ONLY SAVE SEGMENTS FOR BG NOT LOCKED//--></td></tr></table></td>
   </tr></table>
 
 </td></tr>
-<tr><td colspan=2>
-<div id=reasonNoQMSLine style="display: none;">
---REASON NO QMS--
+</table>
 </div>
-</td></tr>
-<tr><td colspan=2 style="padding: 1.5vh 0 0 0;">
-
-<table border=0>
-  <tr>
-    
-    <td class=prcFldLbl>Preparation Method <span class=reqInd>*</span></td>
-    <td class=prcFldLbl>Preparation <span class=reqInd>*</span></td>
-    <td class=prcFldLbl>Container</td>
-  </tr>
-  <tr>
-    <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationMethodValue><input type=text id=fldSEGPreparationMethod READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prp}</div></div></td>
-    <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationValue><input type=text id=fldSEGPreparation READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 15vw;" id=ddSEGPreparationDropDown><center>(Select a Preparation Method)</div></div></td>
-    <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationContainerValue><input type=text id=fldSEGPreparationContainer READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prpcon}</div></div></td>
-  </tr>
-  <tr>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-  </tr>
-</table>
-
-</td></tr>
-</table>
-
-
 RTNTHIS;
 
   }
 
   return $rtnThis;
+
+//<td><table class=tblBtn id=btnADDNoQMS onclick="displayNOQMSReason();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>No QMS</td></tr></table></td>
+  //<td class=prcFldLbl>Cut from Block (Slides Only)</td><td><input type=text id=fldSEGCutFrom></td>
+  //<table border=1>
+//<tr> 
+//    <td class=prcFldLbl>Additives</td>
+//</tr>
+//<tr>
+//    
+//    <td>/ADDITIVES/</td>
+//</tr>
+//</table>
+
 }
 
 

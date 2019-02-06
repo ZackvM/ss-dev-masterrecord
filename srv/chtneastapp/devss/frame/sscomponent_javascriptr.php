@@ -1538,6 +1538,157 @@ function clearGrid() {
    navigateSite('procure-biosample'); 
 }
 
+function markAsBank() { 
+  if (byId('fldSEGselectorAssignInv') && byId('selectorAssignReq') ) { 
+    byId('fldSEGselectorAssignInv').value = "BANK"; 
+    byId('selectorAssignReq').value = "";
+
+  } else { 
+    alert('ERROR: SEE A CHTNEASTERN INFORMATICS STAFF MEMBER');
+  } 
+}
+
+function addQMSSegments() { 
+//ONLY IF QMS SEGMENTS DO NOT EXIST (voided)
+  if (byId('segmentBGSelectorId')) { 
+    var given = new Object(); 
+    given['bgency'] = byId('segmentBGSelectorId').value; 
+    var passeddata = JSON.stringify(given);
+    console.log(passeddata);
+    var mlURL = "/data-doers/segment-create-qms-pieces";
+    universalAJAX("POST",mlURL,passeddata,answerAddQMSSegments,2);
+  } else { 
+    alert('ERROR:  SEE CHTNEASTERN INFORMATICS');
+  }
+}
+
+function answerAddQMSSegments(rtnData) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("Add Segment ERROR:\\n"+dspMsg);
+   } else { 
+     //UPDATE SEGMENT DISPLAY
+   }        
+
+}
+
+function addDefinedSegment() { 
+//ONLY IF QMS SEGMENTS DO NOT EXIST (voided)
+alert('ADD SEGMENTS');
+}
+
+function selectorInvestigator() { 
+  if (byId('fldSEGselectorAssignInv').value.trim().length > 3) { 
+    getSuggestions('fldSEGselectorAssignInv',byId('fldSEGselectorAssignInv').value.trim()); 
+  } else { 
+    byId('fldSEGassignInvestSuggestion').innerHTML = "&nbsp;";
+    byId('glfSEGassignInvestSuggestion').style.display = 'none';
+  }
+}
+
+function getSuggestions(whichfield, passedValue) { 
+switch (whichfield) { 
+  case 'fldSEGselectorAssignInv':
+    var given = new Object(); 
+    given['rqstsuggestion'] = 'vandyinvest-invest';  
+    given['given'] = byId(whichfield).value.trim();
+    var passeddata = JSON.stringify(given);
+    var mlURL = "/data-doers/suggest-something";
+    universalAJAX("POST",mlURL,passeddata,answerAssignInvestSuggestions,2);
+  break;
+}
+}
+
+function answerAssignInvestSuggestions(rtnData) { 
+var rsltTbl = "";
+if (parseInt(rtnData['responseCode']) === 200 ) { 
+  var dta = JSON.parse(rtnData['responseText']);
+  if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
+    var rsltTbl = "<table border=0 class=\"menuDropTbl\"><tr><td colspan=2 style=\"font-size: 1.2vh; padding: 8px;\">Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
+    dta['DATA'].forEach(function(element) { 
+       rsltTbl += "<tr class=ddMenuItem onclick=\"fillField('fldSEGselectorAssignInv','"+element['investvalue']+"','"+element['investvalue']+"'); byId('assignInvestSuggestion').innerHTML = '&nbsp;'; byId('assignInvestSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
+    }); 
+    rsltTbl += "</table>";  
+    byId('assignInvestSuggestion').innerHTML = rsltTbl; 
+    byId('assignInvestSuggestion').style.display = 'block';
+  } else { 
+    byId('assignInvestSuggestion').innerHTML = "&nbsp;";
+    byId('assignInvestSuggestion').style.display = 'none';
+  }
+}
+}
+
+
+function setAssignsRequests() {
+  if (byId('fldSEGselectorAssignInv').value.trim() !== "" ) { 
+    var given = new Object(); 
+    given['rqstsuggestion'] = 'vandyinvest-requests'; 
+    given['given'] = byId('fldSEGselectorAssignInv').value.trim();
+    var passeddata = JSON.stringify(given);
+    var mlURL = "/data-doers/suggest-something";
+    universalAJAX("POST",mlURL,passeddata,answerRequestDrop,2);
+  } 
+}
+
+function answerRequestDrop(rtnData) {
+  var rsltTbl = "";
+  if (parseInt(rtnData['responseCode']) === 200 ) { 
+    var dta = JSON.parse(rtnData['responseText']);
+    var menuTbl = "<table border=0 class=\"menuDropTbl\">";
+    dta['DATA'].forEach(function(element) { 
+      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('selectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;';\">"+element['requestid']+" ["+element['rqstatus']+"]</td></tr>";
+    });  
+    menuTbl += "</table>";
+    byId('requestDropDown').innerHTML = menuTbl; 
+  }
+}
+
+function updatePrepAddDisplay( whichPrep ) { 
+  if (byId('preparationAdditions')) { 
+   byId('preparationAdditions').innerHTML = ""; 
+   byId('preparationAdditions').style.display = "none";
+   //GET THE ADDS
+   var dta = new Object(); 
+   dta['additionsforprep'] = whichPrep;
+   var passdta = JSON.stringify(dta);
+   var mlURL = "/data-doers/preprocess-preparation-additions";
+   universalAJAXStreamTwo("POST",mlURL,passdta,answerPreparationAdditions,2);   
+  } 
+}
+
+function answerPreparationAdditions(rtnData) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("Add Segment ERROR:\\n"+dspMsg);
+   } else { 
+     var rsp = JSON.parse(rtnData['responseText']);
+     if (rsp['DATA']['pagecontent'].trim() !== "") { 
+       byId('preparationAdditions').innerHTML = rsp['DATA']['pagecontent']; 
+       byId('preparationAdditions').style.display = "block";
+     }
+   }        
+}
+
+function selectThisAdditive(additiveId) {
+   if (byId(additiveId)) { 
+     if (parseInt(byId(additiveId).dataset.aselected) === 1) {
+       byId(additiveId).dataset.aselected = '0';
+     } else { 
+       byId(additiveId).dataset.aselected = '1';
+     } 
+   }
+}
+
 function addSegments() { 
   if (!byId('bgSelectorCode')) { 
   } else { 
@@ -1702,17 +1853,6 @@ function fillField(whichfield, whichvalue, whichdisplay) {
   }        
 }            
 
-function displayNOQMSReason() { 
-  if (byId('reasonNoQMSLine')) {
-    if ( byId('reasonNoQMSLine').style.display === 'none' ) { 
-      byId('reasonNoQMSLine').style.display = 'block';
-      //BLANK VALUE
-    } else { 
-      byId('reasonNoQMSLine').style.display = 'none';
-      //BLANK VALUE
-    }
-  }
-}
 
 BGJAVASCRPT;
 
