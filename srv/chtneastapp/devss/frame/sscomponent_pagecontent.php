@@ -2342,7 +2342,7 @@ if ($errorInd === 0) {
   $metarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/metric-uoms-long",$si,$sp),true);
   $met = "<table border=0 class=menuDropTbl>";
   foreach ($metarr['DATA'] as $metval) {
-    $met .= "<tr><td onclick=\"fillField('fldSEGMetricUOM','{$metval['lookupvalue']}','{$metval['menuvalue']}');\" class=ddMenuItem>{$metval['menuvalue']}</td></tr>";
+    $met .= "<tr><td onclick=\"fillField('fldSEGAddMetricUOM','{$metval['lookupvalue']}','{$metval['menuvalue']}');\" class=ddMenuItem>{$metval['menuvalue']}</td></tr>";
   }
   $met .= "</table>";
 
@@ -2354,7 +2354,11 @@ $rtnThis = <<<RTNTHIS
 
 <table border=0>
 <tr><td class=prcFldLbl>Hours Post <span class=reqInd>*</span></td><td class=prcFldLbl>Metric <span class=reqInd>*</span></td><td class=prcFldLbl>Preparation Method <span class=reqInd>*</span></td><td class=prcFldLbl>Preparation <span class=reqInd>*</span></td><td class=prcFldLbl>Container</td></tr>
-<tr><td><input type=text id=fldSEGHP></td><td> <table><tr><td><input type=text id=fldSEGHP></td><td> <div class=menuHolderDiv><input type=hidden id=fldSEGMetricUOMValue><input type=text id=fldSEGMetricUOM READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="min-width: 8vw;">{$met}</div></div></td></tr></table>  </td><td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationMethodValue><input type=text id=fldSEGPreparationMethod READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prp}</div></div></td><td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationValue><input type=text id=fldSEGPreparation READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 20vw;" id=ddSEGPreparationDropDown><center>(Select a Preparation Method)</div></div></td><td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationContainerValue><input type=text id=fldSEGPreparationContainer READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prpcon}</div></div></td></tr>
+<tr>
+   <td><input type=text id=fldSEGAddHP></td>
+   <td><table><tr><td><input type=text id=fldSEGAddMetric></td><td><div class=menuHolderDiv><input type=hidden id=fldSEGAddMetricUOMValue><input type=text id=fldSEGAddMetricUOM READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="min-width: 8vw;">{$met}</div></div></td></tr></table>  </td>
+   <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationMethodValue><input type=text id=fldSEGPreparationMethod READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prp}</div></div></td>
+   <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationValue><input type=text id=fldSEGPreparation READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 20vw;" id=ddSEGPreparationDropDown><center>(Select a Preparation Method)</div></div></td><td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationContainerValue><input type=text id=fldSEGPreparationContainer READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prpcon}</div></div></td></tr>
 </table>      
 
 <table width=100% border=0>

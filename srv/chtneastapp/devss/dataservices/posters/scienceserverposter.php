@@ -35,6 +35,7 @@ function __construct() {
 class datadoers {
 
     function segmentcreateqmspieces( $request, $passdata) { 
+  
       $rows = array(); 
       //$dta = array(); 
       $responseCode = 400;
@@ -46,24 +47,56 @@ class datadoers {
       session_start(); 
       $bg = json_decode($passdata, true); 
       $bgid = cryptservice($bg['bgency'],'d',false);
-
-      $lookupSQL = "SELECT pbiosample FROM four.ut_procure_biosample where ifnull(migrated,0) = 0 and selector = :selectorid";
+      // TODO: Make Sure Tech Has RIGHTS to procure at Institution and check PRCTechInstitute and PRCProcedureInstitutionValue match
+      $lookupSQL = "SELECT bs.pbiosample, bsd.fromlocation as fromlocation FROM four.ut_procure_biosample bs left join (select * from four.ref_procureBiosample_details where activeind = 1) bsd on bs.pbiosample = bsd.pbiosample where ifnull(bs.migrated,0) = 0  and ifnull(bs.voidind,0) = 0 and bs.selector = :selectorid";
       $lookupR = $conn->prepare($lookupSQL); 
       $lookupR->execute(array(':selectorid' => $bgid ));
       if ((int)$lookupR->rowCount() === 1) { 
         //CHECK QMS PIECES
         $lookup = $lookupR->fetch(PDO::FETCH_ASSOC);
-        (list( $errorInd, $msgArr[] ) = array(1 , "{$lookup['pbiosample']}"));
         $chkSQL = "SELECT * FROM four.ut_procure_segment where activeind = 1 and hprind = 1 and pbiosample = :pbiosample";
         $chkR = $conn->prepare($chkSQL);
         $chkR->execute(array(':pbiosample' => $lookup['pbiosample']));
         ( (int)$chkR->rowCount() !== 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THIS BIOGROUP ALREADY HAS QMS SEGMENTS ATTACHED.  YOU MAY NOT ADD QMS SEGMENTS USING THE 'ADD QMS' BUTTON.")) : "";
+        //{"bgency":"Q1pYNVpnSnJnM1VlNzRtOHhrN29LZz09","hrpost":".25","metric":".8","metuom":"4"}
+        //E) initial metric and UOM are a number and a valid menu option 
+        ( preg_match('/[^0-9\.]/', $bg['hrpost']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE HOURS POST MUST BE A NUMBER (DECIMAL)")) : "";
+        ( trim($bg['hrpost']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE HOURS POST FIELD IS REQUIRED")) : "";
+        ( preg_match('/[^0-9\.]/', $bg['metric']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC NUMBER MUST BE A NUMBER (DECIMAL)")) : "";
+        ( trim($bg['metric']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC MEASURE IS REQUIRED")) : "";
+        if ( trim($bg['metuom']) !== "" ) {  
+          $chkMetSQL = "SELECT * FROM four.sys_master_menus where menu = 'metric' and dspind = 1 and queriable = 1 and menuvalue = :metuom";
+          $chkMetR = $conn->prepare($chkMetSQL); 
+          $chkMetR->execute(array(':metuom' => trim($bg['metuom'])));
+          ( $chkMetR->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC UOM IS INVALID.  SEE CHTNEASTERN INFORMATICS STAFF MEMBER")) : "";
+        } else { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC UOM IS REQUIRED"));
+        }
+        $days = biogroupdayssince($bgid);
+        ( count($days[0]) === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SYSTEM ERROR:  BG SELECTOR NOT FOUND ON DATE CHECK.  SEE A CHTN INFORMATICS STAFF.")) : "";
+        ( (int)$days[0]['dbwrite'] > 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "DAYS SINCE DATABASE WRITE DATE IS GREATER THAN ZERO.  YOU MAY NOT ADD QMS SEGMENTS AFTER THE DATE OF BIOSAMPLE PROCUREMENT.")) : ""; 
+        ( (int)$days[0]['procdate'] > 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "DAYS SINCE PROCUREMENT DATE IS GREATER THAN ZERO.  YOU MAY NOT ADD QMS SEGMENTS AFTER THE DATE OF BIOSAMPLE PROCUREMENT.")) : ""; 
+        $authuser = $_SERVER['PHP_AUTH_USER']; 
+        $authpw = $_SERVER['PHP_AUTH_PW'];
+        $authchk = cryptservice($authpw,'d', true, $authuser);
+        ( trim($authchk) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER AUTHENTICATION FAILED.  EITHER YOUR SESSION HAS EXPIRED OR YOU ARE NOT VALID")) : ""; 
+        ( trim($authchk) !== trim($authuser) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER AUTHENTICATION FAILED.  EITHER YOUR SESSION HAS EXPIRED OR YOU ARE NOT VALID")) : ""; 
+        $usr = userDetails( $authchk ); 
+        //[{"sessionid":"3kuck2rbedsl93nes0637r13e7","originalaccountname":"proczack","presentinstitution":"HUP","primaryinstcode":"HUP"}]
+        ( trim($lookup['fromlocation']) !== trim($usr[0]['presentinstitution']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MAY NOT ADD SEGMENTS FOR A BIOGROUP THAT WAS PROCURED AT AN INSTITUTION FOR WHICH YOU ARE PRESENTLY NOT WORKING")) : ""; 
       } else { 
-        (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP CAN'T EXCEPT QMS SEGMENTS.  EITHER THE GROUP DOESN'T EXIST OR HAS ALREADY BEEN LOCKED"));
+        (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP CAN'T EXCEPT QMS SEGMENTS.  EITHER THE GROUP DOESN'T EXIST, HAS ALREADY BEEN LOCKED OR IS VOIDED"));
       }
       if ( $errorInd === 0 ) { 
-        //ADD QMS SEGMENTs HERE
 
+          //TODO:  MAKE PREPS DYNAMIC 
+          $pbSegLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($bg['hrpost']), trim($bg['metric']), trim($bg['metuom']), "PB", "FFPE", "", "", 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], "QC", "QC", "");
+          $sldSegLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($bg['hrpost']), trim($bg['metric']), trim($bg['metuom']), "SLIDE", "H&E SLIDE", "", $pbSegLbl, 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], "QC", "QC", "");
+
+
+
+
+        (list( $errorInd, $msgArr[] ) = array(1 , "{$pbSegLbl} {$sldSegLbl}")); 
 
       }
       $msg = $msgArr;
@@ -2978,6 +3011,56 @@ class systemposts {
 
 /*****  SUPPORTING FUNCTIONS FOR CLASSES ******/ 
 
+function addSegmentToBiogroup($whichBG = "", $hrpost = 0, $metric = 0, $metricUOM = 4, $prp = "", $prpMet = "", $prpContainer = "", $cutFromBlockId = "", $HPRInd = 0, $procuredAt = "", $procuredBy = "", $InvestId = "", $dspName = "", $requestId = "") { 
+
+  include(serverkeys . "/sspdo.zck"); 
+  $nxtSeg = substr(("000" . nextbgsegmentnumber($whichBG)) , -3); 
+  $bgs = "{$whichBG}T{$nxtSeg}";
+
+  $insSQL = "insert into four.ut_procure_segment (pbiosample, activeind, seglabel, bgs, hrpost, metric, metricuom, prp, prpmet, prpContainer, cutfromblockid, qty, hprind, procuredat, procuredby, investid, dspname, projid, requestid, inputon) values(:pbiosample, 1, :seglabel, :bgs, :hrpost, :metric, :metricuom, :prp, :prpmet, :prpContainer, :cutfromblockid, 1, :hprind, :procuredat, :procuredby, :assigncode, :assigndspname, 0, :requestNbr, now())";
+  $insR = $conn->prepare($insSQL);
+  $insR->execute(array(
+      ':pbiosample' => $whichBG 
+     ,':seglabel' => $nxtSeg
+     ,':bgs' => $bgs
+     ,':hrpost' => $hrpost
+     ,':metric' => $metric
+     ,':metricuom' => $metricUOM
+     ,':prp' => $prp
+     ,':prpmet' => $prpMet
+     ,':prpContainer' => $prpContainer
+     ,':cutfromblockid' => $cutFromBlockId
+     ,':hprind' => $HPRInd 
+     ,':procuredat' => $procuredAt
+     ,':procuredby' => $procuredBy
+     ,':assigncode' => $InvestId
+     ,':assigndspname' => $dspName
+     ,':requestNbr' => $requestId
+ ));
+
+  $lst = $conn->lastInsertId();
+
+  
+  return $bgs;
+
+}
+
+function userDetails($whichusr) { 
+
+  include(serverkeys . "/sspdo.zck"); 
+  $rtnArr = array();
+  $usrSQL = "SELECT sessionid, originalaccountname, presentinstitution, primaryinstcode FROM four.sys_userbase where sessionid = :sessionid and allowInd = 1 and allowProc = 1";
+  $usrRS = $conn->prepare($usrSQL); 
+  $usrRS->execute(array(':sessionid' => $whichusr)); 
+  if ($usrRS->rowCount() === 0) { 
+  } else { 
+    while ($u = $usrRS->fetch(PDO::FETCH_ASSOC)) { 
+      $rtnArr[] = $u;
+    }
+  } 
+  return $rtnArr;
+}
+
 function captureSystemActivity($sessionid, $sessionvariables, $loggedsession, $userid, $firstname, $lastname, $email, $requestmethod, $request) { 
     include(serverkeys . "/sspdo.zck"); 
     $insSQL = "insert into webcapture.tbl_siteusage (usagedatetime, sessionid, sessionvariables, loggedsession, userid, firstname, lastname, email, requestmethod, request)  values(now(),  :sessionid, :sessionvariables, :loggedsession, :userid, :firstname, :lastname, :email, :requestmethod, :request)";
@@ -3607,6 +3690,33 @@ function initialBGDataCheckOne($bg) {
       ( !array_key_exists('PRCProcedureInstitutionValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCProcedureInstitutionValue)")) : "";
       ( !array_key_exists('PRCProcedureDateValue', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCProcedureDateValue)")) : "";
     return array('errorind' => $errorInd, 'msgarr' => $msgArr);    
+}
+
+function biogroupdayssince($selector) { 
+    require(serverkeys . "/sspdo.zck");
+    $rtn = array();
+    $daySinceSQL = "SELECT TIMESTAMPDIFF(DAY,bs.inputon,now()) dbwrite, TIMESTAMPDIFF(DAY,prc.refdate,now()) as procdate, TIMESTAMPDIFF(DAY,pcd.refdate,now()) as prcddate FROM four.ut_procure_biosample bs left join (SELECT pbiosample, refdate FROM four.ref_procureBiosample_dates where activeind = 1 and dateDesignation = 'PROCUREMENT') prc on bs.pBioSample = prc.pbiosample left join (SELECT pbiosample, refdate FROM four.ref_procureBiosample_dates where activeind = 1 and dateDesignation = 'PROCEDURE') pcd on bs.pBioSample = pcd.pbiosample where bs.selector = :selector";
+
+  $daySinceRS = $conn->prepare($daySinceSQL);
+  $daySinceRS->execute(array(':selector' => $selector));
+
+  if ($daySinceRS->rowCount() === 0) { 
+  } else { 
+    while ($r = $daySinceRS->fetch(PDO::FETCH_ASSOC)) { 
+      $rtn[] = $r;
+    }
+  }
+  return $rtn;
+}
+
+function nextbgsegmentnumber($whichBG) { 
+  require(serverkeys . "/sspdo.zck");
+  $sgSQL = "SELECT ifnull(convert(segLabel, unsigned integer),0) as seglbl FROM four.ut_procure_biosample bs left join four.ut_procure_segment sg on bs.pbiosample = sg.pbiosample where bs.pbiosample = :selector order by convert(segLabel, unsigned integer) desc";
+  $sgR = $conn->prepare($sgSQL);
+  $sgR->execute(array(':selector' => $whichBG));
+  $sg = $sgR->fetch(PDO::FETCH_ASSOC); 
+
+  return (((int)$sg['seglbl']) + 1); 
 }
 
 function zeroOut($var){

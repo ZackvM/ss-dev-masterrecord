@@ -1553,8 +1553,11 @@ function addQMSSegments() {
   if (byId('segmentBGSelectorId')) { 
     var given = new Object(); 
     given['bgency'] = byId('segmentBGSelectorId').value; 
+    given['hrpost'] = byId('fldSEGAddHP').value; 
+    given['metric'] = byId('fldSEGAddMetric').value; 
+    given['metuom'] = byId('fldSEGAddMetricUOMValue').value; 
     var passeddata = JSON.stringify(given);
-    console.log(passeddata);
+    //console.log(passeddata);
     var mlURL = "/data-doers/segment-create-qms-pieces";
     universalAJAX("POST",mlURL,passeddata,answerAddQMSSegments,2);
   } else { 

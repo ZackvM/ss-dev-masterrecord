@@ -429,7 +429,8 @@ textarea { font-size: 1.3vh; }
 .lockfield:focus, .lockfield:active { background: rgba({$this->color_grey},.5);    }
 
 #segBGDXD { font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); font-weight: bold; padding: 1vh 0;  }
-#fldSEGHP {width: 5vw; text-align: right; }
+#fldSEGAddHP {width: 5vw; text-align: right; }
+#fldSEGAddMetric {width: 5vw; text-align: right; }
 
 #ddSEGPreparationDropDown { min-width: 20vw; }
 #fldSEGselectorAssignInv { width: 15vw; }
