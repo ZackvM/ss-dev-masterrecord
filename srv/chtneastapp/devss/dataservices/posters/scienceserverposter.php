@@ -88,21 +88,106 @@ class datadoers {
         (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP CAN'T EXCEPT QMS SEGMENTS.  EITHER THE GROUP DOESN'T EXIST, HAS ALREADY BEEN LOCKED OR IS VOIDED"));
       }
       if ( $errorInd === 0 ) { 
-
           //TODO:  MAKE PREPS DYNAMIC 
-          $pbSegLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($bg['hrpost']), trim($bg['metric']), trim($bg['metuom']), "PB", "FFPE", "", "", 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], "QC", "QC", "");
-          $sldSegLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($bg['hrpost']), trim($bg['metric']), trim($bg['metuom']), "SLIDE", "H&E SLIDE", "", $pbSegLbl, 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], "QC", "QC", "");
-
-
-
-
-        (list( $errorInd, $msgArr[] ) = array(1 , "{$pbSegLbl} {$sldSegLbl}")); 
-
+          $pbSegLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($bg['hrpost']), trim($bg['metric']), trim($bg['metuom']), "PB", "FFPE", "", "", 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], "BANK", "BANK", "");
+          $sldSegLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($bg['hrpost']), "", 4, "SLIDE", "H&E SLIDE", "", $pbSegLbl, 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], "QC", "QC", "");
+          //TODO:  CHECK THAT THE SEGMENTS ARE MADE
+          $responseCode = 200;
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;                        
+    }
+
+    function getprocurementsegmentlisttable ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $bg = json_decode($passdata, true);
+
+      $sglist = self::getprocurementsegmentlist($request,$passdata);
+      if ( (int)$sglist['statusCode'] === 200 ) { 
+        if ( count($sglist['data']['DATA']) > 0 ) { 
+           $segAnnounce = ( (int)$sglist['data']['ITEMSFOUND'] > 1 ) ? "Segments Found: {$sglist['data']['ITEMSFOUND']}" : "{$sglist['data']['ITEMSFOUND']} Segment Found";
+           //<tr><td colspan=9 id=segmentCountLine>{$segAnnounce}</td></tr>
+           $sgTbl = "<table border=0 id=procurementScreenSegmentList>";
+           $sgTbl .= "<thead><tr><th>BGS</th><th>HPR</th><th>HR</th><th>Preparation</th><th>Metric</th><th>Cut From</th><th>Assignment</th><th>Procured By-At-Time</th></tr></thead><tbody>";
+           foreach ( $sglist['data']['DATA'] as $key => $value) { 
+             $hprind = ( (int)$value['hprind'] === 1 ) ? "X" : "-";
+             $prep = ( trim($value['prpcode']) === "" ) ? "" : "{$value['prpcode']}";
+             if ( trim($value['prpmetdetail']) !== "" ) { 
+               $prep .= ( trim($prep) === "") ? "{$value['prpmetdetail']}" : " / {$value['prpmetdetail']}"; 
+             }
+             if ( trim($value['container']) !== "" ) { 
+               $prep .= ( trim($prep) === "") ? "{$value['container']}" : " ({$value['container']})"; 
+             }
+             $metric = ( trim($value['metric']) === "" ) ? "&nbsp;" : "{$value['metric']}{$value['shortuom']}";
+             $cutblock = ( trim($value['cutfromblockid']) === "" ) ? "&nbsp;" : "{$value['cutfromblockid']}";
+             if ( strtolower(substr(trim($value['assigninvestid']),0,3)) !== 'inv') {  
+                 $assignment = (trim($value['assigninvestid']) === 'QC') ? "&nbsp;" : trim($value['assigninvestid']);
+             } else { 
+                 //TODO:BUILD INVESTIGATOR ASSIGNMENT DSP HERE
+             }
+             //TODO:  BUILD VOID DSP (strikeout)
+             $procmet = trim($value['procuredby']);
+             $procmet .= ( trim($value['procuredat']) === "" ) ? "" : "@{$value['procuredat']}"; 
+             $proctime = $value['proctime'];
+             $sgTbl .= "<tr><td class=ptSegBGS>{$value['bgs']}</td><td class=ptSegHPR>{$hprind}</td><td class=ptSegHRP>{$value['hrpost']}</td><td class=ptSegPRP>{$prep}</td><td class=ptSegMET>{$metric}</td><td class=ptSegCUT>{$cutblock}</td><td class=ptSegASS>{$assignment}</td><td>{$procmet} - {$proctime}</td></tr>";
+           }
+           $sgTbl .= "</tbody></table>";
+           $responseCode = 200;
+        } else { 
+          //ERROR:  RESPONSECODE GOOD BUT NO SEGMENTS - THIS SHOULDN'T HAPPEN
+        }
+      } else { 
+          //NO SEGMENTS EXIST
+          $sgTbl = "<table><tr><td style=\"font-size: 1.3vh; font-weight: bold;\">NO SEGMENTS FOUND FOR THIS BIOGROUP</td></tr></table>";
+      }
+      $dta = $sgTbl;
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+
+    function getprocurementsegmentlist ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $bg = json_decode($passdata, true);
+
+      $segSQL = <<<SEGSQL
+SELECT sg.pbiosample, sg.seglabel, sg.bgs, ifnull(sg.hrpost,0) as hrpost, ifnull(sg.metric,'') as metric, if(ifnull(sg.metric,'') = '','',ifnull(uom.dspvalue,'')) as shortuom, if(ifnull(sg.metric,0) = '','',ifnull(uom.longvalue,'')) as longuom, ifnull(prpm.dspvalue,'') as prepmethod, ifnull(sg.prp,'') as prpcode, ifnull(prpd.longvalue,'') as prpdetail, ifnull(sg.prpmet,'') as prpmetdetail, ifnull(sg.prpcontainer,'') as containercode, ifnull(pcnt.longvalue,'') as container, ifnull(sg.cutfromblockid,'') as cutfromblockid, ifnull(sg.qty,1) as qty, ifnull(sg.hprind,0) as hprind, ifnull(sg.procuredAt,'') as procuredat, ifnull(sg.procuredby,'') as procuredby , ifnull(sg.dspname,'') as assigndspname, ifnull(sg.investid,'') as assigninvestid, ifnull(sg.requestid,'') as assignrequestid, ifnull(sg.voidind,0) as voidind, ifnull(sg.voidreason,'') as voidreason, ifnull(date_format(sg.inputON, '%H:%i (%m/%d/%Y)'),'') as proctime FROM four.ut_procure_segment sg left join four.ut_procure_biosample bs on sg.pbiosample = bs.pbiosample left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricuom = uom.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPMETHOD') prpm on sg.prp = prpm.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPDETAIL') prpd on sg.prpMet = prpd.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'CONTAINER') pcnt on sg.prpcontainer = pcnt.menuvalue where bs.selector = :selector and sg.activeind = 1 order by convert(sg.seglabel, unsigned integer)
+SEGSQL;
+
+      $sgR = $conn->prepare($segSQL);
+      $sgR->execute(array(':selector' => $bg['selector']));
+      if ( $sgR->rowCount() > 0 ) {
+        $itemsfound = $sgR->rowCount();  
+        while ($r = $sgR->fetch(PDO::FETCH_ASSOC)) { 
+          $dta[] = $r;
+        }
+        $responseCode = 200;
+      } else { 
+        $responseCode = 404;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
     }
 
     function getprocurementbiogroup( $request, $passdata ) { 
@@ -258,61 +343,68 @@ BGSQLHERE;
       require(serverkeys . "/sspdo.zck");
       //$dta = array('pagecontent' => bldDialogGetter('dialogAddBGSegments',$passdata) );
       $pager = "";
-      switch (strtoupper($prpRqst['additionsforprep'])) { 
-        case 'PB':
+      switch (strtoupper($prpRqst['additionsforprep'])) {
+
+      case 'PB':
+          //TODO: IT WOULD BE GREAT IF THESE VALUES WERE A WEBSERVICE
           $SQL = "select ifnull(pr.menuvalue,'') as menuvalue, pr.longvalue, pr.dsporder  from (SELECT menuid FROM four.sys_master_menus where menu = 'PREPMETHOD' and menuvalue = :preparation) as pm left join (SELECT * FROM four.sys_master_menus where menu = 'PREPDETAIL' and dspind = 1) as pr on pm.menuid = pr.parentid where trim(pr.menuvalue) <> '' order by pr.dsporder";  
           $rs = $conn->prepare($SQL); 
           $rs->execute(array(':preparation' => 'SLIDE'));
 
-
           $sldprp = "<table border=0 class=menuDropTbl>";
           while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
-            $sldprp .= "<tr><td onclick=\"fillField('fldSEGAddPreparation','{$r['lookupvalue']}','{$r['menuvalue']}');\" class=ddMenuItem>{$r['menuvalue']}</td></tr>";
+            $sldprp .= "<tr><td onclick=\"fillField('additionalPreparation','{$r['lookupvalue']}','{$r['menuvalue']}');\" class=ddMenuItem>{$r['menuvalue']}</td></tr>";
           }
           $sldprp .= "</table>"; 
 
+          $itmTbl = "<table border=0 id=segAddslideItmTbl><tr><th style=\"width: 1vw;\"></th><th style=\"width: 8vw;\">Type of Slide</th><th style=\"width: 3vw;\">Qty</th></tr></table>";
+
+
           $pager = <<<PAGERHERE
+<input type=hidden id=fldAdditiveDiv value="pb"><input type=hidden id=fldAdditiveDivValue value="">
 <table border=0 width=100%>
 <tr><td class=addTblHeader>Add Slide(s) From This Block</td></tr>
-<tr><td>These slides will be added and assigned to the same investigator that the block is assigned</td></tr>
+<tr><td>These slides will be added and assigned to the same investigator to which the block is assigned.  Leave blank to add zero additional slides.<br>To delete an added slide item, click it.</td></tr>
 <tr><td class=addHolder>
 <table border=0>
   <tr><td class=prcFldLbl>Type of Slide</td><td class=prcFldLbl>Quantity</td><td></td><td></td></tr>
-<tr><td valign=top><div class=menuHolderDiv><input type=hidden id=fldSEGAddPreparationValue><input type=text id=fldSEGAddPreparation READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 20vw;" id=ddSEGAddPreparationDropDown>{$sldprp}</div></div></td><td valign=top><input type=text id=fldSEGAddPBQtySlide></td><td valign=top><table class=tblBtn id=btnADDQMSSegs style="width: 6vw;"><tr><td style=" font-size: 1.1vh; "><center>Add</td></tr></table></td><td><div id=addSlideDspBox></div></td></tr>
+<tr><td valign=top><div class=menuHolderDiv><input type=hidden id=additionalPreparationValue><input type=text id=additionalPreparation READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 20vw;" id=ddSEGAddPreparationDropDown>{$sldprp}</div></div></td><td valign=top><input type=text id=addPBQtySlide></td><td valign=top><table class=tblBtn id=btnADDQMSSegs style="width: 6vw;" onclick="requestAdditionalSlides();"><tr><td style=" font-size: 1.1vh; "><center>Add</td></tr></table></td></tr><tr><td colspan=5><div id=addSlideDspBox>{$itmTbl}</div></td></tr>
 </table>
 
 </td></tr>
 </table>
 PAGERHERE;
-            break;
-        case 'SLIDE':
-          $sldNbr = "<table><tr><td class=prcFldLbl>Cut from Block</td><td class=prcFldLbl>Slide Qty</td></tr><tr><td><input type=text id=fldSEGCutFromBlock></td><td><input type=text id=fldSEGAddSlideQtyNbr></td></tr></table>";
+          break;
 
-            
+
+        case 'SLIDE':
+          $sldNbr = "<input type=hidden id=fldAdditiveDiv value=\"slide\"><input type=hidden id=fldAdditiveDivValue value=\"\"><table><tr><td class=prcFldLbl>Cut from Block <span class=reqInd>*</span></td><td class=prcFldLbl>Slide Qty <span class=reqInd>*</span></td></tr><tr><td><input type=text id=fldSEGSlideCutFromBlock></td><td><input type=text id=fldSEGSlideQtyNbr value=1></td></tr></table>";  
           $pager = <<<PAGERHERE
 <table border=0 width=100%>
 <tr><td class=addTblHeader>Quantity of Slides</td></tr>
 <tr><td class=addHolder>{$sldNbr}</td></tr>
 </table>
 PAGERHERE;
-            break; 
+          break; 
+
+
         case 'FRESH':
           $freshList = $conn->prepare("SELECT dspvalue, menuvalue FROM four.sys_master_menus where menu = 'PREPARATIONADDITIONSFRESH' and dspind = 1 order by dsporder");
           $freshList->execute();
           $frshCnt = $freshList->rowCount();  
           $freshAdds = ""; 
           if ( (int)$frshCnt > 0 ) {
-            $freshAdds = "<input type=hidden id=additiveDiv value=\"fresh\"><table><tr>";
+            $freshAdds = "<input type=hidden id=fldAdditiveDiv value=\"fresh\"><input type=hidden id=fldAdditiveDivValue value=\"\"><div id=freshadditivebtns><table><tr>";
             $btnCount = 0;
             while ($r = $freshList->fetch(PDO::FETCH_ASSOC)) {
               if ($btnCount === 4) { 
                 $freshAdds .= "</tr><tr>";
                 $btnCount = 0; 
               }
-              $freshAdds .= "<td> <table class=tblBtn id='{$r['menuvalue']}' onclick=\"selectThisAdditive(this.id);\" style=\"width: 6vw;\" data-aselected='0' data-additivevalue=\"{$r['menuvalue']}\"><tr><td style=\"font-size: 1.1vh;\"><center>{$r['dspvalue']}</td></tr></table>  </td>";
+              $freshAdds .= "<td> <table class=tblBtn id='add-{$r['menuvalue']}' onclick=\"selectThisAdditive(this.id);\" style=\"width: 6vw;\" data-aselected='0' data-additivevalue=\"{$r['menuvalue']}\"><tr><td style=\"font-size: 1.1vh;\"><center>{$r['dspvalue']}</td></tr></table></td>";
               $btnCount++;    
             }
-            $freshAdds .= "</tr></table>";
+            $freshAdds .= "</tr></table></div>";
           }
 
           $pager = <<<PAGERHERE
@@ -321,12 +413,16 @@ PAGERHERE;
 <tr><td class=addHolder>{$freshAdds}</td></tr>
 </table>
 PAGERHERE;
-            break;
+          break;
+
         default:
+
+
       }
+
+
       $dta = array('pagecontent' => $pager );
       ( trim($dta) !== "" ) ? $responseCode = 200 : "";
-
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);

@@ -2303,8 +2303,6 @@ function bldDialogAddSegment( $passeddata ) {
   $errorMsg = "";
   //DATA CHECKS GO HERE
 
-
-
 if ($errorInd === 0) {
   $si = serverIdent;
   $sp = serverpw;
@@ -2347,6 +2345,7 @@ if ($errorInd === 0) {
   $met .= "</table>";
 
 $rtnThis = <<<RTNTHIS
+
 <div id=divSegmentAddHolder>
 <table border=0>
 <tr><td id=segBGDXD>{$dxd}</td></tr>
@@ -2370,7 +2369,7 @@ $rtnThis = <<<RTNTHIS
 
 <table border=0 id=assignTbl>
   <tr>
-   <td class=prcFldLbl>Assignment</td>
+   <td class=prcFldLbl>Assignment <span class=reqInd>*</span></td>
    <td class=prcFldLbl>Request #</td>
    <td rowspan=2 valign=bottom> <table class=tblBtn id=btnSaveSeg onclick="markAsBank();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table>  </td>
   </tr>
@@ -2383,7 +2382,7 @@ $rtnThis = <<<RTNTHIS
     </td>
     <td valign=top>
         <div class=menuHolderDiv onmouseover="byId('assignInvestSuggestion').style.display = 'none'; setAssignsRequests();">
-        <input type=text id=selectorAssignReq READONLY class="inputFld">
+        <input type=text id=fldSEGselectorAssignReq READONLY class="inputFld">
         <div class=valueDropDown id=requestDropDown style="min-width: 10vw;"></div>
         </div>
     </td>
@@ -2402,6 +2401,7 @@ $rtnThis = <<<RTNTHIS
 </td></tr>
 </table>
 </div>
+
 RTNTHIS;
 
   }
@@ -2846,6 +2846,7 @@ function bldProcurementGridEdit( $usr, $selector ) {
   $pdta['selector'] = $selector;
   $payload = json_encode($pdta);
   $bgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-biogroup",serverIdent, serverpw, $payload), true);
+  $sgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-segment-list-table",serverIdent, serverpw, $payload), true);
   $bg = $bgdta['DATA'];
   $jsonbg = json_encode($bg);
 
@@ -2891,7 +2892,14 @@ $tday = $bg['bgprocurementdate'];
 $tech = $bg['bgproctech'];
 $giveSelector = $selector;
 
+//BUILD SEGMENT TABLE
+
+
+//END BUILD SEGMENT TABLE
+
 //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"bgnbr":85052,"bgmigratedind":0,"bgmigratedon":"","bgrecordstatus":2,"bgfromlocationcode":"HUP","bgvoidind":0,"bgvoidreason":""}}
+//OPEN DIV &#9871; // CLOSED DIV &#9870;
+
 
   $rtnTbl['grid'] = <<<GRIDTBL
 
@@ -2905,8 +2913,8 @@ $giveSelector = $selector;
 </td></tr>
 
 <tr><td class=BSDspSpacer>&nbsp;</td></tr>
-<tr><td class=BSDspSectionHeader>Biogroup Sample Metrics</td></tr>
-  <tr><td class=procGridHoldingLine>
+<tr><td class=BSDspSectionHeader><span class=openDivIndicator id=openDivIndBSMetrics onclick="hideProcGridLine('BSGridLineSampleMetrics',this.id);">&#9870;</span>Biogroup Sample Metrics</td></tr>
+  <tr><td class=procGridHoldingLine id=BSGridLineSampleMetrics style="display: none;">
    <table border=0 cellspacing=10>
      <tr><td class=prcFldLbl>Procuring Institution</td><td class=prcFldLbl>Procurement Date </td><td class=prcFldLbl>Procedure Type</td><td class=prcFldLbl>Collection Type</td><td class=prcFldLbl>Technician</td><td class=prcFldLbl>Initial Metric <span class=reqInd>*</span></td><td>&nbsp;</td></tr>
      <tr>      
@@ -2923,8 +2931,8 @@ $giveSelector = $selector;
 
 
 <tr><td class=BSDspSpacer>&nbsp;</td></tr>
-<tr><td class=BSDspSectionHeader>Donor Metrics</td></tr>
-  <tr><td class=procGridHoldingLine>
+<tr><td class=BSDspSectionHeader><span class=openDivIndicator id=openDivIndBSPHI onclick="hideProcGridLine('BSGridLinePHI',this.id);">&#9870;</span>Donor Metrics</td></tr>
+  <tr><td class=procGridHoldingLine id=BSGridLinePHI style="display: none;">
 
    <table border=0 cellspacing=10>
     <tr>
@@ -2960,8 +2968,8 @@ $giveSelector = $selector;
   </td></tr>
 
 <tr><td class=BSDspSpacer>&nbsp;</td></tr>
-<tr><td class=BSDspSectionHeader>Diagnosis Designation</td></tr>
-<tr><td class=procGridHoldingLine>
+<tr><td class=BSDspSectionHeader><span class=openDivIndicator id=openDivIndBSDXD onclick="hideProcGridLine('BSGridLineDXD',this.id);">&#9871;</span>Diagnosis Designation</td></tr>
+<tr><td class=procGridHoldingLine id=BSGridLineDXD>
 
 <table border=0 cellspacing=10>
   <tr><td class=prcFldLbl>Specimen Category</td>
@@ -2997,8 +3005,8 @@ $giveSelector = $selector;
 
 
 <tr><td class=BSDspSpacer>&nbsp;</td></tr>
-<tr><td class=BSDspSectionHeader>Comments</td></tr>
-<tr><td class=procGridHoldingLine>
+<tr><td class=BSDspSectionHeader><span class=openDivIndicator id=openDivIndBSCmt onclick="hideProcGridLine('BSGridLineCmt',this.id);">&#9870;</span>Comments</td></tr>
+<tr><td class=procGridHoldingLine id=BSGridLineCmt style="display: none;">
 
 <table cellspacing=10 border=0>
 <tr><td class=prcFldLbl>Biosample Comments</td><td class=prcFldLbl>Question for HPR/QMS</td></tr>
@@ -3009,10 +3017,12 @@ $giveSelector = $selector;
 
 
 <tr><td class=BSDspSpacer>&nbsp;</td></tr>
-<tr><td class=BSDspSectionHeader>Segments</td></tr>
-<tr><td class=procGridHoldingLine>
+<tr><td class=BSDspSectionHeader><span class=openDivIndicator id=openDivIndBSSegments onclick="hideProcGridLine('BSGridLineSegments',this.id);">&#9871;</span>Segments</td></tr>
+<tr><td class=procGridHoldingLine id=BSGridLineSegments>
 <!-- SEGMENTS //-->
-
+<div id=procBSSegmentDsp>  
+{$sgdta['DATA']}
+</div>
 
 </td></tr>
 

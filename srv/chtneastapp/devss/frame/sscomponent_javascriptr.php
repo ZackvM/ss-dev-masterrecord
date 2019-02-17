@@ -1502,7 +1502,6 @@ JAVASCR;
 
     $rtnthis = <<<BGJAVASCRPT
 
-
 document.addEventListener('DOMContentLoaded', function() {  
 
     if (byId('btnPBClearGrid')) { 
@@ -1539,9 +1538,9 @@ function clearGrid() {
 }
 
 function markAsBank() { 
-  if (byId('fldSEGselectorAssignInv') && byId('selectorAssignReq') ) { 
+  if (byId('fldSEGselectorAssignInv') && byId('fldSEGselectorAssignReq') ) { 
     byId('fldSEGselectorAssignInv').value = "BANK"; 
-    byId('selectorAssignReq').value = "";
+    byId('fldSEGselectorAssignReq').value = "";
 
   } else { 
     alert('ERROR: SEE A CHTNEASTERN INFORMATICS STAFF MEMBER');
@@ -1576,21 +1575,83 @@ function answerAddQMSSegments(rtnData) {
     alert("Add Segment ERROR:\\n"+dspMsg);
    } else { 
      //UPDATE SEGMENT DISPLAY
+     updateBSSegmentDisplay();
+     resetSegmentAddDialog();
    }        
-
 }
 
-function addDefinedSegment() { 
-//ONLY IF QMS SEGMENTS DO NOT EXIST (voided)
-alert('ADD SEGMENTS');
+function updateBSSegmentDisplay() { 
+  if ( byId('procBSSegmentDsp') ) {
+    var given = new Object(); 
+    given['selector'] = byId('bgSelectorCode').value; 
+    var passeddata = JSON.stringify(given);
+    var mlURL = "/data-doers/get-procurement-segment-list-table";
+    universalAJAX("POST",mlURL,passeddata,answerUpdateBSSegmentDisplay,2);
+  }
+}
+
+function resetSegmentAddDialog() { 
+  byId('fldSEGAddHP') ? byId('fldSEGAddHP').value = "" : "";
+  byId('fldSEGAddMetric') ? byId('fldSEGAddMetric').value = "" : "";
+  byId('fldSEGAddMetricUOMValue') ? byId('fldSEGAddMetricUOMValue').value = "" : "";
+  byId('fldSEGAddMetricUOM') ? byId('fldSEGAddMetricUOM').value = "" : "";
+  byId('fldSEGPreparationMethodValue') ? byId('fldSEGPreparationMethodValue').value = "" : "";
+  byId('fldSEGPreparationMethod') ? byId('fldSEGPreparationMethod').value = "" : "";
+  byId('fldSEGPreparationValue') ? byId('fldSEGPreparationValue').value = "" : "";
+  byId('fldSEGPreparation') ? byId('fldSEGPreparation').value = "" : "";
+  byId('ddSEGPreparationDropDown') ? byId('ddSEGPreparationDropDown').innerHTML = "<center>(Select a Preparation Method)" : "";
+  byId('fldSEGPreparationContainerValue') ? byId('fldSEGPreparationContainerValue').value = "" : "";
+  byId('fldSEGPreparationContainer') ? byId('fldSEGPreparationContainer').value = "" : "";
+  byId('preparationAdditions') ? byId('preparationAdditions').innerHTML = "" : "";
+  byId('fldSEGselectorAssignInv') ? byId('fldSEGselectorAssignInv').value = "" : "";
+  byId('selectorAssignReq') ? byId('selectorAssignReq').value = "" : "";
+  byId('requestDropDown') ? byId('requestDropDown').innerHTML = "" : "";
+  byId('assignInvestSuggestion') ? byId('assignInvestSuggestion').innerHTML = "" : "";
+}
+
+function answerUpdateBSSegmentDisplay(rtnData) { 
+  var tblhld = JSON.parse(rtnData['responseText']);
+  byId('procBSSegmentDsp').innerHTML = tblhld['DATA'];       
+}
+
+function hideProcGridLine(whichGridLine, whichControl) { 
+  if ( byId(whichGridLine) ) {
+    if ( byId(whichGridLine).style.display === '' ||  byId(whichGridLine).style.display === 'block' ) { 
+      byId(whichGridLine).style.display = 'none';
+      if ( byId(whichControl) ) { 
+        byId(whichControl).innerHTML = "&#9870;";
+      }
+    } else { 
+      byId(whichGridLine).style.display = 'block';
+      if ( byId(whichControl) ) { 
+        byId(whichControl).innerHTML = "&#9871;";
+      }
+    }
+  }
+}
+
+function addDefinedSegment() {
+  
+   if ( byId('divSegmentAddHolder') ) { 
+     var elem = byId('divSegmentAddHolder').getElementsByTagName('*');
+     for (var i = 0; i < elem.length; i++) {
+       if (elem[i].id.trim() !== "" ) {
+
+         if ( elem[i].id.substr(0,3) === 'fld' ) { 
+           console.log(elem[i].id);
+         }
+       } 
+     }
+   }
+
 }
 
 function selectorInvestigator() { 
   if (byId('fldSEGselectorAssignInv').value.trim().length > 3) { 
     getSuggestions('fldSEGselectorAssignInv',byId('fldSEGselectorAssignInv').value.trim()); 
   } else { 
-    byId('fldSEGassignInvestSuggestion').innerHTML = "&nbsp;";
-    byId('glfSEGassignInvestSuggestion').style.display = 'none';
+    byId('assignInvestSuggestion').innerHTML = "&nbsp;";
+    byId('assignInvestSuggestion').style.display = 'none';
   }
 }
 
@@ -1644,7 +1705,7 @@ function answerRequestDrop(rtnData) {
     var dta = JSON.parse(rtnData['responseText']);
     var menuTbl = "<table border=0 class=\"menuDropTbl\">";
     dta['DATA'].forEach(function(element) { 
-      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('selectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;';\">"+element['requestid']+" ["+element['rqstatus']+"]</td></tr>";
+      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('fldSEGselectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;';\">"+element['requestid']+" ["+element['rqstatus']+"]</td></tr>";
     });  
     menuTbl += "</table>";
     byId('requestDropDown').innerHTML = menuTbl; 
@@ -1684,12 +1745,105 @@ function answerPreparationAdditions(rtnData) {
 
 function selectThisAdditive(additiveId) {
    if (byId(additiveId)) { 
+
+
      if (parseInt(byId(additiveId).dataset.aselected) === 1) {
        byId(additiveId).dataset.aselected = '0';
      } else { 
        byId(additiveId).dataset.aselected = '1';
-     } 
+     }
+     
+     var addbtn = byId('freshadditivebtns').getElementsByTagName('*');
+     var additives = [];
+     var cnt = 0;
+     for (var i = 0; i < addbtn.length; i++) {
+        if (addbtn[i].id.substr(0,4) === "add-") {  
+          if ( addbtn[i].dataset.aselected === "1" ) { 
+            additives.push( addbtn[i].id.substr(4) );
+            cnt++;
+          }
+        }
+     }
+     if ( additives.length > 0 ) { 
+      if (byId('fldAdditiveDivValue') ) { 
+        byId('fldAdditiveDivValue').value = JSON.stringify(additives);
+      }
+     } else { 
+      if (byId('fldAdditiveDivValue') ) { 
+        byId('fldAdditiveDivValue').value = "";
+      }
+     }
+
    }
+}
+
+function requestAdditionalSlides() { 
+  if ( byId('additionalPreparation') && byId('addPBQtySlide') && byId('fldAdditiveDivValue') ) { 
+    if ( byId('additionalPreparation').value.trim() === "") { alert('You must select a \'Type of Slide\''); return null; }
+    if ( byId('addPBQtySlide').value.trim() === "") { alert('You must specify a value for quantity of slide(s)'); return null; }
+    if ( byId('addPBQtySlide').value.trim().match(/^\d+$/) === null ) { alert('You may only use numbers in the quantity field'); byId('addPBQtySlide').value = ""; byId('addPBQtySlide').focus(); return null; }
+
+    if ( byId('fldAdditiveDivValue').value.trim() === "") { 
+      var arr = new Object(); 
+      var itm = new Object();
+      itm['typeofslide'] = byId('additionalPreparation').value.trim(); 
+      itm['qty'] = byId('addPBQtySlide').value.trim();
+      arr[0] = itm;
+    } else { 
+      //NEW ARRAY
+      var itm = new Object();
+      itm['typeofslide'] = byId('additionalPreparation').value.trim(); 
+      itm['qty'] = byId('addPBQtySlide').value.trim();
+      var arr = JSON.parse( byId('fldAdditiveDivValue').value );
+      arr[ Object.keys(arr).length ] = itm;
+    }
+    byId('fldAdditiveDivValue').value = JSON.stringify(arr);
+    byId('additionalPreparation').value = "";
+    byId('addPBQtySlide').value = "";
+    buildPBSlideAddTbl();
+  } 
+}
+
+function buildPBSlideAddTbl() { 
+  if ( byId('addSlideDspBox') && byId('fldAdditiveDivValue')) { 
+    byId('addSlideDspBox').innerHTML = "";
+    if (byId('fldAdditiveDivValue').value !== "") { 
+      var arr = JSON.parse( byId('fldAdditiveDivValue').value.trim() );
+
+      var slideTbl = "<table border=0 id=segAddslideItmTbl><tr><th style=\"width: 1vw;\"></th><th style=\"width: 8vw;\">Type of Slide</th><th style=\"width: 3vw;\">Qty</th></tr><tbody>";  
+      for (var i = 0; i < Object.keys(arr).length; i++ ) { 
+        //var slide = Object.getOwnPropertyNames(arr[i]);
+        slideTbl += "<tr onclick=\"removeSlideItm("+i+");\"><td>&nbsp;</td><td>"+  arr[i]['typeofslide'] +"</td><td>"+arr[i]['qty']+"</td></tr>";
+      }
+      slideTbl += "</tbody></table>";
+      byId('addSlideDspBox').innerHTML = slideTbl;
+    }
+  }
+}
+
+function removeSlideItm(whichkey) { 
+  if ( byId('fldAdditiveDivValue').value.trim() !== "") { 
+    var arr = JSON.parse( byId('fldAdditiveDivValue').value );
+    var itm = new Object();
+    var cnt = 0;
+    for (var i = 0; i < Object.keys(arr).length; i++) { 
+      if ( i === whichkey ) {
+      } else {
+        var slditm = new Object();
+        slditm['typeofslide'] = arr[i]['typeofslide'];
+        slditm['qty'] = arr[i]['qty'];
+        itm[cnt] = slditm;
+        cnt++;        
+      }
+    }
+    byId('fldAdditiveDivValue').value = "";
+    var slides = Object.keys(itm).length;
+    if ( slides > 0) { 
+      byId('fldAdditiveDivValue').value = JSON.stringify(itm);
+    } else { 
+    }
+    buildPBSlideAddTbl();
+  }
 }
 
 function addSegments() { 

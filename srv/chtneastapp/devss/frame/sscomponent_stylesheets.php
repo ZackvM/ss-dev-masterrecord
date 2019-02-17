@@ -434,7 +434,7 @@ textarea { font-size: 1.3vh; }
 
 #ddSEGPreparationDropDown { min-width: 20vw; }
 #fldSEGselectorAssignInv { width: 15vw; }
-#selectorAssignReq { width: 10vw; }
+#fldSEGselectorAssignReq { width: 10vw; }
 #fldSEGCutFrom {width: 10vw;}
 
 .suggestionHolder { position: relative; }
@@ -446,10 +446,34 @@ textarea { font-size: 1.3vh; }
 .addHolder { padding: 1vh 0; border-bottom: 1px solid rgba({$this->color_dblue},1);   }
 #assignTbl { margin-top: 1vh; }
 
-#fldSEGAddPBQtySlide { width: 5vw; text-align: right; }
-#addSlideDspBox {background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); width: 18vw; height: 8vh; overflow: auto;  }
-#fldSEGAddSlideQtyNbr { width: 5vw; text-align: right; }
-#fldSEGCutFromBlock { width: 10vw; }
+#addPBQtySlide { width: 5vw; text-align: right; }
+#addSlideDspBox {background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); width: 27vw; height: 8vh; overflow: auto;  }
+#fldSEGSlideQtyNbr { width: 5vw; text-align: right; }
+#fldSEGSlideCutFromBlock { width: 10vw; }
+
+.openDivIndicator { color: rgba({$this->color_darkgreen},1);  }
+.openDivIndicator:hover { cursor: pointer; color: rgba({$this->color_bred},1); }
+
+
+
+#procurementScreenSegmentList { width: 100%; }
+#procurementScreenSegmentList thead th { font-size: 1.3vh; color: rgba({$this->color_dblue},1);  padding: 0 0 0 3px; text-align: left; font-weight: bold; border-bottom: 1px solid rgba({$this->color_darkgrey},1); }
+#procurementScreenSegmentList tbody td { font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: .4vh 0 .4vh 3px; }
+#procurementScreenSegmentList tbody tr:nth-child(even) { background: rgba({$this->color_lightgrey},1); }
+
+#procurementScreenSegmentList tbody .ptSegBGS { width: 5vw; } 
+#procurementScreenSegmentList tbody .ptSegHPR { width: 1.5vw; text-align: center; } 
+#procurementScreenSegmentList tbody .ptSegHRP { width: 1.5vw; text-align: center; } 
+#procurementScreenSegmentList tbody .ptSegPRP { width: 18vw; } 
+#procurementScreenSegmentList tbody .ptSegMET { width: 5vw; } 
+#procurementScreenSegmentList tbody .ptSegCUT { width: 5vw; } 
+#procurementScreenSegmentList tbody .ptSegASS { width: 25vw; }
+
+#segAddslideItmTbl { width: 100%; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); border-collapse: collapse; }
+#segAddslideItmTbl th { font-size: 1.3vh; color: rgba({$this->color_dblue},1); text-align: left; }
+#segAddslideItmTbl tbody tr:nth-child(even) { background: rgba({$this->color_lightgrey},1); padding: .3vh .5vw;  }
+
+
 
 STYLESHEET;
 return $rtnThis;
