@@ -34,6 +34,46 @@ function __construct() {
 
 class datadoers {
 
+    function segmentcreatedefinedpieces( $request, $passdata) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sg = json_decode($passdata, true);
+
+      $fldList = array('SegmentBGSelectorId' => 'RQ', 'AddHP' => 'RQ','AddMetric' => 'RQ','AddMetricUOMValue' => 'RQ','PreparationMethodValue' => 'RQ','PreparationMethod' => 'RQ','Preparation' => 'RQ','PreparationContainerValue' => '','selectorAssignInv' => 'RQ', 'selectorAssignReq' => ''); 
+      //{"SegmentBGSelectorId":"Q1pYNVpnSnJnM1VlNzRtOHhrN29LZz09","AddHP":"","AddMetric":"","AddMetricUOMValue":"","AddMetricUOM":"","PreparationMethodValue":"","PreparationMethod":"","PreparationValue":"","Preparation":"","PreparationContainerValue":"","PreparationContainer":"","selectorAssignInv":"","selectorAssignReq":""}
+      //START DATA CHECKS
+
+      //CHECK ALL FIELDS THAT SHOULD EXIST DO EXIST
+      foreach($fldList as $k => $v) {
+        if (!array_key_exists($k,$sg)) {          
+          (list( $errorInd, $msgArr[] ) = array(1 , "The Field ({$k}) is missing from the data payload.  See a CHTNEastern Informatics Person."));  
+        } else {
+          if (trim($v) === 'RQ') { 
+            //CHECK FOR REQUIRED VALUE      
+            (list( $errorInd, $msgArr[] ) = array(1 , "{$k}")); 
+          }  
+        }
+      }
+
+
+
+  
+      //END DATA CHECKS
+
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;                        
+    }
+
     function segmentcreateqmspieces( $request, $passdata) { 
   
       $rows = array(); 

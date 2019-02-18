@@ -1631,19 +1631,36 @@ function hideProcGridLine(whichGridLine, whichControl) {
 }
 
 function addDefinedSegment() {
-  
    if ( byId('divSegmentAddHolder') ) { 
      var elem = byId('divSegmentAddHolder').getElementsByTagName('*');
+     var segmentdef = new Object();
      for (var i = 0; i < elem.length; i++) {
        if (elem[i].id.trim() !== "" ) {
-
-         if ( elem[i].id.substr(0,3) === 'fld' ) { 
-           console.log(elem[i].id);
+         if ( elem[i].id.substr(0,3) === 'fld' ) {
+           segmentdef[  elem[i].id.replace(/^fldSEG/,'').replace(/^fld/,'') ] = elem[i].value.trim();
          }
        } 
-     }
+     } 
+     var passeddata = JSON.stringify(segmentdef);
+     //console.log(passeddata);
+     var mlURL = "/data-doers/segment-create-defined-pieces";
+     universalAJAX("POST",mlURL,passeddata,answerSaveDefinedSegment,2);
    }
+}
 
+function answerSaveDefinedSegment(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ADD SEGMENT ERROR:\\n"+dspMsg);
+   } else {
+     //CONFIRM SAVE
+     //UPDATE BIOGROUP SEGMENT LISTING
+     resetSegmentAddDialog();
+   }        
 }
 
 function selectorInvestigator() { 
@@ -1686,7 +1703,6 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
   }
 }
 }
-
 
 function setAssignsRequests() {
   if (byId('fldSEGselectorAssignInv').value.trim() !== "" ) { 
@@ -1745,14 +1761,11 @@ function answerPreparationAdditions(rtnData) {
 
 function selectThisAdditive(additiveId) {
    if (byId(additiveId)) { 
-
-
      if (parseInt(byId(additiveId).dataset.aselected) === 1) {
        byId(additiveId).dataset.aselected = '0';
      } else { 
        byId(additiveId).dataset.aselected = '1';
-     }
-     
+     }     
      var addbtn = byId('freshadditivebtns').getElementsByTagName('*');
      var additives = [];
      var cnt = 0;
@@ -1773,7 +1786,6 @@ function selectThisAdditive(additiveId) {
         byId('fldAdditiveDivValue').value = "";
       }
      }
-
    }
 }
 
@@ -1886,8 +1898,8 @@ function answerAddSegmentsDialog(rtnData) {
        byId('standardModalDialog').style.top = "15vh";
        byId('standardModalBacker').style.display = 'block';
        byId('standardModalDialog').style.display = 'block';
-       if (byId('fldSEGHP')) { 
-         byId('fldSEGHP').focus();
+       if (byId('fldSEGAddHP')) { 
+         byId('fldSEGAddHP').focus();
        }
      }  
    }        

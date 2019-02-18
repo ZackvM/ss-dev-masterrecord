@@ -1852,7 +1852,7 @@ $innerBar = <<<BTNTBL
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVocabSrch border=0><tr><td><!--ICON //--></td><td>Vocabulary Search</td></tr></table></td>
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCLock border=0><tr><td><!--ICON //--></td><td>Release BG</td></tr></table></td>
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVoid border=0><tr><td><!--ICON //--></td><td>Void BG</td></tr></table></td>
-<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCSegment border=0><tr><td><!--ICON //--></td><td>Add Segment</td></tr></table></td>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCSegment border=0><tr><td><!--ICON //--></td><td>Define Segment</td></tr></table></td>
 </tr>
 BTNTBL;
     break;
@@ -2320,7 +2320,7 @@ if ($errorInd === 0) {
   $dxd .= ( trim($bg['bgdxssite']) !== "" ) ? " ({$bg['bgdxssite']})" : "";
   $dxd .= ( trim($bg['bgdxdx']) !== "" ) ? " / {$bg['bgdxdx']}" : "";
   $dxd .= ( trim($bg['bgdxmets']) !== "" ) ? " (METS: {$bg['bgdxmets']})" : "";
-  $dxd .= " <input type=hidden id=segmentBGSelectorId value=\"{$encySelector}\"> ";
+  $dxd .= " <input type=hidden id=fldSegmentBGSelectorId value=\"{$encySelector}\"> ";
 
   $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/all-preparation-methods",$si,$sp),true);
   $prp = "<table border=0 class=menuDropTbl>";
@@ -2352,7 +2352,12 @@ $rtnThis = <<<RTNTHIS
 </table> 
 
 <table border=0>
-<tr><td class=prcFldLbl>Hours Post <span class=reqInd>*</span></td><td class=prcFldLbl>Metric <span class=reqInd>*</span></td><td class=prcFldLbl>Preparation Method <span class=reqInd>*</span></td><td class=prcFldLbl>Preparation <span class=reqInd>*</span></td><td class=prcFldLbl>Container</td></tr>
+<tr>
+  <td class=prcFldLbl>Hours Post <span class=reqInd>*</span></td>
+  <td class=prcFldLbl>Metric <span class=reqInd>*</span></td>
+  <td class=prcFldLbl>Preparation Method <span class=reqInd>*</span></td>
+  <td class=prcFldLbl>Preparation <span class=reqInd>*</span></td>
+  <td class=prcFldLbl>Container</td></tr>
 <tr>
    <td><input type=text id=fldSEGAddHP></td>
    <td><table><tr><td><input type=text id=fldSEGAddMetric></td><td><div class=menuHolderDiv><input type=hidden id=fldSEGAddMetricUOMValue><input type=text id=fldSEGAddMetricUOM READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="min-width: 8vw;">{$met}</div></div></td></tr></table>  </td>
