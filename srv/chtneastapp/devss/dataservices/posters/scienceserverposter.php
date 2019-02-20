@@ -46,7 +46,7 @@ class datadoers {
       require(serverkeys . "/sspdo.zck");
       
       $cgriddta = self::collectiongridresults( $request, $passdata);
-      $dta = $cgriddta['statusCode'] . " // " . $cgriddta['data']['DATA'];
+      $dta = $cgriddta['statusCode'] . " ZZZZ " . $cgriddta['data']['DATA'];
       
       
       
