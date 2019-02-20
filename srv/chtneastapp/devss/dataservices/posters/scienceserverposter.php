@@ -33,6 +33,86 @@ function __construct() {
 }
 
 class datadoers {
+    
+    
+    function collectiongridresultstbl ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      
+      $cgriddta = self::collectiongridresults( $request, $passdata);
+      $dta = $cgriddta['statusCode'] . " // " . $cgriddta['data']['DATA'];
+      
+      
+      
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows; 
+    }
+    
+    function collectiongridresults( $request, $passdata ) {
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $allowData = 0;
+      $pdta = json_decode($passdata, true);
+      if ($authuser !== "chtneast" ) { 
+          //CHECK USER ALLOWED    
+          // $r = cryptservice( $authpw, 'd', true, $a uthuser );
+          // $sessid = session_id();
+          // if ($authuser === $r && $sessid === $r ) {   
+      } else { 
+          if ($authpw === serverpw) { 
+            $allowData = 1;
+            if ( array_key_exists('usrsession', $pdta) ) {                            
+                $getUsrSQL = "SELECT presentinstitution FROM four.sys_userbase where sessionid = :sess and allowInd = 1 and allowproc = 1 and TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";                
+                $getUsrRS = $conn->prepare($getUsrSQL);
+                $getUsrRS->execute(array(':sess' => $pdta['usrsession']));
+                if ($getUsrRS->rowCount() === 1) { 
+                    //CHECK PRESENT LOC
+                    $getUsr = $getUsrRS->fetch(PDO::FETCH_ASSOC);
+                    $dta = $getUsr['presentinstitution'];
+                    if ($getUsr['presentinstitution'] !== $pdta['presentinstitution']) { 
+                        $allowData = 0;
+                    }
+                } else { 
+                    $allowData = 0;
+                }
+            } else { 
+                 $allowData = 0;
+            }
+          }
+      }
+      
+      //CHECK DATE FORMAT AND VALID 
+      
+      if ($allowData === 1) {
+          
+         $dta = $pdta['requesteddate'];
+          
+         $responseCode = 200;
+      }  else { 
+                   
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;                                
+    }
 
     function segmentcreatedefinedpieces( $request, $passdata) { 
       $rows = array(); 
@@ -45,9 +125,19 @@ class datadoers {
       require(serverkeys . "/sspdo.zck");
       session_start(); 
       $sg = json_decode($passdata, true);
-
-      $fldList = array('SegmentBGSelectorId' => 'RQ', 'AddHP' => 'RQ','AddMetric' => 'RQ','AddMetricUOMValue' => 'RQ','PreparationMethodValue' => 'RQ','PreparationMethod' => 'RQ','Preparation' => 'RQ','PreparationContainerValue' => '','selectorAssignInv' => 'RQ', 'selectorAssignReq' => ''); 
-      //{"SegmentBGSelectorId":"Q1pYNVpnSnJnM1VlNzRtOHhrN29LZz09","AddHP":"","AddMetric":"","AddMetricUOMValue":"","AddMetricUOM":"","PreparationMethodValue":"","PreparationMethod":"","PreparationValue":"","Preparation":"","PreparationContainerValue":"","PreparationContainer":"","selectorAssignInv":"","selectorAssignReq":""}
+      $fldList = array(
+          'SegmentBGSelectorId' => array('RQ','BG Encryption Holder')
+          , 'AddHP' => array('RQ','Hours Post')
+          ,'AddMetric' => array('RQ','Metric')
+          ,'AddMetricUOMValue' => array( 'RQ', 'Metric (Unit of Measure)')
+          ,'PreparationMethodValue' => array('RQ','Preparation Method')
+          ,'PreparationMethod' => array('RQ','Preparation Method')
+          ,'Preparation' => array('RQ','Preparation')
+          ,'PreparationContainerValue' => array('','Container')
+          ,'selectorAssignInv' => array('RQ','Assignment')
+          ,'selectorAssignReq' => array('','Request #')
+          ,'SGComments' => array('','Segment Comments')
+          ); 
       //START DATA CHECKS
 
       //CHECK ALL FIELDS THAT SHOULD EXIST DO EXIST
@@ -55,19 +145,117 @@ class datadoers {
         if (!array_key_exists($k,$sg)) {          
           (list( $errorInd, $msgArr[] ) = array(1 , "The Field ({$k}) is missing from the data payload.  See a CHTNEastern Informatics Person."));  
         } else {
-          if (trim($v) === 'RQ') { 
-            //CHECK FOR REQUIRED VALUE      
-            (list( $errorInd, $msgArr[] ) = array(1 , "{$k}")); 
+          if (trim($v[0]) === 'RQ') { 
+            //CHECK THAT REQUIRED FIELDs HAVE VALUEs      
+            if (trim($sg[$k]) === "") {
+               if ( strtoupper( trim($sg['PreparationMethodValue']))  === 'SLIDE' && ($k ===  'AddMetric' || $k === 'AddMetricUOMValue') ) { 
+               } else { 
+                 (list( $errorInd, $msgArr[] ) = array(1 , "'{$v[1]}' IS REQUIRED.")); 
+               }
+            }
           }  
         }
       }
+      ( ( trim($sg['selectorAssignInv']) !== 'BANK' &&  trim($sg['selectorAssignInv']) !== '' )     && trim($sg['selectorAssignReq']) === '') ? (list( $errorInd, $msgArr[] ) = array(1 , "FOR ASSIGNED SEGMENTS, A REQUEST NUMBER MUST BE SPECIFIED."))  : "";
+      //TODO:  GET DISPLAY NAME
+      
+      if (trim($sg['selectorAssignInv']) !== 'BANK' &&  trim($sg['selectorAssignInv']) !== '') { 
+          $invSQL = "SELECT concat(ifnull(invest_lname,''),', ',ifnull(invest_fname,'')) as dspname FROM vandyinvest.invest where investid = :invcode";
+          $invRS = $conn->prepare($invSQL);
+          $invRS->execute(array(':invcode' => trim($sg['selectorAssignInv'])));
+          $invDspName = "";
+          if ($invRS->rowCount() === 1) { 
+              $inv = $invRS->fetch(PDO::FETCH_ASSOC); 
+              $invDspName = $inv['dspname'];
+          }
+      }
 
+      $bgid = cryptservice($sg['SegmentBGSelectorId'],'d',false);
+      $lookupSQL = "SELECT bs.pbiosample, bsd.fromlocation as fromlocation FROM four.ut_procure_biosample bs left join (select * from four.ref_procureBiosample_details where activeind = 1) bsd on bs.pbiosample = bsd.pbiosample where ifnull(bs.migrated,0) = 0 and ifnull(bs.voidind,0) = 0  and  timestampdiff(DAY, bs.inputon, now()) = 0 and bs.selector = :selectorid";
+      $lookupR = $conn->prepare($lookupSQL); 
+      $lookupR->execute(array(':selectorid' => $bgid ));
+      if ((int)$lookupR->rowCount() === 1) {
+          $lookup = $lookupR->fetch(PDO::FETCH_ASSOC);
+          // TODO: Make Sure Tech Has RIGHTS to procure at Institution and check PRCTechInstitute and PRCProcedureInstitutionValue match
+          ( preg_match('/[^0-9\.]/', $sg['AddHP']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE HOURS POST MUST BE A NUMBER (DECIMAL)")) : "";
+          ( preg_match('/[^0-9\.]/', $sg['AddMetric']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC NUMBER MUST BE A NUMBER (DECIMAL)")) : "";
+          if ( trim($sg['AddMetricUOMValue']) !== "" ) {  
+           $chkMetSQL = "SELECT * FROM four.sys_master_menus where menu = 'metric' and dspind = 1 and queriable = 1 and menuvalue = :metuom";
+           $chkMetR = $conn->prepare($chkMetSQL); 
+           $chkMetR->execute(array(':metuom' => trim($sg['AddMetricUOMValue'])));
+           ( $chkMetR->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC UOM IS INVALID.  SEE CHTNEASTERN INFORMATICS STAFF MEMBER")) : "";
+          }
 
-
+        $authuser = $_SERVER['PHP_AUTH_USER']; 
+        $authpw = $_SERVER['PHP_AUTH_PW'];
+        $authchk = cryptservice($authpw,'d', true, $authuser);
+        ( trim($authchk) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER AUTHENTICATION FAILED.  EITHER YOUR SESSION HAS EXPIRED OR YOU ARE NOT VALID")) : ""; 
+        ( trim($authchk) !== trim($authuser) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER AUTHENTICATION FAILED.  EITHER YOUR SESSION HAS EXPIRED OR YOU ARE NOT VALID")) : ""; 
+        $usr = userDetails( $authchk ); 
+        ( trim($lookup['fromlocation']) !== trim($usr[0]['presentinstitution']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MAY NOT ADD SEGMENTS FOR A BIOGROUP THAT WAS PROCURED AT AN INSTITUTION FOR WHICH YOU ARE PRESENTLY NOT WORKING")) : "";         
+        //TODO: CHECK OTHER DROPMENU VALUES
+        //TODO:  CHECK ASSIGNMENTS ARe VALID          
+      }  else { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP CAN'T ACCEPT SEGMENTS.  EITHER THE GROUP DOESN'T EXIST, HAS ALREADY BEEN LOCKED, IS VOIDED OR IS MORE THAN A DAY OLD."));
+      }
+      
+      if (array_key_exists('AdditiveDiv', $sg )) {
+          switch ( $sg['AdditiveDiv'] ) { 
+              case 'slide': 
+                  ( trim($sg['SlideCutFromBlock']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFYING A SLIDE PREPARATION, AN FFPE BLOCK MUST BE SPECIFIED FROM WHICH TO CUT THE SLIDE.")) : "";
+                  ( trim($sg['SlideQtyNbr']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFYING A SLIDE PREPARATION, THE NUMBER OF SLIDES TO CUT MUST BE SPECIFIED.")) : "";                         
+                  ( preg_match('/[^0-9]/',trim($sg['SlideQtyNbr'])) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'SLIDE QTY' FIELD MUST BE SPECIFIED AS A WHOLE NUMBER.")) : "";                         
+                  break;
+              case 'pb': 
+                  $addList = json_decode($sg['AdditiveDivValue'], true);
+                  foreach ($addList as $v) { 
+                      ( (int)$v['qty'] < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'SLIDE QTY' FIELD MUST BE SPECIFIED AS A WHOLE NUMBER GREATER THAN 0."))  : "";
+                      (  preg_match('/[^0-9]/',trim($v['qty'])) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'SLIDE QTY' FIELD MUST BE SPECIFIED AS A WHOLE NUMBER."))   : "";
+                      (  trim($v['typeofslide']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'TYPE OF SLIDE' MUST BE SPECIFIED."))   : "";
+                  }
+                  break;
+              case 'fresh': 
+                  break;
+          }
+      }
+      
   
       //END DATA CHECKS
-
-
+      if ( $errorInd === 0 ) { 
+      if (array_key_exists('AdditiveDiv', $sg )) {
+          switch ( $sg['AdditiveDiv'] ) { 
+              case 'slide': 
+                  $groupingid = generateRandomString(20);                  
+                  for ($sldcnt = 0; $sldcnt < (int)$sg['SlideQtyNbr']; $sldcnt++) { 
+                     $segLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($sg['AddHP']), 0, 4, trim($sg['PreparationMethodValue']), trim($sg['PreparationValue']), "", trim($sg['SlideCutFromBlock']), 0, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], trim($sg['selectorAssignInv']), $invDspName, $sg['selectorAssignReq'], $sg['SGComments'], '', $groupingid ); 
+                  }
+                  break;
+              case 'pb': 
+                $groupingid = generateRandomString(20);
+                $segLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($sg['AddHP']), trim($sg['AddMetric']), trim($sg['AddMetricUOMValue']), trim($sg['PreparationMethodValue']), trim($sg['PreparationValue']), trim($sg['PreparationContainerValue']), trim($sg['SlideCutFromBlock']), 0, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], trim($sg['selectorAssignInv']), $invDspName, $sg['selectorAssignReq'], $sg['SGComments'], '', "");
+                //TODO: PRINT LABEL --- IN ADD SEGMENT FUNCTION 
+                $addSldList = json_decode($sg['AdditiveDivValue'], true);
+                  foreach ($addSldList as $sldval) { 
+                    //GET TYPE OF SLIDE AND LOOP QTY
+                    $typeSlide = strtoupper($sldval['typeofslide']);
+                    $qty = (int)$sldval['qty'];
+                    for ($s = 0; $s < $qty; $s++) { 
+                        $slideLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($sg['AddHP']), "", 4, "SLIDE", trim($typeSlide), "", $segLbl, 0, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], trim($sg['selectorAssignInv']), $invDspName, $sg['selectorAssignReq'],'', '', $groupingid);
+                        //TODO: PRINT LABEL -- IN ADD SEGMENT FUNCTION ????
+                    }                 
+                  }
+                  break;
+              case 'fresh': 
+                  //$groupingid = generateRandomString(20);
+                  $segLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($sg['AddHP']), trim($sg['AddMetric']), trim($sg['AddMetricUOMValue']), trim($sg['PreparationMethodValue']), trim($sg['PreparationValue']), trim($sg['PreparationContainerValue']), trim($sg['SlideCutFromBlock']), 0, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], trim($sg['selectorAssignInv']), $invDspName, $sg['selectorAssignReq'], $sg['SGComments'], $sg['AdditiveDivValue'], "");
+                  break;
+          }
+      } else { 
+          $segLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($sg['AddHP']), trim($sg['AddMetric']), trim($sg['AddMetricUOMValue']), trim($sg['PreparationMethodValue']), trim($sg['PreparationValue']), trim($sg['PreparationContainerValue']), '', 0, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], trim($sg['selectorAssignInv']), $invDspName, $sg['selectorAssignReq'], $sg['SGComments'], "", "");          
+      }
+           //TODO:  CHECK THAT THE SEGMENTS ARE MADE
+           $responseCode = 200;
+      }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -75,7 +263,6 @@ class datadoers {
     }
 
     function segmentcreateqmspieces( $request, $passdata) { 
-  
       $rows = array(); 
       //$dta = array(); 
       $responseCode = 400;
@@ -100,10 +287,12 @@ class datadoers {
         ( (int)$chkR->rowCount() !== 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THIS BIOGROUP ALREADY HAS QMS SEGMENTS ATTACHED.  YOU MAY NOT ADD QMS SEGMENTS USING THE 'ADD QMS' BUTTON.")) : "";
         //{"bgency":"Q1pYNVpnSnJnM1VlNzRtOHhrN29LZz09","hrpost":".25","metric":".8","metuom":"4"}
         //E) initial metric and UOM are a number and a valid menu option 
-        ( preg_match('/[^0-9\.]/', $bg['hrpost']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE HOURS POST MUST BE A NUMBER (DECIMAL)")) : "";
         ( trim($bg['hrpost']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE HOURS POST FIELD IS REQUIRED")) : "";
-        ( preg_match('/[^0-9\.]/', $bg['metric']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC NUMBER MUST BE A NUMBER (DECIMAL)")) : "";
+        ( preg_match('/[^0-9\.]/', $bg['hrpost']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE HOURS POST MUST BE A NUMBER (DECIMAL)")) : "";
+        
         ( trim($bg['metric']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC MEASURE IS REQUIRED")) : "";
+        ( preg_match('/[^0-9\.]/', $bg['metric']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC NUMBER MUST BE A NUMBER (DECIMAL)")) : "";
+        
         if ( trim($bg['metuom']) !== "" ) {  
           $chkMetSQL = "SELECT * FROM four.sys_master_menus where menu = 'metric' and dspind = 1 and queriable = 1 and menuvalue = :metuom";
           $chkMetR = $conn->prepare($chkMetSQL); 
@@ -125,12 +314,13 @@ class datadoers {
         //[{"sessionid":"3kuck2rbedsl93nes0637r13e7","originalaccountname":"proczack","presentinstitution":"HUP","primaryinstcode":"HUP"}]
         ( trim($lookup['fromlocation']) !== trim($usr[0]['presentinstitution']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MAY NOT ADD SEGMENTS FOR A BIOGROUP THAT WAS PROCURED AT AN INSTITUTION FOR WHICH YOU ARE PRESENTLY NOT WORKING")) : ""; 
       } else { 
-        (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP CAN'T EXCEPT QMS SEGMENTS.  EITHER THE GROUP DOESN'T EXIST, HAS ALREADY BEEN LOCKED OR IS VOIDED"));
+        (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP CAN'T ACCEPT QMS SEGMENTS.  EITHER THE GROUP DOESN'T EXIST, HAS ALREADY BEEN LOCKED OR IS VOIDED"));
       }
       if ( $errorInd === 0 ) { 
           //TODO:  MAKE PREPS DYNAMIC 
-          $pbSegLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($bg['hrpost']), trim($bg['metric']), trim($bg['metuom']), "PB", "FFPE", "", "", 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], "BANK", "BANK", "");
-          $sldSegLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($bg['hrpost']), "", 4, "SLIDE", "H&E SLIDE", "", $pbSegLbl, 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], "QC", "QC", "");
+          $groupingid = generateRandomString(20);
+          $pbSegLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($bg['hrpost']), trim($bg['metric']), trim($bg['metuom']), "PB", "FFPE", "", "", 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], "BANK", "BANK", "","","",$groupingid);
+          $sldSegLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($bg['hrpost']), "", 4, "SLIDE", "H&E SLIDE", "", $pbSegLbl, 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], "QC", "QC", "", "","",$groupingid);
           //TODO:  CHECK THAT THE SEGMENTS ARE MADE
           $responseCode = 200;
       }
@@ -153,13 +343,22 @@ class datadoers {
       $bg = json_decode($passdata, true);
 
       $sglist = self::getprocurementsegmentlist($request,$passdata);
+      
       if ( (int)$sglist['statusCode'] === 200 ) { 
-        if ( count($sglist['data']['DATA']) > 0 ) { 
-           $segAnnounce = ( (int)$sglist['data']['ITEMSFOUND'] > 1 ) ? "Segments Found: {$sglist['data']['ITEMSFOUND']}" : "{$sglist['data']['ITEMSFOUND']} Segment Found";
+ 
+          if ( count($sglist['data']['DATA']) > 0 ) { 
+
+              $segAnnounce = ( (int)$sglist['data']['ITEMSFOUND'] > 1 ) ? "Segments Found: {$sglist['data']['ITEMSFOUND']}" : "{$sglist['data']['ITEMSFOUND']} Segment Found";
            //<tr><td colspan=9 id=segmentCountLine>{$segAnnounce}</td></tr>
+
            $sgTbl = "<table border=0 id=procurementScreenSegmentList>";
            $sgTbl .= "<thead><tr><th>BGS</th><th>HPR</th><th>HR</th><th>Preparation</th><th>Metric</th><th>Cut From</th><th>Assignment</th><th>Procured By-At-Time</th></tr></thead><tbody>";
+
            foreach ( $sglist['data']['DATA'] as $key => $value) { 
+
+
+//THIS BUILDS THE TABLE ROWS               
+               
              $hprind = ( (int)$value['hprind'] === 1 ) ? "X" : "-";
              $prep = ( trim($value['prpcode']) === "" ) ? "" : "{$value['prpcode']}";
              if ( trim($value['prpmetdetail']) !== "" ) { 
@@ -173,14 +372,21 @@ class datadoers {
              if ( strtolower(substr(trim($value['assigninvestid']),0,3)) !== 'inv') {  
                  $assignment = (trim($value['assigninvestid']) === 'QC') ? "&nbsp;" : trim($value['assigninvestid']);
              } else { 
-                 //TODO:BUILD INVESTIGATOR ASSIGNMENT DSP HERE
+                 $assignment = (trim($value['assigninvestid']) !== 'QC') ? "{$value['assigninvestid']} / {$value['assignrequestid']} ({$value['assigndspname']})" : "";
              }
-             //TODO:  BUILD VOID DSP (strikeout)
+             //TODO:  BUILD VOID DSP (strikeout)             
              $procmet = trim($value['procuredby']);
              $procmet .= ( trim($value['procuredat']) === "" ) ? "" : "@{$value['procuredat']}"; 
              $proctime = $value['proctime'];
+
+             
              $sgTbl .= "<tr><td class=ptSegBGS>{$value['bgs']}</td><td class=ptSegHPR>{$hprind}</td><td class=ptSegHRP>{$value['hrpost']}</td><td class=ptSegPRP>{$prep}</td><td class=ptSegMET>{$metric}</td><td class=ptSegCUT>{$cutblock}</td><td class=ptSegASS>{$assignment}</td><td>{$procmet} - {$proctime}</td></tr>";
+             
+//STOP TABLE ROWS             
+             
+             
            }
+
            $sgTbl .= "</tbody></table>";
            $responseCode = 200;
         } else { 
@@ -209,12 +415,15 @@ class datadoers {
       session_start(); 
       $bg = json_decode($passdata, true);
 
+//OLD QUERY 
+//SELECT sg.pbiosample, sg.seglabel, sg.bgs, ifnull(sg.hrpost,0) as hrpost, ifnull(sg.metric,'') as metric, if(ifnull(sg.metric,'') = '','',ifnull(uom.dspvalue,'')) as shortuom, if(ifnull(sg.metric,0) = '','',ifnull(uom.longvalue,'')) as longuom, ifnull(prpm.dspvalue,'') as prepmethod, ifnull(sg.prp,'') as prpcode, ifnull(prpd.longvalue,'') as prpdetail, ifnull(sg.prpmet,'') as prpmetdetail, ifnull(sg.prpcontainer,'') as containercode, ifnull(pcnt.longvalue,'') as container, ifnull(sg.cutfromblockid,'') as cutfromblockid, ifnull(sg.qty,1) as qty, ifnull(sg.hprind,0) as hprind, ifnull(sg.procuredAt,'') as procuredat, ifnull(sg.procuredby,'') as procuredby , ifnull(sg.dspname,'') as assigndspname, ifnull(sg.investid,'') as assigninvestid, ifnull(sg.requestid,'') as assignrequestid, ifnull(sg.voidind,0) as voidind, ifnull(sg.voidreason,'') as voidreason, ifnull(date_format(sg.inputON, '%H:%i (%m/%d/%Y)'),'') as proctime FROM four.ut_procure_segment sg left join four.ut_procure_biosample bs on sg.pbiosample = bs.pbiosample left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricuom = uom.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPMETHOD') prpm on sg.prp = prpm.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPDETAIL') prpd on sg.prpMet = prpd.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'CONTAINER') pcnt on sg.prpcontainer = pcnt.menuvalue where bs.selector = :selector and sg.activeind = 1 order by convert(sg.seglabel, unsigned integer)      //
+//END OLD QUERY      
       $segSQL = <<<SEGSQL
-SELECT sg.pbiosample, sg.seglabel, sg.bgs, ifnull(sg.hrpost,0) as hrpost, ifnull(sg.metric,'') as metric, if(ifnull(sg.metric,'') = '','',ifnull(uom.dspvalue,'')) as shortuom, if(ifnull(sg.metric,0) = '','',ifnull(uom.longvalue,'')) as longuom, ifnull(prpm.dspvalue,'') as prepmethod, ifnull(sg.prp,'') as prpcode, ifnull(prpd.longvalue,'') as prpdetail, ifnull(sg.prpmet,'') as prpmetdetail, ifnull(sg.prpcontainer,'') as containercode, ifnull(pcnt.longvalue,'') as container, ifnull(sg.cutfromblockid,'') as cutfromblockid, ifnull(sg.qty,1) as qty, ifnull(sg.hprind,0) as hprind, ifnull(sg.procuredAt,'') as procuredat, ifnull(sg.procuredby,'') as procuredby , ifnull(sg.dspname,'') as assigndspname, ifnull(sg.investid,'') as assigninvestid, ifnull(sg.requestid,'') as assignrequestid, ifnull(sg.voidind,0) as voidind, ifnull(sg.voidreason,'') as voidreason, ifnull(date_format(sg.inputON, '%H:%i (%m/%d/%Y)'),'') as proctime FROM four.ut_procure_segment sg left join four.ut_procure_biosample bs on sg.pbiosample = bs.pbiosample left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricuom = uom.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPMETHOD') prpm on sg.prp = prpm.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPDETAIL') prpd on sg.prpMet = prpd.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'CONTAINER') pcnt on sg.prpcontainer = pcnt.menuvalue where bs.selector = :selector and sg.activeind = 1 order by convert(sg.seglabel, unsigned integer)
+select * from (SELECT sg.pbiosample, sg.seglabel, sg.bgs, ifnull(sg.hrpost,0) as hrpost, ifnull(sg.metric,'') as metric, if(ifnull(sg.metric,'') = '','',ifnull(uom.dspvalue,'')) as shortuom, if(ifnull(sg.metric,0) = '','',ifnull(uom.longvalue,'')) as longuom, ifnull(prpm.dspvalue,'') as prepmethod, ifnull(sg.prp,'') as prpcode, ifnull(prpd.longvalue,'') as prpdetail, ifnull(sg.prpmet,'') as prpmetdetail, ifnull(sg.prpcontainer,'') as containercode, ifnull(pcnt.longvalue,'') as container, ifnull(sg.cutfromblockid,'') as cutfromblockid, ifnull(sg.qty,1) as qty, ifnull(sg.hprind,0) as hprind, ifnull(sg.procuredAt,'') as procuredat, ifnull(sg.procuredby,'') as procuredby , ifnull(sg.dspname,'') as assigndspname, ifnull(sg.investid,'') as assigninvestid, ifnull(sg.requestid,'') as assignrequestid, ifnull(sg.voidind,0) as voidind, ifnull(sg.voidreason,'') as voidreason, ifnull(date_format(sg.inputON, '%H:%i (%m/%d/%Y)'),'') as proctime FROM four.ut_procure_segment sg left join four.ut_procure_biosample bs on sg.pbiosample = bs.pbiosample left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricuom = uom.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPMETHOD') prpm on sg.prp = prpm.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPDETAIL') prpd on sg.prpMet = prpd.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'CONTAINER') pcnt on sg.prpcontainer = pcnt.menuvalue where bs.selector = :selector and sg.activeind = 1 and (if(sg.hprind = 0, sg.prp <> 'SLIDE', '1=1' )) union SELECT sg.pbiosample, min(sg.seglabel) as seglabel, concat(sg.pbiosample,'T', min(sg.seglabel),  if(max(sg.seglabel) = min(sg.seglabel),'', concat('-',max(sg.seglabel)) ),' (' , count(1), ')') bgs  ,ifnull(sg.hrpost,0) as hrpost, if(ifnull(sg.metric,0)=0,'',ifnull(sg.metric,0)) as metric, if(ifnull(sg.metric,0) = 0,'',ifnull(uom.dspvalue,'')) as shortuom, if(ifnull(sg.metric,0) = 0,'',ifnull(uom.longvalue,'')) as longuom, ifnull(prpm.dspvalue,'') as prepmethod, ifnull(sg.prp,'') as prpcode, ifnull(prpd.longvalue,'') as prpdetail, ifnull(sg.prpmet,'') as prpmetdetail, ifnull(sg.prpcontainer,'') as containercode, ifnull(pcnt.longvalue,'') as container, ifnull(sg.cutfromblockid,'') as cutfromblockid, ifnull(sg.qty,1) as qty, ifnull(sg.hprind,0) as hprind, ifnull(sg.procuredAt,'') as procuredat, ifnull(sg.procuredby,'') as procuredby , ifnull(sg.dspname,'') as assigndspname, ifnull(sg.investid,'') as assigninvestid, ifnull(sg.requestid,'') as assignrequestid, ifnull(sg.voidind,0) as voidind, ifnull(sg.voidreason,'') as voidreason, ifnull(date_format(sg.inputON, '%H:%i (%m/%d/%Y)'),'') as proctime FROM four.ut_procure_segment sg left join four.ut_procure_biosample bs on sg.pbiosample = bs.pbiosample left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricuom = uom.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPMETHOD') prpm on sg.prp = prpm.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPDETAIL') prpd on sg.prpMet = prpd.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'CONTAINER') pcnt on sg.prpcontainer = pcnt.menuvalue where bs.selector = :selectorunion and sg.activeind = 1 and (if(sg.hprind = 0, sg.prp = 'SLIDE', ' sg.hprind = 0' )) group by sg.pbiosample, ifnull(sg.hrpost,0), if(ifnull(sg.metric,0)=0,'',ifnull(sg.metric,0)), if(ifnull(sg.metric,0) = 0,'',ifnull(uom.dspvalue,'')), if(ifnull(sg.metric,0) = 0,'',ifnull(uom.longvalue,'')), ifnull(prpm.dspvalue,''), ifnull(sg.prp,''), ifnull(prpd.longvalue,''), ifnull(sg.prpmet,''), ifnull(sg.prpcontainer,''), ifnull(pcnt.longvalue,''), ifnull(sg.cutfromblockid,''), ifnull(sg.qty,1), ifnull(sg.hprind,0), ifnull(sg.procuredAt,''), ifnull(sg.procuredby,'')  , ifnull(sg.dspname,''), ifnull(sg.investid,'') , ifnull(sg.requestid,'') , ifnull(sg.voidind,0) , ifnull(sg.voidreason,'') , ifnull(date_format(sg.inputON, '%H:%i (%m/%d/%Y)'),'') ) conglomTbl order by seglabel
 SEGSQL;
 
       $sgR = $conn->prepare($segSQL);
-      $sgR->execute(array(':selector' => $bg['selector']));
+      $sgR->execute(array(':selector' => $bg['selector'] , ':selectorunion' => $bg['selector']));
       if ( $sgR->rowCount() > 0 ) {
         $itemsfound = $sgR->rowCount();  
         while ($r = $sgR->fetch(PDO::FETCH_ASSOC)) { 
@@ -401,7 +610,7 @@ BGSQLHERE;
 
 
           $pager = <<<PAGERHERE
-<input type=hidden id=fldAdditiveDiv value="pb"><input type=hidden id=fldAdditiveDivValue value="">
+<input type=hidden id=fldSEGAdditiveDiv value="pb"><input type=hidden id=fldSEGAdditiveDivValue value="">
 <table border=0 width=100%>
 <tr><td class=addTblHeader>Add Slide(s) From This Block</td></tr>
 <tr><td>These slides will be added and assigned to the same investigator to which the block is assigned.  Leave blank to add zero additional slides.<br>To delete an added slide item, click it.</td></tr>
@@ -418,7 +627,7 @@ PAGERHERE;
 
 
         case 'SLIDE':
-          $sldNbr = "<input type=hidden id=fldAdditiveDiv value=\"slide\"><input type=hidden id=fldAdditiveDivValue value=\"\"><table><tr><td class=prcFldLbl>Cut from Block <span class=reqInd>*</span></td><td class=prcFldLbl>Slide Qty <span class=reqInd>*</span></td></tr><tr><td><input type=text id=fldSEGSlideCutFromBlock></td><td><input type=text id=fldSEGSlideQtyNbr value=1></td></tr></table>";  
+          $sldNbr = "<input type=hidden id=fldSEGAdditiveDiv value=\"slide\"><input type=hidden id=fldSEGAdditiveDivValue value=\"\"><table><tr><td class=prcFldLbl>Cut from Block <span class=reqInd>*</span></td><td class=prcFldLbl>Slide Qty <span class=reqInd>*</span></td></tr><tr><td><input type=text id=fldSEGSlideCutFromBlock></td><td><input type=text id=fldSEGSlideQtyNbr value=1></td></tr></table>";  
           $pager = <<<PAGERHERE
 <table border=0 width=100%>
 <tr><td class=addTblHeader>Quantity of Slides</td></tr>
@@ -434,7 +643,7 @@ PAGERHERE;
           $frshCnt = $freshList->rowCount();  
           $freshAdds = ""; 
           if ( (int)$frshCnt > 0 ) {
-            $freshAdds = "<input type=hidden id=fldAdditiveDiv value=\"fresh\"><input type=hidden id=fldAdditiveDivValue value=\"\"><div id=freshadditivebtns><table><tr>";
+            $freshAdds = "<input type=hidden id=fldSEGAdditiveDiv value=\"fresh\"><input type=hidden id=fldSEGAdditiveDivValue value=\"\"><div id=freshadditivebtns><table><tr>";
             $btnCount = 0;
             while ($r = $freshList->fetch(PDO::FETCH_ASSOC)) {
               if ($btnCount === 4) { 
@@ -504,8 +713,6 @@ PAGERHERE;
  *  
  */
 
-
-      
       //1) CHECK DATA 
       if ( $errorInd === 0 ) { $chkone   = initialBGDataCheckOne($bg);   if ( (int)$chkone['errorind'] === 1)   { $errorInd = 1; $msgArr = $chkone['msgarr'];   } }
       if ( $errorInd === 0 ) { $chktwo   = initialBGDataCheckTwo($bg);   if ( (int)$chktwo['errorind'] === 1)   { $errorInd = 1; $msgArr = $chktwo['msgarr'];   } }
@@ -3147,13 +3354,11 @@ class systemposts {
 
 /*****  SUPPORTING FUNCTIONS FOR CLASSES ******/ 
 
-function addSegmentToBiogroup($whichBG = "", $hrpost = 0, $metric = 0, $metricUOM = 4, $prp = "", $prpMet = "", $prpContainer = "", $cutFromBlockId = "", $HPRInd = 0, $procuredAt = "", $procuredBy = "", $InvestId = "", $dspName = "", $requestId = "") { 
-
+function addSegmentToBiogroup($whichBG = "", $hrpost = 0, $metric = 0, $metricUOM = 4, $prp = "", $prpMet = "", $prpContainer = "", $cutFromBlockId = "", $HPRInd = 0, $procuredAt = "", $procuredBy = "", $InvestId = "", $dspName = "", $requestId = "", $cmts = "", $additions = "", $groupingid = "") { 
   include(serverkeys . "/sspdo.zck"); 
   $nxtSeg = substr(("000" . nextbgsegmentnumber($whichBG)) , -3); 
   $bgs = "{$whichBG}T{$nxtSeg}";
-
-  $insSQL = "insert into four.ut_procure_segment (pbiosample, activeind, seglabel, bgs, hrpost, metric, metricuom, prp, prpmet, prpContainer, cutfromblockid, qty, hprind, procuredat, procuredby, investid, dspname, projid, requestid, inputon) values(:pbiosample, 1, :seglabel, :bgs, :hrpost, :metric, :metricuom, :prp, :prpmet, :prpContainer, :cutfromblockid, 1, :hprind, :procuredat, :procuredby, :assigncode, :assigndspname, 0, :requestNbr, now())";
+  $insSQL = "insert into four.ut_procure_segment (pbiosample, activeind, seglabel, bgs, hrpost, metric, metricuom, prp, prpmet, prpContainer, cutfromblockid, qty, hprind, procuredat, procuredby, investid, dspname, projid, requestid, inputon, sgcomments, additionalInformation, groupingid) values(:pbiosample, 1, :seglabel, :bgs, :hrpost, :metric, :metricuom, :prp, :prpmet, :prpContainer, :cutfromblockid, 1, :hprind, :procuredat, :procuredby, :assigncode, :assigndspname, 0, :requestNbr, now(), :sgcomments, :addInformation, :groupingid)";
   $insR = $conn->prepare($insSQL);
   $insR->execute(array(
       ':pbiosample' => $whichBG 
@@ -3172,13 +3377,13 @@ function addSegmentToBiogroup($whichBG = "", $hrpost = 0, $metric = 0, $metricUO
      ,':assigncode' => $InvestId
      ,':assigndspname' => $dspName
      ,':requestNbr' => $requestId
+     ,':sgcomments' => $cmts
+     ,':addInformation' => $additions
+     ,':groupingid' => $groupingid     
  ));
-
   $lst = $conn->lastInsertId();
-
-  
-  return $bgs;
-
+  //TODO: PRINT LABEL HERE
+  return $bgs . " ";
 }
 
 function userDetails($whichusr) { 
@@ -3766,7 +3971,8 @@ function initialBGDataCheckTwo($bg) {
     ( trim($bg['PRCInitialMetric']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC IS REQUIRED")) : "";    
     ( !is_numeric(trim($bg['PRCInitialMetric']))  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC MEASURE MUST BE A NUMBER.")) : "";    
     //TODO: FIGURE OUT HOW TO CAST AS DOUBLE TO NON-NEG NON-ZERO
-    //( $bg['PRCInitialMetric'] === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC MEASURE MUST BE GREATER THAN ZERO.")) : "";    
+    ( $bg['PRCInitialMetric'] === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC MEASURE MUST BE GREATER THAN ZERO.")) : ""; 
+    
     ( trim($bg['PRCMetricUOMValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INITIAL METRIC UOM MUST BE SPECIFIED")) : "";    
     ( trim($bg['PRCPXIId']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A DONOR FROM THE OPERATIVE SCHEDULE MUST BE SPECIFIED.  CLICK A DONOR FROM THE LIST")) : "";
     ( trim($bg['PRCPXIInitials']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE DONOR'S INITIALS ARE MISSING.  IF THIS IS A LINKED DONOR, SEE A CHTNEASTERN INFORMATICS PERSON.  FOR DELINKED DONORS, RE-ENTER THE DELINK.")) : "";        

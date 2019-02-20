@@ -661,6 +661,49 @@ JAVASCR;
 return $rtnThis;
 }
 
+function collectiongrid($rqststr) { 
+session_start(); 
+    
+  $tt = treeTop;
+  $eMod = encryptModulus;
+  $eExpo = encryptExponent;
+  $si = serverIdent;
+  $pw = apikey;
+    
+$rtnThis = <<<JAVASCR
+
+//TODO: WRITE TIMER FUNCTION TO REFRESH GRID
+        
+function fillField(whichfield, whichvalue, whichdisplay) { 
+  if (byId(whichfield)) { 
+     byId(whichfield).value = whichdisplay; 
+     if (byId(whichfield+'Value')) { 
+        byId(whichfield+'Value').value = whichvalue;    
+     }
+  }
+}
+
+var lastRequestCalendarDiv = "";
+function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {        
+  var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;
+  lastRequestCalendarDiv = whichdiv;      
+  universalAJAX("GET",mlURL,"",answerGetCalendar,modalCtl);
+}
+
+function answerGetCalendar(rtnData) {
+  if (parseInt(rtnData['responseCode']) === 200) {     
+    var rcd = JSON.parse(rtnData['responseText']);
+    byId(lastRequestCalendarDiv).innerHTML = rcd['DATA']; 
+  } else { 
+    alert("ERROR");  
+  }
+}      
+        
+JAVASCR;
+return $rtnThis;
+}
+
+
 function documentlibrary($rqststr) {     
    
   session_start(); 
@@ -1548,15 +1591,13 @@ function markAsBank() {
 }
 
 function addQMSSegments() { 
-//ONLY IF QMS SEGMENTS DO NOT EXIST (voided)
-  if (byId('segmentBGSelectorId')) { 
+  if (byId('fldSEGSegmentBGSelectorId')) { 
     var given = new Object(); 
-    given['bgency'] = byId('segmentBGSelectorId').value; 
+    given['bgency'] = byId('fldSEGSegmentBGSelectorId').value; 
     given['hrpost'] = byId('fldSEGAddHP').value; 
     given['metric'] = byId('fldSEGAddMetric').value; 
     given['metuom'] = byId('fldSEGAddMetricUOMValue').value; 
     var passeddata = JSON.stringify(given);
-    //console.log(passeddata);
     var mlURL = "/data-doers/segment-create-qms-pieces";
     universalAJAX("POST",mlURL,passeddata,answerAddQMSSegments,2);
   } else { 
@@ -1604,9 +1645,10 @@ function resetSegmentAddDialog() {
   byId('fldSEGPreparationContainer') ? byId('fldSEGPreparationContainer').value = "" : "";
   byId('preparationAdditions') ? byId('preparationAdditions').innerHTML = "" : "";
   byId('fldSEGselectorAssignInv') ? byId('fldSEGselectorAssignInv').value = "" : "";
-  byId('selectorAssignReq') ? byId('selectorAssignReq').value = "" : "";
+  byId('fldSEGselectorAssignReq') ? byId('fldSEGselectorAssignReq').value = "" : "";
   byId('requestDropDown') ? byId('requestDropDown').innerHTML = "" : "";
   byId('assignInvestSuggestion') ? byId('assignInvestSuggestion').innerHTML = "" : "";
+  byId('fldSEGSGComments') ? byId('fldSEGSGComments').value = "" : "";            
 }
 
 function answerUpdateBSSegmentDisplay(rtnData) { 
@@ -1635,14 +1677,13 @@ function addDefinedSegment() {
      var elem = byId('divSegmentAddHolder').getElementsByTagName('*');
      var segmentdef = new Object();
      for (var i = 0; i < elem.length; i++) {
-       if (elem[i].id.trim() !== "" ) {
-         if ( elem[i].id.substr(0,3) === 'fld' ) {
-           segmentdef[  elem[i].id.replace(/^fldSEG/,'').replace(/^fld/,'') ] = elem[i].value.trim();
+       if (elem[i].id.trim() !== "" ) {      
+         if ( elem[i].id.substr(0,3) === 'fld' ) {            
+           segmentdef[  elem[i].id.replace(/^fldSEG/,'') ] = elem[i].value.trim();
          }
        } 
      } 
      var passeddata = JSON.stringify(segmentdef);
-     //console.log(passeddata);
      var mlURL = "/data-doers/segment-create-defined-pieces";
      universalAJAX("POST",mlURL,passeddata,answerSaveDefinedSegment,2);
    }
@@ -1656,10 +1697,9 @@ function answerSaveDefinedSegment(rtnData) {
        dspMsg += "\\n - "+element;
     });
     alert("ADD SEGMENT ERROR:\\n"+dspMsg);
-   } else {
-     //CONFIRM SAVE
-     //UPDATE BIOGROUP SEGMENT LISTING
-     resetSegmentAddDialog();
+   } else {     
+     updateBSSegmentDisplay();
+     resetSegmentAddDialog();            
    }        
 }
 
@@ -1778,24 +1818,24 @@ function selectThisAdditive(additiveId) {
         }
      }
      if ( additives.length > 0 ) { 
-      if (byId('fldAdditiveDivValue') ) { 
-        byId('fldAdditiveDivValue').value = JSON.stringify(additives);
+      if (byId('fldSEGAdditiveDivValue') ) { 
+        byId('fldSEGAdditiveDivValue').value = JSON.stringify(additives);
       }
      } else { 
-      if (byId('fldAdditiveDivValue') ) { 
-        byId('fldAdditiveDivValue').value = "";
+      if (byId('fldSEGAdditiveDivValue') ) { 
+        byId('fldSEGAdditiveDivValue').value = "";
       }
      }
    }
 }
 
 function requestAdditionalSlides() { 
-  if ( byId('additionalPreparation') && byId('addPBQtySlide') && byId('fldAdditiveDivValue') ) { 
+  if ( byId('additionalPreparation') && byId('addPBQtySlide') && byId('fldSEGAdditiveDivValue') ) { 
     if ( byId('additionalPreparation').value.trim() === "") { alert('You must select a \'Type of Slide\''); return null; }
     if ( byId('addPBQtySlide').value.trim() === "") { alert('You must specify a value for quantity of slide(s)'); return null; }
     if ( byId('addPBQtySlide').value.trim().match(/^\d+$/) === null ) { alert('You may only use numbers in the quantity field'); byId('addPBQtySlide').value = ""; byId('addPBQtySlide').focus(); return null; }
 
-    if ( byId('fldAdditiveDivValue').value.trim() === "") { 
+    if ( byId('fldSEGAdditiveDivValue').value.trim() === "") { 
       var arr = new Object(); 
       var itm = new Object();
       itm['typeofslide'] = byId('additionalPreparation').value.trim(); 
@@ -1806,10 +1846,10 @@ function requestAdditionalSlides() {
       var itm = new Object();
       itm['typeofslide'] = byId('additionalPreparation').value.trim(); 
       itm['qty'] = byId('addPBQtySlide').value.trim();
-      var arr = JSON.parse( byId('fldAdditiveDivValue').value );
+      var arr = JSON.parse( byId('fldSEGAdditiveDivValue').value );
       arr[ Object.keys(arr).length ] = itm;
     }
-    byId('fldAdditiveDivValue').value = JSON.stringify(arr);
+    byId('fldSEGAdditiveDivValue').value = JSON.stringify(arr);
     byId('additionalPreparation').value = "";
     byId('addPBQtySlide').value = "";
     buildPBSlideAddTbl();
@@ -1817,10 +1857,10 @@ function requestAdditionalSlides() {
 }
 
 function buildPBSlideAddTbl() { 
-  if ( byId('addSlideDspBox') && byId('fldAdditiveDivValue')) { 
+  if ( byId('addSlideDspBox') && byId('fldSEGAdditiveDivValue')) { 
     byId('addSlideDspBox').innerHTML = "";
-    if (byId('fldAdditiveDivValue').value !== "") { 
-      var arr = JSON.parse( byId('fldAdditiveDivValue').value.trim() );
+    if (byId('fldSEGAdditiveDivValue').value !== "") { 
+      var arr = JSON.parse( byId('fldSEGAdditiveDivValue').value.trim() );
 
       var slideTbl = "<table border=0 id=segAddslideItmTbl><tr><th style=\"width: 1vw;\"></th><th style=\"width: 8vw;\">Type of Slide</th><th style=\"width: 3vw;\">Qty</th></tr><tbody>";  
       for (var i = 0; i < Object.keys(arr).length; i++ ) { 
@@ -1834,8 +1874,8 @@ function buildPBSlideAddTbl() {
 }
 
 function removeSlideItm(whichkey) { 
-  if ( byId('fldAdditiveDivValue').value.trim() !== "") { 
-    var arr = JSON.parse( byId('fldAdditiveDivValue').value );
+  if ( byId('fldSEGAdditiveDivValue').value.trim() !== "") { 
+    var arr = JSON.parse( byId('fldSEGAdditiveDivValue').value );
     var itm = new Object();
     var cnt = 0;
     for (var i = 0; i < Object.keys(arr).length; i++) { 
@@ -1848,10 +1888,10 @@ function removeSlideItm(whichkey) {
         cnt++;        
       }
     }
-    byId('fldAdditiveDivValue').value = "";
+    byId('fldSEGAdditiveDivValue').value = "";
     var slides = Object.keys(itm).length;
     if ( slides > 0) { 
-      byId('fldAdditiveDivValue').value = JSON.stringify(itm);
+      byId('fldSEGAdditiveDivValue').value = JSON.stringify(itm);
     } else { 
     }
     buildPBSlideAddTbl();
@@ -1913,6 +1953,7 @@ alert('To change the donor, void the biogroup and re-create it (functionality wi
 }
 
 function updatePrepmenu(whatvalue) { 
+            
   byId('fldSEGPreparationValue').value = '';
   byId('fldSEGPreparation').value = '';
   byId('ddSEGPreparationDropDown').innerHTML = "&nbsp;"; 
@@ -1933,7 +1974,7 @@ function answerUpdatePrepmenu(rtnData) {
     if (parseInt( dta['ITEMSFOUND'] ) > 0 ) {
       rsltTbl = "<table border=0 class=menuDropTbl>";
       dta['DATA'].forEach(function(element) { 
-        rsltTbl += "<tr><td onclick=\"fillField('fldSEGPreparation','"+element['menuValue']+"','"+element['longValue']+"');\" class=ddMenuItem>"+element['longValue']+"</td></tr>";
+        rsltTbl += "<tr><td onclick=\"fillField('fldSEGPreparation','"+element['menuvalue']+"','"+element['longvalue']+"');\" class=ddMenuItem>"+element['longvalue']+"</td></tr>";
       }); 
       rsltTbl += "</table>";  
       byId('ddSEGPreparationDropDown').innerHTML = rsltTbl; 
@@ -3035,7 +3076,7 @@ function updatePrepmenu(whatvalue) {
   }
 }
 
-function answerUpdatePrepmenu(rtnData) { 
+function answerUpdatePrepmenu(rtnData) {
   byId('qryPreparationValue').value = '';
   byId('qryPreparation').value = '';
   byId('preparationDropDown').innerHTML = "&nbsp;"; 
@@ -3045,7 +3086,7 @@ function answerUpdatePrepmenu(rtnData) {
     if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
     rsltTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryPreparation','','');\" class=ddMenuClearOption>[clear]</td></tr>";
     dta['DATA'].forEach(function(element) { 
-      rsltTbl += "<tr><td onclick=\"fillField('qryPreparation','"+element['menuValue']+"','"+element['longValue']+"');\" class=ddMenuItem>"+element['longValue']+"</td></tr>";
+      rsltTbl += "<tr><td onclick=\"fillField('qryPreparation','"+element['menuvalue']+"','"+element['longvalue']+"');\" class=ddMenuItem>"+element['longvalue']+"</td></tr>";
     }); 
     rsltTbl += "</table>";  
     byId('preparationDropDown').innerHTML = rsltTbl; 

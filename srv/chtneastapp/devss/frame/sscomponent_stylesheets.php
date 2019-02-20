@@ -236,6 +236,18 @@ STYLESHEET;
  return $rtnThis;
   }
 
+function collectiongrid($mobileind) {     
+$rtnThis = <<<STYLESHEET
+body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw; font-size: 1.5vh; } 
+    
+#presentInst { width: 24vw; } 
+#ddpresentInst { min-width: 24vw; }    
+        
+        
+STYLESHEET;
+return $rtnThis; 
+}  
+  
 function procurebiosample($mobileind) { 
 
 $rtnThis = <<<STYLESHEET
@@ -250,7 +262,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 .topBtnHolderCell .tt { position: absolute; left: -.5vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); box-sizing: border-box; padding: 4px 3px; display: none; white-space: nowrap; z-index: 40; }
 .topBtnHolderCell .tt .btnBarDropMenuItems { font-size: 1.5vh; }
 .topBtnHolderCell .tt .btnBarDropMenuItems .btnBarDropMenuItem:hover { background: rgba({$this->color_lblue},1);  color: rgba({$this->color_white},1); cursor: pointer; } 
-.procGridHoldingTable {width: 66vw; box-sizing: border-box; }
+.procGridHoldingTable {width: 85vw; box-sizing: border-box; }
 .procGridHoldingTitle {font-size: 1.7vh; color: rgba({$this->color_cornflowerblue},1); font-weight: bold; border-bottom: 2px solid rgba({$this->color_ddrwgrey},1); padding: .5vh 0 0 0; } 
 .procGridHoldingDecorationLineBACKUP {border-left: 2px solid rgba({$this->color_ddrwgrey},1);border-top: 2px solid rgba({$this->color_ddrwgrey},1);}
 .prcFldLbl { font-size: 1.3vh; color: rgba({$this->color_dblue},1);  padding: 0 0 0 0; font-weight: bold; }
@@ -345,7 +357,7 @@ textarea { font-size: 1.3vh; }
 #ddPRCPathRpt { width: 5vw; }
 .reqInd {font-size: 1.3vh; color: rgba({$this->color_bred},1); font-weight: bold; }
 #BSDspMainHeader { font-size: 2vh; text-align: center; font-variant: small-caps; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_cornflowerblue},1); padding: 1vh 1vw; border: 2px solid rgba({$this->color_dblue},1); }
-.BSDspSectionHeader { padding-top: .6vh; padding-bottom: .6vh; padding-left: 0vw; font-size: 1.4vh; background: rgba({$this->color_white},1); color: rgba({$this->color_darkgrey},1); border-bottom: 1px solid rgba({$this->color_darkgrey},1); font-weight: bold;  }
+.BSDspSectionHeader { padding-top: .6vh; padding-bottom: .6vh; padding-left: 0vw; font-size: 1.4vh; background: rgba({$this->color_white},1); color: rgba({$this->color_darkgrey},1); border-bottom: 1px solid rgba({$this->color_darkgrey},1); font-weight: bold; }
 .BSDspSpacer { height: 1.5vh;  }
 .procGridHoldingLine {padding-top: .5vh; }
 .BSDspSmallSpacer { height: .2vh; font-size: .3vh; }
@@ -461,10 +473,10 @@ textarea { font-size: 1.3vh; }
 #procurementScreenSegmentList tbody td { font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: .4vh 0 .4vh 3px; }
 #procurementScreenSegmentList tbody tr:nth-child(even) { background: rgba({$this->color_lightgrey},1); }
 
-#procurementScreenSegmentList tbody .ptSegBGS { width: 5vw; } 
+#procurementScreenSegmentList tbody .ptSegBGS { width: 8vw; } 
 #procurementScreenSegmentList tbody .ptSegHPR { width: 1.5vw; text-align: center; } 
 #procurementScreenSegmentList tbody .ptSegHRP { width: 1.5vw; text-align: center; } 
-#procurementScreenSegmentList tbody .ptSegPRP { width: 18vw; } 
+#procurementScreenSegmentList tbody .ptSegPRP { width: 16vw; } 
 #procurementScreenSegmentList tbody .ptSegMET { width: 5vw; } 
 #procurementScreenSegmentList tbody .ptSegCUT { width: 5vw; } 
 #procurementScreenSegmentList tbody .ptSegASS { width: 25vw; }
@@ -472,6 +484,8 @@ textarea { font-size: 1.3vh; }
 #segAddslideItmTbl { width: 100%; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); border-collapse: collapse; }
 #segAddslideItmTbl th { font-size: 1.3vh; color: rgba({$this->color_dblue},1); text-align: left; }
 #segAddslideItmTbl tbody tr:nth-child(even) { background: rgba({$this->color_lightgrey},1); padding: .3vh .5vw;  }
+
+#fldSEGSGComments { width: 100%; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw 0 .3vw; text-align: justify;  }
 
 
 

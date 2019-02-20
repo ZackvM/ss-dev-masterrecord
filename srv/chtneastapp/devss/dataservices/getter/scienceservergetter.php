@@ -34,6 +34,8 @@ class objgetter {
 }
 
 class objlisting { 
+    
+    
 
   function chtnstaffdirectorylisting($whichobj, $urirqst) { 
        
@@ -585,7 +587,7 @@ function subpreparationmenu($request) {
     $rtnData = array();
     if (trim($request) !== "") { 
       require(serverkeys . "/sspdo.zck");               
-      $SQL = "select ifnull(pr.menuvalue,'') as menuvalue, pr.longvalue, pr.dsporder  from (SELECT menuid FROM four.sys_master_menus where menu = 'PREPMETHOD' and menuvalue = :preparation) as pm left join (SELECT * FROM four.sys_master_menus where menu = 'PREPDETAIL' and dspind = 1) as pr on pm.menuid = pr.parentid where trim(pr.menuvalue) <> '' order by pr.dsporder";   
+      $SQL = "select ifnull(pr.menuvalue,'') as menuvalue, pr.longvalue as longvalue, pr.dsporder  from (SELECT menuid FROM four.sys_master_menus where menu = 'PREPMETHOD' and menuvalue = :preparation) as pm left join (SELECT * FROM four.sys_master_menus where menu = 'PREPDETAIL' and dspind = 1) as pr on pm.menuid = pr.parentid where trim(pr.menuvalue) <> '' order by pr.dsporder";   
       $rs = $conn->prepare($SQL); 
       $rs->execute(array(':preparation' => $request));
       if ($rs->rowCount() < 1) { 

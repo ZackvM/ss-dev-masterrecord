@@ -448,6 +448,45 @@ PAGEHERE;
 return $rtnthis;
 }
 
+function collectiongrid($rqststr, $usr) { 
+
+    if ((int)$usr->allowprocure !== 1) { 
+     $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE COORDINATOR SCREEN";        
+    } else {
+        $today = new DateTime('now');
+        $tdydte = $today->format('m/d/Y');
+        $tdydtev = $today->format('Y-m-d');
+        $insmnu = bldUsrAllowInstDrop($usr);
+        $cGridCalendar = bldCGridControlCalendar($tdydtev, $tdydte);         
+        session_start();
+        $dta['presentinstitution'] = $usr->presentinstitution;
+        $dta['requesteddate'] = $tdydtev;
+        $dta['usrsession'] = session_id();
+        $pdta = json_encode($dta);        
+        $rsltdta = callrestapi("POST", dataTree . "/data-doers/collection-grid-results-tbl",serverIdent, serverpw, $pdta);          
+               
+        $rtnthis = <<<PAGEHERE
+   <table border=0 cellspacing=0 cellpadding=0>
+                <tr><td>
+                     <table border=0><tr><td>{$insmnu}</td><td>{$cGridCalendar}</td><td><table class=tblBtn id=btnRefresh style="width: 6vw;"><tr><td><center>Refresh</td></tr></table></td></tr></table>
+                </td></tr>
+                <tr><td>
+                     <div id=cResultGridHolder>
+                     <div id=waitForMe>WAIT</div>
+                     <div id=cResults>
+                     {$rsltdta}
+                     </div>
+                     </div>
+                     </td></tr>
+   </table>
+       
+PAGEHERE;
+    }
+
+    return $rtnthis;                
+    
+}
+
 function segment($rqststr, $whichusr) { 
     if ((int)$whichusr->allowcoord !== 1) { 
      $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE COORDINATOR SCREEN";        
@@ -676,7 +715,6 @@ PAGEHERE;
 
 return $rtnthis;    
 }
-
 
 function datacoordinator($rqststr, $whichusr) { 
     if ((int)$whichusr->allowcoord !== 1) { 
@@ -1845,10 +1883,10 @@ switch ($whichpage) {
 
 case 'procurebiosampleedit':
 $pxibtn = "";
+    //<!-- <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPRCSaveEdit border=0><tr><td><!--ICON //--></td><td>Save Edit</td></tr></table></td> //-->
 $innerBar = <<<BTNTBL
 <tr>
-<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>
-<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPRCSaveEdit border=0><tr><td><!--ICON //--></td><td>Save Edit</td></tr></table></td>        
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>       
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVocabSrch border=0><tr><td><!--ICON //--></td><td>Vocabulary Search</td></tr></table></td>
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCLock border=0><tr><td><!--ICON //--></td><td>Release BG</td></tr></table></td>
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVoid border=0><tr><td><!--ICON //--></td><td>Void BG</td></tr></table></td>
@@ -2221,6 +2259,53 @@ RTNTHIS;
   return $rtnThis;
 }
 
+function bldCGridControlCalendar($tdydtev, $tdydte) { 
+        $fCalendar = buildcalendar('cGridDateControl'); 
+        $cGridCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+<div class=valueHolder>
+    <div class=inputiconcontainer>
+    <div class=inputmenuiconholder><i class="material-icons menuDropIndicator">menu</i></div>
+   <input type=hidden id=cGridDateValue value='{$tdydtev}'><input type=text READONLY id=cGridDate class="inputFld" style="width: 18vw;" value='{$tdydte}'>
+   </div>    
+   </div>
+<div class=valueDropDown style="width: 18vw;"><div id=cGridCalendar>{$fCalendar}</div></div>
+</div>
+CALENDAR;
+
+return $cGridCalendar;
+}
+
+function bldUsrAllowInstDrop($usr) { 
+  $inscnt = 0;
+  $insm = "<table border=0 class=menuDropTbl>";
+  $igivendspvalue = "";
+  $igivendspcode = "";
+  foreach ($usr->allowedinstitutions as $inskey => $insval) {
+    $instList .= ( $inscnt > 0 ) ? " <br> {$insval[1]} ({$insval[0]}) " : " {$insval[1]} ({$insval[0]}) ";
+    $inscnt++;
+    if ( trim($usr->presentinstitution) === $insval[0]) {
+      $primeinstdsp = $insval[1];
+      $igivendspvalue = "{$insval[1]}";
+      $igivendspcode = $insval[0];
+    }
+    $insm .= "<tr><td onclick=\"fillField('presentInst','{$insval[0]}','{$insval[1]}');\" class=ddMenuItem>{$insval[1]} ({$insval[0]})</td></tr>";
+  }
+  $insm .= "</table>";
+  
+  $insmnu =  "<input type=hidden id=presentInstValue value=\"{$igivendspcode}\">  "
+                              . "<input type=text id=presentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\">";
+  //$insmnu = "<div class=menuHolderDiv>"
+  //                    . "<input type=hidden id=presentInstValue value=\"{$igivendspcode}\">  "
+  //                    . "<div class=inputiconcontainer>"
+  //                            . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
+  //                            . "<input type=text id=presentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\">"
+  //                   . "</div>"
+  //                   . "<div class=valueDropDown id=ddpresentInst>{$insm}</div>"
+  //                   . "</div>";     
+    return $insmnu;
+}
+
 function bldQuickAddDelinkdialog() { 
 
     $at = genAppFiles;
@@ -2320,7 +2405,7 @@ if ($errorInd === 0) {
   $dxd .= ( trim($bg['bgdxssite']) !== "" ) ? " ({$bg['bgdxssite']})" : "";
   $dxd .= ( trim($bg['bgdxdx']) !== "" ) ? " / {$bg['bgdxdx']}" : "";
   $dxd .= ( trim($bg['bgdxmets']) !== "" ) ? " (METS: {$bg['bgdxmets']})" : "";
-  $dxd .= " <input type=hidden id=fldSegmentBGSelectorId value=\"{$encySelector}\"> ";
+  $dxd .= " <input type=hidden id=fldSEGSegmentBGSelectorId value=\"{$encySelector}\"> ";
 
   $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/all-preparation-methods",$si,$sp),true);
   $prp = "<table border=0 class=menuDropTbl>";
@@ -2376,7 +2461,7 @@ $rtnThis = <<<RTNTHIS
   <tr>
    <td class=prcFldLbl>Assignment <span class=reqInd>*</span></td>
    <td class=prcFldLbl>Request #</td>
-   <td rowspan=2 valign=bottom> <table class=tblBtn id=btnSaveSeg onclick="markAsBank();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table>  </td>
+   <td rowspan=2 valign=bottom style="padding: 0;"><table class=tblBtn id=btnSaveSeg onclick="markAsBank();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table></td>
   </tr>
   <tr>
     <td valign=top>
@@ -2394,7 +2479,12 @@ $rtnThis = <<<RTNTHIS
    </tr>
 </table>
 
-
+<table border=0 width=80%>
+<tr><td class=prcFldLbl>Segment Comments</td></tr>   
+<tr><td><TEXTAREA id=fldSEGSGComments></TEXTAREA></td></tr>   
+</table>
+   
+   
 <table width=100%>
 <tr><td align=right>
 
@@ -2846,13 +2936,21 @@ return $rtnTbl;
 }
 
 function bldProcurementGridEdit( $usr, $selector ) { 
+    
   $si = serverIdent;
   $sp = serverpw;
   $pdta['selector'] = $selector;
   $payload = json_encode($pdta);
   $bgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-biogroup",serverIdent, serverpw, $payload), true);
-  $sgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-segment-list-table",serverIdent, serverpw, $payload), true);
   $bg = $bgdta['DATA'];
+
+if ( $usr->presentinstitution !== $bg['bgfromlocationcode'] || $usr->allowprocure !== 1) {
+    $rtnTbl['grid'] = "<h1>USER NOT ALLOWED (PRIMARY INSTITUTION DOESN'T MATCH OR NOT ALLOWED PROCUREMENT)";
+      $rtnTbl['sidebar'] = "";
+}  else { 
+  
+  $sgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-segment-list-table",serverIdent, serverpw, $payload), true);
+  
   $jsonbg = json_encode($bg);
 
 $insmnu = "<input type=hidden id=fldPRCPresentInstValue value=\"{$bg['bgfromlocationcode']}\"><input type=text id=fldPRCPresentInst READONLY class=\"inputFld lockfield\" value=\"{$bg['bgfromlocation']}\">";
@@ -3055,6 +3153,8 @@ $voidreason = trim($bg['bgvoidreason']);
 
 SIDEBAR;
 
+}
+
   return $rtnTbl;    
 }
 
@@ -3129,14 +3229,15 @@ $inscnt = 0;
     $insm .= "<tr><td onclick=\"fillField('fldPRCPresentInst','{$insval[0]}','{$insval[1]}');\" class=ddMenuItem>{$insval[1]} ({$insval[0]})</td></tr>";
   }
   $insm .= "</table>";
-  $insmnu = "<div class=menuHolderDiv>"
-                      . "<input type=hidden id=fldPRCPresentInstValue value=\"{$igivendspcode}\">  "
-                      . "<div class=inputiconcontainer>"
-                              . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
-                              . "<input type=text id=fldPRCPresentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\">"
-                     . "</div>"
-                     . "<div class=valueDropDown id=ddfldPRCPresentInst>{$insm}</div>"
-                     . "</div>";     
+//  $insmnu = "<div class=menuHolderDiv>"
+//                      . "<input type=hidden id=fldPRCPresentInstValue value=\"{$igivendspcode}\">  "
+//                      . "<div class=inputiconcontainer>"
+//                              . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div>"
+//                              . "<input type=text id=fldPRCPresentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\">"
+//                     . "</div>"
+//                     . "<div class=valueDropDown id=ddfldPRCPresentInst>{$insm}</div>"
+//                     . "</div>";     
+  $insmnu = "<input type=hidden id=fldPRCPresentInstValue value=\"{$igivendspcode}\"><input type=text id=fldPRCPresentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\">";
 
    //DROP DOWN MENU BUILDER END ******************************************************************** //
 
@@ -3583,30 +3684,31 @@ function bldBiosampleProcurementEdit($usr, $selector) {
       $orscheddater = bldSidePanelORSched( $usr->presentinstitution, $tdydte, $tdydtev );
       //TODO:REMOVE THIS LINE TO DEFAULT TO TODAY'S DATE
       //$tdydtev = '20180507';
-      $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
+      //$orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
       
       $procGrid = bldProcurementGridEdit($usr, $selector); //THIS IS THE PROCUREMENT GRID ELEMENTS
 
+      //openAppCard('appcard_procphilisting');
+//<div id=appcard_procphilisting class=appcard>
+//<table>
+//<tr><td class=sidePanel valign=top style="height: 39vh;">
+ // <table border=0 width=100% cellspacing=0 cellpadding=0>
+//    <tr><td>{$orscheddater}</td></tr>
+//    <tr><td colspan=1>{$orlistTbl}</td></tr>
+//  </table>
+//</td></tr>
+//</table> 
+//</div>
       $holdingTbl = <<<HOLDINGTBL
             <div id=initialBiogroupInfo>
             <table border=0 id=procurementAddHoldingTbl>
                    <tr>
-                      <td valign=top id=procbtnsidebar><center><div class=ttholder onclick="alert('You can\'t change the donor on a saved biogroup (for now).  Void the biogroup and recreate it!');openAppCard('appcard_procphilisting');"><i class="material-icons">how_to_reg</i><div class=tt>Donor Information/Operative Schedule</div></div></td>
-                      <td valign=top id=procGridHolderCell> {$procGrid['grid']}</td>
+                      <td valign=top id=procbtnsidebar><center><div class=ttholder onclick="alert('You can\'t change the donor on a saved biogroup (for now).  Void the biogroup and recreate it!');"><i class="material-icons">how_to_reg</i><div class=tt>Donor Information/Operative Schedule</div></div></td>
+                      <td valign=top id=procGridHolderCell style="min-width: 80vw;"> {$procGrid['grid']}</td>
                       <td valign=top id=procGridBGDsp>{$procGrid['sidebar']}</td>
                    </tr>
             </table> 
             </div>
-<div id=appcard_procphilisting class=appcard>
-<table>
-<tr><td class=sidePanel valign=top style="height: 39vh;">
-  <table border=0 width=100% cellspacing=0 cellpadding=0>
-    <tr><td>{$orscheddater}</td></tr>
-    <tr><td colspan=1>{$orlistTbl}</td></tr>
-  </table>
-</td></tr>
-</table> 
-</div>
 HOLDINGTBL;
     }
     return $holdingTbl;

@@ -115,7 +115,7 @@ function checkPostingUser($usrname, $passwrd) {
     } else { 
       //CHECK CODE IN DATABASE   
       require(serverkeys . "/sspdo.zck"); 
-      //TODO: MAKE A WEBSERVICE
+      //TODO: MAKE THIS AWEBSERVICE
       $chkSQL = "SELECT sessid, accesscode FROM serverControls.ss_srvIdents where sessid = :usrsess and datediff(now(), onwhen) < 1";  
       $rs = $conn->prepare($chkSQL); 
       $rs->execute(array(':usrsess' => $usrname));
@@ -411,6 +411,24 @@ if ((int)$nextMonth === 13) {
         $leftBtnAction  = " onclick=\"getcalendar('procquery','{$lastMonth}','{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getcalendar('procquery','{$nextMonth}','{$nextYear}');\" "; 
         break;
+     case 'cgriddatecontrol':
+        $calTblId = "bsqTbl";
+        $leftBtnId = "bsqLeft";
+        $calTitle = "bsqTitle";
+        $rightBtnId = "bsqRight";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmSpacer = "btmSpacer";
+        $btmLine = "bsqBtmLine";
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        //TODO - FIX THE GETTER HERE
+        $leftBtnAction  = " onclick=\"getCalendar('cGridDateControl','cGridCalendar', '{$lastMonth}/{$lastYear}');\" ";
+        $rightBtnAction = " onclick=\"getCalendar('cGridDateControl','cGridCalendar' ,'{$nextMonth}/{$nextYear}');\" ";         
+        break;           
       case 'biosamplequeryfrom':
         $calTblId = "bsqTbl";
         $leftBtnId = "bsqLeft";
@@ -582,6 +600,13 @@ while ($currentDay <= $numberOfDays) {
          $action = " onclick=\" fillField('bsqueryFromDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
          $dayDsp = $currentDayDsp;
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('bsqueryFromDate','','');\" ><center>[clear]</td></tr>";
+         break;
+         case 'cgriddatecontrol':
+         $sqrID = "daySqr{$currentDayDsp}";
+         $action = " onclick=\" fillField('cGridDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
+         $dayDsp = $currentDayDsp;
+         //$btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('bsqueryToDate','','');\" ><center>[clear]</td></tr>";
+         $btmLineDsp = "";
          break;
          case 'biosamplequeryto':
          $sqrID = "daySqr{$currentDayDsp}";
