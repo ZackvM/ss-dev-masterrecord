@@ -46,7 +46,7 @@ class datadoers {
       require(serverkeys . "/sspdo.zck");
       
       $cgriddta = self::collectiongridresults( $request, $passdata);
-      $dta = $cgriddta['statusCode'] . " ZZZZ " . $cgriddta['data']['DATA'];
+      $dta = $cgriddta['statusCode'] . " __ " . $cgriddta['data']['DATA'];
       
       
       
@@ -85,9 +85,8 @@ class datadoers {
                 if ($getUsrRS->rowCount() === 1) { 
                     //CHECK PRESENT LOC
                     $getUsr = $getUsrRS->fetch(PDO::FETCH_ASSOC);
-                    $dta = $getUsr['presentinstitution'];
                     if ($getUsr['presentinstitution'] !== $pdta['presentinstitution']) { 
-                        $allowData = 0;
+                      $allowData = 0;
                     }
                 } else { 
                     $allowData = 0;
@@ -98,19 +97,56 @@ class datadoers {
           }
       }
       
-      //CHECK DATE FORMAT AND VALID 
+      //TODO: CHECK DATE FORMAT AND VALID 
       
       if ($allowData === 1) {
           
-         $dta = $pdta['requesteddate'];
+          //$dta = $pdta['requesteddate'];
+          $sql = "select ifnull(bslist.pbiosampledspnbr,'ERROR') as pbiosampledspnbr, ifnull(bslist.procinstitution,'ERROR') as procuringinstitution, ifnull(bslist.bslinkage,'ERROR') as pbiosamplelink, ifnull(bslist.timeprocured,'') as timeprocured, ifnull(bslist.inputby,'') as technician, bslist.migrated, bslist.migratedon, ifnull(ptype.dspvalue,'') as proctype, ifnull(ctype.dspvalue,'') as collecttype, concat(ifnull(dtl.initialmetric,''),' ', ifnull(mtuom.dspvalue,'')) as metuom, ifnull(prpt.dspvalue,'')  as pathologyrpt, concat(ifnull(pxi.pxiAge,''),' ', ifnull(pxi.pxiAgeUOM,'')) as pxiage, ifnull(pxi.pxirace,'') as pxirace, ifnull(pxi.pxigender,'') as pxisex, ifnull(pxi.subjectnumber,'') as subjectnumber, ifnull(pxi.protocolnumber,'') as protocolnumber, ifnull(pxi.InformedConsent,'') as informedconsent, ifnull(desig.specimencategory,'') as specimencategory, trim(concat(ifnull(desig.primarysite,''),' ',if(ifnull(desig.primarysubsite,'') = '','',concat(' (',ifnull(desig.primarysubsite,''),')')),  if( ifnull(desig.siteposition,'') = '','', concat( ' / ', ifnull(desig.siteposition,''))))) as site, trim(concat(ifnull(desig.diagnosis,''), if(ifnull(desig.diagnosismodifier,'')='','', concat(' (',ifnull(desig.diagnosismodifier,''),')')))) as diagnosismodifier, concat(ifnull(desig.metssite,''), if(ifnull(desig.metsdx,'') ='','',concat(' (',ifnull(desig.metsdx,''),')'))) as metsdx, ifnull(unknownmet,'') as unknownmet from (SELECT substr(pbiosample,1,5) as pbiosampledspNbr, fromlocation as procinstitution, pbiosample as bslinkage, ifnull(migrated,0) as migrated, ifnull(date_format(migratedon, '%m/%d/%Y %H:%i'),'') as migratedon, date_format(inputon, '%H:%i') as timeprocured, inputby FROM four.ut_procure_biosample where date_format(inputon,'%Y-%m-%d') = :procdate and fromLocation = :procloc and recordstatus = 2 union SELECT substr(pbiosample,1,5), fromlocation procinstitution, '', ifnull(migrated,0) as migrated, ifnull(date_format(migratedon, '%m/%d/%Y %H:%i'),'') as migratedon, date_format(inputon, '%H:%i') as timeprocured,'' FROM four.ut_procure_biosample where date_format(inputon,'%Y-%m-%d') = :procdateremote and fromLocation <> :proclocremote and recordstatus = 2) as bslist left join (select * from four.ref_procureBiosample_details where activeind = 1) as dtl on bslist.bslinkage = dtl.pbiosample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PROCTYPE') as ptype on dtl.proctype = ptype.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'COLLECTIONT') as ctype on dtl.collectionmethod = ctype.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'METRIC') as mtuom on dtl.initialUOM = mtuom.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') as prpt on dtl.pathreportind = prpt.menuvalue left join (SELECT pbiosample, pxiage, pxirace, pxiageuom, pxigender, subjectnumber, protocolnumber, ic.dspvalue as informedconsent FROM four.ref_procureBiosample_PXI pxi left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INFC') ic on pxi.informedconsent = ic.menuvalue where activeind = 1) as pxi on bslist.bslinkage = pxi.pbiosample left join (SELECT pbiosample , ifnull(speccat,'') as specimencategory, ifnull(primarysite,'') as primarysite , ifnull(primarysubsite,'') as primarysubsite, ifnull(diagnosis,'') as diagnosis , ifnull(diagnosismodifier,'') as diagnosismodifier, ifnull(metssite,'') as metssite , ifnull(metsdx,'') as metsdx , ifnull(siteposition,'') as siteposition, ifnull(systemdiagnosis,'') as systemicdiagnosis , ifnull(classification,'') as classification, ifnull(uni.dspvalue,'') as unknownmet FROM four.ref_procureBiosample_designation desig left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'UNINVOLVEDIND') as uni on desig.unknownMet = uni.menuvalue where activeind = 1) as desig on bslist.bslinkage = desig.pbiosample";
+
+           $rs = $conn->prepare($sql);
+           $rs->execute(array(':procdate' => $pdta['requesteddate'], ':procloc' => $pdta['presentinstitution'], ':procdateremote' => $pdta['requesteddate'], ':proclocremote' => $pdta['presentinstitution']));
+     
+           if ( $rs->rowCount() > 0 ) {
+             $cntr = 0; 
+             while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+               $dta[$cntr]['pbiosample'] = $r['pbiosampledspnbr'];
+               $dta[$cntr]['institution'] = $r['procuringinstitution'];
+               $dta[$cntr]['linkage'] = $r['pbiosamplelink'];
+               $dta[$cntr]['timeprocured'] = $r['timeprocured'];
+               $dta[$cntr]['technician'] = $r['technician'];
+               $dta[$cntr]['migratedind'] = $r['migratedind'];
+               $dta[$cntr]['migratedon'] = $r['migratedon'];
+               $dta[$cntr]['proctype'] = $r['proctype'];
+               $dta[$cntr]['collecttype'] = $r['collecttype'];
+               $dta[$cntr]['metuom'] = $r['metuom'];
+               $dta[$cntr]['prpt'] = $r['pathologyrpt'];
+               $dta[$cntr]['pxiage'] = $r['pxiage'];
+               $dta[$cntr]['pxirace'] = $r['pxirace'];
+               $dta[$cntr]['pxisex'] = $r['pxisex'];
+               $dta[$cntr]['subjectnumber'] = $r['subjectnumber'];
+               $dta[$cntr]['protocolnumber'] = $r['protocolnumber'];
+               $dta[$cntr]['informedconsent'] = $r['informedconsent'];
+               //$dta[$cntr][''] = $r[''];
+               //$dta[$cntr][''] = $r[''];
+
+
+
+
+               $cntr++;
+             }
+             $responseCode = 200;
+           } else { 
+             $responseCode = 404;
+           }
+  
           
-         $responseCode = 200;
       }  else { 
                    
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
-      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => json_encode($dta));
       return $rows;                                
     }
 
