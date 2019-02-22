@@ -242,8 +242,21 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
     
 #presentInst { width: 24vw; } 
 #ddpresentInst { min-width: 24vw; }    
-        
-        
+
+.strthru { position: relative; }
+.strthru::before {content: '';border-bottom: 3px solid rgba({$this->color_bred},1);width: 100%;position: absolute;right: 0;top: 50%;}
+
+.cgelem_bgnbr {  width: 3vw; color: rgba({$this->color_zackgrey},1); font-size: 1.3vh; padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5);}
+.cgelem_instTmeTech {  width: 20vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_proccoltype { width: 8vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_metric { width: 2vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_prpt { width: 3vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_infc { width: 2vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_sbjt { width: 6vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+
+
+.datalbl { font-size: 1vh; font-weight: bold; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 3px; } 
+
 STYLESHEET;
 return $rtnThis; 
 }  

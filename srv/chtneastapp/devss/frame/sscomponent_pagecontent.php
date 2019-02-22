@@ -463,18 +463,18 @@ function collectiongrid($rqststr, $usr) {
         $dta['requesteddate'] = $tdydtev;
         $dta['usrsession'] = session_id();
         $pdta = json_encode($dta);        
-        $rsltdta = callrestapi("POST", dataTree . "/data-doers/collection-grid-results-tbl",serverIdent, serverpw, $pdta);          
+        $rsltdta = json_decode(callrestapi("POST", dataTree . "/data-doers/collection-grid-results-tbl",serverIdent, serverpw, $pdta),true);          
                
         $rtnthis = <<<PAGEHERE
    <table border=0 cellspacing=0 cellpadding=0>
                 <tr><td>
-                     <table border=0><tr><td>{$insmnu}</td><td>{$cGridCalendar}</td><td><table class=tblBtn id=btnRefresh style="width: 6vw;"><tr><td><center>Refresh</td></tr></table></td></tr></table>
+                     <table border=0><tr><td>{$insmnu}</td><td>{$cGridCalendar}</td><td><table class=tblBtn id=btnRefresh style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Refresh</td></tr></table></td></tr></table>
                 </td></tr>
                 <tr><td>
                      <div id=cResultGridHolder>
                      <div id=waitForMe>WAIT</div>
                      <div id=cResults>
-                     {$rsltdta}
+                     {$rsltdta['DATA']}
                      </div>
                      </div>
                      </td></tr>
@@ -2265,8 +2265,8 @@ function bldCGridControlCalendar($tdydtev, $tdydte) {
 <div class=menuHolderDiv>
 <div class=valueHolder>
     <div class=inputiconcontainer>
-    <div class=inputmenuiconholder><i class="material-icons menuDropIndicator">menu</i></div>
-   <input type=hidden id=cGridDateValue value='{$tdydtev}'><input type=text READONLY id=cGridDate class="inputFld" style="width: 18vw;" value='{$tdydte}'>
+    <div class=inputmenuiconholder style="padding: 15px 6px;"><i class="material-icons menuDropIndicator">menu</i></div>
+   <input type=hidden id=cGridDateValue value='{$tdydtev}'><input type=text READONLY id=cGridDate class="inputFld" style="width: 18vw;font-size: 1.3vh; " value='{$tdydte}'>
    </div>    
    </div>
 <div class=valueDropDown style="width: 18vw;"><div id=cGridCalendar>{$fCalendar}</div></div>
@@ -2294,7 +2294,7 @@ function bldUsrAllowInstDrop($usr) {
   $insm .= "</table>";
   
   $insmnu =  "<input type=hidden id=presentInstValue value=\"{$igivendspcode}\">  "
-                              . "<input type=text id=presentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\">";
+                              . "<input type=text id=presentInst READONLY class=\"inputFld\" value=\"{$igivendspvalue}\" style=\"font-size: 1.3vh;\">";
   //$insmnu = "<div class=menuHolderDiv>"
   //                    . "<input type=hidden id=presentInstValue value=\"{$igivendspcode}\">  "
   //                    . "<div class=inputiconcontainer>"
