@@ -243,19 +243,54 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
 #presentInst { width: 24vw; } 
 #ddpresentInst { min-width: 24vw; }    
 
+.displayRows:nth-child(even) td { background: rgba({$this->color_lightgrey},1); }        
+
+.rowColorA  { background: rgba({$this->color_white},1); } 
+.rowColorB  { background: rgba({$this->color_lightgrey},1); } 
+
+#waitForMe {display: none; }    
+        
 .strthru { position: relative; }
 .strthru::before {content: '';border-bottom: 3px solid rgba({$this->color_bred},1);width: 100%;position: absolute;right: 0;top: 50%;}
 
-.cgelem_bgnbr {  width: 3vw; color: rgba({$this->color_zackgrey},1); font-size: 1.3vh; padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5);}
-.cgelem_instTmeTech {  width: 20vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
-.cgelem_proccoltype { width: 8vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
-.cgelem_metric { width: 2vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
-.cgelem_prpt { width: 3vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
-.cgelem_infc { width: 2vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
-.cgelem_sbjt { width: 6vw; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.lockdsp { width: 1vw; text-align: center;  }
+.cgelem_bgnbr {  width: 4vw; color: rgba({$this->color_zackgrey},1); font-size: 2.5vh; padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); text-align: center;}
+.cgelem_instTmeTech {  width: 15vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_proccoltype { width: 5vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_metric { width: 5vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_prpt { width: 4vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_infc { width: 4vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_sbjt { width: 6vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_prcl { width: 6vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_age { width: 6vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_race { width: 10vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_sex { width: 4vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_spcat { width: 12vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_site { width: 20vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_dx { width: 20vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_unk { width: 8vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.cgelem_metsf { width: 20vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 3px; border-left: 1px solid rgba({$this->color_dblue},.5); border-bottom: 1px solid rgba({$this->color_dblue},.5); }
+.topper { border-top: 1px solid rgba({$this->color_dblue},.5); }
 
+.datalbl { font-size: 1.3vh; font-weight: bold; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 3px; } 
+.endcell {border-right: 1px solid rgba({$this->color_dblue},.5); }
 
-.datalbl { font-size: 1vh; font-weight: bold; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 3px; } 
+.segmentHeader { font-size: 1.5vh; font-weight: bold; color: rgba({$this->color_darkgrey},.5); }
+.segLbl { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); border-bottom: 1px solid rgba({$this->color_darkgrey},.5); padding: 4px; }
+
+.cgsgelem_label { width: 7vw; padding: 4px;  font-size: 1.5vh; border-left: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: 1px solid rgba({$this->color_darkgrey},.5); }
+.cgsgelem_hpr  { width: 1vw; padding: 4px;  font-size: 1.5vh; border-left: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: 1px solid rgba({$this->color_darkgrey},.5); text-align: center; }
+.cgsgelem_qty  { width: 1vw; padding: 4px;  font-size: 1.5vh; border-left: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: 1px solid rgba({$this->color_darkgrey},.5); text-align: right; }
+.cgsgelem_prp { width: 25vw; padding: 4px;  font-size: 1.5vh; border-left: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: 1px solid rgba({$this->color_darkgrey},.5); }
+.cgsgelem_con { width: 10vw; padding: 4px;  font-size: 1.5vh; border-left: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: 1px solid rgba({$this->color_darkgrey},.5); }
+.cgsgelem_hp { width: 4vw; padding: 4px;  font-size: 1.5vh; border-left: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: 1px solid rgba({$this->color_darkgrey},.5);  text-align: right; }
+.cgsgelem_met { width: 2vw; padding: 4px;  font-size: 1.5vh; border-left: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: 1px solid rgba({$this->color_darkgrey},.5);  text-align: right; }
+.cgsgelem_from { width: 5vw; padding: 4px;  font-size: 1.5vh; border-left: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: 1px solid rgba({$this->color_darkgrey},.5);  text-align: right; }
+.cgsgelem_ass { width: 25vw; padding: 4px;  font-size: 1.5vh; border-left: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: 1px solid rgba({$this->color_darkgrey},.5); }
+.cgsgelem_tme { width: 8vw; padding: 4px;  font-size: 1.5vh; border-left: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: 1px solid rgba({$this->color_darkgrey},.5); }
+.cgsgendcap { border-right: 1px solid rgba({$this->color_darkgrey},.5); }
+
+.segmentHolderTbl { margin-bottom: 4vh; }
 
 STYLESHEET;
 return $rtnThis; 

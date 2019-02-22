@@ -50,81 +50,100 @@ class datadoers {
 
       if ( (int)$cgriddta['statusCode'] === 200 ) { 
           //BUILD TABLE
-          //[{\"segmentlist\":[{\"pbiosample\":85067,\"minlbl\":\"001\",\"segdsplbl\":\"001\",\"dspqty\":\"1\",\"prp\":\"PB\",\"prpmet\":\"FFPE\",\"groupingid\":\"Nr5JbeS5ddyTCjyQmzRI\",\"hrpost\":\".25\",\"metric\":\".8\",\"shortuom\":\"g\",\"longuom\":\"Grams\",\"prepmethod\":\"Paraffin Block\",\"prpdetail\":\"Formalyn Fixed Paraffin Embedded\",\"containercode\":\"\",\"container\":\"\",\"cutfromblockid\":\"\",\"hprind\":1,\"procuredat\":\"HUP\",\"procuredby\":\"proczack\",\"assigndspname\":\"BANK\",\"assigninvestid\":\"BANK\",\"assignrequestid\":\"\",\"voidind\":0,\"voidreason\":\"\",\"proctime\":\"07:50 (02\\\/20\\\/2019)\"},
-
           $cgrid = json_decode($cgriddta['data']['DATA'], true); 
-//         $inner .= "<tr><td colspan=10>{$cgriddta['data']['DATA']}</td></tr>"; 
        $cntr = 0;
+       $rowControl = 0;
        foreach ($cgrid as $ky => $vl) {
-  
          $tchn = ( trim($vl['technician']) === "" ) ? "" : " / {$vl['technician']}";
          $inst = ( trim($vl['dspinstitution']) === "") ? "" : "{$vl['dspinstitution']} ";
-         $lock = ( (int)$vl['migratedind'] === 0 && $vl['linkage'] !== "" ) ? "UNL" : "LCK";
+         $lock = ( (int)$vl['migratedind'] === 0 && $vl['linkage'] !== "" ) ? "lock_open" : "lock";
          $void = ( (int)$vl['voidind'] === 1) ? " strthru" : "";
-         $selector = ( trim($vl['selector']) === "" ) ? "" : " onclick = \"alert('" . cryptservice($vl['selector'],'e') . "');\" ";
-         $coltype = ( trim($vl['collecttype']) === "" ) ? "" : " ({$vl['collecttype']})";
-
-
-
-
+         $selector = ( trim($vl['selector']) === "" ) ? "" : " onclick = \"navigateSite('procure-biosample/" . cryptservice($vl['selector'],'e') . "');\" ";
+         $sbj = ( trim($vl['subjectnumber']) === "" ) ? "" : "{$vl['subjectnumber']} / ";
+         $proc = ( trim($vl['proctype']) === "") ? "" : "{$vl['proctype']} /";
+         $coltype = ( trim($vl['collecttype']) === "" ) ? "" : "{$vl['collecttype']}";
+        $pr = ( trim($vl['prpt']) === "") ? "" : "{$vl['prpt']} /";
+        $rc = ( trim($vl['pxirace']) === "") ? "" : " / {$vl['pxirace']}";
+        $sx = ( trim($vl['pxisex']) === "") ? "" : " / {$vl['pxisex']}";
+        $colmet = ( trim($sgvl['proctime']) === "") ? "" : "{$sgvl['proctime']}";
+      $segTable = "";
+        if ( count($vl['segmentlist']) === 0) { 
+        } else { 
+          $segTable = "<table border=0 cellspacing=0 class=segmentHolderTbl><tr><td colspan=10 class=segmentHeader>SEGMENTS</td></tr><tr><td class=segLbl>Segment Label</td><td class=segLbl>HPR</td><td class=segLbl>QTY</td><td class=segLbl>Preparation</td><td class=segLbl>Container</td><td class=segLbl>Hours Post</td><td class=segLbl>Metric</td><td class=segLbl>Cut From</td><td class=segLbl>Assignment</td><td class=segLbl>Collection Time</td></tr>";
+          foreach ($vl['segmentlist'] as $sgky => $sgvl) { 
+            $prpd = ( trim($sgvl['prpdetail']) === "" ) ? "" : " / {$sgvl['prpdetail']}"; 
+            $void = ( (int)$sgvl['voidind'] === 1) ? " strthru" : "";
+            $hpr = ( (int)$sgvl['hprind'] === 1) ? "Y" : "N";
+            $ass = ( strtolower(substr(trim($sgvl['assigninvestid']),0,3)) === "inv") ?  "{$sgvl['assigndspname']} ({$sgvl['assigninvestid']} / {$sgvl['assignrequestid']})" : strtoupper(trim($sgvl['assigninvestid']));
+            $segTable .= <<<SGTBL
+                   <tr>
+                       <td class="cgsgelem_label {$void}">{$sgvl['pbiosample']}T{$sgvl['segdsplbl']}</td>
+                       <td class="cgsgelem_hpr {$void}">{$hpr}</td>
+                       <td class="cgsgelem_qty {$void}">{$sgvl['dspqty']}</td>
+                       <td class="cgsgelem_prp {$void}">{$sgvl['prepmethod']}{$prpd}</td> 
+                       <td class="cgsgelem_con {$void}">{$sgvl['container']}</td> 
+                       <td class="cgsgelem_hp {$void}">{$sgvl['hrpost']}</td> 
+                       <td class="cgsgelem_met {$void}">{$sgvl['metric']}{$sgvl['shortuom']}</td>                        
+                       <td class="cgsgelem_from {$void}">{$sgvl['cutfromblockid']}</td> 
+                       <td class="cgsgelem_ass {$void}">{$ass}</td>
+                       <td class="cgsgelem_tme cgsgendcap {$void}">{$colmet}</td>
+                  </tr>
+SGTBL;
+          }
+          $segTable .= "</table>";
+        }
+        $rowC = ( $rowControl === 0 ) ?  "rowColorA" : "rowColorB";
+        
          $inner .= <<<BSLINE
-<tr><td {$selector}>
-
-<table border=0 cellpadding=0 cellspacing=0>
-<tr>
-  <td rowspan=4>{$lock}</td>
-  <td class="datalbl cgelem_bgnbr ">Biogroup #</td>
-  <td class="datalbl cgelem_instTmeTech ">Institution / Collection Time / Technician</td>
-  <td class="datalbl cgelem_proccoltype ">Procedure (Collection Type)</td>
-  <td class="datalbl cgelem_metric ">Metric</td>
-  <td class="datalbl cgelem_prpt ">Path Rpt</td>
-  <td class="datalbl cgelem_infc ">Consent</td>
-  <td class="datalbl cgelem_infc ">Subject #</td>
+<tr class="displayRows" {$selector} >
+  <td class="lockdsp topper {$rowC}"><i class="material-icons">{$lock}</i></td>
+  <td class="cgelem_bgnbr{$void} topper {$rowC}">{$vl['pbiosample']}&nbsp;</td>
+  <td class="cgelem_instTmeTech{$void} topper {$rowC}">{$vl['timeprocured']}{$tchn}<br>{$inst}&nbsp;</td>
+  <td class="cgelem_proccoltype{$void} topper {$rowC}">{$proc}<br>{$coltype}&nbsp;</td>
+  <td class="cgelem_spcat{$void} topper {$rowC}">{$vl['specimencategory']}&nbsp;</td>
+  <td class="cgelem_site{$void} topper {$rowC}">{$vl['site']}&nbsp;</td>
+  <td class="cgelem_dx{$void} topper {$rowC}">{$vl['diagnosis']}&nbsp;</td>
+  <td class="cgelem_unk{$void} topper {$rowC}">{$vl['unknownmet']}&nbsp;</td>
+  <td class="cgelem_metsf{$void} topper {$rowC}">{$vl['metsdx']}&nbsp;</td>
+  <td class="cgelem_metric{$void} topper {$rowC}">{$vl['metuom']}&nbsp;</td>
+  <td class="cgelem_prpt{$void} topper {$rowC}">{$pr}<br>{$vl['informedconsent']}&nbsp;</td>
+  <td class="cgelem_sbjt{$void} topper {$rowC}">{$sbj}<br>{$vl['protocolnumber']}&nbsp;</td>
+  <td class="cgelem_age{$void} topper {$rowC} endcell">{$vl['pxiage']}  {$rc} {$sx}&nbsp;</td>
 </tr>
-<tr>
-  
-  <td class="cgelem_bgnbr{$void}">{$vl['pbiosample']}</td>
-  <td class="cgelem_instTmeTech{$void}">{$inst} / {$vl['timeprocured']}{$tchn}</td>
-  <td class="cgelem_proccoltype{$void}">{$vl['proctype']}{$coltype}</td>
-  <td class="cgelem_metric{$void}">{$vl['metuom']}</td>
-  <td class="cgelem_prpt{$void}">{$vl['prpt']}</td>
-  <td class="cgelem_infc{$void}">{$vl['informedconsent']}</td>
-  <td class="cgelem_sbjt{$void}">{$vl['subjectnumber']}</td>
-  <td class="{$void}">{$vl['protocolnumber']}</td>
-  <td class="{$void}">{$vl['pxiage']}</td>
-  <td class="{$void}">{$vl['pxirace']}</td>
-  <td class="{$void}">{$vl['pxisex']}</td>
-</tr>
-<tr>
-<td colspan=12>
-
-<table>
-<tr>
-  <td class="{$void}">{$vl['specimencategory']}</td>
-  <td class="{$void}">{$vl['site']}</td>
-  <td class="{$void}">{$vl['diagnosis']}</td>
-  <td class="{$void}">{$vl['unknownmet']}</td>
-  <td class="{$void}">{$vl['metsdx']}</td>
-</tr>
-</table>
-
-</td></tr>
-
-<tr><td colspan=12>
-
-</td></tr>
-
-</table>
-
-
+<tr><td colspan=15 class="{$rowC}">
+  <table border=0 cellspacing=0 >
+  <tr>
+      <td style="width: 3vw;">&nbsp;</td>
+      <td>{$segTable}</td>          
+   </tr></table>
 </td></tr>
 BSLINE;
          $cntr++;
+         if ($rowControl === 0) { 
+             $rowControl = 1; 
+         } else { 
+             $rowControl = 0;
+         }
        }
          
        $dta = <<<BSSEGTBL
-<table border=0>
-<tr><td colspan=10>Total Biogroups: {$cntr} </td></tr>
+<table border=0 cellspacing=0 id=collectionGridDspTbl>
+<tr><td colspan=15 align=right>Total Biogroups: {$cntr} </td></tr>
+<tr>
+<td class="datalbl">&nbsp;</td>
+  <td class="datalbl cgelem_bgnbr " valign=top>Biogroup #</td>
+  <td class="datalbl cgelem_instTmeTech " valign=top>Collection Time / Technician<br>Institution</td>
+  <td class="datalbl cgelem_proccoltype " valign=top>Procedure /<br>Collection Type</td>
+  <td class="datalbl cglem_spcat">Specimen Category</td>
+  <td class="datalbl cglem_site">Site (Sub-Site) / Position</td>
+  <td class="datalbl cglem_dx">Diagnosis (Modifier)</td>
+  <td class="datalbl cglem_unk">Unknown MET/NAT</td>
+  <td class="datalbl cglem_metsf">METS From</td>
+  <td class="datalbl cgelem_metric " valign=top>Initial Metric</td>
+  <td class="datalbl cgelem_prpt " valign=top>Path Rpt /<br>Consent</td>
+  <td class="datalbl cgelem_sbjt " valign=top>Subject # /<br>Protocol #</td>
+  <td class="datalbl cgelem_age endcell" valign=top>Donor Age / Race / Sex</td>
+</tr>
 {$inner}
 </table>
 BSSEGTBL;
