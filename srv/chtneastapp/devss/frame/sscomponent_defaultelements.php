@@ -10,6 +10,8 @@ if ($whichpage !== "login") {
   $tt = treeTop;    
   $usrProfile = buildUserProfileTray( $whichUsr ); 
   $directory = buildUserDirectory();
+  $vocab = buildVocabSearch();
+
   $thisAcct = <<<THISMENU
 
 <div id=appcard_useraccount class=appcard> 
@@ -28,7 +30,12 @@ if ($whichpage !== "login") {
  <div id=appcard_chtndirectory class=appcard>
  {$directory} 
  </div>
- 
+
+<div id=appcard_vocabsearch class=appcard>
+{$vocab}
+</div>
+
+
 THISMENU;
 }
 return $thisAcct;    
@@ -360,6 +367,25 @@ PROFTRAY;
 
 return $profTray;
 
+}
+
+function buildVocabSearch() { 
+
+$rtnthis = <<<VOCABSRCH
+<div id=vocsrchHolderDiv>
+  <div id=vsclsBtnHold><table width=100%><tr><td></td><td id=closeBtn onclick="openAppCard('appcard_vocabsearch');">&times;</td></tr></table></div>   
+  <div id=vocsrchTitle>CHTN Diagnosis-Vocabulary Search</div> 
+<table width=100% cellspacing=0 cellpadding=0>
+<tr><td class=vocsrchFldLabel>Search Term</td></tr>
+<tr><td><input type=text id=vocabSrchTermFld></td></tr>
+</table>
+<div id=srchVocRsltDisplay>
+
+
+</div>
+</div>
+VOCABSRCH;
+  return $rtnthis;
 }
 
 function buildUserDirectory() { 

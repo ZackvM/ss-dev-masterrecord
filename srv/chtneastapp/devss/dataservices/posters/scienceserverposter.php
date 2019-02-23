@@ -33,7 +33,35 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+    function searchvocabularyterms ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 200;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      //TODO:  DO I NEED TO CHECK THE USER HERE OR IS THIS LOW LEVEL ENOUGH TO LET IT RUN FREE 
+      $pdta = json_decode($passdata, true);
+      if ( trim($pdta['srchterm']) === "") { 
+        $dta = "<table><tr><td><h3>Search Term Missing</h3></td></tr></table>";
+      } else { 
+          $rtnArr = searchVocabByTerm( trim($pdta['srchterm']) );
+          if ( count($rtnArr) > 0 ) { 
+
+
+          } else { 
+            $dta = "<table><tr><td><h3>No Vocabulary Terms Found Matching \"" . trim($pdta['srchterm']) . "\"</h3></td></tr></table>";
+          }
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows; 
+    }    
     
     function collectiongridresultstbl ( $request, $passdata ) { 
       $rows = array(); 
@@ -46,8 +74,6 @@ class datadoers {
       require(serverkeys . "/sspdo.zck");
       
       $cgriddta = self::collectiongridresults( $request, $passdata);
-//      $dta = $cgriddta['statusCode'] . " __ " . $cgriddta['data']['DATA'];
-
       if ( (int)$cgriddta['statusCode'] === 200 ) { 
           //BUILD TABLE
           $cgrid = json_decode($cgriddta['data']['DATA'], true); 
@@ -4203,6 +4229,16 @@ function nextbgsegmentnumber($whichBG) {
   $sg = $sgR->fetch(PDO::FETCH_ASSOC); 
 
   return (((int)$sg['seglbl']) + 1); 
+}
+
+function searchVocabByTerm($whichterm) { 
+  $rtnArr = array(); 
+  if ( trim($whichterm) !== "" ) {
+      //SEARCH
+      //$rtnArr[] = array("speccat" => "MALIGNANT");
+  } else { 
+  } 
+  return $rtnArr;
 }
 
 function zeroOut($var){

@@ -206,8 +206,29 @@ document.addEventListener('DOMContentLoaded', function() {
       } 
      }, false);
   }
+
+  if (byId('vocabSrchTermFld')) { 
+    byId('vocabSrchTermFld').addEventListener('keyup', function() {
+      if (byId('vocabSrchTermFld').value.trim().length > 2) { 
+        var obj = new Object(); 
+        obj['srchterm'] = byId('vocabSrchTermFld').value.trim();
+        var passdta = JSON.stringify(obj); 
+        var mlURL = "/data-doers/search-vocabulary-terms";
+        universalAJAX("POST",mlURL,passdta,answerSearchVocabulary,0);
+      } else { 
+        byId('srchVocRsltDisplay').innerHTML = "";
+      }
+    }, false);
+  }
   
 }, false);
+
+
+function answerSearchVocabulary(rtnData) { 
+  if (byId('srchVocRsltDisplay')) { 
+    byId('srchVocRsltDisplay').innerHTML = JSON.stringify( rtnData );
+  }
+}
 
 function answerUpdateMyPresentInstitution(rtnData) { 
    if (parseInt(rtnData['responseCode']) !== 200) { 
@@ -296,6 +317,14 @@ function openAppCard(whichcard) {
   
   if ( parseInt(byId(whichcard).style.left) > 100   ) { 
      byId(whichcard).style.left =  "50vw";
+
+     //Specialized Controls
+     if (whichcard === 'appcard_vocabsearch') {
+       if (byId('vocabSrchTermFld')) { 
+         byId('vocabSrchTermFld').focus();
+       }
+     }
+
   } else { 
      byId(whichcard).style.left =  "101vw";
   }
@@ -838,6 +867,10 @@ document.addEventListener('DOMContentLoaded', function() {
        
     if (byId('btnPRCSave')) { 
       byId('btnPRCSave').addEventListener('click', function() { createInitialBG(); }, false);   
+    }
+
+    if (byId('btnPBCVocabSrch')) { 
+      byId('btnPBCVocabSrch').addEventListener('click', function() { openAppCard('appcard_vocabsearch'); } , false);   
     }
 
     if (byId('fldPRCDXOverride')) {

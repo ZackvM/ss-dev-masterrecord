@@ -101,6 +101,15 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 #hlpByLine { width: 100%; font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_darkgreen},1); text-align: right; }
 #hlpText { width: 100%; font-family: Roboto; font-size: 1.8vh; line-height: 1.6em; text-align: justify; padding: 1vh 0 0 0; }
 
+#vocsrchHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
+#vsclsBtnHold #closeBtn { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
+#vsclsBtnHold #closeBtn:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
+#vocsrchTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
+.vocsrchFldLabel {font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_zackgrey},1); padding-top: 1vh; white-space: nowrap; }
+#vocabSrchTermFld {width: 47vw; box-sizing: border-box; }
+#srchVocRsltDisplay { width: 47vw; height: 70vh; overflow: auto; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); box-sizing: border-box; margin-top: 1vh; }
+
+
 .sidebarprofilepicture { height: 15.5vh; }
 .circularOverlay { position: relative; height: 15vh; width: 8vw; overflow: hidden; border-radius: 50%; }
 

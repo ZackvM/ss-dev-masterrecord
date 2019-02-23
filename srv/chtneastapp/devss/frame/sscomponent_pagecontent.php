@@ -3751,6 +3751,7 @@ function bldBiosampleProcurement($usr) {
 </td></tr>
 </table> 
 </div>
+
 HOLDINGTBL;
     }
     return $holdingTbl;
