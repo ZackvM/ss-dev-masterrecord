@@ -1609,6 +1609,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
 }, false); 
 
+function doBGVoid() { 
+alert('VOIDER');
+
+}
+
 function sendVoidPreprocess() {
   if (byId('bgSelectorCode')) { 
     var obj = new Object(); 

@@ -2408,11 +2408,21 @@ ERRORSCREEN;
 
   if ($errorInd === 0) {
       //VOID BIOGROUP {$ency} {$bgdta['DATA']['pbiosample']} {$bgdta['DATA']['fromlocation']}
-    $voidreasons = callrestapi("GET", dataTree . "/globalmenu/bg-pristine-void-reasons",serverIdent,serverpw);
+    $voidreasons = json_decode(callrestapi("GET", dataTree . "/globalmenu/bg-pristine-void-reasons",serverIdent,serverpw),true);
+    $vreason = "<table border=0 class=menuDropTbl>";
+    foreach ($voidreasons['DATA'] as $vreasonval) {
+      $vreason .= "<tr><td onclick=\"fillField('fldBGVReason','{$vreasonval['lookupvalue']}','{$vreasonval['menuvalue']}');\" class=ddMenuItem>{$vreasonval['menuvalue']}</td></tr>";
+    }
+    $vreason .= "</table>";
+
     $rtnThis = <<<RTNTHIS
 
-    <table border=1><tr><td colspan=2>This will void biogroup number {$bgdta['DATA']['pbiosample']} and all child segments.  This will take the biogroup out of the normal CHTN work process (it will NOT appear in the master-record).  You must provide a reason below.</td></tr>   
-    <tr><td>{$voidreasons}</td></tr>
+    <table border=0><tr><td colspan=2 style="width: 25vw; font-size: 1.3vh; line-height: 1.2em; text-align: justify; padding: 1vh .8vw; box-sizing: border-box;">This will void biogroup number &laquo;{$bgdta['DATA']['pbiosample']}&raquo; and all child segments.  This will take the biogroup out of the normal CHTN work process (i.e. it will NOT appear in the master-record).  You must provide a reason below.</td></tr>  
+    <tr><td class=fldLabel>Reason For Void</td></tr> 
+    <tr><td><input type=hidden id=fldBGVency value='{$ency}'><div class=menuHolderDiv><input type=hidden id=fldBGVReasonValue><input type=text id=fldBGVReason READONLY class="inputFld" style="width: 25vw;"><div class=valueDropDown style="min-width: 25vw;">{$vreason}</div></div></td></tr>
+    <tr><td class=fldLabel>Further Explanation</td></tr>
+    <tr><td><TEXTAREA id=fldBGVText style="width: 25vw; box-sizing: border-box; padding: 10px; font-size: 1.3vh;height: 15vh; "></textarea></td></tr>
+    <tr><td align=right>  <table class=tblBtn id=btnSaveSeg style="width: 6vw;" onclick="doBGVoid();"><tr><td style=" font-size: 1.1vh;"><center>Void {$bgdta['DATA']['pbiosample']}</td></tr></table> </td></tr>
     </table>
 
 
