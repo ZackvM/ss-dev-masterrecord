@@ -971,6 +971,10 @@ function hprrequestcode($whichobj, $rqst) {
 
 class globalMenus {
 
+    function bgpristinevoidreasons() { 
+      return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'DEVIATIONREASON_BGPRISTINEVOID' and dspind = 1 order by dsporder";
+    }
+
     function cellcarriers() { 
       return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'CELLCARRIER' and dspind = 1 order by dsporder";
 

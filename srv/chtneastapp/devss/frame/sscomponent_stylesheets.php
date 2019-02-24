@@ -109,6 +109,13 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 #vocabSrchTermFld {width: 47vw; box-sizing: border-box; }
 #srchVocRsltDisplay { width: 47vw; height: 70vh; overflow: auto; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); box-sizing: border-box; margin-top: 1vh; }
 
+#vocabularyDisplayTable { width: 100%;   }
+#vocabularyDisplayTable tr:nth-child(even) { background: rgba({$this->color_lightgrey},1); }
+#vocabularyDisplayTable .headercell { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); font-size: 1.3vh; font-weight: bold; padding: .5vh .5vw;    }
+#vocabularyDisplayTable .datacell { font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .5vw; border-bottom: 1px solid rgba({$this->color_darkgrey},.5); border-left: 1px solid rgba({$this->color_darkgrey},.5); }
+#vocabularyDisplayTable .vocDspSpeccat { width: 8vw; }
+#vocabularyDisplayTable .vocDspSite { width: 10vw; }
+#vocabularyDisplayTable .vocDspSSite { width: 8vw; }
 
 .sidebarprofilepicture { height: 15.5vh; }
 .circularOverlay { position: relative; height: 15vh; width: 8vw; overflow: hidden; border-radius: 50%; }
@@ -239,6 +246,9 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 .usrAccountTitle { font-size: 2vh; font-weight: bold; color: rgba({$this->color_dblue},1); }
 
 .helppicturecaption { font-size: 1.1vh; color: rgba({$this->color_darkgrey},1); font-weight: bold; font-style: italics; }
+
+
+
 STYLESHEET;
 
 //FOR CHECKBOXES AND RADIO BUTTONS https://www.w3schools.com/howto/howto_css_custom_checkbox.asp
@@ -523,8 +533,6 @@ textarea { font-size: 1.3vh; }
 .openDivIndicator { color: rgba({$this->color_darkgreen},1);  }
 .openDivIndicator:hover { cursor: pointer; color: rgba({$this->color_bred},1); }
 
-
-
 #procurementScreenSegmentList { width: 100%; }
 #procurementScreenSegmentList thead th { font-size: 1.3vh; color: rgba({$this->color_dblue},1);  padding: 0 0 0 3px; text-align: left; font-weight: bold; border-bottom: 1px solid rgba({$this->color_darkgrey},1); }
 #procurementScreenSegmentList tbody td { font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); padding: .4vh 0 .4vh 3px; }
@@ -544,7 +552,8 @@ textarea { font-size: 1.3vh; }
 
 #fldSEGSGComments { width: 100%; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw 0 .3vw; text-align: justify;  }
 
-
+#bgvoiderrortbl { width: 40vw; } 
+#bgvoiderrortbl tr td { text-align: center; font-size: 1.8vh; color: rgba({$this->color_bred},1); font-weight: bold; padding: 3vh 3vw; }
 
 STYLESHEET;
 return $rtnThis;

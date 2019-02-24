@@ -34,6 +34,38 @@ function __construct() {
 
 class datadoers {
 
+    function bgchecksbeforevoid ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 200;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+
+      $bgselector = cryptservice($pdta['bgency'],'d',false);
+      $chkSQL = "SELECT pbiosample, fromlocation FROM four.ut_procure_biosample where selector = :selector and recordstatus = 2 and ifnull(voidind,0) = 0 and ifnull(migrated,0) = 0 and timestampdiff(hour, inputon, now()) < 12";
+      $chkRS = $conn->prepare($chkSQL);
+      $chkRS->execute(array(':selector' => $bgselector));
+   
+      if ( $chkRS->rowCount() < 1) { 
+          $responseCode = 404;
+          $msgArr = "404";
+      } else { 
+          $bg = $chkRS->fetch(PDO::FETCH_ASSOC);
+          $dta = $bg;
+          $responseCode = 200;
+      } 
+
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows; 
+    }
+
     function searchvocabularyterms ( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 
@@ -49,14 +81,21 @@ class datadoers {
         $dta = "<table><tr><td><h3>Search Term Missing</h3></td></tr></table>";
       } else { 
           $rtnArr = searchVocabByTerm( trim($pdta['srchterm']) );
-          if ( count($rtnArr) > 0 ) { 
+          if ( count($rtnArr) > 0 ) {
+
+
+              $dta = "<table border=0 cellspacing=0 cellpadding=0 id=vocabularyDisplayTable><tr><td class=\"headercell \">Specimen<br>Category</td><td class=\"headercell \">Site</td><td class=\"headercell \">Sub-Site</td><td class=\"headercell \">Diagnosis \ Modifier </td></tr>"; 
+              foreach ( $rtnArr as $ky => $vl) {
+                $dx = explode(" \ ", $vl['diagnosis'] );
+                $dta .= "<tr><td class=\"datacell vocDspSpeccat\" valign=top>" . strtoupper($vl['specimencategory']) . "</td><td class=\"datacell vocDspSite\" valign=top>" . strtoupper($vl['site']) . "</td><td class=\"datacell vocDspSSite\" valign=top>" . strtoupper($vl['subsite']) . "</td><td class=\"datacell\" valign=top>" . strtoupper($vl['diagnosis']) . "</td></tr>";    
+              }     
+              $dta .= "</table>";
 
 
           } else { 
             $dta = "<table><tr><td><h3>No Vocabulary Terms Found Matching \"" . trim($pdta['srchterm']) . "\"</h3></td></tr></table>";
           }
       }
-
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -842,6 +881,22 @@ PAGERHERE;
 
       $dta = array('pagecontent' => $pager );
       ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;      
+    }
+
+    function preprocessvoidbg($request, $passdata) { 
+      $responseCode = 400; 
+      $msg = "BAD REQUEST";
+      $msgArr = array();
+      $itemsfound = 0;
+    
+      $dta = array('pagecontent' => bldDialogGetter('dialogVoidBG',$passdata) );
+
+      ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -4232,10 +4287,18 @@ function nextbgsegmentnumber($whichBG) {
 }
 
 function searchVocabByTerm($whichterm) { 
+  require(serverkeys . "/sspdo.zck");
   $rtnArr = array(); 
   if ( trim($whichterm) !== "" ) {
       //SEARCH
-      //$rtnArr[] = array("speccat" => "MALIGNANT");
+      $sql = "SELECT vocabid, ifnull(specimenCategory,'') as specimencategory, ifnull(site,'') as site, ifnull(subsite,'') as subsite, ifnull(diagnosis,'') as diagnosis FROM four.sys_master_menu_vocabulary where 1=1 and ifnull(specimenCategory,'') <> '' and match(specimenCategory,site, Subsite, Diagnosis) against(:srchtrm IN BOOLEAN MODE) order by specimencategory, site, subsite, diagnosis";
+      $rs = $conn->prepare($sql); 
+      $rs->execute(array(':srchtrm' => "{$whichterm}*"  ));
+      if ( $rs->rowCount() > 0 ) { 
+        while ( $r = $rs->fetch(PDO::FETCH_ASSOC) ) { 
+          $rtnArr[] = $r;
+        }
+      } 
   } else { 
   } 
   return $rtnArr;

@@ -225,8 +225,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 function answerSearchVocabulary(rtnData) { 
-  if (byId('srchVocRsltDisplay')) { 
-    byId('srchVocRsltDisplay').innerHTML = JSON.stringify( rtnData );
+  if (byId('srchVocRsltDisplay')) {
+    if ( parseInt(rtnData['responseCode']) === 200 ) {
+      var tbl = JSON.parse( rtnData['responseText'] ); 
+      byId('srchVocRsltDisplay').innerHTML = tbl['DATA'];
+    }
   }
 }
 
@@ -1593,20 +1596,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (byId('btnPBCLock')) { 
-      byId('btnPBCLock').addEventListener('click', function() { alert('This will release this biogroup to the coordinators to work with (but not yet)'); }, false);          
+      byId('btnPBCLock').addEventListener('click', function() { alert('LOCK'); }, false);         
     }
 
     if (byId('btnPBCVoid')) { 
-      byId('btnPBCVoid').addEventListener('click', function() { alert('This will void this biogroup (but not yet)'); }, false); 
+      byId('btnPBCVoid').addEventListener('click', function() { sendVoidPreprocess(); }, false); 
     }
 
     if (byId('btnPBCSegment')) { 
       byId('btnPBCSegment').addEventListener('click', function() { addSegments(); }, false); 
     }
     
-   
-
 }, false); 
+
+function sendVoidPreprocess() {
+  if (byId('bgSelectorCode')) { 
+    var obj = new Object(); 
+    obj['bgselector'] = byId('bgSelectorCode').value;
+    var passeddata = JSON.stringify(obj);
+    var mlURL = "/data-doers/preprocess-void-bg";
+    universalAJAX("POST",mlURL,passeddata,answerPreprocessVoid,2);
+  }
+}
+
+function answerPreprocessVoid(rtnData) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("Void BG ERROR:\\n"+dspMsg);
+   } else { 
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = "-25vw";
+       byId('standardModalDialog').style.left = "50%";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "15vh";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+   }       
+
+}
 
 function clearGrid() { 
    //TODO:  RESET DEFAULT FIELD VALUES

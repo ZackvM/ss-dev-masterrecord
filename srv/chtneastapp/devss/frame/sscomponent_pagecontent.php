@@ -29,7 +29,13 @@ function sysDialogBuilder($whichdialog, $passedData) {
         //$footerBar = "DONOR RECORD";
         $innerDialog = bldQuickPRUpload( $passedData );
         break;
-      
+
+      case 'dialogVoidBG':
+        $titleBar = "Void Biogroup";
+        //$footerBar = "DONOR RECORD";
+        $innerDialog = bldDialogVoidBG( $passedData );
+      break;
+
       case 'dialogAddBGSegments':
         $titleBar = "Add Biogroup Segments";
         //$footerBar = "DONOR RECORD";
@@ -1883,14 +1889,14 @@ switch ($whichpage) {
 
 case 'procurebiosampleedit':
 $pxibtn = "";
-    //<!-- <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPRCSaveEdit border=0><tr><td><!--ICON //--></td><td>Save Edit</td></tr></table></td> //-->
+//<!-- <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPRCSaveEdit border=0><tr><td><!--ICON //--></td><td>Save Edit</td></tr></table></td> //-->
+//<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVocabSrch border=0><tr><td><!--ICON //--></td><td>Vocabulary Search</td></tr></table></td>
 $innerBar = <<<BTNTBL
 <tr>
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>       
-<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVocabSrch border=0><tr><td><!--ICON //--></td><td>Vocabulary Search</td></tr></table></td>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCSegment border=0><tr><td><!--ICON //--></td><td>Define Segment</td></tr></table></td>
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCLock border=0><tr><td><!--ICON //--></td><td>Release BG</td></tr></table></td>
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCVoid border=0><tr><td><!--ICON //--></td><td>Void BG</td></tr></table></td>
-<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBCSegment border=0><tr><td><!--ICON //--></td><td>Define Segment</td></tr></table></td>
 </tr>
 BTNTBL;
     break;
@@ -2379,6 +2385,43 @@ RTNTHIS;
 return $rtnThis;
 }
 
+function bldDialogVoidBG ( $passeddata ) { 
+
+  $pdta = json_decode($passeddata, true);
+  $errorInd = 0;
+  $errorMsg = "";
+  //DATA CHECKS GO HERE
+   
+ 
+  //DATA CHECKS END HERE
+
+  $ency = cryptservice($pdta['bgselector'],'e',false);
+  $payload = json_encode(array("bgency" => $ency));
+  $bgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/bg-checks-before-void",serverIdent, serverpw, $payload), true);
+  //TODO:  Convert All Error Messages to a Web Service for easy editing
+  if ( (int)$bgdta['MESSAGE'] === 404 ) { 
+    $rtnThis = <<<ERRORSCREEN
+<table id=bgvoiderrortbl><tr><td>The specified biogroup is already voided, locked or too old to edit.<p>If you feel that this is incorrect, please see a CHTN Eastern Informatics staff member.</td></tr></table>
+ERRORSCREEN;
+    $errorInd = 1;    
+  }
+
+  if ($errorInd === 0) {
+      //VOID BIOGROUP {$ency} {$bgdta['DATA']['pbiosample']} {$bgdta['DATA']['fromlocation']}
+    $voidreasons = callrestapi("GET", dataTree . "/globalmenu/bg-pristine-void-reasons",serverIdent,serverpw);
+    $rtnThis = <<<RTNTHIS
+
+    <table border=1><tr><td colspan=2>This will void biogroup number {$bgdta['DATA']['pbiosample']} and all child segments.  This will take the biogroup out of the normal CHTN work process (it will NOT appear in the master-record).  You must provide a reason below.</td></tr>   
+    <tr><td>{$voidreasons}</td></tr>
+    </table>
+
+
+RTNTHIS;
+}
+
+return $rtnThis;
+
+}
 
 
 function bldDialogAddSegment( $passeddata ) { 
