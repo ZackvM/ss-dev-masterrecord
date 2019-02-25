@@ -1596,7 +1596,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (byId('btnPBCLock')) { 
-      byId('btnPBCLock').addEventListener('click', function() { alert('LOCK'); }, false);         
+      byId('btnPBCLock').addEventListener('click', function() { markMigration(); }, false);         
     }
 
     if (byId('btnPBCVoid')) { 
@@ -1610,7 +1610,6 @@ document.addEventListener('DOMContentLoaded', function() {
 }, false); 
 
 function doBGVoid() { 
-
   if (byId('fldBGVency')) { 
     var obj = new Object();
     obj['bgency'] = byId('fldBGVency').value.trim(); 
@@ -1622,11 +1621,9 @@ function doBGVoid() {
     var mlURL = "/data-doers/void-bg";
     universalAJAX("POST",mlURL,passeddata,answerBGVoid,2);
   }
-
 }
 
 function answerBGVoid( rtnData ) { 
-
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
     var dspMsg = ""; 
@@ -1635,20 +1632,40 @@ function answerBGVoid( rtnData ) {
     });
     alert("Void BG ERROR:\\n"+dspMsg);
    } else { 
-//     if (byId('standardModalDialog')) {
-//       var dta = JSON.parse(rtnData['responseText']); 
-//       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
-//       byId('standardModalDialog').style.marginLeft = "-25vw";
-//       byId('standardModalDialog').style.left = "50%";
-//       byId('standardModalDialog').style.marginTop = 0;
-//       byId('standardModalDialog').style.top = "15vh";
-//       byId('standardModalBacker').style.display = 'block';
-//       byId('standardModalDialog').style.display = 'block';
-//     }  
+     if (byId('standardModalDialog')) {
+       byId('standardModalDialog').innerHTML = "";
+       //byId('standardModalBacker').style.display = 'none';
+       byId('standardModalDialog').style.display = 'none';
+       location.reload(true);     
+     }  
    }       
-  
 }
 
+function markMigration() { 
+  if (byId('bgSelectorCode')) { 
+    var obj = new Object(); 
+    obj['bgselector'] = byId('bgSelectorCode').value;
+    var passeddata = JSON.stringify(obj);
+            if (confirm("This Biogroup ("+byId('fldPRCBGNbr').value.trim()+") has been saved to the procurement module.\\r\\nThis will move the biogroup to the master-record and lock the biogroup from edits in procurement.\\r\\n\\r\\nConfirm that you are now releasing it to the master-record.") ) { 
+              var mlURL = "/data-doers/mark-bg-migration";
+              universalAJAX("POST",mlURL,passeddata,answerMarkMigration,2);            
+            }
+  }
+}
+            
+function answerMarkMigration(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("BIOGROUP RELEASE ERROR:\\n"+dspMsg);
+   } else { 
+      alert('BIOGROUP marked for migration');
+   }  
+}
+            
 function sendVoidPreprocess() {
   if (byId('bgSelectorCode')) { 
     var obj = new Object(); 
@@ -1660,7 +1677,6 @@ function sendVoidPreprocess() {
 }
 
 function answerPreprocessVoid(rtnData) { 
-
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
     var dspMsg = ""; 

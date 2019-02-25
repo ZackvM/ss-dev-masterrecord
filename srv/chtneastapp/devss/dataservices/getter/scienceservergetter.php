@@ -1266,8 +1266,17 @@ function runbiogroupsearchquery($srchrqstjson) {
                $fieldsQueried++;
              }
            } else {
-             $sqlCritAdd .= " and ( bs.pbiosample = cast( :bgnbr as DECIMAL(20,8))) ";
-             $qryArr += [':bgnbr' => "{$bgvalue}"  ];
+             //COMMENTED ON 2019-02-25 FOR THE LINES BELOW  
+             //$sqlCritAdd .= " and ( bs.pbiosample = cast( :bgnbr as DECIMAL(20,8))) ";
+             //$qryArr += [':bgnbr' => "{$bgvalue}"  ];
+             
+             //CORRECTED 2019-02-25 TO PULL ALL DECIMAL COMPONENTS OF A BIOGROUP 
+             //TODO:  MAKE ALL THE ABOVE CODE RANGE FOR THE DECIMAL NUMBERS  
+             $sqlCritAdd .= " and ( bs.pbiosample >= cast( :bgnbrOne as DECIMAL(20,8)) and bs.pbiosample < cast( :bgnbrTwo as DECIMAL(20,8))  ) ";
+             $qryArr += [':bgnbrOne' => "{$bgvalue}" ];
+             $bgTwo = ($bgvalue + 1);
+             $qryArr += [':bgnbrTwo' => "{$bgTwo}" ];
+             
              $fieldsQueried++;
            }
             break;

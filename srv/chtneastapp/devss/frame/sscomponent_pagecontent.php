@@ -2990,8 +2990,6 @@ return $rtnTbl;
 
 function bldProcurementGridEdit( $usr, $selector ) { 
     
-  $si = serverIdent;
-  $sp = serverpw;
   $pdta['selector'] = $selector;
   $payload = json_encode($pdta);
   $bgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-biogroup",serverIdent, serverpw, $payload), true);
@@ -3003,10 +3001,8 @@ if ( $usr->presentinstitution !== $bg['bgfromlocationcode'] || $usr->allowprocur
 }  else { 
   
   $sgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-procurement-segment-list-table",serverIdent, serverpw, $payload), true);
-  
   $jsonbg = json_encode($bg);
-
-$insmnu = "<input type=hidden id=fldPRCPresentInstValue value=\"{$bg['bgfromlocationcode']}\"><input type=text id=fldPRCPresentInst READONLY class=\"inputFld lockfield\" value=\"{$bg['bgfromlocation']}\">";
+  $insmnu = "<input type=hidden id=fldPRCPresentInstValue value=\"{$bg['bgfromlocationcode']}\"><input type=text id=fldPRCPresentInst READONLY class=\"inputFld lockfield\" value=\"{$bg['bgfromlocation']}\">";
 $tday = $bg['bgprocurementdate'];
 //DROP MENU BUILDER ********************************************************************** //
   //Initial UOM Menu

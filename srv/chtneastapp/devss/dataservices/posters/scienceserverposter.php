@@ -33,7 +33,59 @@ function __construct() {
 }
 
 class datadoers {
-
+    
+    function markbgmigration ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      
+      //DATA CHEKCS
+      ( !array_key_exists( "bgselector", $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Data Element (BG selector) is missing.")) : "";
+      ( trim($pdta['bgselector']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "BG SELECTOR is a required field")) : "";
+      $chkSQL = "SELECT pbiosample, fromlocation FROM four.ut_procure_biosample where selector = :selector and voidind = 0 and (ifnull(migrated,0) <> 100 and ifnull(migrated,0) <> 2)  and timestampdiff(hour, inputon, now()) < 12 and recordStatus = 2";
+      $chkRS = $conn->prepare($chkSQL); 
+      $chkRS->execute(array(':selector' => trim($pdta['bgselector'])));
+      ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "No Biogroup found matching request.  Either the biogroup doesn't exist, is locked, is already voided or has been migrated to master-record")) : "";
+      $chk = $chkRS->fetch(PDO::FETCH_ASSOC); 
+      $bg = $chk['pbiosample']; 
+      $frm = $chk['fromlocation'];
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      ( $authuser !== $authchk ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member.")) : "";
+      $chkUSQL = "SELECT ifnull(allowproc,0) as allowproc, ifnull(allowind,0) as allowind, ifnull(presentinstitution,'') as presentinstitution, ifnull(originalaccountname,'') as originalaccountname, ifnull(emailaddress,'') as usr FROM four.sys_userbase where sessionid = :usrCode and timestampdiff(hour, now(), sessionExpire) > 0 and timestampdiff(day, now(), passwordExpireDate) > 0";
+      $chkURS = $conn->prepare($chkUSQL); 
+      $chkURS->execute(array(':usrCode' => $authuser));
+      ( $chkURS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "User not allowed this function:  Either the user doesn't exist, has expired, or isn't allowed this function ")) : "";
+      $usr = $chkURS->fetch(PDO::FETCH_ASSOC);
+      ( (int)$usr['allowproc'] !== 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "User not allowed function")) : "";
+      ( (int)$usr['allowind'] !== 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "User not allowed function")) : "";
+      ( $usr['originalaccountname'] === ""  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "User not allowed function")) : "";
+      ( $usr['presentinstitution'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "User not allowed function")) : "";
+      ( $usr['presentinstitution'] !== $frm ) ? (list( $errorInd, $msgArr[] ) = array(1 , "You may not migrate a sample that is outside your present institution")) : "";      
+      //END DATA CHECKS
+      
+      if ( $errorInd === 0 ) { 
+          $updSQL = "update four.ut_procure_biosample set migrated = 2 where  selector = :selector"; 
+          $updRS = $conn->prepare($updSQL); 
+          $updRS->execute(array(':selector' => $pdta['bgselector']));
+          
+          //TODO: CHECK THE VALIDITY OF THE UPDATE
+          $responseCode = 200;
+      }
+      
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    }
+    
     function bgchecksbeforevoid ( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 
@@ -371,9 +423,14 @@ BSSEGTBL;
       //END DATA CHECKS
 
       if ( $errorInd === 0 ) { 
+        $voidBGSQL = "update four.ut_procure_biosample set voidind = 1, voidcode = :voidcode, voidReason = :voidreason, voidby = :voidby, voidon = now(), voidtext = :voidtext  where selector = :selector";
+        $voidBGRS = $conn->prepare($voidBGSQL);
+        $voidBGRS->execute(array(':selector' => $bgselect, ':voidcode' => trim($pdta['reasoncode']), ':voidreason' => trim($pdta['reason']), ':voidby' => trim($usr['originalaccountname']), ':voidtext' => trim($pdta['reasonnotes']) ));
+        $segVoidSQL = "update four.ut_procure_segment  set voidind = 1, voidreason =:segvoidreason where pbiosample = :bg";
+        $segVoidRS = $conn->prepare($segVoidSQL);
+        $segVoidRS->execute(array(':bg' => $bg, ':segvoidreason' => 'BIOGROUP VOIDED BY ' . $usr['originalaccountname']));
 
-
-
+         $responseCode = 200;
       }
 
       $msg = $msgArr;
@@ -4432,4 +4489,3 @@ SEGSQL;
 return $rtnthis;
 
 }
-
