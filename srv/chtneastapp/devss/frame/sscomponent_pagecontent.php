@@ -2418,7 +2418,7 @@ ERRORSCREEN;
     $rtnThis = <<<RTNTHIS
 
     <table border=0><tr><td colspan=2 style="width: 25vw; font-size: 1.3vh; line-height: 1.2em; text-align: justify; padding: 1vh .8vw; box-sizing: border-box;">This will void biogroup number &laquo;{$bgdta['DATA']['pbiosample']}&raquo; and all child segments.  This will take the biogroup out of the normal CHTN work process (i.e. it will NOT appear in the master-record).  You must provide a reason below.</td></tr>  
-    <tr><td class=fldLabel>Reason For Void</td></tr> 
+    <tr><td class=fldLabel>Reason For Void <span class=reqInd>*</span></td></tr> 
     <tr><td><input type=hidden id=fldBGVency value='{$ency}'><div class=menuHolderDiv><input type=hidden id=fldBGVReasonValue><input type=text id=fldBGVReason READONLY class="inputFld" style="width: 25vw;"><div class=valueDropDown style="min-width: 25vw;">{$vreason}</div></div></td></tr>
     <tr><td class=fldLabel>Further Explanation</td></tr>
     <tr><td><TEXTAREA id=fldBGVText style="width: 25vw; box-sizing: border-box; padding: 10px; font-size: 1.3vh;height: 15vh; "></textarea></td></tr>

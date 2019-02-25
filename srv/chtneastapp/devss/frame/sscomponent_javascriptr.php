@@ -1610,8 +1610,43 @@ document.addEventListener('DOMContentLoaded', function() {
 }, false); 
 
 function doBGVoid() { 
-alert('VOIDER');
 
+  if (byId('fldBGVency')) { 
+    var obj = new Object();
+    obj['bgency'] = byId('fldBGVency').value.trim(); 
+    obj['reasoncode'] = byId('fldBGVReasonValue').value.trim();
+    obj['reason'] = byId('fldBGVReason').value.trim();
+    obj['reasonnotes'] = byId('fldBGVText').value.trim();  
+    var passeddata = JSON.stringify(obj);
+    console.log(passeddata);
+    var mlURL = "/data-doers/void-bg";
+    universalAJAX("POST",mlURL,passeddata,answerBGVoid,2);
+  }
+
+}
+
+function answerBGVoid( rtnData ) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("Void BG ERROR:\\n"+dspMsg);
+   } else { 
+//     if (byId('standardModalDialog')) {
+//       var dta = JSON.parse(rtnData['responseText']); 
+//       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+//       byId('standardModalDialog').style.marginLeft = "-25vw";
+//       byId('standardModalDialog').style.left = "50%";
+//       byId('standardModalDialog').style.marginTop = 0;
+//       byId('standardModalDialog').style.top = "15vh";
+//       byId('standardModalBacker').style.display = 'block';
+//       byId('standardModalDialog').style.display = 'block';
+//     }  
+   }       
+  
 }
 
 function sendVoidPreprocess() {

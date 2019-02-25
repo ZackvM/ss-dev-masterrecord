@@ -44,12 +44,10 @@ class datadoers {
       $itemsfound = 0;
       require(serverkeys . "/sspdo.zck");
       $pdta = json_decode($passdata, true);
-
       $bgselector = cryptservice($pdta['bgency'],'d',false);
       $chkSQL = "SELECT pbiosample, fromlocation FROM four.ut_procure_biosample where selector = :selector and recordstatus = 2 and ifnull(voidind,0) = 0 and ifnull(migrated,0) = 0 and timestampdiff(hour, inputon, now()) < 12";
       $chkRS = $conn->prepare($chkSQL);
       $chkRS->execute(array(':selector' => $bgselector));
-   
       if ( $chkRS->rowCount() < 1) { 
           $responseCode = 404;
           $msgArr = "404";
@@ -58,8 +56,6 @@ class datadoers {
           $dta = $bg;
           $responseCode = 200;
       } 
-
-
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -328,6 +324,63 @@ BSSEGTBL;
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => json_encode($dta));
       return $rows;                                
     }
+
+    function voidbg ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode( $passdata, true );
+
+      //DATA CHECKS 
+      ( !array_key_exists( "bgency", $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Data Element (BG Encryption) is missing.")) : "";
+      ( trim($pdta['bgency']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "BGENCY is a required field")) : "";
+      //CHECK BG 
+      $bgselect = cryptservice($pdta['bgency'],'d',false);
+      $chkSQL = "SELECT pbiosample, fromlocation FROM four.ut_procure_biosample where selector = :selector and voidind = 0 and ifnull(migrated,0) <> 100 and timestampdiff(hour, inputon, now()) < 12 and recordStatus = 2";
+      $chkRS = $conn->prepare($chkSQL); 
+      $chkRS->execute(array(':selector' => $bgselect));
+      ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "No Biogroup found matching request.  Either the biogroup doesn't exist, is locked, is already voided or has been migrated to master-record")) : "";
+      $chk = $chkRS->fetch(PDO::FETCH_ASSOC); 
+      $bg = $chk['pbiosample']; 
+      $frm = $chk['fromlocation'];
+      ( !array_key_exists( "reasoncode", $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Data Element (ReasonCode) is missing.")) : "";
+      ( trim($pdta['reasoncode']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "You must provide a reason for voiding this biogroup")) : "";
+      ( !array_key_exists( "reason", $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Data Element (Reason) is missing.")) : "";
+      ( !array_key_exists( "reasonnotes", $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Data Element (ReasonNotes) is missing.")) : "";
+      //CHECK USER
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      ( $authuser !== $authchk ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member.")) : "";
+      $chkUSQL = "SELECT ifnull(allowproc,0) as allowproc, ifnull(allowind,0) as allowind, ifnull(presentinstitution,'') as presentinstitution, ifnull(originalaccountname,'') as originalaccountname, ifnull(emailaddress,'') as usr FROM four.sys_userbase where sessionid = :usrCode and timestampdiff(hour, now(), sessionExpire) > 0 and timestampdiff(day, now(), passwordExpireDate) > 0";
+      $chkURS = $conn->prepare($chkUSQL); 
+      $chkURS->execute(array(':usrCode' => $authuser));
+      ( $chkURS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "User not allowed this function:  Either the user doesn't exist, has expired, or isn't allowed this function ")) : "";
+      $usr = $chkURS->fetch(PDO::FETCH_ASSOC);
+      ( (int)$usr['allowproc'] !== 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "User not allowed function")) : "";
+      ( (int)$usr['allowind'] !== 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "User not allowed function")) : "";
+      ( $usr['originalaccountname'] === ""  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "User not allowed function")) : "";
+      ( $usr['presentinstitution'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "User not allowed function")) : "";
+      ( $usr['presentinstitution'] !== $frm ) ? (list( $errorInd, $msgArr[] ) = array(1 , "You may not void a sample that is outside your present institution")) : "";
+      //( 1 === 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "{$bg} {$frm}")) : "";
+      //END DATA CHECKS
+
+      if ( $errorInd === 0 ) { 
+
+
+
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;                        
+    } 
 
     function segmentcreatedefinedpieces( $request, $passdata) { 
       $rows = array(); 
