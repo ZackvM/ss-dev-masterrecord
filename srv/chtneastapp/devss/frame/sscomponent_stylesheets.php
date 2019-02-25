@@ -117,6 +117,11 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 #vocabularyDisplayTable .vocDspSite { width: 10vw; }
 #vocabularyDisplayTable .vocDspSSite { width: 8vw; }
 
+#environHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto; box-sizing: border-box;}
+#environBtnHold #envCloseBtn { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
+#environBtnHold #envCloseBtn:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
+#environmentalTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
+
 .sidebarprofilepicture { height: 15.5vh; }
 .circularOverlay { position: relative; height: 15vh; width: 8vw; overflow: hidden; border-radius: 50%; }
 

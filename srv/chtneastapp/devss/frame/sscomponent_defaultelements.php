@@ -7,7 +7,7 @@ $thisAcct = "";
 $hlpfile = buildHelpFiles($whichpage, $rqststr);
 
 if ($whichpage !== "login") { 
-  $tt = treeTop;    
+  $tt = buildEnvironTemps();    
   $usrProfile = buildUserProfileTray( $whichUsr ); 
   $directory = buildUserDirectory();
   $vocab = buildVocabSearch();
@@ -18,9 +18,8 @@ if ($whichpage !== "login") {
 {$usrProfile}
 </div>   
 
-<div id=appcard_environmentals class=appcard> 
- ENVIRONMENTAL MONITORS
- <p>{$tt}       
+<div id=appcard_environmentals class=appcard>
+{$tt}       
 </div>   
  
  <div id=appcard_help class=appcard> 
@@ -380,12 +379,23 @@ $rtnthis = <<<VOCABSRCH
 <tr><td><input type=text id=vocabSrchTermFld></td></tr>
 </table>
 <div id=srchVocRsltDisplay>
-
-
 </div>
 </div>
 VOCABSRCH;
   return $rtnthis;
+}
+
+function buildEnvironTemps() { 
+$rtnthis = <<<VOCABSRCH
+<div id=environHolderDiv>
+  <div id=environBtnHold><table width=100%><tr><td></td><td id=envCloseBtn onclick="openAppCard('appcard_environmentals');">&times;</td></tr></table></div>   
+  <div id=environmentalTitle>Environmental Monitor Data</div> 
+
+   <!-- data goes here //-->
+   
+</div>
+VOCABSRCH;
+  return $rtnthis;    
 }
 
 function buildUserDirectory() { 
