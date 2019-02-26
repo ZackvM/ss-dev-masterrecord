@@ -127,8 +127,18 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 #environmentalReadingsHolder { height: 73vh; overflow-y: auto;  } 
 
 #sensorDspHolder { width: 46vw; border: 1px solid rgba({$this->color_darkgrey},.5);}
-#sensorDspHolder #sensorNbr { font-size: 1.3vh; font-weight: bold; text-align: right; color: rgba({$this->color_darkgrey},.5); padding: .8vh .3vw 0 .3vw; border-bottom: 2px solid rgba({$this->color_darkgrey},.5); }
-#sensorDspHolder .holdercell { box-sizing: border-box; width: 23vw; padding: 0 .3vw .8vh .3vw; }
+#sensorDspHolder #sensorNbr { font-size: 1.3vh; font-weight: bold; text-align: right; color: rgba({$this->color_darkgrey},.5); padding: .8vh .3vw;  }
+#sensorDspHolder .holdercell { box-sizing: border-box; width: 23vw; padding: .8vh .3vw .8vh .3vw; }
+
+.sensorMetricTbl {border-collapse: collapse; width: 100%; border: 1px solid rgba({$this->color_zackgrey},1);  background: rgba({$this->color_white},1); }
+.sensorMetricTbl .sensorDspName { background: rgba({$this->color_cornflowerblue},1); font-size: 1.7vh; padding: .6vh .4vw; color: rgba({$this->color_white},1);  }
+.sensorMetricTbl .lastread { font-size: 1.1vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; padding: 0 .4vw .6vh .4vw; }
+.sensorMetricTbl .rowColor:nth-child(odd) { background: rgba({$this->color_lightgrey},1); }
+.sensorMetricTbl .sensorTime {font-size: 1.7vh; padding: .3vh .4vw; width: 2vw;  }
+.sensorMetricTbl .sensorValue {font-size: 1.7vh; padding: .3vh .4vw .3vh 1vw; width: 3.4vw;  }
+.sensorMetricTbl .utcValue { font-size: 1.1vh; text-align: right; }
+.sensorMetricTbl .trendIconDsp { width: 1vw; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_lamber},1); }
+.uparrow { font-size: 1.7vh; color:  rgba({$this->color_darkgreen},1); font-weight: bold;}
 
 
 .sidebarprofilepicture { height: 15.5vh; }

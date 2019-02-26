@@ -390,18 +390,40 @@ function buildEnvironTemps() {
 $sensorReadings = json_decode(callrestapi("GET", dataTree .  "/chtn-eastern-environmental-metrics", serverIdent, serverpw),true);  
 //{"MESSAGE":"","ITEMSFOUND":10,"DATA":{"9633":{"sensorname":"Room 566 Ambient (9633)","readings":[{"utctimestamp":"1551181160","sensorid":"9633","namelabel":"S9633.566.AmbientTemp","readinginc":"22.7","gathertime":"06:39","gatherdate":"02\/26\/2019","dtegathered":"Feb 26th, 2019 :: 06:39 AM"}
 
-$readingsTbl = "<table border=1 cellpadding=0 cellspacing=0 id=sensorDspHolder><tr><td colspan=2 id=sensorNbr>Sensors Read: {$sensorReadings['ITEMSFOUND']}</td></tr><tr>";
+$readingsTbl = "<table border=0 cellpadding=0 cellspacing=0 id=sensorDspHolder><tr><td colspan=2 id=sensorNbr>Sensors Read: {$sensorReadings['ITEMSFOUND']}</td></tr><tr>";
 $cellCntr = 0;
+
 foreach ( $sensorReadings['DATA'] as $ky => $value) { 
-    //$ky = $sensorid  
     $lastRead = ""; 
     $innerRow = ""; 
     foreach ( $value['readings'] as $k => $v ) { 
-     if ( $lastRead === "" ) { $lastRead = $v['dtegathered']; }  
-     $innerRow .= "<tr><td>{$v['gathertime']}</td><td>{$v['readinginc']}&#176;C</td></tr>";    //({$v['utctimestamp']}) 
-    } 
+
+       if ( $lastRead === "" ) { $lastRead = $v['dtegathered']; }  
+
+       $fvalue = sprintf("%1\$.1f&#176; C",$v['readinginc']);
+       $ths = floatval( $v['readinginc'] );
+
+       if ( trim($value['readings'][$k + 1]['readinginc']) !== "") { 
+         $nxt =   floatval(  $value['readings'][$k + 1]['readinginc'] );
+       } else { 
+         $nxt = "";
+       }
+       
+       $trendInd = "&nbsp;";
+       if ($nxt !== "" ) { 
+         if ($ths > $nxt) { $trendInd = "<i class=\"material-icons uparrow\">arrow_upward</i>"; }
+         if ($ths < $nxt) { $trendInd = "<i class=\"material-icons uparrow\">arrow_downward</i>"; }
+         if ($ths === $nxt) { $trendInd = "<i class=\"material-icons uparrow\">subdirectory_arrow_right</i>"; }
+       } 
+       
+       $innerRow .= "<tr class=rowColor><td class=sensorValue>{$fvalue}  </td><td class=trendIconDsp>{$trendInd}</td><td class=sensorTime>{$v['gathertime']}</td><td class=utcValue> ({$v['utctimestamp']})</td></tr>";    
+
+       
+       
+       } 
+
     if ( $cellCntr === 2 ) { $readingsTbl .= "</tr><tr>"; $cellCntr = 0; } 
-    $readingsTbl .= "<td valign=top class=holdercell><table border=1><tr><td colspan=3>{$value['sensorname']} {$lastRead}</td></tr>{$innerRow}</table></td>";
+    $readingsTbl .= "<td valign=top class=holdercell><table border=0 class=sensorMetricTbl><tr><td colspan=4 class=sensorDspName>{$value['sensorname']} </td></tr><tr><td colspan=4 class=lastread>Last Read: {$lastRead}</td></tr>{$innerRow}</table></td>";
     $cellCntr++;
 }
 $readingsTbl .= "</tr></table>";
