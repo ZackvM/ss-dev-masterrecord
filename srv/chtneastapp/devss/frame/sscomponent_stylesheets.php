@@ -53,6 +53,8 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
   border-radius: 50%;
 }
 
+.hyperlink { color: rgba({$this->color_darkgreen},1); text-decoration: underline;  }
+.hyperlink:hover { cursor: pointer; color: rgba({$this->color_deeppurple},1); }
 
 #standardModalDialog {display: none; background: rgba({$this->color_lgrey},1); position: fixed; margin-left: -20vw; left: 50%; margin-top: -10vh; top: 50%; z-index: 101; border: 2px solid rgba({$this->color_white},1); }
 
