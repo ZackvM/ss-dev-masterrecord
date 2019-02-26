@@ -35,7 +35,44 @@ class objgetter {
 
 class objlisting { 
     
-    
+  function chtneasternenvironmentalmetrics( $whichobj, $urirqst ) { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW'];
+
+     $sensorListSQL = "SELECT ifnull(menuValue,'') as sensorid, ifnull(longValue,'') as sensorname FROM four.sys_master_menus where menu = :sensorlistid and dspInd = 1 order by dspOrder";
+     $sensorListRS = $conn->prepare($sensorListSQL);
+     $sensorListRS->execute(array(':sensorlistid' => 'CORISSENSORLIST'));
+
+     $sensor = array();
+     $cntr = 0;
+     while ($sensors = $sensorListRS->fetch(PDO::FETCH_ASSOC)) { 
+       $id =  $sensors['sensorid']; 
+       $sensor[$id]['sensorname'] = $sensors['sensorname'];
+       $sensorDtaSQL = "select utctimestamp, sensorid, corisnamelabel as namelabel, readinginc, date_format(onwhen, '%H:%i') as gathertime, date_format(onwhen, '%m/%d/%Y') as gatherdate, date_format(onwhen,'%b %D, %Y :: %h:%i %p') as dtegathered from (SELECT @row := @row +1 AS rownum, s.* FROM (SELECT @row :=0) r, four.enviro_coris_lastweek s where s.sensorid = :sensorid order by s.onwhen desc ) as sensorrows where rownum % 9 = 1 limit 0,5";
+       $sensorDtaRS = $conn->prepare($sensorDtaSQL); 
+       $sensorDtaRS->execute(array(':sensorid' => $sensors['sensorid']));
+       $readings = array();
+       while ( $sread = $sensorDtaRS->fetch(PDO::FETCH_ASSOC)) { 
+         $readings[] = $sread;
+       }
+       $sensor[$id]['readings'] = $readings;
+       $cntr++;
+     }
+     $dta = $sensor;
+     $itemsfound = $cntr;
+
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;       
+  }
+
 
   function chtnstaffdirectorylisting($whichobj, $urirqst) { 
        

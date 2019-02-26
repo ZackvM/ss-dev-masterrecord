@@ -117,10 +117,19 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 #vocabularyDisplayTable .vocDspSite { width: 10vw; }
 #vocabularyDisplayTable .vocDspSSite { width: 8vw; }
 
-#environHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto; box-sizing: border-box;}
+
+
+#environHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: hidden; box-sizing: border-box;}
 #environBtnHold #envCloseBtn { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
 #environBtnHold #envCloseBtn:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
 #environmentalTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
+
+#environmentalReadingsHolder { height: 73vh; overflow-y: auto;  } 
+
+#sensorDspHolder { width: 46vw; border: 1px solid rgba({$this->color_darkgrey},.5);}
+#sensorDspHolder #sensorNbr { font-size: 1.3vh; font-weight: bold; text-align: right; color: rgba({$this->color_darkgrey},.5); padding: .8vh .3vw 0 .3vw; border-bottom: 2px solid rgba({$this->color_darkgrey},.5); }
+#sensorDspHolder .holdercell { box-sizing: border-box; width: 23vw; padding: 0 .3vw .8vh .3vw; }
+
 
 .sidebarprofilepicture { height: 15.5vh; }
 .circularOverlay { position: relative; height: 15vh; width: 8vw; overflow: hidden; border-radius: 50%; }

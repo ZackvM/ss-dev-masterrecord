@@ -385,14 +385,35 @@ VOCABSRCH;
   return $rtnthis;
 }
 
-function buildEnvironTemps() { 
+function buildEnvironTemps() {
+
+$sensorReadings = json_decode(callrestapi("GET", dataTree .  "/chtn-eastern-environmental-metrics", serverIdent, serverpw),true);  
+//{"MESSAGE":"","ITEMSFOUND":10,"DATA":{"9633":{"sensorname":"Room 566 Ambient (9633)","readings":[{"utctimestamp":"1551181160","sensorid":"9633","namelabel":"S9633.566.AmbientTemp","readinginc":"22.7","gathertime":"06:39","gatherdate":"02\/26\/2019","dtegathered":"Feb 26th, 2019 :: 06:39 AM"}
+
+$readingsTbl = "<table border=1 cellpadding=0 cellspacing=0 id=sensorDspHolder><tr><td colspan=2 id=sensorNbr>Sensors Read: {$sensorReadings['ITEMSFOUND']}</td></tr><tr>";
+$cellCntr = 0;
+foreach ( $sensorReadings['DATA'] as $ky => $value) { 
+    //$ky = $sensorid  
+    $lastRead = ""; 
+    $innerRow = ""; 
+    foreach ( $value['readings'] as $k => $v ) { 
+     if ( $lastRead === "" ) { $lastRead = $v['dtegathered']; }  
+     $innerRow .= "<tr><td>{$v['gathertime']}</td><td>{$v['readinginc']}&#176;C</td></tr>";    //({$v['utctimestamp']}) 
+    } 
+    if ( $cellCntr === 2 ) { $readingsTbl .= "</tr><tr>"; $cellCntr = 0; } 
+    $readingsTbl .= "<td valign=top class=holdercell><table border=1><tr><td colspan=3>{$value['sensorname']} {$lastRead}</td></tr>{$innerRow}</table></td>";
+    $cellCntr++;
+}
+$readingsTbl .= "</tr></table>";
+
 $rtnthis = <<<VOCABSRCH
 <div id=environHolderDiv>
   <div id=environBtnHold><table width=100%><tr><td></td><td id=envCloseBtn onclick="openAppCard('appcard_environmentals');">&times;</td></tr></table></div>   
   <div id=environmentalTitle>Environmental Monitor Data</div> 
+  <div id=environmentalReadingsHolder>
+{$readingsTbl}
 
-   <!-- data goes here //-->
-   
+  </div>
 </div>
 VOCABSRCH;
   return $rtnthis;    
