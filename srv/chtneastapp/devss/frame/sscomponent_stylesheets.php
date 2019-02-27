@@ -594,8 +594,7 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
 #sshHoldingTable { border-collapse: collapse; width: 97vw; height: 87vh; }
 #sshHoldingTable #head { height: 2vh; }
 #sshHoldingTable #topicDivHolder { width: 25vw; }
-#sshHoldingTable #divDspTopicList { height: 80vh; border-right: 1px solid rgba({$this->color_darkgrey},1); overflow: auto; }
-
+#sshHoldingTable #divDspTopicList { width: 27vw;  }
 
 #ssHelpFilesHeaderDsp { font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); }
 .ssHlpModDiv { position: relative; }
@@ -607,7 +606,7 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
 
 .iconholdercell {width: 1vw; }
 
-.topicicon {font-size: 1.6vh; padding: .3vh .3vw .3vh 1vw; }
+.topicicon {font-size: 1.6vh; padding: .3vh .3vw .3vh 1.5vw; }
 .hlpTopicDiv table tr td { padding: .5vh 0 .5vh 0; }
 .hlpTopicTbl { font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); width: 100%; }
 .hlpTopicTbl:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
@@ -621,7 +620,7 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
 
 .helpticket { font-size: 1.5vh; }
 
-#hlpMainHolderDiv {padding: 0 1vw 0 1vw; height: 75vh; overflow: auto; } 
+#hlpMainHolderDiv {padding: 5vh 1vw 0 1vw; border-left: 1px solid rgba({$this->color_darkgrey},1); min-height: 75vh; } 
 #hlpMainTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; padding: .5vh 0 .8vh 0; }
 #hlpMainSubTitle { width: 100%; font-family: Roboto; font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; padding: .5vh 0 .8vh 0; }
 #hlpMainByLine { width: 100%; font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_darkgreen},1); text-align: right; padding: .8vh 0 .8vh 0; }

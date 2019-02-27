@@ -662,8 +662,9 @@ RTNTHIS;
         $hlpDte = ( trim($hlp['initialdte']) !== "" ) ? " / {$hlp['initialdte']}" : "";
         $hlpTxt = putPicturesInHelpText( $hlp['htmltxt'] );
         $hlpurl = $hlp['helpurl'];
+        $printTopicBtn = "<td><table class=tblBtn id=btnPrintThis onclick=\"openOutSidePage('{$tt}/print-obj/help-file/{$hlpurl}');\" style=\"width: 6vw;\"><tr><td><center><i class=\"material-icons helpticket\">print</i></td></tr></table></td>";
+//<div id=hlpMainToolBar><table width=100% cellpadding=0 cellspacing=0><tr><td> <table class=tblBtn id=btnPrintThis onclick="openOutSidePage('{$tt}/print-obj/help-file/{$hlpurl}');" style="width: 6vw;"><tr><td><center><i class="material-icons helpticket">print</i></td></tr></table> </td></tr></table> </div>
         $helpFile = <<<RTNTHIS
-<div id=hlpMainToolBar><table width=100% cellpadding=0 cellspacing=0><tr><td> <table class=tblBtn id=btnPrintThis onclick="openOutSidePage('{$tt}/print-obj/help-file/{$hlpurl}');" style="width: 6vw;"><tr><td><center><i class="material-icons helpticket">print</i></td></tr></table> </td></tr></table> </div>
    <div id=hlpMainHolderDiv>
    <div id=hlpMainTitle>{$hlpTitle}</div> 
    <div id=hlpMainSubTitle>{$hlpSubTitle}</div>            
@@ -712,7 +713,8 @@ $rtnthis = <<<PAGEHERE
                  <td align=right>
                    <table style="border-collapse: collapse;"><tr><td> <input type=text id=fldHlpSrch value="{$givenSearchTerm}"> </td>
                               <td><table class=tblBtn id=btnSearchHelp style="width: 6vw;"><tr><td><center>Search</td></tr></table></td>
-                          <td><table class=tblBtn id=btnHelpTicket style="width: 6vw;"><tr><td><center><i class="material-icons helpticket">build</i></td></tr></table></td></tr></table>
+                              {$printTopicBtn}
+                              <td><table class=tblBtn id=btnHelpTicket style="width: 6vw;"><tr><td><center><i class="material-icons helpticket">build</i></td></tr></table></td></tr></table>
             </td></tr></table>
         </td></tr>
 <tr><td valign=top id=topicDivHolder><div id=divDspTopicList>{$t}</div></td><td valign=top> {$helpFile}  </td></tr>
