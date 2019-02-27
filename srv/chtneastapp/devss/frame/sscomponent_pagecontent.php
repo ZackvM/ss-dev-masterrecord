@@ -478,9 +478,10 @@ function collectiongrid($rqststr, $usr) {
                 </td></tr>
                 <tr><td>
                      <div id=cResultGridHolder>
-                     <div id=waitForMe>WAIT</div>
+                     <div id=waitForMe>&nbsp; <!-- PUT A WAIT GIF HERE, IF YOU WANT //--> </div>
                      <div id=cResults>
                      {$rsltdta['DATA']}
+                     
                      </div>
                      </div>
                      </td></tr>

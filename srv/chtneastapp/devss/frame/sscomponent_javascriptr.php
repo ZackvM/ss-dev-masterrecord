@@ -19,8 +19,6 @@ function globalscripts( $keypaircode, $usrid ) {
   $regCode = registerServerIdent($regUsr);  
 
 $rtnThis = <<<JAVASCR
-
-
         
 var byId = function( id ) { return document.getElementById( id ); };
 var treeTop = "{$tt}";
@@ -697,15 +695,60 @@ function collectiongrid($rqststr) {
 session_start(); 
     
   $tt = treeTop;
-  $eMod = encryptModulus;
-  $eExpo = encryptExponent;
-  $si = serverIdent;
-  $pw = apikey;
+  $regUsr = session_id();  
     
 $rtnThis = <<<JAVASCR
 
 //TODO: WRITE TIMER FUNCTION TO REFRESH GRID
+
+//   
         
+document.addEventListener('DOMContentLoaded', function() {  
+  if (byId('btnRefresh')) { 
+    byId('btnRefresh').addEventListener('click', function() { 
+        updateCollectGrid();
+     }, false);        
+  }        
+        
+}, false);     
+        
+
+function updateCollectGrid() { 
+
+  if ( byId('presentInstValue') && byId('cGridDateValue')   ) {      
+   
+    if (byId('cResults')) { byId('cResults').innerHTML = ""; }
+    if (byId('waitForMe')) { byId('waitForMe').style.display = "block"; }
+    var obj = new Object();
+    obj['presentinstitution'] = byId('presentInstValue').value;
+    obj['requesteddate'] = byId('cGridDateValue').value;
+    obj['usrsession'] = "{$regUsr}";   
+    var passdata = JSON.stringify(obj);
+    var mlURL = "/data-doers/collection-grid-results-tbl";
+    universalAJAX("POST",mlURL,passdata,answerUpdateCollectGrid,1);
+  }
+        
+}
+
+function answerUpdateCollectGrid(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    if (byId('waitForMe')) { byId('waitForMe').style.display = "none"; }
+    alert("UPDATE COLLECTION GRID ERROR:\\n"+dspMsg);
+   } else { 
+     //DISPLAY PHI EDIT
+     if (byId('cResults')) {
+        var dta = JSON.parse(rtnData['responseText']); 
+        if (byId('waitForMe')) { byId('waitForMe').style.display = "none"; }
+        byId('cResults').innerHTML = dta['DATA'];
+     }  
+   }       
+}
+    
 function fillField(whichfield, whichvalue, whichdisplay) { 
   if (byId(whichfield)) { 
      byId(whichfield).value = whichdisplay; 

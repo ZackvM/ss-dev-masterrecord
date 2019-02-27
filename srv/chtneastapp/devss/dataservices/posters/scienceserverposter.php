@@ -260,9 +260,11 @@ BSLINE;
 {$inner}
 </table>
 BSSEGTBL;
+        $responseCode = 200;      
       } else { 
         //BUILD NO FIND TABLE
           $dta = "<table><tr><td><h3>No Procurement Records Match The Entered Criteria</h3></td></tr></table>";
+          $responseCode = 200;
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
@@ -285,11 +287,32 @@ BSSEGTBL;
       $allowData = 0;
       $pdta = json_decode($passdata, true);
       if ($authuser !== "chtneast" ) { 
-          //CHECK USER ALLOWED    
-          // $r = cryptservice( $authpw, 'd', true, $a uthuser );
-          // $sessid = session_id();
-          // if ($authuser === $r && $sessid === $r ) {   
-      } else { 
+
+          
+          if ( array_key_exists('usrsession', $pdta) ) {
+            //$allowData = 1;              
+           //CHECK USER
+            $authchk = cryptservice($authpw,'d', true, $authuser);
+            $allowData = ( $authuser !== $authchk ) ? 0 : 1; 
+            $allowData = ($authuser !== $pdta['usrsession']) ? 0 : 1;   
+            $getUsrSQL = "SELECT presentinstitution FROM four.sys_userbase where sessionid = :sess and allowInd = 1 and allowproc = 1 and TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";                
+            $getUsrRS = $conn->prepare($getUsrSQL);
+            $getUsrRS->execute(array(':sess' => $pdta['usrsession']));
+            if ($getUsrRS->rowCount() === 1) { 
+              //CHECK PRESENT LOC
+              $getUsr = $getUsrRS->fetch(PDO::FETCH_ASSOC);
+              if ($getUsr['presentinstitution'] !== $pdta['presentinstitution']) { 
+                $allowData = 0;
+              }
+            } else { 
+              $allowData = 0;
+            }            
+          } else { 
+            $allowData = 0;
+          } 
+        
+        
+        } else { 
           if ($authpw === serverpw) { 
             $allowData = 1;
             if ( array_key_exists('usrsession', $pdta) ) {                            
