@@ -698,8 +698,14 @@ function root($mobileind) {
 
 body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;  }
               
-#rootTable { font-family: Roboto; font-size: 2vh; }
+#rootTable { font-family: Roboto; font-size: 1.5vh; width: 100%; }
 
+              
+/* SCREEN CALENDAR FORMATTING */ 
+#mainRootTbl { width: 30vw; border: 1px solid rgba({$this->color_darkgrey},.5);               
+              
+              
+              
 STYLESHEET;
 return $rtnThis;
   }    

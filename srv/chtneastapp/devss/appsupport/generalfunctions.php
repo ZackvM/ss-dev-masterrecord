@@ -328,27 +328,19 @@ function getColor($num) {
 
 function buildcalendar($whichcalendar, $pmonth, $pyear) { 
 
-if (trim($pmonth) === "") { 
-  $pmonth = date('m');
-}
-if (trim($pyear) === "") { 
-  $pyear = date('Y');
-}
-
+if (trim($pmonth) === "") { $pmonth = date('m'); }
+if (trim($pyear) === "") { $pyear = date('Y'); }
 $daysofweek = array('Su','M','T','W','Th','F','Sa'); 
-
 $firstDayOfMonth = mktime(0,0,0,$pmonth,1,$pyear);
 $numberOfDays = date('t',$firstDayOfMonth);
-
 $dateComponents = getdate($firstDayOfMonth);
 $monthName = $dateComponents['month'];
 $monthNbr = str_pad($dateComponents['mon'],2,"0", STR_PAD_LEFT);
 $dayOfWeek = $dateComponents['wday'];
-
 $dyr = $dateComponents['wday'];
-
 $lastMonth = substr(('00'.((int)$pmonth - 1)), -2);
 $lastYear = $pyear; 
+
 if ((int)$lastMonth === 0) { 
   $lastMonth = 12; 
   $lastYear = ($lastYear - 1);
@@ -376,8 +368,8 @@ if ((int)$nextMonth === 13) {
         $calTitleClass = "ddMainRootMenuCalTitle";
         $topBarClass = "ddMainRootMenuCalTopRow";
         $topCtlBtnClass= "smallMainRootCtlBtn";
-        $leftBtnAction  = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$lastMonth}','{$lastYear}');\" ";
-        $rightBtnAction = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$nextMonth}','{$nextYear}');\" ";          
+        $leftBtnAction  = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$lastMonth}/{$lastYear}');\" ";
+        $rightBtnAction = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$nextMonth}/{$nextYear}');\" ";          
          break;
      case 'procedureprocurequery':
         $calTblId = "pqcTbl";
@@ -396,7 +388,7 @@ if ((int)$nextMonth === 13) {
         $leftBtnAction  = " onclick=\"getCalendar('procedureprocurequery','procureProcedureCalendar','{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('procedureprocurequery','procureProcedureCalendar','{$nextMonth}/{$nextYear}');\" "; 
         break;        
-      case 'procquery':
+     case 'procquery':
         $calTblId = "pqcTbl";
         $leftBtnId = "pqcLeft";
         $leftBtnAction = " onclick=\"alert('LEFT');\" ";
@@ -433,7 +425,7 @@ if ((int)$nextMonth === 13) {
         $leftBtnAction  = " onclick=\"getCalendar('cGridDateControl','cGridCalendar', '{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('cGridDateControl','cGridCalendar' ,'{$nextMonth}/{$nextYear}');\" ";         
         break;           
-      case 'biosamplequeryfrom':
+     case 'biosamplequeryfrom':
         $calTblId = "bsqTbl";
         $leftBtnId = "bsqLeft";
         $calTitle = "bsqTitle";
@@ -450,7 +442,7 @@ if ((int)$nextMonth === 13) {
         $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryFrom','bsqCalendar', '{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('biosampleQueryFrom','bsqCalendar' ,'{$nextMonth}/{$nextYear}');\" ";         
         break;   
-      case 'biosamplequeryto':
+     case 'biosamplequeryto':
         $calTblId = "bstqTbl";
         $leftBtnId = "bstqLeft";
         $calTitle = "bstqTitle";
@@ -467,7 +459,7 @@ if ((int)$nextMonth === 13) {
         $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";       
         break;
-      case 'shipsdcfrom':
+     case 'shipsdcfrom':
         $calTblId = "shpSDCTbl";
         $leftBtnId = "shpFromLeft";
         $calTitle = "shpFromTitle";
@@ -501,7 +493,7 @@ if ((int)$nextMonth === 13) {
         $leftBtnAction  = " onclick=\"getCalendar('shipSDCToLab','rToLabCalendar', '{$lastMonth}/{$lastYear}',2);\" ";
         $rightBtnAction = " onclick=\"getCalendar('shipSDCToLab','rToLabCalendar' ,'{$nextMonth}/{$nextYear}',2);\" ";  
         break;
-      case 'shipbsqfrom':
+     case 'shipbsqfrom':
         $calTblId = "shpFromTbl";
         $leftBtnId = "shpFromLeft";
         $calTitle = "shpFromTitle";
@@ -518,7 +510,7 @@ if ((int)$nextMonth === 13) {
         $leftBtnAction  = " onclick=\"getCalendar('shipBSQFrom','shpfCalendar', '{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('shipBSQFrom','shpfCalendar' ,'{$nextMonth}/{$nextYear}');\" ";  
         break;
-      case 'shipbsqto':
+     case 'shipbsqto':
         $calTblId = "shpToTbl";
         $leftBtnId = "shpToLeft";
         $calTitle = "shpToTitle";
@@ -671,7 +663,6 @@ return $rtnthiscalendar;
 }
 
 function putPicturesInHelpText( $hlpTxt ) { 
-
 /*
  * NOTETOZACK: TO ADD PICTURES TO THE HELP FILE EMBED A JSON STRING INTO THE DATABASE FILE AS BELOW:
  * PICTURE:{"picturefile": "help/elproDiagram.png","type":"png","useid":"pictElproDiagram","width":"10vw", "caption":"elpro monitor diagram", "holdingdivstyle":"float: left; margin-right: 10px; margin-bottom: 10px;"} 
@@ -687,7 +678,6 @@ function putPicturesInHelpText( $hlpTxt ) {
  * caption is text that will be placed in grey under the picture
  *
  */
-
     $at = genAppFiles;
     //$pattern = '/\bPICTURE:[^*?"<>|:.]{0,}\.[A-Za-z]{3}\b/'; ex.: PICTURE:pathname.threechar-ext
     $pattern = '/\bPICTURE:(\{.{1,}\})/';
@@ -702,25 +692,60 @@ function putPicturesInHelpText( $hlpTxt ) {
         $picfile = ( array_key_exists('picturefile',$pd) ) ? "{$pd['picturefile']}" : "";
         $pictype = ( array_key_exists('type', $pd) ) ? $pd['type'] : "";
         $useid = ( array_key_exists('useid', $pd) ) ? $pd['useid'] : "";
-
         $additionals  = " style = \""; 
         $additionals .= ( array_key_exists('width', $pd) ) ? "width: {$pd['width']};" : "";
         $additionals .= ( array_key_exists('height', $pd) ) ?  "height: {$pd['height']};" : ""; 
         $additionals .= "\"";
-         
         $picturecode = base64file("{$at}/publicobj/{$picfile}", $useid, $pictype, true, $additionals);
-
         $divstyle = ( array_key_exists('holdingdivstyle',$pd) ) ? " style = \"position: relative; display: inline-block; {$pd['holdingdivstyle']}\"" : " style = \"position: relative; display: inline-block; \"";   
         $caption = ( array_key_exists('caption', $pd) ) ? $pd['caption'] : "";
-
-
         $picturedsp = "<div class=helpPictureDisplay {$divstyle}>{$picturecode}<div class=helppicturecaption>{$caption}</div></div>";
-
         $hlpTxt = str_replace($pictDef,$picturedsp,$hlpTxt);
       }
     }
-
     return $hlpTxt;
-
 }
 
+function putPicturesInPrintHelpText( $hlpTxt ) { 
+/*
+ * NOTETOZACK: TO ADD PICTURES TO THE HELP FILE EMBED A JSON STRING INTO THE DATABASE FILE AS BELOW:
+ * PICTURE:{"picturefile": "help/elproDiagram.png","type":"png","useid":"pictElproDiagram","width":"10vw", "caption":"elpro monitor diagram", "holdingdivstyle":"float: left; margin-right: 10px; margin-bottom: 10px;" , "printwidth":"150px" , "printheight" : "100px;"}  
+ * OR
+ * PICTURE:{"picturefile": "graphics/chtn_trans.png","type":"png","useid":"pictCHTNTrans","height":"10vh","holdingdivstyle":"float: right; border: 1px solid #000084;"}
+ *
+ * References must be single line json (no carriage returns) and are outlined as 
+ * picturefile (required) - under mainapp/publicobj ... directory/file
+ * useid (required) is the id that will be written to the HTML output
+ * height
+ * width 
+ * holdingdivstyle  these are in addition to position relative and display inline block
+ * caption is text that will be placed in grey under the picture
+ *
+ */
+    $at = genAppFiles;
+    //$pattern = '/\bPICTURE:[^*?"<>|:.]{0,}\.[A-Za-z]{3}\b/'; ex.: PICTURE:pathname.threechar-ext
+    $pattern = '/\bPICTURE:(\{.{1,}\})/';
+    preg_match_all($pattern,$hlpTxt,$outlist,PREG_PATTERN_ORDER); 
+    //$o = $outlist[0][0];
+    if ( count($outlist[0]) > 0 ) { 
+      foreach ($outlist[0] as $pictDef) {
+        $pictureDef = preg_replace('/\bPICTURE:/','',$pictDef);
+        $pd = json_decode( $pictureDef , true); 
+        //BUILD THE PICTURE
+        //{"picturefile": "help/elproDiagram.png","type":"png","useid":"pictElproDiagram","width":"5vw","height":"5vh"}
+        $picfile = ( array_key_exists('picturefile',$pd) ) ? "{$pd['picturefile']}" : "";
+        $pictype = ( array_key_exists('type', $pd) ) ? $pd['type'] : "";
+        $useid = ( array_key_exists('useid', $pd) ) ? $pd['useid'] : "";
+        $additionals  = " style = \""; 
+        $additionals .= ( array_key_exists('printwidth', $pd) ) ? "width: {$pd['printwidth']};" : "";
+        $additionals .= ( array_key_exists('printheight', $pd) ) ?  "height: {$pd['printheight']};" : ""; 
+        $additionals .= "\"";
+        $picturecode = base64file("{$at}/publicobj/{$picfile}", $useid, $pictype, true, $additionals);
+        $divstyle = ( array_key_exists('holdingdivstyle',$pd) ) ? " style = \"position: relative; display: inline-block; {$pd['holdingdivstyle']}\"" : " style = \"position: relative; display: inline-block; \"";   
+        $caption = ( array_key_exists('caption', $pd) ) ? $pd['caption'] : "";
+        $picturedsp = "<div class=helpPictureDisplay {$divstyle}>{$picturecode}<div class=helppicturecaption>{$caption}</div></div>";
+        $hlpTxt = str_replace($pictDef,$picturedsp,$hlpTxt);
+      }
+    }
+    return $hlpTxt;
+}

@@ -11,7 +11,7 @@ class printobject {
     public $style = "";
     public $bodycontent = "";
 
-    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview'); //chartreview when that is built 
+    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview', 'helpfile'); //chartreview when that is built 
     //pxchart = Patient Chart
     
     function __construct() { 		  
@@ -53,11 +53,8 @@ class printobject {
         $elArr['headr'] = (method_exists($conDoc,'generateheader') ? $conDoc->generateheader() : ""); 
         $elArr['tabicon'] = (method_exists($conDoc,'faviconBldr') ? $conDoc->faviconBldr($elArr['object']) : "");
         $elArr['style'] = (method_exists($conDoc,'globalstyles') ? $conDoc->globalstyles() : "");        
-
         $elArr['bodycontent'] = $elArr['object']['documentid'];
-        
         $bdy = (method_exists($conDoc,'documenttext') ? $conDoc->documenttext($elArr['object'], $originalURI) : "");
-        
         if ($bdy['format'] === "pdf") { 
          $elArr['bodycontent'] = $bdy['pathtodoc'];   
          $elArr['htmlpdfind'] = 0;
@@ -122,7 +119,12 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $docid = $docIdElem[0];
             $bgnbr = '';                  
            break; 
-
+        case 'helpfile':
+            $dt = "SCIENCESERVER HELP DOCUMENT";
+            $docIdElem = $unencry;
+            $docid = $docIdElem;
+            $bgnbr = '';                  
+          break;
         default: 
             //RETURN ERROR
     }    
@@ -166,7 +168,7 @@ $rtnthis = <<<RTNTHIS
 
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
 html {margin: 0; height: 100%; width: 100%; box-sizing: border-box;}
-body { margin: 0;  height: 100%; width: 100%; box-sizing: border-box; font-family: Roboto; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); }
+body { margin: 0;  height: 100%; width: 100%; box-sizing: border-box; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1); }
 RTNTHIS;
 return $rtnthis;    
 }            
@@ -183,6 +185,9 @@ function pagetabs($docobject) {
     case 'CHART REVIEW':
         $dspdoc = 'CR-' . substr(('000000' . $docobject['documentid']),-6);
         $thisTab = "Chart Review {$dspdoc}";
+    break;
+    case 'SCIENCESERVER HELP DOCUMENT':
+    $thisTab = "ScienceServer Help Document";
     break;
     default: 
       $thisTab =  substr(('000000' . $docobject['documentid']),-6) . " Shipment Document"; 
@@ -206,6 +211,10 @@ function documenttext($docobject, $orginalURI) {
     case 'SCIENCESERVER PRINTABLE REPORTS':
         $doctext = getPrintableReport($docobject['documentid'],$orginalURI);
         break;
+    case 'SCIENCESERVER HELP DOCUMENT':
+        $doctext = getSystemHelpDocument($docobject['documentid'],$orginalURI);
+        break;
+    
     }
     return $doctext;
 }
@@ -252,6 +261,96 @@ function getPrintableReport($sdid, $originalURL) {
   }
 
   return array('status' => $responseCode, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => $format);
+}
+
+function getSystemHelpDocument($docid, $originalURL) { 
+
+    $at = genAppFiles;
+    $tt = treeTop;    
+    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+    
+    //****************CREATE BARCODE
+        require ("{$at}/extlibs/bcodeLib/qrlib.php");
+        $tempDir = "{$at}/tmp/";
+        $codeContents = "{$tt}{$orginalURL}";
+        $fileName = 'hlpbr' . generateRandomString() . '.png';
+        $pngAbsoluteFilePath = $tempDir.$fileName;
+        if (!file_exists($pngAbsoluteFilePath)) {
+          QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+        } 
+        $qrcode = base64file("{$pngAbsoluteFilePath}", "topqrcode", "png", true, " style=\"height: .5in;\"   ");
+        
+        //********************END BARCODE CREATION
+
+require(genAppFiles . "/dataconn/sspdo.zck"); 
+$hlpSQL = "SELECT ifnull(helptype,'') as hlpType, ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt , ifnull(helpurl,'') as helpurl FROM four.base_ss7_help where helpurl = :dataurl ";        
+$hlpR = $conn->prepare($hlpSQL); 
+$hlpR->execute(array(':dataurl' => trim($docid)));        
+if ($hlpR->rowCount() < 1) { 
+    $helpFile = "NO HELP FILE FOUND WITH THAT URL";
+      } else {           
+        $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);    
+          $hlpTitle = $hlp['hlpTitle'];
+          $hlpSubTitle = $hlp['hlpSubTitle'];
+          $hlpEmail = $hlp['byemail'];
+          $hlpDte = ( trim($hlp['initialdte']) !== "" ) ? " / {$hlp['initialdte']}" : "";
+          $hlpTxt = putPicturesInPrintHelpText( $hlp['htmltxt'] );          
+          $helpFile = <<<RTNTHIS
+   <div id=hlpMainHolderDiv>
+   <div id=hlpMainTitle>{$hlpTitle}</div> 
+   <div id=hlpMainSubTitle>{$hlpSubTitle}</div>            
+   <div id=hlpMainByLine>{$hlpEmail} {$hlpDte}</div>             
+   <div id=hlpMainText>
+        {$hlpTxt}
+        <p>&nbsp;
+   </div>
+   </div>         
+RTNTHIS;
+      }
+
+$dte = date('l jS, M Y H:i');
+        
+$docText = <<<RTNTHIS
+<html>
+<head>
+<style>
+@import url(https://fonts.googleapis.com/css?family=Roboto);
+html {margin: 0;}
+body { margin: 0; font-family: Roboto; font-size: 9pt; color: rgba(48,57,71,1); }
+.line {border-bottom: 1px solid rgba(0,0,0,1); height: 2pt; }
+        
+#hlpMainHolderDiv {padding: 5vh 1vw 0 1vw;   } 
+#hlpMainTitle { width: 100%; font-family: Roboto; font-size: 18pt; font-weight: bold; color: rgba(48,57,71,1); text-align: center; padding: 15px 0 8px 0; }
+#hlpMainSubTitle { width: 100%; font-family: Roboto; font-size: 16pt; font-weight: bold; color: rgba(48,57,71,1); text-align: center; padding: 5px 0 10px 0; }
+#hlpMainByLine { width: 100%; font-family: Roboto; font-size: 11pt; color: rgba(0, 112, 13,1); text-align: right; padding: 10px 0 10px 0; }
+#hlpMainText { width: 100%; font-family: Roboto; font-size: 10.5pt; line-height: 1.8em; text-align: justify; padding: 10px 0 0 0; }
+        
+.helppicturecaption { font-size: 9pt; color: rgba(145,145,145,1); font-weight: bold; font-style: italics; }
+        
+</style>
+</head>
+<body>
+<table border=0 width=100%>
+  <tr><td rowspan=3 valign=top style="width: 1in;">{$favi}</td><td style="font-size: 14pt; font-weight: bold; padding: 0 0 0 0; ">ScienceServer HELP Document / Specimen Management System</td><td rowspan=2 align=right valign=top>{$qrcode}</td></tr>
+  <tr><td valign=top style=" font-size: 8pt;"><b>CHTN Eastern Division</b><br>Unversity of Pennsylvania Perelman School of Medicine<br>3400 Spruce Street, Dulles 565, Philadelphia, Pennsylvania 19104 <br>(215) 662 4570 | https://www.chtneast.org | email: chtnmail@uphs.upenn.edu</td></tr>
+  <tr><td valign=top style=" font-size: 7pt;">Print Date: {$dte}</td></tr>
+  <tr><td colspan=3 class=line></td></tr>        
+</table>
+        
+ {$helpFile}
+RTNTHIS;
+
+    $filehandle = generateRandomString();                
+    $sdDocFile = genAppFiles . "/tmp/hlpz{$filehandle}.html";
+    $sdDhandle = fopen($sdDocFile, 'w');
+    fwrite($sdDhandle,  $docText );
+    fclose;
+    $sdPDF = genAppFiles . "/publicobj/documents/hlpdocprints/hlpdoc{$filehandle}.pdf";
+    $linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED Help Document\"     {$sdDocFile} {$sdPDF}";
+    //$linuxCmd = "wkhtmltopdf --load-error-handling ignore {$linuxcmd} {$sdDocFile} {$sdPDF}";
+    $output = shell_exec($linuxCmd);
+    $format = "pdf";    
+    return array('status' => $responseCode, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => $format);
 }
 
 function getShipmentDocument($sdid, $originalURL) { 

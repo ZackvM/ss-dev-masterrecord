@@ -659,7 +659,7 @@ RTNTHIS;
           //GET PDF
           $hlpTitle = $hlp['hlpTitle'];
           $hlpSubTitle = $hlp['hlpSubTitle'];  
-          $pth = base64file(genAppFiles  . "{$hlp['htmltxt']}", "HELPDSPPDF","pdfhlp",true)    ;
+          $pth = base64file(genAppFiles  . "{$hlp['htmltxt']}", "HELPDSPPDF","pdfhlp",true);
           $helpFile = <<<RTNTHIS
    <div id=hlpMainHolderDiv>
    <div id=hlpMainTitle>{$hlpTitle}</div> 
@@ -676,7 +676,7 @@ RTNTHIS;
           $hlpEmail = $hlp['byemail'];
           $hlpDte = ( trim($hlp['initialdte']) !== "" ) ? " / {$hlp['initialdte']}" : "";
           $hlpTxt = putPicturesInHelpText( $hlp['htmltxt'] );
-          $hlpurl = $hlp['helpurl'];
+          $hlpurl = cryptservice( $hlp['helpurl'] );
           $printTopicBtn = "<td><table class=tblBtn id=btnPrintThis onclick=\"openOutSidePage('{$tt}/print-obj/help-file/{$hlpurl}');\" style=\"width: 6vw;\"><tr><td><center><i class=\"material-icons helpticket\">print</i></td></tr></table></td>";
           $helpFile = <<<RTNTHIS
    <div id=hlpMainHolderDiv>
@@ -1190,26 +1190,12 @@ return $rtnthis;
 function root($rqstStr, $whichUsr) { 
     //$whichUsr THIS IS THE USER ARRAY {"statusCode":200,"loggedsession":"i46shslvmj1p672lskqs7anmu1","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":20,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"googleiconcode":"lock_open","menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"googleiconcode":"account_balance","menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""}]],["472","REPORTS","",[{"googleiconcode":"account_balance","menuvalue":"All Reports","pagesource":"all-reports","additionalcode":""}]],["473","UTILITIES","",[{"googleiconcode":"account_balance","menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474",null,null,[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]} 
   
-  $d = date('M d, Y H:i'); 
-  
+  $d = date('M d, Y H:i');   
   $fsCalendar = buildcalendar('mainroot'); 
   
-  
   $rtnthis = <<<PAGEHERE
-
-<table border=0 width=100% id=rootTable>
-  <tr>
-          <td>Welcome {$whichUsr->username} ({$whichUsr->useremail} /{$whichUsr->userid}) </td>
-          <td align=right>Now: {$d}</td>
-  </tr>
-  <td colspan=2>          
-      <!-- Display Area //-->      
-          
-          {$fsCalendar} 
-          
-          
-      <!-- END Display Area //-->                
-  </td>        
+<table border=0 id=rootTable>
+    <tr><td>&nbsp;</td><td style="width: 40vw;" align=right><div id="mainRootCalendar">{$fsCalendar}</div></td></tr>        
 </table>
 
 PAGEHERE;
