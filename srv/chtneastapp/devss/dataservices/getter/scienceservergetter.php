@@ -161,7 +161,7 @@ class objlisting {
           $modArray[$modArrCnt]['moduleid'] = $modList['moduleid'];
           $modArray[$modArrCnt]['module'] = $modList['module'];
           $topicArray = array();
-          $topicSQL = "SELECT hlpid, helptype, helpurl, screenreference, title  FROM four.base_ss7_help where helpdspind = 1 and (helptype = 'SCREEN' or helptype = 'TOPIC') and belongstoindexid = :modIndex order by helpdsporder";
+          $topicSQL = "SELECT hlpid, helptype, helpurl, screenreference, title  FROM four.base_ss7_help where helpdspind = 1 and (helptype = 'SCREEN' or helptype = 'TOPIC' or helptype = 'PDF') and belongstoindexid = :modIndex order by helpdsporder";
           $topicRS = $conn->prepare($topicSQL);
           $topicRS->execute(array(':modIndex' => $modList['moduleid'])); 
           if ($topicRS->rowCount() > 0 ) { 

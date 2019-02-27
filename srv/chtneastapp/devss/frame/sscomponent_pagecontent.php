@@ -637,7 +637,6 @@ if ( trim($rqststr[2]) !== "" ) {
         $inner .= "</table>";
         $inner .= "</td></tr>";
       }
-
       $helpFile = <<<RTNTHIS
 <table border=0 cellspacing=0 cellpadding=0 id=resultsSearchTbl>
 <tr><td id=title colspan=2>Search Results</td></tr>
@@ -649,22 +648,36 @@ RTNTHIS;
       //GET HELP FILE
       //TODO - PULL FROM A WEB SERVICE    
       require(genAppFiles . "/dataconn/sspdo.zck"); 
-      $hlpSQL = "SELECT ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt , ifnull(helpurl,'') as helpurl FROM four.base_ss7_help where replace(helpurl,'-','') = :dataurl ";
+      $hlpSQL = "SELECT ifnull(helptype,'') as hlpType, ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt , ifnull(helpurl,'') as helpurl FROM four.base_ss7_help where replace(helpurl,'-','') = :dataurl ";
       $hlpR = $conn->prepare($hlpSQL); 
       $hlpR->execute(array(':dataurl' => trim($rqststr[2])));
       if ($hlpR->rowCount() < 1) { 
-      } else { 
-        $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);
-        $ar = json_encode($hlp);
-        $hlpTitle = $hlp['hlpTitle'];
-        $hlpSubTitle = $hlp['hlpSubTitle'];
-        $hlpEmail = $hlp['byemail'];
-        $hlpDte = ( trim($hlp['initialdte']) !== "" ) ? " / {$hlp['initialdte']}" : "";
-        $hlpTxt = putPicturesInHelpText( $hlp['htmltxt'] );
-        $hlpurl = $hlp['helpurl'];
-        $printTopicBtn = "<td><table class=tblBtn id=btnPrintThis onclick=\"openOutSidePage('{$tt}/print-obj/help-file/{$hlpurl}');\" style=\"width: 6vw;\"><tr><td><center><i class=\"material-icons helpticket\">print</i></td></tr></table></td>";
-//<div id=hlpMainToolBar><table width=100% cellpadding=0 cellspacing=0><tr><td> <table class=tblBtn id=btnPrintThis onclick="openOutSidePage('{$tt}/print-obj/help-file/{$hlpurl}');" style="width: 6vw;"><tr><td><center><i class="material-icons helpticket">print</i></td></tr></table> </td></tr></table> </div>
-        $helpFile = <<<RTNTHIS
+      } else {           
+        $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);        
+        if ( strtoupper(trim($hlp['hlpType'])) === "PDF") { 
+          //GET PDF
+          $hlpTitle = $hlp['hlpTitle'];
+          $hlpSubTitle = $hlp['hlpSubTitle'];  
+          $pth = base64file(genAppFiles  . "{$hlp['htmltxt']}", "HELPDSPPDF","pdfhlp",true)    ;
+          $helpFile = <<<RTNTHIS
+   <div id=hlpMainHolderDiv>
+   <div id=hlpMainTitle>{$hlpTitle}</div> 
+   <div id=hlpMainSubTitle>{$hlpSubTitle}</div>
+   <div id=hlpMainText>
+        {$pth}       
+        <p>&nbsp;
+   </div>
+   </div>         
+RTNTHIS;
+        } else {         
+          $hlpTitle = $hlp['hlpTitle'];
+          $hlpSubTitle = $hlp['hlpSubTitle'];
+          $hlpEmail = $hlp['byemail'];
+          $hlpDte = ( trim($hlp['initialdte']) !== "" ) ? " / {$hlp['initialdte']}" : "";
+          $hlpTxt = putPicturesInHelpText( $hlp['htmltxt'] );
+          $hlpurl = $hlp['helpurl'];
+          $printTopicBtn = "<td><table class=tblBtn id=btnPrintThis onclick=\"openOutSidePage('{$tt}/print-obj/help-file/{$hlpurl}');\" style=\"width: 6vw;\"><tr><td><center><i class=\"material-icons helpticket\">print</i></td></tr></table></td>";
+          $helpFile = <<<RTNTHIS
    <div id=hlpMainHolderDiv>
    <div id=hlpMainTitle>{$hlpTitle}</div> 
    <div id=hlpMainSubTitle>{$hlpSubTitle}</div>            
@@ -675,6 +688,8 @@ RTNTHIS;
    </div>
    </div>         
 RTNTHIS;
+        }
+        
       }
     }
 } else { 
@@ -690,7 +705,21 @@ foreach ($dta['DATA'] as $key => $val) {
   $t .= "<div class=ssHlpModDiv><table cellspacing=0 cellpadding=0 class=hlpModuleTbl><tr><td><i class=\"material-icons\">keyboard_arrow_right</i></td><td>{$val['module']}</td></tr></table>";
   if ((int)count($val['topics']) > 0) { 
     foreach ( $val['topics'] as $tky => $tvl ) {
-      $topicon = ($tvl['topictype'] === "TOPIC") ? "<i class=\"material-icons topicicon\">library_books</i>" : "<i class=\"material-icons topicicon\">desktop_windows</i>"; 
+      //$topicon = ($tvl['topictype'] === "TOPIC") ? "<i class=\"material-icons topicicon\">library_books</i>" :  ($tvl['topictype'] === "PDF") ? "" : "<i class=\"material-icons topicicon\">desktop_windows</i>"; 
+      switch ($tvl['topictype']) { 
+          case 'TOPIC': 
+              $topicon = "<i class=\"material-icons topicicon\">library_books</i>";
+              break;
+          case 'PDF':
+              $topicon = "<i class=\"material-icons topicicon\">picture_as_pdf</i>";
+              break;
+          case 'SCREEN':
+              $topicon = "<i class=\"material-icons topicicon\">desktop_windows</i>";    
+              break;
+          default:
+          $topicon = "<i class=\"material-icons topicicon\">desktop_windows</i>";
+      }
+      
       $t .= "<div class=\"hlpTopicDiv\"><table cellspacing=0 cellpadding=0 onclick=\"navigateSite('scienceserver-help/{$tvl['topicurl']}');\" border=0 class=hlpTopicTbl><tr><td class=iconholdercell>{$topicon}</td><td>{$tvl['topictitle']}</td></tr></table>";
       if ((int)count($tvl['functionslist']) > 0 ) { 
         foreach ( $tvl['functionslist'] as $fky => $fvl ) { 
