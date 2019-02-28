@@ -8,9 +8,14 @@ function root( $rqststr ) {
 
 var lastRequestCalendarDiv = "";
 function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {        
-  var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;            
+  var obj = new Object(); 
+  obj['whichcalendar'] = whichcalendar; 
+  obj['monthyear'] = monthyear;  
+  var passeddata = JSON.stringify(obj);
+  var mlURL = "/data-doers/front-sscalendar";            
   lastRequestCalendarDiv = whichdiv;      
-  universalAJAX("GET",mlURL,"",answerGetCalendar,modalCtl);
+  universalAJAX("POST",mlURL,passeddata,answerGetCalendar,modalCtl);
+
 }
 
 function answerGetCalendar(rtnData) {

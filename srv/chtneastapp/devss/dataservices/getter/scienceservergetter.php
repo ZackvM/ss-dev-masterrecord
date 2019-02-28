@@ -603,7 +603,7 @@ OBJECTSQL;
     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
     return $rows;    
  }
-    
+ 
 function sscalendar($request,$urirqst) { 
     $rows = array(); 
     //TODO:  Check inputs for errors

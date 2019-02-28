@@ -1,14 +1,12 @@
 <?php
 
-$userTestString = "USER TEST STRING";
-
-
 class bldssuser { 
     
     public $statusCode = 404;
     public $loggedsession = "";
     public $dbuserid = 0;
     public $userid = "";
+    public $friendlyname = "";
     public $username = "";
     public $useremail = "";
     public $chngpwordind = 0;
@@ -43,6 +41,7 @@ class bldssuser {
           $this->loggedsession = $userelements['sssession'];
           $this->dbuserid = $userelements['ssuserid'];
           $this->userid = $userelements['ssusername'];
+          $this->friendlyname = $userelements['ssfriendlyname'];
           $this->username = $userelements['ssdisplayname'];
           $this->useremail = $userelements['ssemail'];
           $this->chngpwordind = $userelements['sschangepassword'];
@@ -77,6 +76,7 @@ class bldssuser {
         session_start(); 
         require_once(serverkeys . "/sspdo.zck"); 
         $userTopSQL = "SELECT ub.userid"
+                . ", ifnull(ub.friendlyName,'') as ssfriendlyname"
                 . ", ifnull(ub.originalaccountname,'') as ssusername"
                 . ", lcase(ifnull(ub.emailaddress,'')) as email "
                 . ", ifnull(ub.changePWordInd,1) as changepwordind"
@@ -116,6 +116,7 @@ class bldssuser {
            $ur = $userTopR->fetch(PDO::FETCH_ASSOC); 
            $uid = $ur['userid'];
            $elArr['ssuserid'] = $ur['userid'];
+           $elArr['ssfriendlyname'] = $ur['ssfriendlyname'];
            $elArr['sssession'] = session_id();             
            $elArr['ssusername'] = $ur['ssusername']; 
            $elArr['ssdisplayname'] = $ur['displayname'];
@@ -191,6 +192,7 @@ class bldssuser {
            $elArr['sssession'] = "";             
            $elArr['ssusername'] = ""; 
            $elArr['ssdisplayname'] = "";
+           $elArr['ssfriendlyname'] = "";
            $elArr['ssemail'] = "";
            $elArr['sschangepassword'] = "";
            $elArr['allowpxi'] = 0;

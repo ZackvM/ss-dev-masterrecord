@@ -696,15 +696,27 @@ function root($mobileind) {
 
       $rtnThis = <<<STYLESHEET
 
-body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;  }
-              
+body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;  }     
 #rootTable { font-family: Roboto; font-size: 1.5vh; width: 100%; }
 
-              
 /* SCREEN CALENDAR FORMATTING */ 
-#mainRootTbl { width: 30vw; border: 1px solid rgba({$this->color_darkgrey},.5);               
-              
-              
+#mainRootTbl { width: 42vw; border: 1px solid rgba({$this->color_darkgrey},.5); box-sizing: border-box; }               
+#mainRootTbl #mainRootLeftCtl { width: 1vw; height: 4vh; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_darkgrey},.5); }              
+#mainRootTbl #mainRootLeftCtl:hover { cursor: pointer; color: rgba({$this->color_darkgreen},1); }
+#mainRootTbl #mainRootRightCtl { width: 1vw; height: 4vh; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_darkgrey},.5); }              
+#mainRootTbl #mainRootRightCtl:hover { cursor: pointer; color: rgba({$this->color_darkgreen},1); }
+#mainRootTbl #mainRootCalTitle { text-align: center; background: rgba({$this->color_darkgrey},.5); font-weight: bold; font-size: 1.8vh; padding: .8vh 0;  }
+#mainRootTbl .mainRootCalHeadDay { font-size: 1.2vh; width: 6vw; height: 3vh; border: 1px solid rgba({$this->color_darkgrey},.5); border-right: none; background: rgba({$this->color_darkgrey},1); text-align: center; }
+#mainRootTbl .starterHeadCell { border-left: none;   }
+#mainRootTbl .mainRootTopSpacer {background: rgba({$this->color_lightgrey},.7); }
+#mainRootTbl .mainRootBtmSpacer {background: rgba({$this->color_lightgrey},.7); }
+#mainRootTbl .mnuMainRootDaySquare { border: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: none; border-right: none; width: 6vw; height: 6vh; }
+#mainRootTbl .calendarEndDay { border-left: none; }
+#mainRootTbl .todayDsp { background: rgba({$this->color_lamber},.5); }
+#mainRootTbl #mainRootBtmLine { border-top: 1px solid rgba({$this->color_darkgrey},.5); padding: 1vh 1vw; background: rgba({$this->color_lightgrey},1); }
+#mainRootTbl #saluations { font-size: 1.2vh; font-weight: bold; }
+
+
               
 STYLESHEET;
 return $rtnThis;

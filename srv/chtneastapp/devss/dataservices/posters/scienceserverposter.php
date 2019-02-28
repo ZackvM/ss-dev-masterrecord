@@ -33,6 +33,38 @@ function __construct() {
 }
 
 class datadoers {
+
+    
+    function frontsscalendar() { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode(func_get_arg(1), true);
+
+      //TODO:  CHECK ALL DATA ELEMENTS ARE CORRECT AND CORRECT TYPE (ei. Month/Year values)
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      ( $authuser !== $authchk ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member.")) : "";
+       
+      $dte = explode("/",$pdta['monthyear']); 
+      $u = userDetailsCal($authuser);
+      $dta = buildcalendar($pdta['whichcalendar'], $dte[0], $dte[1], $u[0]['friendlyname'], $u[0]['emailaddress'], $authuser);  
+
+      if ( trim($dta) !== "" ) { 
+        $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    } 
     
     function markbgmigration ( $request, $passdata ) { 
       $rows = array(); 
@@ -3744,8 +3776,22 @@ function addSegmentToBiogroup($whichBG = "", $hrpost = 0, $metric = 0, $metricUO
   return $bgs . " ";
 }
 
-function userDetails($whichusr) { 
+function userDetailsCal($whichusr) { 
+  include(serverkeys . "/sspdo.zck"); 
+  $rtnArr = array();
+  $usrSQL = "SELECT sessionid, friendlyname, emailaddress FROM four.sys_userbase where sessionid = :sessionid and allowInd = 1";
+  $usrRS = $conn->prepare($usrSQL); 
+  $usrRS->execute(array(':sessionid' => $whichusr)); 
+  if ($usrRS->rowCount() === 0) { 
+  } else { 
+    while ($u = $usrRS->fetch(PDO::FETCH_ASSOC)) { 
+      $rtnArr[] = $u;
+    }
+  } 
+  return $rtnArr;
+}
 
+function userDetails($whichusr) { 
   include(serverkeys . "/sspdo.zck"); 
   $rtnArr = array();
   $usrSQL = "SELECT sessionid, originalaccountname, presentinstitution, primaryinstcode FROM four.sys_userbase where sessionid = :sessionid and allowInd = 1 and allowProc = 1";

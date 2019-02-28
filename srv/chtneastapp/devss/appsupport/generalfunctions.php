@@ -326,7 +326,7 @@ function getColor($num) {
     return array(hexdec(substr($hash, 0, 2)), hexdec(substr($hash, 2, 2)), hexdec(substr($hash, 4, 2))); 
 }
 
-function buildcalendar($whichcalendar, $pmonth, $pyear) { 
+function buildcalendar($whichcalendar, $pmonth, $pyear ) { 
 
 if (trim($pmonth) === "") { $pmonth = date('m'); }
 if (trim($pyear) === "") { $pyear = date('Y'); }
@@ -340,21 +340,15 @@ $dayOfWeek = $dateComponents['wday'];
 $dyr = $dateComponents['wday'];
 $lastMonth = substr(('00'.((int)$pmonth - 1)), -2);
 $lastYear = $pyear; 
-
-if ((int)$lastMonth === 0) { 
-  $lastMonth = 12; 
-  $lastYear = ($lastYear - 1);
-}
+if ((int)$lastMonth === 0) { $lastMonth = 12; $lastYear = ($lastYear - 1); }
 $nextMonth = substr(('00'.((int)$pmonth + 1)), -2);
 $nextYear = $pyear; 
-if ((int)$nextMonth === 13) { 
-  $nextMonth = '01';
-  $nextYear = ((int)$nextYear + 1);
-}
+if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1); }
 
 //******FORMATTING
     switch (strtolower($whichcalendar)) {
      case 'mainroot':
+        $daysofweek = array('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'); 
         $calTblId = "mainRootTbl";
         $leftBtnId = "mainRootLeftCtl";
         $calTitle = "mainRootCalTitle";
@@ -369,7 +363,16 @@ if ((int)$nextMonth === 13) {
         $topBarClass = "ddMainRootMenuCalTopRow";
         $topCtlBtnClass= "smallMainRootCtlBtn";
         $leftBtnAction  = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$lastMonth}/{$lastYear}');\" ";
-        $rightBtnAction = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$nextMonth}/{$nextYear}');\" ";          
+        $rightBtnAction = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$nextMonth}/{$nextYear}');\" ";         
+
+        $chkToday = date('m/d/Y');;
+        //TODO:  CHECK THAT THE OVERLOAD ELEMENTS CONTAIN VALUES
+        $fn = func_get_arg(3);
+        $em = func_get_arg(4);  
+        $ls = func_get_arg(5); 
+        //SELECT * FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1 
+        //{$em} {$ls}
+        $dspChkToday =  "<div id=saluations>Hi {$fn}<br>Today is " . date('l, jS \of F, Y') . ". Here's what's happening today <p></div>";
          break;
      case 'procedureprocurequery':
         $calTblId = "pqcTbl";
@@ -560,8 +563,15 @@ $rtnthiscalendar = <<<CALSTRT
 CALSTRT;
 
 $rtnthiscalendar .= "<tr>";
+$dcnt = 0;
 foreach ($daysofweek as $day) { 
-  $rtnthiscalendar .= "<th class=\"{$dayHeadClass}\">{$day}</th>";
+  $endcell = "";
+  if ( $dcnt === 0 ) { $endcell = " starterHeadCell"; }
+  if ( $dcnt === 6 ) { $endcell = " endHeadCell"; }
+
+
+  $rtnthiscalendar .= "<th class=\"{$dayHeadClass}{$endcell}\">{$day}</th>";
+  $dcnt++;
 }
 $rtnthiscalendar .= "</tr>";
 $rtnthiscalendar .= "<tr>";
@@ -570,13 +580,16 @@ if ($dayOfWeek > 0) {
     $rtnthiscalendar .= "<td colspan='{$dayOfWeek}' class=\"{$topSpacer}\">&nbsp;</td>";
 }
 $currentDay = 1; 
-while ($currentDay <= $numberOfDays) { 
+while ($currentDay <= $numberOfDays) {
+
    if ($dayOfWeek === 7) { 
      $rtnthiscalendar .= "</tr><tr>";
      $dayOfWeek = 0;
    }
+
    $currentDayDsp = str_pad($currentDay,2,"00",STR_PAD_LEFT);
-//INDIVIDUAL BUTTON ACTION HERE
+   
+    //INDIVIDUAL BUTTON ACTION HERE
     switch (strtolower($whichcalendar)) {
         case 'procedureprocurequery':
          $sqrID = "daySqr{$currentDayDsp}";
@@ -634,11 +647,17 @@ while ($currentDay <= $numberOfDays) {
          $dayDsp = $currentDayDsp;
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('shpQryToDate','','');\" ><center>[clear]</td></tr>";
          break;
-        case 'mainroot': 
-         $sqrID = "daySqr{$currentDayDsp}";
-         $action = " onclick=\"alert('{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
-         $dayDsp = $currentDayDsp;
-         $btmLineDsp = "";
+         case 'mainroot':
+          if ( "{$monthNbr}/{$currentDayDsp}/{$pyear}" === $chkToday ) {
+            $daySquare = ( $dayOfWeek === 0 ) ? "mnuMainRootDaySquare calendarEndDay todayDsp" : "mnuMainRootDaySquare todayDsp";
+          } else { 
+            $daySquare = ( $dayOfWeek === 0 ) ? "mnuMainRootDaySquare calendarEndDay" : "mnuMainRootDaySquare";
+          }
+          $sqrID = "daySqr{$currentDayDsp}";
+          $action = " onclick=\"alert('{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
+          $dayDsp = $currentDayDsp;
+          $btmLineDsp = "<tr><td colspan=7 id={$btmLine}><div id=mainRootTodayActivityDsp>{$dspChkToday}</div></td></tr>";
+
          break;
        default: 
          $sqrID = "daySqr{$currentDayDsp}";
