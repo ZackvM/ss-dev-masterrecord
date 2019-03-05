@@ -165,13 +165,13 @@ echo $pg;
               $responseCode = $obj->responseCode;
               $data = $obj->rtnData;  
             } else {
-                $responseCode = 401;
+              $responseCode = 401;
             }
             break;
            default: 
-               echo "ONLY GET/POST are allowed under this end point!"; 
-               $responseCode = 405;
-               header('HTTP/1.0 401 Unauthorized');
+              echo "ONLY GET/POST are allowed under this end point!"; 
+              $responseCode = 405;
+              header('HTTP/1.0 401 Unauthorized');
         }
 
         header('Content-type: application/json; charset=utf8');
@@ -181,7 +181,7 @@ echo $pg;
         header('Access-Control-Allow-Methods: GET, POST');
         http_response_code($responseCode);
         echo $data;
-        break;        
+    break;        
 
     case 'printobj': 
       //PRINT OBJECT - GET ONLY  

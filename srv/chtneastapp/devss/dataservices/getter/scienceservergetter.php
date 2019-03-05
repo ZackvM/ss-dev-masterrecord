@@ -35,6 +35,35 @@ class objgetter {
 
 class objlisting { 
     
+  function printthermallabellist() { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW'];
+     
+     if ( $authuser === serverIdent) { 
+        $getSQL = "SELECT ifnull(lbl.labelRequested,'') as lblRqst, ifnull(lbl.printerRequested,'') as printerrqst, ifnull(lbl.dataStringpayload,'') as datapayload, ifnull(lbl.bywho,'UNKNOWNRQSTR') as bywho, ifnull(lbl.onwhen,now()) as onwhen, lbl.printid, ifnull(fm.formatText,'') as formatText FROM serverControls.lblToPrint lbl left join serverControls.lblFormats fm on lbl.labelRequested = fm.formatname where ifnull(lbl.datastringpayload,'') <> '' and ifnull(lbl.printerRequested,'') <> '' and ifnull(fm.formatText,'') <> '' ";
+        $getLbl = $conn->prepare($getSQL);
+        $getLbl->execute();
+        $itemsfound = $getLbl->rowCount();
+        while ($r = $getLbl->fetch(PDO::FETCH_ASSOC)) {
+            $rows[] = $r;
+            //DELETE HERE
+        }
+        $dta = $rows;
+        $responseCode = 200;
+     }
+     
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;       
+  }  
+    
   function chtneasternenvironmentalmetrics( $whichobj, $urirqst ) { 
      $responseCode = 400;
      $rows = array();

@@ -113,6 +113,8 @@ function checkPostingUser($usrname, $passwrd) {
           $responseCode = 200;
       }
     } else { 
+      
+
       //CHECK CODE IN DATABASE   
       require(serverkeys . "/sspdo.zck"); 
       //TODO: MAKE THIS AWEBSERVICE
@@ -125,6 +127,8 @@ function checkPostingUser($usrname, $passwrd) {
             $responseCode = 200;
           }
       }
+      
+      
     }
     return $responseCode;
 }
