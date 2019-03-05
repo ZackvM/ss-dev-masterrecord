@@ -370,10 +370,11 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $fn = func_get_arg(3);
         $em = func_get_arg(4);  
         $ls = func_get_arg(5); 
-        //SELECT * FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1 
-        //{$em} {$ls}
+        //SELECT * FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1
+        //https://kayaposoft.com/enrico/json/v2.0/?action=getHolidaysForMonth&month=1&year=2019&country=us&region=pa&holidayType=public_holiday   ///GET ALL HOLIDAYS FOR A MONTH IN US/PA
+
         $dspChkToday =  "<div id=saluations>Hi {$fn}<br>Today is " . date('l, jS \of F, Y') . ". Here's what's happening today <p></div>";
-         break;
+        break;
      case 'procedureprocurequery':
         $calTblId = "pqcTbl";
         $leftBtnId = "pqcLeft";
