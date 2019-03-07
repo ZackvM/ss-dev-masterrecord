@@ -691,7 +691,48 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 STYLESHEET;
 return $rtnThis;    
 }
-  
+
+function paymenttracker($mobileind) { 
+$rtnThis = <<<STYLESHEET
+
+  body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
+  #mainPayHoldTblTitle { font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
+  #payListTable { width: 15.3vw; border-collapse: collapse;  }
+  .payCounter { width: 5vw; text-align: right; font-style: italic; font-size: 1.4vh;  }
+  .payDateDsp { font-size: 1.4vh; }
+  .payDetailDiv { display: none; }
+  .goodpay { color: rgba({$this->color_darkgreen},1); font-size: 1.6vh; }
+  .badpay { color: rgba({$this->color_bred},1); font-size: 1.6vh;}
+  .payiconholder { width: 1.3vw; text-align: center; }
+  .payinvestname { width: 5vw; } 
+  .payinvoices { width: 6vw; }
+  .mohknee {width: 3vw; text-align: right; }
+
+  .topbtns { font-size: 1.5vh; }
+
+  .dspFldLabel { font-size: 1.2vh; color: rgba({$this->color_darkgrey},.8); font-weight: bold; border-bottom: 1px solid rgba({$this->color_darkgrey},.8); padding: 1vh 0 0 0; } 
+  #dspFldTransUUID { width: 10vw; }
+  #dspFldTransType { width: 9vw; }
+  #dspFldTransDate { width: 12vw; }
+  #dspFldTransStat { width: 10vw; }
+  #dspFldAuthCode { width: 10vw; }
+  #dspFldAuthRefNo { width: 9vw; }
+  #dspFldAuthAuthTime { width: 12vw; }
+  #dspFldCard { width: 10vw; }
+  #dspFldAuthMsg {width: 42vw; }
+
+  #dspFldTransINVID { width: 10vw; }
+  #dspFldTransName { width: 25vw; }
+  #dspFldTransEmail { width: 25vw; }
+  #dspFldTransPhone { width: 25vw; }
+
+
+
+
+STYLESHEET;
+return $rtnThis;
+}
+
 function root($mobileind) { 
 
       $rtnThis = <<<STYLESHEET
@@ -1093,6 +1134,7 @@ body {margin: 0; height: 100%; width: 100%; background: rgba({$this->color_white
 #loginGrid input:focus, #loginGrid input:active {background: rgba({$this->color_lamber},.5); border: 1px solid rgba({$this->color_dblue},.5);  outline: none;  }
 
 #loginFooter {font-family: Roboto; font-size: 1.2vh; line-height: 1.8em; padding: 2vh .8vw 2vh .8vw; text-align: justify; border-top: 1px solid rgba({$this->color_dblue},1); background: rgba({$this->color_lightgrey},1); }
+#loginvnbr { font-family: Roboto; font-size: .9vh; padding: .4vh .4vw .4vh .8vw; text-align: right; background: rgba({$this->color_lightgrey},1); }
 
 .adminBtn {font-family: Roboto; font-size: 1.8vh; border: 1px solid rgba({$this->color_mblue},1); color: rgba({$this->color_mblue}, 1); padding: 8px 4px 8px 4px; }
 .adminBtn:hover {cursor: pointer; background: rgba({$this->color_lgrey},1); }

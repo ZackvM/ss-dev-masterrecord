@@ -454,10 +454,139 @@ PAGEHERE;
 return $rtnthis;
 }
 
-function collectiongrid($rqststr, $usr) { 
+function paymenttracker( $rqststr, $usr ) {
+    session_start();
+    $dta['sessionid']   = session_id();
+    $dta['user']        = $usr->useremail;
+    $dta['nbrofdays']   = 10; //MAKE THIS CHANGABLE!  
+    $pdta = json_encode($dta);
+    $rsltdta = json_decode(callrestapi("POST", dataTree . "/data-doers/financial-credit-card-payments",serverIdent, serverpw, $pdta), true);    
+    if ( $rsltdta['MESSAGE'][0] !== "GOOD") {
+$rtnthis = <<<PAGEHERE
+<h1>USER NOT ALLOWED ACCESS TO FINANCIALS
+PAGEHERE;
+    } else {
+//{"transDate":"2019-03-05","countrecords":1,"detaillines":[{"reference_number":"15518001418949","decision":"ACCEPT","billto":"EPESH1","pay_invoices":"6616","amount":"50"}]}
+$dteList = $rsltdta['DATA'];        
+
+if ( trim($rqststr[2]) !== "" ) { 
+    //GET DETAILS
+    $ddta['sessionid'] = session_id();
+    $ddta['user'] = $usr->useremail; 
+    $ddta['encycode'] = $rqststr[2];
+    $pddta = json_encode($ddta);
+
+    //{"MESSAGE":["GOOD"],"ITEMSFOUND":0,"DATA":[{"bill_to_company_name":"UMass Amherst\/Shelly Peyton Lab","bill_to_address_line1":"686 North Pleasant St","bill_to_address_line2":"159 Goessmann Lab","bill_to_address_city":"Amherst","bill_to_address_state":"MA","bill_to_address_postal_code":"01003","bill_to_address_country":"US","bill_to_phone":"4135453615","bill_to_email":"guarnieri@ecs.umass.edu","pay_invoices":"6616","amount":"50","req_card_type":"002","auth_time":"2019-03-05T153927Z","message":"Request was processed successfully."}]} 
+    $detaildta = json_decode(callrestapi("POST", dataTree . "/data-doers/financial-credit-card-payment-detail",serverIdent, serverpw, $pddta), true);    
+
+    $dType = strtoupper($detaildta['DATA'][0]['transaction_type']);
+    $dDteTime = ($detaildta['DATA'][0]['decision'] !== "ERROR") ? DateTime::createFromFormat('Y-m-d\TH:i:s\Z', $detaildta['DATA'][0]['signed_date_time'])->format('m/d/Y') : "";   
+    $dAuthTime = ($detaildta['DATA'][0]['decision'] !== "ERROR") ? DateTime::createFromFormat('Y-m-d\THis\Z', $detaildta['DATA'][0]['auth_time'])->format('m/d/Y H:i \U\T\C') : "";   
+    $dInv = strtoupper($detaildta['DATA'][0]['bill_to_investigator']);
+    $dName = strtoupper($detaildta['DATA'][0]['bill_to_forename']) . " " . strtoupper($detaildta['DATA'][0]['bill_to_surname']);
+    switch ($detaildta['DATA'][0]['req_card_type']) { 
+      case '001':
+          $card = "VISA";
+          break;
+      case '002':
+          $card = "MASTERCARD";
+          break;
+      case '003':
+          $card = "AMERICAN EXPRESS";
+          break;
+      case '004': 
+          $card = "DISCOVER";
+          break;
+      default: 
+          $card = "UNKNOWN CARD TYPE";    
+    }
+    
+
+    $displayThis = <<<DETTBL
+<table border=0 width=100%>
+<tr><td align=right><table><tr><td><table class=tblBtn id=btnPrintThis onclick="openOutSidePage('{$tt}/print-obj/financials/{$rqststr[2]}');" style="width: 6vw;"><tr><td><center><i class="material-icons topbtns">print</i></td></tr></table></td><td><table class=tblBtn id=btnPrintTen onclick="openOutSidePage('{$tt}/print-obj/financials/last-ten');" style="width: 6vw;"><tr><td><center><i class="material-icons topbtns">list_alt</i></td></tr></table></td></tr></table></td></tr>
+<tr><td>
+  <table border=0>
+    <tr><td class=dspFldLabel>Transaction ID</td><td class=dspFldLabel>Transaction Type</td><td class=dspFldLabel>Transaction Date</td><td class=dspFldLabel>Transaction Status</td></tr>
+    <tr><td><input type=text id=dspFldTransUUID READONLY value="{$detaildta['DATA'][0]['transaction_uuid']}"></td><td><input type=text id=dspFldTransType READONLY value="{$dType}"></td><td><input type=text id=dspFldTransDate READONLY value="{$dDteTime}"></td><td><input type=text id=dspFldTransStat READONLY value="{$detaildta['DATA'][0]['decision']}"></td></tr>
+    <tr><td class=dspFldLabel>Auth Code</td><td class=dspFldLabel>Auth Reference</td><td class=dspFldLabel>Auth Date-Time</td><td class=dspFldLabel>Card Type</td></tr>
+    <tr><td><input type=text id=dspFldAuthCode READONLY value="{$detaildta['DATA'][0]['auth_code']}"></td><td><input type=text id=dspFldAuthRefNo READONLY value="{$detaildta['DATA'][0]['auth_trans_ref_no']}"></td><td><input type=text id=dspFldAuthAuthTime READONLY value="{$dAuthTime}"></td><td><input type=text id=dspFldCard READONLY value="{$card}"></td> </tr><tr><td class=dspFldLabel colspan=4>Authorization Message</td></tr><tr><td colspan=4><input type=text id=dspFldAuthMsg READONLY value="{$detaildta['DATA'][0]['message']}"></td></tr></table>
+
+<p> &nbsp; <p>
+
+    <table>
+    <tr>
+      <td class=dspFldLabel>Investigator ID</td>
+      <td class=dspFldLabel>Name</td>
+      <td class=dspFldLabel>Email</td>
+    </tr>
+    <tr>
+      <td><input type=text id=dspFldTransINVID READONLY value="{$dInv}"></td>
+      <td><input type=text id=dspFldTransName READONLY value="{$dName}"></td>
+      <td><input type=text id=dspFldTransEmail READONLY value="{$detaildta['DATA'][0]['bill_to_email']}"></td>
+    </tr>
+    <tr><td colspan=2 class=dspFldLabel>Address</td><td class=dspFldLabel>Phone</td></tr>
+    <tr><td colspan=2>                                        <td valign=top><input type=text id=dspFldTransPhone READONLY value="{$detaildta['DATA'][0]['bill_to_phone']}"></td>
+  </table>
+
+</td></tr>
+</table>
+DETTBL;
+ 
+} else { 
+    $displayThis = "&nbsp;";
+}
+
+$listTbl = "<table border=0 id=payListTable>";
+$rowCount = 0;
+foreach ( $dteList as $datekey => $datevalue ) { 
+
+    $detTbl = "<table border=0>";   
+    foreach ( $datevalue['detaillines'] as $dKey => $dVal ) { 
+      $refid = $dVal['reference_number'];
+      switch ( $dVal['decision'] ) { 
+        case 'ACCEPT':
+          $icon = "<i class=\"material-icons goodpay\">check_circle</i>";
+        break;
+        default:
+          $icon = "<i class=\"material-icons badpay\">remove_circle</i>";
+      }
+      $iname = strtoupper( $dVal['billto'] );
+      $money = money_format("$%.2n", $dVal['amount']);
+ 
+      $detTbl .= <<<DLINE
+<tr onclick="navigateSite('payment-tracker/{$refid}');">
+    <td class=payiconholder>{$icon}</td>
+    <td class=payinvestname>{$iname}</td>
+    <td class=payinvoices>{$dVal['pay_invoices']}</td>
+    <td class=mohknee>{$money}</td>
+</tr>
+DLINE;
+    } 
+    $detTbl .= "</table>";
+
+   $listTbl .= "<tr onclick=\"displayPaymentDetail('{$rowCount}');\"><td valign=top class=payDateDsp>{$datevalue['transDate']}</td><td valign=top class=payCounter>Payments: {$datevalue['countrecords']}</td></tr>"; 
+   $listTbl .= "<tr><td colspan=2 valign=top><div id='detailDiv{$rowCount}' class=\"payDetailDiv\">{$detTbl}</div></td></tr>";
+   $rowCount++;
+} 
+$listTbl .= "</table>";
+
+$rtnthis = <<<PAGEHERE
+<table border=0 width=100% height=100%>
+  <tr><td colspan=2 id=mainPayHoldTblTitle>Payment Tracker</td></tr>
+  <tr><td valign=top style="width: 16vw; border-right: 1px solid rgba(0,0,0,.4);">{$listTbl}</td><td valign=top>{$displayThis}&nbsp;</td></tr>
+</table>
+PAGEHERE;
+
+    }
+
+  return $rtnthis;
+}
+
+function collectiongrid( $rqststr, $usr) { 
 
     if ((int)$usr->allowprocure !== 1) { 
-     $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE COORDINATOR SCREEN";        
+     $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE PROCUREMENT SCREEN";        
     } else {
         $today = new DateTime('now');
         $tdydte = $today->format('m/d/Y');
@@ -531,14 +660,9 @@ return $rtnthis;
 
 function reports($rqststr, $whichusr) { 
 
-    //$rqststr[2] = Module Listing
-    //$rqststr[2] = also denotes reportresults
-    //$rqststr[3] = report name
-    //$rqststr[4] = object id
-
-  if ((int)$whichusr->allowcoord !== 1) { 
-    $pg = "<h1>USER IS NOT ALLOWED TO USE THE REPORT SCREEN";        
-  } else {    
+//  if ((int)$whichusr->allowcoord !== 1     ) { 
+//    $pg = "<h1>USER IS NOT ALLOWED TO USE THE REPORT SCREEN";        
+//  } else {    
    
    $accesslvl = $whichusr->accessnbr;
    if (trim($rqststr[2]) === "") { 
@@ -602,7 +726,7 @@ CONTENT;
 {$reportParameters}
 CONTENT;
      }
-   }
+//   }
     
   $rtnthis = <<<PAGEHERE
 {$topBtnBar} 
@@ -1251,7 +1375,9 @@ function login($rqststr) {
 //}
 
 $controlBtn = "<table><tr><td class=adminBtn id=btnLoginCtl>Login</td></tr></table>";    
-    
+$ssversion = scienceserverTagVersion;
+
+
 $rtnThis = <<<PAGECONTENT
 
 <div id=loginHolder>        
@@ -1267,7 +1393,8 @@ $rtnThis = <<<PAGECONTENT
 <tr><td><center> <span class=pseudoLink>Forgot Password</span> </td></tr>    
 </table>        
 </div>
-<div id=loginFooter><b>Disclaimer</b>: This is the Specimen Management Data Application (SMDA) for the Eastern Division of the Cooperative Human Tissue Network.  It provides access to collection data by employees, remote site contracts and investigators of the CHTNEastern Division.   You must have a valid username and password to access this system.  If you need credentials for this application, please contact a CHTNED Manager.  Unauthorized activity is tracked and reported! To contact the offices of CHTNED, please call (215) 662-4570 or email chtnmail /at/ uphs.upenn.edu</div>    
+<div id=loginFooter><b>Disclaimer</b>: This is the Specimen Management Data Application (SMDA) for the Eastern Division of the Cooperative Human Tissue Network.  It provides access to collection data by employees, remote site contracts and investigators of the CHTNEastern Division.   You must have a valid username and password to access this system.  If you need credentials for this application, please contact a CHTNED Manager.  Unauthorized activity is tracked and reported! To contact the offices of CHTNED, please call (215) 662-4570 or email chtnmail /at/ uphs.upenn.edu</div>
+<div id=loginvnbr>(SMDA Version: {$ssversion} [ScienceServer])</div>    
 </div>
 
 PAGECONTENT;
@@ -3831,11 +3958,11 @@ $rpt = $rptarr['DATA'];
 $rptaccesslvl = $rpt['accesslvl'];
 $uaccess = $usr->accessnbr;
 $uid = $usr->userid;
+
 //CHECK ACCESS LEVEL IS CORRECT
 if ($rptaccesslvl > $uaccess) { 
     $rtnpage = "<h1>ACCESS DENIED TO USER ({$uid}/Access Level: {$uaccess})";
 } else { 
-
   $rptgroupingname = $rpt['groupingname'];
   $rptgroupurl = $rpt['groupingurl'];
   $rptname = $rpt['reportname'];
@@ -3845,7 +3972,6 @@ if ($rptaccesslvl > $uaccess) {
   $rptallowpdf = $rpt['allowpdfdsp'];
   $rptbywhom = $rpt['bywhom'];
   $rptcreation = $rpt['rptcreation'];
-
   $hdTbl = <<<TBLTBL
       <table border=0 cellspacing=0 cellpadding=0 id=defHead>
         <tr onclick="navigateSite('reports/{$rptgroupurl}');"><td>Module:&nbsp;</td><td>&nbsp;{$rptgroupingname}</td><td>&nbsp;(Click for reports in module)</td></tr>
@@ -3865,8 +3991,6 @@ TBLTBL;
         //MARK REQUIRED CRITERIA
         $chkbox = ((int)$value['requiredind'] !== 1 && (int)$value['includenondsp'] !== 1) ? "<input type=checkbox id=\"fldParaChkBx{$parameterCntr}\" id=\"fldParaChkBx{$parameterCntr}\" data-sqlwhere=\"{$value['sqltextline']}\">" : "<input type=checkbox disabled=\"disabled\" checked=\"checked\" id=\"fldParaChkBx{$parameterCntr}\" data-sqlwhere=\"{$value['sqltextline']}\">";
         preg_match_all("/:\b[a-zA-Z]{1,}\b/", $value['sqltextline'], $out);
-
-
         $rowOne = "&nbsp;";
         $rowTwo = "&nbsp;";
         if ((int)$value['includenondsp'] === 1) { 
@@ -3900,9 +4024,6 @@ TBLTBL;
             } 
           }
         }
-
-
-
         $critTbl = "<table><tr>{$rowOne}</tr><tr>{$rowTwo}</tr></table>";
         $paraTbl .= "<tr><td>{$chkbox}</td><td>{$critTbl}</td></tr>"; 
         $parameterCntr++;
@@ -3910,9 +4031,11 @@ TBLTBL;
     $paraTbl .= "</table></form>";
   }
 //END BUILD CRITERIA
+
 $gridBtn = ((int)$rptallowgriddsp === 1) ? "<table class=tblBtn id=btnGenRptData><tr><td>View Data</td></tr></table>" : "";
 $pdfBtn = ((int)$rptallowpdf === 1) ? "<table class=tblBtn id=btnGenRptPDF><tr><td>Print Report</td></tr></table>" : "";
-  $ftTbl = <<<TBLTBL
+
+$ftTbl = <<<TBLTBL
 <table width=100%><tr><td><center><table><tr><td>{$gridBtn}</td><td>{$pdfBtn}</td></tr></table></td></tr></table>
 TBLTBL;
 

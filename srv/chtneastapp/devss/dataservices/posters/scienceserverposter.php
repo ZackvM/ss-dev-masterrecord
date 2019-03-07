@@ -180,6 +180,93 @@ class datadoers {
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows; 
+    }
+
+    function financialcreditcardpaymentdetail ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $sess = $pdta['sessionid'];
+      $user = $pdta['user'];
+      $ency = $pdta['encycode'];
+
+      //CHECK USER RIGHTS
+      $chkSQL = "SELECT friendlyName FROM four.sys_userbase where sessionid = :sess and emailAddress = :usr and allowfinancials = 1 and allowind = 1 and timestampdiff(day, now(), passwordExpireDate ) > 0 ";
+      $chkRS = $conn->prepare($chkSQL);
+      $chkRS->execute(array(':sess' => $sess, ':usr' => $user));
+      if ( $chkRS->rowCount() < 1 ) { 
+          //USER NOT ALLOWED
+        $msgArr[] = "NOTALLOWED";
+      } else { 
+        $msgArr[] = "GOOD";
+        $refid =  $ency;
+        $sql = "SELECT transaction_uuid, transaction_type, signed_date_time, bill_to_investigator, bill_to_forename, bill_to_surname, bill_to_company_name, bill_to_address_line1, bill_to_address_line2, bill_to_address_city, bill_to_address_state, bill_to_address_postal_code, bill_to_address_country, bill_to_phone, bill_to_email, pay_invoices, amount, decision, auth_code, reason_code, req_card_type, auth_time, message, auth_trans_ref_no FROM webcapture.web_PayCapture where concat(webPageId, reference_number) = :refnbr";
+        $rs = $conn->prepare($sql); 
+        $rs->execute(array(':refnbr' => $refid));
+        while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
+          $dta[] = $r;
+        }
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows; 
+    }    
+
+
+    function financialcreditcardpayments ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $sess = $pdta['sessionid'];
+      $user = $pdta['user'];
+      $nbrODays = $pdta['nbrofdays'];
+
+      //CHECK USER RIGHTS
+      $chkSQL = "SELECT friendlyName FROM four.sys_userbase where sessionid = :sess and emailAddress = :usr and allowfinancials = 1 and allowind = 1 and timestampdiff(day, now(), passwordExpireDate ) > 0 ";
+      $chkRS = $conn->prepare($chkSQL);
+      $chkRS->execute(array(':sess' => $sess, ':usr' => $user));
+      if ( $chkRS->rowCount() < 1 ) { 
+          //USER NOT ALLOWED
+        $msgArr[] = "NOTALLOWED";
+      } else { 
+        $msgArr[] = "GOOD";
+        $lastDatesSQL = "SELECT distinct date_format(str_to_date(signed_date_time,'%Y-%m-%d'),'%Y-%m-%d') ondte FROM webcapture.web_PayCapture order by ondte desc limit :nbrOfDays";
+        $lastDatesRS = $conn->prepare($lastDatesSQL); 
+        $lastDatesRS->execute(array(':nbrOfDays' => (int)$nbrODays));
+        $cnt = 0;
+        while ($d = $lastDatesRS->fetch(PDO::FETCH_ASSOC)) { 
+          $dta[$cnt]['transDate'] = $d['ondte'];
+
+          $detSQL = "SELECT concat(webpageid, reference_number) as reference_number, decision, if(trim(ifnull(bill_to_investigator,''))='',trim(ifnull(bill_to_surname,'')),trim(ifnull(bill_to_investigator,''))) as billto, pay_invoices, amount FROM webcapture.web_PayCapture where str_to_date(signed_date_time,'%Y-%m-%d') = :dateString order by reference_number";
+          $detR = $conn->prepare($detSQL);
+          $detR->execute(array(':dateString' => $d['ondte']));
+          $dta[$cnt]['countrecords'] = $detR->rowCount();
+          $detArr = array();
+          while ($r = $detR->fetch(PDO::FETCH_ASSOC)) { 
+            $detArr[] = $r;
+          }
+          $dta[$cnt]['detaillines'] = $detArr;
+          $cnt++;
+        }
+
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows; 
     }    
     
     function collectiongridresultstbl ( $request, $passdata ) { 

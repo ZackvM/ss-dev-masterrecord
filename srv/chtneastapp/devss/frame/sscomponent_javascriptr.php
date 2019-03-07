@@ -30,9 +30,36 @@ function answerGetCalendar(rtnData) {
 RTNTHIS;
     return $rtnThis;
 }    
+
+function paymenttracker ( $rqststr) { 
+
+  session_start(); 
+  $tt = treeTop;
+  $ott = ownerTree;
+  $si = serverIdent;
+  $sp = serverpw;
+
+  $rtnThis = <<<JAVASCR
+
+function displayPaymentDetail ( whichdetail ) { 
+  if (byId('detailDiv'+whichdetail)) { 
+    if (byId('detailDiv'+whichdetail).style.display === 'none' || byId('detailDiv'+whichdetail).style.display.trim() === '' ) { 
+      byId('detailDiv'+whichdetail).style.display = 'block';
+    } else { 
+      byId('detailDiv'+whichdetail).style.display = 'none';
+    }
+  }
+}
+
+
+
+JAVASCR;
+return $rtnThis;
+
+}
+
     
-    
-function globalscripts( $keypaircode, $usrid ) {  
+function globalscripts ( $keypaircode, $usrid ) {  
 
   session_start();
   $sid = session_id();
