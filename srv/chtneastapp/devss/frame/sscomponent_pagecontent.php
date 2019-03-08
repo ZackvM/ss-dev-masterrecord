@@ -476,9 +476,8 @@ if ( trim($rqststr[2]) !== "" ) {
     $ddta['encycode'] = $rqststr[2];
     $pddta = json_encode($ddta);
 
-    //{"MESSAGE":["GOOD"],"ITEMSFOUND":0,"DATA":[{"bill_to_company_name":"UMass Amherst\/Shelly Peyton Lab","bill_to_address_line1":"686 North Pleasant St","bill_to_address_line2":"159 Goessmann Lab","bill_to_address_city":"Amherst","bill_to_address_state":"MA","bill_to_address_postal_code":"01003","bill_to_address_country":"US","bill_to_phone":"4135453615","bill_to_email":"guarnieri@ecs.umass.edu","pay_invoices":"6616","amount":"50","req_card_type":"002","auth_time":"2019-03-05T153927Z","message":"Request was processed successfully."}]} 
+    //{"MESSAGE":["GOOD"],"ITEMSFOUND":0,"DATA":[{"bill_to_address_line2":"159 Goessmann Lab","bill_to_address_city":"Amherst","bill_to_address_state":"MA","bill_to_address_postal_code":"01003","bill_to_address_country":"US"}]} 
     $detaildta = json_decode(callrestapi("POST", dataTree . "/data-doers/financial-credit-card-payment-detail",serverIdent, serverpw, $pddta), true);    
-
     $dType = strtoupper($detaildta['DATA'][0]['transaction_type']);
     $dDteTime = ($detaildta['DATA'][0]['decision'] !== "ERROR") ? DateTime::createFromFormat('Y-m-d\TH:i:s\Z', $detaildta['DATA'][0]['signed_date_time'])->format('m/d/Y') : "";   
     $dAuthTime = ($detaildta['DATA'][0]['decision'] !== "ERROR") ? DateTime::createFromFormat('Y-m-d\THis\Z', $detaildta['DATA'][0]['auth_time'])->format('m/d/Y H:i \U\T\C') : "";   
@@ -500,8 +499,15 @@ if ( trim($rqststr[2]) !== "" ) {
       default: 
           $card = "UNKNOWN CARD TYPE";    
     }
-    
 
+    setlocale(LC_MONETARY, 'en_US');
+    $money = ( trim($detaildta['DATA'][0]['amount']) !== "" && is_numeric($detaildta['DATA'][0]['amount']) ) ? money_format("$%.2n", $detaildta['DATA'][0]['amount']) : $detaildta['DATA'][0]['amount']; 
+    $addr = ( trim( $detaildta['DATA'][0]['bill_to_address_line1']) !== "" ) ? trim( $detaildta['DATA'][0]['bill_to_address_line1']) : "";
+    $addr .= ( trim( $detaildta['DATA'][0]['bill_to_address_line2']) !== "" ) ?  ( trim($addr) !== "" ) ? "\n" . trim( $detaildta['DATA'][0]['bill_to_address_line2']) :  trim( $detaildta['DATA'][0]['bill_to_address_line2']) : "";
+
+
+
+    //TODO:  MAKE PRINT OBJECTS
     $displayThis = <<<DETTBL
 <table border=0 width=100%>
 <tr><td align=right><table><tr><td><table class=tblBtn id=btnPrintThis onclick="openOutSidePage('{$tt}/print-obj/financials/{$rqststr[2]}');" style="width: 6vw;"><tr><td><center><i class="material-icons topbtns">print</i></td></tr></table></td><td><table class=tblBtn id=btnPrintTen onclick="openOutSidePage('{$tt}/print-obj/financials/last-ten');" style="width: 6vw;"><tr><td><center><i class="material-icons topbtns">list_alt</i></td></tr></table></td></tr></table></td></tr>
@@ -510,7 +516,11 @@ if ( trim($rqststr[2]) !== "" ) {
     <tr><td class=dspFldLabel>Transaction ID</td><td class=dspFldLabel>Transaction Type</td><td class=dspFldLabel>Transaction Date</td><td class=dspFldLabel>Transaction Status</td></tr>
     <tr><td><input type=text id=dspFldTransUUID READONLY value="{$detaildta['DATA'][0]['transaction_uuid']}"></td><td><input type=text id=dspFldTransType READONLY value="{$dType}"></td><td><input type=text id=dspFldTransDate READONLY value="{$dDteTime}"></td><td><input type=text id=dspFldTransStat READONLY value="{$detaildta['DATA'][0]['decision']}"></td></tr>
     <tr><td class=dspFldLabel>Auth Code</td><td class=dspFldLabel>Auth Reference</td><td class=dspFldLabel>Auth Date-Time</td><td class=dspFldLabel>Card Type</td></tr>
-    <tr><td><input type=text id=dspFldAuthCode READONLY value="{$detaildta['DATA'][0]['auth_code']}"></td><td><input type=text id=dspFldAuthRefNo READONLY value="{$detaildta['DATA'][0]['auth_trans_ref_no']}"></td><td><input type=text id=dspFldAuthAuthTime READONLY value="{$dAuthTime}"></td><td><input type=text id=dspFldCard READONLY value="{$card}"></td> </tr><tr><td class=dspFldLabel colspan=4>Authorization Message</td></tr><tr><td colspan=4><input type=text id=dspFldAuthMsg READONLY value="{$detaildta['DATA'][0]['message']}"></td></tr></table>
+    <tr><td><input type=text id=dspFldAuthCode READONLY value="{$detaildta['DATA'][0]['auth_code']}"></td><td><input type=text id=dspFldAuthRefNo READONLY value="{$detaildta['DATA'][0]['auth_trans_ref_no']}"></td><td><input type=text id=dspFldAuthAuthTime READONLY value="{$dAuthTime}"></td><td><input type=text id=dspFldCard READONLY value="{$card}"></td></tr>
+<tr><td class=dspFldLabel colspan=3>Invoices Paid</td><td class=dspFldLabel>Amount Paid</td></tr>
+<tr><td colspan=3><input type=text id=dspFldAuthInvoices READONLY value="{$detaildta['DATA'][0]['pay_invoices']}"></td><td><input type=text id=dspFldAuthAmt READONLY value="{$money}"></td>
+
+<tr><td class=dspFldLabel colspan=4>Authorization Message</td></tr><tr><td colspan=4><input type=text id=dspFldAuthMsg READONLY value="{$detaildta['DATA'][0]['message']}"></td></tr></table>
 
 <p> &nbsp; <p>
 
@@ -525,9 +535,19 @@ if ( trim($rqststr[2]) !== "" ) {
       <td><input type=text id=dspFldTransName READONLY value="{$dName}"></td>
       <td><input type=text id=dspFldTransEmail READONLY value="{$detaildta['DATA'][0]['bill_to_email']}"></td>
     </tr>
-    <tr><td colspan=2 class=dspFldLabel>Address</td><td class=dspFldLabel>Phone</td></tr>
-    <tr><td colspan=2>                                        <td valign=top><input type=text id=dspFldTransPhone READONLY value="{$detaildta['DATA'][0]['bill_to_phone']}"></td>
+    
+    <tr><td colspan=2 class=dspFldLabel>Institution</td><td class=dspFldLabel>Phone</td></tr>
+    <tr><td colspan=2> <input type=text id=dspFldTransCoName READONLY value="{$detaildta['DATA'][0]['bill_to_company_name']}"></td><td valign=top><input type=text id=dspFldTransPhone READONLY value="{$detaildta['DATA'][0]['bill_to_phone']}"></td>
   </table>
+
+  <table>
+    <tr><td colspan=3 class=dspFldLabel>Address</td></tr>
+    <tr><td colspan=3><textarea id=dspFldTransAddress READONLY>{$addr}</textarea></td></tr>
+    <tr><td><input type=text id=dspFldTransAddCity READONLY value="{$detaildta['DATA'][0]['bill_to_address_city']}"></td><td><input type=text id=dspFldTransAddState READONLY value="{$detaildta['DATA'][0]['bill_to_address_state']}"></td> <td><input type=text id=dspFldTransAddZip READONLY value="{$detaildta['DATA'][0]['bill_to_address_postal_code']}"></td>  </tr> 
+  </table> 
+
+
+
 
 </td></tr>
 </table>

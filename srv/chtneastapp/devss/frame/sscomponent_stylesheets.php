@@ -725,8 +725,13 @@ $rtnThis = <<<STYLESHEET
   #dspFldTransName { width: 25vw; }
   #dspFldTransEmail { width: 25vw; }
   #dspFldTransPhone { width: 25vw; }
-
-
+  #dspFldTransCoName { width: 35vw; }
+  #dspFldAuthInvoices { width: 32vw; }
+  #dspFldAuthAmt { width: 10vw; text-align: right; }
+  #dspFldTransAddress { width: 35.5vw; height: 8vh; }
+  #dspFldTransAddCity { width: 25vw; }
+  #dspFldTransAddState { width: 4vw; }
+  #dspFldTransAddZip { width: 6vw; }
 
 
 STYLESHEET;
