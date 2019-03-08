@@ -378,7 +378,7 @@ class objlisting {
       $grpname = $head['groupingname']; 
       $grpdesc = $head['groupingdescriptions'];
       
-      $subSQL = "SELECT ifnull(rg.groupingurl,'') as groupingurl,  ifnull(rl.urlpath,'') as urlpath, ifnull(rl.reportname,'') as reportname, ifnull(rl.reportdescription,'') as reportdescription, ifnull(rl.bywhom,'') as bywhom, date_format(rl.onwhen, '%m/%d/%Y') as onwhen FROM four.ut_reportlist rl left join four.ut_reportgrouping rg on rl.groupingid = rg.groupid  where rl.groupingid = :groupid and rl.dspind = 1 order by rl.dsporder";
+      $subSQL = "SELECT ifnull(rg.groupingurl,'') as groupingurl,  ifnull(rl.urlpath,'') as urlpath, ifnull(rl.reportname,'') as reportname, ifnull(rl.reportdescription,'') as reportdescription, ifnull(rl.bywhom,'') as bywhom, date_format(rl.onwhen, '%m/%d/%Y') as onwhen FROM four.ut_reportlist rl left join four.ut_reportgrouping rg on rl.groupingid = rg.groupid  where rl.groupingid = :groupid and rl.dspind = 1  and rl.systemrptInd = 0 order by rl.dsporder";
       $subRS = $conn->prepare($subSQL);
       $subRS->execute(array(':groupid' => $grpid));
       $rptlist = array(); 

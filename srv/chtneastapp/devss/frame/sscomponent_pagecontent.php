@@ -2694,6 +2694,7 @@ $rtnThis = <<<RTNTHIS
         </div>
     </td>
    </tr>
+   <tr><td colspan=3 id=noteBlock>(SLIDE ONLY: Enter 'QC' in Assignment for HPR Slides that don't have matching HPR FFPEs)</td></tr>
 </table>
 
 <table border=0 width=80%>
@@ -2707,7 +2708,7 @@ $rtnThis = <<<RTNTHIS
 
   <table cellspacing=0 cellpadding=0 border=0><tr>
     <td><table class=tblBtn id=btnADDQMSSegs style="width: 6vw;" onclick="addQMSSegments();"><tr><td style=" font-size: 1.1vh; "><center>Add QMS</td></tr></table></td>
-    <td><table class=tblBtn id=btnSaveSeg style="width: 6vw;" onclick="addDefinedSegment();"><tr><td style=" font-size: 1.1vh;"><center>Save Segment<!--ONLY SAVE SEGMENTS FOR BG NOT LOCKED//--></td></tr></table></td>
+    <td><table class=tblBtn id=btnSaveSeg style="width: 6vw;" onclick="addDefinedSegment();"><tr><td style=" font-size: 1.1vh;"><center>Save Segment</td></tr></table></td>
   </tr></table>
 
 </td></tr>

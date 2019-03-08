@@ -550,6 +550,7 @@ textarea { font-size: 1.3vh; }
 .addTblHeader {font-size: 1.3vh; color: rgba({$this->color_dblue},1);  padding: 0 0 0 0; font-weight: bold;  border-bottom: 1px solid rgba({$this->color_dblue},1); } 
 .addHolder { padding: 1vh 0; border-bottom: 1px solid rgba({$this->color_dblue},1);   }
 #assignTbl { margin-top: 1vh; }
+#assignTbl #noteBlock { font-size: 1vh; font-weight: bold; padding: 0 0 1vh 0; color: rgba({$this->color_darkgrey},.7);   }
 
 #addPBQtySlide { width: 5vw; text-align: right; }
 #addSlideDspBox {background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); width: 27vw; height: 8vh; overflow: auto;  }
@@ -1077,8 +1078,8 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 
 STYLESHEET;
 return $rtnThis;
-}  
-  
+} 
+ 
 function documentlibrary($mobileind) { 
 
       $rtnThis = <<<STYLESHEET

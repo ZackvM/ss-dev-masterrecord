@@ -15,7 +15,6 @@ function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
   var mlURL = "/data-doers/front-sscalendar";            
   lastRequestCalendarDiv = whichdiv;      
   universalAJAX("POST",mlURL,passeddata,answerGetCalendar,modalCtl);
-
 }
 
 function answerGetCalendar(rtnData) {
@@ -474,7 +473,9 @@ function fillProfTrayField(whichfield, whichvalue, whichdisplay) {
   }
 }
 
-
+function genSystemReport(whichreport) { 
+  alert(whichreport);
+}
       
 JAVASCR;
 return $rtnThis;    
@@ -923,6 +924,7 @@ function answerGetDocumentText(rtnData) {
 JAVASCR;
 return $rtnThis;    
 }
+
 
 function procurebiosample($rqstrstr) { 
 

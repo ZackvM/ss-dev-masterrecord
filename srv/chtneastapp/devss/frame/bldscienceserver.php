@@ -20,7 +20,7 @@ class pagebuilder {
   public $modalrs = "";
   public $modalrdialogs = "";
   //PAGE NAME MUST BE REGISTERED IN THIS ARRAY - COULD DO A METHOD SEARCH - BUT I LIKE THE CONTROL OF NOT ALLOWING A PAGE THAT IS NOT READY FOR DISPL
-  private $registeredPages = array('login','root','datacoordinator','documentlibrary','segment','hprreview','scienceserverhelp','reports','procurebiosample','collectiongrid','paymenttracker');  
+  private $registeredPages = array('login','root','datacoordinator','documentlibrary','segment','hprreview','scienceserverhelp','reports','procurebiosample','collectiongrid','paymenttracker','systemreports');  
   //THE SECURITY EXCPETIONS ARE THOSE PAGES THAT DON'T REQUIRE USER RIGHTS TO ACCESS
   private $securityExceptions = array('login','root','scienceserverhelp');
 
@@ -97,7 +97,7 @@ function getPageElements($whichpage, $rqststr, $mobileInd, $usrmetrics) {
           foreach ($modval[3] as $allowPageLst) {
               $allowPage = ($whichpage === str_replace("-","",$allowPageLst['pagesource'])) ? 1 : $allowPage; 
           }
-      }      
+      }
   } 
  
  if ($allowPage === 1) { 

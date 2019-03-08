@@ -63,7 +63,15 @@ if ($whichpage !== "login") {
               //GET ITEMS
            $controlList .= "<div class=menuDrpItems><table>";
            foreach ($modval[3] as $lstItem) {
-              $controlList .= "<tr><td onclick=\"navigateSite('{$lstItem['pagesource']}');\">" . $lstItem['menuvalue'] . "</td></tr>";               
+              
+              if ( trim($lstItem['additionalcode']) === "" ) {
+                 //NAVIGATE BY PAGE     
+                 $controlList .= "<tr><td onclick=\"navigateSite('{$lstItem['pagesource']}');\">" . $lstItem['menuvalue'] . "</td></tr>";               
+              } else { 
+                 //FUNCTION LISTED IN EXPLAINER LINE
+                 $controlList .= "<tr><td onclick=\"if (typeof {$lstItem['additionalcode']} == 'function') { {$lstItem['additionalcode']}; }\">" . $lstItem['menuvalue'] . "</td></tr>";               
+              }
+
           }
           $controlList .= "</table></div>";
           $controlList .= "</div></td>";           

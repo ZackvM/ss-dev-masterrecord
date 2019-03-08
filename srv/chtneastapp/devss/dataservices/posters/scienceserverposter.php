@@ -612,6 +612,7 @@ BSSEGTBL;
         if (!array_key_exists($k,$sg)) {          
           (list( $errorInd, $msgArr[] ) = array(1 , "The Field ({$k}) is missing from the data payload.  See a CHTNEastern Informatics Person."));  
         } else {
+
           if (trim($v[0]) === 'RQ') { 
             //CHECK THAT REQUIRED FIELDs HAVE VALUEs      
             if (trim($sg[$k]) === "") {
@@ -622,11 +623,14 @@ BSSEGTBL;
             }
           }  
         }
+
       }
-      ( ( trim($sg['selectorAssignInv']) !== 'BANK' &&  trim($sg['selectorAssignInv']) !== '' )     && trim($sg['selectorAssignReq']) === '') ? (list( $errorInd, $msgArr[] ) = array(1 , "FOR ASSIGNED SEGMENTS, A REQUEST NUMBER MUST BE SPECIFIED."))  : "";
+
+
+      ((( trim($sg['selectorAssignInv']) !== 'BANK' &&  trim($sg['selectorAssignInv']) !== 'QC' ) &&  trim($sg['selectorAssignInv']) !== '' ) && trim($sg['selectorAssignReq']) === '') ? (list( $errorInd, $msgArr[] ) = array(1 , "FOR ASSIGNED SEGMENTS, A REQUEST NUMBER MUST BE SPECIFIED."))  : "";
       //TODO:  GET DISPLAY NAME
       
-      if (trim($sg['selectorAssignInv']) !== 'BANK' &&  trim($sg['selectorAssignInv']) !== '') { 
+      if (  ( trim($sg['selectorAssignInv']) !== 'BANK' && trim($sg['selectorAssignInv']) !== 'QC' ) &&  trim($sg['selectorAssignInv']) !== '') { 
           $invSQL = "SELECT concat(ifnull(invest_lname,''),', ',ifnull(invest_fname,'')) as dspname FROM vandyinvest.invest where investid = :invcode";
           $invRS = $conn->prepare($invSQL);
           $invRS->execute(array(':invcode' => trim($sg['selectorAssignInv'])));
@@ -661,7 +665,7 @@ BSSEGTBL;
         $usr = userDetails( $authchk ); 
         ( trim($lookup['fromlocation']) !== trim($usr[0]['presentinstitution']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MAY NOT ADD SEGMENTS FOR A BIOGROUP THAT WAS PROCURED AT AN INSTITUTION FOR WHICH YOU ARE PRESENTLY NOT WORKING")) : "";         
         //TODO: CHECK OTHER DROPMENU VALUES
-        //TODO:  CHECK ASSIGNMENTS ARe VALID          
+        //TODO: CHECK ASSIGNMENTS ARE VALID          
       }  else { 
           (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP CAN'T ACCEPT SEGMENTS.  EITHER THE GROUP DOESN'T EXIST, HAS ALREADY BEEN LOCKED, IS VOIDED OR IS MORE THAN A DAY OLD."));
       }
@@ -669,7 +673,8 @@ BSSEGTBL;
       if (array_key_exists('AdditiveDiv', $sg )) {
           switch ( $sg['AdditiveDiv'] ) { 
               case 'slide': 
-                  ( trim($sg['SlideCutFromBlock']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFYING A SLIDE PREPARATION, AN FFPE BLOCK MUST BE SPECIFIED FROM WHICH TO CUT THE SLIDE.")) : "";
+                  ( ( trim($sg['selectorAssignInv']) !== "QC" ) && trim($sg['SlideCutFromBlock']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFYING A SLIDE PREPARATION, AN FFPE BLOCK MUST BE SPECIFIED FROM WHICH TO CUT THE SLIDE.")) : "";
+                  ( (trim($sg['selectorAssignInv']) !== "QC" ) && !preg_match("/[0-9]{5}T[0-9]{3}/", trim($sg['SlideCutFromBlock']), $match)) ? (list( $errorInd, $msgArr[] ) = array(1 ,"SPECIFIED SEGMENT BLOCK FROM WHICH TO CUT SLIDE MUST BE IN FORMAT OF 00000T000.")) : ""; 
                   ( trim($sg['SlideQtyNbr']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFYING A SLIDE PREPARATION, THE NUMBER OF SLIDES TO CUT MUST BE SPECIFIED.")) : "";                         
                   ( preg_match('/[^0-9]/',trim($sg['SlideQtyNbr'])) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'SLIDE QTY' FIELD MUST BE SPECIFIED AS A WHOLE NUMBER.")) : "";                         
                   break;
@@ -691,11 +696,17 @@ BSSEGTBL;
       if ( $errorInd === 0 ) { 
       if (array_key_exists('AdditiveDiv', $sg )) {
           switch ( $sg['AdditiveDiv'] ) { 
-              case 'slide': 
-                  $groupingid = generateRandomString(20);                  
-                  for ($sldcnt = 0; $sldcnt < (int)$sg['SlideQtyNbr']; $sldcnt++) { 
+             case 'slide':
+                 if ( strtoupper(trim($sg['selectorAssignInv'])) === "QC" ) { 
+                     $groupingid = generateRandomString(20);                  
+                     $segLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($sg['AddHP']), 0, 4, trim($sg['PreparationMethodValue']), trim($sg['PreparationValue']), "", trim($sg['SlideCutFromBlock']), 1, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], 'BANK', "", "", $sg['SGComments'], '', $groupingid );  
+                 } else { 
+                   $groupingid = generateRandomString(20);                  
+                   for ($sldcnt = 0; $sldcnt < (int)$sg['SlideQtyNbr']; $sldcnt++) { 
                      $segLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($sg['AddHP']), 0, 4, trim($sg['PreparationMethodValue']), trim($sg['PreparationValue']), "", trim($sg['SlideCutFromBlock']), 0, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], trim($sg['selectorAssignInv']), $invDspName, $sg['selectorAssignReq'], $sg['SGComments'], '', $groupingid ); 
-                  }
+                   }
+                 }
+
                   break;
               case 'pb': 
                 $groupingid = generateRandomString(20);
