@@ -87,7 +87,9 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 
 .menuDrpItems table {width: 100%; }
 .menuDrpItems table td {color: rgba({$this->color_white},1);font-size: 1.8vh; padding: .6vh 1vw .6vh .8vw; white-space: nowrap; }
-.menuDrpItems table td:hover { cursor: pointer; background: rgba({$this->color_lblue},1); }
+.menuDrpItems table .ico { padding: .6vh 1vw .6vh .8vw; width: .5vw; }
+.menuDrpItems table tr:hover { cursor: pointer; background: rgba({$this->color_lblue},1); }
+.menuDrpItems .menuicons { font-size: 1.8vh; } 
 
 .bigspacer { width: 30%;}
 .universeBtns { color: rgba({$this->color_white},1);  font-size: 1.8vh;  padding: 0 0 0 1vw;  white-space: nowrap; }

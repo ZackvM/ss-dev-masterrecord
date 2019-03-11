@@ -61,12 +61,18 @@ if ($whichpage !== "login") {
            //HEADER AND ITEMS
            $controlList .= "<td valign=bottom class=menuHolderSqr><div class=mnuHldr><div class=hdrItem>{$modval[1]}</div>"; 
               //GET ITEMS
-           $controlList .= "<div class=menuDrpItems><table>";
+           $controlList .= "<div class=menuDrpItems><table border=0 cellspacing=0 cellpadding=0>";
            foreach ($modval[3] as $lstItem) {
               
               if ( trim($lstItem['additionalcode']) === "" ) {
-                 //NAVIGATE BY PAGE     
-                 $controlList .= "<tr><td onclick=\"navigateSite('{$lstItem['pagesource']}');\">" . $lstItem['menuvalue'] . "</td></tr>";               
+                  //NAVIGATE BY PAGE    
+
+                 if ( trim($lstItem['dspsystemicon']) === "" ) { 
+                   $controlList .= "<tr><td onclick=\"navigateSite('{$lstItem['pagesource']}');\">{$lstItem['menuvalue']}</td></tr>";               
+                 } else {     
+                   $controlList .= "<tr><td onclick=\"navigateSite('{$lstItem['pagesource']}');\">{$lstItem['menuvalue']}</td></tr>";               
+                 }
+
               } else { 
                  //FUNCTION LISTED IN EXPLAINER LINE
                  $controlList .= "<tr><td onclick=\"if (typeof {$lstItem['additionalcode']} == 'function') { {$lstItem['additionalcode']}; }\">" . $lstItem['menuvalue'] . "</td></tr>";               

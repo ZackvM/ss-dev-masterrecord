@@ -474,8 +474,28 @@ function fillProfTrayField(whichfield, whichvalue, whichdisplay) {
 }
 
 function genSystemReport(whichreport) { 
-  alert(whichreport);
+  var obj = new Object(); 
+  obj['rptRequested'] = whichreport; 
+  var passdta = JSON.stringify(obj);
+  var mlURL = "/data-doers/generate-system-report-request";
+  universalAJAX("POST",mlURL,passdta,answerGenSystemReport,1);
 }
+
+function answerGenSystemReport(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("SEARCH ERROR:\\n"+dspMsg);
+   } else { 
+     //SUCCESS
+     var prts = JSON.parse(rtnData['responseText']);
+     openOutSidePage("{$tt}/print-obj/system-reports/"+prts['DATA']['reportobjectency']);
+   }        
+}
+
       
 JAVASCR;
 return $rtnThis;    
@@ -2685,6 +2705,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
+  if (byId('btnBarRsltInventoryOverride')) { 
+    byId('btnBarRsltInventoryOverride').addEventListener('click', function() {       
+      var selection = gatherSelection();
+      if (parseInt(selection['responseCode']) === 200) { 
+        var passdta = JSON.stringify(selection['selectionListing']);
+console.log(passdta);
+        var mlURL = "/data-doers/preprocess-inventory-override";
+        universalAJAX("POST",mlURL,passdta,answerPreprocessInventoryOverride,1);   
+      } else { 
+        alert(selection['message']);
+      }
+    }, false);
+  }
+
   if (byId('btnBarRsltExport')) { 
     byId('btnBarRsltExport').addEventListener('click', function() { 
       exportResults();
@@ -2877,6 +2911,29 @@ function editPathRpt(e, docid) {
   }
 }
 
+function answerPreprocessInventoryOverride(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("Inventory Over-ride Error:\\n"+dspMsg);
+   } else { 
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = 0;
+       byId('standardModalDialog').style.left = "8vw";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "3vh";
+       //byId('systemDialogTitle').style.width = "82vw";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+   }        
+}
+
 function answerEditPathRpt(rtnData) { 
    if (parseInt(rtnData['responseCode']) !== 200) { 
      var msgs = JSON.parse(rtnData['responseText']);
@@ -2901,7 +2958,7 @@ function answerEditPathRpt(rtnData) {
 }
 
 function getUploadNewPathRpt(e, labelNbr) { 
-  e.stopPropagation();
+  e.stopPropagation(); 
   if (labelNbr.toString().trim() !== "") { 
     var mlURL = "/preprocess-pathology-rpt-upload/"+labelNbr.toString();
     universalAJAX("GET",mlURL,"",answerGetUploadNewPathRpt, 1);

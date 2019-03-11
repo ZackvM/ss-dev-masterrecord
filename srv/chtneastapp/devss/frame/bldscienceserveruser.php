@@ -149,7 +149,7 @@ class bldssuser {
            $modR->execute(array(':userid' => $uid));
            $mods = array();
            while ($mod = $modR->fetch(PDO::FETCH_ASSOC)) {
-              $subModMenuSQL = "SELECT menuvalue, pagesource, ifnull(explainerline,'') as additionalcode  FROM four.sys_master_menus where menu = 'MODULEPAGES' and trim(ifnull(pagesource,'')) <> '' and dspind = 1 and ( additionalinformation <= :accesslevel) and parentid = :parentmodid order by dspOrder";
+              $subModMenuSQL = "SELECT menuvalue, pagesource, ifnull(explainerline,'') as additionalcode, ifnull(googleiconcode,'') as dspsystemicon  FROM four.sys_master_menus where menu = 'MODULEPAGES' and trim(ifnull(pagesource,'')) <> '' and dspind = 1 and ( additionalinformation <= :accesslevel) and parentid = :parentmodid order by dspOrder";
               $subModMenuR = $conn->prepare($subModMenuSQL); 
               $subModMenuR->execute(array(':parentmodid' => $mod['moduleid'], ':accesslevel' => (int)$ur['accessnbr']));
               $sbmod = array();

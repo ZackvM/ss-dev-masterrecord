@@ -34,8 +34,108 @@ function __construct() {
 
 class datadoers {
 
-    
-    function frontsscalendar() { 
+    function segmentmasterrecord ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+
+      $segmentSQL = "SELECT sg.biosamplelabel, ifnull(sg.segmentlabel,'') as segmentlabel, ifnull(sg.bgs,'') as bgs, ifnull(sg.segstatus,'') as segstatus, ifnull(date_format(sg.statusdate,'%m/%d/%Y'),'') as statusdate, ifnull(sg.statusby,'') as statusby, ifnull(sg.shipdocrefid,'') as shipdocrefid, ifnull(date_format(sg.shippedDate,'%m/%d/%Y'),'') as shippeddate, ifnull(sg.hourspost,'') as hourspost, ifnull(sg.metric,'') as metric, ifnull(muom.dspvalue,'') as metricuom, ifnull(muom.longvalue,'') as metricuomlong, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, ifnull(sg.qty,1) as qty, ifnull(sg.assignedto,'') as assignedto, ifnull(sg.assignedReq,'') as assignedrequest, ifnull(sg.assignedby,'') as assignedby , ifnull(date_format(sg.assignmentdate,'%m/%d/%Y'),'') as assignmentdate, ifnull(sg.hprblockind,0) as hprblockind , ifnull(date_format(sg.enteredon,'%m/%d/%Y'),'') as procurementdate, ifnull(sg.enteredby,'') as procurementtech, ifnull(sg.procuredat,'') as procuredat, ifnull(sg.segmentcomments,'') as segmentcomments, ifnull(sg.voidind,0) as voidind , ifnull(sg.segmentvoidreason,'') as segmentvoidreason, ifnull(sg.scannedlocation,'') as scannedlocation, ifnull(sg.scanloccode,'') as scanloccode, ifnull(sg.scannedstatus,'') as scannedstatus, ifnull(sg.scannedby,'') as scannedby, ifnull(date_format(sg.scanneddate,'%m/%d/%Y'),'') as scanneddate, ifnull(sg.tohpr,0) as tohprind , ifnull(sg.reconcilInd,'') as reconcilind, ifnull(sg.reconcilBy,'') as reconcilby, ifnull(date_format(sg.reconcilOn,'%m/%d/%Y'),'') as reconcilon FROM masterrecord.ut_procure_segment sg left join (SELECT menu, menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') as muom on sg.metricuom = muom.menuvalue where segmentid = :segmentid";
+      $segmentRS = $conn->prepare($segmentSQL); 
+      $segmentRS->execute(array(':segmentid' => $pdta['segmentid']));
+      if ($segmentRS->rowCount() === 1) { 
+        //GET SEGDATA
+
+      } else { 
+        //BAD DATA
+
+      }
+
+
+      $dta = $pdta['segmentid']; 
+
+
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    }
+
+    function generatesystemreportrequest($request, $passdata) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      if ( $authuser !== $authchk ) {
+          (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } else {
+  
+        //GET USER ALLOWANCE  
+        $usrSQL = "SELECT originalaccountname, emailaddress, allowind, allowproc, allowcoord, allowhpr, allowinvtry, allowfinancials, presentinstitution, timestampdiff(day,now(),passwordexpiredate) as daystilexpire, accesslevel, accessnbr FROM four.sys_userbase where sessionid = :sess and allowind = 1 and timestampdiff(day,now(),passwordexpiredate) > 0 ";
+        $usrR = $conn->prepare($usrSQL); 
+        $usrR->execute(array(':sess' => $authuser)); 
+        if ($usrR->rowCount() < 1) { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "USER NOT ALLOWED"));
+        } else { 
+            //GET USER
+            $u = $usrR->fetch(PDO::FETCH_ASSOC);
+            $pdta['user'][] = $u;
+        }
+
+        //GET REPORT PARAMETERS AND FILL THEM IN 
+        $rptsqlSQL = "SELECT ifnull(selectClause,'') as selectclause, ifnull(fromClause,'') as fromclause, ifnull(whereclause,'') as whereclause, ifnull(summaryfield,'') as summaryfield, ifnull(groupbyClause,'') as groupbyclause, ifnull(orderbyClause,'') as orderby, ifnull(accesslvl,100) as accesslevel, ifnull(allowpdf,0) as allowpdf FROM four.ut_reportlist where urlpath = :rpturl";
+      $rptsqlRS = $conn->prepare($rptsqlSQL); 
+      $rptsqlRS->execute(array(':rpturl' =>  $pdta['rptRequested'] )); 
+     
+        if ( $rptsqlRS->rowCount() <> 1) { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "REPORT DEFINITION NOT FOUND"));
+        } else {
+          $rptsql = $rptsqlRS->fetch(PDO::FETCH_ASSOC);
+          $pdta['request']['rptsql'] = $rptsql;
+        }
+      }
+
+      
+      $msgArr[] = $pdta['rptRequested'];
+      if ($errorInd === 0 ) { 
+        //BUILD REPORT REQUEST with name and user AND GET REPORT ENCRY CODE HERE
+        $objid = strtolower( generateRandomString() ); 
+        $insSQL = "insert into four.objsrchdocument (objid, bywho, onwhen, doctype, reportmodule, reportname, requestjson, typeofreportrequested) value (:objid,:whoby,now(),:doctype,:reportmodule,:reportname,:requestjson,:typeofreportrequested)";
+        $insR = $conn->prepare($insSQL);
+        $insR->execute(array(':objid' => $objid,':whoby' => $u['originalaccountname'], ':doctype' => 'REPORTREQUEST', ':reportmodule' => 'system-reports', ':reportname' => $pdta['rptRequested'],':requestjson' => json_encode($pdta),':typeofreportrequested'=> 'PDF'));
+        $dta['reportobject'] = $objid;
+        $dta['reportobjectency'] = cryptservice($objid, 'e');
+        $dta['typerequested'] = 'PDF';
+        $dta['reportmodule'] = 'system-reports';
+        $dta['reportname'] = $pdta['rptRequested'];
+        $itemsfound = 1;
+        $responseCode = 200;                      
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    }
+
+
+
+    function frontsscalendar( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 
       $responseCode = 400;
@@ -65,7 +165,9 @@ class datadoers {
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;         
     } 
-    
+
+
+
     function markbgmigration ( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 
@@ -1144,6 +1246,22 @@ PAGERHERE;
 
       $dta = array('pagecontent' => $pager );
       ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;      
+    }
+
+    function preprocessinventoryoverride( $request, $passdata ) { 
+      $responseCode = 400; 
+      $msg = "BAD REQUEST";
+      $msgArr = array();
+      $itemsfound = 0;
+    
+      $dta = array('pagecontent' => bldDialogGetter('dialogInventoryOverride', $passdata) );
+
+      ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -2698,7 +2816,6 @@ SQLSTMT;
       $msgArr = array();
       $pdta = json_decode($passdata,true);
       require(serverkeys . "/sspdo.zck");  
-      //{"request":{"valuelist":{":bcrpbiosample":"82555",":bcrinstitution":"HUP"},"wherelist":{"0":"subtbl.pbiosample = :bcrpbiosample","1":"procurementinstitution = :bcrinstitution"},"typeofrequest":"PDF","requestedreporturl":"barcoderun"}}
       foreach ($pdta['request']['valuelist'] as $key => $value) { 
         if (trim($value) === "") {     
           $msgArr[] .= "Selected criteria ({$key}) must have a specified value";
@@ -3905,6 +4022,8 @@ function userDetails($whichusr) {
 }
 
 function captureSystemActivity($sessionid, $sessionvariables, $loggedsession, $userid, $firstname, $lastname, $email, $requestmethod, $request) { 
+    //TODO:  ADD THIS FUNCTION INTO ALL OTHER FUNCTIONS
+
     include(serverkeys . "/sspdo.zck"); 
     $insSQL = "insert into webcapture.tbl_siteusage (usagedatetime, sessionid, sessionvariables, loggedsession, userid, firstname, lastname, email, requestmethod, request)  values(now(),  :sessionid, :sessionvariables, :loggedsession, :userid, :firstname, :lastname, :email, :requestmethod, :request)";
     $insR = $conn->prepare($insSQL); 

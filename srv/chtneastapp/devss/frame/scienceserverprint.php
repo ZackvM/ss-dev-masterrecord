@@ -11,7 +11,7 @@ class printobject {
     public $style = "";
     public $bodycontent = "";
 
-    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview', 'helpfile'); //chartreview when that is built 
+    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview', 'helpfile', 'systemreports'); //chartreview when that is built 
     //pxchart = Patient Chart
     
     function __construct() { 		  
@@ -118,7 +118,13 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $docIdElem = explode("-", $unencry);
             $docid = $docIdElem[0];
             $bgnbr = '';                  
-           break; 
+            break;
+        case 'systemreports': 
+            $dt = "SCIENCESERVER SYSTEM REPORTS";
+            $docIdElem = explode("-", $unencry);
+            $docid = $unencry;
+            $bgnbr = '';                  
+            break;
         case 'helpfile':
             $dt = "SCIENCESERVER HELP DOCUMENT";
             $docIdElem = $unencry;
@@ -165,10 +171,10 @@ public $color_zackcomp = "235,242,255"; //#ebf2ff
 
 function globalstyles() {
 $rtnthis = <<<RTNTHIS
-
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
 html {margin: 0; height: 100%; width: 100%; box-sizing: border-box;}
 body { margin: 0;  height: 100%; width: 100%; box-sizing: border-box; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1); }
+
 RTNTHIS;
 return $rtnthis;    
 }            
@@ -182,6 +188,9 @@ function pagetabs($docobject) {
     case 'SCIENCESERVER PRINTABLE REPORTS':
       $thisTab = "ScienceServer Printable Reports";
       break; 
+    case 'SCIENCESERVER SYSTEM REPORTS':
+      $thisTab = "ScienceServer System Reports";
+      break;  
     case 'CHART REVIEW':
         $dspdoc = 'CR-' . substr(('000000' . $docobject['documentid']),-6);
         $thisTab = "Chart Review {$dspdoc}";
@@ -211,16 +220,100 @@ function documenttext($docobject, $orginalURI) {
     case 'SCIENCESERVER PRINTABLE REPORTS':
         $doctext = getPrintableReport($docobject['documentid'],$orginalURI);
         break;
+    case 'SCIENCESERVER SYSTEM REPORTS':
+        $doctext = getSystemPrintReport ( $docobject['documentid'],$originalURI); 
+        break;
     case 'SCIENCESERVER HELP DOCUMENT':
         $doctext = getSystemHelpDocument($docobject['documentid'],$orginalURI);
-        break;
-    
+        break;    
     }
     return $doctext;
 }
  
 }
 
+function getSystemPrintReport( $docid, $originalURL ) {
+    
+  $rptarr = json_decode(callrestapi("GET", dataTree . "/report-parts/{$docid}",serverIdent, serverpw), true);
+  //{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"bywho":"proczack","onwhen":"03\/09\/2019","reportmodule":"system-reports","reportname":"dailypristinebarcoderun","requestjson":"{\"rptRequested\":\"dailypristinebarcoderun\",\"user\":[{\"originalaccountname\":\"proczack\",\"emailaddress\":\"zacheryv@mail.med.upenn.edu\",\"allowind\":1,\"allowproc\":1,\"allowcoord\":1,\"allowhpr\":1,\"allowinvtry\":1,\"allowfinancials\":1,\"presentinstitution\":\"HUP\",\"daystilexpire\":139,\"accesslevel\":\"ADMINISTRATOR\",\"accessnbr\":\"43\"}],\"request\":{\"rptsql\":{\"selectclause\":\"sg.bgs, sg.prp, sg.prpmet, bs.speccat, bs.primarysite\",\"fromclause\":\"four.ut_procure_segment sg left join four.ref_procureBiosample_designation bs on sg.pbiosample = bs.pbiosample\",\"whereclause\":\"sg.voidind <> 1 and sg.activeind = 1 and sg.procuredAt = :thisInstitution and date_format(inputon,'%Y-%m-%d') = :thisDate\",\"summaryfield\":\"\",\"groupbyclause\":\"\",\"orderby\":\"sg.bgs\",\"accesslevel\":3,\"allowpdf\":1}}}","typeofreportrequested":"PDF","dspreportname":"Daily Pristine Barcode Run","dspreportdescription":"A sheet of printable barcodes for the institution at which you are currently ","rptcreator":"Zack","rptcreatedon":"March 08, 2019","rqaccesslvl":3,"groupingname":"PROCUREMENT REPORTS"}} 
+  $reportnme = $rptarr['DATA']['reportname'];
+  $responseCode = 404;
+  $format = 'HTML';
+  $printrptsfromdata = new sysreportprintables(); 
+  if (  method_exists( $printrptsfromdata,   $reportnme )) { 
+    $sDocFile = $printrptsfromdata->$reportnme($rptarr);
+    $docText = $sDocFile;
+    $cmds = new whtmltopdfcommands(); 
+    if ( method_exists( $cmds, $reportnme )) { 
+      $linuxcmd = $cmds->$reportnme();
+    } else { 
+      //default
+      $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED PRINTABLE REPORT MODULE\" ";
+    }    
+    $responseCode = 200;
+  } else { 
+    $sDocFile = "THIS PRINTABLE DOES NOT EXISTS: {$docid} ... ";
+    $docText = $sDocFile;
+  } 
+
+  //IF RESPONSECODE IS 200 CONVERT TO PDF
+  if ($responseCode === 200) { 
+    $filehandle = generateRandomString();                
+    $sdDocFile = genAppFiles . "/tmp/sysrpt{$filehandle}.html";
+    $sdDhandle = fopen($sdDocFile, 'w');
+    fwrite($sdDhandle, $docText);
+    fclose;
+    $sdPDF = genAppFiles . "/publicobj/documents/shipdoc/shipdoc{$filehandle}.pdf";
+    $linuxCmd = "wkhtmltopdf --load-error-handling ignore {$linuxcmd} {$sdDocFile} {$sdPDF}";
+    $output = shell_exec($linuxCmd);
+    $format = "pdf";    
+  }
+  return array('status' => $responseCode, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => $format);
+}
+
+class sysreportprintables { 
+
+    function dailypristinebarcoderun($rptdef) { 
+      $at = genAppFiles;
+      $tt = treeTop;
+      $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+      $r = json_encode($rptdef);
+
+      $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$r}</tr></table>"; 
+      return $resultTbl;    
+    } 
+
+    function histologysheet($rptdef) { 
+      $at = genAppFiles;
+      $tt = treeTop;
+      $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+      $r = json_encode($rptdef);
+
+      $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$r}</tr></table>"; 
+      return $resultTbl;    
+    }
+
+    function histologyembed($rptdef) { 
+      $at = genAppFiles;
+      $tt = treeTop;
+      $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+      $r = json_encode($rptdef);
+
+      $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$r}</tr></table>"; 
+      return $resultTbl;    
+    }
+
+    function dailypristineprocurementsheet($rptdef) { 
+      $at = genAppFiles;
+      $tt = treeTop;
+      $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+      $r = json_encode($rptdef);
+
+      $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$r}</tr></table>"; 
+      return $resultTbl;    
+    }
+
+}
 
 function getPrintableReport($sdid, $originalURL) { 
   $rptarr = json_decode(callrestapi("GET", dataTree . "/report-parts/{$sdid}",serverIdent, serverpw), true);
@@ -1032,6 +1125,29 @@ class whtmltopdfcommands {
         return $linuxcmd;
     }
 
+    function dailypristinebarcoderun() { 
+        $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"Daily Barcode Run (Pristine)\" ";
+        return $linuxcmd;
+    }
+   
+    function dailypristineprocurementsheet() { 
+        $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"Daily Barcode Run (Pristine)\" ";
+        return $linuxcmd;
+    }
+
+    function histologysheet() { 
+        $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8 ";
+        return $linuxcmd;
+    }
+
+    function histologyembed() { 
+        $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8 ";
+        return $linuxcmd;
+    }
+
+
+
+
 }
 
 class reportprintables {
@@ -1134,7 +1250,7 @@ LBLLBL;
   }  
       $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$rowTbl}</tr></table>"; 
       return $resultTbl;    
-    }
+  }
 
 
 }

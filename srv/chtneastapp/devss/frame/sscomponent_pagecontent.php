@@ -21,39 +21,32 @@ function sysDialogBuilder($whichdialog, $passedData) {
       break;  
       case 'dialogPBAddDelink': 
         $titleBar = "Add Delinked Donor";
-        //$footerBar = "DONOR RECORD";
         $innerDialog = bldQuickAddDelinkdialog();
       break;
       case 'dataCoordUploadPR':
         $titleBar = "Quick Pathology Report Upload";
-        //$footerBar = "DONOR RECORD";
         $innerDialog = bldQuickPRUpload( $passedData );
         break;
-
       case 'dialogVoidBG':
         $titleBar = "Void Biogroup";
-        //$footerBar = "DONOR RECORD";
         $innerDialog = bldDialogVoidBG( $passedData );
       break;
-
       case 'dialogAddBGSegments':
         $titleBar = "Add Biogroup Segments";
-        //$footerBar = "DONOR RECORD";
         $innerDialog = bldDialogAddSegment( $passedData );
       break; 
-
       case 'dataCoordEditPR':
         $titleBar = "Quick Pathology Report Editor";
-        //$footerBar = "DONOR RECORD";
         $innerDialog = bldQuickPREdit( $passedData );
         break;
-
+      case 'dialogInventoryOverride':
+        $titleBar = "Inventory Over-Ride Deviation Screen";
+        $innerDialog = bldQuickInventoryOverride( $passedData );
+        break;
       case 'procureBiosampleEditDonor':
         $titleBar = "Quick-Edit Donor Record";
-        //$footerBar = "DONOR RECORD";
         $innerDialog = bldQuickEditDonor( $passedData );
         break;
-
       case 'dataCoordinatorHPROverride':
         if ( count($passedData) > 0 ) {   
           $biogroupTbl = "<form id=frmQMSSubmitter><table border=0><tr><td valign=top rowspan=2><table border=0 id=qmsSldListTbl><thead><tr><th></th><th>Biogroup</th><th>Designation</th><th>Path-Rpt</th><th>QMS Conclusion</th><th>Present Status</th><th>New Status</th><th>Slide Submitted</th></tr></thead><tbody>";
@@ -1084,11 +1077,11 @@ PRPTNOTATION;
         }
       break;
       case 'P':
-        $dspBG = substr($sglabel,0,5);
+        $dspBG = substr($sglabel,0,5); 
         $pRptDsp = <<<PRPTNOTATION
 <div class=ttholder>{$val['pathologyrptind']}
    <div class=tt>
-     <div class=quickLink onclick="getUploadNewPathRpt(event,{$sglabel});"><i class="material-icons qlSmallIcon">file_copy</i> Upload Pathology Report (Biogroup: {$dspBG})</div>
+     <div class=quickLink onclick="getUploadNewPathRpt(event,'{$sglabel}');"><i class="material-icons qlSmallIcon">file_copy</i> Upload Pathology Report (Biogroup: {$dspBG})</div>
    </div>
 </div>
 PRPTNOTATION;
@@ -2149,7 +2142,8 @@ $innerBar = <<<BTNTBL
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltParams><tr><td><i class="material-icons">settings</i></td><td>View Parameters</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltMakeSD><tr><td><i class="material-icons">local_shipping</i></td><td>Create Shipdoc</td></tr></table></td>  
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltSubmitHPR><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Over-Ride</td></tr></table></td>           
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltSubmitHPR><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Override</td></tr></table></td>           
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltInventoryOverride><tr><td><i class="material-icons">blur_linear</i></td><td>Inventory Override</td></tr></table></td>           
 </tr>
 BTNTBL;
     break;
@@ -2276,6 +2270,28 @@ function bldSidePanelORSched($institution, $procedureDate, $procedureDateValue) 
 
 CALENDAR;
 return "{$prcCalendar}";
+}
+
+function bldQuickInventoryOverride( $passdata ) { 
+
+    $pdta = json_decode( $passdata, true );
+   //{"0":{"biogroup":"87016","bgslabel":"87016T001","segmentid":"447778"}} 
+    $segList = "<table border=1>";
+    foreach  ( $pdta as $key => $val ) {
+
+
+      $payload = json_encode(array("segmentid" => $val['segmentid']));
+      $sgdta = callrestapi("POST", dataTree . "/data-doers/segment-masterrecord",serverIdent, serverpw, $payload);
+
+
+
+      $segList .= "<tr><td>{$val['bgslabel']}</td><td>{$sgdta}</td></tr>";
+    }
+    $segList .= "</table>"; 
+ 
+ 
+ 
+   return "{$segList}";
 }
 
 function bldQuickPREdit($passeddata) { 
