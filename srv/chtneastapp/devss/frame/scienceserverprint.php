@@ -245,7 +245,7 @@ function getSystemPrintReport( $docid, $originalURL ) {
     $docText = $sDocFile;
     $cmds = new whtmltopdfcommands(); 
     if ( method_exists( $cmds, $reportnme )) { 
-      $linuxcmd = $cmds->$reportnme();
+      $linuxcmd = $cmds->$reportnme($rptarr);
     } else { 
       //default
       $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED PRINTABLE REPORT MODULE\" ";
@@ -307,9 +307,58 @@ class sysreportprintables {
       $at = genAppFiles;
       $tt = treeTop;
       $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
-      $r = json_encode($rptdef);
+      //{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"bywho":"proczack","onwhen":"03\/11\/2019"
+      //,"reportmodule":"system-reports","reportname":"dailypristineprocurementsheet","requestjson":"{\"rptRequested\":\"dailypristineprocurementsheet\",\"user\":[{\"originalaccountname\":\"proczack\",\"emailaddress\":\"zacheryv@mail.med.upenn.edu\",\"allowind\":1,\"allowproc\":1,\"allowcoord\":1,\"allowhpr\":1,\"allowinvtry\":1,\"allowfinancials\":1,\"presentinstitution\":\"HUP\",\"daystilexpire\":137,\"accesslevel\":\"ADMINISTRATOR\",\"accessnbr\":\"43\"}],\"request\":{\"rptsql\":{\"selectclause\":\"\",\"fromclause\":\"\",\"whereclause\":\"\",\"summaryfield\":\"\",\"groupbyclause\":\"\",\"orderby\":\"\",\"accesslevel\":3,\"allowpdf\":1}}}","typeofreportrequested":"PDF","dspreportname":"DailyPristine Procurement Sheet","dspreportdescription":"A listing of procured biosample\/segments from the pristine database","rptcreator":"Zack","rptcreatedon":"March 06,2019","rqaccesslvl":3,"groupingname":"SYSTEM REPORTS"}}
+      
+       $rqst = json_decode($rptdef['DATA']['requestjson'], true);            
+      //****************CREATE BARCODE
+        require ("{$at}/extlibs/bcodeLib/qrlib.php");
+        $tempDir = "{$at}/tmp/";
+        $codeContents = json_encode(array("institution" => "{$rqst['user'][0]['presentinstitution']}", "date" => date('Y-m-d'), "rpttitle" => "PRISTINE PROC SHEET"));
+        $fileName = 'procsht' . generateRandomString() . '.png';
+        $pngAbsoluteFilePath = $tempDir.$fileName;
+        if (!file_exists($pngAbsoluteFilePath)) {
+          QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+        } 
+        $qrcode = base64file("{$pngAbsoluteFilePath}", "topqrcode", "png", true, " style=\"height: .6in;\"   ");
+        
+        //********************END BARCODE CREATION
+      
+      $tday = date('Y-m-d');
+      $tdaydsp = date('m/d/Y');
+      $rpttitle = <<<RPTTITLE
+              <table border=0 cellspacing=0 cellpadding=0 style="width: 100%;">
+                  <tr>
+                      <td style="width: 10px; padding: 0 5px 0 0;" rowspan=2>{$favi}</td>
+                      <td style="font-size: 14pt; " valign=bottom><center>{$rptdef['DATA']['dspreportname']}</td>
+                      <td style="width: 10px;" rowspan=2>{$qrcode}</td>
+                  </tr>
+                  <tr>
+                     <td valign=top><center>For {$rqst['user'][0]['presentinstitution']} on {$tdaydsp} </td>    
+                  </tr>   
+               </table>
+RPTTITLE;
+      
+      
+      
 
-      $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$r}</tr></table>"; 
+      $r = "Run By: {$rqst['user'][0]['emailaddress']} at " . date('H:i');
+      //foreach( $rptdef['DATA'] as $ky => $vl) {
+      //  $el .= "{$ky} => {$vl} <br>";
+      //}
+
+      
+      
+      
+      
+      $resultTbl = <<<RSLTTBL
+              <table border=0 style="width: 10.5in; box-sizing: border-box; color: rgba(48,57,71,1);">
+                  <tr><td style="font-size: 8pt; font-weight: bold; font-style: italic; text-align: right;">{$r}</td></tr>              
+                  <tr><td style="border-bottom: 1px solid rgba(48,57,71,.6);">{$rpttitle}</td></tr>
+
+                  <tr><td>{$el}</td></tr>
+              </table>
+RSLTTBL;
       return $resultTbl;    
     }
 
@@ -1130,8 +1179,11 @@ class whtmltopdfcommands {
         return $linuxcmd;
     }
    
-    function dailypristineprocurementsheet() { 
-        $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"Daily Barcode Run (Pristine)\" ";
+    function dailypristineprocurementsheet($rptdef) {
+        $rqst = json_decode($rptdef['DATA']['requestjson'], true); 
+        $inst = $rqst['user'][0]['presentinstitution'];
+        $tdaydsp = date('m/d/Y');
+        $linuxcmd = " --page-size Letter --orientation Landscape  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"- For {$inst} on {$tdaydsp} -\" --footer-left \"Daily Pristine Procurement Sheet\" ";
         return $linuxcmd;
     }
 

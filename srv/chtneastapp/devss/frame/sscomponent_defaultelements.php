@@ -66,7 +66,6 @@ if ($whichpage !== "login") {
               
               if ( trim($lstItem['additionalcode']) === "" ) {
                   //NAVIGATE BY PAGE    
-
                  if ( trim($lstItem['dspsystemicon']) === "" ) { 
                    $controlList .= "<tr><td onclick=\"navigateSite('{$lstItem['pagesource']}');\">{$lstItem['menuvalue']}</td></tr>";               
                  } else {     
@@ -75,7 +74,14 @@ if ($whichpage !== "login") {
 
               } else { 
                  //FUNCTION LISTED IN EXPLAINER LINE
-                 $controlList .= "<tr><td onclick=\"if (typeof {$lstItem['additionalcode']} == 'function') { {$lstItem['additionalcode']}; }\">" . $lstItem['menuvalue'] . "</td></tr>";               
+                 
+                 if ( $lstItem['additionalcode'] === 'SEPARATOR' ) { 
+                    $controlList .= "<tr class=trseparator><td class=menuSeparator></td></tr>"; 
+                 } else {     
+                    $controlList .= "<tr><td onclick=\"if (typeof {$lstItem['additionalcode']} == 'function') { {$lstItem['additionalcode']}; }\">" . $lstItem['menuvalue'] . "</td></tr>";               
+                 }
+                 
+                 
               }
 
           }

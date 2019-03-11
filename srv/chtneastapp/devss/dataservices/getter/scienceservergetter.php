@@ -53,9 +53,15 @@ class objlisting {
         $itemsfound = $getLbl->rowCount();
         while ($r = $getLbl->fetch(PDO::FETCH_ASSOC)) {
             $rows[] = $r;
-            //DELETE HERE
         }
         $dta = $rows;
+        //BACKUP AND DELETE HERE
+        $mvSQL = "insert into serverControls.lblPrinted (printID,labelRequested,printerRequested,dataStringpayload,byWho,onWhen,printedOn) select printID,labelRequested,printerRequested,dataStringpayload,byWho,onWhen, now() from serverControls.lblToPrint"; 
+        $mvR = $conn->prepare($mvSQL); 
+        $mvR->execute(); 
+        $delSQL = "delete FROM serverControls.lblToPrint"; 
+        $delR = $conn->prepare($delSQL);
+        $delR->execute();
         $responseCode = 200;
      }
      
@@ -101,7 +107,6 @@ class objlisting {
      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
      return $rows;       
   }
-
 
   function chtnstaffdirectorylisting($whichobj, $urirqst) { 
        
@@ -245,7 +250,6 @@ class objlisting {
     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
     return $rows;      
   } 
-
 
   function preprocesspathologyrptupload($request, $urirqst) { 
    $rows = array(); 
@@ -838,7 +842,6 @@ function investigatorhead($whichobj, $rqst) {
     $rows['data'] = array('status' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
     return $rows;  
 }
-
 
 function investigatorbilladdress($whichobj, $rqst) { 
     session_start();

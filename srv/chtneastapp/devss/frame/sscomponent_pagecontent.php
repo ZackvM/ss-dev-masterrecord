@@ -2143,7 +2143,7 @@ $innerBar = <<<BTNTBL
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltMakeSD><tr><td><i class="material-icons">local_shipping</i></td><td>Create Shipdoc</td></tr></table></td>  
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltSubmitHPR><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Override</td></tr></table></td>           
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltInventoryOverride><tr><td><i class="material-icons">blur_linear</i></td><td>Inventory Override</td></tr></table></td>           
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltInventoryOverride><tr><td><i class="material-icons">blur_linear</i></td><td>Check-In Override</td></tr></table></td>           
 </tr>
 BTNTBL;
     break;
