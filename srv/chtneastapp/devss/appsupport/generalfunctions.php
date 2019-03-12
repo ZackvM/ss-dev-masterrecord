@@ -375,9 +375,15 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $em = func_get_arg(4);  
         $ls = func_get_arg(5); 
         //SELECT * FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1
-        //https://kayaposoft.com/enrico/json/v2.0/?action=getHolidaysForMonth&month=1&year=2019&country=us&region=pa&holidayType=public_holiday   ///GET ALL HOLIDAYS FOR A MONTH IN US/PA
-
-        $dspChkToday =  "<div id=saluations>Hi {$fn}<br>Today is " . date('l, jS \of F, Y') . ". Here's what's happening today <p></div>";
+        //[{"date":{"day":1,"month":1,"year":2019,"dayOfWeek":2},"name":[{"lang":"en","text":"New Year's Day"}],"holidayType":"public_holiday"},{"date":{"day":21,"month":1,"year":2019,"dayOfWeek":1},"name":[{"lang":"en","text":"Dr. Martin Luther King, Jr. Day"}],"holidayType":"public_holiday"}]
+        $pbholidayws = json_decode(callrestapi("GET","https://kayaposoft.com/enrico/json/v2.0/?action=getHolidaysForMonth&month={$pmonth}&year={$pyear}&country=us&region=pa&holidayType=public_holiday"),true);   ///GET ALL HOLIDAYS FOR A MONTH IN US/PA
+        
+        $pubholiday = array();
+        foreach ( $pbholidayws as $pbk => $pbv ) { 
+            $pubholiday[$pbv['date']['day']] = $pbv['name'][0]['text'];
+            $tdyEventList .= ( (int)date('d') == (int)$pbv['date']['day'] ) ? "&raquo; {$pbv['name'][0]['text']}" : "";
+        }
+        $dspChkToday =  "<div id=saluations>Hi {$fn}<br>Today is " . date('l, jS \of F, Y') . ". Here's what's happening today:<br>{$tdyEventList}</div>";
         break;
      case 'procedureprocurequery':
         $calTblId = "pqcTbl";
@@ -660,9 +666,9 @@ while ($currentDay <= $numberOfDays) {
           }
           $sqrID = "daySqr{$currentDayDsp}";
           $action = " onclick=\"alert('{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
+          //TODO:  THIS IS WHERE THE CURRENT DAY SQUARE DISPLAY GOES
           $dayDsp = $currentDayDsp;
           $btmLineDsp = "<tr><td colspan=7 id={$btmLine}><div id=mainRootTodayActivityDsp>{$dspChkToday}</div></td></tr>";
-
          break;
        default: 
          $sqrID = "daySqr{$currentDayDsp}";

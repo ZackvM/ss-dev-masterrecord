@@ -2866,7 +2866,15 @@ console.log(passdta);
 
   if (byId('btnPrintAllLabels')) { 
     byId('btnPrintAllLabels').addEventListener('click', function() { 
-      alert('THIS FUNCTION DOESN\'T WORK YET.');
+      var selection = gatherSelection();
+      if (parseInt(selection['responseCode']) === 200) { 
+        var passdta = JSON.stringify(selection['selectionListing']);
+        //console.log(passdta);
+        var mlURL = "/data-doers/preprocess-label-print";
+        universalAJAX("POST",mlURL,passdta,answerPreprocessLabelPrint,1);   
+      } else { 
+        alert(selection['message']);
+      }   
     }, false);
   }
 
@@ -2933,7 +2941,58 @@ function answerPreprocessInventoryOverride(rtnData) {
      }  
    }        
 }
+              
+function answerPreprocessLabelPrint(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("Print Thermal Labels Error:\\n"+dspMsg);
+   } else { 
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = 0;
+       byId('standardModalDialog').style.left = "15vw";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "5vh";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+   }    
+}
 
+function sendLblPrintRequest() { 
+   if (byId('fldDialogLabelPrnterValue') && byId('fldDialogLabelQTY') && byId('segmentListingPayLoad') ) { 
+     var obj = new Object();    
+     obj['payload'] = byId('segmentListingPayLoad').value; 
+     obj['formatname'] = byId('fldDialogLabelPrnterValue').value;          
+     obj['qty'] = byId('fldDialogLabelQTY').value;         
+     var passdata = JSON.stringify(obj);
+     var mlURL = "/data-doers/label-print-request";
+     universalAJAX("POST",mlURL,passdata, answerLabelPrintRequest,2);                  
+  }
+}
+
+function answerLabelPrintRequest(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("Label Print Error:\\n"+dspMsg);
+   } else { 
+     if (byId('standardModalDialog')) {
+       byId('standardModalDialog').innerHTML = "";
+       byId('standardModalBacker').style.display = 'none';
+       byId('standardModalDialog').style.display = 'none';
+     }  
+   }              
+}
+                 
 function answerEditPathRpt(rtnData) { 
    if (parseInt(rtnData['responseCode']) !== 200) { 
      var msgs = JSON.parse(rtnData['responseText']);

@@ -43,6 +43,10 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $titleBar = "Inventory Over-Ride Deviation Screen";
         $innerDialog = bldQuickInventoryOverride( $passedData );
         break;
+      case 'dialogPrintThermalLabels':
+        $titleBar = "Print Label";
+        $innerDialog = bldQuickPrintThermalLabels( $passedData );          
+        break;
       case 'procureBiosampleEditDonor':
         $titleBar = "Quick-Edit Donor Record";
         $innerDialog = bldQuickEditDonor( $passedData );
@@ -2272,20 +2276,59 @@ CALENDAR;
 return "{$prcCalendar}";
 }
 
+function bldQuickPrintThermalLabels( $passdata ) { 
+   $pdta = json_decode( $passdata, true );
+   $lArr = array(); 
+   $cntr = 0;
+   foreach ($pdta as $ky => $vl) { 
+       $lArr['BS-'.$cntr] = $vl['bgslabel'];
+       $cntr++;
+   }
+   $lArrPayload = json_encode($lArr);
+   $prntarr = json_decode(callrestapi("GET", dataTree . "/thermal-printer-list",serverIdent, serverpw), true);
+   $prnmenu = "<table border=0 class=menuDropTbl style=\"min-width: 19.8vw;\">";
+   foreach ($prntarr['DATA'] as $pky => $pval) { 
+     $prnmenu .= "<tr><td onclick=\"fillField('fldDialogLabelPrnter','{$pval['formatname']}','{$pval['printer']}');\" class=ddMenuItem>{$pval['printer']}</td></tr>";  
+   }
+   $prnmenu .= "</table>";
+   
+   $dialog = <<<DIALOG
+           <input type=hidden value='{$lArrPayload}' id=segmentListingPayLoad>
+   <table border=0 style="width: 24vw;">
+   <tr><td style="font-size: 1.6vh; line-height: 1.6em; text-align: justify;">This dialog will print to the CHTNEast thermal barcode printers.  Select a printer from the list, specify the quantity of EACH label and then click the print button.</td></tr>
+   <tr><td>
+   <table border=0 cellspacing=2 cellpadding=0>
+       <tr><td class=fldLabel>Printer</td><td class=fldLabel>Qty</td></tr>
+       <tr>
+           <td><div class=menuHolderDiv><input type=hidden id=fldDialogLabelPrnterValue><input type=text id=fldDialogLabelPrnter style="font-size: 1.8vh; width: 20vw;"><div class=valueDropDown>{$prnmenu}</div></div></td>
+           <td><input type=text id=fldDialogLabelQTY style="font-size: 1.8vh; width: 3vw; text-align: right;" value=1></td>
+       </tr>
+        <tr><td colspan=2 align=right><table class=tblBtn id=btnUploadPR style="width: 6vw;" onclick="sendLblPrintRequest();"><tr><td style="white-space: nowrap;"><center>Print</td></tr></table></td></tr>
+        </table>
+   </td></tr>        
+</table>           
+              
+DIALOG;
+   return $dialog; 
+}
+
 function bldQuickInventoryOverride( $passdata ) { 
 
     $pdta = json_decode( $passdata, true );
    //{"0":{"biogroup":"87016","bgslabel":"87016T001","segmentid":"447778"}} 
     $segList = "<table border=1>";
     foreach  ( $pdta as $key => $val ) {
-
-
       $payload = json_encode(array("segmentid" => $val['segmentid']));
-      $sgdta = callrestapi("POST", dataTree . "/data-doers/segment-masterrecord",serverIdent, serverpw, $payload);
-
-
-
-      $segList .= "<tr><td>{$val['bgslabel']}</td><td>{$sgdta}</td></tr>";
+      $sgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/segment-masterrecord",serverIdent, serverpw, $payload), true);
+      //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"biosamplelabel":87022,"segmentid":447797,"segmentlabel":"001","bgs":"87022T001","segstatus":"ONOFFER","statusdate":"03\/07\/2019","statusby":"URSALA","shipdocrefid":"","shippeddate":"","hourspost":"2.5"
+      //,"metric":"0.61","metricuom":"g","metricuomlong":"Grams","prepmethod":"PB","preparation":"FFPE","qty":1,"assignedto":"BANK","assignedrequest":"","assignedby":"Deneen","assignmentdate":"03\/07\/2019","hprblockind":1,"procurementdate":"03\/06\/2019","procurementtech":"Deneen","procuredat":"HUP","segmentcomments":"","voidind":0,"segmentvoidreason":"","scannedlocation":"","scanloccode":"","scannedstatus":"","scannedby":"","scanneddate":"","tohprind":0,"reconcilind":"0","reconcilby":"","reconcilon":""}} i
+      $sg = $sgdta['DATA'];
+      //hprblockind
+      //voidind
+      //segstatus
+      //prepmethod
+      //assignedto
+      $segList .= "<tr><td>{$val['bgslabel']}</td><td>{$sg['segmentid']} {$sg['bgs']} {$sg['segstatus']} {$sg['hprblockind']} {$sg['prepmethod']} {$sg['assignedto']}</td></tr>";
     }
     $segList .= "</table>"; 
  

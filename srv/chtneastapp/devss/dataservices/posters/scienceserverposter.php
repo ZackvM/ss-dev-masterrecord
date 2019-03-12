@@ -33,6 +33,78 @@ function __construct() {
 }
 
 class datadoers {
+    
+    function  labelprintrequest ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      if ( $authuser !== $authchk ) {
+          (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } else {        
+          
+          $chkUSQL = "SELECT originalaccountname FROM four.sys_userbase where allowind = 1 and timestampdiff(day, now(), passwordExpireDate) > 0 and sessionid = :sess"; 
+          $chkURS = $conn->prepare($chkUSQL); 
+          $chkURS->execute(array(':sess' => $authuser));
+          if ($chkURS->rowCount() === 1) { 
+              $uRS = $chkURS->fetch(PDO::FETCH_ASSOC);
+              $usr = $uRS['originalaccountname'];
+          } else { 
+              (list( $errorInd, $msgArr[] ) = array(1 , "USER NOT ALLOWED FUNCTION"));
+          }
+          ( !array_key_exists("payload", $pdta) ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "PAYLOAD KEY IS MISSING")) : "";
+          ( !array_key_exists("formatname", $pdta) ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "LABEL FORMAT NAME IS MISSING")) : "";
+          ( !array_key_exists("qty", $pdta) ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE QTY KEY IS MISSING")) : "";
+          if (array_key_exists("payload", $pdta)) {
+            $pl = json_decode($pdta['payload'], true);  
+             if ( count($pl) < 1 ) { 
+               (list( $errorInd, $msgArr[] ) = array(1 , "THE SEGMENT PRINT PAYLOAD IS EMPTY" ));    
+             }
+          }
+          ( trim($pdta['formatname']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE FORMAT NAME IS NOT SPECIFIED" )) : "";   
+          ( trim($pdta['qty']) === "" || !is_numeric($pdta['qty'])  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE QUANTITY FIELD MUST NOT BE EMPTY AND MUST BE A NUMBER" )) : "";   
+          $chkFrmSQL = "SELECT  linuxlprname, formatname, formattext FROM serverControls.lblFormats where dspPrinter = 1 and formatname = :formatname";
+          $chkFrmRS = $conn->prepare($chkFrmSQL);
+          $chkFrmRS->execute(array(':formatname' => $pdta['formatname']));
+           if ( $chkFrmRS->rowCount() <> 1) { 
+            (list( $errorInd, $msgArr[] ) = array(1 , "THE SPECIFIED FORMAT WAS NOT FOUND" ));    
+           } else { 
+             $fmt = $chkFrmRS->fetch(PDO::FETCH_ASSOC);
+             $formattext = $fmt['formattext'];
+             $printer = $fmt['linuxlprname'];
+             $labelname = $fmt['formatname'];
+             preg_match_all('/#FIELD\d{1,}#/', $formattext, $mtcharr, PREG_OFFSET_CAPTURE);                   
+           }
+      }
+      
+      if ($errorInd === 0 ) {
+        foreach ($pl as $skey => $sval ) { 
+          //$pattern = preg_quote('#$%^&*()+=-[]\';,./{}|\":<>?~', '#');
+          $label = preg_replace( '/[^A-Za-z0-9]/', '', $sval );    
+          $elementArr = array();
+          for ($i = 0; $i < count($mtcharr[0]); $i++) { 
+            $elementArr[strtoupper(str_replace('#','',$mtcharr[0][$i][0]))] = $label;
+          }
+          $insSQL = "insert into serverControls.lblToPrint (labelRequested, printerRequested, dataStringpayload, byWho, onWhen)  values(:labelrequested, :printerrequested,:datastringpayload, :bywho, now())";
+          $insRS = $conn->prepare($insSQL);
+          $insRS->execute(array(':labelrequested' => $labelname, ':printerrequested' => $printer,':datastringpayload' => json_encode($elementArr), ':bywho' => $usr));
+        }
+        $responseCode = 200;
+      }      
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;   
+    }
 
     function segmentmasterrecord ( $request, $passdata ) { 
       $rows = array(); 
@@ -45,22 +117,15 @@ class datadoers {
       require(serverkeys . "/sspdo.zck");
       $pdta = json_decode($passdata, true);
 
-      $segmentSQL = "SELECT sg.biosamplelabel, ifnull(sg.segmentlabel,'') as segmentlabel, ifnull(sg.bgs,'') as bgs, ifnull(sg.segstatus,'') as segstatus, ifnull(date_format(sg.statusdate,'%m/%d/%Y'),'') as statusdate, ifnull(sg.statusby,'') as statusby, ifnull(sg.shipdocrefid,'') as shipdocrefid, ifnull(date_format(sg.shippedDate,'%m/%d/%Y'),'') as shippeddate, ifnull(sg.hourspost,'') as hourspost, ifnull(sg.metric,'') as metric, ifnull(muom.dspvalue,'') as metricuom, ifnull(muom.longvalue,'') as metricuomlong, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, ifnull(sg.qty,1) as qty, ifnull(sg.assignedto,'') as assignedto, ifnull(sg.assignedReq,'') as assignedrequest, ifnull(sg.assignedby,'') as assignedby , ifnull(date_format(sg.assignmentdate,'%m/%d/%Y'),'') as assignmentdate, ifnull(sg.hprblockind,0) as hprblockind , ifnull(date_format(sg.enteredon,'%m/%d/%Y'),'') as procurementdate, ifnull(sg.enteredby,'') as procurementtech, ifnull(sg.procuredat,'') as procuredat, ifnull(sg.segmentcomments,'') as segmentcomments, ifnull(sg.voidind,0) as voidind , ifnull(sg.segmentvoidreason,'') as segmentvoidreason, ifnull(sg.scannedlocation,'') as scannedlocation, ifnull(sg.scanloccode,'') as scanloccode, ifnull(sg.scannedstatus,'') as scannedstatus, ifnull(sg.scannedby,'') as scannedby, ifnull(date_format(sg.scanneddate,'%m/%d/%Y'),'') as scanneddate, ifnull(sg.tohpr,0) as tohprind , ifnull(sg.reconcilInd,'') as reconcilind, ifnull(sg.reconcilBy,'') as reconcilby, ifnull(date_format(sg.reconcilOn,'%m/%d/%Y'),'') as reconcilon FROM masterrecord.ut_procure_segment sg left join (SELECT menu, menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') as muom on sg.metricuom = muom.menuvalue where segmentid = :segmentid";
+      $segmentSQL = "SELECT sg.biosamplelabel,  sg.segmentid, ifnull(sg.segmentlabel,'') as segmentlabel, ifnull(sg.bgs,'') as bgs, ifnull(sg.segstatus,'') as segstatus, ifnull(date_format(sg.statusdate,'%m/%d/%Y'),'') as statusdate, ifnull(sg.statusby,'') as statusby, ifnull(sg.shipdocrefid,'') as shipdocrefid, ifnull(date_format(sg.shippedDate,'%m/%d/%Y'),'') as shippeddate, ifnull(sg.hourspost,'') as hourspost, ifnull(sg.metric,'') as metric, ifnull(muom.dspvalue,'') as metricuom, ifnull(muom.longvalue,'') as metricuomlong, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, ifnull(sg.qty,1) as qty, ifnull(sg.assignedto,'') as assignedto, ifnull(sg.assignedReq,'') as assignedrequest, ifnull(sg.assignedby,'') as assignedby , ifnull(date_format(sg.assignmentdate,'%m/%d/%Y'),'') as assignmentdate, ifnull(sg.hprblockind,0) as hprblockind , ifnull(date_format(sg.enteredon,'%m/%d/%Y'),'') as procurementdate, ifnull(sg.enteredby,'') as procurementtech, ifnull(sg.procuredat,'') as procuredat, ifnull(sg.segmentcomments,'') as segmentcomments, ifnull(sg.voidind,0) as voidind , ifnull(sg.segmentvoidreason,'') as segmentvoidreason, ifnull(sg.scannedlocation,'') as scannedlocation, ifnull(sg.scanloccode,'') as scanloccode, ifnull(sg.scannedstatus,'') as scannedstatus, ifnull(sg.scannedby,'') as scannedby, ifnull(date_format(sg.scanneddate,'%m/%d/%Y'),'') as scanneddate, ifnull(sg.tohpr,0) as tohprind , ifnull(sg.reconcilInd,'') as reconcilind, ifnull(sg.reconcilBy,'') as reconcilby, ifnull(date_format(sg.reconcilOn,'%m/%d/%Y'),'') as reconcilon FROM masterrecord.ut_procure_segment sg left join (SELECT menu, menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') as muom on sg.metricuom = muom.menuvalue where segmentid = :segmentid";
       $segmentRS = $conn->prepare($segmentSQL); 
       $segmentRS->execute(array(':segmentid' => $pdta['segmentid']));
       if ($segmentRS->rowCount() === 1) { 
         //GET SEGDATA
-
+        $dta = $segmentRS->fetch(PDO::FETCH_ASSOC);
       } else { 
         //BAD DATA
-
-      }
-
-
-      $dta = $pdta['segmentid']; 
-
-
-
+      }      
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -133,8 +198,6 @@ class datadoers {
       return $rows;         
     }
 
-
-
     function frontsscalendar( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 
@@ -165,8 +228,6 @@ class datadoers {
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;         
     } 
-
-
 
     function markbgmigration ( $request, $passdata ) { 
       $rows = array(); 
@@ -320,7 +381,6 @@ class datadoers {
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows; 
     }    
-
 
     function financialcreditcardpayments ( $request, $passdata ) { 
       $rows = array(); 
@@ -1252,7 +1312,23 @@ PAGERHERE;
       return $rows;      
     }
 
-    function preprocessinventoryoverride( $request, $passdata ) { 
+    function preprocesslabelprint( $request, $passdata ) { 
+      $responseCode = 400; 
+      $msg = "BAD REQUEST";
+      $msgArr = array();
+      $itemsfound = 0;
+    
+      $dta = array('pagecontent' => bldDialogGetter('dialogPrintThermalLabels', $passdata) );
+
+      ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;              
+    }
+    
+   function preprocessinventoryoverride( $request, $passdata ) { 
       $responseCode = 400; 
       $msg = "BAD REQUEST";
       $msgArr = array();
@@ -1268,7 +1344,7 @@ PAGERHERE;
       return $rows;      
     }
 
-    function preprocessvoidbg($request, $passdata) { 
+   function preprocessvoidbg($request, $passdata) { 
       $responseCode = 400; 
       $msg = "BAD REQUEST";
       $msgArr = array();
@@ -1284,7 +1360,7 @@ PAGERHERE;
       return $rows;      
     }
 
-    function preprocessaddbgsegments($request, $passdata) { 
+   function preprocessaddbgsegments($request, $passdata) { 
       $responseCode = 400; 
       $msg = "BAD REQUEST";
       $msgArr = array();
@@ -1300,7 +1376,7 @@ PAGERHERE;
       return $rows;      
     }
 
-    function initialbgroupsave($request, $passdata) {       
+   function initialbgroupsave($request, $passdata) {       
       $rows = array(); 
       //$dta = array(); 
       $responseCode = 400;
@@ -1356,7 +1432,7 @@ PAGERHERE;
       return $rows;
     }
 
-    function updatemypresentinstitution($request, $passdata) { 
+   function updatemypresentinstitution($request, $passdata) { 
       $rows = array(); 
       $institutionlist = array(); 
       $responseCode = 400;
@@ -1395,7 +1471,7 @@ PAGERHERE;
       return $rows;
     }
 
-    function updatemypassword($request, $passdata) { 
+   function updatemypassword($request, $passdata) { 
       $rows = array(); 
       $responseCode = 400;
       $msgArr = array(); 
@@ -1459,7 +1535,7 @@ PAGERHERE;
       return $rows;
     } 
 
-    function updateaboutme($request, $passdata) { 
+   function updateaboutme($request, $passdata) { 
       $rows = array(); 
       $responseCode = 400;
       $msgArr = array(); 
@@ -1571,7 +1647,7 @@ UPDSQL;
       return $rows;
     }
 
-    function livemasterrecordsitelisting($request, $passdata) { 
+   function livemasterrecordsitelisting($request, $passdata) { 
       $rows = array(); 
       //$dta = array(); 
       $responseCode = 400;
@@ -1600,7 +1676,7 @@ UPDSQL;
       return $rows;
     }
 
-    function getpwchangecode($request, $passdata) { 
+   function getpwchangecode($request, $passdata) { 
       $rows = array(); 
       //$dta = array(); 
       $responseCode = 400;
@@ -1642,8 +1718,7 @@ MSGTXT;
       return $rows;
     }
 
-
-    function getalternateunlockcode($request, $passdata) { 
+   function getalternateunlockcode($request, $passdata) { 
       $rows = array(); 
       //$dta = array(); 
       $responseCode = 400;
@@ -1686,7 +1761,7 @@ MSGTXT;
       return $rows;
     }
 
-    function savelinuxorschedphi($request, $passdata) { 
+   function savelinuxorschedphi($request, $passdata) { 
      $rows = array(); 
      //$dta = array(); 
      $responseCode = 400;
@@ -1751,7 +1826,7 @@ MSGTXT;
      return $rows;
     }
     
-    function savedelinkedphi($request, $passdata) { 
+   function savedelinkedphi($request, $passdata) { 
      $rows = array(); 
      $dta = array(); 
      $responseCode = 400;
@@ -1904,7 +1979,7 @@ MSGTXT;
      return $rows;                        
     } 
 
-    function submithelpticket( $request, $passdata ) { 
+   function submithelpticket( $request, $passdata ) { 
      $rows = array(); 
      $dta = array(); 
      $responseCode = 400;
@@ -1960,7 +2035,7 @@ MSGTXT;
      return $rows;                        
     } 
 
-    function submithelpsearch( $request, $passdata ) { 
+   function submithelpsearch( $request, $passdata ) { 
      $rows = array(); 
      $dta = array(); 
      $responseCode = 400;
@@ -2009,7 +2084,7 @@ MSGTXT;
      return $rows;                        
     } 
 
-    function saveencounterdonor( $request, $passdata ) {
+   function saveencounterdonor( $request, $passdata ) {
      $rows = array(); 
      $dta = array(); 
      $responseCode = 400;
@@ -2224,7 +2299,6 @@ UPDSQL;
      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
      return $rows;                        
    }
-
 
    function pathologyreportcoordinatoredit( $request, $passdata ) { 
      $rows = array(); 
@@ -2634,7 +2708,7 @@ SQLSTMT;
      return $rows;          
    }
 
-  function   sitesbyspecimencategory($request, $passdata) { 
+   function  sitesbyspecimencategory($request, $passdata) { 
    $rows = array(); 
    $dta = array(); 
    $responseCode = 400; 
@@ -2663,7 +2737,7 @@ SQLSTMT;
    return $rows;          
   }
     
- function procurementdiagnosisdesignationsearch($request, $passdata) { 
+   function procurementdiagnosisdesignationsearch($request, $passdata) { 
    $rows = array(); 
    $dta = array(); 
    $responseCode = 400; 
@@ -2709,9 +2783,7 @@ SQLSTMT;
    return $rows;    
  } 
 
-    
-
- function generatesubmenu($request, $passdata) { 
+   function generatesubmenu($request, $passdata) { 
    $rows = array(); 
    $dta = array(); 
    $responseCode = 400; 
@@ -2742,8 +2814,7 @@ SQLSTMT;
    return $rows;    
  } 
 
-
-    function grabreportdata($request, $passdata) { 
+   function grabreportdata($request, $passdata) { 
       $responseCode = 400; 
       $error = 0;
       $msg = "";
@@ -2807,7 +2878,7 @@ SQLSTMT;
       return $rows;
     }
 
-    function createreportobj($request, $passdata) { 
+   function createreportobj($request, $passdata) { 
       $responseCode = 400; 
       $error = 0;
       $msg = "";
@@ -2875,7 +2946,7 @@ SQLSTMT;
       return $rows;
     } 
 
-    function hprworkbenchbuilder($request, $passdata) {  
+   function hprworkbenchbuilder($request, $passdata) {  
       $responseCode = 400; 
       $error = 0;
       $msg = "";
@@ -2903,7 +2974,7 @@ SQLSTMT;
       return $rows;
     }
 
-    function hprworkbenchsidepanel($request, $passdata) {  
+   function hprworkbenchsidepanel($request, $passdata) {  
       $responseCode = 400; 
       $error = 0;
       $msg = "";
@@ -2992,7 +3063,7 @@ SQLSTMT;
       return $rows;
     }
 
-    function inventoryhprtrayoverride($request, $passdata) { 
+   function inventoryhprtrayoverride($request, $passdata) { 
       $responseCode = 400; 
       $error = 0;
       $msg = "";
@@ -3146,7 +3217,7 @@ SQLSTMT;
       return $rows;
     }
  
-    function biogrouphprstatus($request, $passdata) { 
+   function biogrouphprstatus($request, $passdata) { 
       $dta = array(); 
       require(serverkeys . "/sspdo.zck");  
       $pdta = json_decode($passdata,true);
@@ -3184,8 +3255,7 @@ SQLSTMT;
       return $rows;
     }
 
-
-    function assignsegments($request, $passdata) { 
+   function assignsegments($request, $passdata) { 
 //{"segmentlist":"{\"0\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948001\",\"segmentid\":\"431100\"},\"1\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948003\",\"segmentid\":\"431102\"},\"2\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948004\",\"segmentid\":\"431103\"}}","investigatorid":"INV3000","requestnbr":"REQ19002"}
       $responseCode = 400; 
       $error = 0;
@@ -3330,7 +3400,7 @@ SQLSTMT;
       return $rows;
     } 
 
-    function makequeryrequest($request, $passedData) { 
+   function makequeryrequest($request, $passedData) { 
       $responseCode = 400; 
       $msg = "";
       $itemsfound = 0;
@@ -3372,7 +3442,7 @@ SQLSTMT;
       return $rows;                
     }
  
-    function documenttext($request, $passedData) {
+   function documenttext($request, $passedData) {
         //TODO:  Add Error Checking to all Webservice end points 
       require(serverkeys . "/sspdo.zck");  
       $responseCode = 400; 
@@ -3413,7 +3483,7 @@ SQLSTMT;
       return $rows;
     }
 
-    function suggestsomething($request, $passedData) { 
+   function suggestsomething($request, $passedData) { 
        //{"rqstsuggestion":"masterrecord-sites","given":"thyr"} 
        require(serverkeys . "/sspdo.zck");  
        $responseCode = 503;  

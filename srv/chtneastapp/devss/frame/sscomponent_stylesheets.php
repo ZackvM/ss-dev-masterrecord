@@ -1077,8 +1077,6 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #PRUPHoldTbl .ttholder:hover .tt { display: block; }
 #PRUPHoldTbl .tt { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; z-index: 40; }
 
-
-
 STYLESHEET;
 return $rtnThis;
 } 
