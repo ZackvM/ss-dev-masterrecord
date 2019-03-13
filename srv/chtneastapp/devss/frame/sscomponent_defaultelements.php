@@ -411,8 +411,6 @@ VOCABSRCH;
 function buildEnvironTemps() {
 
 $sensorReadings = json_decode(callrestapi("GET", dataTree .  "/chtn-eastern-environmental-metrics", serverIdent, serverpw),true);  
-//{"MESSAGE":"","ITEMSFOUND":10,"DATA":{"9633":{"sensorname":"Room 566 Ambient (9633)","readings":[{"utctimestamp":"1551181160","sensorid":"9633","namelabel":"S9633.566.AmbientTemp","readinginc":"22.7","gathertime":"06:39","gatherdate":"02\/26\/2019","dtegathered":"Feb 26th, 2019 :: 06:39 AM"}
-
 $readingsTbl = "<table border=0 cellpadding=0 cellspacing=0 id=sensorDspHolder><tr><td colspan=2 id=sensorNbr>Sensors Read: {$sensorReadings['ITEMSFOUND']}</td></tr><tr>";
 $cellCntr = 0;
 
@@ -422,27 +420,20 @@ foreach ( $sensorReadings['DATA'] as $ky => $value) {
     foreach ( $value['readings'] as $k => $v ) { 
 
        if ( $lastRead === "" ) { $lastRead = $v['dtegathered']; }  
-
        $fvalue = sprintf("%1\$.1f&#176; C",$v['readinginc']);
        $ths = floatval( $v['readinginc'] );
-
        if ( trim($value['readings'][$k + 1]['readinginc']) !== "") { 
          $nxt =   floatval(  $value['readings'][$k + 1]['readinginc'] );
        } else { 
          $nxt = "";
        }
-       
        $trendInd = "&nbsp;";
        if ($nxt !== "" ) { 
          if ($ths > $nxt) { $trendInd = "<i class=\"material-icons uparrow\">arrow_upward</i>"; }
          if ($ths < $nxt) { $trendInd = "<i class=\"material-icons uparrow\">arrow_downward</i>"; }
          if ($ths === $nxt) { $trendInd = "<i class=\"material-icons uparrow\">subdirectory_arrow_right</i>"; }
        } 
-       
        $innerRow .= "<tr class=rowColor><td class=sensorValue>{$fvalue}  </td><td class=trendIconDsp>{$trendInd}</td><td class=sensorTime>{$v['gathertime']}</td><td class=utcValue> ({$v['utctimestamp']})</td></tr>";    
-
-       
-       
        } 
 
     if ( $cellCntr === 2 ) { $readingsTbl .= "</tr><tr>"; $cellCntr = 0; } 
@@ -457,21 +448,19 @@ $rtnthis = <<<VOCABSRCH
   <div id=environmentalTitle>Environmental Monitor Data</div> 
   <div id=environmentalReadingsHolder>
 {$readingsTbl}
-
-  </div>
+<p>
 </div>
+<p>&nbsp;</p>
+</div>
+<p>
 VOCABSRCH;
   return $rtnthis;    
 }
 
 function buildUserDirectory() { 
-    //{"MESSAGE":"","ITEMSFOUND":0,"DATA":[{"institution":"Hospital of The University of Pennsylvania (HUP)","userid":"000111","emailaddress":"linus@pennmedicine.upenn.edu","originalaccountname":"VLiVolsi","username":"Dr. Viriginia Livolsi","profilephone":"","profilepicurl":"avatar_female","dspalternateindir":0,"profilealtemail":"","altphone":"484-238-5982","altphonetype":"CELL","dsptitle":"Principal Investigator"} 
-
   $at = genAppFiles;
   $boypic = base64file("{$at}/publicobj/graphics/usrprofile/avatar_male.png", "", "png", true, " class=\"sidebarprofilepicture\" " );   
   $girlpic =  base64file("{$at}/publicobj/graphics/usrprofile/avatar_female.png", "", "png", true, " class=\"sidebarprofilepicture\" "); 
-
-
   $directoryRS = json_decode(callrestapi("GET", dataTree .  "/chtn-staff-directory-listing", serverIdent, serverpw), true);  
   $directory = "<div id=directoryDisplay>";
   $directory .= "<table border=0 cellspacing=4 id=directoryTbl><tr><td colspan=2><table border=0 id=directoryHeaderTbl><tr><td id=directoryHeaderTblTitle>CHTNEastern Directory Listing</td><td id=closeBtnDirectory onclick=\"openAppCard('appcard_chtndirectory');\">&times;</td></tr><tr><td colspan=2 style=\"font-size: 1.2vh; font-style: italic; text-align: center;\">(Alphabetical by Primary Institution/Last Name)</table></td></tr>";

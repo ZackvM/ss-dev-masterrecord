@@ -98,7 +98,7 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 .universeFreeze { color: rgba({$this->color_cornflowerblue},1); }
 
 #hlpHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
-#directoryDisplay { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
+#directoryDisplay { padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
 #clsBtnHold #closeBtn { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
 #clsBtnHold #closeBtn:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
 #hlpTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
@@ -124,12 +124,12 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 
 
 
-#environHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: hidden; box-sizing: border-box;}
+#environHolderDiv {  padding: 0 1vw 0 1vw; height: 92vh; overflow: auto; box-sizing: border-box;}
 #environBtnHold #envCloseBtn { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
 #environBtnHold #envCloseBtn:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
 #environmentalTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
 
-#environmentalReadingsHolder { height: 73vh; overflow-y: auto;  } 
+#environmentalReadingsHolder { } 
 
 #sensorDspHolder { width: 46vw; border: 1px solid rgba({$this->color_darkgrey},.5);}
 #sensorDspHolder #sensorNbr { font-size: 1.3vh; font-weight: bold; text-align: right; color: rgba({$this->color_darkgrey},.5); padding: .8vh .3vw;  }
@@ -175,7 +175,7 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 #profTrayPictureHold {padding: 0 0 0 3vw; }
 
 #profTrayControlDivHoldTbl { width: 46vw; border-collapse: collapse; }
-#profTrayControlDivHolder { border-top: 1px solid rgba({$this->color_zackgrey},1); padding: 2.5vh 1.5vw;   }
+#profTrayControlDivHolder { border-top: 1px solid rgba({$this->color_zackgrey},1); padding: 2.5vh 1.5vw; height: 55vh; overflow: auto;  }
 
 #profTrayControlAbtMe { padding: 10px; display: block; }
 #profTrayControlAccess { padding: 10px; display: none;  }
@@ -750,7 +750,7 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #rootTable { font-family: Roboto; font-size: 1.5vh; width: 100%; }
 
 /* SCREEN CALENDAR FORMATTING */ 
-#mainRootTbl { width: 42vw; border: 1px solid rgba({$this->color_darkgrey},.5); box-sizing: border-box; }               
+#mainRootTbl { width: 45vw; border: 1px solid rgba({$this->color_darkgrey},.5); box-sizing: border-box; }               
 #mainRootTbl #mainRootLeftCtl { width: 1vw; height: 4vh; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_darkgrey},.5); }              
 #mainRootTbl #mainRootLeftCtl:hover { cursor: pointer; color: rgba({$this->color_darkgreen},1); }
 #mainRootTbl #mainRootRightCtl { width: 1vw; height: 4vh; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_darkgrey},.5); }              
@@ -760,12 +760,15 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #mainRootTbl .starterHeadCell { border-left: none;   }
 #mainRootTbl .mainRootTopSpacer {background: rgba({$this->color_lightgrey},.7); }
 #mainRootTbl .mainRootBtmSpacer {background: rgba({$this->color_lightgrey},.7); }
-#mainRootTbl .mnuMainRootDaySquare { border: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: none; border-right: none; width: 6vw; height: 6vh; }
+#mainRootTbl .mnuMainRootDaySquare { border: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: none; border-right: none; width: 7vw; height: 10vh; }
 #mainRootTbl .calendarEndDay { border-left: none; }
 #mainRootTbl .todayDsp { background: rgba({$this->color_lamber},.5); }
 #mainRootTbl #mainRootBtmLine { border-top: 1px solid rgba({$this->color_darkgrey},.5); padding: 1vh 1vw; background: rgba({$this->color_lightgrey},1); }
 #mainRootTbl #saluations { font-size: 1.2vh; font-weight: bold; }
 
+.caldayeventholder { font-size: 1.1vh;  }
+.caldayday { float: left; margin-right: 4px; padding-left: 4px; font-size: 1.5vh; color: rgba({$this->color_darkgrey},.8); }
+.caldaytoday { color: rgba({$this->color_darkgreen},1); font-weight: bold; }
 
               
 STYLESHEET;

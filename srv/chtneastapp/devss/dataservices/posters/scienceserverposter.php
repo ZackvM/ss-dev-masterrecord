@@ -881,7 +881,6 @@ BSSEGTBL;
                     $qty = (int)$sldval['qty'];
                     for ($s = 0; $s < $qty; $s++) { 
                         $slideLbl = addSegmentToBiogroup($lookup['pbiosample'], trim($sg['AddHP']), "", 4, "SLIDE", trim($typeSlide), "", $segLbl, 0, trim($usr[0]['presentinstitution']), $usr[0]['originalaccountname'], trim($sg['selectorAssignInv']), $invDspName, $sg['selectorAssignReq'],'', '', $groupingid);
-                        //TODO: PRINT LABEL -- IN ADD SEGMENT FUNCTION ????
                     }                 
                   }
                   break;
@@ -4057,8 +4056,21 @@ function addSegmentToBiogroup($whichBG = "", $hrpost = 0, $metric = 0, $metricUO
      ,':groupingid' => $groupingid     
  ));
   $lst = $conn->lastInsertId();
-  //TODO: PRINT LABEL HERE
-  return $bgs . " ";
+  //TODO: MAKE THIS DYNAMIC THERE IS A FUNCTION: labelprintrequest() USE THIS FUNCTION FOR NOW THIS IS A HARD CODE 
+  if ( strtoupper( $procuredAt ) === 'HUP' ) {
+     $insSQL = "insert into serverControls.lblToPrint (labelRequested, printerRequested, dataStringpayload, byWho, onWhen) values(:formatname,:linuxprinter,:payloadstring,:usr,now())";
+     $insRS = $conn->prepare($insSQL);
+     if ( strtoupper( $prp ) === 'PB' ) { 
+       //PRINT FFPE LABEL ON hades
+       $insRS->execute(array( ':formatname' => 'hades',':linuxprinter' => 'Hades',':payloadstring' => json_encode(array('FIELD01' => $bgs, 'FIELD02' => $bgs)),':usr' => $procuredBy));
+     }
+     if ( strtoupper( $prp ) !== 'PB' && strtoupper( $prp ) !== 'SLIDE' ) {
+       //PRINT OTHER LABEL ON anubis
+       $insRS->execute(array( ':formatname' => 'anubis',':linuxprinter' => 'Anubis',':payloadstring' => json_encode(array('FIELD01' => $bgs, 'FIELD02' => $bgs)),':usr' => $procuredBy));
+     }
+  } 
+  //PRINT LABEL END
+  return $bgs; //REMOVED SPACE FROM AFTER BGS - 20190313 ZACK
 }
 
 function userDetailsCal($whichusr) { 

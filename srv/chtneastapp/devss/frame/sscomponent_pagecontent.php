@@ -1335,7 +1335,7 @@ function root($rqstStr, $whichUsr) {
   $fsCalendar = buildcalendar('mainroot', date('m'), date('Y'), $whichUsr->friendlyname, $whichUsr->useremail, $whichUsr->loggedsession );  
   $rtnthis = <<<PAGEHERE
 <table border=0 id=rootTable>
-    <tr><td>&nbsp;</td><td style="width: 42vw;" align=right><div id="mainRootCalendar">{$fsCalendar}</div></td></tr>     
+    <tr><td>&nbsp;</td><td style="width: 42vw;" align=right valign=top><div id="mainRootCalendar">{$fsCalendar}</div></td></tr>     
 </table>
   
 PAGEHERE;

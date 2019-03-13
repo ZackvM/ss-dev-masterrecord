@@ -375,12 +375,12 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $em = func_get_arg(4);  
         $ls = func_get_arg(5); 
         //SELECT * FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1
-        //[{"date":{"day":1,"month":1,"year":2019,"dayOfWeek":2},"name":[{"lang":"en","text":"New Year's Day"}],"holidayType":"public_holiday"},{"date":{"day":21,"month":1,"year":2019,"dayOfWeek":1},"name":[{"lang":"en","text":"Dr. Martin Luther King, Jr. Day"}],"holidayType":"public_holiday"}]
+        //[{"date":{"day":1,"month":1,"year":2019,"dayOfWeek":2},"name":[{"lang":"en","text":"New Year's Day"}],"holidayType":"public_holiday"}]
         $pbholidayws = json_decode(callrestapi("GET","https://kayaposoft.com/enrico/json/v2.0/?action=getHolidaysForMonth&month={$pmonth}&year={$pyear}&country=us&region=pa&holidayType=public_holiday"),true);   ///GET ALL HOLIDAYS FOR A MONTH IN US/PA
-        
+    
         $pubholiday = array();
         foreach ( $pbholidayws as $pbk => $pbv ) { 
-            $pubholiday[$pbv['date']['day']] = $pbv['name'][0]['text'];
+            $pubholiday['E' . (int)$pbv['date']['day']] = array("type" => "PUBLICHOLIDAY", "name" => $pbv['name'][0]['text']);
             $tdyEventList .= ( (int)date('d') == (int)$pbv['date']['day'] ) ? "&raquo; {$pbv['name'][0]['text']}" : "";
         }
         $dspChkToday =  "<div id=saluations>Hi {$fn}<br>Today is " . date('l, jS \of F, Y') . ". Here's what's happening today:<br>{$tdyEventList}</div>";
@@ -659,15 +659,41 @@ while ($currentDay <= $numberOfDays) {
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('shpQryToDate','','');\" ><center>[clear]</td></tr>";
          break;
          case 'mainroot':
+
+         $caldayeventlistdsp = "";
+         if ( array_key_exists( 'E'.(int)$currentDayDsp , $pubholiday) ) { 
+           $caldayeventlistdsp = $pubholiday['E'.(int)$currentDayDsp]['name'];
+         }  
+             
           if ( "{$monthNbr}/{$currentDayDsp}/{$pyear}" === $chkToday ) {
+
+            //THIS IS TODAY  
             $daySquare = ( $dayOfWeek === 0 ) ? "mnuMainRootDaySquare calendarEndDay todayDsp" : "mnuMainRootDaySquare todayDsp";
+            $dayDsp = <<<DAYDSP
+<div class=caldayeventholder>
+  <div class="caldayday caldaytoday">{$currentDayDsp}</div>
+  {$caldayeventlistdsp}
+</div>
+DAYDSP;
           } else { 
+            //THIS IS NOT TODAY  
             $daySquare = ( $dayOfWeek === 0 ) ? "mnuMainRootDaySquare calendarEndDay" : "mnuMainRootDaySquare";
+            $dayDsp = <<<DAYDSP
+<div class=caldayeventholder>
+  <div class=caldayday>{$currentDayDsp}</div>
+  {$caldayeventlistdsp}
+</div>
+DAYDSP;
+
           }
+
           $sqrID = "daySqr{$currentDayDsp}";
           $action = " onclick=\"alert('{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
+
           //TODO:  THIS IS WHERE THE CURRENT DAY SQUARE DISPLAY GOES
-          $dayDsp = $currentDayDsp;
+          
+          
+          
           $btmLineDsp = "<tr><td colspan=7 id={$btmLine}><div id=mainRootTodayActivityDsp>{$dspChkToday}</div></td></tr>";
          break;
        default: 
