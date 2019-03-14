@@ -325,39 +325,117 @@ class sysreportprintables {
         //********************END BARCODE CREATION
       
       $tday = date('Y-m-d');
+      //$tday = '2019-03-13';  
       $tdaydsp = date('m/d/Y');
-      $rpttitle = <<<RPTTITLE
+      //$tdaydsp = '03/13/2019';
+
+      $presInst = $rqst['user'][0]['presentinstitution'];
+      $r = "Run By: {$rqst['user'][0]['emailaddress']} at " . date('H:i');
+
+        $dta['presentinstitution'] = $presInst;
+        $dta['requesteddate'] = $tday;
+        $dta['usrsession'] = session_id();
+        $pdta = json_encode($dta);
+        $rslts = json_decode(callrestapi("POST", dataTree . "/data-doers/collection-grid-results",serverIdent, serverpw, $pdta),true);  
+        $rsltdta = json_decode($rslts['DATA'], true);
+
+        $bgheader = "background: #000000; color: #ffffff; font-size: 7pt;padding: 4px;";
+        $rsltDsp = "<table border=0 cellspacing=0 cellpadding=0 style=\"font-size: 8pt; color: #303947; width: 100%; margin-top: 15px;border: 1px solid #000000; \">";
+        $rsltDsp .= "<tr><th style=\"{$bgheader}\">BG#</th><th style=\"{$bgheader}\">Specimen Category</th><th style=\"{$bgheader}\">Site</th><th style=\"{$bgheader}\">Diagnosis</th><th style=\"{$bgheader}\">Mets Diagnosis</th><th style=\"{$bgheader}\">Procedure</th><th style=\"{$bgheader}\">Initial<br>Metric</th><th style=\"{$bgheader}\">Path<br>Rpt</th><th style=\"{$bgheader}\">Inf<br>Con</th><th style=\"{$bgheader}\">A/R/S</th><th style=\"{$bgheader}\">Subject/Protocol</th><th style=\"{$bgheader}\">Time / Technician</th></tr>";
+        $thisBG = "";
+        $countThis = 0;
+
+        foreach ($rsltdta as $key => $val) {
+
+            if ( strtoupper( $presInst ) === strtoupper( $val['institution'] ) ) {  
+                $dspInst = $val['dspinstitution'];
+                if ( $thisBG !== $val['pbiosample']) { 
+                    //ADD BG
+                  if ( $countThis === 0 ) {
+                  } else { 
+                    $rsltDsp .= "</table></td></tr>";
+                  }
+                  $dCnt = $countThis + 1;
+                  $voidThis = ( (int)$val['voidind'] === 1 ) ? "text-decoration: line-through; " : "";
+                  $styleThis = "padding: 6px;border-top: 1px solid #A0A0A0; border-bottom: 1px solid #A0A0A0; border-right: 1px solid #A0A0A0; "; 
+                  $rsltDsp .= <<<BIOGROUPLINE
+<tr>
+  <td style="{$voidThis}{$styleThis}">{$val['pbiosample']}</td>
+  <td style="{$voidThis}{$styleThis}">{$val['specimencategory']}</td>
+  <td style="{$voidThis}{$styleThis}">{$val['site']}</td>
+  <td style="{$voidThis}{$styleThis}">{$val['diagnosis']}</td>
+  <td style="{$voidThis}{$styleThis}">{$val['metsdx']}</td>
+  <td style="{$voidThis}{$styleThis}">{$val['proctype']}</td>
+  <td style="{$voidThis}{$styleThis}">{$val['metuom']}</td>
+  <td style="{$voidThis}{$styleThis}">{$val['prpt']}</td>
+  <td style="{$voidThis}{$styleThis}">{$val['informedconsent']}</td>
+  <td style="{$voidThis}{$styleThis}">{$val['pxiage']} / {$val['pxirace']} / {$val['pxisex']}</td>
+  <td style="{$voidThis}{$styleThis}">{$val['subjectnumber']} / {$val['protocolnumber']}</td>
+  <td style="{$voidThis}{$styleThis} border-right: none;">{$val['timeprocured']} / {$val['technician']}</td>
+</tr>
+<tr>
+  <td colspan=30 style="padding: 0 20px 0 20px;">
+    <table border=0 cellspacing=0 cellpadding=0 style="font-size: 8pt; color: #303947; {$voidThis} margin-top: 8px; margin-bottom: 8px;width: 100%; border: 1px solid #F5F5F5;">
+    <tr>
+      <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Segment</th>
+      <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Preparation</th>
+      <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Metric</th>
+      <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Cut From</th>
+      <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Assignment</th>
+      <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">HPR</th>
+      <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Proc-Time</th>
+    </tr>
+BIOGROUPLINE;
+                  $thisBG = $val['pbiosample'];
+                }
+
+                foreach ($val['segmentlist'] as $sky => $sval) {
+                  $hpri = ( (int)$val['hprind'] === 1 ) ? "Y" : "";   
+                  $rsltDsp .= <<<SEGLINE
+<tr>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$sval['pbiosample']}T{$sval['segdsplbl']}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$sval['prp']} / {$sval['prpmet']}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$sval['metric']}{$sval['shortuom']}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$sval['cutfromblockid']}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$sval['assigndspname']} ({$sval['assigninvestid']}) [{$sval['assignrequestid']}]</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$hpri}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none; border-right: none;">{$sval['proctime']}</td>
+</tr>
+SEGLINE;
+                }
+            $countThis++;    
+            }
+        }
+
+        $rsltDsp .= "</table></td></tr></table> ";
+
+        if ( $countThis === 0 ) { 
+          $rsltDsp = "<h3>No Procurement Data Found for {$tdaydsp} at {$presInst}"; 
+        }
+
+        $rpttitle = <<<RPTTITLE
               <table border=0 cellspacing=0 cellpadding=0 style="width: 100%;">
                   <tr>
-                      <td style="width: 10px; padding: 0 5px 0 0;" rowspan=2>{$favi}</td>
-                      <td style="font-size: 14pt; " valign=bottom><center>{$rptdef['DATA']['dspreportname']}</td>
+                      <td style="width: 10px; padding: 0 5px 0 0;" rowspan=3>{$favi}</td>
+                      <td style="font-size: 15pt; font-weight: bold; text-align: center; height: 50px;" valign=bottom>{$rptdef['DATA']['dspreportname']}</td>
                       <td style="width: 10px;" rowspan=2>{$qrcode}</td>
                   </tr>
                   <tr>
-                     <td valign=top><center>For {$rqst['user'][0]['presentinstitution']} on {$tdaydsp} </td>    
-                  </tr>   
+                     <td valign=top style="font-size: 10pt; text-align: center; font-style: italic;">{$dspInst} ({$presInst}) ON {$tdaydsp} </td>    
+                  </tr>  
+                  <tr><td colspan=2 style="font-size: 7pt; font-weight: bold; font-style: italic; text-align: right;">{$r}</td></tr> 
                </table>
 RPTTITLE;
-      
-      
-      
 
-      $r = "Run By: {$rqst['user'][0]['emailaddress']} at " . date('H:i');
-      //foreach( $rptdef['DATA'] as $ky => $vl) {
-      //  $el .= "{$ky} => {$vl} <br>";
-      //}
 
-      
-      
-      
-      
-      $resultTbl = <<<RSLTTBL
-              <table border=0 style="width: 10.5in; box-sizing: border-box; color: rgba(48,57,71,1);">
-                  <tr><td style="font-size: 8pt; font-weight: bold; font-style: italic; text-align: right;">{$r}</td></tr>              
-                  <tr><td style="border-bottom: 1px solid rgba(48,57,71,.6);">{$rpttitle}</td></tr>
-
-                  <tr><td>{$el}</td></tr>
+        $resultTbl = <<<RSLTTBL
+              <!-- HEADER TABLE STARTS HERE //-->
+              <table border=0 style="width: 10.5in; box-sizing: border-box; color: #303947;border-bottom: 1px solid #303947;">
+                  <tr><td>{$rpttitle}</td></tr>
               </table>
+              <!-- HEADER TABLE ENDS HERE //-->
+{$rsltDsp}
+    
 RSLTTBL;
       return $resultTbl;    
     }
