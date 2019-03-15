@@ -2313,36 +2313,76 @@ DIALOG;
 }
 
 function bldQuickInventoryOverride( $passdata ) { 
-
-
     $invListWS = json_decode(callrestapi("GET", dataTree . "/global-menu/inventory-location-storagecontainers",serverIdent, serverpw), true);
-
     $pdta = json_decode( $passdata, true );
-    //{"0":{"biogroup":"87016","bgslabel":"87016T001","segmentid":"447778"}}
-
-    $cntr = 0; 
-    $segList = "<table border=1>";
+    $cntr = 1; 
+    
+              $devarr = json_decode(callrestapi("GET", dataTree . "/global-menu/dev-menu-hpr-inventory-override",serverIdent, serverpw), true);
+              $devm = "<table border=0 class=menuDropTbl style=\"min-width: 14.9vw;\">";
+              foreach ($devarr['DATA'] as $devval) { 
+                $devm .= "<tr><td onclick=\"fillField('fldDeviationReason','','{$devval['menuvalue']}');\" class=ddMenuItem>{$devval['menuvalue']}</td></tr>";
+              }
+              $devm .= "</table>";
+    
+    $devTbl = <<<DEVTBL
+            <table border=0>
+            <tr><td  class=checkInHead align=left>Inventory User PIN</td></tr>
+            <tr><td><input type=password id=fldUsrPIN style="width: 15vw;"></td></tr>
+            <tr><td style="width: 15vw; text-align: justify;"><b>CHTNEASTERN SOP DEVIATION NOTIFICATION</b>: This is NOT a standard inventory screen and should only be used in extenuating operating circumstances.  The use of this screen will be tracked as a deviation from standard operating procedures. Please enter a reason for the deviation below.</td></tr>
+            <tr><td class=checkInHead>Deviation Reason</td></tr>
+            <tr><td><div class=menuHolderDiv><input type=text id=fldDeviationReason style="width: 15vw;"><div class=valueDropDown>{$devm}</div></div></td></tr>
+            <tr><td align=right><table class=tblBtn id=btnInvOverride style="width: 6vw;" onclick="updateStatuses();"><tr><td style="white-space: nowrap;"><center>Update Status</td></tr></table></td></tr>
+                </table>
+DEVTBL;
+    
+    
+    $segList = "<form id=frmCheckInOverride><table border=0><tr><td class=checkInHead>&nbsp;</td><td class=checkInHead>CHTN #</td><td class=checkInHead>Preparation</td><td class=checkInHead>New Status</td><td class=checkInHead>Inventory Location</td></tr>";
     foreach  ( $pdta as $key => $val ) {
       $payload = json_encode(array("segmentid" => $val['segmentid']));
-      $sgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/segment-masterrecord",serverIdent, serverpw, $payload), true);
-      //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"biosamplelabel":87022,"segmentid":447797,"segmentlabel":"001","bgs":"87022T001","segstatus":"ONOFFER","statusdate":"03\/07\/2019","statusby":"URSALA","shipdocrefid":"","shippeddate":"","hourspost":"2.5"
-      //,"metric":"0.61","metricuom":"g","metricuomlong":"Grams","prepmethod":"PB","preparation":"FFPE","qty":1,"assignedto":"BANK","assignedrequest":"","assignedby":"Deneen","assignmentdate":"03\/07\/2019","hprblockind":1,"procurementdate":"03\/06\/2019","procurementtech":"Deneen","procuredat":"HUP","segmentcomments":"","voidind":0,"segmentvoidreason":"","scannedlocation":"","scanloccode":"","scannedstatus":"","scannedby":"","scanneddate":"","tohprind":0,"reconcilind":"0","reconcilby":"","reconcilon":""}} i
+      $sgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/segment-masterrecord",serverIdent, serverpw, $payload), true);      
       $sg = $sgdta['DATA'];
-      //hprblockind
-      //voidind
-      //segstatus
-      //prepmethod
-      //assignedto
-      $invmenu = "<table border=0 class=menuDropTbl>";
-      foreach ($invListWS['DATA'] as $pky => $pval) { 
-        $invmenu .= "<tr><td onclick=\"fillField('fldInvLoc{$cntr}','{$pval['codevalue']}','{$pval['menuvalue']}');\" class=ddMenuItem style=\"font-size: 1.4vh;\">{$pval['menuvalue']}</td></tr>";  
+      $invmenu = "";
+      $dspInvMenu = "";
+      $newStatus = "";
+
+      if ($sg['segstatus'] === 'ONOFFER') { 
+          //ALLOW CHECKIN
+        $invmenu = "<table border=0 class=menuDropTbl>";
+        foreach ($invListWS['DATA'] as $pky => $pval) { 
+           $invmenu .= "<tr><td onclick=\"fillField('fldInvLoc.{$sg['segmentid']}','{$pval['codevalue']}','{$pval['menuvalue']}');\" class=ddMenuItem>{$pval['menuvalue']}</td></tr>";  
+        }
+        $invmenu .= "</table>";  
+        $dspInvMenu = "<div class=menuHolderDiv><input type=hidden id=fldInvLoc.{$sg['segmentid']}Value><input type=text id=fldInvLoc.{$sg['segmentid']} READONLY class=inventoryLocDsp><div class=valueDropDown>{$invmenu}</div></div>";
+        
+        $newStatus = "";
+        if ( $sg['assignedto'] === 'QC' ||  ( $sg['prepmethod'] === 'SLIDE' && (int)$sg['hprblockind'] === 1 )  ) { 
+            //PERMANENT COLLECTION
+            $newStatus = "<input type=text READONLY value='PERMANENT COLLECTION' id='fldNewStatus.{$sg['segmentid']}' class=inventoryNewStatus>";
+        }
+        if (strtoupper(substr($sg['assignedto'], 0,3)) === 'INV') { 
+            //ASSIGNED
+            $newStatus = "<input type=text READONLY value='ASSIGNED' id='fldNewStatus.{$sg['segmentid']}' class=inventoryNewStatus>";
+        }
+        if ($newStatus === "") { 
+            //BANK
+            $newStatus = "<input type=text READONLY value='BANKED' id='fldNewStatus.{$sg['segmentid']}' class=inventoryNewStatus>";
+        }
+        $segList .= "<tr><td style=\"font-size: 1.8vh; font-weight: bold; background: rgba(48,57,71,1); color: rgba(255,255,255,1); width: 2vw; text-align: center; \">{$cntr})</td><td><input type=text READONLY id=\"fldSegId.{$sg['segmentid']}\" value=\"{$val['bgslabel']}\" class=dspInvOverrideSegmentLabel></td><td style=\"font-size: 1.8vh;\">{$sg['prepmethod']}</td><td>{$newStatus}</td><td>{$dspInvMenu}</td></tr>";
+      } else { 
+          //GIVE ERROR
+        $segList .= "<tr><td style=\"font-size: 1.8vh;  font-weight: bold; background: rgba(48,57,71,1); color: rgba(255,255,255,1); width: 2vw; text-align: center;\">{$cntr})</td><td><input type=text READONLY id=\"dspSegId{$sg['segmentid']}\" value=\"{$val['bgslabel']}\" class=dspInvOverrideSegmentLabel></td><td colspan=3 style=\"font-size: 1.8vh; color: rgba(237, 35, 0,1);\"> ONLY '<b>ON OFFER</b>' SEGMENTS CAN BE CHECKED IN USING THIS UTILITY.</td></tr>";
       }
-      $invmenu .= "</table>";
-      $segList .= "<tr><td>{$val['bgslabel']}</td><td>{$sg['segmentid']} {$sg['segstatus']} {$sg['hprblockind']} {$sg['prepmethod']} {$sg['assignedto']}</td><td><div class=menuHolderDiv><input type=hidden id=fldInvLoc{$cntr}Value><input type=text id=fldInvLoc{$cntr} style=\"font-size: 1.4vh;\"><div class=valueDropDown>{$invmenu}</div></div></td></tr>";
       $cntr++;
     }
-    $segList .= "</table>";  
-   return $segList;
+
+    //MAKE DEVIATION MENU AND INVKEY AND GO BUTTON
+    $segList .= "</table></form>";  
+    
+    $segListTblRtn = "<table border=0><tr><td valign=top>{$segList}</td><td valign=top>{$devTbl}</td></tr></table>";
+    
+    
+    
+    return $segListTblRtn;
 }
 
 function bldQuickPREdit($passeddata) { 

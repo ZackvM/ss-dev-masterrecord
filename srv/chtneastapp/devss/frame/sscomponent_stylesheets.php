@@ -1080,6 +1080,10 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #PRUPHoldTbl .ttholder:hover .tt { display: block; }
 #PRUPHoldTbl .tt { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; z-index: 40; }
 
+.dspInvOverrideSegmentLabel {width: 8vw; }
+.inventoryLocDsp { width: 30vw; }
+.inventoryNewStatus { width: 13vw; }
+.checkInHead {font-size: 1.8vh;  background: rgba(48,57,71,1); color: rgba(255,255,255,1); padding: .5vh .3vw .5vh .3vw; }
 STYLESHEET;
 return $rtnThis;
 } 

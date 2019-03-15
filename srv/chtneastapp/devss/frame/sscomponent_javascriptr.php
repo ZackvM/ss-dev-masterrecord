@@ -2710,7 +2710,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var selection = gatherSelection();
       if (parseInt(selection['responseCode']) === 200) { 
         var passdta = JSON.stringify(selection['selectionListing']);
-console.log(passdta);
+        //console.log(passdta);
         var mlURL = "/data-doers/preprocess-inventory-override";
         universalAJAX("POST",mlURL,passdta,answerPreprocessInventoryOverride,1);   
       } else { 
@@ -3613,6 +3613,45 @@ function checkBoxIndicators(whichbox) {
    if (byId('nbrQMSSubmittal')) { 
        byId('nbrQMSSubmittal').innerHTML = submittingCnt;
    }
+}
+  
+function updateStatuses() { 
+
+  if ( byId('frmCheckInOverride')) { 
+    var e = byId('frmCheckInOverride').elements;
+    var lobj = new Object();
+    var cntr = 0;
+    for ( var i = 0; i < e.length; i++ ) {
+       if ( e[i].id.substr(0,3) === 'fld') { 
+         var idparts = e[i].id.replace(/^fld/,'').split(".");
+         lobj[idparts[1].replace(/[Vv]alue$/,'')] = "";
+       }
+    }
+   Object.keys(lobj).forEach(function(key) {
+       lobj[key] = { bgs: byId('fldSegId.'+key).value, statusupdate: byId('fldNewStatus.'+key).value, loccode: byId('fldInvLoc.'+key+'Value').value, locdesc: byId('fldInvLoc.'+key).value  };
+   });
+   lobj['userid'] = window.btoa( encryptedString(key, byId('fldUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );
+   lobj['devReason'] = byId('fldDeviationReason').value;
+   //console.log(JSON.stringify(lobj));
+   var passdata = JSON.stringify(lobj);
+   var mlURL = "/data-doers/quick-segment-status-update";
+   universalAJAX("POST",mlURL,passdata,answerUpdateStatuses,2);
+  }
+}
+  
+function answerUpdateStatuses(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("STATUS UPDATE ERROR:\\n"+dspMsg);
+  } else { 
+    //Good results
+    alert(""); 
+    location.reload(); 
+  }   
 }
         
 JAVASCR;
