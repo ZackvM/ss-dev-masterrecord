@@ -277,9 +277,27 @@ class sysreportprintables {
       $at = genAppFiles;
       $tt = treeTop;
       $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
-      $r = json_encode($rptdef);
+     
+      //{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"bywho":"proczack","onwhen":"03\/14\/2019","reportmodule":"system-reports","reportname":"dailypristinebarcoderun","requestjson":"{\"rptRequested\":\"dailypristinebarcoderun\",\"user\":[{\"originalaccountname\":\"proczack\",\"emailaddress\":\"zacheryv@mail.med.upenn.edu\",\"allowind\":1,\"allowproc\":1,\"allowcoord\":1,\"allowhpr\":1,\"allowinvtry\":1,\"allowfinancials\":1,\"presentinstitution\":\"HUP\",\"daystilexpire\":182,\"accesslevel\":\"ADMINISTRATOR\",\"accessnbr\":\"43\"}],\"request\":{\"rptsql\":{\"selectclause\":\"sg.bgs, sg.prp, sg.prpmet, bs.speccat, bs.primarysite\",\"fromclause\":\"four.ut_procure_segment sg left join four.ref_procureBiosample_designation bs on sg.pbiosample = bs.pbiosample\",\"whereclause\":\"sg.voidind <> 1 and sg.activeind = 1 and sg.procuredAt = :thisInstitution and date_format(inputon,'%Y-%m-%d') = :thisDate\",\"summaryfield\":\"\",\"groupbyclause\":\"\",\"orderby\":\"sg.bgs\",\"accesslevel\":3,\"allowpdf\":1}}}","typeofreportrequested":"PDF","dspreportname":"Daily Pristine Barcode Run","dspreportdescription":"A sheet of printable barcodes for the institution at which you are currently","rptcreator":"Zack","rptcreatedon":"March 08, 2019","rqaccesslvl":3,"groupingname":"SYSTEM REPORTS"}} 
+      
+      $rqst = json_decode($rptdef['DATA']['requestjson'], true);            
+      $presInst = $rqst['user'][0]['presentinstitution'];
+      $r = "Run By: {$rqst['user'][0]['emailaddress']} at " . date('H:i');
+      $tday = date('Y-m-d');
+      //$tday = '2019-03-13';  
+      $tdaydsp = date('m/d/Y');
+      //$tdaydsp = '03/13/2019'; 
+      $dta['presentinstitution'] = $presInst;
+      $dta['requesteddate'] = $tday;
+      $dta['usrsession'] = session_id();
+      $pdta = json_encode($dta);
+      $rslts = json_decode(callrestapi("POST", dataTree . "/data-doers/pristine-barcode-run",serverIdent, serverpw, $pdta),true);  
 
-      $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$r}</tr></table>"; 
+
+
+
+
+      $resultTbl .= "<table border=1 style=\"width: 8in;\"><tr><td>{$r} {$presInst}</td></tr></table>"; 
       return $resultTbl;    
     } 
 
@@ -294,21 +312,20 @@ class sysreportprintables {
     }
 
     function histologyembed($rptdef) { 
-      $at = genAppFiles;
-      $tt = treeTop;
-      $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
-      $r = json_encode($rptdef);
-
-      $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$r}</tr></table>"; 
-      return $resultTbl;    
+    //  $at = genAppFiles;
+    //  $tt = treeTop;
+    //  $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+    //  $r = json_encode($rptdef);
+//
+    //  $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$r}</tr></table>"; 
+        //  return $resultTbl;    
+        //  NOT USED !!!!!!!!!!
     }
 
     function dailypristineprocurementsheet($rptdef) { 
       $at = genAppFiles;
       $tt = treeTop;
       $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
-      //{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"bywho":"proczack","onwhen":"03\/11\/2019"
-      //,"reportmodule":"system-reports","reportname":"dailypristineprocurementsheet","requestjson":"{\"rptRequested\":\"dailypristineprocurementsheet\",\"user\":[{\"originalaccountname\":\"proczack\",\"emailaddress\":\"zacheryv@mail.med.upenn.edu\",\"allowind\":1,\"allowproc\":1,\"allowcoord\":1,\"allowhpr\":1,\"allowinvtry\":1,\"allowfinancials\":1,\"presentinstitution\":\"HUP\",\"daystilexpire\":137,\"accesslevel\":\"ADMINISTRATOR\",\"accessnbr\":\"43\"}],\"request\":{\"rptsql\":{\"selectclause\":\"\",\"fromclause\":\"\",\"whereclause\":\"\",\"summaryfield\":\"\",\"groupbyclause\":\"\",\"orderby\":\"\",\"accesslevel\":3,\"allowpdf\":1}}}","typeofreportrequested":"PDF","dspreportname":"DailyPristine Procurement Sheet","dspreportdescription":"A listing of procured biosample\/segments from the pristine database","rptcreator":"Zack","rptcreatedon":"March 06,2019","rqaccesslvl":3,"groupingname":"SYSTEM REPORTS"}}
       
        $rqst = json_decode($rptdef['DATA']['requestjson'], true);            
       //****************CREATE BARCODE
@@ -341,7 +358,6 @@ class sysreportprintables {
 
         $bgheader = "background: #000000; color: #ffffff; font-size: 7pt;padding: 4px;";
         $rsltDsp = "<table border=0 cellspacing=0 cellpadding=0 style=\"font-size: 8pt; color: #303947; width: 100%; margin-top: 15px;border: 1px solid #000000; \">";
-        $rsltDsp .= "<tr><th style=\"{$bgheader}\">BG#</th><th style=\"{$bgheader}\">Specimen Category</th><th style=\"{$bgheader}\">Site</th><th style=\"{$bgheader}\">Diagnosis</th><th style=\"{$bgheader}\">Mets Diagnosis</th><th style=\"{$bgheader}\">Procedure</th><th style=\"{$bgheader}\">Initial<br>Metric</th><th style=\"{$bgheader}\">Path<br>Rpt</th><th style=\"{$bgheader}\">Inf<br>Con</th><th style=\"{$bgheader}\">A/R/S</th><th style=\"{$bgheader}\">Subject/Protocol</th><th style=\"{$bgheader}\">Time / Technician</th></tr>";
         $thisBG = "";
         $countThis = 0;
 
@@ -357,7 +373,16 @@ class sysreportprintables {
                   }
                   $dCnt = $countThis + 1;
                   $voidThis = ( (int)$val['voidind'] === 1 ) ? "text-decoration: line-through; " : "";
-                  $styleThis = "padding: 6px;border-top: 1px solid #A0A0A0; border-bottom: 1px solid #A0A0A0; border-right: 1px solid #A0A0A0; "; 
+                  $styleThis = "padding: 6px;border-top: 1px solid #A0A0A0; border-bottom: 1px solid #A0A0A0; border-right: 1px solid #A0A0A0; ";
+
+                  $bsC = ( trim($val['bscomment']) !== "" ) ? "<tr><td colspan=30 style=\"background: #f5f5f5; color: #303947;padding: 3px 0 3px 3px;font-size: 7pt; font-weight: bold; \">Biosample Comment</th></tr><tr><td colspan=30 style=\"{$voidThis}{$styleThis}border-right: none;\">{$val['bscomment']}</td></tr>" : "";
+                  $hprC = ( trim($val['hprcomment']) !== "" ) ? "<tr><td colspan=30 style=\"background: #f5f5f5; color: #303947;padding: 3px 0 3px 3px;font-size: 7pt; font-weight: bold; \">HPR Question</th></tr><tr><td colspan=30 style=\"{$voidThis}{$styleThis}border-right: none;\">{$val['hprcomment']}</td></tr>" : "";
+
+                  $sbpr = ( trim( $val['subjectnumber'] ) !== "") ? trim($val['subjectnumber']) : "";
+                  $sbpr .= ( trim( $val['protocolnumber'] ) !== "") ? ( $sbpr === "") ? trim($val['protocolnumber']) : " / {$val['protocolnumber']}" : "";      
+
+
+        $rsltDsp .= "<tr><th style=\"{$bgheader}\">BG#</th><th style=\"{$bgheader}\">Category</th><th style=\"{$bgheader}\">Site</th><th style=\"{$bgheader}\">Diagnosis</th><th style=\"{$bgheader}\">Mets Diagnosis</th><th style=\"{$bgheader}\">Procedure</th><th style=\"{$bgheader}\">Initial<br>Metric</th><th style=\"{$bgheader}\">Inf<br>Con</th><th style=\"{$bgheader}\">A/R/S</th><th style=\"{$bgheader}\">Subject/Protocol</th><th style=\"{$bgheader}\">Time / Technician</th></tr>";
                   $rsltDsp .= <<<BIOGROUPLINE
 <tr>
   <td style="{$voidThis}{$styleThis}">{$val['pbiosample']}</td>
@@ -367,12 +392,12 @@ class sysreportprintables {
   <td style="{$voidThis}{$styleThis}">{$val['metsdx']}</td>
   <td style="{$voidThis}{$styleThis}">{$val['proctype']}</td>
   <td style="{$voidThis}{$styleThis}">{$val['metuom']}</td>
-  <td style="{$voidThis}{$styleThis}">{$val['prpt']}</td>
   <td style="{$voidThis}{$styleThis}">{$val['informedconsent']}</td>
   <td style="{$voidThis}{$styleThis}">{$val['pxiage']} / {$val['pxirace']} / {$val['pxisex']}</td>
-  <td style="{$voidThis}{$styleThis}">{$val['subjectnumber']} / {$val['protocolnumber']}</td>
+  <td style="{$voidThis}{$styleThis}">{$sbpr}</td>
   <td style="{$voidThis}{$styleThis} border-right: none;">{$val['timeprocured']} / {$val['technician']}</td>
 </tr>
+                  {$bsC}
 <tr>
   <td colspan=30 style="padding: 0 20px 0 20px;">
     <table border=0 cellspacing=0 cellpadding=0 style="font-size: 8pt; color: #303947; {$voidThis} margin-top: 8px; margin-bottom: 8px;width: 100%; border: 1px solid #F5F5F5;">
@@ -380,26 +405,31 @@ class sysreportprintables {
       <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Segment</th>
       <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Preparation</th>
       <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Metric</th>
+      <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">HR-Post</th>
       <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Cut From</th>
       <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Assignment</th>
       <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">HPR</th>
-      <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Proc-Time</th>
+      <th style="background: #f5f5f5; padding: 4px; color: #303947; text-decoration: none;font-size: 7pt;">Segment Comment</th>
     </tr>
 BIOGROUPLINE;
                   $thisBG = $val['pbiosample'];
                 }
 
                 foreach ($val['segmentlist'] as $sky => $sval) {
-                  $hpri = ( (int)$val['hprind'] === 1 ) ? "Y" : "";   
+                  $hpri = ( (int)$sval['hprind'] === 1 ) ? "Y" : "";  
+                  $ass = ( strtoupper(substr($sval['assigninvestid'],0,3)) === 'INV' ) ? "{$sval['assigndspname']} ({$sval['assigninvestid']}) [{$sval['assignrequestid']}]" : "{$sval['assigninvestid']}";
+
+
                   $rsltDsp .= <<<SEGLINE
 <tr>
-<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$sval['pbiosample']}T{$sval['segdsplbl']}</td>
-<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$sval['prp']} / {$sval['prpmet']}</td>
-<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$sval['metric']}{$sval['shortuom']}</td>
-<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$sval['cutfromblockid']}</td>
-<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$sval['assigndspname']} ({$sval['assigninvestid']}) [{$sval['assignrequestid']}]</td>
-<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;">{$hpri}</td>
-<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none; border-right: none;">{$sval['proctime']}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;" valign=top>{$sval['pbiosample']}T{$sval['segdsplbl']}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;" valign=top>{$sval['prp']} / {$sval['prpmet']}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none; text-align: right;" valign=top>{$sval['metric']}{$sval['shortuom']}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none; text-align: right;" valign=top>{$sval['hrpost']}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;" valign=top>{$sval['cutfromblockid']}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;" valign=top>{$ass}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none; text-align: center;" valign=top>{$hpri}</td>
+<td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none; border-right: none;" valign=top>{$sval['sgcomments']}</td>
 </tr>
 SEGLINE;
                 }

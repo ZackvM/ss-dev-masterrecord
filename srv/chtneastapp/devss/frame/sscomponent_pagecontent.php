@@ -40,7 +40,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $innerDialog = bldQuickPREdit( $passedData );
         break;
       case 'dialogInventoryOverride':
-        $titleBar = "Inventory Over-Ride Deviation Screen";
+        $titleBar = "Inventor Check-in Over-Ride Deviation Screen";
         $innerDialog = bldQuickInventoryOverride( $passedData );
         break;
       case 'dialogPrintThermalLabels':
@@ -2314,8 +2314,13 @@ DIALOG;
 
 function bldQuickInventoryOverride( $passdata ) { 
 
+
+    $invListWS = json_decode(callrestapi("GET", dataTree . "/global-menu/inventory-location-storagecontainers",serverIdent, serverpw), true);
+
     $pdta = json_decode( $passdata, true );
-   //{"0":{"biogroup":"87016","bgslabel":"87016T001","segmentid":"447778"}} 
+    //{"0":{"biogroup":"87016","bgslabel":"87016T001","segmentid":"447778"}}
+
+    $cntr = 0; 
     $segList = "<table border=1>";
     foreach  ( $pdta as $key => $val ) {
       $payload = json_encode(array("segmentid" => $val['segmentid']));
@@ -2328,13 +2333,16 @@ function bldQuickInventoryOverride( $passdata ) {
       //segstatus
       //prepmethod
       //assignedto
-      $segList .= "<tr><td>{$val['bgslabel']}</td><td>{$sg['segmentid']} {$sg['bgs']} {$sg['segstatus']} {$sg['hprblockind']} {$sg['prepmethod']} {$sg['assignedto']}</td></tr>";
+      $invmenu = "<table border=0 class=menuDropTbl>";
+      foreach ($invListWS['DATA'] as $pky => $pval) { 
+        $invmenu .= "<tr><td onclick=\"fillField('fldInvLoc{$cntr}','{$pval['codevalue']}','{$pval['menuvalue']}');\" class=ddMenuItem style=\"font-size: 1.4vh;\">{$pval['menuvalue']}</td></tr>";  
+      }
+      $invmenu .= "</table>";
+      $segList .= "<tr><td>{$val['bgslabel']}</td><td>{$sg['segmentid']} {$sg['segstatus']} {$sg['hprblockind']} {$sg['prepmethod']} {$sg['assignedto']}</td><td><div class=menuHolderDiv><input type=hidden id=fldInvLoc{$cntr}Value><input type=text id=fldInvLoc{$cntr} style=\"font-size: 1.4vh;\"><div class=valueDropDown>{$invmenu}</div></div></td></tr>";
+      $cntr++;
     }
-    $segList .= "</table>"; 
- 
- 
- 
-   return "{$segList}";
+    $segList .= "</table>";  
+   return $segList;
 }
 
 function bldQuickPREdit($passeddata) { 

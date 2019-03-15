@@ -33,6 +33,37 @@ function __construct() {
 }
 
 class datadoers {
+
+    function pristinebarcoderun ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      //TODO: CHECK USER FOR PRISTINE BARCODE FUNCTION
+
+
+
+      if ($errorInd === 0 ) {
+
+
+      
+        $responseCode = 200;
+      }      
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;   
+
+
+    }
     
     function  labelprintrequest ( $request, $passdata ) { 
       $rows = array(); 
@@ -650,13 +681,15 @@ BSSEGTBL;
                $dta[$cntr]['diagnosis'] = $r['diagnosismodifier'];
                $dta[$cntr]['metsdx'] = $r['metsdx'];
                $dta[$cntr]['unknownmet'] = $r['unknownmet'];
+               $dta[$cntr]['bscomment'] = $r['bscomment'];
+               $dta[$cntr]['hprcomment'] = $r['hprcomment'];
                $dta[$cntr]['voidind'] = $r['voidind'];
                $dta[$cntr]['voidreason'] = $r['voidreason'];
 
                $segArr = array();
                if (trim($r['pbiosamplelink']) !== "") { 
                  //GET SEGMENTS
-                   $segListSQL = "SELECT sg.pbiosample, min(sg.seglabel) as minlbl, if(min(sg.seglabel) = max(sg.seglabel), min(sg.segLabel), concat(min(sg.seglabel),'-',max(sg.seglabel))) as segdsplbl, sum(sg.qty) as dspqty, sg.prp, sg.prpmet, sg.groupingid , ifnull(sg.hrpost,0) as hrpost, ifnull(sg.metric,'') as metric, if(ifnull(sg.metric,'') = '','',ifnull(uom.dspvalue,'')) as shortuom, if(ifnull(sg.metric,0) = '','',ifnull(uom.longvalue,'')) as longuom , ifnull(prpm.dspvalue,'') as prepmethod, ifnull(prpd.longvalue,'') as prpdetail, ifnull(sg.prpcontainer,'') as containercode, ifnull(pcnt.longvalue,'') as container, ifnull(sg.cutfromblockid,'') as cutfromblockid, ifnull(sg.hprind,0) as hprind, ifnull(sg.procuredAt,'') as procuredat, ifnull(sg.procuredby,'') as procuredby , ifnull(sg.dspname,'') as assigndspname, ifnull(sg.investid,'') as assigninvestid, ifnull(sg.requestid,'') as assignrequestid, ifnull(sg.voidind,0) as voidind, ifnull(sg.voidreason,'') as voidreason, ifnull(date_format(sg.inputOn, '%H:%i (%m/%d/%Y)'),'') as proctime FROM four.ut_procure_segment sg left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricuom = uom.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPMETHOD') prpm on sg.prp = prpm.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPDETAIL') prpd on sg.prpMet = prpd.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'CONTAINER') pcnt on sg.prpcontainer = pcnt.menuvalue where sg.pbiosample = :bsgroup and sg.activeind = 1 group by sg.pbiosample, sg.prp, sg.prpmet, sg.groupingid , hrpost, metric, shortuom, longuom, prepmethod, prpdetail, containercode, container, cutfromblockid, hprind, procuredat, procuredby, assigndspname, assigninvestid, assignrequestid, voidind, voidreason, proctime order by minlbl";
+                   $segListSQL = "SELECT sg.pbiosample, min(sg.seglabel) as minlbl, if(min(sg.seglabel) = max(sg.seglabel), min(sg.segLabel), concat(min(sg.seglabel),'-',max(sg.seglabel))) as segdsplbl, sum(sg.qty) as dspqty, sg.prp, sg.prpmet, sg.groupingid , ifnull(sg.hrpost,0) as hrpost, ifnull(sg.metric,'') as metric, if(ifnull(sg.metric,'') = '','',ifnull(uom.dspvalue,'')) as shortuom, if(ifnull(sg.metric,0) = '','',ifnull(uom.longvalue,'')) as longuom , ifnull(prpm.dspvalue,'') as prepmethod, ifnull(prpd.longvalue,'') as prpdetail, ifnull(sg.prpcontainer,'') as containercode, ifnull(pcnt.longvalue,'') as container, ifnull(sg.cutfromblockid,'') as cutfromblockid, ifnull(sg.hprind,0) as hprind, ifnull(sg.procuredAt,'') as procuredat, ifnull(sg.procuredby,'') as procuredby , ifnull(sg.dspname,'') as assigndspname, ifnull(sg.investid,'') as assigninvestid, ifnull(sg.requestid,'') as assignrequestid, ifnull(sg.voidind,0) as voidind, ifnull(sg.voidreason,'') as voidreason, ifnull(date_format(sg.inputOn, '%H:%i (%m/%d/%Y)'),'') as proctime, sgcomments FROM four.ut_procure_segment sg left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricuom = uom.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPMETHOD') prpm on sg.prp = prpm.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'PREPDETAIL') prpd on sg.prpMet = prpd.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'CONTAINER') pcnt on sg.prpcontainer = pcnt.menuvalue where sg.pbiosample = :bsgroup and sg.activeind = 1 group by sg.pbiosample, sg.prp, sg.prpmet, sg.groupingid , hrpost, metric, shortuom, longuom, prepmethod, prpdetail, containercode, container, cutfromblockid, hprind, procuredat, procuredby, assigndspname, assigninvestid, assignrequestid, voidind, voidreason, proctime, sgcomments order by minlbl";
                    $sgRS = $conn->prepare($segListSQL); 
                    $sgRS->execute(array(':bsgroup' => $r['pbiosamplelink']));
                    while ($s = $sgRS->fetch(PDO::FETCH_ASSOC)) { 
@@ -4817,7 +4850,10 @@ select ifnull(bslist.pbiosampledspnbr,'ERROR') as pbiosampledspnbr
      , ifnull(unknownmet,'') as unknownmet 
      , ifnull(voidind,0) as voidind
      , ifnull(voidreason,'') as voidreason
-from (SELECT substr(pbiosample,1,5) as pbiosampledspNbr, fromlocation as procinstitution, pbiosample as bslinkage, ifnull(migrated,0) as migrated, ifnull(date_format(migratedon, '%m/%d/%Y %H:%i'),'') as migratedon, date_format(inputon, '%H:%i') as timeprocured, inputby, selector, voidind, voidreason FROM four.ut_procure_biosample where date_format(inputon,'%Y-%m-%d') = :procdate and fromLocation = :procloc and recordstatus = 2 
+     , ifnull(bscmt.comment,"") as bscomment
+     , ifnull(hprcmt.comment,"") as hprcomment
+from 
+(SELECT substr(pbiosample,1,5) as pbiosampledspNbr, fromlocation as procinstitution, pbiosample as bslinkage, ifnull(migrated,0) as migrated, ifnull(date_format(migratedon, '%m/%d/%Y %H:%i'),'') as migratedon, date_format(inputon, '%H:%i') as timeprocured, inputby, selector, voidind, voidreason FROM four.ut_procure_biosample where date_format(inputon,'%Y-%m-%d') = :procdate and fromLocation = :procloc and recordstatus = 2 
 union 
 SELECT substr(pbiosample,1,5)
      , fromlocation procinstitution
@@ -4844,6 +4880,8 @@ left join (SELECT pbiosample , ifnull(speccat,'') as specimencategory, ifnull(pr
            left join (SELECT menuvalue, dspvalue 
                       FROM four.sys_master_menus where menu = 'UNINVOLVEDIND') as uni on desig.unknownMet = uni.menuvalue 
                       where activeind = 1) as desig on bslist.bslinkage = desig.pbiosample 
+left join (SELECT pbiosample, comment FROM four.ref_procureBiosample_comment where trim(ifnull(comment,'')) <> '' and activeind = 1 and modulereference = 'BIOSPECIMENCMT') as bscmt on bslist.bslinkage = bscmt.pbiosample
+left join (SELECT pbiosample, comment FROM four.ref_procureBiosample_comment where trim(ifnull(comment,'')) <> '' and activeind = 1 and modulereference = 'HPRQUESTION') as hprcmt on bslist.bslinkage = hprcmt.pbiosample
 order by pbiosampledspnbr desc 
 SQLSTMT;
    break;
