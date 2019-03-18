@@ -284,6 +284,16 @@ STYLESHEET;
  return $rtnThis;
   }
 
+function biogroupdefinition($mobileind) { 
+$rtnThis = <<<STYLESHEET
+body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw; font-size: 1.5vh; } 
+
+
+STYLESHEET;
+return $rtnThis;
+}
+
+
 function collectiongrid($mobileind) {     
 $rtnThis = <<<STYLESHEET
 body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw; font-size: 1.5vh; } 

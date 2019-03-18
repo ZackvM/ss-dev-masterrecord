@@ -451,6 +451,24 @@ PAGEHERE;
 return $rtnthis;
 }
 
+function biogroupdefinition( $rqststr, $usr ) { 
+  $u = json_encode($usr);
+  $r = json_encode($rqststr);
+  $url = explode("/",$_SERVER['REQUEST_URI']);   
+  $bg = cryptservice($url[2],'d',false);
+if ( trim($bg) !== '' ) { 
+  $bgdsp = getBiogroupDefitionDisplay($bg);
+$rtnthis = <<<PAGEHERE
+{$bgdsp}
+PAGEHERE;
+} else { 
+  ///NO ENCRYPTED BIOGROUP
+  $rtnthis = "BAD ENCRYPTION CODE IN URL";  
+}
+  return $rtnthis;
+}
+
+
 function paymenttracker( $rqststr, $usr ) {
     session_start();
     $dta['sessionid']   = session_id();
@@ -1111,7 +1129,7 @@ $dataTbl .=  <<<LINEITEM
      data-printprid = "{$prDocId}"
      data-printsdid = "{$sdencry}"
      onclick="rowselector('sg{$val['segmentid']}');" 
-     ondblclick="navigateSite('segment/{$sgencry}');"
+     ondblclick="navigateSite('biogroup-definition/{$bgencry}');"
   >
   <td>{$moreInfo}</td>
   <td {$pbSqrBgColor} class=colorline>&nbsp;</td>
@@ -4202,4 +4220,8 @@ RTNTHIS;
    return $rtnThis;
 }
 
+function getBiogroupDefitionDisplay($biogroup) { 
 
+return "THIS IS THE BIOGROUP NUMBER: {$biogroup}";
+
+}

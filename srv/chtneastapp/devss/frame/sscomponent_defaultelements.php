@@ -63,7 +63,7 @@ if ($whichpage !== "login") {
               //GET ITEMS
            $controlList .= "<div class=menuDrpItems><table border=0 cellspacing=0 cellpadding=0>";
            foreach ($modval[3] as $lstItem) {
-              
+             if ( (int)$lstItem['dspinmenu'] === 1 ) {     
               if ( trim($lstItem['additionalcode']) === "" ) {
                   //NAVIGATE BY PAGE    
                  if ( trim($lstItem['dspsystemicon']) === "" ) { 
@@ -71,19 +71,15 @@ if ($whichpage !== "login") {
                  } else {     
                    $controlList .= "<tr><td onclick=\"navigateSite('{$lstItem['pagesource']}');\">{$lstItem['menuvalue']}</td></tr>";               
                  }
-
               } else { 
-                 //FUNCTION LISTED IN EXPLAINER LINE
-                 
+                 //FUNCTION LISTED IN EXPLAINER LINE                 
                  if ( $lstItem['additionalcode'] === 'SEPARATOR' ) { 
                     $controlList .= "<tr class=trseparator><td class=menuSeparator></td></tr>"; 
                  } else {     
                     $controlList .= "<tr><td onclick=\"if (typeof {$lstItem['additionalcode']} == 'function') { {$lstItem['additionalcode']}; }\">" . $lstItem['menuvalue'] . "</td></tr>";               
                  }
-                 
-                 
               }
-
+             }
           }
           $controlList .= "</table></div>";
           $controlList .= "</div></td>";           

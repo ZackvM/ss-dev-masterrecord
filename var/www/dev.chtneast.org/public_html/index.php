@@ -18,7 +18,7 @@
 session_start(); 
 //DEFINE APPLICATION PATH PARAMETERS
 define("uriPath","dev.chtneast.org");
-define("scienceserverTagVersion","v7.0.2c");
+define("scienceserverTagVersion","v7.0.3ed");
 define("ownerTree","https://www.chtneast.org");
 define("treeTop","https://dev.chtneast.org");
 define("dataTree","https://dev.chtneast.org/data-services");
