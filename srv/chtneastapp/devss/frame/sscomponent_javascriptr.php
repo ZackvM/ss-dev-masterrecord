@@ -3632,6 +3632,7 @@ function updateStatuses() {
    });
    lobj['userid'] = window.btoa( encryptedString(key, byId('fldUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );
    lobj['devReason'] = byId('fldDeviationReason').value;
+   byId('waiterIndicator').style.display = 'block';
    //console.log(JSON.stringify(lobj));
    var passdata = JSON.stringify(lobj);
    var mlURL = "/data-doers/quick-segment-status-update";
@@ -3646,10 +3647,10 @@ function answerUpdateStatuses(rtnData) {
      msgs['MESSAGE'].forEach(function(element) { 
        dspMsg += "\\n - "+element;
      });
+     byId('waiterIndicator').style.display = 'none';
      alert("STATUS UPDATE ERROR:\\n"+dspMsg);
   } else { 
     //Good results
-    alert(""); 
     location.reload(); 
   }   
 }

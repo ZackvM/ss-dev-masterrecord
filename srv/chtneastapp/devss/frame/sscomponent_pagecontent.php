@@ -2313,6 +2313,9 @@ DIALOG;
 }
 
 function bldQuickInventoryOverride( $passdata ) { 
+
+    $at = genAppFiles;
+    $waitpic = base64file("{$at}/publicobj/graphics/zwait2.gif", "waitgifADD", "gif", true);         
     $invListWS = json_decode(callrestapi("GET", dataTree . "/global-menu/inventory-location-storagecontainers",serverIdent, serverpw), true);
     $pdta = json_decode( $passdata, true );
     $cntr = 1; 
@@ -2336,7 +2339,7 @@ function bldQuickInventoryOverride( $passdata ) {
 DEVTBL;
     
     
-    $segList = "<form id=frmCheckInOverride><table border=0><tr><td class=checkInHead>&nbsp;</td><td class=checkInHead>CHTN #</td><td class=checkInHead>Preparation</td><td class=checkInHead>New Status</td><td class=checkInHead>Inventory Location</td></tr>";
+              $segList = "<form id=frmCheckInOverride><div id=waiterIndicator style=\"font-size: 1.5vh;\"><center>{$waitpic}<br>Please wait ...</div><table border=0><tr><td class=checkInHead>&nbsp;</td><td class=checkInHead>CHTN #</td><td class=checkInHead>Preparation</td><td class=checkInHead>New Status</td><td class=checkInHead>Inventory Location</td></tr>";
     foreach  ( $pdta as $key => $val ) {
       $payload = json_encode(array("segmentid" => $val['segmentid']));
       $sgdta = json_decode(callrestapi("POST", dataTree . "/data-doers/segment-masterrecord",serverIdent, serverpw, $payload), true);      
@@ -2376,11 +2379,8 @@ DEVTBL;
     }
 
     //MAKE DEVIATION MENU AND INVKEY AND GO BUTTON
-    $segList .= "</table></form>";  
-    
+    $segList .= "</table></form>";   
     $segListTblRtn = "<table border=0><tr><td valign=top>{$segList}</td><td valign=top>{$devTbl}</td></tr></table>";
-    
-    
     
     return $segListTblRtn;
 }

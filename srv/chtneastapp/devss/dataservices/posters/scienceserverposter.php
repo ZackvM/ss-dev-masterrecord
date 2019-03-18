@@ -64,72 +64,103 @@ class datadoers {
     }
 
     function quicksegmentstatusupdate ( $request, $passdata ) { 
-      $rows = array(); 
-      //$dta = array(); 
-      $responseCode = 400;
-      $msgArr = array(); 
-      $errorInd = 0;
-      $msg = "BAD REQUEST";
-      $itemsfound = 0;
-      session_start();
-      require(serverkeys . "/sspdo.zck");
-      //{"447861":{"bgs":"87043T006","statusupdate":"ASSIGNED","loccode":"FRZB380","locdesc":"Room 566 :: Panasonic-165 :: Shelf #001 :: Box #001 (SC0019) [STORAGE CONTAINER]"},"447864":{"bgs":"87046T001","statusupdate":"BANKED","loccode":"","locdesc":""}
-      //,"447865":{"bgs":"87046T002","statusupdate":"PERMANENT COLLECTION","loccode":"","locdesc":""},"447867":{"bgs":"87046T004","statusupdate":"BANKED","loccode":"","locdesc":""},
-      //"userid":"Y0WimS/UR4Z7yDD4W70JGEByzpa/fiyQHEq7GqJcdP2tDDWMX5xAxfdLMKjUcXV0FJPzMxy99SRLC9+i16NgkKGbnKTfKAMlml94WK/mjcqteRrezJC7htG0wfw4hrqpt7q+/WDwR5DyVyQKx9N1yFIsN5TMhxHKnaZVSSW6KK1tUSqGegGQY/gdBP/MoPufdd6iPSqi6mdIB7AemnNd4mu21YfTUx7
-      //5pgKhc/DDkwF0BY56IFcETTYJtm7mcpmsnii6QnaJW0aAe6MiyRKUMKk/7IUMOyFBEZDkoNXXUUdkfBffgux5/sm4J+EgkdvSuTV894cQQyJgvarxAx2CVg==","devReason":"Inventory Module Not Working"}
-      $pdta = json_decode($passdata, true);
+       $rows = array(); 
+       //$dta = array(); 
+       $responseCode = 400;
+       $msgArr = array(); 
+       $errorInd = 0;
+       $msg = "BAD REQUEST";
+       $itemsfound = 0;
+       session_start();
+       require(serverkeys . "/sspdo.zck");
+       $pdta = json_decode($passdata, true);
       
-      //CHECK USER IS CORRECT AND COORD AND ALLOWED 
-      $usr = chtndecrypt($pdta['userid']);
-      $sess = session_id();      
-      $authuser = $_SERVER['PHP_AUTH_USER']; 
-      $authpw = $_SERVER['PHP_AUTH_PW'];      
-      $authchk = cryptservice($authpw,'d', true, $authuser);
+       //CHECK USER IS CORRECT AND COORD AND ALLOWED 
+       $usr = chtndecrypt($pdta['userid']);
+       $sess = session_id();      
+       $authuser = $_SERVER['PHP_AUTH_USER']; 
+       $authpw = $_SERVER['PHP_AUTH_PW'];      
+       $authchk = cryptservice($authpw,'d', true, $authuser);
        if ( $authuser !== $authchk || $authuser !== $sess ) {
           (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
        } 
        $chkUsrSQL = "SELECT originalaccountname, emailaddress FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and allowInvtry = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0 and inventorypinkey = :pinkey";
        $chkUsrR = $conn->prepare($chkUsrSQL); 
        $chkUsrR->execute(array(':sess' => $sess, ':pinkey' => $usr));
+
        if ($chkUsrR->rowCount() <> 1) { 
          (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your inventory pin key is incorrect or you are not allowed to perform this action."));
+       } else { 
+         $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
        }
-      //CHECK DEVREASON IS GIVEN
-      ( trim($pdta['devReason']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE REASON FOR DEVIATING FROM CHTNEASTERN SOPs MUST BE SPECIFIED." )) : "";       
-      $chkSQL = "SELECT * FROM four.sys_master_menus where menu like 'DEVIATIONREASON_HPROVERRIDE' and dspind = 1 and dspValue = :value";
-      $chkR = $conn->prepare($chkSQL);
-      $chkR->execute(array(':value' => $pdta['devReason']));
-      if ($chkR->rowCount() <> 1) { 
+
+       //CHECK DEVREASON IS GIVEN
+       ( trim($pdta['devReason']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE REASON FOR DEVIATING FROM CHTNEASTERN SOPs MUST BE SPECIFIED." )) : "";       
+       $chkSQL = "SELECT * FROM four.sys_master_menus where menu like 'DEVIATIONREASON_HPROVERRIDE' and dspind = 1 and dspValue = :value";
+       $chkR = $conn->prepare($chkSQL);
+       $chkR->execute(array(':value' => $pdta['devReason']));
+       if ($chkR->rowCount() <> 1) { 
          (list( $errorInd, $msgArr[] ) = array(1 , "Deviation Reason is not allowable"));    
-      }
-      //CHECK THAT SAMPLES ARE LISTED
-      $segidCnt = 0;        
-      $allSegExist = 1;
-     foreach ($pdta as $key => $val) {
+       }
+       //CHECK THAT SAMPLES ARE LISTED
+       $segidCnt = 0;        
+       $allSegExist = 1;
+       foreach ($pdta as $key => $val) {
          if ($key !== 'userid' && $key !== 'devReason') { 
-            (list( $errorInd, $msgArr[] ) = array(1 , "{$key} {$val['bgs']} "));
-            $segChkSQL = "SELECT replace(bgs,'_','') as bgs FROM masterrecord.ut_procure_segment where segmentid = :segid and segstatus = 'ONOFFER'";
+            $segChkSQL = "SELECT replace(bgs,'_','') as bgs FROM masterrecord.ut_procure_segment where segmentid = :segid and segstatus = :segstatus and voidind = 0";
             $segChkR = $conn->prepare($segChkSQL); 
-            $segChkR->execute(array(':segid' => $key));
+            //TODO:MAKE THIS DYNAMIC
+            $segChkR->execute(array(':segid' => $key, ':segstatus' => 'ONOFFER'  ));
             if ( $segChkR->rowCount() <> 1) { 
                 (list( $errorInd, $msgArr[] ) = array(1 , "THE SEGMENT ({$val['bgs']}) was either not found or has had a different status than 'ON OFFER'.  Refresh your screen and try again."));
                 $allSegExist = 0;
             } 
            $segidCnt++;
          }
-      }
-      ($segidCnt === 0) ? (list( $errorInd, $msgArr[] ) = array(1 , "NO BIOSAMPLES SPECIFIED")) : "";    
-      //CHECK THAT SAMPLES EXIST
-      ($allSegExist === 0) ? (list( $errorInd, $msgArr[] ) = array(1 , "NOT ALL THE SEGMENTS EXIST IN THE DATABASE AS GIVEN.  REFRESH YOUR SCREEN AND TRY AGAIN - OR SEE A CHTNEASTERN INFORMATICS PERSON.")) : "";          
-      //CHECK THAT VALUE FOR NEW STATUS IS GIVEN AND CORRECT
-      
-      //CHECK: OPTIONAL LOCATIONCODE IS VALID - IF NOT DEFAULT TO A CHECKIN LOCATION
-      
-      if ( $errorInd === 0 ) {
-          
-          
-      }
-      
+       }
+       ($segidCnt === 0) ? (list( $errorInd, $msgArr[] ) = array(1 , "NO BIOSAMPLES SPECIFIED")) : "";    
+       //CHECK THAT SAMPLES EXIST
+       ($allSegExist === 0) ? (list( $errorInd, $msgArr[] ) = array(1 , "NOT ALL THE SEGMENTS EXIST IN THE DATABASE AS GIVEN.  REFRESH YOUR SCREEN AND TRY AGAIN - OR SEE A CHTNEASTERN INFORMATICS PERSON.")) : "";          
+       //TODO:CHECK THAT VALUE FOR NEW STATUS IS GIVEN AND CORRECT
+       //TODO:CHECK: OPTIONAL LOCATIONCODE IS VALID - IF NOT DEFAULT TO A CHECKIN LOCATION 
+
+       if ( $errorInd === 0 ) {
+  
+         $stsSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) SELECT segmentid, segstatus, statusby, statusdate, now(), concat(:user,'/CHECKIN-PROCESS') as updater FROM masterrecord.ut_procure_segment where segmentid = :segid";
+         $locSQL = "insert into masterrecord.history_procure_segment_inventory(segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) values(:segmentid, :bgs, :scannedlocation, :scannedinventorycode, :inventoryscanstatus, :scannedby, now(), now(), :historyby)";
+         $stsUpdSQL = "update masterrecord.ut_procure_segment set segstatus = :newStatus, statusdate = now(), statusby = :user, scannedLocation = :scndesc, scanloccode = :scncode, scannedstatus = 'CHECK IN TO INVENTORY', scannedby = :usr, internalcomments = concat(ifnull(internalcomments,''),' ','OVERRIDE CHECKIN SCREEN') where segmentid = :segid";
+
+         foreach ($pdta as $key => $val) {
+           if ($key !== 'userid' && $key !== 'devReason') { 
+             //WRITE SEGMENT HISTORY FILES
+             $stsRS = $conn->prepare($stsSQL); 
+             $stsRS->execute(array(':segid' => $key, ':user' => $u['originalaccountname']));
+
+             //TODO:  MAKE DYNAMIC WITH WEBSERVICE //OR = Over Ride
+             $stsLookupSQL = "SELECT menuvalue FROM four.sys_master_menus where menu = 'segmentstatus' and dspvalue = :dspStatus";
+             $stsLookupRS = $conn->prepare($stsLookupSQL); 
+             $stsLookupRS->execute(array(':dspStatus' => $val['statusupdate']));
+             if ($stsLookupRS->rowCount() === 1) {
+                 $srs = $stsLookupRS->fetch(PDO::FETCH_ASSOC); 
+                 $nwSts = $srs['menuvalue']; 
+             } else { 
+                 $nwSts = 'BANKED';
+             }
+             $scnRS = $conn->prepare($locSQL);
+             $updRS = $conn->prepare($stsUpdSQL);  
+             //CHANGE STATUS
+             if ( trim($val['loccode']) !== "" ) { 
+               $scnRS->execute(array(':segmentid' => $key , ':bgs' => $val['bgs'], ':scannedlocation' => $val['locdesc'], ':scannedinventorycode' => $val['loccode'], ':inventoryscanstatus' => 'CHECK IN TO INVENTORY', ':scannedby' => $u['originalaccountname'], ':historyby' => 'CHECK-IN OVERRIDE COORDINATOR SCREEN')); 
+               $updRS->execute(array(':segid' => $key,':newStatus' => $nwSts,':user' => $u['originalaccountname'],':scndesc' => $val['locdesc'], ':scncode' => $val['loccode'], ':usr' => $u['originalaccountname'] ));
+             } else { 
+               $scnRS->execute(array(':segmentid' => $key , ':bgs' => $val['bgs'], ':scannedlocation' => 'OVERRIDE CHECKIN PROCESS'  , ':scannedinventorycode' => 'ORCHECKIN', ':inventoryscanstatus' => 'CHECK IN TO INVENTORY', ':scannedby' => $u['originalaccountname'], ':historyby' => 'CHECK-IN OVERRIDE COORDINATOR SCREEN'));
+               $updRS->execute(array(':segid' => $key,':newStatus' => $nwSts,':user' => $u['originalaccountname'],':scndesc' => 'OVERRIDE CHECKIN PROCESS', ':scncode' => 'ORCHECKIN', ':usr' => $u['originalaccountname']));
+             }
+             $responseCode = 200;
+           }
+         }      
+       } 
+
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -3212,7 +3243,7 @@ SQLSTMT;
           $trayChkR->execute(array(':scancode' => $invscancode));
           if ($trayChkR->rowCount() < 1) { 
             $error = 1; 
-            $msgArr[] = "THE HPR TRAY SCANCODE MISSING IS NOT VALID";               
+            $msgArr[] = "THE HPR TRAY SCANCODE IS MISSING OR IS NOT VALID";               
           }
         }
         

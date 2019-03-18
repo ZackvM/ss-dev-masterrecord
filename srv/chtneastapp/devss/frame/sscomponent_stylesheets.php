@@ -1084,6 +1084,8 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 .inventoryLocDsp { width: 30vw; }
 .inventoryNewStatus { width: 13vw; }
 .checkInHead {font-size: 1.8vh;  background: rgba(48,57,71,1); color: rgba(255,255,255,1); padding: .5vh .3vw .5vh .3vw; }
+#waitgifADD { width: 1.4vw; padding: 1vh 0; }
+#waiterIndicator { display: none; }
 STYLESHEET;
 return $rtnThis;
 } 
