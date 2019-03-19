@@ -63,6 +63,69 @@ class datadoers {
       return $rows;   
     }
 
+    function masterbgrecord ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      if ( $authuser === "chtneast" && $authpw === serverpw ) { 
+  
+  
+        require(serverkeys . "/sspdo.zck");
+        $pdta = json_decode($passdata, true);
+        $bgn = cryptservice($pdta['bgency'],'d',false);
+
+        
+
+
+        if ($errorInd === 0 ) {
+          $dta = $bgn;
+//SELECT 
+//replace(bs.read_label,'_','') as readlabel
+//, ifnull(voidind,0) as voidind
+//, ifnull(inst.dspinstitution, bs.procureInstitution) as dspinstitution 
+//, ifnull(bs.createdby,'') as technician
+//, ifnull(date_format(createdon,'%m/%d/%Y'),'') as procuredate
+//
+//, trim(ifnull(bs.tisstype,'')) as speccat
+//, trim(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subSite,'')='','',concat(' :: ',ifnull(bs.subsite,''))))) as site  
+//, trim(concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' :: ',ifnull(bs.subdiagnos,''))))) as diagnosis
+//, trim(concat(ifnull(bs.metssite,''), if(ifnull(bs.metsSiteDX,'')='','',concat(' :: ',ifnull(bs.metsSiteDX,''))))) mets
+//, trim(ifnull(bs.pdxSystemic,'')) as systemicdx
+//
+//, trim(date_format(bs.procedureDate,'%m/%d/%Y')) as proceduredate
+//, trim(ifnull(bs.pxiID,'')) as pxiid
+//, upper(concat(ifnull(bs.pxiage,''), if(ifnull(auom.ageuomdsp,'')='','',concat(' ',auom.ageuomdsp)))) as pxiage 
+//, upper(ifnull(bs.pxiRace,'')) as pxirace
+//, upper(ifnull(sx.sexdsp,'')) as pxisex
+//
+//, trim(ifnull(bs.biosamplecomment,'')) as biosamplecomment
+//, trim(ifnull(bs.questionHPR,'')) as questionhpr
+//
+//FROM masterrecord.ut_procure_biosample bs 
+//left join (SELECT menuvalue, if(ifnull(longvalue,'') = '', ifnull(dspvalue,''), ifnull(longvalue,'')) as dspinstitution FROM four.sys_master_menus where menu = 'INSTITUTION') as inst on bs.procureInstitution = inst.menuvalue
+//left join (SELECT  menuvalue, ifnull(dspvalue,'') as ageuomdsp  FROM four.sys_master_menus where menu = 'AGEUOM') as auom on bs.pxiAgeUOM = auom.menuvalue
+//left join (SELECT menuvalue, ifnull(dspvalue,'') as sexdsp  FROM four.sys_master_menus where menu = 'PXSEX') as sx on bs.pxiGender = sx.menuvalue
+//
+//where pbiosample = 87039
+      
+          $responseCode = 200;
+        }      
+
+
+
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;   
+    }
+
     function quicksegmentstatusupdate ( $request, $passdata ) { 
        $rows = array(); 
        //$dta = array(); 
@@ -93,7 +156,6 @@ class datadoers {
        } else { 
          $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
        }
-
        //CHECK DEVREASON IS GIVEN
        ( trim($pdta['devReason']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE REASON FOR DEVIATING FROM CHTNEASTERN SOPs MUST BE SPECIFIED." )) : "";       
        $chkSQL = "SELECT * FROM four.sys_master_menus where menu like 'DEVIATIONREASON_HPROVERRIDE' and dspind = 1 and dspValue = :value";
@@ -125,17 +187,14 @@ class datadoers {
        //TODO:CHECK: OPTIONAL LOCATIONCODE IS VALID - IF NOT DEFAULT TO A CHECKIN LOCATION 
 
        if ( $errorInd === 0 ) {
-  
          $stsSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) SELECT segmentid, segstatus, statusby, statusdate, now(), concat(:user,'/CHECKIN-PROCESS') as updater FROM masterrecord.ut_procure_segment where segmentid = :segid";
          $locSQL = "insert into masterrecord.history_procure_segment_inventory(segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) values(:segmentid, :bgs, :scannedlocation, :scannedinventorycode, :inventoryscanstatus, :scannedby, now(), now(), :historyby)";
          $stsUpdSQL = "update masterrecord.ut_procure_segment set segstatus = :newStatus, statusdate = now(), statusby = :user, scannedLocation = :scndesc, scanloccode = :scncode, scannedstatus = 'CHECK IN TO INVENTORY', scannedby = :usr, internalcomments = concat(ifnull(internalcomments,''),' ','OVERRIDE CHECKIN SCREEN') where segmentid = :segid";
-
          foreach ($pdta as $key => $val) {
            if ($key !== 'userid' && $key !== 'devReason') { 
              //WRITE SEGMENT HISTORY FILES
              $stsRS = $conn->prepare($stsSQL); 
              $stsRS->execute(array(':segid' => $key, ':user' => $u['originalaccountname']));
-
              //TODO:  MAKE DYNAMIC WITH WEBSERVICE //OR = Over Ride
              $stsLookupSQL = "SELECT menuvalue FROM four.sys_master_menus where menu = 'segmentstatus' and dspvalue = :dspStatus";
              $stsLookupRS = $conn->prepare($stsLookupSQL); 
@@ -160,14 +219,12 @@ class datadoers {
            }
          }      
        } 
-
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;
     }          
 
-    
     function  labelprintrequest ( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 

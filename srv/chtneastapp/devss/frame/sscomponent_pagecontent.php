@@ -457,7 +457,8 @@ function biogroupdefinition( $rqststr, $usr ) {
   $url = explode("/",$_SERVER['REQUEST_URI']);   
   $bg = cryptservice($url[2],'d',false);
 if ( trim($bg) !== '' ) { 
-  $bgdsp = getBiogroupDefitionDisplay($bg);
+  //TODO:  CHECK THAT THIS IS AN ACTUAL BGNUMBER  
+  $bgdsp = getBiogroupDefitionDisplay($bg, $url[2]);
 $rtnthis = <<<PAGEHERE
 {$bgdsp}
 PAGEHERE;
@@ -3961,10 +3962,6 @@ function dropmenuInitialMetric( $passedvalue = "" ) {
            . "<input type=text id=fldPRCMetricUOM READONLY class=\"inputFld {$lock}\" value=\"{$muomDefaultDsp}\">"
            . "</div>"
            . "<div class=valueDropDown id=ddPRCMetricUOM>{$muom}</div></div>";
-
-
-
-
   return array('menuObj' => $muommenu,'defaultDspValue' => $muomDefaultDsp, 'defaultLookupValue' => $muomDefaultValue);
 }
 
@@ -4220,8 +4217,14 @@ RTNTHIS;
    return $rtnThis;
 }
 
-function getBiogroupDefitionDisplay($biogroup) { 
+function getBiogroupDefitionDisplay($biogroup, $bgency) { 
+  $pdta = array();  
+  $pdta['bgency'] = $bgency;
+  $passdata = json_encode($pdta);
+  $bgarr = callrestapi("POST",dataTree."/data-doers/master-bg-record",serverIdent,serverpw,$passdata);
 
-return "THIS IS THE BIOGROUP NUMBER: {$biogroup}";
+
+
+return "THIS IS THE BIOGROUP NUMBER: {$biogroup} {$bgarr}";
 
 }
