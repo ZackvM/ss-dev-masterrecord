@@ -80,41 +80,62 @@ class datadoers {
         $pdta = json_decode($passdata, true);
         $bgn = cryptservice($pdta['bgency'],'d',false);
 
+        //TODO:  DATA CHECKS AND SECURITY CHECKS???
         
-
-
         if ($errorInd === 0 ) {
-          $dta = $bgn;
-//SELECT 
-//replace(bs.read_label,'_','') as readlabel
-//, ifnull(voidind,0) as voidind
-//, ifnull(inst.dspinstitution, bs.procureInstitution) as dspinstitution 
-//, ifnull(bs.createdby,'') as technician
-//, ifnull(date_format(createdon,'%m/%d/%Y'),'') as procuredate
-//
-//, trim(ifnull(bs.tisstype,'')) as speccat
-//, trim(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subSite,'')='','',concat(' :: ',ifnull(bs.subsite,''))))) as site  
-//, trim(concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' :: ',ifnull(bs.subdiagnos,''))))) as diagnosis
-//, trim(concat(ifnull(bs.metssite,''), if(ifnull(bs.metsSiteDX,'')='','',concat(' :: ',ifnull(bs.metsSiteDX,''))))) mets
-//, trim(ifnull(bs.pdxSystemic,'')) as systemicdx
-//
-//, trim(date_format(bs.procedureDate,'%m/%d/%Y')) as proceduredate
-//, trim(ifnull(bs.pxiID,'')) as pxiid
-//, upper(concat(ifnull(bs.pxiage,''), if(ifnull(auom.ageuomdsp,'')='','',concat(' ',auom.ageuomdsp)))) as pxiage 
-//, upper(ifnull(bs.pxiRace,'')) as pxirace
-//, upper(ifnull(sx.sexdsp,'')) as pxisex
-//
-//, trim(ifnull(bs.biosamplecomment,'')) as biosamplecomment
-//, trim(ifnull(bs.questionHPR,'')) as questionhpr
-//
-//FROM masterrecord.ut_procure_biosample bs 
-//left join (SELECT menuvalue, if(ifnull(longvalue,'') = '', ifnull(dspvalue,''), ifnull(longvalue,'')) as dspinstitution FROM four.sys_master_menus where menu = 'INSTITUTION') as inst on bs.procureInstitution = inst.menuvalue
-//left join (SELECT  menuvalue, ifnull(dspvalue,'') as ageuomdsp  FROM four.sys_master_menus where menu = 'AGEUOM') as auom on bs.pxiAgeUOM = auom.menuvalue
-//left join (SELECT menuvalue, ifnull(dspvalue,'') as sexdsp  FROM four.sys_master_menus where menu = 'PXSEX') as sx on bs.pxiGender = sx.menuvalue
-//
-//where pbiosample = 87039
-      
-          $responseCode = 200;
+         $masterSQL = "SELECT replace(bs.read_label,'_','') as readlabel, ifnull(bs.pristineselector,'') as pristineselector, ifnull(voidind,0) as voidind, ifnull(inst.dspinstitution, bs.procureInstitution) as dspinstitution , ifnull(bs.createdby,'') as technician, ifnull(date_format(createdon,'%m/%d/%Y'),'') as procuredate, ifnull(bs.associd,'') as associd, upper(concat(ifnull(pt.dspvalue,''), if(ifnull(ct.dspvalue,'')='','',concat(' :: ',ifnull(ct.dspvalue,'')))))  as collectproctype, trim(ifnull(bs.tisstype,'')) as speccat, trim(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subSite,'')='','',concat(' :: ',ifnull(bs.subsite,''))))) as site  , trim(concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' :: ',ifnull(bs.subdiagnos,''))))) as diagnosis, trim(concat(ifnull(bs.metssite,''), if(ifnull(bs.metsSiteDX,'')='','',concat(' :: ',ifnull(bs.metsSiteDX,''))))) mets, trim(ifnull(bs.siteposition,'')) as siteposition, trim(ifnull(bs.pdxSystemic,'')) as systemicdx, trim(date_format(bs.procedureDate,'%m/%d/%Y')) as proceduredate, trim(ifnull(bs.pxiID,'')) as pxiid, upper(concat(ifnull(bs.pxiage,''), if(ifnull(auom.ageuomdsp,'')='','',concat(' ',auom.ageuomdsp)))) as pxiage , upper(ifnull(bs.pxiRace,'')) as pxirace, upper(ifnull(sx.sexdsp,'')) as pxisex, upper(ifnull(cx.dspvalue,'')) as cxind, upper(ifnull(rx.dspvalue,'')) as rxind, upper(ifnull(ic.dspvalue,'')) as icind, upper(ifnull(pr.dspvalue,'')) as prind, ifnull(bs.subjectnbr,'') as subjectnbr, ifnull(bs.protocolnbr,'') as protocolnbr, ifnull(bs.hprind,0) as hprind, ifnull(bs.hprmarkbyon,'') as hprmarkbyon, ifnull(bs.qcind,0) as qcind, ifnull(bs.qcmarkbyon,'') as qcmarkbyon, ifnull(bs.qcvalv2,'') as qcvalue, ifnull(bs.qcprocstatus,'') as qcprocstatus, ifnull(bs.qmsstatusby,'') as qmsstatusby , ifnull(date_format(bs.qmsstatuson,'%m/%d/%Y'),'') as qmsstatuson, ifnull(bs.hprdecision,'') as hprstatus , ifnull(bs.hprresult,0) as hprresult, ifnull(bs.hprslidereviewed,'') as hprslidereviewed, ifnull(bs.hprby,'') as hprby , ifnull(date_format(bs.hpron,'%m/%d/%Y'),'') as hpron, trim(ifnull(bs.biosamplecomment,'')) as biosamplecomment, trim(ifnull(bs.questionHPR,'')) as questionhpr FROM masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, if(ifnull(longvalue,'') = '', ifnull(dspvalue,''), ifnull(longvalue,'')) as dspinstitution FROM four.sys_master_menus where menu = 'INSTITUTION') as inst on bs.procureInstitution = inst.menuvalue left join (SELECT  menuvalue, ifnull(dspvalue,'') as ageuomdsp  FROM four.sys_master_menus where menu = 'AGEUOM') as auom on bs.pxiAgeUOM = auom.menuvalue left join (SELECT menuvalue, ifnull(dspvalue,'') as sexdsp  FROM four.sys_master_menus where menu = 'PXSEX') as sx on bs.pxiGender = sx.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'CX') as cx on bs.chemoind = cx.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'RX') as rx on bs.radind = rx.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INFC') as ic on bs.informedconsent = ic.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') as pr on bs.pathreport = pr.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PROCTYPE') as pt on bs.proctype = pt.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'COLLECTIONT') as ct on bs.collectiontype = ct.menuvalue where pbiosample = :biog";    
+         $bgrs = $conn->prepare($masterSQL);
+         $bgrs->execute(array(':biog' => $bgn));
+         if ( $bgrs->rowCount() === 1 ) {
+             $itemsfound = 1;
+             $bg = $bgrs->fetch(PDO::FETCH_ASSOC);
+             
+             $dta['bgnbr']                          = $bgn;
+             $dta['readlabel']                     = $bg['readlabel'];
+             $dta['pristineselector']           = $bg['pristineselector'];
+             $dta['voidind']                        = $bg['voidind'];
+             $dta['procureinstitution']       = $bg['dspinstitution'];
+             $dta['technician']                   = $bg['technician'];
+             $dta['proceduredate']             = $bg['proceduredate'];
+             $dta['associativeid']               = $bg['associd'];
+             $dta['collecttype']                  = $bg['collectproctype'];
+             $dta['specimencategory']       = $bg['speccat'];             
+             $dta['collectedsite']               = $bg['site'];
+             $dta['diagnosis']                    = $bg['diagnosis'];
+             $dta['mets']                           = $bg['mets'];
+             $dta['siteposition']                = $bg['siteposition'];
+             $dta['systemicdx']                  = $bg['systemicdx'];
+             $dta['proceduredate']                  = $bg['proceduredate'];             
+             $dta['pxiid']                  = $bg['pxiid'];             
+             $dta['phiage']                  = $bg['pxiage'];             
+             $dta['phirace']                  = $bg['pxirace'];             
+             $dta['phisex']                  = $bg['pxisex'];             
+             $dta['cxind']                  = $bg['cxind'];             
+             $dta['rxind']                  = $bg['rxind'];
+             $dta['icind']                  = $bg['icind'];
+             $dta['prind']                  = $bg['prind'];
+             $dta['subjectnbr']                  = $bg['subjectnbr'];
+             $dta['protocolnbr']                  = $bg['protocolnbr'];
+             $dta['hprind']                  = $bg['hprind'];
+             $dta['hprmarkbyon']                  = $bg['hprmarkbyon'];
+             $dta['qcind']                  = $bg['qcind'];
+             $dta['qcmarkbyon']                  = $bg['qcmarkbyon'];
+             $dta['qcvalue']                  = $bg['qcvalue'];
+             $dta['qcprocstatus']                  = $bg['qcprocstatus'];
+             $dta['qmsstatusby']                  = $bg['qmsstatusby'];
+             $dta['qmsstatuson']                  = $bg['qmsstatuson'];
+             $dta['hprstatus']                  = $bg['hprstatus'];
+             $dta['hprresult']                  = $bg['hprresult'];
+             $dta['hprslidereviewed']                  = $bg['hprslidereviewed'];
+             $dta['hprby']                  = $bg['hprby'];
+             $dta['hpron']                  = $bg['hpron'];
+             $dta['biosamplecomment']                  = $bg['biosamplecomment'];
+             $dta['questionhpr']                  = $bg['questionhpr'];
+           
+             
+             
+         }     
+         $responseCode = 200;
         }      
 
 
@@ -3034,7 +3055,10 @@ SQLSTMT;
 //      }
 
       if ($error === 0) { 
+
+          
         $rqjson = json_decode($pdta['DATA']['requestjson'], true);
+       
         if ( count($rqjson['request']['wherelist']) < 1) { 
           $msgArr[] = "NO PARAMETER/CRITERIA WAS SPECIFIED IN WHERE CLAUSE - SEE CHTNED IT STAFF FOR ASSISTANCE";
           $msg = $msgArr;
@@ -3051,7 +3075,7 @@ SQLSTMT;
          $groupby =  (trim($rqjson['request']['rptsql']['groupbyclause']) === '') ? '' : " GROUP BY {$rqjson['request']['rptsql']['groupbyclause']}";
 //        $summaryfield = $r['rptsql']['summaryfield'];
 
-          $sqlstmt = "SELECT {$select} FROM {$from} {$where} {$groupby} {$orderby}";
+          $sqlstmt = "SELECT  {$select}  FROM  {$from}  {$where}  {$groupby}  {$orderby}";
           $valuelist = $rqjson['request']['valuelist'];
           $rs = $conn->prepare($sqlstmt); 
           $rs->execute($valuelist);
@@ -3059,6 +3083,7 @@ SQLSTMT;
           while ($r = $rs->fetch(PDO::FETCH_ASSOC)) { 
             $dta[] = $r;
           }
+          //$dta = $sqlstmt . " " .  json_encode($valuelist);
           $responseCode = 200;
           $msg = "";
         }

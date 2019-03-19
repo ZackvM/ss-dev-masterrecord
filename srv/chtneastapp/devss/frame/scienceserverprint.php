@@ -1383,7 +1383,7 @@ HEADERTBL;
 <table border=0 cellpadding=0 cellspacing=0 style="width: 4in; height: 5.21in; border: 1px solid #000000; box-sizing: border-box;">
 <tr><td style="padding: 0 0 0 4px;">{$favi}</td><td align=right valign=bottom> 
 
-    <table>
+   <table>
       <tr>
         <td style="font-family: tahoma, verdana; font-size: 14pt; color: #000084; font-weight: bold; text-align: right;">CHTNEastern Biosample</td></tr>
       <tr>
@@ -1410,6 +1410,7 @@ LBLLBL;
   }  
       $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$rowTbl}</tr></table>"; 
       return $resultTbl;    
+      //return json_encode($tbldta);
   }
 
 

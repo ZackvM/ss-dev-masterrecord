@@ -458,7 +458,7 @@ function biogroupdefinition( $rqststr, $usr ) {
   $bg = cryptservice($url[2],'d',false);
 if ( trim($bg) !== '' ) { 
   //TODO:  CHECK THAT THIS IS AN ACTUAL BGNUMBER  
-  $bgdsp = getBiogroupDefitionDisplay($bg, $url[2]);
+$bgdsp = getBiogroupDefitionDisplay($bg, $url[2]);
 $rtnthis = <<<PAGEHERE
 {$bgdsp}
 PAGEHERE;
@@ -4221,10 +4221,18 @@ function getBiogroupDefitionDisplay($biogroup, $bgency) {
   $pdta = array();  
   $pdta['bgency'] = $bgency;
   $passdata = json_encode($pdta);
-  $bgarr = callrestapi("POST",dataTree."/data-doers/master-bg-record",serverIdent,serverpw,$passdata);
+  //ITEMSFOUND":1,"DATA":{"bgnbr":"82812","readlabel":"82812T","pristineselector":"","voidind":0,"procureinstitution":"Reading Hospital ","technician":"ablatt","proceduredate":"01\/17\/2018","associativeid":"264712306LLW20180117","collecttype":"SURGERY","specimencategory":"MALIGNANT","collectedsite":"OVARY","diagnosis":"CARCINOMA","mets":"","siteposition":"","systemicdx":"","pxiid":"ZH6631191017122XSYIO968264712306LLW","phiage":"67 YEARS","phirace":"WHITE","phisex":"FEMALE","cxind":"NO","rxind":"NO","icind":"NO","prind":"YES","subjectnbr":"","protocolnbr":"","hprind":0,"hprmarkbyon":"","qcind":0,"qcmarkbyon":"","qcvalue":"","qcprocstatus":"S","qmsstatusby":"","qmsstatuson":"","hprstatus":"","hprresult":0,"hprslidereviewed":"","hprby":"","hpron":"","biosamplecomment":"SSV5 -----------","questionhpr":"SSV5 ----------"}} 
+  $bgarr = json_decode(callrestapi("POST",dataTree."/data-doers/master-bg-record",serverIdent,serverpw,$passdata), true);
+  if ( (int)$bgarr['ITEMSFOUND'] === 1 ) { 
+      $bg = $bgarr['DATA'];          
+      $rtnThis = "<table border=1><tr><td>Biogroup: {$bg['readlabel']}</td></tr></table>";
+      
 
 
+  } else { 
+      $rtnThis = "<h3>NO BIOGROUP FOUND.  ERROR - SEE A CHTNEASTERN INFORMATICS STAFF MEMBER";
+  }
 
-return "THIS IS THE BIOGROUP NUMBER: {$biogroup} {$bgarr}";
+return $rtnThis;
 
 }
