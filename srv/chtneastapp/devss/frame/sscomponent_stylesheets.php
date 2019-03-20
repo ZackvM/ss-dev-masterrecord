@@ -301,14 +301,32 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
 .sideControlBtn:hover { color: rgba({$this->color_dblue},1); cursor: pointer; background: rgba({$this->color_cornflowerblue},.6); } 
 
 .noteHolder { position: relative; }
-.noteExplainerDropDown { position: absolute; top: 28px; right: -4vw; width: 8vw; background: rgba({$this->color_cornflowerblue},1); padding: 4px; box-sizing: border-box; display: none; } 
-.noteExplainerDropDown:before {content:'';position:absolute; border: 15px solid transparent;border-bottom: 15px solid rgba({$this->color_cornflowerblue},1); top: -25px; left: 3vw;}
+.noteExplainerDropDown { position: absolute; top: 28px; right: -5vw; width: 10vw; background: rgba({$this->color_cornflowerblue},1); padding: 4px; box-sizing: border-box; display: none; font-size: 1.5vh; font-weight: normal; } 
+.noteExplainerDropDown:before {content:'';position:absolute; border: 15px solid transparent;border-bottom: 15px solid rgba({$this->color_cornflowerblue},1); top: -25px; left: 0;}
 .noteHolder:hover .noteExplainerDropDown { display: block; }
 
-#elemSpecCat { width: 20vw; }
-#elemSite { width: 36vw; }
-#elemDX { width: 36vw; }
-#elemMets { width: 36vw; }
+.btnExplainerHolder { position: relative; }
+.btnExplainer { position: absolute; top: 5vh; right: 0; white-space: nowrap; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 4px; box-sizing: border-box; display: none; z-index: 55; } 
+.btnExplainerHolder:hover .btnExplainer { display: block; }
+
+.sideindicatoricon { font-size: 1.5vw;color: rgba({$this->color_darkgrey},.8); }
+.sideindicatoricon:hover { color: rgba({$this->color_cornflowerblue},1); cursor: pointer; }
+
+#elemSpecCat { width: 21vw; }
+#elemSite { width: 35vw; }
+#elemDX { width: 35vw; }
+
+#elemMets { width: 35vw; }
+#elemSystemic { width: 35vw; }
+#elemPosition { width: 21vw; }
+
+#elemProceDate { width: 6vw; }
+#elemProcedureCollect { width: 17vw; }
+#elemARS { width: 30vw; }
+#elemCXRX { width: 12vw; }
+#elemPR { width: 8vw; }
+#elemSbj { width: 11vw; }
+#elemIC { width: 6vw; }
 
 
 STYLESHEET;

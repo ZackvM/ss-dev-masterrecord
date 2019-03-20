@@ -131,7 +131,20 @@ class datadoers {
              $dta['hpron']                  = $bg['hpron'];
              $dta['biosamplecomment']                  = $bg['biosamplecomment'];
              $dta['questionhpr']                  = $bg['questionhpr'];
+             
+             $sgSQL = "SELECT sg.segmentid, ifnull(sg.segmentlabel,'000') as segmentlabel, ifnull(date_format(sg.procurementdate,'%m/%d/%Y'),'') as procurementdate, ifnull(sts.dspvalue,'ERROR') as segstatus, ifnull(date_format(sg.statusdate, '%m/%d/%Y'),'') as statusdate, ifnull(statusby,'') as statusby, substr(concat('000000',ifnull(sg.shipDocRefId,'000000')),-6) as shipdocref, ifnull(reconcilind,0) as reconcilind, ifnull(date_format(sg.shippeddate, '%m/%d/%Y'),'') as shippeddate , ifnull(sg.hourspost,'') as hourspost, ifnull(sg.metric,0) as metric, ifnull(uom.dspvalue,'') as muom, upper(ifnull(sg.prepmethod,'')) as prepmethod , upper(ifnull(sg.preparation,'')) as preparation, ifnull(sg.assignedreq,'') as assignedrequest, upper(ifnull(sg.assignedto,'')) as investid , concat( ifnull(i.nameone,''), ', ', ifnull(i.nametwo,'')) as iname, ifnull(date_format(sg.assignmentdate,'%m/%d/%Y'),'') as assigneddate, ifnull(sg.assignedby,'') as assignedby, ifnull(sg.qty,0) as qty, ifnull(sg.hprblockind,0) as hprblockind, ifnull(sg.slidegroupid,'') as slidegroupid, ifnull(sg.scannedstatus,'') as scannedstatus, ifnull(sg.scannedlocation,'') as scannedlocation, ifnull(sg.scanloccode,'') as scannedloccode, ifnull(sg.scannedby,'') as scannedby, ifnull(sg.procuredat,'') as procureinstitution, ifnull(inst.dspinstitution,'') as dspinstitution,   ifnull(enteredby,'') as cuttech, ifnull(sg.segmentcomments,'') as segmentcomments FROM masterrecord.ut_procure_segment sg left join (SELECT menuvalue, if(ifnull(longvalue,'') = '', dspvalue, ifnull(longvalue,'')) as dspvalue FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') as sts on sg.segstatus = sts.menuvalue left join (SELECT menuvalue, if(ifnull(longvalue,'') = '', ifnull(dspvalue,''), ifnull(longvalue,'')) as dspinstitution FROM four.sys_master_menus where menu = 'INSTITUTION') as inst on sg.procuredat = inst.menuvalue left join (SELECT  menuvalue, if(ifnull(dspvalue,'') = '', longvalue, ifnull(dspvalue,'')) as dspvalue FROM four.sys_master_menus where menu = 'METRIC') as uom on sg.metricuom = uom.menuvalue left join (SELECT investid, invest_fname as nameone, invest_lname as nametwo FROM vandyinvest.invest) as i on sg.assignedto = i.investid where biosamplelabel = :pbiosample order by segmentlabel";
+           $sgRS = $conn->prepare($sgSQL);
+           $sgRS->execute(array(':pbiosample' => $bgn));
+           $sg = array();
+           if ($sgRS->rowCount() < 1) { 
+               //NO SEGMENTS
+           } else { 
+               while ($sgr = $sgRS->fetch(PDO::FETCH_ASSOC)) { 
+                   $sg[] = $sgr;
+               }
+           }
            
+           $dta['segments'] = $sg;
              
              
          }     

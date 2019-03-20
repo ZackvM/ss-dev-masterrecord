@@ -458,7 +458,7 @@ function biogroupdefinition( $rqststr, $usr ) {
   $bg = cryptservice($url[2],'d',false);
 if ( trim($bg) !== '' ) { 
   //TODO:  CHECK THAT THIS IS AN ACTUAL BGNUMBER  
-$bgdsp = getBiogroupDefitionDisplay($bg, $url[2]);
+$bgdsp = bldBiogroupDefitionDisplay($bg, $url[2]);
 $rtnthis = <<<PAGEHERE
 {$bgdsp}
 PAGEHERE;
@@ -4217,17 +4217,24 @@ RTNTHIS;
    return $rtnThis;
 }
 
-function getBiogroupDefitionDisplay($biogroup, $bgency) { 
+function bldBiogroupDefitionDisplay($biogroup, $bgency) { 
   $pdta = array();  
   $pdta['bgency'] = $bgency;
   $passdata = json_encode($pdta);
-  //ITEMSFOUND":1,"DATA":{"bgnbr":"82812","readlabel":"82812T","pristineselector":"","voidind":0,"procureinstitution":"Reading Hospital ","technician":"ablatt","proceduredate":"01\/17\/2018","associativeid":"264712306LLW20180117","collecttype":"SURGERY","mets":"","siteposition":"","systemicdx":"","pxiid":"ZH6631191017122XSYIO968264712306LLW","phiage":"67 YEARS","phirace":"WHITE","phisex":"FEMALE","cxind":"NO","rxind":"NO","icind":"NO","prind":"YES","subjectnbr":"","protocolnbr":"","hprind":0,"hprmarkbyon":"","qcind":0,"qcmarkbyon":"","qcvalue":"","qcprocstatus":"S","qmsstatusby":"","qmsstatuson":"","hprstatus":"","hprresult":0,"hprslidereviewed":"","hprby":"","hpron":"","biosamplecomment":"SSV5 -----------","questionhpr":"SSV5 ----------"}} 
   $bgarr = json_decode(callrestapi("POST",dataTree."/data-doers/master-bg-record",serverIdent,serverpw,$passdata), true);
   if ( (int)$bgarr['ITEMSFOUND'] === 1 ) { 
       $bg = $bgarr['DATA'];          
     
       $rtnThis = "<table id=mainHolderTbl border=0>";
-      $rtnThis .= "<tr><td><table border=0 class=lineTbl id=lineBiogroupAnnounce><tr><td>Biogroup {$bg['readlabel']}</td></tr></table></td></tr>";
+      $rtnThis .= <<<TOPLINE
+              <tr><td colspan=2>
+                  <table border=0 class=lineTbl id=lineBiogroupAnnounce>
+                        <tr>
+                            <td>Biogroup {$bg['readlabel']}</td>
+                            <td align=right>{$bg['technician']}@{$bg['procureinstitution']}</td>
+                       </tr></table>
+              </td></tr>
+TOPLINE;
       //DESIGNATION
       $rtnThis .= "<tr><td valign=top>";
 
@@ -4245,29 +4252,141 @@ function getBiogroupDefitionDisplay($biogroup, $bgency) {
       <td>  
       <table class=dataElementTbl id=elemDX><tr><td class=elementLabel>Diagnosis :: Modifier</td></tr><tr><td class=dataElement>{$bg['diagnosis']}&nbsp;</td></tr></table> 
       </td>
-      
-      <td valign=top align=right>  <table border=0 style="border-collapse: collapse;"><tr><td><table class=sideControlBtn style="height: 6vh; " border=1><tr><td><i class="material-icons">edit</i></td></tr></table> </td></tr>   </table> </td>
+
   </tr>
 </table>
-
 
 <table border=0>
   <tr>
       <td>  
-      <table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From <sup>*</sup><div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement>{$bg['mets']}&nbsp;</td></tr></table> 
+      <table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From *<div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement>{$bg['mets']}&nbsp;</td></tr></table> 
       </td>
 
+      <td>  
+      <table class=dataElementTbl id=elemSystemic><tr><td class=elementLabel>Systemic Diagnosis</td></tr><tr><td class=dataElement>{$bg['systemicdx']}&nbsp;</td></tr></table> 
+      </td>
+
+      <td>  
+      <table class=dataElementTbl id=elemPosition><tr><td class=elementLabel>Site Position</td></tr><tr><td class=dataElement>{$bg['siteposition']}&nbsp;</td></tr></table> 
+      </td>
+      
   </tr>
 </table>
 
 LINEONE;
 
+$pristineBTN = ( trim($bg['pristineselector']) !== "" ) ? "<tr><td><div class=btnExplainerHolder><table class=sideControlBtn style=\"height: 5vh;\" border=1 onclick=\"alert('SEE PRISTINE PROCUREMENT RECORD {$bg['pristineselector']}');\"><tr><td><i class=\"material-icons\">change_history</i></td></tr></table><div class=btnExplainer>Review Pristine Procurement Record</div></div></td></tr>"  : ""; 
+      
+      $rtnThis .= <<<ANOTHERLINE
+              </td><td valign=top rowspan=20>  
+                  <table border=0 style="border-collapse: collapse;">
+              
+                       <tr><td>
+                         <div class=btnExplainerHolder>
+                         <table class=sideControlBtn style="height: 5vh; " border=1 onclick="alert('EDIT DESIGNATION');"><tr><td><i class="material-icons">edit</i></td></tr></table>
+                          <div class=btnExplainer>Edit Diagnosis Designation</div>
+                          </div>
+                      </td></tr>   
 
+                      <tr><td>
+                          <div class=btnExplainerHolder>
+                         <table class=sideControlBtn style="height: 5vh; " border=1 onclick="alert('ASSOCIATED {$bg['associativeid']}');"><tr><td><i class="material-icons">group_work</i></td></tr></table> 
+                         <div class=btnExplainer>Associated Biogroups</div>
+                          </div>
+                      </td></tr>              
 
-
-      $rtnThis .= "</td></tr>";
+                      <tr><td>
+                          <div class=btnExplainerHolder>
+                         <table class=sideControlBtn style="height: 5vh; " border=1 onclick="alert('WORK WITH DONOR ENCOUNTER {$bg['pxiid']}');"><tr><td><i class="material-icons">group</i></td></tr></table> 
+                         <div class=btnExplainer>Donor/Encounter Information</div>
+                          </div>
+                      </td></tr>   
+                                              
+                  {$pristineBTN}         
+                         
+                  </table>       
+              </td></tr>
+ANOTHERLINE;
       //END DESIGNATION
 
+//ITEMSFOUND":1,"DATA":{"voidind":0,
+ // "hprind":0,"hprmarkbyon":""
+  //,"qcind":0,"qcmarkbyon":"","qcvalue":"","qcprocstatus":"S","qmsstatusby":"","qmsstatuson":"","hprstatus":"","hprresult":0
+  //,"hprslidereviewed":"","hprby":"","hpron":"","biosamplecomment":"SSV5 -----------","questionhpr":"SSV5 ----------"}}                   
+                                    
+//PHI INFORMATION                         
+$rtnThis .= <<<NEXTLINE
+<tr><td>
+    
+<table border=0>
+  <tr>
+
+      <td>  
+      <table class=dataElementTbl id=elemProceDate><tr><td class=elementLabel>Procedure Date</td></tr><tr><td class=dataElement>{$bg['proceduredate']}&nbsp;</td></tr></table> 
+      </td>
+
+      <td>  
+      <table class=dataElementTbl id=elemProcedureCollect><tr><td class=elementLabel>Procedure :: Collection Type</td></tr><tr><td class=dataElement>{$bg['collecttype']}&nbsp;</td></tr></table> 
+      </td>      
+   
+      <td>  
+      <table class=dataElementTbl id=elemARS><tr><td class=elementLabel>Age - Race - Sex</td></tr><tr><td class=dataElement>{$bg['phiage']} - {$bg['phirace']} - {$bg['phisex']}&nbsp;</td></tr></table> 
+      </td>      
+
+      <td>  
+      <table class=dataElementTbl id=elemCXRX><tr><td class=elementLabel>Chemo - Radiation Indicator</td></tr><tr><td class=dataElement>{$bg['cxind']} - {$bg['rxind']} &nbsp;</td></tr></table> 
+      </td>
+
+      <td>  
+      <table class=dataElementTbl id=elemPR><tr><td class=elementLabel colspan=2>Pathology Report</td></tr><tr><td class=dataElement>{$bg['prind']} &nbsp;</td><td style="width: 1.5vw;"><i class="material-icons sideindicatoricon">chrome_reader_mode</i></td></tr></table> 
+      </td>
+
+      <td>  
+      <table class=dataElementTbl id=elemSbj><tr><td class=elementLabel>Subject - Protocol Numbers</td></tr><tr><td class=dataElement>{$bg['subjectnbr']} - {$bg['protocolnbr']} &nbsp;</td></tr></table> 
+      </td>   
+
+      <td>  
+      <table class=dataElementTbl id=elemIC><tr><td class=elementLabel>Consent</td></tr><tr><td class=dataElement>{$bg['icind']} &nbsp;</td></tr></table> 
+      </td>      
+   
+ </tr></table>
+        
+             
+</td></tr>            
+NEXTLINE;
+//END PHI LINE
+      
+      
+      //[{"segmentid":447845,"procurementdate":"03\/13\/2019","segstatus":"On Offer from Procurement"
+      //,"statusdate":"03\/14\/2019","statusby":"URSALA","shipdocref":"000000","reconcilind":0,"shippeddate":""
+      //,"assignedrequest":"REQ22740","investid":"INV4356"
+      //,"iname":"Paul, Iazzetti","assigneddate":"03\/14\/2019","assignedby":"ablatt","qty":1,"hprblockind":0,"slidegroupid":""
+      //,"scannedstatus":"","scannedlocation":"","scannedloccode":"","scannedby":"","segmentcomments":""}]
+      $segTbl = "<table border=1><tr><td>Segment</td><td>Preparation</td><td>Hours Post</td><td>Measure</td><td>Procurement (Cut) Date</td><td>Cut At</td><td>Cutting Technician</td></tr>";
+      foreach ($bg['segments'] as $sky => $svl) { 
+          
+          $prp = ( trim($svl['prepmethod']) !== "" ) ? "{$svl['prepmethod']}" : "";
+          $prp .= ( trim($svl['preparation']) !== "" ) ?  ( trim($prp) !== "" ) ? " :: {$svl['preparation']}" : "{$svl['preparation']}"  :  "";
+          
+          $metric = ( (int)$svl['metric'] <> 0 ) ? "{$svl['metric']} {$svl['muom']}" : "";
+          
+          
+          $segTbl .= <<<SEGMENTLINES
+                  <tr>
+                      <td>{$svl['segmentlabel']}&nbsp;</td>
+                      <td>{$prp}&nbsp;</td>                      
+                      <td>{$svl['hourspost']}&nbsp;</td>
+                      <td>{$metric}&nbsp;</td>
+                      <td>{$svl['procurementdate']}&nbsp;</td>
+                      <td>{$svl['dspinstitution']}&nbsp;</td>     
+                      <td>{$svl['cuttech']}&nbsp;</td>                          
+                  </tr>
+SEGMENTLINES;
+      }
+      $segTbl .= "</table>";
+      
+      $rtnThis .= "<tr><td>{$segTbl}</td></tr>";                   
+                         
       $rtnThis .= "</table>";
 
 
