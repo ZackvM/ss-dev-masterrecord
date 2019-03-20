@@ -286,7 +286,29 @@ STYLESHEET;
 
 function biogroupdefinition($mobileind) { 
 $rtnThis = <<<STYLESHEET
-body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw; font-size: 1.5vh; } 
+body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw; font-size: 1.5vh; } 
+
+#mainHolderTbl { }
+.lineTbl { border-collapse: collapse; }
+#lineBiogroupAnnounce { border-bottom: 1px solid rgba({$this->color_dblue},1); width: 95vw; font-size: 1.9vh; font-weight: bold; color: rgba({$this->color_dblue},1); }
+
+.dataElementTbl { border-collapse: collapse; border: 1px solid rgba({$this->color_dblue},1); }
+.elementLabel { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .5vh .3vw; font-size: 1.1vh; font-weight: bold; } 
+.dataElement { padding: .9vh .3vw; background: rgba({$this->color_white},1); }
+
+.sideControlBtn { color: rgba({$this->color_darkgrey},.8); background: rgba({$this->color_white},1); border-collapse: collapse; box-sizing: border-box; }
+.sideControlBtn tr td { padding: .3vh .5vw; }
+.sideControlBtn:hover { color: rgba({$this->color_dblue},1); cursor: pointer; background: rgba({$this->color_cornflowerblue},.6); } 
+
+.noteHolder { position: relative; }
+.noteExplainerDropDown { position: absolute; top: 28px; right: -4vw; width: 8vw; background: rgba({$this->color_cornflowerblue},1); padding: 4px; box-sizing: border-box; display: none; } 
+.noteExplainerDropDown:before {content:'';position:absolute; border: 15px solid transparent;border-bottom: 15px solid rgba({$this->color_cornflowerblue},1); top: -25px; left: 3vw;}
+.noteHolder:hover .noteExplainerDropDown { display: block; }
+
+#elemSpecCat { width: 20vw; }
+#elemSite { width: 36vw; }
+#elemDX { width: 36vw; }
+#elemMets { width: 36vw; }
 
 
 STYLESHEET;

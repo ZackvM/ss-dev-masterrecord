@@ -4221,12 +4221,56 @@ function getBiogroupDefitionDisplay($biogroup, $bgency) {
   $pdta = array();  
   $pdta['bgency'] = $bgency;
   $passdata = json_encode($pdta);
-  //ITEMSFOUND":1,"DATA":{"bgnbr":"82812","readlabel":"82812T","pristineselector":"","voidind":0,"procureinstitution":"Reading Hospital ","technician":"ablatt","proceduredate":"01\/17\/2018","associativeid":"264712306LLW20180117","collecttype":"SURGERY","specimencategory":"MALIGNANT","collectedsite":"OVARY","diagnosis":"CARCINOMA","mets":"","siteposition":"","systemicdx":"","pxiid":"ZH6631191017122XSYIO968264712306LLW","phiage":"67 YEARS","phirace":"WHITE","phisex":"FEMALE","cxind":"NO","rxind":"NO","icind":"NO","prind":"YES","subjectnbr":"","protocolnbr":"","hprind":0,"hprmarkbyon":"","qcind":0,"qcmarkbyon":"","qcvalue":"","qcprocstatus":"S","qmsstatusby":"","qmsstatuson":"","hprstatus":"","hprresult":0,"hprslidereviewed":"","hprby":"","hpron":"","biosamplecomment":"SSV5 -----------","questionhpr":"SSV5 ----------"}} 
+  //ITEMSFOUND":1,"DATA":{"bgnbr":"82812","readlabel":"82812T","pristineselector":"","voidind":0,"procureinstitution":"Reading Hospital ","technician":"ablatt","proceduredate":"01\/17\/2018","associativeid":"264712306LLW20180117","collecttype":"SURGERY","mets":"","siteposition":"","systemicdx":"","pxiid":"ZH6631191017122XSYIO968264712306LLW","phiage":"67 YEARS","phirace":"WHITE","phisex":"FEMALE","cxind":"NO","rxind":"NO","icind":"NO","prind":"YES","subjectnbr":"","protocolnbr":"","hprind":0,"hprmarkbyon":"","qcind":0,"qcmarkbyon":"","qcvalue":"","qcprocstatus":"S","qmsstatusby":"","qmsstatuson":"","hprstatus":"","hprresult":0,"hprslidereviewed":"","hprby":"","hpron":"","biosamplecomment":"SSV5 -----------","questionhpr":"SSV5 ----------"}} 
   $bgarr = json_decode(callrestapi("POST",dataTree."/data-doers/master-bg-record",serverIdent,serverpw,$passdata), true);
   if ( (int)$bgarr['ITEMSFOUND'] === 1 ) { 
       $bg = $bgarr['DATA'];          
-      $rtnThis = "<table border=1><tr><td>Biogroup: {$bg['readlabel']}</td></tr></table>";
+    
+      $rtnThis = "<table id=mainHolderTbl border=0>";
+      $rtnThis .= "<tr><td><table border=0 class=lineTbl id=lineBiogroupAnnounce><tr><td>Biogroup {$bg['readlabel']}</td></tr></table></td></tr>";
+      //DESIGNATION
+      $rtnThis .= "<tr><td valign=top>";
+
+      $rtnThis .= <<<LINEONE
+<table border=0>
+  <tr>
+      <td>  
+      <table class=dataElementTbl id=elemSpecCat><tr><td class=elementLabel>Specimen Category</td></tr><tr><td class=dataElement>{$bg['specimencategory']}&nbsp;</td></tr></table> 
+      </td>
+
+      <td>  
+      <table class=dataElementTbl id=elemSite><tr><td class=elementLabel>Collected Site (Site :: Subsite)</td></tr><tr><td class=dataElement>{$bg['collectedsite']}&nbsp;</td></tr></table> 
+      </td>
+
+      <td>  
+      <table class=dataElementTbl id=elemDX><tr><td class=elementLabel>Diagnosis :: Modifier</td></tr><tr><td class=dataElement>{$bg['diagnosis']}&nbsp;</td></tr></table> 
+      </td>
       
+      <td valign=top align=right>  <table border=0 style="border-collapse: collapse;"><tr><td><table class=sideControlBtn style="height: 6vh; " border=1><tr><td><i class="material-icons">edit</i></td></tr></table> </td></tr>   </table> </td>
+  </tr>
+</table>
+
+
+<table border=0>
+  <tr>
+      <td>  
+      <table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From <sup>*</sup><div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement>{$bg['mets']}&nbsp;</td></tr></table> 
+      </td>
+
+  </tr>
+</table>
+
+LINEONE;
+
+
+
+
+      $rtnThis .= "</td></tr>";
+      //END DESIGNATION
+
+      $rtnThis .= "</table>";
+
+
 
 
   } else { 
