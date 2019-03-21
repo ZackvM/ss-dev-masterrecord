@@ -457,9 +457,12 @@ function biogroupdefinition( $rqststr, $usr ) {
   $url = explode("/",$_SERVER['REQUEST_URI']);   
   $bg = cryptservice($url[2],'d',false);
 if ( trim($bg) !== '' ) { 
-  //TODO:  CHECK THAT THIS IS AN ACTUAL BGNUMBER  
+    //TODO:  CHECK THAT THIS IS AN ACTUAL BGNUMBER  
+
+$topBtnBar = generatePageTopBtnBar('biogroupdefinition' , $usr);
 $bgdsp = bldBiogroupDefitionDisplay($bg, $url[2]);
 $rtnthis = <<<PAGEHERE
+{$topBtnBar}
 {$bgdsp}
 PAGEHERE;
 } else { 
@@ -2107,6 +2110,19 @@ $innerBar = <<<BTNTBL
 BTNTBL;
 break;
 
+case 'biogroupdefinition':
+$innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnEditDX><tr><td><i class="material-icons">edit</i></td><td>Edit DX</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnSeeAssocGrp><tr><td><i class="material-icons">group_work</i></td><td>Associative</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPHIRecord><tr><td><i class="material-icons">group</i></td><td>Encounter</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPristine><tr><td><i class="material-icons">change_history</i></td><td>Pristine</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPathologyRpt><tr><td><i class="material-icons">subject</i></td><td>Path Report</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSeg><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSeg><tr><td><i class="material-icons">cancel</i></td><td>Void Segment</td></tr></table></td>
+</tr>
+BTNTBL;
+    break;
 case 'reportresultsscreen':
 $innerBar = <<<BTNTBL
 <tr>
@@ -4227,7 +4243,7 @@ function bldBiogroupDefitionDisplay($biogroup, $bgency) {
     
       $rtnThis = "<table id=mainHolderTbl border=0>";
       $rtnThis .= <<<TOPLINE
-              <tr><td colspan=2>
+              <tr><td>
                   <table border=0 class=lineTbl id=lineBiogroupAnnounce>
                         <tr>
                             <td>Biogroup {$bg['readlabel']}</td>
@@ -4239,72 +4255,27 @@ TOPLINE;
       $rtnThis .= "<tr><td valign=top>";
 
       $rtnThis .= <<<LINEONE
-<table border=0>
+<table border=0 width=100%>
   <tr>
-      <td>  
-      <table class=dataElementTbl id=elemSpecCat><tr><td class=elementLabel>Specimen Category</td></tr><tr><td class=dataElement>{$bg['specimencategory']}&nbsp;</td></tr></table> 
-      </td>
-
-      <td>  
-      <table class=dataElementTbl id=elemSite><tr><td class=elementLabel>Collected Site (Site :: Subsite)</td></tr><tr><td class=dataElement>{$bg['collectedsite']}&nbsp;</td></tr></table> 
-      </td>
-
-      <td>  
-      <table class=dataElementTbl id=elemDX><tr><td class=elementLabel>Diagnosis :: Modifier</td></tr><tr><td class=dataElement>{$bg['diagnosis']}&nbsp;</td></tr></table> 
-      </td>
-
+      <td><table class=dataElementTbl id=elemSpecCat><tr><td class=elementLabel>Specimen Category</td></tr><tr><td class=dataElement>{$bg['specimencategory']}&nbsp;</td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSite><tr><td class=elementLabel>Collected Site (Site :: Subsite)</td></tr><tr><td class=dataElement>{$bg['collectedsite']}&nbsp;</td></tr></table></td>
+      <td><table class=dataElementTbl id=elemDX><tr><td class=elementLabel>Diagnosis :: Modifier</td></tr><tr><td class=dataElement>{$bg['diagnosis']}&nbsp;</td></tr></table></td>
   </tr>
 </table>
 
-<table border=0>
+<table border=0 width=100%>
   <tr>
-      <td>  
-      <table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From *<div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement>{$bg['mets']}&nbsp;</td></tr></table> 
-      </td>
-
-      <td>  
-      <table class=dataElementTbl id=elemSystemic><tr><td class=elementLabel>Systemic Diagnosis</td></tr><tr><td class=dataElement>{$bg['systemicdx']}&nbsp;</td></tr></table> 
-      </td>
-
-      <td>  
-      <table class=dataElementTbl id=elemPosition><tr><td class=elementLabel>Site Position</td></tr><tr><td class=dataElement>{$bg['siteposition']}&nbsp;</td></tr></table> 
-      </td>
-      
+      <td><table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From *<div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement>{$bg['mets']}&nbsp;</td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSystemic><tr><td class=elementLabel>Systemic Diagnosis</td></tr><tr><td class=dataElement>{$bg['systemicdx']}&nbsp;</td></tr></table></td>
+      <td><table class=dataElementTbl id=elemPosition><tr><td class=elementLabel>Site Position</td></tr><tr><td class=dataElement>{$bg['siteposition']}&nbsp;</td></tr></table></td>
   </tr>
 </table>
 
 LINEONE;
 
-$pristineBTN = ( trim($bg['pristineselector']) !== "" ) ? "<tr><td><div class=btnExplainerHolder><table class=sideControlBtn style=\"height: 5vh;\" border=1 onclick=\"alert('SEE PRISTINE PROCUREMENT RECORD {$bg['pristineselector']}');\"><tr><td><i class=\"material-icons\">change_history</i></td></tr></table><div class=btnExplainer>Review Pristine Procurement Record</div></div></td></tr>"  : ""; 
+//$pristineBTN = ( trim($bg['pristineselector']) !== "" ) ; 
       
       $rtnThis .= <<<ANOTHERLINE
-              </td><td valign=top rowspan=20>  
-                  <table border=0 style="border-collapse: collapse;">
-              
-                       <tr><td>
-                         <div class=btnExplainerHolder>
-                         <table class=sideControlBtn style="height: 5vh; " border=1 onclick="alert('EDIT DESIGNATION');"><tr><td><i class="material-icons">edit</i></td></tr></table>
-                          <div class=btnExplainer>Edit Diagnosis Designation</div>
-                          </div>
-                      </td></tr>   
-
-                      <tr><td>
-                          <div class=btnExplainerHolder>
-                         <table class=sideControlBtn style="height: 5vh; " border=1 onclick="alert('ASSOCIATED {$bg['associativeid']}');"><tr><td><i class="material-icons">group_work</i></td></tr></table> 
-                         <div class=btnExplainer>Associated Biogroups</div>
-                          </div>
-                      </td></tr>              
-
-                      <tr><td>
-                          <div class=btnExplainerHolder>
-                         <table class=sideControlBtn style="height: 5vh; " border=1 onclick="alert('WORK WITH DONOR ENCOUNTER {$bg['pxiid']}');"><tr><td><i class="material-icons">group</i></td></tr></table> 
-                         <div class=btnExplainer>Donor/Encounter Information</div>
-                          </div>
-                      </td></tr>   
-                                              
-                  {$pristineBTN}         
-                         
-                  </table>       
               </td></tr>
 ANOTHERLINE;
       //END DESIGNATION
@@ -4318,7 +4289,7 @@ ANOTHERLINE;
 $rtnThis .= <<<NEXTLINE
 <tr><td>
     
-<table border=0>
+<table border=0 width=100%>
   <tr>
 
       <td>  
@@ -4338,14 +4309,14 @@ $rtnThis .= <<<NEXTLINE
       </td>
 
       <td>  
-      <table class=dataElementTbl id=elemPR><tr><td class=elementLabel colspan=2>Pathology Report</td></tr><tr><td class=dataElement>{$bg['prind']} &nbsp;</td><td style="width: 1.5vw;"><i class="material-icons sideindicatoricon">chrome_reader_mode</i></td></tr></table> 
+      <table class=dataElementTbl id=elemPR><tr><td class=elementLabel>Pathology Report</td></tr><tr><td class=dataElement>{$bg['prind']} &nbsp;</td></tr></table> 
       </td>
 
       <td>  
       <table class=dataElementTbl id=elemSbj><tr><td class=elementLabel>Subject - Protocol Numbers</td></tr><tr><td class=dataElement>{$bg['subjectnbr']} - {$bg['protocolnbr']} &nbsp;</td></tr></table> 
       </td>   
 
-      <td>  
+      <td align=right>  
       <table class=dataElementTbl id=elemIC><tr><td class=elementLabel>Consent</td></tr><tr><td class=dataElement>{$bg['icind']} &nbsp;</td></tr></table> 
       </td>      
    
@@ -4357,33 +4328,54 @@ NEXTLINE;
 //END PHI LINE
       
       
-      //[{"segmentid":447845,"procurementdate":"03\/13\/2019","segstatus":"On Offer from Procurement"
-      //,"statusdate":"03\/14\/2019","statusby":"URSALA","shipdocref":"000000","reconcilind":0,"shippeddate":""
-      //,"assignedrequest":"REQ22740","investid":"INV4356"
-      //,"iname":"Paul, Iazzetti","assigneddate":"03\/14\/2019","assignedby":"ablatt","qty":1,"hprblockind":0,"slidegroupid":""
-      //,"scannedstatus":"","scannedlocation":"","scannedloccode":"","scannedby":"","segmentcomments":""}]
-      $segTbl = "<table border=1><tr><td>Segment</td><td>Preparation</td><td>Hours Post</td><td>Measure</td><td>Procurement (Cut) Date</td><td>Cut At</td><td>Cutting Technician</td></tr>";
+      //[{"segmentid":447845
+      //"reconcilind":0
+      //"hprblockind":0,"slidegroupid":""}]
+      $segTbl = "<table border=0 id=segmentListTbl><thead><tr><td class=seg-lbl>#</td><td>Segment<br>Status</td><td>Preparation</td><td class=seg-hrp><center>Hours<br>Post</td><td class=seg-metr>Metric</td><td class=seg-procdte>Procurement<br>Date</td><td>Processed<br>Institution</td><td class=seg-cuttech>Processing<br>Technician</td><td class=seg-qty>Qty</td><td>Assignment</td><td class=seg-rqst>Request</td><td class=seg-shpdoc>Ship Doc</td><td class=seg-shpdte>Shipped</td><td>Comments</td><td>Inventory<br>Location</td></tr></thead><tbody>";
       foreach ($bg['segments'] as $sky => $svl) { 
           
           $prp = ( trim($svl['prepmethod']) !== "" ) ? "{$svl['prepmethod']}" : "";
           $prp .= ( trim($svl['preparation']) !== "" ) ?  ( trim($prp) !== "" ) ? " :: {$svl['preparation']}" : "{$svl['preparation']}"  :  "";
-          
-          $metric = ( (int)$svl['metric'] <> 0 ) ? "{$svl['metric']} {$svl['muom']}" : "";
-          
-          
+          $metric = ( (int)$svl['metric'] <> 0 ) ? "{$svl['metric']}{$svl['muom']}" : "";
+          $segststbl = "<div class=hovertbl><table border=0><tr><td>Status Date: </td><td>{$svl['statusdate']}&nbsp;</td></tr><tr><td>Statused By: </td><td>{$svl['statusby']}&nbsp;</td></tr></table></div>";
+
+          $assignment = ( trim($svl['investid']) !== "" ) ? trim($svl['investid']) : "";
+          $assignment .= ( trim($svl['iname']) !== "," ) ? ( trim($assignment) !== "" ) ? " ({$svl['iname']})" : "{$svl['iname']}" : "";
+          $innerAss = ( trim($svl['assigneddate']) !== "" ) ? "<div class=segstatusinfo><div class=hovertbl><table><tr><td>Assigned Date: </td><td>{$svl['assigneddate']}</td></tr><tr><td>Assigned By: </td><td>{$svl['assignedby']}</td></tr></table></div></div>" : ""; 
+          $assdiv = "<div class=segstatusdspinfo>{$assignment}{$innerAss}</div>";
+
+          $shipdoc = ( trim($svl['shipdocref']) !== "000000" ) ? trim($svl['shipdocref']) : "";
+
+          $scnDsp = ( trim($svl['scannedlocation']) !== "" ) ? "<div class=scnstatusdspinfo>{$svl['scannedlocation']}<div class=scnstatusinfo><div class=hovertbl><table><tr><td>Scanned: </td><td>{$svl['scannedby']}</td></tr><tr><td>Status: </td><td>{$svl['scannedstatus']}</td></tr><tr><td>Date: </td><td>{$svl['scanneddate']}</td></tr></table></div></div></div>" : "&nbsp;";
+     
           $segTbl .= <<<SEGMENTLINES
-                  <tr>
-                      <td>{$svl['segmentlabel']}&nbsp;</td>
+                  <tr
+                    id = "sg{$svl['segmentid']}"
+                    data-bgs = "{$svl['bgs']}"
+                    data-shipdoc = "{$shipdoc}"
+                    data-segmentid = {$svl['segmentid']}
+                    data-selected = "false"
+                    onclick="rowselector('sg{$svl['segmentid']}');" 
+                  >
+                      <td class=seg-lbl>{$svl['segmentlabel']}&nbsp;</td>
+                      <td><div class=segstatusdspinfo>{$svl['segstatus']}<div class=segstatusinfo>{$segststbl}</div></div></td>
                       <td>{$prp}&nbsp;</td>                      
-                      <td>{$svl['hourspost']}&nbsp;</td>
-                      <td>{$metric}&nbsp;</td>
-                      <td>{$svl['procurementdate']}&nbsp;</td>
-                      <td>{$svl['dspinstitution']}&nbsp;</td>     
+                      <td class=seg-hrp align=right>{$svl['hourspost']}&nbsp;</td>
+                      <td class=seg-metr align=right>{$metric}&nbsp;</td>
+                      <td class=seg-procdte>{$svl['procurementdate']}&nbsp;</td>
+                      <td class=seg-cuttech>{$svl['dspinstitution']}&nbsp;</td>     
                       <td>{$svl['cuttech']}&nbsp;</td>                          
+                      <td class=seg-qty>{$svl['qty']}&nbsp;</td>
+                      <td>{$assdiv}</td>
+                      <td class=seg-rqst>{$svl['assignedrequest']}&nbsp;</td>
+                      <td class=seg-shpdoc>{$shipdoc}&nbsp;</td>
+                      <td class=seg-shpdte>{$svl['shippeddate']}&nbsp;</td>
+                      <td>{$svl['segmentcomments']}&nbsp;</td>
+                      <td class="endCell ">{$scnDsp}</td>
                   </tr>
 SEGMENTLINES;
       }
-      $segTbl .= "</table>";
+      $segTbl .= "</tbody></table>";
       
       $rtnThis .= "<tr><td>{$segTbl}</td></tr>";                   
                          

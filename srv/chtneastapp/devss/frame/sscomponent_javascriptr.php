@@ -57,6 +57,30 @@ return $rtnThis;
 
 }
 
+function biogroupdefinition ( $rqststr ) { 
+
+  session_start(); 
+  $tt = treeTop;
+  $ott = ownerTree;
+  $si = serverIdent;
+  $sp = serverpw;
+
+
+$rtnThis = <<<JAVASCR
+
+function rowselector(whichrow) { 
+  if (byId(whichrow)) { 
+    if (byId(whichrow).dataset.selected === "false") { 
+          byId(whichrow).dataset.selected = "true";
+        } else { 
+          byId(whichrow).dataset.selected = "false";
+        }
+  }
+}
+
+JAVASCR;
+return $rtnThis;
+}
     
 function globalscripts ( $keypaircode, $usrid ) {  
 

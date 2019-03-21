@@ -286,11 +286,11 @@ STYLESHEET;
 
 function biogroupdefinition($mobileind) { 
 $rtnThis = <<<STYLESHEET
-body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw; font-size: 1.5vh; } 
+body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw; font-size: 1.5vh; } 
 
 #mainHolderTbl { }
 .lineTbl { border-collapse: collapse; }
-#lineBiogroupAnnounce { border-bottom: 1px solid rgba({$this->color_dblue},1); width: 95vw; font-size: 1.9vh; font-weight: bold; color: rgba({$this->color_dblue},1); }
+#lineBiogroupAnnounce { border-bottom: 1px solid rgba({$this->color_dblue},1); width: 100%; font-size: 1.9vh; font-weight: bold; color: rgba({$this->color_dblue},1); }
 
 .dataElementTbl { border-collapse: collapse; border: 1px solid rgba({$this->color_dblue},1); }
 .elementLabel { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .5vh .3vw; font-size: 1.1vh; font-weight: bold; } 
@@ -313,21 +313,56 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
 .sideindicatoricon:hover { color: rgba({$this->color_cornflowerblue},1); cursor: pointer; }
 
 #elemSpecCat { width: 21vw; }
-#elemSite { width: 35vw; }
-#elemDX { width: 35vw; }
+#elemSite { width: 37vw; }
+#elemDX { width: 37vw; }
 
-#elemMets { width: 35vw; }
-#elemSystemic { width: 35vw; }
+#elemMets { width: 37vw; }
+#elemSystemic { width: 37vw; }
 #elemPosition { width: 21vw; }
 
 #elemProceDate { width: 6vw; }
-#elemProcedureCollect { width: 17vw; }
+#elemProcedureCollect { width: 18vw; }
 #elemARS { width: 30vw; }
 #elemCXRX { width: 12vw; }
 #elemPR { width: 8vw; }
-#elemSbj { width: 11vw; }
-#elemIC { width: 6vw; }
+#elemSbj { width: 13vw; }
+#elemIC { width: 7vw; }
 
+.segstatusdspinfo { position: relative; }
+.segstatusinfo { position: absolute; top: 30px; left: 30px; white-space: nowrap; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 4px; box-sizing: border-box; display: none; z-index: 55; }
+.segstatusdspinfo:hover .segstatusinfo { display: block; }
+.segstatusdspinfo:hover { cursor: pointer; }
+
+.scnstatusdspinfo { position: relative; }
+.scnstatusinfo { position: absolute; top: 30px; right: 0; white-space: nowrap; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 4px; box-sizing: border-box; display: none; z-index: 55; }
+.scnstatusdspinfo:hover .scnstatusinfo { display: block; }
+.scnstatusdspinfo:hover { cursor: pointer; }
+
+#segmentListTbl { width: 96vw; table-layout: fixed; font-size: 1.3vh; margin-top: 2vh; border: 1px solid rgba({$this->color_dblue},1); }
+#segmentListTbl thead tr { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); font-size: 1.1vh; font-weight: bold; }
+#segmentListTbl thead tr td { padding: .5vh .3vw; }
+
+#segmentListTbl tbody tr:nth-child(even) { background: rgba({$this->color_lightgrey},1); }
+#segmentListTbl tbody tr:hover { background: rgba({$this->color_lamber},1); }
+#segmentListTbl tbody tr[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
+
+
+#segmentListTbl tbody tr td { padding: .2vh .3vw; border-bottom: 1px solid rgba({$this->color_darkgrey},.5); border-right: 1px solid rgba({$this->color_darkgrey},.5); height: 6vh; }
+
+#segmentListTbl .endCell { border-right: none; }
+#segmentListTbl .seg-lbl { width: 1.5vw; text-align: center; }
+#segmentListTbl .seg-hrp { width: 2.5vw; }
+#segmentListTbl .seg-metr { width: 3vw; }
+#segmentListTbl .seg-cuttech { width: 5vw; }
+#segmentListTbl .seg-qty { width: 1vw; text-align: center; }
+#segmentListTbl .seg-procdte { width: 5vw; }
+#segmentListTbl .seg-rqst { width: 4vw; }
+#segmentListTbl .seg-shpdte {width: 5vw; }
+#segmentListTbl .seg-shpdoc { width: 3vw; }
+
+#segmentListTbl tbody tr td .hovertbl table tr:hover { background: rgba({$this->color_zackgrey},1); } 
+#segmentListTbl tbody tr td .hovertbl table tr:nth-child(even) { background: rgba({$this->color_zackgrey},1); }
+#segmentListTbl tbody tr td .hovertbl table tr td { border: none; height: 1vh; }
 
 STYLESHEET;
 return $rtnThis;
