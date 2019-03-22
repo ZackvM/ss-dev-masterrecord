@@ -286,7 +286,7 @@ STYLESHEET;
 
 function biogroupdefinition($mobileind) { 
 $rtnThis = <<<STYLESHEET
-body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw; font-size: 1.5vh; } 
+body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.5vh; } 
 
 #mainHolderTbl { }
 .lineTbl { border-collapse: collapse; }
@@ -328,6 +328,8 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #elemSbj { width: 13vw; }
 #elemIC { width: 7vw; }
 
+#elemBGCmnt { width: 15vw; }
+
 .segstatusdspinfo { position: relative; }
 .segstatusinfo { position: absolute; top: 30px; left: 30px; white-space: nowrap; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 4px; box-sizing: border-box; display: none; z-index: 55; }
 .segstatusdspinfo:hover .segstatusinfo { display: block; }
@@ -337,6 +339,12 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 .scnstatusinfo { position: absolute; top: 30px; right: 0; white-space: nowrap; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 4px; box-sizing: border-box; display: none; z-index: 55; }
 .scnstatusdspinfo:hover .scnstatusinfo { display: block; }
 .scnstatusdspinfo:hover { cursor: pointer; }
+
+.qmsdspholder { position: relative; } 
+.qmsdspinfo {  position: absolute; top: 35px; left: 15px; white-space: nowrap; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 4px; box-sizing: border-box; display: none; z-index: 55;  }
+.qmsdspholder:hover .qmsdspinfo { display: block; }
+.qmsdspholder:hover { cursor: pointer; }
+
 
 #segmentListTbl { width: 96vw; table-layout: fixed; font-size: 1.3vh; margin-top: 2vh; border: 1px solid rgba({$this->color_dblue},1); }
 #segmentListTbl thead tr { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); font-size: 1.1vh; font-weight: bold; }
@@ -363,6 +371,8 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #segmentListTbl tbody tr td .hovertbl table tr:hover { background: rgba({$this->color_zackgrey},1); } 
 #segmentListTbl tbody tr td .hovertbl table tr:nth-child(even) { background: rgba({$this->color_zackgrey},1); }
 #segmentListTbl tbody tr td .hovertbl table tr td { border: none; height: 1vh; }
+
+#qmsstatind { width: 1.8vw; height: 3.8vh; border: 1px solid rgba({$this->color_zackgrey},1); text-align: center; color: rgba({$this->color_white},1); }
 
 STYLESHEET;
 return $rtnThis;

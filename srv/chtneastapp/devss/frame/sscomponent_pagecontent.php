@@ -2118,6 +2118,7 @@ $innerBar = <<<BTNTBL
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPHIRecord><tr><td><i class="material-icons">group</i></td><td>Encounter</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPristine><tr><td><i class="material-icons">change_history</i></td><td>Pristine</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPathologyRpt><tr><td><i class="material-icons">subject</i></td><td>Path Report</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnHPRRecord><tr><td><i class="material-icons">thumbs_up_down</i></td><td>View HPR</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSeg><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSeg><tr><td><i class="material-icons">cancel</i></td><td>Void Segment</td></tr></table></td>
 </tr>
@@ -4240,10 +4241,53 @@ function bldBiogroupDefitionDisplay($biogroup, $bgency) {
   $bgarr = json_decode(callrestapi("POST",dataTree."/data-doers/master-bg-record",serverIdent,serverpw,$passdata), true);
   if ( (int)$bgarr['ITEMSFOUND'] === 1 ) { 
       $bg = $bgarr['DATA'];          
-    
+
+
+//ITEMSFOUND":1,"DATA":{"voidind":0,
+ // "hprind":0,"hprmarkbyon":""
+  //,"qcind":0,"qcmarkbyon":"","qcvalue":"","biosamplecomment":"SSV5 -----------","questionhpr":"SSV5 ----------"}}                   
+      //TODO:  MAKE THIS DYNAMIC
+      switch ( $bg['qcprocstatus'] ) {
+      case 'S': //SUBMITTED
+        $qmsicon = "<i class=\"material-icons\">offline_bolt</i>";
+        $clssuffix = " 237, 35, 0, 1";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>Submitted</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr></table>";
+      break;
+      case 'L': //LAB ACTION  
+        $qmsicon = "<i class=\"material-icons\">schedule</i>";  
+        $clssuffix = " 107, 18, 102, 1";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>In Lab Action</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slided Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+      break;
+      case 'R': //RESUBMITTED 
+        $qmsicon = "<i class=\"material-icons\">history</i>";
+        $clssuffix = "226,226,125,1";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>Re-Submitted</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slided Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+      break;
+      case 'H':
+        $qmsicon = "<i class=\"material-icons\">offline_pin</i>";
+        $clssuffix = "84,113,210,1";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>HPR Review Complete</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slided Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+      break;
+      case 'Q':
+        $qmsicon = "<i class=\"material-icons\">stars</i>";
+        $clssuffix = "0, 112, 13, 1";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>QMS PROCESS Complete</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slided Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+      break;
+      case 'N':
+        $qmsicon = "<i class=\"material-icons\">play_circle_outline</i>";
+        $clssuffix = "203, 232, 240, 1";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>Not Applicable to biosample</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr></table>";
+      break;
+      default:  //NO VALUE MATCHING
+        $qmsicon = "<i class=\"material-icons\">help_outline</i>";
+        $clssuffix = "145,145,145,1";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>Not Yet Submitted</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr></table>";
+      }
+
+      
       $rtnThis = "<table id=mainHolderTbl border=0>";
       $rtnThis .= <<<TOPLINE
-              <tr><td>
+              <tr><td rowspan=10 valign=top><div class=qmsdspholder><table border=0 cellspacing=0 cellpadding=0><tr><td id=qmsstatind style="background: rgba({$clssuffix});">{$qmsicon}</td></tr></table><div class=qmsdspinfo>{$qcstatustxt}</div></div></td><td>
                   <table border=0 class=lineTbl id=lineBiogroupAnnounce>
                         <tr>
                             <td>Biogroup {$bg['readlabel']}</td>
@@ -4272,18 +4316,12 @@ TOPLINE;
 </table>
 
 LINEONE;
-
-//$pristineBTN = ( trim($bg['pristineselector']) !== "" ) ; 
-      
+ 
       $rtnThis .= <<<ANOTHERLINE
               </td></tr>
 ANOTHERLINE;
       //END DESIGNATION
 
-//ITEMSFOUND":1,"DATA":{"voidind":0,
- // "hprind":0,"hprmarkbyon":""
-  //,"qcind":0,"qcmarkbyon":"","qcvalue":"","qcprocstatus":"S","qmsstatusby":"","qmsstatuson":"","hprstatus":"","hprresult":0
-  //,"hprslidereviewed":"","hprby":"","hpron":"","biosamplecomment":"SSV5 -----------","questionhpr":"SSV5 ----------"}}                   
                                     
 //PHI INFORMATION                         
 $rtnThis .= <<<NEXTLINE
@@ -4321,14 +4359,29 @@ $rtnThis .= <<<NEXTLINE
       </td>      
    
  </tr></table>
-        
-             
+         
 </td></tr>            
 NEXTLINE;
 //END PHI LINE
+
+//BG METRICS 
+$rtnThis .= <<<NEXTLINETWO
+<tr><td>
+  
+
+<table border=0 width=100%>
+  <tr>
+
+      <td>  
+      <table class=dataElementTbl id=elemBGCmnt><tr><td class=elementLabel>Biosample Comments</td></tr><tr><td class=dataElement>{$bg['biosamplecomment']}&nbsp;</td></tr></table> 
+      </td>
+
+
+ </tr></table>
+</td></tr>            
+NEXTLINETWO;
+//END BG METRICS
       
-      
-      //[{"segmentid":447845
       //"reconcilind":0
       //"hprblockind":0,"slidegroupid":""}]
       $segTbl = "<table border=0 id=segmentListTbl><thead><tr><td class=seg-lbl>#</td><td>Segment<br>Status</td><td>Preparation</td><td class=seg-hrp><center>Hours<br>Post</td><td class=seg-metr>Metric</td><td class=seg-procdte>Procurement<br>Date</td><td>Processed<br>Institution</td><td class=seg-cuttech>Processing<br>Technician</td><td class=seg-qty>Qty</td><td>Assignment</td><td class=seg-rqst>Request</td><td class=seg-shpdoc>Ship Doc</td><td class=seg-shpdte>Shipped</td><td>Comments</td><td>Inventory<br>Location</td></tr></thead><tbody>";
@@ -4347,6 +4400,8 @@ NEXTLINE;
           $shipdoc = ( trim($svl['shipdocref']) !== "000000" ) ? trim($svl['shipdocref']) : "";
 
           $scnDsp = ( trim($svl['scannedlocation']) !== "" ) ? "<div class=scnstatusdspinfo>{$svl['scannedlocation']}<div class=scnstatusinfo><div class=hovertbl><table><tr><td>Scanned: </td><td>{$svl['scannedby']}</td></tr><tr><td>Status: </td><td>{$svl['scannedstatus']}</td></tr><tr><td>Date: </td><td>{$svl['scanneddate']}</td></tr></table></div></div></div>" : "&nbsp;";
+
+          $sgcmt = preg_replace('/[Ss][Ss][Vv]\d(SEGMENT|segment)\s(COMMENTS|comments)-{1,}/','',$svl['segmentcomments']);
      
           $segTbl .= <<<SEGMENTLINES
                   <tr
@@ -4370,7 +4425,7 @@ NEXTLINE;
                       <td class=seg-rqst>{$svl['assignedrequest']}&nbsp;</td>
                       <td class=seg-shpdoc>{$shipdoc}&nbsp;</td>
                       <td class=seg-shpdte>{$svl['shippeddate']}&nbsp;</td>
-                      <td>{$svl['segmentcomments']}&nbsp;</td>
+                      <td>{$sgcomments}&nbsp;</td>
                       <td class="endCell ">{$scnDsp}</td>
                   </tr>
 SEGMENTLINES;
