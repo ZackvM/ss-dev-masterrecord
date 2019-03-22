@@ -295,6 +295,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 .dataElementTbl { border-collapse: collapse; border: 1px solid rgba({$this->color_dblue},1); }
 .elementLabel { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .5vh .3vw; font-size: 1.1vh; font-weight: bold; } 
 .dataElement { padding: .9vh .3vw; background: rgba({$this->color_white},1); }
+.dataElementc { background: rgba({$this->color_white},1); }
 
 .sideControlBtn { color: rgba({$this->color_darkgrey},.8); background: rgba({$this->color_white},1); border-collapse: collapse; box-sizing: border-box; }
 .sideControlBtn tr td { padding: .3vh .5vw; }
@@ -328,7 +329,16 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #elemSbj { width: 13vw; }
 #elemIC { width: 7vw; }
 
-#elemBGCmnt { width: 15vw; }
+#elemBGCmnt { width: 48vw; }
+#elemHPRQ { width: 47.5vw; }
+
+.commentHolder { position: relative; }
+.commentHolder:hover {cursor: pointer; }
+
+.commentdsp { width: 40vw; height: 8vh; overflow: auto;  padding: .9vh .3vw; box-sizing: border-box;}
+.cmtEditIcon { position: absolute; right: 12px; top: .7vh;  }
+.cmtEditIconCls { font-size: 2.5vh; color: rgba({$this->color_darkgrey},.5); }
+.commentHolder:hover .cmtEditIconCls { color: rgba({$this->color_bred}, .6); }
 
 .segstatusdspinfo { position: relative; }
 .segstatusinfo { position: absolute; top: 30px; left: 30px; white-space: nowrap; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 4px; box-sizing: border-box; display: none; z-index: 55; }
@@ -373,6 +383,8 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #segmentListTbl tbody tr td .hovertbl table tr td { border: none; height: 1vh; }
 
 #qmsstatind { width: 1.8vw; height: 3.8vh; border: 1px solid rgba({$this->color_zackgrey},1); text-align: center; color: rgba({$this->color_white},1); }
+
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; }
 
 STYLESHEET;
 return $rtnThis;

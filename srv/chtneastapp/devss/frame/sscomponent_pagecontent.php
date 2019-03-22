@@ -13,7 +13,19 @@ public $checkBtn = "<i class=\"material-icons\">check</i>";
 
 function sysDialogBuilder($whichdialog, $passedData) {
  
+    $standardSysDialog = 1;
+    $scripter = "";
     switch($whichdialog) {
+      
+      case 'dlgCMTEDIT':  
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Biogroup Comment Editor";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";        
+        //{"whichdialog":"dlgCMTEDIT","objid":"BGC:82454","dialogid":"ZZZ34345"}
+        $innerDialog = bldDialogCoordEditComments( $passedData );        
+        //$footerBar = "DONOR RECORD";
+      break;    
       case 'dialogHelpTicket':
         $titleBar = "ScienceServer HelpTicket Submission";
         //$footerBar = "DONOR RECORD";
@@ -381,10 +393,6 @@ DIALOGINNER;
         $footerBar = "";
     }
         break;
-
-
-
-
       case 'dataCoordinatorBGSAssignment': 
         $titleBar = "Segment Assignment";
         $footerBar = "";
@@ -439,14 +447,18 @@ DIALOGINNER;
       $innerTbl = "";
     }
 
+    $closerAction = ( $standardSysDialog === 1 ) ? "closeSystemDialog();" : "{$closer}";
+    
+    
   $rtnthis = <<<PAGEHERE
-<table border=0 cellspacing=0 cellpadding=0>
-<tr><td id=systemDialogTitle>{$titleBar}</td><td onclick="closeSystemDialog();" id=systemDialogClose>{$this->closeBtn}</td></tr>
+{$scripter}<table border=0 cellspacing=0 cellpadding=0>
+<tr><td id=systemDialogTitle>{$titleBar}</td><td onclick="{$closerAction}" id=systemDialogClose>{$this->closeBtn}</td></tr>
 <tr><td colspan=2>
   {$innerDialog}
 </td></tr>
 <tr><td colspan=2>{$footerBar}</td></tr>
 </table>
+
 PAGEHERE;
 return $rtnthis;
 }
@@ -2111,6 +2123,7 @@ BTNTBL;
 break;
 
 case 'biogroupdefinition':
+    //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSeg><tr><td><i class="material-icons">cancel</i></td><td>Void Segment</td></tr></table></td>
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnEditDX><tr><td><i class="material-icons">edit</i></td><td>Edit DX</td></tr></table></td>
@@ -2120,7 +2133,7 @@ $innerBar = <<<BTNTBL
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPathologyRpt><tr><td><i class="material-icons">subject</i></td><td>Path Report</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnHPRRecord><tr><td><i class="material-icons">thumbs_up_down</i></td><td>View HPR</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSeg><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSeg><tr><td><i class="material-icons">cancel</i></td><td>Void Segment</td></tr></table></td>
+  
 </tr>
 BTNTBL;
     break;
@@ -2699,7 +2712,7 @@ function bldDialogVoidBG ( $passeddata ) {
   $errorMsg = "";
   //DATA CHECKS GO HERE
    
- 
+
   //DATA CHECKS END HERE
 
   $ency = cryptservice($pdta['bgselector'],'e',false);
@@ -2740,6 +2753,11 @@ return $rtnThis;
 
 }
 
+function bldDialogCoordEditComments ( $passeddata ) { 
+    
+    //{"whichdialog":"dlgCMTEDIT","objid":"HPQ:82454","dialogid":"uXJek9Zu8MXVTqh"}
+    return "THIS IS THE INNER DIALOG " . $passeddata;
+}
 
 function bldDialogAddSegment( $passeddata ) { 
 
@@ -4373,10 +4391,29 @@ $rtnThis .= <<<NEXTLINETWO
   <tr>
 
       <td>  
-      <table class=dataElementTbl id=elemBGCmnt><tr><td class=elementLabel>Biosample Comments</td></tr><tr><td class=dataElement>{$bg['biosamplecomment']}&nbsp;</td></tr></table> 
+      <table class=dataElementTbl id=elemBGCmnt><tr><td class=elementLabel>Biosample Comments</td></tr><tr>
+          <td class=dataElementc>
+          <div class=commentHolder onclick="generateDialog('dlgCMTEDIT', 'BGC:{$bg['bgnbr']}');">
+             <div class=commentdsp>
+                {$bg['biosamplecomment']}                
+             </div>
+             <div class=cmtEditIcon><i class="material-icons cmtEditIconCls">edit</i></div>   
+          </div>
+          </td></tr></table> 
       </td>
 
-
+      <td align=right>  
+      <table class=dataElementTbl id=elemBGCmnt><tr><td class=elementLabel>Question for HPR/QMS Reviewer</td></tr><tr>
+          <td class=dataElementc>
+          <div class=commentHolder onclick="generateDialog('dlgCMTEDIT', 'HPQ:{$bg['bgnbr']}');">
+             <div class=commentdsp>
+                {$bg['questionhpr']}                
+             </div>
+             <div class=cmtEditIcon><i class="material-icons cmtEditIconCls">edit</i></div>   
+          </div>
+          </td></tr></table> 
+      </td>                
+                    
  </tr></table>
 </td></tr>            
 NEXTLINETWO;
