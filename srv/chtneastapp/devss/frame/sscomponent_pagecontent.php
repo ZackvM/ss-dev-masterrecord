@@ -14,15 +14,29 @@ public $checkBtn = "<i class=\"material-icons\">check</i>";
 function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
-    $scripter = "";
     switch($whichdialog) {
-      
-      case 'dlgCMTEDIT':  
+
+      case 'dlgEDTDX':  
         $pdta = json_decode($passedData, true);          
-        $titleBar = "Biogroup Comment Editor";
+        $titleBar = "Diagnosis Designation Editor";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";        
-        //{"whichdialog":"dlgCMTEDIT","objid":"BGC:82454","dialogid":"ZZZ34345"}
+        $innerDialog = bldDialogEditDesigDX( $passedData );
+        //$footerBar = "DONOR RECORD";
+        break;    
+      case 'dlgEDTENC':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Encounter Editor";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";        
+        $innerDialog = bldDialogEditEncounter( $passedData );
+        //$footerBar = "DONOR RECORD";
+        break;
+      case 'dlgCMTEDIT':  
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Comment Editor";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";        
         $innerDialog = bldDialogCoordEditComments( $passedData );        
         //$footerBar = "DONOR RECORD";
       break;    
@@ -451,7 +465,7 @@ DIALOGINNER;
     
     
   $rtnthis = <<<PAGEHERE
-{$scripter}<table border=0 cellspacing=0 cellpadding=0>
+<table border=0 cellspacing=0 cellpadding=0>
 <tr><td id=systemDialogTitle>{$titleBar}</td><td onclick="{$closerAction}" id=systemDialogClose>{$this->closeBtn}</td></tr>
 <tr><td colspan=2>
   {$innerDialog}
@@ -2753,10 +2767,297 @@ return $rtnThis;
 
 }
 
+
+
+
+
+
+
+function bldDialogEditDesigDX( $passeddata ) { 
+//{"whichdialog":"dlgEDTDX","objid":"82454","dialogid":"xW7T9up7KPPGz5R"} 
+  $pdta = json_decode($passeddata, true); 
+  $errorInd = 0;
+  session_start(); 
+  $sess = session_id();
+  require(serverkeys . "/sspdo.zck");
+
+  //TODO:  MAKE WEBSERVICE
+  $siteSQL = "SELECT upper(ifnull(tisstype,'')) as speccat, upper(ifnull(anatomicsite,'')) as psite, upper(ifnull(subSite,'')) as subsite, upper(ifnull(diagnosis,'')) as diagnosis, upper(ifnull(subdiagnos,'')) as subdx, upper(ifnull(metsSite,'')) as metssite, upper(ifnull(sitePosition,'')) as siteposition, upper(ifnull(pdxSystemic,'')) as pdxsystemic  FROM masterrecord.ut_procure_biosample where pBioSample = :pbiosample";
+  $siteR = $conn->prepare($siteSQL);
+  $siteR->execute(array(':pbiosample' => $pdta['objid']));
+
+  $speccat = "";
+  $primesite = "";
+  $subsite = "";
+  if ($siteR->rowCount() === 1) { 
+    $defdx = $siteR->fetch(PDO::FETCH_ASSOC);
+    $speccat = $defdx['speccat'];
+    $primesite = $defdx['psite'];
+    $subsite = $defdx['subsite'];
+  }
+
+  //SPECIMEN CATEGORY
+    $spcData = dropmenuInitialSpecCat( $speccat );
+    $spcmenu = $spcData['menuObj'];
+  //SITE POSITIONS
+    $asiteposData = dropmenuVocASitePositions(); 
+    $aspmenu = $asiteposData['menuObj'];
+  //BASE SITE-SUBSITE MENU
+    $sitesubsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSite READONLY class=\"inputFld\" value=\"{$primesite}\"></div><div class=valueDropDown id=ddPRCSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>"; 
+
+   $subsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSSite READONLY class=\"inputFld\" value=\"{$subsite}\"></div><div class=valueDropDown id=ddPRCSSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>";
+
+   //BASE DX-MOD Menu
+     $dxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCDXModValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCDXMod READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCDXMod><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category & Site)</div></div></div>";
+ 
+ //METASTATIC SITE MENU DROPDOWN
+     $metsData = dropmenuMetsMalignant();
+     $metssite = $metsData['menuObj'];
+     $metsdxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSDXValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCMETSDX READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCMETSDX><center><div style=\"font-size: 1.4vh\">(Choose a Metastatic site)</div></div></div>";
+
+  //SYSTEMIC LIST 
+    $sysData = dropmenuSystemicDXListing(); 
+    $sysdxmenu = $sysData['menuObj'];
+
+
+  $rtnThis = <<<RTNTHIS
+<style>
+
+
+</style>
+
+<table border=0>
+<tr><td>Specimen Category *:&nbsp; </td><td>{$spcmenu}</td></tr>
+<tr><td>Site *:&nbsp;</td><td>{$sitesubsite}</td></tr>
+<tr><td>Sub-Site:&nbsp;</td><td>{$subsite}</td></tr>
+<tr><td>Site Position:&nbsp; </td><td>{$aspmenu}</td></tr>
+<tr><td>Diagnosis :: Modifier</td><td>{$dxmod}</td></tr>
+<tr><td>METS From: &nbsp;</td><td>{$metssite}</td></tr>
+<tr><td>Systemic Diagnosis: &nbsp; </td><td>{$sysdxmenu}</td></tr>
+</table>
+
+
+
+RTNTHIS;
+  return $rtnThis;
+
+}
+
+function bldDialogEditEncounter ( $passeddata ) { 
+  //{"whichdialog":"dlgEDTENC","objid":"569c4a4a-8bca-4a02-9c7b-28d89aac7573","dialogid":"h0gFsujDaQ1SOtC"}
+  $pdta = json_decode($passeddata, true); 
+  $errorInd = 0;
+  session_start(); 
+  $sess = session_id();
+  require(serverkeys . "/sspdo.zck");
+  $objref = explode("::",$pdta['objid']);
+  
+  if ( trim($objref[0]) === "" || trim($objref[1]) === "" ) { 
+      //ERROR
+      $rtnThis = "<table><tr><td><h3>ERROR:  SEE CHTNEastern Informatics personnel</h3></td></tr></table>";
+  } else { 
+
+      //TODO:  MAKE THIS A WEBSERVICE
+      $allPXISQL = "SELECT pxiid, replace(read_label,'_','') as readlabel, upper(concat(ifnull(tisstype,''), if(ifnull(anatomicSite,'')='','',concat(' :: ', ifnull(anatomicSite,''))), if(ifnull(diagnosis,'')='','',concat(' :: ',ifnull(diagnosis,''))))) as dxdesig, upper(ifnull(pxirace,'')) as pxirace, upper(ifnull(pxiGender,'')) as pxisex, ifnull(pxiage,0) as pxiage, ifnull(pxiageuom,1) as pxiageuom, ifnull(chemoind, 2) as chemoind, ifnull(radind,2) as radind, ifnull(subjectnbr,'') as subjectnbr, ifnull(protocolnbr,'') as protocolnbr FROM masterrecord.ut_procure_biosample where pxiid = :pxiid";
+      $allPXIRS = $conn->prepare($allPXISQL); 
+      $allPXIRS->execute(array(':pxiid' => $objref[0])); 
+      $allPXIRef = $allPXIRS->rowCount();
+      $rcCnt = 1;
+
+      $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/age-uoms",serverIdent, serverpw), true);
+      $rarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-race",serverIdent, serverpw), true);
+      $sxarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-sex",serverIdent, serverpw), true);
+      $cxarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-cx",serverIdent, serverpw), true);
+      $rxarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-rx",serverIdent, serverpw), true);
+
+
+      $bgList = "<table border=0 id=matrixTbl><tr><td colspan=30>PHI FOUND ON {$allPXIRef} BIOSAMPLES</td></tr><tr><td>#</td><td>Biogroup<br>Designation</td><td>Age (at procedure)</td><td>Race</td><td>Sex</td><td>Chemo</td><td>Radiation</td><td>Subject #</td><td>Protocol #</td></tr>";
+      while ($r = $allPXIRS->fetch(PDO::FETCH_ASSOC)) { 
+        $idsuffix = generateRandomString(8);
+
+        $agm = "<table border=0 class=\"menuDropTbl ageUOMOptTbl\">";
+        $givendspvalue = "";
+        $givendspcode = "";
+        foreach ($agarr['DATA'] as $agval) {
+          if ( (int)$r['pxiageuom'] === (int)$agval['lookupvalue'] ) { 
+            $givendspcode = $agval['lookupvalue'];
+            $givendspvalue = $agval['menuvalue'];
+          } 
+          $agm .= "<tr><td onclick=\"fillField('dlgFldAgeUOM{$idsuffix}','{$agval['lookupvalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+        }
+        $agm .= "</table>";
+        $ageuommnu = "<div class=menuHolderDiv><input type=hidden id=dlgFldAgeUOM{$idsuffix}Value value=\"{$givendspcode}\"><input type=text class=dlgFldAgeUOM id=dlgFldAgeUOM{$idsuffix} READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddAGEUOM>{$agm}</div></div>";
+
+      $rm = "<table border=0 class=\"menuDropTbl raceOptTbl\">";
+      $rgivendspvalue = "";
+      $rgivendspcode = "";
+      foreach ($rarr['DATA'] as $rval) {
+        if ( strtoupper($rval['lookupvalue']) === strtoupper($r['pxirace']) ) { 
+            $rgivendspcode = $rval['codevalue'];
+            $rgivendspvalue = $rval['menuvalue'];
+          }
+          $rm .= "<tr><td onclick=\"fillField('dlgFldRace{$idsuffix}','{$rval['lookupvalue']}','{$rval['menuvalue']}');\" class=ddMenuItem>{$rval['menuvalue']}</td></tr>";
+        }
+        $rm .= "</table>";
+        $racemnu="<div class=menuHolderDiv><input type=hidden id=dlgFldRace{$idsuffix}Value value=\"{$rgivendspcode}\"><input type=text id=dlgFldRace{$idsuffix} READONLY class=\"inputFld dlgFldRace\" value=\"{$rgivendspvalue}\"><div class=valueDropDown id=ddADDRace>{$rm}</div></div>";
+
+      $sxm = "<table border=0 class=\"menuDropTbl sexOptTbl\">";
+      $sxgivendspvalue = "";
+      $sxgivendspcode = "";
+      foreach ($sxarr['DATA'] as $sxval) {
+        if ($sxval['lookupvalue'] === $r['pxisex'] ) { 
+          $sxgivendspvalue = $sxval['menuvalue'];
+          $sxgivendspcode = $sxval['lookupcode'];
+        } 
+        $sxm .= "<tr><td onclick=\"fillField('dlgFldSex{$idsuffix}','{$sxval['lookupvalue']}','{$sxval['menuvalue']}');\" class=ddMenuItem>{$sxval['menuvalue']}</td></tr>";
+      }
+      $sxm .= "</table>";
+      $sexmnu = "<div class=menuHolderDiv><input type=hidden id=dlgFldSex{$idsuffix}Value value=\"{$sxgivendspcode}\"><input type=text id=dlgFldSex{$idsuffix} READONLY class=\"inputFld dlgFldSex\" value=\"{$sxgivendspvalue}\"><div class=valueDropDown id=ddDNRSex>{$sxm}</div></div>";
+
+      $cxm = "<table border=0 class=\"menuDropTbl cxOptTbl\">";
+      $cxgivendspvalue = "";
+      $cxgivendspcode = "";
+      foreach ($cxarr['DATA'] as $cxval) {
+        if ( (int)$cxval['lookupvalue'] === (int)$r['chemoind'] ) { 
+          $cxgivendspvalue = $cxval['menuvalue'];
+          $cxgivendspcode = $cxval['lookupcode'];
+        } 
+        $cxm .= "<tr><td onclick=\"fillField('dlgFldCX{$idsuffix}','{$cxval['lookupvalue']}','{$cxval['menuvalue']}');\" class=ddMenuItem>{$cxval['menuvalue']}</td></tr>";
+      }
+      $cxm .= "</table>";
+      $cxmnu = "<div class=menuHolderDiv><input type=hidden id=dlgFldCX{$idsuffix}Value value=\"{$cxgivendspcode}\"><input type=text id=dlgFldCX{$idsuffix} READONLY class=\"inputFld dlgFldCX\" value=\"{$cxgivendspvalue}\"><div class=valueDropDown id=ddDNRSex>{$cxm}</div></div>";
+
+      $rxm = "<table border=0 class=\"menuDropTbl cxOptTbl\">";
+      $rxgivendspvalue = "";
+      $rxgivendspcode = "";
+      foreach ($rxarr['DATA'] as $rxval) {
+        if ( (int)$rxval['lookupvalue'] === (int)$r['radind'] ) { 
+          $rxgivendspvalue = $rxval['menuvalue'];
+          $rxgivendspcode = $rxval['lookupcode'];
+        } 
+        $rxm .= "<tr><td onclick=\"fillField('dlgFldRX{$idsuffix}','{$rxval['lookupvalue']}','{$rxval['menuvalue']}');\" class=ddMenuItem>{$rxval['menuvalue']}</td></tr>";
+      }
+      $rxm .= "</table>";
+      $rxmnu = "<div class=menuHolderDiv><input type=hidden id=dlgFldRX{$idsuffix}Value value=\"{$rxgivendspcode}\"><input type=text id=dlgFldRX{$idsuffix} READONLY class=\"inputFld dlgFldRX\" value=\"{$rxgivendspvalue}\"><div class=valueDropDown id=ddDNRSex>{$rxm}</div></div>";
+
+      $ageEditTbl = "<table border=0 cellpadding=0 cellspacing=0><tr><td><input type=text class=dlgFldPHIAge id=\"dlgFldPHIAge{$idsuffix}\" value=\"{$r['pxiage']}\" maxlength=2></td><td style=\"padding: 0 0 0 4px;\">{$ageuommnu}</td></tr></table>";
+      $sbj = "<input type=text class=dlgFldSbjt id=\"dlgFldSbjt{$idsuffix}\" value=\"{$r['subjectnbr']}\">";
+      $prt = "<input type=text class=dlgFldProtocol id=\"dlgFldProtocol{$idsuffix}\" value=\"{$r['protocolnbr']}\">";
+      $sveBtn = "<table class=tblBtn id=btnSaveSeg style=\"width: 6vw;\" onclick=\"alert('{$idsuffix}');\"><tr><td style=\"font-size: 1.1vh;\"><center>Update</td></tr></table>";
+      $bgList .= "<tr><td class=numberer>{$rcCnt}</td><td class=bgiddsp>{$r['readlabel']}<br>{$r['dxdesig']}</td><td>{$ageEditTbl}</td><td>{$racemnu}</td><td>{$sexmnu}</td><td>{$cxmnu}</td><td>{$rxmnu}</td><td>{$sbj}</td><td>{$prt}</td><td>{$sveBtn}</td></tr>";
+      $rcCnt++;
+      }
+      $bgList .= "</table>";
+
+
+  $rtnThis = <<<RTNTHIS
+<style>
+  #holdingTbl { width: 90vw; }
+  #vwarning { font-weight: bold; color: rgba(237, 35, 0,1); } 
+  #instructionsText { text-align: justify; line-height: 1.8em; padding: 8px; }
+  #matrixTbl { font-size: 1.4vh; }
+
+  .numberer { width: 2vw; text-align: center; font-size: 1.1vh; background: rgba(48,57,71,1); color: rgba(255,255,255,1); }
+  .bgiddsp { font-size : 1.1vh; width: 18vw; max-width: 17vw; }
+
+  .dlgFldAgeUOM { width: 6vw; font-size: 1.1vh; }
+  .ageUOMOptTbl { min-width: 7vw; }
+  .dlgFldPHIAge { width: 2.5vw; text-align: right;  font-size: 1.1vh;}
+  .dlgFldRace { width: 12vw;  font-size: 1.1vh;}
+  .raceOptTbl { min-width: 13vw; }
+  .dlgFldSex { width: 6vw;  font-size: 1.1vh;}
+  .sexOptTbl { width: 7vw; }
+  .dlgFldCX { width: 6vw;  font-size: 1.1vh;}
+  .cxOptTbl { min-width: 7vw; }
+  .dlgFldRX { width: 6vw;   font-size: 1.1vh;}
+  .rxOptTbl { min-width: 7vw; }
+  .dlgFldSbjt { width: 12vw; font-size: 1.1vh;}
+  .dlgFldProtocol { width: 12vw; font-size: 1.1vh;}
+
+</style>
+
+<table border=0 id=holdingTbl>
+<tr><td id=instructionsText>
+<b>Instructions</b>: Below is a list of all donor encounters for this donor's id.  When editing the encounter record, make sure that all donor encouters are correct for each biogroup's donor encounter (i.e subject/protocol numbers should only be referenced for those biogroups under which that encounter has happened). If you are unsure how to manage data on this screen <span id=vwarning>DO NOT GUESS</span>, ask either a CHTNEastern Informatics person or a CHTNEastern manager.   
+
+</td></tr>
+<tr><td valign=top>{$bgList}</td></tr>
+</table>
+RTNTHIS;
+  }
+return $rtnThis;
+}
+
+
+
+
+
 function bldDialogCoordEditComments ( $passeddata ) { 
-    
-    //{"whichdialog":"dlgCMTEDIT","objid":"HPQ:82454","dialogid":"uXJek9Zu8MXVTqh"}
-    return "THIS IS THE INNER DIALOG " . $passeddata;
+  $pdta = json_decode($passeddata, true); 
+  $rqstobj = explode(":",$pdta['objid']); 
+  $errorInd = 0;
+  session_start(); 
+  $sess = session_id();
+
+  //TODO:  MAKE THIS A WEBSERVICE
+  switch ( $rqstobj[0] ) { 
+    case 'BGC':
+        $mainLabel = "Biogroup Comments";
+        $cSQL = "SELECT ifnull(biosamplecomment,'') as dspcomment FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
+        $cType = "BIOSAMPLE";
+        break;
+    case 'HPQ':
+        $mainLabel = "Question for HPR/QMS Reviewer";
+        $cSQL = "SELECT ifnull(questionHPR,'') as dspcomment FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
+        $cType = "HPRQ";
+        break;    
+    default:   
+      $errorInd = 1;    
+  }
+  //{"whichdialog":"dlgCMTEDIT","objid":"HPQ:82454","dialogid":"uXJek9Zu8MXVTqh"}
+  $rtnThis = "";
+  if ( $errorInd === 1 ) { 
+    //DISPLAY ERROR
+  } else {
+    require(serverkeys . "/sspdo.zck");
+    $at = genAppFiles;
+    $serverAccess = generateRandomString(20);
+
+    $accSQL = "insert into serverControls.ss_srvIdents (sessid, accesscode, onwhen) values (:sess,:acc ,now())";
+    $accR = $conn->prepare($accSQL);
+    $accR->execute(array(':sess' => $sess, ':acc' => $serverAccess));
+
+    $idarr['commenttype'] = $cType;
+    $idarr['record'] = cryptservice($rqstobj[1],'e');
+    $idarr['access'] = cryptservice($serverAccess,'e');
+    $IDTHIS = json_encode($idarr);
+
+    $rs = $conn->prepare($cSQL);
+    $rs->execute(array(':pbiosample' => $rqstobj[1]));
+    $r = $rs->fetch(PDO::FETCH_ASSOC);
+
+    $waitpic = base64file("{$at}/publicobj/graphics/zwait2.gif", "waitgifcmt", "gif", true);         
+
+
+    $rtnThis = <<<RTNTHIS
+<style>
+#fldDspBGComment { width: 50vw; height: 10vh; font-size: 1.5vh; padding: 5px; box-sizing: border-box; background: rgba(255,255,255,1); } 
+#waitgifcmt { width: 1vw; }
+#waitDsp { display: none; width: 50vw; }
+</style>
+<form id=frmBGCommentUpdater>
+<table border=0>
+<tr><td><center><div id=waitDsp>{$waitpic}<br>Please wait ...</div></td></tr>
+<tr><td class=fldLabel id=dspLineOne>{$mainLabel}</td></tr>
+<tr><td id=dspLineTwo><TEXTAREA id=fldDspBGComment>{$r['dspcomment']}</TEXTAREA></td></tr>
+<tr><td align=right id=dspLineThree><table class=tblBtn id=btnSaveBGComment style="width: 6vw;" onclick="dlgSaveBGComments();"><tr><td><center>Save</td></tr></table></td></tr>
+</table>
+<input type=hidden id=fldID value={$IDTHIS}>
+</form>
+RTNTHIS;
+
+  }
+  return $rtnThis;
 }
 
 function bldDialogAddSegment( $passeddata ) { 
@@ -4319,17 +4620,17 @@ TOPLINE;
       $rtnThis .= <<<LINEONE
 <table border=0 width=100%>
   <tr>
-      <td><table class=dataElementTbl id=elemSpecCat><tr><td class=elementLabel>Specimen Category</td></tr><tr><td class=dataElement>{$bg['specimencategory']}&nbsp;</td></tr></table></td>
-      <td><table class=dataElementTbl id=elemSite><tr><td class=elementLabel>Collected Site (Site :: Subsite)</td></tr><tr><td class=dataElement>{$bg['collectedsite']}&nbsp;</td></tr></table></td>
-      <td><table class=dataElementTbl id=elemDX><tr><td class=elementLabel>Diagnosis :: Modifier</td></tr><tr><td class=dataElement>{$bg['diagnosis']}&nbsp;</td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSpecCat><tr><td class=elementLabel>Specimen Category</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['specimencategory']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSite><tr><td class=elementLabel>Collected Site (Site :: Subsite)</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['collectedsite']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemDX><tr><td class=elementLabel>Diagnosis :: Modifier</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['diagnosis']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
   </tr>
 </table>
 
 <table border=0 width=100%>
   <tr>
-      <td><table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From *<div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement>{$bg['mets']}&nbsp;</td></tr></table></td>
-      <td><table class=dataElementTbl id=elemSystemic><tr><td class=elementLabel>Systemic Diagnosis</td></tr><tr><td class=dataElement>{$bg['systemicdx']}&nbsp;</td></tr></table></td>
-      <td><table class=dataElementTbl id=elemPosition><tr><td class=elementLabel>Site Position</td></tr><tr><td class=dataElement>{$bg['siteposition']}&nbsp;</td></tr></table></td>
+      <td><table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From *<div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['mets']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSystemic><tr><td class=elementLabel>Systemic Diagnosis</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['systemicdx']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemPosition><tr><td class=elementLabel>Site Position</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['siteposition']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
   </tr>
 </table>
 
@@ -4341,7 +4642,8 @@ ANOTHERLINE;
       //END DESIGNATION
 
                                     
-//PHI INFORMATION                         
+      //PHI INFORMATION
+//generateDialog('dlgEncountARS', 'ENC:ARS:/PXIID/');
 $rtnThis .= <<<NEXTLINE
 <tr><td>
     
@@ -4357,11 +4659,11 @@ $rtnThis .= <<<NEXTLINE
       </td>      
    
       <td>  
-      <table class=dataElementTbl id=elemARS><tr><td class=elementLabel>Age - Race - Sex</td></tr><tr><td class=dataElement>{$bg['phiage']} - {$bg['phirace']} - {$bg['phisex']}&nbsp;</td></tr></table> 
+      <table class=dataElementTbl id=elemARS><tr><td class=elementLabel>Age :: Race :: Sex</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTENC','{$bg['pxiid']}::{$bg['bgnbr']}');">{$bg['phiage']} :: {$bg['phirace']} :: {$bg['phisex']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table> 
       </td>      
 
       <td>  
-      <table class=dataElementTbl id=elemCXRX><tr><td class=elementLabel>Chemo - Radiation Indicator</td></tr><tr><td class=dataElement>{$bg['cxind']} - {$bg['rxind']} &nbsp;</td></tr></table> 
+      <table class=dataElementTbl id=elemCXRX><tr><td class=elementLabel>Chemo :: Radiation Indicator</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTENC','{$bg['pxiid']}::{$bg['bgnbr']}');">{$bg['cxind']} :: {$bg['rxind']} &nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table> 
       </td>
 
       <td>  
@@ -4369,7 +4671,7 @@ $rtnThis .= <<<NEXTLINE
       </td>
 
       <td>  
-      <table class=dataElementTbl id=elemSbj><tr><td class=elementLabel>Subject - Protocol Numbers</td></tr><tr><td class=dataElement>{$bg['subjectnbr']} - {$bg['protocolnbr']} &nbsp;</td></tr></table> 
+      <table class=dataElementTbl id=elemSbj><tr><td class=elementLabel>Subject :: Protocol Numbers</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTENC','{$bg['pxiid']}::{$bg['bgnbr']}');">{$bg['subjectnbr']} :: {$bg['protocolnbr']} &nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table> 
       </td>   
 
       <td align=right>  

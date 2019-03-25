@@ -77,7 +77,16 @@ function rowselector(whichrow) {
         }
   }
 }
-        
+
+function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) { 
+  if (byId(whichfield)) { 
+    if (byId(whichfield+'Value')) {
+      byId(whichfield+'Value').value = whatvalue;
+    }    
+    byId(whichfield).value = whatplaintext; 
+  }
+}
+
 function generateDialog( whichdialog, whatobject ) { 
       var dta = new Object(); 
       dta['whichdialog'] = whichdialog;
@@ -108,6 +117,9 @@ function answerPreprocessGenerateDialog( rtnData ) {
         d.innerHTML = dta['DATA']['pageElement'];
         document.body.appendChild(d);
         byId(dta['DATA']['dialogID']).style.display = 'block';
+        if ( dta['DATA']['primeFocus'].trim() !== "" ) { 
+          byId(dta['DATA']['primeFocus'].trim()).focus();
+        }
         byId('standardModalBacker').style.display = 'block';
   }
 }
@@ -116,6 +128,38 @@ function closeThisDialog(dlog) {
    byId(dlog).parentNode.removeChild(byId(dlog));
    byId('standardModalBacker').style.display = 'none';        
 }
+
+function dlgSaveBGComments() {
+   if ( byId('fldDspBGComment') && byId('fldID') ) { 
+     var obj = new Object();
+     byId('waitDsp').style.display = 'block';
+     byId('dspLineOne').style.display = 'none';
+     byId('dspLineTwo').style.display = 'none';
+     byId('dspLineThree').style.display = 'none';
+     obj['comment'] = byId('fldDspBGComment').value;
+     obj['key'] = byId('fldID').value;
+     var passdta = JSON.stringify(obj);
+     var mlURL = "/data-doers/dialog-action-save-comments";
+     universalAJAX("POST",mlURL,passdta,answerDLGSaveBGComments,2);
+   }
+}
+
+function answerDLGSaveBGComments( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('waitDsp').style.display = 'none';
+    byId('dspLineOne').style.display = 'block';
+    byId('dspLineTwo').style.display = 'block';
+    byId('dspLineThree').style.display = 'block';
+   } else { 
+      location.reload(true);
+   }
+} 
 
 JAVASCR;
 return $rtnThis;

@@ -340,6 +340,11 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 .cmtEditIconCls { font-size: 2.5vh; color: rgba({$this->color_darkgrey},.5); }
 .commentHolder:hover .cmtEditIconCls { color: rgba({$this->color_bred}, .6); }
 
+.basicEditIcon {   position: absolute; right: 3px; top: -7px; font-size: 1vh; }
+
+
+
+
 .segstatusdspinfo { position: relative; }
 .segstatusinfo { position: absolute; top: 30px; left: 30px; white-space: nowrap; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 4px; box-sizing: border-box; display: none; z-index: 55; }
 .segstatusdspinfo:hover .segstatusinfo { display: block; }
@@ -384,8 +389,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 
 #qmsstatind { width: 1.8vw; height: 3.8vh; border: 1px solid rgba({$this->color_zackgrey},1); text-align: center; color: rgba({$this->color_white},1); }
 
-.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; }
-
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; } 
 STYLESHEET;
 return $rtnThis;
 }

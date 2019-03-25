@@ -62,6 +62,90 @@ class datadoers {
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;   
     }
+
+    function dialogactionsavecomments ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      session_start();
+      $sess = session_id();
+      $pdta = json_decode($passdata, true);
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      require(serverkeys . "/sspdo.zck");
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      if ( $authuser !== $authchk || $authuser !== $sess ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } 
+      $chkUsrSQL = "SELECT originalaccountname, emailaddress FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrR = $conn->prepare($chkUsrSQL); 
+      $chkUsrR->execute(array(':sess' => $sess));
+      if ($chkUsrR->rowCount() <> 1) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your Session has expired, your password has expired, or don't have access to the coordinator function"));
+      } else { 
+        $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
+      }
+
+      //{"comment":"HPR - 90T, RARE!","key":"{\"commenttype\":\"BIOSAMPLE\",\"record\":\"M0lsaFhOUURZaE9UZlJIVHY0aklidz09\",\"access\":\"cHNyWDdYa2dmaEJPRkdvaFF2MzdTS01TZWlGajBjMGxwOTFFSnp3NWtOdz0=\"}"}
+      ( !array_key_exists('comment', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'comments' missing from passed data")) : "";
+      ( !array_key_exists('key', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'key' missing from passed data")) : ( trim($pdta['key']) === '' )  ? (list( $errorInd, $msgArr[] ) = array(1 , "Key Cannot be empty - See a CHTNEastern Informatics Person")) : "";
+
+
+      if ( $errorInd === 0 ) { 
+        $key = json_decode($pdta['key'] , true);
+        ( !array_key_exists('commenttype', $key) || !array_key_exists('record', $key) || !array_key_exists('access', $key) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Key Data Structure is incorrect")) : "";        
+      }
+
+      if ( $errorInd === 0 ) {
+        ( trim($key['commenttype']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "COMMENT TYPE CANNOT BE EMPTY")) : "";
+        ( trim($key['record']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "RECORD CANNOT BE EMPTY")) : "";
+        ( trim($key['access']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SECURITY ISSUE")) : "";
+      }
+
+      if ( $errorInd === 0 ) {
+        ( trim($key['commenttype']) !== 'HPRQ' && trim($key['commenttype']) !== 'BIOSAMPLE' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "COMMENT TYPE CAN ONLY BE BIOSAMPLE OR HPR QUESTION")) : "";
+        $recordid = cryptservice( $key['record'],'d' );
+        ( trim($recordid) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "RECORD ID IS INCORRECT")) : "";
+        $access = cryptservice( $key['access'] , 'd' );
+        ( trim($access) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SECURITY ISSUE")) : "";
+      }
+
+      if ( $errorInd === 0 ) {
+        $accessSQL = "select * from serverControls.ss_srvIdents where accesscode = :akey and sessid = :sess and timestampdiff(minute, onwhen, now()) < 60";
+        $accessR = $conn->prepare($accessSQL);
+        $accessR->execute(array(':sess' => $sess, ':akey' => $access));
+        ( $accessR->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SECURITY KEY DOES NOT EXIST OR HAS EXPIRED.  SEE A CHTN INFORMATICS PERSON")) : "";
+      }
+
+      if ( $errorInd === 0 ) { 
+        //COMMIT CHANGES
+        if ( $key['commenttype'] === 'BIOSAMPLE') {
+          $captureHistSQL = "insert into masterrecord.history_procure_biosample_comments (biosample, previouscomment, commenttype, commentupdatedon, commentupdatedby) SELECT pbiosample, biosamplecomment, 'BIOSAMPLECOMMENT', now(), 'proczack' FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample"; 
+          $updateSQL = "update masterrecord.ut_procure_biosample set biosamplecomment = :newComment where pbiosample = :pbiosample";
+        } 
+        if ( $key['commenttype'] === 'HPRQ' ) { 
+          $captureHistSQL = "insert into masterrecord.history_procure_biosample_comments (biosample, previouscomment, commenttype, commentupdatedon, commentupdatedby) SELECT pbiosample, questionHPR, 'HPRQUESTION', now(), 'proczack' FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample"; 
+          $updateSQL = "update masterrecord.ut_procure_biosample set questionHPR = :newComment where pbiosample = :pbiosample";
+        }
+        $capR = $conn->prepare($captureHistSQL); 
+        $capR->execute(array(':pbiosample' => $recordid));
+        $updR = $conn->prepare($updateSQL);
+        $updR->execute(array(':newComment' => $pdta['comment'], ':pbiosample' => $recordid));
+        $delSrvSQL = "delete FROM serverControls.ss_srvIdents where timestampdiff( minute, onwhen, now()) > 60";
+        $delSrvR = $conn->prepare($delSrvSQL); 
+        $delSrvR->execute();  
+        $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;           
+    }
     
     function preprocessgeneratedialog ( $request, $passdata ) { 
       $rows = array(); 
@@ -77,29 +161,52 @@ class datadoers {
       $authuser = $_SERVER['PHP_AUTH_USER']; 
       $authpw = $_SERVER['PHP_AUTH_PW'];      
       require(serverkeys . "/sspdo.zck");
-       $authchk = cryptservice($authpw,'d', true, $authuser);
-       if ( $authuser !== $authchk || $authuser !== $sess ) {
-          (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
-       } 
-       $chkUsrSQL = "SELECT originalaccountname, emailaddress FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
-       $chkUsrR = $conn->prepare($chkUsrSQL); 
-       $chkUsrR->execute(array(':sess' => $sess));
-       if ($chkUsrR->rowCount() <> 1) { 
-         (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your Session has expired, your password has expired, or don't have access to the coordinator function"));
-       } else { 
-         $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
-       }
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      if ( $authuser !== $authchk || $authuser !== $sess ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } 
+      $chkUsrSQL = "SELECT originalaccountname, emailaddress FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrR = $conn->prepare($chkUsrSQL); 
+      $chkUsrR->execute(array(':sess' => $sess));
+      if ($chkUsrR->rowCount() <> 1) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your Session has expired, your password has expired, or don't have access to the coordinator function"));
+      } else { 
+        $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
+      }
        //{"whichdialog":"CMTEDIT","objid":"BGC:82454"}
-       ( !array_key_exists('whichdialog', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'whichdialog' missing from passed data")) : ( trim($pdta['whichdialog']) === '' )  ? (list( $errorInd, $msgArr[] ) = array(1 , "Dialog Not Specified")) : "";
-       ( !array_key_exists('objid', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'objid' missing from passed data")) : ( trim($pdta['objid']) === '' )  ? (list( $errorInd, $msgArr[] ) = array(1 , "Object Not Specified")) : "";
+      ( !array_key_exists('whichdialog', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'whichdialog' missing from passed data")) : ( trim($pdta['whichdialog']) === '' )  ? (list( $errorInd, $msgArr[] ) = array(1 , "Dialog Not Specified")) : "";
+      ( !array_key_exists('objid', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'objid' missing from passed data")) : ( trim($pdta['objid']) === '' )  ? (list( $errorInd, $msgArr[] ) = array(1 , "Object Not Specified")) : "";
 
        //TODO - CHECK VALID OBJID      
-       if ( $errorInd === 0 ) { 
-          $pdta['dialogid'] = generateRandomString(15); 
-          $newpassdata = json_encode($pdta); 
-          $dlgPage = bldDialogGetter($pdta['whichdialog'], $newpassdata );
-          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => '12vw', 'top' => '13vh');
-          $responseCode = 200;
+      if ( $errorInd === 0 ) { 
+ 
+         $pdta['dialogid'] = generateRandomString(15); 
+         $newpassdata = json_encode($pdta); 
+         $dlgPage = bldDialogGetter($pdta['whichdialog'], $newpassdata );
+
+         $left = '5vw';
+         $top = '13vh';
+         $primeFocus = '';
+         switch ( $pdta['whichdialog'] ) { 
+           case 'dlgCMTEDIT':
+             $primeFocus = "fldDspBGComment";
+             $left = '25vw';
+             $top = '15vh';
+             break;
+           case 'dlgEDTENC':
+             $primeFocus = "";
+             $left = '5vw';
+             $top = '12vh';
+             break;
+           case 'dlgEDTDX':
+             $primeFocus = "";
+             $left = '25vw';
+             $top = '12vh';
+             break;
+         }
+
+         $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);
+         $responseCode = 200;
        }
        
        $msg = $msgArr;
