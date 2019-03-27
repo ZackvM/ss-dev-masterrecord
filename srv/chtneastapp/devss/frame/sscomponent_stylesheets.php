@@ -233,7 +233,7 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 /* DROP DOWN TABLES */
 .menuHolderDiv { position: relative; }
 .menuHolderDiv:hover .valueDropDown { display: block; cursor: pointer; }
-.valueDropDown {background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .1vh; min-height: 15vh; max-height: 33vh; overflow: auto; display: none; z-index: 25; }
+.valueDropDown {background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .07vh; min-height: 15vh; max-height: 33vh; overflow: auto; display: none; z-index: 25; }
 .menuDropTbl { font-size: 1.8vh; padding: .6vh .1vw .6vh .1vw; white-space: nowrap; background: rgba({$this->color_white},1); width: 100%; }
 
 .inputiconcontainer { position: relative; }

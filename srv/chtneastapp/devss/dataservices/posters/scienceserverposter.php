@@ -63,6 +63,66 @@ class datadoers {
       return $rows;   
     }
 
+    function validatechtnvocabulary ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      session_start();
+      $sess = session_id();
+      $pdta = json_decode($passdata, true);
+      //{"speccat":"MALIGNANT","psite":"BLADDER","subsite":"SEROSA","dx":"CARCINOMA :: UROTHELIAL (TRANSITIONAL CELL)","metssite":"KIDNEY","siteposition":"LEFT","pdxsystemic":"ZACKITIS"}
+      //$authuser = $_SERVER['PHP_AUTH_USER']; 
+      //$authpw = $_SERVER['PHP_AUTH_PW'];      
+      require(serverkeys . "/sspdo.zck");
+
+      
+      //CHECK MAIN VOCAB
+      $mainSQL = "SELECT vocabid FROM four.sys_master_menu_vocabulary where 1 = 1 and specimencategory = :spc and site = :ste";
+      $mainSQL .= ( trim($pdta['subsite']) !== "" ) ? " and subsite = :sste " : "";
+      $mainSQL .= ( trim($pdta['dx']) !== "" ) ? " and REPLACE(diagnosis,'\\\', '::') = :dx " : "";
+      $mainRS = $conn->prepare($mainSQL);
+      $exeArr[':spc'] = $pdta['speccat'];
+      $exeArr[':ste'] = $pdta['psite'];
+      if ( trim($pdta['subsite']) !== "" ) { $exeArr[':sste'] = $pdta['subsite']; }
+      if ( trim($pdta['dx']) !== "" ) { $exeArr[':dx'] = $pdta['dx']; }
+      $mainRS->execute($exeArr);
+      $cntMain = $mainRS->rowCount();
+
+      $cntSys = 0; 
+      if ( trim($pdta['pdxsystemic']) !== "" ) { 
+        $sysSQL = "SELECT * FROM four.sys_master_menu_vocabulary where systemicIndicator = 1  and diagnosis = :sysdx";
+        $sysRS = $conn->prepare($sysSQL); 
+        $sysRS->execute(array(':sysdx' => $pdta['pdxsystemic']));
+        $cntSys = $sysRS->rowCount();
+      } else { 
+        $cntSys = 1;
+      }
+
+      $cntMets = 0;
+      if ( trim($pdta['metssite']) !== "" ) { 
+        $metsSQL = "select * from (SELECT distinct site as chksite FROM four.sys_master_menu_vocabulary where ifnull(site,'') <> '') vocsitecheck where vocsitecheck.chksite = :metssite";
+        $metsRS = $conn->prepare($metsSQL); 
+        $metsRS->execute(array(':metssite' => $pdta['metssite']));
+        $cntMets = $metsRS->rowCount();
+      } else { 
+        $cntMets = 1;
+      }
+
+
+      $dta =  array( 'mainvocchk' => $cntMain, 'systemicvocchk' =>  $cntSys, 'metsvocchk' => $cntMets);
+
+
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;           
+    }
+
     function dialogactionsavecomments ( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 
@@ -200,7 +260,7 @@ class datadoers {
              break;
            case 'dlgEDTDX':
              $primeFocus = "";
-             $left = '25vw';
+             $left = '34vw';
              $top = '12vh';
              break;
          }

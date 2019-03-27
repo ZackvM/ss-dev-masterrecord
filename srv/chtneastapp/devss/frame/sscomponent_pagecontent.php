@@ -2138,9 +2138,9 @@ break;
 
 case 'biogroupdefinition':
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSeg><tr><td><i class="material-icons">cancel</i></td><td>Void Segment</td></tr></table></td>
+    //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnEditDX><tr><td><i class="material-icons">edit</i></td><td>Edit DX</td></tr></table></td>
 $innerBar = <<<BTNTBL
 <tr>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnEditDX><tr><td><i class="material-icons">edit</i></td><td>Edit DX</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnSeeAssocGrp><tr><td><i class="material-icons">group_work</i></td><td>Associative</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPHIRecord><tr><td><i class="material-icons">group</i></td><td>Encounter</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPristine><tr><td><i class="material-icons">change_history</i></td><td>Pristine</td></tr></table></td>
@@ -2774,7 +2774,6 @@ return $rtnThis;
 
 
 function bldDialogEditDesigDX( $passeddata ) { 
-//{"whichdialog":"dlgEDTDX","objid":"82454","dialogid":"xW7T9up7KPPGz5R"} 
   $pdta = json_decode($passeddata, true); 
   $errorInd = 0;
   session_start(); 
@@ -2782,58 +2781,96 @@ function bldDialogEditDesigDX( $passeddata ) {
   require(serverkeys . "/sspdo.zck");
 
   //TODO:  MAKE WEBSERVICE
-  $siteSQL = "SELECT upper(ifnull(tisstype,'')) as speccat, upper(ifnull(anatomicsite,'')) as psite, upper(ifnull(subSite,'')) as subsite, upper(ifnull(diagnosis,'')) as diagnosis, upper(ifnull(subdiagnos,'')) as subdx, upper(ifnull(metsSite,'')) as metssite, upper(ifnull(sitePosition,'')) as siteposition, upper(ifnull(pdxSystemic,'')) as pdxsystemic  FROM masterrecord.ut_procure_biosample where pBioSample = :pbiosample";
+  $siteSQL = "SELECT upper(ifnull(tisstype,'')) as speccat, upper(ifnull(anatomicsite,'')) as psite, upper(ifnull(subSite,'')) as subsite, concat( upper(ifnull(diagnosis,'')),  if (ifnull(subdiagnos,'') = '','',concat(' :: ', upper(ifnull(subdiagnos,''))))) as dx, upper(ifnull(metsSite,'')) as metssite, upper(ifnull(sitePosition,'')) as siteposition, upper(ifnull(pdxSystemic,'')) as pdxsystemic  FROM masterrecord.ut_procure_biosample where pBioSample = :pbiosample";
   $siteR = $conn->prepare($siteSQL);
   $siteR->execute(array(':pbiosample' => $pdta['objid']));
 
   $speccat = "";
   $primesite = "";
   $subsite = "";
+  $sitePos = "";
+  $dx = "";
+  $met = "";
+  $sysdx = "";
+  $goodMainVocab = 0;
+  $goodSysVocab = 0;
+  $goodMetsVocab = 0;
   if ($siteR->rowCount() === 1) { 
     $defdx = $siteR->fetch(PDO::FETCH_ASSOC);
+    $payload = json_encode($defdx);
+    //{"speccat":"MALIGNANT","psite":"BLADDER","subsite":"SEROSA","dx":"CARCINOMA :: UROTHELIAL (TRANSITIONAL CELL)","metssite":"KIDNEY","siteposition":"LEFT","pdxsystemic":"ZACKITIS"}
     $speccat = $defdx['speccat'];
     $primesite = $defdx['psite'];
     $subsite = $defdx['subsite'];
+    $sitePos = $defdx['siteposition'];
+    $dx = $defdx['dx'];
+    $met = $defdx['metssite'];
+    $sysdx = $defdx['pdxsystemic'];
+    $voccheck = json_decode(callrestapi("POST", dataTree . "/data-doers/validate-chtn-vocabulary",serverIdent, serverpw, $payload), true);
+    //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"mainvocchk":1,"systemicvocchk":0,"metsvocchk":1}}
+    $goodMainVocab = $voccheck['DATA']['mainvocchk'];
+    $goodSysVocab =  $voccheck['DATA']['systemicvocchk'];
+    $goodMetsVocab = $voccheck['DATA']['metsvocchk'];
   }
 
+  $vocMain = ( (int)$goodMainVocab <> 0 ) ? "Vocabulary Match Found" : "<span class=badvocabind>No Vocabulary Match Found</span>";
+  $vocSyst = ( (int)$goodSysVocab <> 0 ) ? "Vocabulary Match Found" : "<span class=badvocabind>No Vocabulary Match Found</span>";
+  $vocMets = ( (int)$goodMetsVocab <> 0 ) ? "Vocabulary Match Found" : "<span class=badvocabind>No Vocabulary Match Found</span>";
+
+
+  $preambleTxt = "This dialog allow you to edit the diagnosis designation parameters of a biosample.  You must be aware that the CHTNEastern over time has used multiple vocabluaries.  At the end of this paragraph is a denotation as to whether the vocabulary is correct to the present CHTN Network's vocabulary.  If you change any values to get the 'Save' button, you must unlock the form which will blank all values.<center> <table><tr><td><b>Main Designation</b>:</td><td>{$vocMain}</td></tr><tr><td><b>Systemic</b>:</td><td>{$vocSyst}</td></tr><tr><td><b>Metastatic</b>:</td><td>{$vocMets}</td></tr></table>"; 
+
+
   //SPECIMEN CATEGORY
-    $spcData = dropmenuInitialSpecCat( $speccat );
+    $spcData = dropmenuInitialSpecCat( $speccat, 'bgvocabedit' );
     $spcmenu = $spcData['menuObj'];
   //SITE POSITIONS
-    $asiteposData = dropmenuVocASitePositions(); 
+    $asiteposData = dropmenuVocASitePositions( $sitePos ); 
     $aspmenu = $asiteposData['menuObj'];
   //BASE SITE-SUBSITE MENU
-    $sitesubsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSite READONLY class=\"inputFld\" value=\"{$primesite}\"></div><div class=valueDropDown id=ddPRCSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>"; 
+    $sitesubsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSite READONLY class=\"inputFld\" value=\"{$primesite}\"></div><div class=\"valueDropDown vocEditTbl\" id=ddPRCSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>"; 
 
-   $subsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSSite READONLY class=\"inputFld\" value=\"{$subsite}\"></div><div class=valueDropDown id=ddPRCSSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>";
+   $subsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSSite READONLY class=\"inputFld\" value=\"{$subsite}\"></div><div class=\"valueDropDown vocEditTbl\" id=ddPRCSSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>";
 
    //BASE DX-MOD Menu
-     $dxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCDXModValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCDXMod READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCDXMod><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category & Site)</div></div></div>";
+     $dxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCDXModValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCDXMod READONLY class=\"inputFld\" value=\"{$dx}\"></div><div class=\"valueDropDown vocEditTbl\" id=ddPRCDXMod><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category & Site)</div></div></div>";
  
  //METASTATIC SITE MENU DROPDOWN
-     $metsData = dropmenuMetsMalignant();
+     $metsData = dropmenuMetsMalignant( $met );
      $metssite = $metsData['menuObj'];
      $metsdxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSDXValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCMETSDX READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCMETSDX><center><div style=\"font-size: 1.4vh\">(Choose a Metastatic site)</div></div></div>";
 
   //SYSTEMIC LIST 
-    $sysData = dropmenuSystemicDXListing(); 
+    $sysData = dropmenuSystemicDXListing( $sysdx ); 
     $sysdxmenu = $sysData['menuObj'];
 
 
   $rtnThis = <<<RTNTHIS
 <style>
-
-
+  #vocHoldTbl { width: 32vw; font-size: 1.3vh; } 
+  #preambleTxt { text-align: justify; line-height: 1.8em; width: 35vw; box-sizing: border-box; padding: 8px; font-size: 1.3vh; }
+  #fldPRCSpecCat { font-size: 1.3vh; padding: 1vh .5vw 1vh .5vw; width: 25vw; }
+  #fldPRCSite { font-size: 1.3vh; padding: 1vh .5vw 1vh .5vw; width: 25vw; }
+  #fldPRCSSite {  font-size: 1.3vh; padding: 1vh .5vw 1vh .5vw; width: 25vw; }
+  #fldPRCDXMod {  font-size: 1.3vh; padding: 1vh .5vw 1vh .5vw; width: 25vw; }
+  #fldPRCMETSSite  {  font-size: 1.3vh; padding: 1vh .5vw 1vh .5vw; width: 25vw; }
+  #fldPRCSitePosition { font-size: 1.3vh; padding: 1vh .5vw 1vh .5vw; width: 25vw; }
+  #fldPRCSystemList { font-size: 1.3vh; padding: 1vh .5vw 1vh .5vw; width: 25vw; }
+  .vocEditTbl { min-width: 25vw; }
+  .badvocabind { font-weight: bold; color: rgba(237, 35, 0, 1); }
 </style>
-
-<table border=0>
-<tr><td>Specimen Category *:&nbsp; </td><td>{$spcmenu}</td></tr>
-<tr><td>Site *:&nbsp;</td><td>{$sitesubsite}</td></tr>
+<table>
+<tr><td colspan=2 id=preambleTxt> {$preambleTxt}</td></tr>
+</table>
+<table border=0 id=vocHoldTbl>
+<tr><td>Specimen Category:&nbsp; </td><td>{$spcmenu}</td></tr>
+<tr><td>Site:&nbsp;</td><td>{$sitesubsite}</td></tr>
 <tr><td>Sub-Site:&nbsp;</td><td>{$subsite}</td></tr>
 <tr><td>Site Position:&nbsp; </td><td>{$aspmenu}</td></tr>
-<tr><td>Diagnosis :: Modifier</td><td>{$dxmod}</td></tr>
+<tr><td>Diagnosis :: Modifier: &nbsp;</td><td>{$dxmod}</td></tr>
 <tr><td>METS From: &nbsp;</td><td>{$metssite}</td></tr>
 <tr><td>Systemic Diagnosis: &nbsp; </td><td>{$sysdxmenu}</td></tr>
+<tr><td colspan=2 align=right> <table class=tblBtn id=btnADDQMSSegs style="width: 6vw;" onclick="editVocab();"><tr><td style=" font-size: 1.1vh;"><center><span id=buttnText>Unlock</span></td></tr></table> </td></tr>
 </table>
 
 
@@ -4112,29 +4149,42 @@ function dropmenuCXIndicator( $dspvalue ) {
   return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 }
 
-function dropmenuSystemicDXListing() { 
+function dropmenuSystemicDXListing( $defaultVal ) { 
   $si = serverIdent;
   $sp = serverpw;
   $asparr = json_decode(callrestapi("GET", dataTree . "/global-menu/vocabulary-systemic-dx-list",$si,$sp),true);
   $asp = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCSystemList','','');\" class=ddMenuClearOption>[clear]</td></tr>";
-  $aspDefaultValue = "";
-  $aspDefaultDsp = "";
+
+  if ($defaultVal === "" ) {
+    $aspDefaultValue = "";
+    $aspDefaultDsp = "";
+  } else { 
+    $aspDefaultValue = "";
+    $aspDefaultDsp = $defaultVal;
+  }
+
+
   foreach ($asparr['DATA'] as $aspval) {
     $asp .= "<tr><td onclick=\"fillField('fldPRCSystemList','{$aspval['codevalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
   }
   $asp .= "</table>";
   $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSystemListValue value=\"\">"
-          . "<div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSystemList READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCSystemList>{$asp}</div></div>";
+          . "<div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSystemList READONLY class=\"inputFld\" value=\"{$aspDefaultDsp}\"></div><div class=\"valueDropDown vocEditTbl\" id=ddPRCSystemList>{$asp}</div></div>";
   return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 }
 
-function dropmenuVocASitePositions() { 
+function dropmenuVocASitePositions( $defaultDsp ) { 
   $si = serverIdent;
   $sp = serverpw;
   $asparr = json_decode(callrestapi("GET", dataTree . "/global-menu/vocabulary-site-positions",$si,$sp),true);
-  $asp = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCSitePosition','','');\" class=ddMenuClearOption>[clear]</td></tr>";
-  $aspDefaultValue = "";
-  $aspDefaultDsp = "";
+  $asp = "<table border=0 class=\"menuDropTbl vocEditTbl\"><tr><td align=right onclick=\"fillField('fldPRCSitePosition','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  if ( $defaultDsp === "" ) {
+    $aspDefaultValue = "";
+    $aspDefaultDsp = "";
+  } else { 
+    $aspDefaultValue = "";
+    $aspDefaultDsp = $defaultDsp;
+  }
   foreach ($asparr['DATA'] as $aspval) {
       if ( (int)$aspval['useasdefault'] === 1 ) {
         $aspDefaultValue = $aspval['lookupvalue']; 
@@ -4222,20 +4272,28 @@ function dropmenuCollectionType($givenlookup) {
   return array('menuObj' => $collectionType,'defaultDspValue' => $collectionDefaultDsp, 'defaultLookupValue' => $collectionDefaultValue);
 } 
 
-function dropmenuMetsMalignant() { 
+function dropmenuMetsMalignant( $defaultVal ) { 
   $pdta = array();  
   $pdta['specimencategory'] = 'MALIGNANT';
   $passdata = json_encode($pdta);
   $menudtaarr = json_decode(callrestapi("POST",dataTree."/data-doers/sites-by-specimen-category",serverIdent,serverpw,$passdata), true);
-   $metsm = "<table border=0 class=menuDropTbl>";
+  $metsm = "<table border=0 class=menuDropTbl>";
+
+  if ( $defaultVal === "" ) { 
    $metsDefaultValue = "";
    $metsDefaultDsp = "";
+  } else { 
+   $metsDefaultValue = "";
+   $metsDefaultDsp = $defaultVal;
+  } 
+  
+  
    foreach ( $menudtaarr['DATA'] as $metsval) { 
       $metsm .= "<tr><td onclick=\"fillField('fldPRCMETSSite','{$metsval['siteid']}','{$metsval['site']}');\" class=ddMenuItem>{$metsval['site']}</td></tr>";
    } 
    $metsm .= "</table>";
 
-   $metssite = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCMETSSite READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCMETSSite> {$metsm} </div></div>";
+   $metssite = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCMETSSite READONLY class=\"inputFld\" value=\"{$metsDefaultDsp}\"></div><div class=\"valueDropDown vocEditTbl\" id=ddPRCMETSSite> {$metsm} </div></div>";
 
   return array('menuObj' => $metssite,'defaultDspValue' => $metsDefaultDsp, 'defaultLookupValue' => $metsDefaultValue);
 }
@@ -4301,21 +4359,25 @@ function dropmenuInitialMetric( $passedvalue = "" ) {
   return array('menuObj' => $muommenu,'defaultDspValue' => $muomDefaultDsp, 'defaultLookupValue' => $muomDefaultValue);
 }
 
-function dropmenuInitialSpecCat( $passedvalue = "" ) {   
+function dropmenuInitialSpecCat( $passedvalue = "", $screenref = "" ) {   
   $si = serverIdent;
   $sp = serverpw;
   $speccatarr = json_decode(callrestapi("GET", dataTree . "/global-menu/vocabulary-specimen-category",$si,$sp),true);
 
-  $speccat = "<table border=0 class=menuDropTbl>";
+
+  $speccat = "<table border=0 class=\"menuDropTbl vocEditTbl\">";
   foreach ($speccatarr['DATA'] as $spcval) {
 
-   $speccat .= "<tr><td onclick=\"fillField('fldPRCSpecCat','{$spcval['lookupvalue']}','{$spcval['menuvalue']}');\" class=ddMenuItem>{$spcval['menuvalue']}</td></tr>";
+   $actionStuff = ( $screenref === 'bgvocabedit' ) ?  "alert('CHANGED TO {$spcval['menuvalue']}');" : "";
+   $speccat .= "<tr><td onclick=\"fillField('fldPRCSpecCat','{$spcval['lookupvalue']}','{$spcval['menuvalue']}');{$actionStuff}\" class=ddMenuItem>{$spcval['menuvalue']}</td></tr>";
 
   }
   $speccat .= "</table>";
+  
+
   $spcmenu = "<div class=menuHolderDiv>"
           . "<div class=inputiconcontainer>"
-  . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=hidden id=fldPRCSpecCatValue value=\"\">"
+          . "<div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=hidden id=fldPRCSpecCatValue value=\"\">"
           . "</div>"
           . "<input type=text id=fldPRCSpecCat READONLY class=\"inputFld\" value=\"{$passedvalue}\"><div class=valueDropDown id=ddPRCSpecCat>{$speccat}</div></div>";
 
@@ -4620,17 +4682,17 @@ TOPLINE;
       $rtnThis .= <<<LINEONE
 <table border=0 width=100%>
   <tr>
-      <td><table class=dataElementTbl id=elemSpecCat><tr><td class=elementLabel>Specimen Category</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['specimencategory']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
-      <td><table class=dataElementTbl id=elemSite><tr><td class=elementLabel>Collected Site (Site :: Subsite)</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['collectedsite']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
-      <td><table class=dataElementTbl id=elemDX><tr><td class=elementLabel>Diagnosis :: Modifier</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['diagnosis']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSpecCat><tr><td class=elementLabel>Specimen Category</td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['specimencategory']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSite><tr><td class=elementLabel>Collected Site (Site :: Subsite)</td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['collectedsite']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemDX><tr><td class=elementLabel>Diagnosis :: Modifier</td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['diagnosis']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
   </tr>
 </table>
 
 <table border=0 width=100%>
   <tr>
-      <td><table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From *<div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['mets']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
-      <td><table class=dataElementTbl id=elemSystemic><tr><td class=elementLabel>Systemic Diagnosis</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['systemicdx']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
-      <td><table class=dataElementTbl id=elemPosition><tr><td class=elementLabel>Site Position</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['siteposition']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From *<div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['mets']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSystemic><tr><td class=elementLabel>Systemic Diagnosis</td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['systemicdx']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemPosition><tr><td class=elementLabel>Site Position</td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['siteposition']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
   </tr>
 </table>
 

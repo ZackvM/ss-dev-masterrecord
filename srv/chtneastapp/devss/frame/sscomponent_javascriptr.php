@@ -161,6 +161,41 @@ function answerDLGSaveBGComments( rtnData ) {
    }
 } 
 
+var vocabUnlock = 0;
+function editVocab() { 
+  if ( vocabUnlock === 0 ) { 
+    blankVocabForm();
+    byId('buttnText').innerHTML = "Save";
+    vocabUnlock = 1;
+  } else { 
+    //SAVE VOCAB
+  }
+}
+
+function initialSet() { 
+  vocabUnlock = 0;
+}
+
+function blankVocabForm() { 
+    byId('fldPRCSpecCat').value = "";
+    byId('fldPRCSpecCatValue').value = "";
+    byId('fldPRCSite').value = "";
+    byId('fldPRCSiteValue').value = "";
+    byId('fldPRCSSite').value = "";
+    byId('fldPRCSSiteValue').value = "";
+    byId('fldPRCDXMod').value = "";
+    byId('fldPRCDXModValue').value = "";
+    byId('fldPRCSitePosition').value = "";
+    byId('fldPRCSitePositionValue').value = "";
+    byId('fldPRCMETSSite').value = "";
+    byId('fldPRCMETSSiteValue').value = "";
+    byId('fldPRCSystemList').value = "";
+    byId('fldPRCSystemListValue').value = "";
+}
+
+
+
+
 JAVASCR;
 return $rtnThis;
 }
