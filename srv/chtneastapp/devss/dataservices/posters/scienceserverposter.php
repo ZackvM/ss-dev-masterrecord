@@ -63,6 +63,55 @@ class datadoers {
       return $rows;   
     }
 
+
+
+
+
+
+
+
+    function dialogactionbgdefinitionencountersave ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array();
+      //$passdata ={"agemetric":"53","agemetricuom":"Years","race":"Unknown","sex":"Female","cxind":"Unknown","rxind":"Unknown","subjectnbr":"324354","protocolnbr":"987-6543","pbiosample":"87106","pxiid":"13fd4ff4-7006-4769-9e49-5a0b457e7393"}  
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      session_start();
+      $sess = session_id();
+      $pdta = json_decode($passdata, true);
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      require(serverkeys . "/sspdo.zck");
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      if ( $authuser !== $authchk || $authuser !== $sess ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } 
+      $chkUsrSQL = "SELECT originalaccountname, emailaddress FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrR = $conn->prepare($chkUsrSQL); 
+      $chkUsrR->execute(array(':sess' => $sess));
+      if ($chkUsrR->rowCount() <> 1) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your Session has expired, your password has expired, or don't have access to the coordinator function"));
+      } else { 
+        $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
+      }
+
+      (list( $errorInd, $msgArr[] ) = array(1 , $passdata));
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;           
+    }
+
+
+
+
+
+
+
     function validatechtnvocabulary ( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 

@@ -194,6 +194,40 @@ function blankVocabForm() {
 }
 
 
+function packageEncounterSave( eid ) {
+  var dta = new Object();
+  var allfieldsfound = 1;
+  byId('dlgFldPHIAge'+eid) ? dta['agemetric'] = byId('dlgFldPHIAge'+eid).value : allfieldsfound = 0;
+  byId('dlgFldAgeUOM'+eid) ? dta['agemetricuom'] = byId('dlgFldAgeUOM'+eid).value : allfieldsfound = 0;
+  byId('dlgFldRace'+eid) ? dta['race'] = byId('dlgFldRace'+eid).value : allfieldsfound = 0;
+  byId('dlgFldSex'+eid) ? dta['sex'] = byId('dlgFldSex'+eid).value : allfieldsfound = 0;
+  byId('dlgFldCX'+eid) ? dta['cxind'] = byId('dlgFldCX'+eid).value : allfieldsfound = 0;
+  byId('dlgFldRX'+eid) ? dta['rxind'] = byId('dlgFldRX'+eid).value : allfieldsfound = 0;
+  byId('dlgFldSbjt'+eid) ? dta['subjectnbr'] = byId('dlgFldSbjt'+eid).value : allfieldsfound = 0;
+  byId('dlgFldProtocol'+eid) ? dta['protocolnbr'] = byId('dlgFldProtocol'+eid).value : allfieldsfound = 0;
+  byId('dlgpbiosample'+eid) ? dta['pbiosample'] = byId('dlgpbiosample'+eid).value : allfieldsfound = 0;
+  byId('dlgpxiid'+eid) ? dta['pxiid'] = byId('dlgpxiid'+eid).value : allfieldsfound = 0;
+  if ( allfieldsfound === 1 ) { 
+    var passdta = JSON.stringify(dta);
+    var mlURL = "/data-doers/dialog-action-bg-definition-encounter-save";
+    universalAJAX("POST",mlURL,passdta,answerBGDefinitionEncounterSave,2);
+  } else { 
+    alert('ERROR WITH PAYLOAD PACKAGE.  SEE A CHTNEASTERN INFORMATICS MEMBER');
+  } 
+}
+
+function answerBGDefinitionEncounterSave(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     alert('Encounter Saved');
+   }
+}
 
 
 JAVASCR;

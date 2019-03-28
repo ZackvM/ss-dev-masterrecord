@@ -2817,7 +2817,6 @@ function bldDialogEditDesigDX( $passeddata ) {
   $vocSyst = ( (int)$goodSysVocab <> 0 ) ? "Vocabulary Match Found" : "<span class=badvocabind>No Vocabulary Match Found</span>";
   $vocMets = ( (int)$goodMetsVocab <> 0 ) ? "Vocabulary Match Found" : "<span class=badvocabind>No Vocabulary Match Found</span>";
 
-
   $preambleTxt = "This dialog allow you to edit the diagnosis designation parameters of a biosample.  You must be aware that the CHTNEastern over time has used multiple vocabluaries.  At the end of this paragraph is a denotation as to whether the vocabulary is correct to the present CHTN Network's vocabulary.  If you change any values to get the 'Save' button, you must unlock the form which will blank all values.<center> <table><tr><td><b>Main Designation</b>:</td><td>{$vocMain}</td></tr><tr><td><b>Systemic</b>:</td><td>{$vocSyst}</td></tr><tr><td><b>Metastatic</b>:</td><td>{$vocMets}</td></tr></table>"; 
 
 
@@ -2895,7 +2894,7 @@ function bldDialogEditEncounter ( $passeddata ) {
   } else { 
 
       //TODO:  MAKE THIS A WEBSERVICE
-      $allPXISQL = "SELECT pxiid, replace(read_label,'_','') as readlabel, upper(concat(ifnull(tisstype,''), if(ifnull(anatomicSite,'')='','',concat(' :: ', ifnull(anatomicSite,''))), if(ifnull(diagnosis,'')='','',concat(' :: ',ifnull(diagnosis,''))))) as dxdesig, upper(ifnull(pxirace,'')) as pxirace, upper(ifnull(pxiGender,'')) as pxisex, ifnull(pxiage,0) as pxiage, ifnull(pxiageuom,1) as pxiageuom, ifnull(chemoind, 2) as chemoind, ifnull(radind,2) as radind, ifnull(subjectnbr,'') as subjectnbr, ifnull(protocolnbr,'') as protocolnbr FROM masterrecord.ut_procure_biosample where pxiid = :pxiid";
+      $allPXISQL = "SELECT pbiosample, pxiid, replace(read_label,'_','') as readlabel, upper(concat(ifnull(tisstype,''), if(ifnull(anatomicSite,'')='','',concat(' :: ', ifnull(anatomicSite,''))), if(ifnull(diagnosis,'')='','',concat(' :: ',ifnull(diagnosis,''))))) as dxdesig, upper(ifnull(pxirace,'')) as pxirace, upper(ifnull(pxiGender,'')) as pxisex, ifnull(pxiage,0) as pxiage, ifnull(pxiageuom,1) as pxiageuom, ifnull(chemoind, 2) as chemoind, ifnull(radind,2) as radind, ifnull(subjectnbr,'') as subjectnbr, ifnull(protocolnbr,'') as protocolnbr FROM masterrecord.ut_procure_biosample where pxiid = :pxiid";
       $allPXIRS = $conn->prepare($allPXISQL); 
       $allPXIRS->execute(array(':pxiid' => $objref[0])); 
       $allPXIRef = $allPXIRS->rowCount();
@@ -2908,7 +2907,7 @@ function bldDialogEditEncounter ( $passeddata ) {
       $rxarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-rx",serverIdent, serverpw), true);
 
 
-      $bgList = "<table border=0 id=matrixTbl><tr><td colspan=30>PHI FOUND ON {$allPXIRef} BIOSAMPLES</td></tr><tr><td>#</td><td>Biogroup<br>Designation</td><td>Age (at procedure)</td><td>Race</td><td>Sex</td><td>Chemo</td><td>Radiation</td><td>Subject #</td><td>Protocol #</td></tr>";
+      $bgList = "<table border=0 cellspacing=8 cellpadding=0 id=matrixTbl><tr><td colspan=30 class=announcer>[ENCOUNTER ID FOUND ON {$allPXIRef} BIOSAMPLES]</td></tr><tr><td class=toplabel>Designation [Biogroup]</td><td class=toplabel>Age (at procedure)</td><td class=toplabel>Race</td><td class=toplabel>Sex</td><td class=toplabel>Chemo</td><td class=toplabel>Radiation</td><td class=toplabel>Subject #</td><td class=toplabel>Protocol #</td></tr>";
       while ($r = $allPXIRS->fetch(PDO::FETCH_ASSOC)) { 
         $idsuffix = generateRandomString(8);
 
@@ -2980,8 +2979,8 @@ function bldDialogEditEncounter ( $passeddata ) {
       $ageEditTbl = "<table border=0 cellpadding=0 cellspacing=0><tr><td><input type=text class=dlgFldPHIAge id=\"dlgFldPHIAge{$idsuffix}\" value=\"{$r['pxiage']}\" maxlength=2></td><td style=\"padding: 0 0 0 4px;\">{$ageuommnu}</td></tr></table>";
       $sbj = "<input type=text class=dlgFldSbjt id=\"dlgFldSbjt{$idsuffix}\" value=\"{$r['subjectnbr']}\">";
       $prt = "<input type=text class=dlgFldProtocol id=\"dlgFldProtocol{$idsuffix}\" value=\"{$r['protocolnbr']}\">";
-      $sveBtn = "<table class=tblBtn id=btnSaveSeg style=\"width: 6vw;\" onclick=\"alert('{$idsuffix}');\"><tr><td style=\"font-size: 1.1vh;\"><center>Update</td></tr></table>";
-      $bgList .= "<tr><td class=numberer>{$rcCnt}</td><td class=bgiddsp>{$r['readlabel']}<br>{$r['dxdesig']}</td><td>{$ageEditTbl}</td><td>{$racemnu}</td><td>{$sexmnu}</td><td>{$cxmnu}</td><td>{$rxmnu}</td><td>{$sbj}</td><td>{$prt}</td><td>{$sveBtn}</td></tr>";
+      $sveBtn = "<table class=tblBtn id=btnSaveSeg style=\"width: 6vw;\" onclick=\"packageEncounterSave('{$idsuffix}');\"><tr><td style=\"font-size: 1.1vh;\"><center>Update</td></tr></table>";
+      $bgList .= "<tr><td class=bgiddsp>{$r['dxdesig']} [{$r['readlabel']}] <input type=hidden id='dlgpbiosample{$idsuffix}' value=\"{$r['pbiosample']}\">  <input type=hidden id='dlgpxiid{$idsuffix}' value=\"{$r['pxiid']}\">  </td><td>{$ageEditTbl}</td><td>{$racemnu}</td><td>{$sexmnu}</td><td>{$cxmnu}</td><td>{$rxmnu}</td><td>{$sbj}</td><td>{$prt}</td><td>{$sveBtn}</td></tr>";
       $rcCnt++;
       }
       $bgList .= "</table>";
@@ -2991,11 +2990,11 @@ function bldDialogEditEncounter ( $passeddata ) {
 <style>
   #holdingTbl { width: 90vw; }
   #vwarning { font-weight: bold; color: rgba(237, 35, 0,1); } 
-  #instructionsText { text-align: justify; line-height: 1.8em; padding: 8px; }
+  #instructionsText { text-align: justify; line-height: 1.8em; padding: 8px 8px 20px 8px; }
   #matrixTbl { font-size: 1.4vh; }
 
-  .numberer { width: 2vw; text-align: center; font-size: 1.1vh; background: rgba(48,57,71,1); color: rgba(255,255,255,1); }
-  .bgiddsp { font-size : 1.1vh; width: 18vw; max-width: 17vw; }
+  .numberer { width: 2vw; text-align: center; font-size: 1.1vh; border: 1px solid rgba(48,57,71,1); color: rgba(48,57,71,1); background: rgba(255,255,255,1); }
+  .bgiddsp { font-size : 1.1vh; width: 18vw; max-width: 17vw; box-sizing: border-box; border: 1px solid rgba(48,57,71,.5); border-top: none; border-right: none; padding: 0 0 0 4px; color: rgba(48,57,71,1); background: rgba(239,239,239,.8); }
 
   .dlgFldAgeUOM { width: 6vw; font-size: 1.1vh; }
   .ageUOMOptTbl { min-width: 7vw; }
@@ -3010,6 +3009,8 @@ function bldDialogEditEncounter ( $passeddata ) {
   .rxOptTbl { min-width: 7vw; }
   .dlgFldSbjt { width: 12vw; font-size: 1.1vh;}
   .dlgFldProtocol { width: 12vw; font-size: 1.1vh;}
+  .toplabel { font-size: 1.1vh; font-weight: bold; color: rgba(48,57,71,1); border-bottom: 1px solid rgba(48,57,71,.8); padding: 0 4px 0 4px;  }
+  .announcer { font-size: 1.1vh; text-align: center;   }
 
 </style>
 
