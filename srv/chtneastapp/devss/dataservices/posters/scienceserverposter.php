@@ -72,8 +72,6 @@ class datadoers {
 
     function dialogactionbgdefinitionencountersave ( $request, $passdata ) { 
       $rows = array(); 
-      //$dta = array();
-      //$passdata ={"agemetric":"53","agemetricuom":"Years","race":"Unknown","sex":"Female","cxind":"Unknown","rxind":"Unknown","subjectnbr":"324354","protocolnbr":"987-6543","pbiosample":"87106","pxiid":"13fd4ff4-7006-4769-9e49-5a0b457e7393"}  
       $responseCode = 400;
       $msgArr = array(); 
       $errorInd = 0;
@@ -98,7 +96,72 @@ class datadoers {
         $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
       }
 
-      (list( $errorInd, $msgArr[] ) = array(1 , $passdata));
+      //DATA CHECKS - MAKE SURE ALL VALUES ARE APPROPRIATE
+      ( !preg_match('/^[0-9]{1,2}?/',$pdta['agemetric']) ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE AGE MUST BE SPECIFIED AS A EITHER A ONE OR TWO DIGITAL NUMBER")) : "";
+
+      $valChkSQL = "SELECT menuvalue FROM four.sys_master_menus where menu = 'AGEUOM' and dspind = 1 and dspvalue = :chkval";  
+      $chkRS = $conn->prepare($valChkSQL); 
+      $chkRS->execute( array( ':chkval' => $pdta['agemetricuom'] ));
+      if ($chkRS->rowCount() > 0) { 
+        $rs = $chkRS->fetch(PDO::FETCH_ASSOC); 
+        $ageuomval = $rs['menuvalue'];
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "THIS AGE METRIC UNIT OF MEASURE VALUE ({$pdta['agemetricuom']}) WAS NOT FOUND IN THE DATA TABLES"));
+      }
+
+      $valChkSQL = "SELECT menuvalue FROM four.sys_master_menus where menu = 'PXRACE' and dspind = 1 and dspvalue = :chkval";  
+      $chkRS = $conn->prepare($valChkSQL); 
+      $chkRS->execute( array( ':chkval' => $pdta['race'] ));
+      if ($chkRS->rowCount() > 0) { 
+        $rs = $chkRS->fetch(PDO::FETCH_ASSOC); 
+        $raceval = $rs['menuvalue'];
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "THIS DONOR RACE VALUE ({$pdta['race']}) WAS NOT FOUND IN THE DATA TABLES"));
+      }
+
+      $valChkSQL = "SELECT menuvalue FROM four.sys_master_menus where menu = 'PXSEX' and dspind = 1 and dspvalue = :chkval";  
+      $chkRS = $conn->prepare($valChkSQL); 
+      $chkRS->execute( array( ':chkval' => $pdta['sex'] ));
+      if ($chkRS->rowCount() > 0) { 
+        $rs = $chkRS->fetch(PDO::FETCH_ASSOC); 
+        $sexval = $rs['menuvalue'];
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "THIS DONOR SEX VALUE ({$pdta['sex']}) WAS NOT FOUND IN THE DATA TABLES"));
+      }
+
+      $valChkSQL = "SELECT menuvalue FROM four.sys_master_menus where menu = 'CX' and dspind = 1 and dspvalue = :chkval";  
+      $chkRS = $conn->prepare($valChkSQL); 
+      $chkRS->execute( array( ':chkval' => $pdta['cxind'] ));
+      if ($chkRS->rowCount() > 0) { 
+        $rs = $chkRS->fetch(PDO::FETCH_ASSOC); 
+        $cxval = $rs['menuvalue'];
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "THIS DONOR CHEMO-THERAPY INDICATION VALUE ({$pdta['cxind']}) WAS NOT FOUND IN THE DATA TABLES"));
+      }
+
+      $valChkSQL = "SELECT menuvalue FROM four.sys_master_menus where menu = 'RX' and dspind = 1 and dspvalue = :chkval";  
+      $chkRS = $conn->prepare($valChkSQL); 
+      $chkRS->execute( array( ':chkval' => $pdta['rxind'] ));
+      if ($chkRS->rowCount() > 0) { 
+        $rs = $chkRS->fetch(PDO::FETCH_ASSOC); 
+        $rxval = $rs['menuvalue'];
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "THIS DONOR RADIATION-THERAPY INDICATION VALUE ({$pdta['rxind']}) WAS NOT FOUND IN THE DATA TABLES"));
+      }
+
+      if ($errorInd === 0 ) {   
+        //$passdata ={"agemetric":"53","agemetricuom":"Years","race":"Unknown","sex":"Female","cxind":"Unknown","rxind":"Unknown","subjectnbr":"324354","protocolnbr":"987-6543","pbiosample":"87106","pxiid":"13fd4ff4-7006-4769-9e49-5a0b457e7393"}  
+        //MAKE BACKUP COPY of original values 
+        $bckSQL = "insert into masterrecord.history_procure_biosample_donor (pbiosample, pxiid, age, ageuom, sex, race, chemoind, radind, subjectnbr, protocolnbr, historyon, historyby) SELECT pbiosample, pxiid, ifnull(pxiage,'') as pxiage, ifnull(pxiageuom,'') as pxiageuom, ifnull(pxirace,'') as pxirace, ifnull(pxigender,'') as pxigender, ifnull(chemoInd,'') as chemoind, ifnull(radInd,'') as radind , ifnull(subjectNbr,'') as subjectnbr, ifnull(protocolNbr,'') as protocolnbr, now(), :usr FROM masterrecord.ut_procure_biosample where pxiid = :pxiid and pbiosample = :pbiosample";
+        $bckRS = $conn->prepare($bckSQL); 
+        $bckRS->execute(array(':usr' => $u['originalaccountname'], ':pxiid' => $pdta['pxiid'], ':pbiosample' => $pdta['pbiosample'])); 
+        //write new values
+        $updSQL = "UPDATE masterrecord.ut_procure_biosample set pxiage = :ageval, pxiageuom = :ageuomval, pxirace = :pxirace, pxigender = :pxisex, chemoind = :cx, radind = :rx, subjectnbr = :sbjt, protocolnbr = :prtcl where pxiid = :pxiid and pbiosample = :pbiosample";
+        $updRS = $conn->prepare($updSQL); 
+        $updRS->execute(array(':ageval' => (int)$pdta['agemetric'],':ageuomval' => $ageuomval,':pxirace' => $raceval,':pxisex' => $sexval,':cx' => $cxval,':rx' => $rxval,':sbjt' => trim($pdta['subjectnbr']),':prtcl' => trim($pdta['protocolnbr']),':pxiid' => $pdta['pxiid'],':pbiosample' => $pdta['pbiosample']));
+
+        $responseCode = 200;
+      }
 
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 

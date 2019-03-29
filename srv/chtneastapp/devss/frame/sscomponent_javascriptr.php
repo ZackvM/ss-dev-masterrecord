@@ -225,7 +225,7 @@ function answerBGDefinitionEncounterSave(rtnData) {
     });
     alert("ERROR:\\n"+dspMsg);
    } else {
-     alert('Encounter Saved');
+     alert('Encounter Saved - Refresh the screen to see the changes');
    }
 }
 
