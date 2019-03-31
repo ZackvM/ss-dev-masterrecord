@@ -161,36 +161,49 @@ function answerDLGSaveBGComments( rtnData ) {
    }
 } 
 
-var vocabUnlock = 0;
 function editVocab() { 
-  if ( vocabUnlock === 0 ) { 
-    blankVocabForm();
+  if ( parseInt(byId('btnVocEditEnable').dataset.vocabunlock) === 0 ) { 
+    byId('btnVocEditEnable').dataset.vocabunlock = 1;
     byId('buttnText').innerHTML = "Save";
-    vocabUnlock = 1;
+    blankVocabForm();
   } else { 
-    //SAVE VOCAB
+    packageDiagnosisSave();
   }
 }
 
-function initialSet() { 
-  vocabUnlock = 0;
-}
+function blankVocabForm( blankIndicatorLevel = 0 ) {
 
-function blankVocabForm() { 
+if ( parseInt(byId('btnVocEditEnable').dataset.vocabunlock) === 1 ) { 
+switch (blankIndicatorLevel) { 
+  case 0:
     byId('fldPRCSpecCat').value = "";
     byId('fldPRCSpecCatValue').value = "";
+  case 1:
     byId('fldPRCSite').value = "";
     byId('fldPRCSiteValue').value = "";
+    var menuTbl =  "<center><div style='font-size: 1.4vh'>(Choose a Specimen Category)</div>";     
+    byId('ddPRCSite').innerHTML = menuTbl;            
+  case 2:
     byId('fldPRCSSite').value = "";
     byId('fldPRCSSiteValue').value = "";
+    var menuTbl =  "<center><div style='font-size: 1.4vh'>(Choose a Site)</div>";     
+    byId('ddPRCSSite').innerHTML = menuTbl;            
+  case 3:
     byId('fldPRCDXMod').value = "";
     byId('fldPRCDXModValue').value = "";
-    byId('fldPRCSitePosition').value = "";
-    byId('fldPRCSitePositionValue').value = "";
+    var menuTbl =  "<center><div style='font-size: 1.4vh'>(Choose a Specimen Category and Site)</div>";     
+    byId('ddPRCDXMod').innerHTML = menuTbl;            
+  case 4:
     byId('fldPRCMETSSite').value = "";
     byId('fldPRCMETSSiteValue').value = "";
+  case 5:
+    byId('fldPRCSitePosition').value = "";
+    byId('fldPRCSitePositionValue').value = "";
     byId('fldPRCSystemList').value = "";
     byId('fldPRCSystemListValue').value = "";
+}
+}
+
 }
 
 
@@ -216,6 +229,26 @@ function packageEncounterSave( eid ) {
   } 
 }
 
+function packageDiagnosisSave() { 
+  var dta = new Object();
+  var allfieldsfound = 1;
+  byId('fldHoldBioGroup') ? dta['refbg'] = byId('fldHoldBioGroup').value.trim() : allfieldsfound = 0;
+  byId('fldPRCSpecCat') ? dta['speccat'] = byId('fldPRCSpecCat').value.trim() : allfieldsfound = 0;
+  byId('fldPRCSite') ? dta['collectedsite'] = byId('fldPRCSite').value.trim() : allfieldsfound = 0;
+  byId('fldPRCSSite') ? dta['collectedsubsite'] = byId('fldPRCSSite').value.trim() : allfieldsfound = 0;
+  byId('fldPRCDXMod') ? dta['diagnosismodifier'] = byId('fldPRCDXMod').value.trim() : allfieldsfound = 0;
+  byId('fldPRCMETSSite') ? dta['metsfromsite'] = byId('fldPRCMETSSite').value.trim() : allfieldsfound = 0;
+  byId('fldPRCSitePosition') ? dta['siteposition'] = byId('fldPRCSitePosition').value.trim() : allfieldsfound = 0;
+  byId('fldPRCSystemList') ? dta['systemicdx'] = byId('fldPRCSystemList').value.trim() : allfieldsfound = 0;
+  if ( allfieldsfound === 1 ) { 
+    var passdta = JSON.stringify(dta);
+    var mlURL = "/data-doers/dialog-action-bg-definition-designation-save";
+    universalAJAX("POST",mlURL,passdta,answerBGDefinitionDesignationSave,2);
+  } else { 
+    alert('ERROR WITH PAYLOAD PACKAGE.  SEE A CHTNEASTERN INFORMATICS MEMBER');
+  } 
+}
+
 function answerBGDefinitionEncounterSave(rtnData) { 
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
@@ -229,6 +262,124 @@ function answerBGDefinitionEncounterSave(rtnData) {
    }
 }
 
+function answerBGDefinitionDesignationSave(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     alert('Diagnosis Designation Saved');
+     //refresh page
+   }
+
+}
+
+function updateSiteMenu() {
+  if ( parseInt(byId('btnVocEditEnable').dataset.vocabunlock) === 1 ) { 
+   if ( byId('fldPRCSpecCatValue') ) {
+     if ( byId('fldPRCSpecCatValue').value.trim() !== "") {     
+       var mlURL = "/data-doers/sites-by-specimen-category"; 
+       var dta = new Object();
+       dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
+       var passdta = JSON.stringify(dta);
+       universalAJAX("POST",mlURL,passdta,answerUpdateSiteMenu,2);               
+     } else { 
+       //NOTHING SELECTED
+     }
+   }
+ }
+}
+
+
+function answerUpdateSiteMenu(rtnData) { 
+  if (parseInt(rtnData['responseCode']) === 200) {
+    var dta = JSON.parse( rtnData['responseText'] );
+    var rquestFld = dta['MESSAGE'];
+    if (parseInt(dta['ITEMSFOUND']) > 0) {
+      var dspList = dta['DATA'];
+      var menuTbl = "<table border=0 class=menuDropTbl>";      
+      dspList.forEach( function(element) {          
+          menuTbl += "<tr><td onclick=\"fillField('fldPRCSite','"+element['siteid']+"','"+element['site']+"');blankVocabForm(2);updateSubSiteMenu();updateDiagnosisMenu();\" class=ddMenuItem>"+element['site']+"</td></tr>";            
+      });
+      menuTbl += "</table>";      
+   } else {
+      var menuTbl =  "<center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div>";     
+    }
+    byId('ddPRCSite').innerHTML = menuTbl        
+  } else {      
+  }
+}        
+
+function updateSubSiteMenu() { 
+  if ( parseInt(byId('btnVocEditEnable').dataset.vocabunlock) === 1 ) { 
+   if ( byId('fldPRCSpecCatValue') && byId('fldPRCSite') ) {
+     if ( byId('fldPRCSpecCatValue').value.trim() !== "" && byId('fldPRCSite').value.trim() !== "" ) {     
+       var mlURL = "/data-doers/subsites-by-specimen-category"; 
+       var dta = new Object();
+       dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
+       dta['site'] = byId('fldPRCSite').value.trim();
+       var passdta = JSON.stringify(dta);
+       universalAJAX("POST",mlURL,passdta,answerUpdateSSiteMenu,2);               
+     } else { 
+       //NOTHING SELECTED
+     }
+   }
+ }
+}
+
+function answerUpdateSSiteMenu(rtnData) { 
+  if (parseInt(rtnData['responseCode']) === 200) {
+    var dta = JSON.parse( rtnData['responseText'] );
+    var rquestFld = dta['MESSAGE'];
+    if (parseInt(dta['ITEMSFOUND']) > 0) {
+      var dspList = dta['DATA']; 
+      var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCSSite','','');\" class=ddMenuClearOption>[clear]</td></tr>";      
+      dspList.forEach( function(element) {          
+          menuTbl += "<tr><td onclick=\"fillField('fldPRCSSite','"+element['ssiteid']+"','"+element['subsite']+"');\" class=ddMenuItem>"+element['subsite']+"</td></tr>";            
+      });
+      menuTbl += "</table>";      
+   } else {
+      var menuTbl =  "<center><div style=\"font-size: 1.4vh\">No Subsite Listed</div>";     
+    }
+  } else {      
+     var menuTbl =  "<center><div style=\"font-size: 1.4vh\">No Subsite Listed</div>";     
+  }
+  byId('ddPRCSSite').innerHTML = menuTbl;        
+}           
+
+function updateDiagnosisMenu() { 
+       var mlURL = "/data-doers/diagnosis-downstream"; 
+       var dta = new Object();
+       dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
+       dta['site'] = byId('fldPRCSiteValue').value.trim();            
+       var passdta = JSON.stringify(dta);
+       universalAJAXStreamTwo("POST",mlURL,passdta,answerUpdateDiagnosisMenu,2);                 
+}
+
+function answerUpdateDiagnosisMenu(rtnData) { 
+  //console.log(rtnData);
+  if (parseInt(rtnData['responseCode']) === 200) {
+    var dta = JSON.parse( rtnData['responseText'] );
+    var rquestFld = dta['MESSAGE'];
+    if (parseInt(dta['ITEMSFOUND']) > 0) {
+      var dspList = dta['DATA'];
+      var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCDXMod','','');\" class=ddMenuClearOption>[clear]</td></tr>";      
+      dspList.forEach( function(element) {          
+          menuTbl += "<tr><td onclick=\"fillField('fldPRCDXMod','"+element['dxid']+"','"+element['diagnosis']+"');\" class=ddMenuItem>"+element['diagnosis']+"</td></tr>";            
+      });
+      menuTbl += "</table>";      
+   } else {
+      var menuTbl =  "<center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div>";     
+    }
+    byId('ddPRCDXMod').innerHTML = menuTbl        
+  } else {      
+    //ERROR - DISPLAY ERROR
+    //console.log(rtnData);    
+  }            
+}
 
 JAVASCR;
 return $rtnThis;
@@ -1270,8 +1421,7 @@ function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxi
    byId('fldPRCPXISubjectNbr').value = "";       
    byId('fldPRCPXIProtocolNbr').value = "";
    byId('fldPRCPXISOGI').value = "";
-       
-            
+
    byId('fldPRCPXIId').value = pxiid;
    byId('fldPRCPXIInitials').value = pxiinitials.toUpperCase().trim();         
    byId('fldPRCPXIAge').value = pxiage.toUpperCase().trim();

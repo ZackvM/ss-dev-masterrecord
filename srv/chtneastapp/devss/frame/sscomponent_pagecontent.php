@@ -2824,7 +2824,7 @@ function bldDialogEditDesigDX( $passeddata ) {
     $spcData = dropmenuInitialSpecCat( $speccat, 'bgvocabedit' );
     $spcmenu = $spcData['menuObj'];
   //SITE POSITIONS
-    $asiteposData = dropmenuVocASitePositions( $sitePos ); 
+    $asiteposData = dropmenuVocASitePositions( $sitePos, 'bgvocabedit' ); 
     $aspmenu = $asiteposData['menuObj'];
   //BASE SITE-SUBSITE MENU
     $sitesubsite = "<div class=menuHolderDiv><input type=hidden id=fldPRCSiteValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCSite READONLY class=\"inputFld\" value=\"{$primesite}\"></div><div class=\"valueDropDown vocEditTbl\" id=ddPRCSite><center><div style=\"font-size: 1.4vh\">(Choose a Specimen Category)</div></div></div>"; 
@@ -2862,14 +2862,14 @@ function bldDialogEditDesigDX( $passeddata ) {
 <tr><td colspan=2 id=preambleTxt> {$preambleTxt}</td></tr>
 </table>
 <table border=0 id=vocHoldTbl>
-<tr><td>Specimen Category:&nbsp; </td><td>{$spcmenu}</td></tr>
+<tr><td>Specimen Category:&nbsp; </td><td>{$spcmenu} <input type=hidden id=fldHoldBioGroup value="{$pdta['objid']}"></td></tr>
 <tr><td>Site:&nbsp;</td><td>{$sitesubsite}</td></tr>
 <tr><td>Sub-Site:&nbsp;</td><td>{$subsite}</td></tr>
 <tr><td>Site Position:&nbsp; </td><td>{$aspmenu}</td></tr>
 <tr><td>Diagnosis :: Modifier: &nbsp;</td><td>{$dxmod}</td></tr>
 <tr><td>METS From: &nbsp;</td><td>{$metssite}</td></tr>
 <tr><td>Systemic Diagnosis: &nbsp; </td><td>{$sysdxmenu}</td></tr>
-<tr><td colspan=2 align=right> <table class=tblBtn id=btnADDQMSSegs style="width: 6vw;" onclick="editVocab();"><tr><td style=" font-size: 1.1vh;"><center><span id=buttnText>Unlock</span></td></tr></table> </td></tr>
+<tr><td colspan=2 align=right> <table class=tblBtn id=btnVocEditEnable data-vocabunlock=0 style="width: 6vw;" onclick="editVocab();"><tr><td style=" font-size: 1.1vh;"><center><span id=buttnText>Unlock</span></td></tr></table> </td></tr>
 </table>
 
 
@@ -4174,7 +4174,7 @@ function dropmenuSystemicDXListing( $defaultVal ) {
   return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 }
 
-function dropmenuVocASitePositions( $defaultDsp ) { 
+function dropmenuVocASitePositions( $defaultDsp = "", $screenref = "" ) { 
   $si = serverIdent;
   $sp = serverpw;
   $asparr = json_decode(callrestapi("GET", dataTree . "/global-menu/vocabulary-site-positions",$si,$sp),true);
@@ -4186,12 +4186,14 @@ function dropmenuVocASitePositions( $defaultDsp ) {
     $aspDefaultValue = "";
     $aspDefaultDsp = $defaultDsp;
   }
+  $actionStuff = "";
   foreach ($asparr['DATA'] as $aspval) {
+    $actionStuff = ( $screenref === 'bgvocabedit' ) ? "" : "";
       if ( (int)$aspval['useasdefault'] === 1 ) {
         $aspDefaultValue = $aspval['lookupvalue']; 
         $aspDefaultDsp = $aspval['menuvalue'];
       }
-    $asp .= "<tr><td onclick=\"fillField('fldPRCSitePosition','{$aspval['lookupvalue']}','{$aspval['menuvalue']}');\" class=ddMenuItem>{$aspval['menuvalue']}</td></tr>";
+    $asp .= "<tr><td onclick=\"fillField('fldPRCSitePosition','{$aspval['lookupvalue']}','{$aspval['menuvalue']}');{$actionStuff}\" class=ddMenuItem>{$aspval['menuvalue']}{$screenRef}  </td></tr>";
   }
   $asp .= "</table>";
   $aspmenu = "<div class=menuHolderDiv><input type=hidden id=fldPRCSitePositionValue value=\"{$aspDefaultValue}\">"
@@ -4365,11 +4367,9 @@ function dropmenuInitialSpecCat( $passedvalue = "", $screenref = "" ) {
   $sp = serverpw;
   $speccatarr = json_decode(callrestapi("GET", dataTree . "/global-menu/vocabulary-specimen-category",$si,$sp),true);
 
-
   $speccat = "<table border=0 class=\"menuDropTbl vocEditTbl\">";
   foreach ($speccatarr['DATA'] as $spcval) {
-
-   $actionStuff = ( $screenref === 'bgvocabedit' ) ?  "alert('CHANGED TO {$spcval['menuvalue']}');" : "";
+   $actionStuff = ( $screenref === 'bgvocabedit' ) ?  "updateSiteMenu();blankVocabForm(1);" : "";
    $speccat .= "<tr><td onclick=\"fillField('fldPRCSpecCat','{$spcval['lookupvalue']}','{$spcval['menuvalue']}');{$actionStuff}\" class=ddMenuItem>{$spcval['menuvalue']}</td></tr>";
 
   }
@@ -4683,17 +4683,17 @@ TOPLINE;
       $rtnThis .= <<<LINEONE
 <table border=0 width=100%>
   <tr>
-      <td><table class=dataElementTbl id=elemSpecCat><tr><td class=elementLabel>Specimen Category</td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['specimencategory']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
-      <td><table class=dataElementTbl id=elemSite><tr><td class=elementLabel>Collected Site (Site :: Subsite)</td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['collectedsite']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
-      <td><table class=dataElementTbl id=elemDX><tr><td class=elementLabel>Diagnosis :: Modifier</td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['diagnosis']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSpecCat><tr><td class=elementLabel>Specimen Category</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['specimencategory']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSite><tr><td class=elementLabel>Collected Site (Site :: Subsite)</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['collectedsite']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemDX><tr><td class=elementLabel>Diagnosis :: Modifier</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['diagnosis']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
   </tr>
 </table>
 
 <table border=0 width=100%>
   <tr>
-      <td><table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From *<div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['mets']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
-      <td><table class=dataElementTbl id=elemSystemic><tr><td class=elementLabel>Systemic Diagnosis</td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['systemicdx']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
-      <td><table class=dataElementTbl id=elemPosition><tr><td class=elementLabel>Site Position</td></tr><tr><td class=dataElement><div class=commentHolder onclick="initialSet();generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['siteposition']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemMets><tr><td class=elementLabel><div class=noteHolder style="width: 6vw;">Metastatic From *<div class=noteExplainerDropDown>Since CHTNEast has been collecting for over 20 years, this designation has changed from TO/FROM. Read the Pathology Report to verify.</div></div></td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['mets']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemSystemic><tr><td class=elementLabel>Systemic Diagnosis</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['systemicdx']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
+      <td><table class=dataElementTbl id=elemPosition><tr><td class=elementLabel>Site Position</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTDX','{$bg['bgnbr']}');">{$bg['siteposition']}&nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table></td>
   </tr>
 </table>
 

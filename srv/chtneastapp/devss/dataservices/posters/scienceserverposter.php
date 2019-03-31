@@ -67,8 +67,46 @@ class datadoers {
 
 
 
+    function dialogactionbgdefinitiondesignationsave ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      session_start();
+      $sess = session_id();
+      $pdta = json_decode($passdata, true);
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      require(serverkeys . "/sspdo.zck");
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      if ( $authuser !== $authchk || $authuser !== $sess ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } 
+      $chkUsrSQL = "SELECT originalaccountname, emailaddress FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrR = $conn->prepare($chkUsrSQL); 
+      $chkUsrR->execute(array(':sess' => $sess));
+      if ($chkUsrR->rowCount() <> 1) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your Session has expired, your password has expired, or don't have access to the coordinator function"));
+      } else { 
+        $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
+      }
 
+      //DATA CHECKS
+      //{"refbg":"87106","speccat":"MALIGNANT","collectedsite":"THYROID","collectedsubsite":"","diagnosismodifier":"CARCINOMA :: FOLLICULAR","metsfromsite":"LYMPH NODE","siteposition":"","systemicdx":""}
+      //MAKE SURE ALLOWABLE CHTN VOCAB
+      //IF NOT MALIGNANT - NO METS SITE 
 
+      
+
+       (list( $errorInd, $msgArr[] ) = array(1 , "{$passdata}"));
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;           
+    }
 
     function dialogactionbgdefinitionencountersave ( $request, $passdata ) { 
       $rows = array(); 
