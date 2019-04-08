@@ -105,33 +105,46 @@ class datadoers {
 
       if ($errorInd === 0) { 
           //{"speccat":"MALIGNANT","psite":"BLADDER","subsite":"SEROSA","dx":"CARCINOMA :: UROTHELIAL (TRANSITIONAL CELL)","metssite":"KIDNEY","siteposition":"LEFT","pdxsystemic":"ZACKITIS"}
-
           $chkArr['speccat'] = strtoupper(trim($pdta['speccat']));
           $chkArr['psite'] = strtoupper(trim($pdta['collectedsite']));
           $chkArr['subsite'] = strtoupper(trim($pdta['collectedsubsite']));
           $chkArr['dx'] = strtoupper(trim($pdta['diagnosismodifier']));
           $chkArr['metssite'] = strtoupper(trim($pdta['metsfromsite']));
           $chkArr['siteposition'] = strtoupper(trim($pdta['siteposition']));
-          $chkArr['pdxsystemic'] = strtoupper(trim($pdta['systemicdx'])) . "ZACK";
-          $vocchk = self::validatechtnvocabulary( "", json_encode($chkArr)); 
-
-          //"DATA":{"mainvocchk":2,"systemicvocchk":0,"metsvocchk":1} 
-          ( (int)$vocchk['data']['DATA']['mainvocchk'] === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MAIN DIAGNOSIS DESIGNATION DOES NOT EXIST IN THE OFFICIAL CHTN NETWORK VOCABULARY TABLES")) : "";
+          $chkArr['pdxsystemic'] = strtoupper(trim($pdta['systemicdx']));
+          $vocchk = self::validatechtnvocabulary( "", json_encode($chkArr));          
+          if ( $pdta['dxoverride']) {
+          } else {
+            ( (int)$vocchk['data']['DATA']['mainvocchk'] === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MAIN DIAGNOSIS DESIGNATION DOES NOT EXIST IN THE OFFICIAL CHTN NETWORK VOCABULARY TABLES")) : "";
+          }
           ( (int)$vocchk['data']['DATA']['systemicvocchk'] === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SYSTEMIC DIAGNOSIS DOES NOT EXIST IN THE OFFICIAL CHTN NETWORK VOCABULARY TABLES")) : "";
-
-  
+          ( (int)$vocchk['data']['DATA']['metsvocchk'] === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE METS FROM DESIGNATION IS NOT A VALID CHTN NETWQORK VOCABULARY VALUE")) : "";
       }
 
 
 
       if ( $errorInd === 0 ) {
+         //MAKE DATA BACKUP   
+        $bckSQL = "insert into masterrecord.history_procure_biosample_vocab (pbiosample, speccat, collectedsite, subsite, siteposition, diagnosis, modifier, metssite, systemicdx, bywho, onwhen) SELECT pBioSample, ifnull(tissType,'') as tisstype, ifnull(anatomicSite,'') as site, ifnull(subSite,'') as subsite, ifnull(sitePosition,'') as siteposition, ifnull(diagnosis,'') as diagnosis, ifnull(subdiagnos,'') as modifier, ifnull(metsSite,'') as metssite, ifnull(pdxSystemic,'') as systemic, :user, now() FROM masterrecord.ut_procure_biosample where pbiosample = :bg"; 
+        $bckRS = $conn->prepare($bckSQL);
+        $bckRS->execute(array(':bg' => $pdta['refbg'], ':user' => $u['originalaccountname']));
 
+        $dxhld = explode(" :: ", $pdta['diagnosismodifier']);
+        $updSQL = "update masterrecord.ut_procure_biosample set tissType = :sp, anatomicSite = :st, subSite = :sst, siteposition = :pos, diagnosis = :dx, subdiagnos = :mod, metsSite = :mets, pdxSystemic = :systemic where pbiosample = :bg";
+        $updRS = $conn->prepare($updSQL);
+        $updRS->execute(array(
+           ':bg' => $pdta['refbg']
+          ,':sp' => strtoupper(trim($pdta['speccat']))
+          ,':st' =>  strtoupper(trim($pdta['collectedsite']))
+          ,':sst' =>  strtoupper(trim($pdta['collectedsubsite']))
+          ,':pos' =>  strtoupper(trim($pdta['siteposition']))
+          ,':dx' =>  strtoupper(trim($dxhld[0])) 
+          ,':mod' =>  strtoupper(trim($dxhld[1]))
+          ,':mets' =>  strtoupper(trim($pdta['metsfromsite']))
+          ,':systemic' =>  strtoupper(trim($pdta['systemicdx']))   
+        ));
 
-
-
-        //MAKE DATA BACKUP 
-        //WRITE DATA 
-        (list( $errorInd, $msgArr[] ) = array(1 , "TEST LINE"));
+        $responseCode = 200;
       }
 
 

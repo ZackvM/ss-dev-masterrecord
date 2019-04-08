@@ -2837,7 +2837,7 @@ function bldDialogEditDesigDX( $passeddata ) {
  //METASTATIC SITE MENU DROPDOWN
      $metsData = dropmenuMetsMalignant( $met );
      $metssite = $metsData['menuObj'];
-     $metsdxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSDXValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCMETSDX READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCMETSDX><center><div style=\"font-size: 1.4vh\">(Choose a Metastatic site)</div></div></div>";
+     $metsdxmod = "<div class=menuHolderDiv><input type=hidden id=fldPRCMETSDXValue value=\"\"><div class=inputiconcontainer><div class=inputmenuiconholder><i class=\"material-icons menuDropIndicator\">menu</i></div><input type=text id=fldPRCMETSDX READONLY class=\"inputFld\" value=\"\"></div><div class=valueDropDown id=ddPRCMETSDX ><center><div style=\"font-size: 1.2vh; max-width: 25vw; overflow: auto;\">(Choose a Metastatic site)</div></div></div>";
 
   //SYSTEMIC LIST 
     $sysData = dropmenuSystemicDXListing( $sysdx ); 
@@ -2846,8 +2846,8 @@ function bldDialogEditDesigDX( $passeddata ) {
 
   $rtnThis = <<<RTNTHIS
 <style>
-  #vocHoldTbl { width: 32vw; font-size: 1.3vh; } 
-  #preambleTxt { text-align: justify; line-height: 1.8em; width: 35vw; box-sizing: border-box; padding: 8px; font-size: 1.3vh; }
+  #vocHoldTbl { width: 35vw; font-size: 1.3vh; } 
+  #preambleTxt { text-align: justify; line-height: 1.8em; width: 32vw; box-sizing: border-box; padding: 8px; font-size: 1.3vh; }
   #fldPRCSpecCat { font-size: 1.3vh; padding: 1vh .5vw 1vh .5vw; width: 25vw; }
   #fldPRCSite { font-size: 1.3vh; padding: 1vh .5vw 1vh .5vw; width: 25vw; }
   #fldPRCSSite {  font-size: 1.3vh; padding: 1vh .5vw 1vh .5vw; width: 25vw; }
@@ -2867,6 +2867,7 @@ function bldDialogEditDesigDX( $passeddata ) {
 <tr><td>Sub-Site:&nbsp;</td><td>{$subsite}</td></tr>
 <tr><td>Site Position:&nbsp; </td><td>{$aspmenu}</td></tr>
 <tr><td>Diagnosis :: Modifier: &nbsp;</td><td>{$dxmod}</td></tr>
+<tr><td></td><td><input type=checkbox id=fldPRCDXOverride onclick="overridedxmenu();"><label for=dxoverride>Diagnosis Override</label></td></tr>
 <tr><td>METS From: &nbsp;</td><td>{$metssite}</td></tr>
 <tr><td>Systemic Diagnosis: &nbsp; </td><td>{$sysdxmenu}</td></tr>
 <tr><td colspan=2 align=right> <table class=tblBtn id=btnVocEditEnable data-vocabunlock=0 style="width: 6vw;" onclick="editVocab();"><tr><td style=" font-size: 1.1vh;"><center><span id=buttnText>Unlock</span></td></tr></table> </td></tr>
@@ -3181,9 +3182,9 @@ $rtnThis = <<<RTNTHIS
    <td rowspan=2 valign=bottom style="padding: 0;"><table class=tblBtn id=btnSaveSeg onclick="markAsBank();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table></td>
   </tr>
   <tr>
-    <td valign=top>
+    <td valign=top><input type=hidden id=requestsasked value=0>
          <div class=suggestionHolder>
-          <input type=text id=fldSEGselectorAssignInv class="inputFld" onkeyup="selectorInvestigator(); byId('fldSEGselectorAssignReq').value = '';byId('requestDropDown').innerHTML = ''; ">
+          <input type=text id=fldSEGselectorAssignInv class="inputFld" onkeyup="selectorInvestigator(); byId('fldSEGselectorAssignReq').value = '';byId('requestDropDown').innerHTML = '';byId('requestsasked').value = 0;  ">
           <div id=assignInvestSuggestion class=suggestionDisplay>&nbsp;</div>
          </div>
     </td>

@@ -191,6 +191,7 @@ switch (blankIndicatorLevel) {
   case 3:
     byId('fldPRCDXMod').value = "";
     byId('fldPRCDXModValue').value = "";
+    byId('fldPRCDXOverride').checked = false;    
     var menuTbl =  "<center><div style='font-size: 1.4vh'>(Choose a Specimen Category and Site)</div>";     
     byId('ddPRCDXMod').innerHTML = menuTbl;            
   case 4:
@@ -206,7 +207,44 @@ switch (blankIndicatorLevel) {
 
 }
 
+function overridedxmenu() { 
+if (parseInt(byId('btnVocEditEnable').dataset.vocabunlock) === 0) {
+   alert('VOCABULARY IS NOT UNLOCKED');
+} else {
+    if (byId('fldPRCDXOverride').checked) {
+          //LIST THE WHOLE DX HERE
+          byId('ddPRCDXMod').innerHTML = ""; 
+          byId('fldPRCDXMod').value = "";
+          byId('fldPRCDXModValue').value = "";            
+          allDiagnosisMenu();
+        } else {
+          if ( byId('fldPRCSpecCat').value.trim() !== "" && byId('fldPRCSite').value.trim() !== "") { 
+             byId('fldPRCDXMod').value = "";
+             byId('fldPRCDXModValue').value = "";
+             updateDiagnosisMenu();  
+          } else { 
+             byId('fldPRCDXMod').value = "";
+             byId('fldPRCDXModValue').value = "";
+             byId('ddPRCDXMod').innerHTML = "<center><div style='font-size: 1.4vh'>(Choose a Specimen Category and Site)</div>";  
+          }
+        }
+}
+}
 
+function updateDiagnosisMenu() { 
+       var mlURL = "/data-doers/diagnosis-downstream"; 
+       var dta = new Object();
+       dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
+       dta['site'] = byId('fldPRCSiteValue').value.trim();            
+       var passdta = JSON.stringify(dta);
+       universalAJAXStreamTwo("POST",mlURL,passdta,answerUpdateDiagnosisMenu,2);                 
+}        
+        
+function allDiagnosisMenu() { 
+       var mlURL = "/data-doers/all-downstream-diagnosis"; 
+       universalAJAXStreamTwo("POST",mlURL,"",answerUpdateDiagnosisMenu,2);                 
+}            
+                       
 function packageEncounterSave( eid ) {
   var dta = new Object();
   var allfieldsfound = 1;
@@ -240,6 +278,7 @@ function packageDiagnosisSave() {
   byId('fldPRCMETSSite') ? dta['metsfromsite'] = byId('fldPRCMETSSite').value.trim() : allfieldsfound = 0;
   byId('fldPRCSitePosition') ? dta['siteposition'] = byId('fldPRCSitePosition').value.trim() : allfieldsfound = 0;
   byId('fldPRCSystemList') ? dta['systemicdx'] = byId('fldPRCSystemList').value.trim() : allfieldsfound = 0;
+  byId('fldPRCDXOverride') ? dta['dxoverride'] = byId('fldPRCDXOverride').checked : allfieldsfound = 0;        
   if ( allfieldsfound === 1 ) { 
     var passdta = JSON.stringify(dta);
     var mlURL = "/data-doers/dialog-action-bg-definition-designation-save";
@@ -271,8 +310,8 @@ function answerBGDefinitionDesignationSave(rtnData) {
     });
     alert("ERROR:\\n"+dspMsg);
    } else {
-     alert('Diagnosis Designation Saved');
-     //refresh page
+     alert('Diagnosis Designation Saved - Your Page will now refresh ... ');
+     location.reload(true);
    }
 
 }
@@ -366,9 +405,9 @@ function answerUpdateDiagnosisMenu(rtnData) {
     var rquestFld = dta['MESSAGE'];
     if (parseInt(dta['ITEMSFOUND']) > 0) {
       var dspList = dta['DATA'];
-      var menuTbl = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldPRCDXMod','','');\" class=ddMenuClearOption>[clear]</td></tr>";      
+      var menuTbl = "<table border=0 class=menuDropTbl style=\"max-width: 25vw;\"><tr><td align=right onclick=\"fillField('fldPRCDXMod','','');\" class=ddMenuClearOption>[clear]</td></tr>";      
       dspList.forEach( function(element) {          
-          menuTbl += "<tr><td onclick=\"fillField('fldPRCDXMod','"+element['dxid']+"','"+element['diagnosis']+"');\" class=ddMenuItem>"+element['diagnosis']+"</td></tr>";            
+          menuTbl += "<tr><td onclick=\"fillField('fldPRCDXMod','"+element['dxid']+"','"+element['diagnosis']+"');\" class=ddMenuItem style=\"word-wrap: break-word;\">"+element['diagnosis']+"</td></tr>";            
       });
       menuTbl += "</table>";      
    } else {
@@ -2316,14 +2355,17 @@ if (parseInt(rtnData['responseCode']) === 200 ) {
 }
 }
 
+            
 function setAssignsRequests() {
-  if (byId('fldSEGselectorAssignInv').value.trim() !== "" ) { 
-    var given = new Object(); 
-    given['rqstsuggestion'] = 'vandyinvest-requests'; 
-    given['given'] = byId('fldSEGselectorAssignInv').value.trim();
-    var passeddata = JSON.stringify(given);
-    var mlURL = "/data-doers/suggest-something";
-    universalAJAX("POST",mlURL,passeddata,answerRequestDrop,2);
+  if (byId('fldSEGselectorAssignInv').value.trim() !== "" ) {   
+    if (parseInt(byId('requestsasked').value) === 0) {        
+      var given = new Object(); 
+      given['rqstsuggestion'] = 'vandyinvest-requests'; 
+      given['given'] = byId('fldSEGselectorAssignInv').value.trim();
+      var passeddata = JSON.stringify(given);
+      var mlURL = "/data-doers/suggest-something";
+      universalAJAX("POST",mlURL,passeddata,answerRequestDrop,2);
+    }
   } 
 }
 
@@ -2333,12 +2375,14 @@ function answerRequestDrop(rtnData) {
     var dta = JSON.parse(rtnData['responseText']);
     var menuTbl = "<table border=0 class=\"menuDropTbl\">";
     dta['DATA'].forEach(function(element) { 
-      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('fldSEGselectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;';\">"+element['requestid']+" ["+element['rqstatus']+"]</td></tr>";
+      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('fldSEGselectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); \">"+element['requestid']+" ["+element['rqstatus']+"]</td></tr>";
     });  
     menuTbl += "</table>";
     byId('requestDropDown').innerHTML = menuTbl; 
+    byId('requestsasked').value = 1;
   }
 }
+
 
 function updatePrepAddDisplay( whichPrep ) { 
   if (byId('preparationAdditions')) { 
@@ -3555,13 +3599,15 @@ function answerRequestDrop(rtnData) {
     var dta = JSON.parse(rtnData['responseText']);
     var menuTbl = "<table border=0 class=\"menuDropTbl\">";
     dta['DATA'].forEach(function(element) { 
-      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('selectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); byId('requestDropDown').innerHTML = '&nbsp;';\">"+element['requestid']+" ["+element['rqstatus']+"]</td></tr>";
+      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('selectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); \">"+element['requestid']+" ["+element['rqstatus']+"]</td></tr>";
     });  
     menuTbl += "</table>";
     byId('requestDropDown').innerHTML = menuTbl; 
   }
 }
-
+//byId('requestDropDown').innerHTML = '&nbsp;';
+  
+  
 function answerAssignInvestSuggestions(rtnData) { 
 var rsltTbl = "";
 if (parseInt(rtnData['responseCode']) === 200 ) { 

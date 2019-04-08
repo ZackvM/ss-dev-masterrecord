@@ -70,7 +70,7 @@ class objlisting {
      $authpw = $_SERVER['PHP_AUTH_PW'];
      
      if ( $authuser === serverIdent) { 
-        $getSQL = "SELECT ifnull(lbl.labelRequested,'') as lblRqst, ifnull(lbl.printerRequested,'') as printerrqst, ifnull(lbl.dataStringpayload,'') as datapayload, ifnull(lbl.bywho,'UNKNOWNRQSTR') as bywho, ifnull(lbl.onwhen,now()) as onwhen, lbl.printid, ifnull(fm.formatText,'') as formatText FROM serverControls.lblToPrint lbl left join serverControls.lblFormats fm on lbl.labelRequested = fm.formatname where ifnull(lbl.datastringpayload,'') <> '' and ifnull(lbl.printerRequested,'') <> '' and ifnull(fm.formatText,'') <> '' ";
+        $getSQL = "SELECT  printid as printorderid, ifnull(lbl.labelRequested,'') as lblRqst, ifnull(lbl.printerRequested,'') as printerrqst, ifnull(lbl.dataStringpayload,'') as datapayload, ifnull(lbl.bywho,'UNKNOWNRQSTR') as bywho, ifnull(lbl.onwhen,now()) as onwhen, lbl.printid, ifnull(fm.formatText,'') as formatText FROM serverControls.lblToPrint lbl left join serverControls.lblFormats fm on lbl.labelRequested = fm.formatname where ifnull(lbl.datastringpayload,'') <> '' and ifnull(lbl.printerRequested,'') <> '' and ifnull(fm.formatText,'') <> '' ";
         $getLbl = $conn->prepare($getSQL);
         $getLbl->execute();
         $itemsfound = $getLbl->rowCount();
