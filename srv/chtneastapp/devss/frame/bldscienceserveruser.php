@@ -10,6 +10,7 @@ class bldssuser {
     public $username = "";
     public $useremail = "";
     public $chngpwordind = 0;
+    public $allowweeklyupdate = 0;
     public $allowpxi = 0;
     public $allowprocure = 0; 
     public $allowcoord = 0; 
@@ -45,6 +46,7 @@ class bldssuser {
           $this->username = $userelements['ssdisplayname'];
           $this->useremail = $userelements['ssemail'];
           $this->chngpwordind = $userelements['sschangepassword'];
+          $this->allowweeklyupdate = $userelements['allowweeklyupdate']; 
           $this->allowpxi = $userelements['allowpxi'];
           $this->allowprocure = $userelements['allowprocurement'];
           $this->allowcoord = $userelements['allowcoordination'];
@@ -81,6 +83,7 @@ class bldssuser {
                 . ", lcase(ifnull(ub.emailaddress,'')) as email "
                 . ", ifnull(ub.changePWordInd,1) as changepwordind"
                 . ", ifnull(ub.allowind,0) as allowind"
+                . ", ifnull(ub.allowweeklyupdate,0) as allowweeklyupdate"
                 . ", ifnull(ub.allowlinux,0) as allowlinux"
                 . ", ifnull(ub.allowproc,0) as allowprocurement"
                 . ", ifnull(ub.allowcoord,0) as allowcoordination"
@@ -123,6 +126,7 @@ class bldssuser {
            $elArr['ssemail'] = $ur['email'];
            $elArr['sschangepassword'] = $ur['changepwordind'];
            $elArr['allowpxi'] = $ur['allowlinux'];
+           $elArr['allowweeklyupdate'] = $ur['allowweeklyupdate'];
            $elArr['allowprocurement'] = $ur['allowprocurement'];
            $elArr['allowcoordination'] = $ur['allowcoordination'];
            $elArr['allowhpr'] = $ur['allowhpr'];
@@ -196,6 +200,7 @@ class bldssuser {
            $elArr['ssemail'] = "";
            $elArr['sschangepassword'] = "";
            $elArr['allowpxi'] = 0;
+           $elArr['allowweeklyupdate'] = 0;
            $elArr['allowprocurement'] = 0;
            $elArr['allowcoordination'] = 0;
            $elArr['allowhpr'] = 0;

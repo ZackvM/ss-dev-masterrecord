@@ -67,6 +67,43 @@ function biogroupdefinition ( $rqststr ) {
 
 
 $rtnThis = <<<JAVASCR
+        
+document.addEventListener('DOMContentLoaded', function() {  
+     
+  if (byId('btnAddSegment')) { 
+    byId('btnAddSegment').addEventListener('click', function() { alert('Add Segment'); }, false);
+  }
+
+  if (byId('btnEditSeg')) { 
+    byId('btnEditSeg').addEventListener('click', function() { alert('Edit Segment'); }, false);
+  }   
+
+  if (byId('btnQMSActions')) { 
+    byId('btnQMSActions').addEventListener('click', function() { alert('QMS Action'); }, false);
+  }      
+
+  if (byId('btnAssocGrp')) { 
+    byId('btnAssocGrp').addEventListener('click', function() { alert('Associative Grouping'); }, false);
+  }    
+
+  if (byId('btnPHIRecord')) { 
+    byId('btnPHIRecord').addEventListener('click', function() { alert('Patient Record'); }, false);
+  } 
+
+  if (byId('btnPristine')) { 
+    byId('btnPristine').addEventListener('click', function() { alert('View Pristine Record'); }, false);
+  }    
+
+  if (byId('btnPathologyRpt')) { 
+    byId('btnPathologyRpt').addEventListener('click', function() { alert( byId('mainHolderTbl').dataset.bgnbr  ); }, false);
+  }    
+        
+        
+  if (byId('btnHPRRecord')) { 
+    byId('btnHPRRecord').addEventListener('click', function() { alert('View HPR Record'); }, false);
+  }   
+      
+}, false); 
 
 function rowselector(whichrow) { 
   if (byId(whichrow)) { 
