@@ -95,12 +95,45 @@ class datadoers {
 
       //DATA CHECKS
       //{"refbg":"87106","speccat":"MALIGNANT","collectedsite":"THYROID","collectedsubsite":"","diagnosismodifier":"CARCINOMA :: FOLLICULAR","metsfromsite":"LYMPH NODE","siteposition":"","systemicdx":""}
+      ( trim($pdta['refbg']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "NO BIOGROUP SPECIFIED")) : "";
+      //IF NOT MALIGNANT - NO METS SITE
+      ( trim($pdta['metsfromsite']) !== "" && strtoupper(trim($pdta['speccat'])) !== "MALIGNANT" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "TO SPECIFY A \"METS FROM\" SITE, A BIOSAMPLE MUST BE MALIGNANT.")) : "";
       //MAKE SURE ALLOWABLE CHTN VOCAB
-      //IF NOT MALIGNANT - NO METS SITE 
+      ( trim($pdta['speccat']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A 'SPECIMEN CATEGORY' IS REQUIRED")) : "";
+      ( trim($pdta['collectedsite']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'COLLECTED SITE' IS REQUIRED")) : "";
+      ( trim($pdta['collectedsubsite']) !== "" && trim($pdta['collectedsite']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFYING A SUB-SITE, THE COLLECTED SITE MUST BE SPECIFIED")) : "";
 
-      
+      if ($errorInd === 0) { 
+          //{"speccat":"MALIGNANT","psite":"BLADDER","subsite":"SEROSA","dx":"CARCINOMA :: UROTHELIAL (TRANSITIONAL CELL)","metssite":"KIDNEY","siteposition":"LEFT","pdxsystemic":"ZACKITIS"}
 
-       (list( $errorInd, $msgArr[] ) = array(1 , "{$passdata}"));
+          $chkArr['speccat'] = strtoupper(trim($pdta['speccat']));
+          $chkArr['psite'] = strtoupper(trim($pdta['collectedsite']));
+          $chkArr['subsite'] = strtoupper(trim($pdta['collectedsubsite']));
+          $chkArr['dx'] = strtoupper(trim($pdta['diagnosismodifier']));
+          $chkArr['metssite'] = strtoupper(trim($pdta['metsfromsite']));
+          $chkArr['siteposition'] = strtoupper(trim($pdta['siteposition']));
+          $chkArr['pdxsystemic'] = strtoupper(trim($pdta['systemicdx'])) . "ZACK";
+          $vocchk = self::validatechtnvocabulary( "", json_encode($chkArr)); 
+
+          //"DATA":{"mainvocchk":2,"systemicvocchk":0,"metsvocchk":1} 
+          ( (int)$vocchk['data']['DATA']['mainvocchk'] === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MAIN DIAGNOSIS DESIGNATION DOES NOT EXIST IN THE OFFICIAL CHTN NETWORK VOCABULARY TABLES")) : "";
+          ( (int)$vocchk['data']['DATA']['systemicvocchk'] === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SYSTEMIC DIAGNOSIS DOES NOT EXIST IN THE OFFICIAL CHTN NETWORK VOCABULARY TABLES")) : "";
+
+  
+      }
+
+
+
+      if ( $errorInd === 0 ) {
+
+
+
+
+        //MAKE DATA BACKUP 
+        //WRITE DATA 
+        (list( $errorInd, $msgArr[] ) = array(1 , "TEST LINE"));
+      }
+
 
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
@@ -231,6 +264,7 @@ class datadoers {
 
       
       //CHECK MAIN VOCAB
+      $cntMain = 0;
       $mainSQL = "SELECT vocabid FROM four.sys_master_menu_vocabulary where 1 = 1 and specimencategory = :spc and site = :ste";
       $mainSQL .= ( trim($pdta['subsite']) !== "" ) ? " and subsite = :sste " : "";
       $mainSQL .= ( trim($pdta['dx']) !== "" ) ? " and REPLACE(diagnosis,'\\\', '::') = :dx " : "";
