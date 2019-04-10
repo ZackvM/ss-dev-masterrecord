@@ -119,6 +119,13 @@ function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) {
   }
 }
 
+function printPRpt(e, pathrptencyption) { 
+  if (pathrptencyption == '0') { 
+  } else { 
+    openOutSidePage('{$tt}/print-obj/pathology-report/'+pathrptencyption);  
+  }
+}
+
 function generateDialog( whichdialog, whatobject ) { 
       var dta = new Object(); 
       dta['whichdialog'] = whichdialog;
@@ -128,48 +135,7 @@ function generateDialog( whichdialog, whatobject ) {
       var mlURL = "/data-doers/preprocess-generate-dialog";
       universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
 }
-
-function printPRpt(e, pathrptencyption) { 
-  if (pathrptencyption == '0') { 
-  } else { 
-    openOutSidePage('{$tt}/print-obj/pathology-report/'+pathrptencyption);  
-  }
-}
-
-function editPathRpt(e, docid) { 
-  if (docid.toString().trim() !== "") { 
-    var dta = new Object(); 
-    dta['docid'] = docid;
-    var passdata = JSON.stringify(dta);
-    var mlURL = "/data-doers/preprocess-pathology-rpt-edit";
-    universalAJAX("POST",mlURL,passdata,answerEditPathRpt, 1);
-  }
-}
-
-function answerEditPathRpt(rtnData) { 
-   if (parseInt(rtnData['responseCode']) !== 200) { 
-     var msgs = JSON.parse(rtnData['responseText']);
-     var dspMsg = ""; 
-     msgs['MESSAGE'].forEach(function(element) { 
-       dspMsg += "\\n - "+element;
-     });
-     alert("Pathology Report Edit Error:\\n"+dspMsg);
-   } else {
-     if (byId('standardModalDialog')) {
-     console.log(rtnData); 
-       var dta = JSON.parse(rtnData['responseText']); 
-       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
-       byId('standardModalDialog').style.marginLeft = 0;
-       byId('standardModalDialog').style.left = "8vw";
-       byId('standardModalDialog').style.marginTop = 0;
-       byId('standardModalDialog').style.top = "3vh";
-       byId('systemDialogTitle').style.width = "82vw";
-       byId('standardModalBacker').style.display = 'block';
-       byId('standardModalDialog').style.display = 'block';
-     }  
-   }        
-}
-        
+            
 function answerPreprocessGenerateDialog( rtnData ) { 
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
@@ -489,8 +455,41 @@ function answerUpdateDiagnosisMenu(rtnData) {
     byId('ddPRCDXMod').innerHTML = menuTbl        
   } else {      
     //ERROR - DISPLAY ERROR
-    //console.log(rtnData);    
   }            
+}
+    
+function editPathologyReportText(whichdialog) {
+  var dta = new Object(); 
+  dta['labelNbr'] = byId('fldDialogPRUPLabelNbr').value.trim();
+  dta['bg'] = byId('fldDialogPRUPBG').value.trim();
+  dta['user'] = byId('fldDialogPRUPUser').value.trim();
+  dta['pxiid'] = byId('fldDialogPRUPPXI').value.trim();
+  dta['sess'] = byId('fldDialogPRUPSess').value.trim();
+  dta['prtxt'] = byId('fldDialogPRUPPathRptTxt').value.trim();
+  dta['prid'] = byId('fldDialogPRUPPRID').value.trim();
+  dta['hipaacert'] = byId('HIPAACertify').checked;
+  dta['usrpin'] = window.btoa( encryptedString(key, byId('fldUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );
+  dta['editreason'] = byId('fldDialogPRUPEditReason').value.trim();
+  dta['dialogid'] = whichdialog;
+  var passdata = JSON.stringify(dta); 
+  //TODO MAKE A 'PLEASE WAIT' INDICATION - AS THIS PROCESS CAN TAKE UP TO 10+ SECONDS 
+  var mlURL = "/data-doers/pathology-report-coordinator-edit";
+  universalAJAX("POST",mlURL,passdata, answerEditPathologyReportText,2);          
+}
+
+function answerEditPathologyReportText(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("PATHOLOGY REPORT EDIT ERROR:\\n"+dspMsg);
+   } else { 
+    alert('PATHOLOGY REPORT WAS SUCCESSFULLY SAVED');
+    var rtn = JSON.parse(rtnData['responseText']);    
+    closeThisDialog(rtn['DATA']['dialogid']);
+  }
 }
 
 JAVASCR;

@@ -456,6 +456,11 @@ class datadoers {
              $left = '34vw';
              $top = '12vh';
              break;
+           case 'predit':
+             $primeFocus = "";
+             $left = '5vw';
+             $top = '12vh';               
+         
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);
@@ -2968,32 +2973,55 @@ UPDSQL;
           (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER ({$pdta['user']}) INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
         }
      }  
+     
+     if ( $pdta['prid'] === 'NEWPRPT') { 
+         $htmlized = preg_replace('/\n\n/','<p>',$pdta['prtxt']);
+         $htmlized = preg_replace('/\r\n/','<p>', $htmlized);
+         $htmlized = preg_replace('/\n/','<br>',$htmlized);
 
-     //COPY ORIGINAL REPORT 
-     $copySQL = "insert into masterrecord.qcpathreports_history(prid, selector, pathreport, pxiid, uploadedBy, uploadedon, biospecimen, procedureMark, dnpr_nbr, deleteInd, div_code, lastedited, lasteditby, reasonforedit) select prid, selector, pathreport, pxiid, uploadedBy, uploadedon, biospecimen, procedureMark, dnpr_nbr, deleteInd, div_code, lastedited, lasteditby, reasonforedit from masterrecord.qcpathreports where prid = :prid"; 
-     $copyRS = $conn->prepare($copySQL); 
-     $copyRS->execute(array(':prid' => $pdta['prid']));
-     $rowsCopied = $copyRS->rowCount();   
-     if ($rowsCopied < 1) { 
+         $insSQL = "insert into  masterrecord.qcpathreports( selector, pathreport, pxiid, uploadedby, uploadedon, biospecimen, dnpr_nbr) values ( :selector, :pathreport, :pxiid, :uploadedby, now(), :biospecimen, :dnpr_nbr)";
+         $insRS = $conn->prepare($insSQL);
+         $insRS->execute(array(
+             ':selector' => generateRandomString(8)
+            ,':pathreport' => $htmlized
+            ,':pxiid' => $pdta['pxiid']
+            ,':uploadedby' => $usrrecord['originalaccountname']
+            ,':biospecimen' => $pdta['bg']
+            ,':dnpr_nbr' => $pdta['bg']
+         ));
+         
+         //START HERE 2019-04-11
+         //REPLACE THE DNPR_NBR WITH THE PROCEDURE CODE AS WELL 
+         //UPDATE UT_PROCURE_BIOSAMPLE table with PRID AND CHANGE TO Y
+         
+         $responseCode = 200;
+         $dta['dialogid'] = $pdta['dialogid'];
+     } else { 
+       //COPY ORIGINAL REPORT 
+       $copySQL = "insert into masterrecord.qcpathreports_history(prid, selector, pathreport, pxiid, uploadedBy, uploadedon, biospecimen, procedureMark, dnpr_nbr, deleteInd, div_code, lastedited, lasteditby, reasonforedit) select prid, selector, pathreport, pxiid, uploadedBy, uploadedon, biospecimen, procedureMark, dnpr_nbr, deleteInd, div_code, lastedited, lasteditby, reasonforedit from masterrecord.qcpathreports where prid = :prid"; 
+       $copyRS = $conn->prepare($copySQL); 
+       $copyRS->execute(array(':prid' => $pdta['prid']));
+       $rowsCopied = $copyRS->rowCount();   
+       if ($rowsCopied < 1) { 
           (list( $errorInd, $msgArr[] ) = array(1 , "DATABASE WAS UNABLE TO MAKE A COPY OF PATHOLOGY REPORT.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER."));
-     }
-
-     //SAVE EDITS
-     if ($errorInd === 0) {  
-       $htmlized = preg_replace('/\n\n/','<p>',$pdta['prtxt']);
-       $htmlized = preg_replace('/\r\n/','<p>', $htmlized);
-       $htmlized = preg_replace('/\n/','<br>',$htmlized);
-
-       $editSQL = "update masterrecord.qcpathreports set pathreport = :prtxt, lastedited = now(), lasteditby = :lasteditby, pxiid = :pxiid, biospecimen = :biospecimennbr, reasonforedit = :editreason where prid = :prid";
-       $editRS = $conn->prepare($editSQL); 
-       $editRS->execute(array(':prid' => $pdta['prid']
-                             ,':prtxt' => "{$htmlized}"
+       }
+       //SAVE EDITS
+       if ($errorInd === 0) {  
+         $htmlized = preg_replace('/\n\n/','<p>',$pdta['prtxt']);
+         $htmlized = preg_replace('/\r\n/','<p>', $htmlized);
+         $htmlized = preg_replace('/\n/','<br>',$htmlized);
+         $editSQL = "update masterrecord.qcpathreports set pathreport = :prtxt, lastedited = now(), lasteditby = :lasteditby, pxiid = :pxiid, biospecimen = :biospecimennbr, reasonforedit = :editreason where prid = :prid";
+         $editRS = $conn->prepare($editSQL); 
+         $editRS->execute(array(':prid' => $pdta['prid']
+                             ,':prtxt' => $htmlized
                              ,':lasteditby' => $usrrecord['originalaccountname']
                              ,':pxiid' => $pdta['pxiid']
                              ,':biospecimennbr' => $pdta['bg']
                              ,':editreason' => $pdta['editreason']
                          ));
-       $responseCode = 200;
+         $responseCode = 200;
+         $dta['dialogid'] = $pdta['dialogid'];
+       }
      }
 
      $msg = $msgArr;

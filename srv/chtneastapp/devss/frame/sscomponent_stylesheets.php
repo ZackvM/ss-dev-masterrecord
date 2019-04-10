@@ -400,6 +400,21 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #qmsstatind { width: 1.8vw; height: 3.8vh; border: 1px solid rgba({$this->color_zackgrey},1); text-align: center; color: rgba({$this->color_white},1); }
 
 .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; } 
+
+#PRUPHoldTbl { width: 84vw;  }
+#PRUPHoldTbl #fldDialogPRUPPathRptTxt {width: 90vw; height: 40vh; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1); line-height: 1.6em; text-align: justify; }
+#PRUPHoldTbl #VERIFHEAD { font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_cornflowerblue},1); text-align: center; padding: .5vh 0 .5vh 0; }
+#PRUPHoldTbl .lblThis {font-size: 1.3vh; white-space: nowrap; font-weight: bold; color: rgba({$this->color_zackgrey},1);border-right: 1px solid rgba({$this->color_grey},1); padding: 0 0 0 .2vw; }
+#PRUPHoldTbl .dspVerif {font-size: 1.3vh; white-space: nowrap; color: rgba({$this->color_zackgrey},1); padding: .8vh 1vw .8vh .2vw;border-right: 1px solid rgba({$this->color_grey},1); border-bottom: 1px solid rgba({$this->color_grey},1); }
+#PRUPHoldTbl .headhead { padding: 1vh 0 0 .5vw; font-size: 1.3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1);  }
+#PRUPHoldTbl input[type=checkbox] { width: 1vw; }
+#PRUPHoldTbl input[type=checkbox] + label { color: rgba({$this->color_bred},1); font-size: 1.5vh; text-align: justify; line-height: 1.8em; }
+#PRUPHoldTbl input[type=checkbox]:checked + label { color: rgba({$this->color_darkgreen},1);font-size: 1.5vh; text-align: justify; line-height: 1.8em; font-weight: normal; }
+
+#PRUPHoldTbl .ttholder { position: relative; }
+#PRUPHoldTbl .ttholder:hover .tt { display: block; }
+#PRUPHoldTbl .tt { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; z-index: 40; }
+
 STYLESHEET;
 return $rtnThis;
 }

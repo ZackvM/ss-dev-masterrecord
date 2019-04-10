@@ -16,6 +16,24 @@ function sysDialogBuilder($whichdialog, $passedData) {
     $standardSysDialog = 1;
     switch($whichdialog) {
 
+        case 'prnew': 
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Pathology Report Uploader";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";        
+        $innerDialog = bldDialogUploadPathRpt( $passedData );
+        //$footerBar = "DONOR RECORD";            
+            break;
+        
+        
+        case 'predit': 
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Pathology Report Editor";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";        
+        $innerDialog = bldDialogEditPathRpt( $passedData );
+        //$footerBar = "DONOR RECORD";            
+            break;
       case 'dlgEDTDX':  
         $pdta = json_decode($passedData, true);          
         $titleBar = "Diagnosis Designation Editor";
@@ -2784,6 +2802,189 @@ return $rtnThis;
 
 }
 
+function bldDialogUploadPathRpt ( $passeddata ) { 
+
+//{"whichdialog":"prnew","objid":"aEMrL0VTWmdCZXRHcU52K1p6K3N1Zz09","dialogid":"7JG7PQ8Qw6BXxXV"}      
+    $pdta = json_decode( $passeddata, true);
+    $bg = cryptservice( $pdta['objid'] , 'd', false );    
+    $errorInd = 0;
+    session_start(); 
+    $sess = session_id();
+    require(serverkeys . "/sspdo.zck");
+    $rtnThis = "ERROR!";
+    session_start();      
+    $sessid = session_id();
+    $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+    $rs = $conn->prepare($chkUsrSQL); 
+    $rs->execute(array(':sessid' => $sessid));
+    if ($rs->rowCount() === 1) { 
+      $usrrecord = $rs->fetch(PDO::FETCH_ASSOC);
+    } else { 
+      (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+    }
+    
+    if ($errorInd === 0) { 
+       $bsnbr = cryptservice( $pdta['objid'], 'd');
+       $pathrptSQL = "select bs.read_Label as bgs, bs.pbiosample, bs.pathReport, ifnull(bs.pathreportid,0) as pathreportid, concat(trim(ifnull(bs.anatomicSite,'')), if(trim(ifnull(bs.tissType,''))='','', concat(' (',trim(ifnull(bs.tissType,'')),')'))) site, concat(trim(ifnull(bs.diagnosis, '')), if(trim(ifnull(bs.subdiagnos,''))='','', concat( ' :: ' , trim(ifnull(bs.subdiagnos,''))))) as diagnosis, ifnull(bs.procureInstitution,'') as procinstitution, ifnull(date_format(bs.procedureDate,'%m/%d/%Y'),'') as proceduredate, concat( if(trim(ifnull(bs.pxiAge,'')) = '', '-',trim(ifnull(bs.pxiAge,''))),'::',if(trim(ifnull(bs.pxiRace,''))='','-',ucase(trim(ifnull(bs.pxiRace,'')))),'::',if(trim(ifnull(bs.pxiGender,'')) = '','-',ucase(trim(ifnull(bs.pxiGender,''))))) ars, ifnull(bs.pxiid,'NOPXI') as pxiid from  masterrecord.ut_procure_biosample bs where bs.pbiosample = :bsnbr";
+
+$pathrptRS = $conn->prepare($pathrptSQL); 
+       $pathrptRS->execute(array(':bsnbr' => $bsnbr));
+       if ( $pathrptRS->rowCount() === 1 ) {  
+            $r = $pathrptRS->fetch(PDO::FETCH_ASSOC);
+            $pdta['pbiosample'] = $r['pbiosample'];
+            $pdta['labelnbr'] = $r['bgs'];
+            $pdta['user'] = $usrrecord['originalaccountname'];
+            $pdta['sessionid'] = $sessid;
+            $pdta['pathreportind'] = $r['pathReport'];
+            $pdta['pathreportid'] = $r['pathreportid'];
+            $pdta['site'] = $r['site'];
+            $pdta['diagnosis'] = $r['diagnosis'];
+            $pdta['procinstitution'] = $r['procinstitution'];
+            $pdta['proceduredate'] = $r['proceduredate'];
+            $pdta['ars'] = $r['ars'];
+            $pdta['pxiid'] = $r['pxiid'];
+            $pdta['pathologyrpt'] = "{$r['pathreport']}";
+            $pdta['prid'] = $r['prid'];             
+       }
+    
+    
+  $devarr = json_decode(callrestapi("GET", dataTree . "/global-menu/dev-edit-pathrpt-reasons",serverIdent, serverpw), true);
+  $devm = "<table border=0 class=menuDropTbl>";
+  foreach ($devarr['DATA'] as $devval) {
+    $devm .= "<tr><td onclick=\"fillField('fldDialogPRUPEditReason','','{$devval['menuvalue']}');\" class=ddMenuItem>{$devval['menuvalue']}</td></tr>";
+  }
+  $devm .= "</table>";
+$prTxt = preg_replace('/<p\s?\/?>/i',"\n\n",preg_replace('/<br\s?\/?>/i', "\n", $pdta['pathologyrpt']));
+
+$rtnThis = <<<RTNTHIS
+<input type=hidden id=fldDialogPRUPLabelNbr value='{$pdta['labelnbr']}'>
+<input type=hidden id=fldDialogPRUPBG value='{$pdta['pbiosample']}'>
+<input type=hidden id=fldDialogPRUPUser value='{$pdta['user']}'>
+<input type=hidden id=fldDialogPRUPSess value='{$pdta['sessionid']}'>
+<input type=hidden id=fldDialogPRUPPXI value='{$pdta['pxiid']}'>
+<input type=hidden id=fldDialogPRUPPRID value='NEWPRPT'>
+<table border=0 id=PRUPHoldTbl cellspacing=0 cellpadding=0>
+<tr><td colspan=7 id=VERIFHEAD>PATHOLOGY REPORT UPLOAD</td></tr>
+<tr><td class=lblThis style="width: 8vw;">Biogroup</td>
+        <td class=lblThis style="width: 15vw;">Site</td>
+        <td class=lblThis style="width: 15vw;">Diagnosis</td>
+        <td class=lblThis style="width: 8vw;">Institution</td>
+        <td class=lblThis style="width: 10vw;">Procedure Date</td>
+        <td class=lblThis style="width: 10vw;">A/R/S</td>
+        <td></td></tr>
+<tr><td class=dspVerif>{$bg}</td><td class=dspVerif>{$pdta['site']}</td><td class=dspVerif>{$pdta['diagnosis']}</td><td class=dspVerif>{$pdta['procinstitution']}</td><td class=dspVerif>{$pdta['proceduredate']}</td><td class=dspVerif>{$pdta['ars']}</td><td></td></tr>
+
+<tr><td colspan=7 class=headhead>Pathology Report Text</td></tr>
+<tr><td colspan=7 style="padding: 0 0 0 .4vw;"><TEXTAREA id=fldDialogPRUPPathRptTxt>{$prTxt}</TEXTAREA></td></tr>
+<tr><td colspan=7 style="padding: .4vh .8vw .4vh .8vw;"><input type=checkbox id=HIPAACertify><label for=HIPAACertify id=HIPAABoxLabel>By clicking this box, I ({$pdta['user']}) certify that this Pathology Report Text DOES NOT contain any HIPAA patient identifiers.  This includes:  names, birthdays, addresses, phone numbers, email addresses, physician names, pathology assistance names, technician names, institution names, dates, etc.  I have made myself familiar with the HIPAA identifiers and certify that ALL HIPAA idenitifers have been removed as per CHTNEastern Standard Operating Procedures.  This pathology report is redacted so that the donor/patient cannot be identified.</td></tr>
+
+<tr><td colspan=7><center>
+<table><tr><td class=headhead valign=bottom>Override PIN (Inventory PIN)</td><td valign=bottom class=headhead> Reason for Edit </td></tr>
+<tr><td style="padding: 0 0 0 .5vw;"><input type=password id=fldUsrPIN style="width: 11vw; font-size: 1.3vh;"></td><td style="padding: 0 0 0 .5vw;"><div class=menuHolderDiv><input type=text id=fldDialogPRUPEditReason style="font-size: 1.3vh; width: 13vw;"><div class=valueDropDown>{$devm}</div></div></td></tr>
+</table>
+</td></tr>
+
+<tr><td colspan=7 align=right style="padding: 0 20vw 0 0;"><table class=tblBtn id=btnUploadPR style="width: 6vw;" onclick="editPathologyReportText('{$pdta['dialogid']}');"><tr><td style="white-space: nowrap;"><center>Save</td></tr></table></td></tr>
+
+</table>
+RTNTHIS;
+
+    }
+return $rtnThis;
+}
+
+function bldDialogEditPathRpt( $passeddata ) { 
+  $pdta = json_decode($passeddata, true); 
+  $errorInd = 0;
+  session_start(); 
+  $sess = session_id();
+  require(serverkeys . "/sspdo.zck");
+
+  $rtnThis = "ERROR!";
+  
+  session_start();      
+     $sessid = session_id();
+
+     $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+     $rs = $conn->prepare($chkUsrSQL); 
+     $rs->execute(array(':sessid' => $sessid));
+     if ($rs->rowCount() === 1) { 
+       $usrrecord = $rs->fetch(PDO::FETCH_ASSOC);
+     } else { 
+       (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+     }
+  
+   if ($errorInd === 0) { 
+       $prid = cryptservice( $pdta['objid'], 'd');
+$pathrptSQL = "select qcpr.prid, qcpr.pathreport,  bs.read_Label as bgs, bs.pbiosample, bs.pathReport, ifnull(bs.pathreportid,0) as pathreportid, concat(trim(ifnull(bs.anatomicSite,'')), if(trim(ifnull(bs.tissType,''))='','', concat(' (',trim(ifnull(bs.tissType,'')),')'))) site, concat(trim(ifnull(bs.diagnosis, '')), if(trim(ifnull(bs.subdiagnos,''))='','', concat( ' :: ' , trim(ifnull(bs.subdiagnos,''))))) as diagnosis, ifnull(bs.procureInstitution,'') as procinstitution, ifnull(date_format(bs.procedureDate,'%m/%d/%Y'),'') as proceduredate, concat( if(trim(ifnull(bs.pxiAge,'')) = '', '-',trim(ifnull(bs.pxiAge,''))),'::',if(trim(ifnull(bs.pxiRace,''))='','-',ucase(trim(ifnull(bs.pxiRace,'')))),'::',if(trim(ifnull(bs.pxiGender,'')) = '','-',ucase(trim(ifnull(bs.pxiGender,''))))) ars, ifnull(bs.pxiid,'NOPXI') as pxiid from masterrecord.qcpathreports qcpr left join masterrecord.ut_procure_biosample bs on qcpr.prid = bs.pathreportid where qcpr.prid = :prid";
+       $pathrptRS = $conn->prepare($pathrptSQL); 
+       $pathrptRS->execute(array(':prid' => $prid));
+       if ( $pathrptRS->rowCount() === 1 ) {  
+            $r = $pathrptRS->fetch(PDO::FETCH_ASSOC);
+            $pdta['pbiosample'] = $r['pbiosample'];
+            $pdta['labelnbr'] = $r['bgs'];
+            $pdta['user'] = $usrrecord['originalaccountname'];
+            $pdta['sessionid'] = $sessid;
+            $pdta['pathreportind'] = $r['pathReport'];
+            $pdta['pathreportid'] = $r['pathreportid'];
+            $pdta['site'] = $r['site'];
+            $pdta['diagnosis'] = $r['diagnosis'];
+            $pdta['procinstitution'] = $r['procinstitution'];
+            $pdta['proceduredate'] = $r['proceduredate'];
+            $pdta['ars'] = $r['ars'];
+            $pdta['pxiid'] = $r['pxiid'];
+            $pdta['pathologyrpt'] = "{$r['pathreport']}";
+            $pdta['prid'] = $r['prid']; 
+            //$dta = array('pagecontent' => bldDialogGetter('dataCoordEditPR', $pdta) ); 
+            
+  $devarr = json_decode(callrestapi("GET", dataTree . "/global-menu/dev-edit-pathrpt-reasons",serverIdent, serverpw), true);
+  $devm = "<table border=0 class=menuDropTbl>";
+  foreach ($devarr['DATA'] as $devval) {
+    $devm .= "<tr><td onclick=\"fillField('fldDialogPRUPEditReason','','{$devval['menuvalue']}');\" class=ddMenuItem>{$devval['menuvalue']}</td></tr>";
+  }
+  $devm .= "</table>";
+$prTxt = preg_replace('/<p\s?\/?>/i',"\n\n",preg_replace('/<br\s?\/?>/i', "\n", $pdta['pathologyrpt']));
+$bg = $pdta['pbiosample'];
+$rtnThis = <<<RTNTHIS
+<input type=hidden id=fldDialogPRUPLabelNbr value='{$pdta['labelnbr']}'>
+<input type=hidden id=fldDialogPRUPBG value='{$pdta['pbiosample']}'>
+<input type=hidden id=fldDialogPRUPUser value='{$pdta['user']}'>
+<input type=hidden id=fldDialogPRUPSess value='{$pdta['sessionid']}'>
+<input type=hidden id=fldDialogPRUPPXI value='{$pdta['pxiid']}'>
+<input type=hidden id=fldDialogPRUPPRID value='{$pdta['prid']}'>
+
+<table border=0 id=PRUPHoldTbl cellspacing=0 cellpadding=0>
+<tr><td colspan=7 id=VERIFHEAD>PATHOLOGY REPORT EDIT</td></tr>
+<tr><td class=lblThis style="width: 8vw;">Biogroup</td>
+        <td class=lblThis style="width: 15vw;">Site</td>
+        <td class=lblThis style="width: 15vw;">Diagnosis</td>
+        <td class=lblThis style="width: 8vw;">Institution</td>
+        <td class=lblThis style="width: 10vw;">Procedure Date</td>
+        <td class=lblThis style="width: 10vw;">A/R/S</td>
+        <td></td></tr>
+<tr><td class=dspVerif>{$bg}</td><td class=dspVerif>{$pdta['site']}</td><td class=dspVerif>{$pdta['diagnosis']}</td><td class=dspVerif>{$pdta['procinstitution']}</td><td class=dspVerif>{$pdta['proceduredate']}</td><td class=dspVerif>{$pdta['ars']}</td><td></td></tr>
+
+<tr><td colspan=7 class=headhead>Pathology Report Text</td></tr>
+<tr><td colspan=7 style="padding: 0 0 0 .4vw;"><TEXTAREA id=fldDialogPRUPPathRptTxt>{$prTxt}</TEXTAREA></td></tr>
+<tr><td colspan=7 style="padding: .4vh .8vw .4vh .8vw;"><input type=checkbox id=HIPAACertify><label for=HIPAACertify id=HIPAABoxLabel>By clicking this box, I ({$pdta['user']}) certify that this Pathology Report Text DOES NOT contain any HIPAA patient identifiers.  This includes:  names, birthdays, addresses, phone numbers, email addresses, physician names, pathology assistance names, technician names, institution names, dates, etc.  I have made myself familiar with the HIPAA identifiers and certify that ALL HIPAA idenitifers have been removed as per CHTNEastern Standard Operating Procedures.  This pathology report is redacted so that the donor/patient cannot be identified.</td></tr>
+
+<tr><td colspan=7><center>
+<table><tr><td class=headhead valign=bottom>Override PIN (Inventory PIN)</td><td valign=bottom class=headhead> Reason for Edit </td></tr>
+<tr><td style="padding: 0 0 0 .5vw;"><input type=password id=fldUsrPIN style="width: 11vw; font-size: 1.3vh;"></td><td style="padding: 0 0 0 .5vw;"><div class=menuHolderDiv><input type=text id=fldDialogPRUPEditReason style="font-size: 1.3vh; width: 13vw;"><div class=valueDropDown>{$devm}</div></div></td></tr>
+</table>
+</td></tr>
+
+<tr><td colspan=7 align=right style="padding: 0 20vw 0 0;"><table class=tblBtn id=btnUploadPR style="width: 6vw;" onclick="editPathologyReportText('{$pdta['dialogid']}');"><tr><td style="white-space: nowrap;"><center>Save</td></tr></table></td></tr>
+
+</table>
+RTNTHIS;
+
+       }
+
+   }
+  return $rtnThis;
+}
+
 function bldDialogEditDesigDX( $passeddata ) { 
   $pdta = json_decode($passeddata, true); 
   $errorInd = 0;
@@ -4737,39 +4938,43 @@ ANOTHERLINE;
             <table border=0 cellspacing=0 cellpadding=0>
                <tr>
                  <td class=prAnswer>{$bg['prind']}</td>
-                 <td onclick="printPRpt(event,'{$prDocId}');"><div class=prExplainer><i class="material-icons qlSmallIcon">print</i><div class=prExplainerText>Print Pathology Report for {$bg['bgnbr']}</div></div></td>
-                 <td onclick="editPathRpt(event,'{$prDocId}');"><div class=prExplainer><i class="material-icons qlSmallIcon">file_copy</i><div class=prExplainerText>Edit Pathology Report for {$bg['bgnbr']}</div></div></td>
+                 <td onclick="printPRpt(event,'{$prDocId}');"><div class=prExplainer><i class="material-icons qlSmallIcon">print</i><div class=prExplainerText>Click to print pathology report for {$bg['bgnbr']}</div></div></td>
+                 <td onclick="generateDialog('predit','{$prDocId}');"><div class=prExplainer><i class="material-icons qlSmallIcon">file_copy</i><div class=prExplainerText>Click to edit pathology report for {$bg['bgnbr']}</div></div></td>
                </tr>
             </table>
 PRPTNOTATION;
         } else { 
           $pRptDsp = <<<PRPTNOTATION
-<div class=ttholder>
-   <div class=tt>
-     Biogroup has multiple pathology Report References.  See a CHTNEastern Informatics Staff Member
-   </div>
-</div>
+                  <table border=0 cellspacing=0 cellpadding=0>
+               <tr>
+                 <td class=prAnswer>{$bg['prind']}</td>
+                 <td><div class=prExplainer><i class="material-icons qlSmallIcon">error</i><div class=prExplainerText>Biogroup ({$bg['bgnbr']}) has multiple pathology Report References.  See a CHTNEastern Informatics Staff Member! </div></div></td>
+                 </tr>
+            </table>                
 PRPTNOTATION;
         }
       break;
       case 'PENDING':
         $dspBG = $bg['bgnbr'];
-        $pRptDsp = <<<PRPTNOTATION
-<div class=ttholder>
-   <div class=tt>
-     <div class=quickLink onclick="getUploadNewPathRpt(event,'{$sglabel}');"><i class="material-icons qlSmallIcon">file_copy</i> Upload Pathology Report (Biogroup: {$dspBG})</div>
-   </div>
-</div>
+$pRptDsp = <<<PRPTNOTATION
+            <table border=0 cellspacing=0 cellpadding=0>
+               <tr>
+                 <td class=prAnswer>{$bg['prind']}</td>
+                 <td onclick="generateDialog('prnew','{$bgency}');"><div class=prExplainer><i class="material-icons qlSmallIcon">file_copy</i><div class=prExplainerText>Click to edit pathology report for {$bg['bgnbr']}</div></div></td>
+               </tr>
+            </table>
 PRPTNOTATION;
       break; 
       default: 
         $dspBG = $bg['bgnbr'];
+          //<div class=quickLink onclick="getUploadNewPathRpt(event,'{$sglabel}');"><i class="material-icons qlSmallIcon">file_copy</i> Upload Pathology Report (Biogroup: {$dspBG})</div>
+          //<td onclick="generateDialog('prnew','{$dspBG}');"><div class=prExplainer><i class="material-icons qlSmallIcon">file_copy</i><div class=prExplainerText>Click to upload pathology report for {$bg['bgnbr']}</div></div></td>
         $pRptDsp = <<<PRPTNOTATION
-<div class=ttholder>
-   <div class=tt>
-     <div class=quickLink onclick="getUploadNewPathRpt(event,'{$sglabel}');"><i class="material-icons qlSmallIcon">file_copy</i> Upload Pathology Report (Biogroup: {$dspBG})</div>
-   </div>
-</div>
+        <table border=0 cellspacing=0 cellpadding=0>
+               <tr>
+                 <td class=prAnswer>{$bg['prind']}</td>                
+               </tr>
+            </table>     
 PRPTNOTATION;
     }
 
