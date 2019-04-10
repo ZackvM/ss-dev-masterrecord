@@ -93,12 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (byId('btnPristine')) { 
     byId('btnPristine').addEventListener('click', function() { alert('View Pristine Record'); }, false);
   }    
-
-  if (byId('btnPathologyRpt')) { 
-    byId('btnPathologyRpt').addEventListener('click', function() { alert( byId('mainHolderTbl').dataset.bgnbr  ); }, false);
-  }    
-        
-        
+         
   if (byId('btnHPRRecord')) { 
     byId('btnHPRRecord').addEventListener('click', function() { alert('View HPR Record'); }, false);
   }   
@@ -132,6 +127,47 @@ function generateDialog( whichdialog, whatobject ) {
       byId('standardModalBacker').style.display = 'block';
       var mlURL = "/data-doers/preprocess-generate-dialog";
       universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
+}
+
+function printPRpt(e, pathrptencyption) { 
+  if (pathrptencyption == '0') { 
+  } else { 
+    openOutSidePage('{$tt}/print-obj/pathology-report/'+pathrptencyption);  
+  }
+}
+
+function editPathRpt(e, docid) { 
+  if (docid.toString().trim() !== "") { 
+    var dta = new Object(); 
+    dta['docid'] = docid;
+    var passdata = JSON.stringify(dta);
+    var mlURL = "/data-doers/preprocess-pathology-rpt-edit";
+    universalAJAX("POST",mlURL,passdata,answerEditPathRpt, 1);
+  }
+}
+
+function answerEditPathRpt(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("Pathology Report Edit Error:\\n"+dspMsg);
+   } else {
+     if (byId('standardModalDialog')) {
+     console.log(rtnData); 
+       var dta = JSON.parse(rtnData['responseText']); 
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = 0;
+       byId('standardModalDialog').style.left = "8vw";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "3vh";
+       byId('systemDialogTitle').style.width = "82vw";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+   }        
 }
         
 function answerPreprocessGenerateDialog( rtnData ) { 

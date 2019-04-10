@@ -1104,6 +1104,9 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $bgencry = cryptservice($val['pbiosample']);
     $moreInfo = ( trim($cmtDsp) !== "" ) ? "<div class=ttholder><div class=infoIconDiv><i class=\"material-icons informationalicon\">error_outline</i></div><div class=infoTxtDspDiv>{$cmtDsp}</div></div>" : "";
 
+
+
+
     $prDocId = "";
     switch (trim($val['pathologyrptind'])) { 
       case 'Y':
@@ -1141,6 +1144,9 @@ PRPTNOTATION;
       default: 
         $pRptDsp = "{$val['pathologyrptind']}";
     }
+
+
+
 
 //TODO: ADD ABILITY TO PULL ASSOCIATIVE RECORD    
     
@@ -1381,15 +1387,17 @@ function root($rqstStr, $whichUsr) {
   
 
   $fsCalendar = buildcalendar('mainroot', date('m'), date('Y'), $whichUsr->friendlyname, $whichUsr->useremail, $whichUsr->loggedsession );
-  
-  if ($whichUsr->primaryinstitution === 'HUP') { 
-      $weekGoal = bldWeeklyGoals($whichUsr);
-  } else { 
-      $weekGoal = "";
-  }
-  
+
+//DISPLAY WEEKLY GOALS
+//  if ($whichUsr->primaryinstitution === 'HUP') { 
+//      $weekGoal = bldWeeklyGoals($whichUsr);
+//  } else { 
+//      $weekGoal = "";
+//  }
+
+
   $rtnthis = <<<PAGEHERE
-<table border=1 id=rootTable>
+<table border=0 id=rootTable>
     <tr><td rowspan=2 valign=top>&nbsp;</td><td style="width: 42vw;" align=right valign=top>{$weekGoal}</td></tr>
     <tr><td style="width: 42vw;" align=right valign=top><div id="mainRootCalendar">{$fsCalendar}</div></td></tr>    
 </table>
@@ -2155,7 +2163,6 @@ $innerBar = <<<BTNTBL
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAssocGrp><tr><td><i class="material-icons">group_work</i></td><td>Associative</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPHIRecord><tr><td><i class="material-icons">group</i></td><td>Encounter</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPristine><tr><td><i class="material-icons">change_history</i></td><td>Pristine</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPathologyRpt><tr><td><i class="material-icons">subject</i></td><td>Path Report</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnHPRRecord><tr><td><i class="material-icons">gavel</i></td><td>View HPR</td></tr></table></td>
         
 </tr>
@@ -2776,12 +2783,6 @@ RTNTHIS;
 return $rtnThis;
 
 }
-
-
-
-
-
-
 
 function bldDialogEditDesigDX( $passeddata ) { 
   $pdta = json_decode($passeddata, true); 
@@ -4688,7 +4689,7 @@ function bldBiogroupDefitionDisplay($biogroup, $bgency) {
       }
 
       
-      $rtnThis = "<table id=mainHolderTbl border=0 data-bgnbr='{$bg['bgnbr']}'>";
+      $rtnThis = "<table id=mainHolderTbl border=0 data-bgnbr='{$bgency}'>";
       $rtnThis .= <<<TOPLINE
               <tr><td rowspan=10 valign=top><div class=qmsdspholder><table border=0 cellspacing=0 cellpadding=0><tr><td id=qmsstatind style="background: rgba({$clssuffix});">{$qmsicon}</td></tr></table><div class=qmsdspinfo>{$qcstatustxt}</div></div></td><td>
                   <table border=0 class=lineTbl id=lineBiogroupAnnounce>
@@ -4725,9 +4726,55 @@ LINEONE;
 ANOTHERLINE;
       //END DESIGNATION
 
-                                    
-      //PHI INFORMATION
-//generateDialog('dlgEncountARS', 'ENC:ARS:/PXIID/');
+
+    $prDocId = "";
+    switch (trim($bg['prind'])) { 
+      case 'YES':
+        if ((int)$bg['pathologyrptdocid'] !== 0) {  
+          $prDocId = ((int)$bg['pathologyrptdocid'] > 0) ? cryptservice( (int)$bg['pathologyrptdocid'], "e" ) : 0;
+          $dspBG = $bg['bgnbr'];
+          $pRptDsp = <<<PRPTNOTATION
+            <table border=0 cellspacing=0 cellpadding=0>
+               <tr>
+                 <td class=prAnswer>{$bg['prind']}</td>
+                 <td onclick="printPRpt(event,'{$prDocId}');"><div class=prExplainer><i class="material-icons qlSmallIcon">print</i><div class=prExplainerText>Print Pathology Report for {$bg['bgnbr']}</div></div></td>
+                 <td onclick="editPathRpt(event,'{$prDocId}');"><div class=prExplainer><i class="material-icons qlSmallIcon">file_copy</i><div class=prExplainerText>Edit Pathology Report for {$bg['bgnbr']}</div></div></td>
+               </tr>
+            </table>
+PRPTNOTATION;
+        } else { 
+          $pRptDsp = <<<PRPTNOTATION
+<div class=ttholder>
+   <div class=tt>
+     Biogroup has multiple pathology Report References.  See a CHTNEastern Informatics Staff Member
+   </div>
+</div>
+PRPTNOTATION;
+        }
+      break;
+      case 'PENDING':
+        $dspBG = $bg['bgnbr'];
+        $pRptDsp = <<<PRPTNOTATION
+<div class=ttholder>
+   <div class=tt>
+     <div class=quickLink onclick="getUploadNewPathRpt(event,'{$sglabel}');"><i class="material-icons qlSmallIcon">file_copy</i> Upload Pathology Report (Biogroup: {$dspBG})</div>
+   </div>
+</div>
+PRPTNOTATION;
+      break; 
+      default: 
+        $dspBG = $bg['bgnbr'];
+        $pRptDsp = <<<PRPTNOTATION
+<div class=ttholder>
+   <div class=tt>
+     <div class=quickLink onclick="getUploadNewPathRpt(event,'{$sglabel}');"><i class="material-icons qlSmallIcon">file_copy</i> Upload Pathology Report (Biogroup: {$dspBG})</div>
+   </div>
+</div>
+PRPTNOTATION;
+    }
+
+    //PHI INFORMATION
+    //<div class=basicEditIcon><i class="material-icons cmtEditIconCls">menu</i></div>
 $rtnThis .= <<<NEXTLINE
 <tr><td>
     
@@ -4750,8 +4797,19 @@ $rtnThis .= <<<NEXTLINE
       <table class=dataElementTbl id=elemCXRX><tr><td class=elementLabel>Chemo :: Radiation Indicator</td></tr><tr><td class=dataElement><div class=commentHolder onclick="generateDialog('dlgEDTENC','{$bg['pxiid']}::{$bg['bgnbr']}');">{$bg['cxind']} :: {$bg['rxind']} &nbsp;<div class=basicEditIcon><i class="material-icons cmtEditIconCls">edit</i></div></div></td></tr></table> 
       </td>
 
-      <td>  
-      <table class=dataElementTbl id=elemPR><tr><td class=elementLabel>Pathology Report</td></tr><tr><td class=dataElement>{$bg['prind']} &nbsp;</td></tr></table> 
+      <td> 
+
+      <table class=dataElementTbl id=elemPR>
+               <tr>
+                 <td class=elementLabel>Pathology Report</td></tr>
+               <tr>
+                 <td class="dataElement">
+                   {$pRptDsp}
+
+                 </td>
+               </tr>
+      </table> 
+
       </td>
 
       <td>  
@@ -4759,7 +4817,7 @@ $rtnThis .= <<<NEXTLINE
       </td>   
 
       <td align=right>  
-      <table class=dataElementTbl id=elemIC><tr><td class=elementLabel>Consent</td></tr><tr><td class=dataElement>{$bg['icind']} &nbsp;</td></tr></table> 
+      <table class=dataElementTbl id=elemIC><tr><td class=elementLabel>Consent</td></tr><tr><td class=dataElement>{$bg['icind']}&nbsp;</td></tr></table> 
       </td>      
    
  </tr></table>
@@ -4780,7 +4838,7 @@ $rtnThis .= <<<NEXTLINETWO
       <table class=dataElementTbl id=elemBGCmnt><tr><td class=elementLabel>Biosample Comments</td></tr><tr>
           <td class=dataElementc>
           <div class=commentHolder onclick="generateDialog('dlgCMTEDIT', 'BGC:{$bg['bgnbr']}');">
-             <div class=commentdsp>
+             <div class=commentdsp style="width: 100%; height: 8vh;">
                 {$bg['biosamplecomment']}                
              </div>
              <div class=cmtEditIcon><i class="material-icons cmtEditIconCls">edit</i></div>   
@@ -4792,7 +4850,7 @@ $rtnThis .= <<<NEXTLINETWO
       <table class=dataElementTbl id=elemBGCmnt><tr><td class=elementLabel>Question for HPR/QMS Reviewer</td></tr><tr>
           <td class=dataElementc>
           <div class=commentHolder onclick="generateDialog('dlgCMTEDIT', 'HPQ:{$bg['bgnbr']}');">
-             <div class=commentdsp>
+             <div class=commentdsp style="width: 100%; height: 8vh;">
                 {$bg['questionhpr']}                
              </div>
              <div class=cmtEditIcon><i class="material-icons cmtEditIconCls">edit</i></div>   

@@ -294,7 +294,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 
 .dataElementTbl { border-collapse: collapse; border: 1px solid rgba({$this->color_dblue},1); }
 .elementLabel { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .5vh .3vw; font-size: 1.1vh; font-weight: bold; } 
-.dataElement { padding: .9vh .3vw; background: rgba({$this->color_white},1); }
+.dataElement { padding: .9vh .3vw; background: rgba({$this->color_white},1); box-sizing: border-box; }
 .dataElementc { background: rgba({$this->color_white},1); }
 
 .sideControlBtn { color: rgba({$this->color_darkgrey},.8); background: rgba({$this->color_white},1); border-collapse: collapse; box-sizing: border-box; }
@@ -325,7 +325,19 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #elemProcedureCollect { width: 18vw; }
 #elemARS { width: 30vw; }
 #elemCXRX { width: 12vw; }
+
 #elemPR { width: 8vw; }
+   #elemPR .dataElement { padding: 0; }
+   #elemPR table { width: 8vw; }
+   .prAnswer { padding: .9vh .3vw; min-width: 4.5vw; } 
+
+.prExplainer { position: relative; }
+.prExplainer .qlSmallIcon { font-size: 1.8vh; color: rgba({$this->color_darkgrey},.8);  } 
+.prExplainer .prExplainerText { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 8px; top: 30px; border: 1px solid rgba({$this->color_cornflowerblue},1); display: none; font-size: 1.2vh; white-space: nowrap; }
+.prExplainer:hover .prExplainerText { display: block; }
+.prExplainer:hover .qlSmallIcon { color: rgba({$this->color_cornflowerblue},1); }
+.prExplainer:hover { cursor: pointer; }
+
 #elemSbj { width: 13vw; }
 #elemIC { width: 7vw; }
 
@@ -335,15 +347,13 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 .commentHolder { position: relative; }
 .commentHolder:hover {cursor: pointer; }
 
-.commentdsp { width: 40vw; height: 8vh; overflow: auto;  padding: .9vh .3vw; box-sizing: border-box;}
+.commentdsp { overflow: auto;  padding: .9vh .3vw; box-sizing: border-box; }
 .cmtEditIcon { position: absolute; right: 12px; top: .7vh;  }
 .cmtEditIconCls { font-size: 2.5vh; color: rgba({$this->color_darkgrey},.5); }
 .commentHolder:hover .cmtEditIconCls { color: rgba({$this->color_bred}, .6); }
 
+
 .basicEditIcon {   position: absolute; right: 3px; top: -7px; font-size: 1vh; }
-
-
-
 
 .segstatusdspinfo { position: relative; }
 .segstatusinfo { position: absolute; top: 30px; left: 30px; white-space: nowrap; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 4px; box-sizing: border-box; display: none; z-index: 55; }
