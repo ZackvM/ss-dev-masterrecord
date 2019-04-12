@@ -440,6 +440,7 @@ class datadoers {
          $left = '5vw';
          $top = '13vh';
          $primeFocus = '';
+
          switch ( $pdta['whichdialog'] ) { 
            case 'dlgCMTEDIT':
              $primeFocus = "fldDspBGComment";
@@ -460,7 +461,12 @@ class datadoers {
              $primeFocus = "";
              $left = '5vw';
              $top = '12vh';               
-         
+             break; 
+           case 'masterAddSegment':
+             $primeFocus = "";
+             $left = '4vw';
+             $top = '13vh';               
+            break;
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);
@@ -2972,7 +2978,10 @@ UPDSQL;
         } else { 
           (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER ({$pdta['user']}) INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
         }
-     }  
+
+     }
+
+    if ( $errorInd === 0 ) { 
      
      if ( $pdta['prid'] === 'NEWPRPT') { 
          $htmlized = preg_replace('/\n\n/','<p>',$pdta['prtxt']);
@@ -2987,13 +2996,23 @@ UPDSQL;
             ,':pxiid' => $pdta['pxiid']
             ,':uploadedby' => $usrrecord['originalaccountname']
             ,':biospecimen' => $pdta['bg']
-            ,':dnpr_nbr' => $pdta['bg']
+            ,':dnpr_nbr' => $pdta['labelNbr']
          ));
-         
-         //START HERE 2019-04-11
-         //REPLACE THE DNPR_NBR WITH THE PROCEDURE CODE AS WELL 
-         //UPDATE UT_PROCURE_BIOSAMPLE table with PRID AND CHANGE TO Y
-         
+
+         $prid = $conn->lastInsertId();
+         $yesvalSQL = "SELECT menuvalue as yesvalue FROM four.sys_master_menus where menu = 'PRpt' and queriable = 0";
+         $yesvalRS = $conn->prepare($yesvalSQL); 
+         $yesvalRS->execute(); 
+         $yesval = $yesvalRS->fetch(PDO::FETCH_ASSOC); 
+
+         $histSQL = "insert into masterrecord.history_procure_biosample_pathrpt (pbiosample, pathreportind, prid, changeby, changeon) SELECT pbiosample, ifnull(pathreport,0) as pathreportind, ifnull(pathreportid,0) as pathreportid, :user, now() FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
+         $histRS = $conn->prepare($histSQL);
+         $histRS->execute(array(':user' => $usrrecord['originalaccountname'], ':pbiosample' => $pdta['bg']));
+
+         $updSQL = "update masterrecord.ut_procure_biosample set pathreport = :yval, pathreportid = :prid where pbiosample = :pbiosample";
+         $updRS = $conn->prepare($updSQL); 
+         $updRS->execute(array(':yval' => $yesval['yesvalue'], ':prid' => $prid, ':pbiosample' => $pdta['bg']));
+   
          $responseCode = 200;
          $dta['dialogid'] = $pdta['dialogid'];
      } else { 
@@ -3022,6 +3041,8 @@ UPDSQL;
          $responseCode = 200;
          $dta['dialogid'] = $pdta['dialogid'];
        }
+     }
+
      }
 
      $msg = $msgArr;

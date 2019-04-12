@@ -16,24 +16,30 @@ function sysDialogBuilder($whichdialog, $passedData) {
     $standardSysDialog = 1;
     switch($whichdialog) {
 
-        case 'prnew': 
+      case 'masterAddSegment':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Segment Additions (Master-Record)";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";        
+        $innerDialog = bldDialogMasterAddSegment( $passedData );
+        //$footerBar = "SEGMENT ADD";   
+        break;        
+      case 'prnew': 
         $pdta = json_decode($passedData, true);          
         $titleBar = "Pathology Report Uploader";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";        
         $innerDialog = bldDialogUploadPathRpt( $passedData );
         //$footerBar = "DONOR RECORD";            
-            break;
-        
-        
-        case 'predit': 
+        break; 
+      case 'predit': 
         $pdta = json_decode($passedData, true);          
         $titleBar = "Pathology Report Editor";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";        
         $innerDialog = bldDialogEditPathRpt( $passedData );
         //$footerBar = "DONOR RECORD";            
-            break;
+        break;
       case 'dlgEDTDX':  
         $pdta = json_decode($passedData, true);          
         $titleBar = "Diagnosis Designation Editor";
@@ -2802,6 +2808,158 @@ return $rtnThis;
 
 }
 
+function bldDialogMasterAddSegment ( $passeddata ) { 
+
+    $pdta = json_decode( $passeddata, true);
+    $bg = cryptservice( $pdta['objid'] , 'd', false );    
+    $errorInd = 0;
+    session_start(); 
+    $sess = session_id();
+    require(serverkeys . "/sspdo.zck");
+    $rtnThis = "ERROR!";
+    session_start();      
+    $sessid = session_id();
+    $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+    $rs = $conn->prepare($chkUsrSQL); 
+    $rs->execute(array(':sessid' => $sessid));
+    if ($rs->rowCount() === 1) { 
+      $usrrecord = $rs->fetch(PDO::FETCH_ASSOC);
+    } else { 
+      (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+    }
+
+
+
+  //TODO: TURN INTO A WEBSERVICE
+ 
+    $dxdSQL = "select concat(ucase(ifnull(anatomicSite,'')), if(ifnull(tisstype,'') ='','',concat(' :: ',ifnull(tisstype,''),'')), concat(' ',ifnull(diagnosis,''), if(ifnull(subdiagnos,'')='','',concat(' / ',ifnull(subdiagnos,'')))), if(ifnull(metssite,'')='','', concat(' [',ifnull(metssite,''),']'))) as dxd from masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
+    $dxdRS = $conn->prepare($dxdSQL); 
+    $dxdRS->execute(array(':pbiosample' => $bg));
+    $dxdDesig = $dxdRS->fetch(PDO::FETCH_ASSOC);
+    $dxd = "[{$bg}] " . $dxdDesig['dxd'];
+ 
+    $segListSQL = "SELECT substr(bgs,1,6) as pbiosamplelabel, ifnull(prepmethod,'') as prepmethod, ifnull(preparation,'') as preparation, ifnull(slidegroupid,'') as slidegroup, ifnull(assignedto,'') as assignedto, if(min(SegmentLabel) = max(SegmentLabel), min(SegmentLabel), concat(min(SegmentLabel),'-', max(SegmentLabel))) as segrange FROM masterrecord.ut_procure_segment where biosamplelabel = :bg group by substr(bgs,1,6), prepmethod, preparation, slidegroupid, assignedto";
+    $segListRS = $conn->prepare($segListSQL); 
+    $segListRS->execute(array(':bg' => $bg));
+    $segTbl = "<table><tr><td class=prcFldLbl>Cut From <span class=reqInd>*</span></td></tr><tr><td><input type=text id=fldParentSegment READONLY></td></tr><tr><td><center><input type=checkbox id=fldNoParentIndicator><label for=fldNoParentIndicator>No Parent</label></center></td></tr><tr><td><div id=divSegmentDisplayLister><table id=tblSegmentLister cellspacing=0 cellpadding=0><thead><tr><th>Segment #</th><th>Preparation</th></tr></thead></tbody>";
+    while ($r = $segListRS->fetch(PDO::FETCH_ASSOC)) {
+        if ( strtoupper(trim($r['prepmethod'])) !== 'SLIDE' ) {
+            //CUT ALLOWED
+            $clicker = "fillField('fldParentSegment','','{$r['pbiosamplelabel']}{$r['segrange']}');";
+        } else { 
+            $clicker = "alert('SLIDES ARE NOT ALLOWED AS PARENT SEGMENTS');";
+        }
+        $segTbl .= "<tr onclick=\"{$clicker}\"><td>{$r['segrange']}</td><td>{$r['prepmethod']}</td></tr>";
+    }
+    $segTbl .= "</tbody></table></div></td></tr></table>";
+
+  //END TODO
+
+
+    $si = serverIdent;
+    $sp = serverpw;
+    $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/all-preparation-methods",$si,$sp),true);
+    $prp = "<table border=0 class=menuDropTbl>";
+    //<tr><td align=right onclick=\"fillField('qryPreparationMethod','','');updatePrepmenu('');\" class=ddMenuClearOption>[clear]</td></tr>
+    foreach ($preparr['DATA'] as $prpval) {
+      $prp .= "<tr><td onclick=\"fillField('fldSEGPreparationMethod','{$prpval['lookupvalue']}','{$prpval['menuvalue']}');updatePrepmenu('{$prpval['lookupvalue']}');\" class=ddMenuItem>{$prpval['menuvalue']}</td></tr>";
+    }
+    $prp .= "</table>";
+  
+    $prepconarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/preparation-containers",$si,$sp),true);
+    $prpcon = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldSEGPreparationContainer','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+    foreach ($prepconarr['DATA'] as $prpconval) {
+      $prpcon .= "<tr><td onclick=\"fillField('fldSEGPreparationContainer','{$prpconval['lookupvalue']}','{$prpconval['menuvalue']}');\" class=ddMenuItem>{$prpconval['menuvalue']}</td></tr>";
+    } 
+    $prpcon .= "</table>";
+
+    $metarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/metric-uoms-long",$si,$sp),true);
+    $met = "<table border=0 class=menuDropTbl>";
+    foreach ($metarr['DATA'] as $metval) {
+      $met .= "<tr><td onclick=\"fillField('fldSEGAddMetricUOM','{$metval['lookupvalue']}','{$metval['menuvalue']}');\" class=ddMenuItem>{$metval['menuvalue']}</td></tr>";
+    }
+    $met .= "</table>";
+
+$rtnThis = <<<RTNTHIS
+
+<div id=divSegmentAddHolder>
+
+<table><tr><td valign=top>{$segTbl}</td><td>
+<table border=0>
+<tr><td id=segBGDXD>{$dxd}</td></tr>
+</table> 
+
+<table border=0>
+<tr>
+  <td class=prcFldLbl>Preparation Method <span class=reqInd>*</span></td>
+  <td class=prcFldLbl>Preparation <span class=reqInd>*</span></td>
+<tr>
+   <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationMethodValue><input type=text id=fldSEGPreparationMethod READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prp}</div></div></td>
+   <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationValue><input type=text id=fldSEGPreparation READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 20vw;" id=ddSEGPreparationDropDown><center>(Select a Preparation Method)</div></div></td></tr>
+</table>      
+
+
+<table>
+<tr>
+  <td class=prcFldLbl>Metric <span class=reqInd>*</span></td>
+  <td class=prcFldLbl>Container</td></tr>
+</tr>
+<tr>
+   <td><table><tr><td><input type=text id=fldSEGAddMetric></td><td><div class=menuHolderDiv><input type=hidden id=fldSEGAddMetricUOMValue><input type=text id=fldSEGAddMetricUOM READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="min-width: 8vw;">{$met}</div></div></td></tr></table>  </td>
+<td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationContainerValue><input type=text id=fldSEGPreparationContainer READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prpcon}</div></div></td>
+</tr>
+</table>
+
+<table border=0 id=assignTbl>
+  <tr>
+   <td class=prcFldLbl>Assignment <span class=reqInd>*</span></td>
+   <td class=prcFldLbl>Request #</td>
+   <td rowspan=2 valign=bottom style="padding: 0;"><table class=tblBtn id=btnSaveSeg onclick="markAsBank();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table></td>
+  </tr>
+  <tr>
+    <td valign=top><input type=hidden id=requestsasked value=0>
+         <div class=suggestionHolder>
+          <input type=text id=fldSEGselectorAssignInv class="inputFld" onkeyup="selectorInvestigator(); byId('fldSEGselectorAssignReq').value = '';byId('requestDropDown').innerHTML = '';byId('requestsasked').value = 0;  ">
+          <div id=assignInvestSuggestion class=suggestionDisplay>&nbsp;</div>
+         </div>
+    </td>
+    <td valign=top>
+        <div class=menuHolderDiv onmouseover="byId('assignInvestSuggestion').style.display = 'none'; setAssignsRequests();">
+        <input type=text id=fldSEGselectorAssignReq READONLY class="inputFld">
+        <div class=valueDropDown id=requestDropDown style="min-width: 10vw;"></div>
+        </div>
+    </td>
+   </tr>
+</table>
+
+<table border=0 width=80%>
+<tr><td class=prcFldLbl>Segment Comments</td></tr>   
+<tr><td><TEXTAREA id=fldSEGSGComments></TEXTAREA></td></tr>   
+</table>
+   
+   
+<table width=100% border=0>
+<tr><td class=prcFldLbl>Repeat <span class=reqInd>*</span></td><td align=right rowspan=2 valign=bottom>
+
+  <table cellspacing=0 cellpadding=0 border=0><tr>
+    <td><table class=tblBtn id=btnSaveSeg style="width: 6vw;" onclick="addDefinedSegment();"><tr><td style=" font-size: 1.1vh;"><center>Save Segment</td></tr></table></td>
+  </tr></table>
+
+</td></tr>
+<tr><td valign=top><input type=text id=fldDefinitionRepeater value=1></td></tr>
+</table>
+
+</td></tr></table>
+</div>
+
+RTNTHIS;
+
+  
+
+   return $rtnThis;
+}
+
+
 function bldDialogUploadPathRpt ( $passeddata ) { 
 
 //{"whichdialog":"prnew","objid":"aEMrL0VTWmdCZXRHcU52K1p6K3N1Zz09","dialogid":"7JG7PQ8Qw6BXxXV"}      
@@ -4895,7 +5053,7 @@ function bldBiogroupDefitionDisplay($biogroup, $bgency) {
               <tr><td rowspan=10 valign=top><div class=qmsdspholder><table border=0 cellspacing=0 cellpadding=0><tr><td id=qmsstatind style="background: rgba({$clssuffix});">{$qmsicon}</td></tr></table><div class=qmsdspinfo>{$qcstatustxt}</div></div></td><td>
                   <table border=0 class=lineTbl id=lineBiogroupAnnounce>
                         <tr>
-                            <td>Biogroup {$bg['readlabel']} </td>
+                            <td>Biogroup {$bg['readlabel']} <input type=hidden id=masterBG value={$bg['bgnbr']}><input type=hidden id=masterBGEncy value="{$bgency}"></td>
                             <td align=right>{$bg['technician']}@{$bg['procureinstitution']}</td>
                        </tr></table>
               </td></tr>

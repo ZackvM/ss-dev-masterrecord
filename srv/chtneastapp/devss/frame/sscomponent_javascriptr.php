@@ -71,7 +71,9 @@ $rtnThis = <<<JAVASCR
 document.addEventListener('DOMContentLoaded', function() {  
      
   if (byId('btnAddSegment')) { 
-    byId('btnAddSegment').addEventListener('click', function() { alert('Add Segment'); }, false);
+    byId('btnAddSegment').addEventListener('click', function() { 
+      generateDialog('masterAddSegment',byId('masterBGEncy').value);
+    }, false);
   }
 
   if (byId('btnEditSeg')) { 
@@ -127,13 +129,13 @@ function printPRpt(e, pathrptencyption) {
 }
 
 function generateDialog( whichdialog, whatobject ) { 
-      var dta = new Object(); 
-      dta['whichdialog'] = whichdialog;
-      dta['objid'] = whatobject;   
-      var passdta = JSON.stringify(dta);
-      byId('standardModalBacker').style.display = 'block';
-      var mlURL = "/data-doers/preprocess-generate-dialog";
-      universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
+  var dta = new Object(); 
+  dta['whichdialog'] = whichdialog;
+  dta['objid'] = whatobject;   
+  var passdta = JSON.stringify(dta);
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/preprocess-generate-dialog";
+  universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
 }
             
 function answerPreprocessGenerateDialog( rtnData ) { 
@@ -429,16 +431,15 @@ function answerUpdateSSiteMenu(rtnData) {
 }           
 
 function updateDiagnosisMenu() { 
-       var mlURL = "/data-doers/diagnosis-downstream"; 
-       var dta = new Object();
-       dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
-       dta['site'] = byId('fldPRCSiteValue').value.trim();            
-       var passdta = JSON.stringify(dta);
-       universalAJAXStreamTwo("POST",mlURL,passdta,answerUpdateDiagnosisMenu,2);                 
+  var mlURL = "/data-doers/diagnosis-downstream"; 
+  var dta = new Object();
+  dta['specimencategory'] = byId('fldPRCSpecCatValue').value.trim();
+  dta['site'] = byId('fldPRCSiteValue').value.trim();            
+  var passdta = JSON.stringify(dta);
+  universalAJAXStreamTwo("POST",mlURL,passdta,answerUpdateDiagnosisMenu,2);                 
 }
 
 function answerUpdateDiagnosisMenu(rtnData) { 
-  //console.log(rtnData);
   if (parseInt(rtnData['responseCode']) === 200) {
     var dta = JSON.parse( rtnData['responseText'] );
     var rquestFld = dta['MESSAGE'];
@@ -486,11 +487,128 @@ function answerEditPathologyReportText(rtnData) {
      });
      alert("PATHOLOGY REPORT EDIT ERROR:\\n"+dspMsg);
    } else { 
-    alert('PATHOLOGY REPORT WAS SUCCESSFULLY SAVED');
+    alert('PATHOLOGY REPORT WAS SUCCESSFULLY SAVED.  YOUR SCREEN WILL NOW REFRESH');
     var rtn = JSON.parse(rtnData['responseText']);    
     closeThisDialog(rtn['DATA']['dialogid']);
+    location.reload(true); 
   }
 }
+
+function selectorInvestigator() { 
+  if (byId('fldSEGselectorAssignInv').value.trim().length > 3) { 
+    getSuggestions('fldSEGselectorAssignInv',byId('fldSEGselectorAssignInv').value.trim()); 
+  } else { 
+    byId('assignInvestSuggestion').innerHTML = "&nbsp;";
+    byId('assignInvestSuggestion').style.display = 'none';
+  }
+}
+
+function getSuggestions(whichfield, passedValue) { 
+switch (whichfield) { 
+  case 'fldSEGselectorAssignInv':
+    var given = new Object(); 
+    given['rqstsuggestion'] = 'vandyinvest-invest';  
+    given['given'] = byId(whichfield).value.trim();
+    var passeddata = JSON.stringify(given);
+    var mlURL = "/data-doers/suggest-something";
+    universalAJAX("POST",mlURL,passeddata,answerAssignInvestSuggestions,2);
+  break;
+}
+}
+
+function answerAssignInvestSuggestions(rtnData) { 
+var rsltTbl = "";
+if (parseInt(rtnData['responseCode']) === 200 ) { 
+  var dta = JSON.parse(rtnData['responseText']);
+  if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
+    var rsltTbl = "<table border=0 class=\"menuDropTbl\"><tr><td colspan=2 style=\"font-size: 1.2vh; padding: 8px;\">Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
+    dta['DATA'].forEach(function(element) { 
+       rsltTbl += "<tr class=ddMenuItem onclick=\"fillField('fldSEGselectorAssignInv','"+element['investvalue']+"','"+element['investvalue']+"'); byId('assignInvestSuggestion').innerHTML = '&nbsp;'; byId('assignInvestSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
+    }); 
+    rsltTbl += "</table>";  
+    byId('assignInvestSuggestion').innerHTML = rsltTbl; 
+    byId('assignInvestSuggestion').style.display = 'block';
+  } else { 
+    byId('assignInvestSuggestion').innerHTML = "&nbsp;";
+    byId('assignInvestSuggestion').style.display = 'none';
+  }
+}
+}
+
+function setAssignsRequests() {
+  if (byId('fldSEGselectorAssignInv').value.trim() !== "" ) {   
+    if (parseInt(byId('requestsasked').value) === 0) {        
+      var given = new Object(); 
+      given['rqstsuggestion'] = 'vandyinvest-requests'; 
+      given['given'] = byId('fldSEGselectorAssignInv').value.trim();
+      var passeddata = JSON.stringify(given);
+      var mlURL = "/data-doers/suggest-something";
+      universalAJAX("POST",mlURL,passeddata,answerRequestDrop,2);
+    }
+  } 
+}
+
+function answerRequestDrop(rtnData) {
+  var rsltTbl = "";
+  if (parseInt(rtnData['responseCode']) === 200 ) { 
+    var dta = JSON.parse(rtnData['responseText']);
+    var menuTbl = "<table border=0 class=\"menuDropTbl\">";
+    dta['DATA'].forEach(function(element) { 
+      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('fldSEGselectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); \">"+element['requestid']+" ["+element['rqstatus']+"]</td></tr>";
+    });  
+    menuTbl += "</table>";
+    byId('requestDropDown').innerHTML = menuTbl; 
+    byId('requestsasked').value = 1;
+  }
+}
+
+function markAsBank() { 
+  if (byId('fldSEGselectorAssignInv') && byId('fldSEGselectorAssignReq') ) { 
+    byId('fldSEGselectorAssignInv').value = "BANK"; 
+    byId('fldSEGselectorAssignReq').value = "";
+
+  } else { 
+    alert('ERROR: SEE A CHTNEASTERN INFORMATICS STAFF MEMBER');
+  } 
+}
+
+function updatePrepmenu(whatvalue) { 
+            
+  byId('fldSEGPreparationValue').value = '';
+  byId('fldSEGPreparation').value = '';
+  byId('ddSEGPreparationDropDown').innerHTML = "&nbsp;"; 
+  if (whatvalue.trim() === "") { 
+  } else { 
+     var mlURL = "/sub-preparation-menu/"+whatvalue;
+     universalAJAX("GET",mlURL,"",answerUpdatePrepmenu,2);
+  }
+}
+
+function answerUpdatePrepmenu(rtnData) { 
+  byId('fldSEGPreparationValue').value = '';
+  byId('fldSEGPreparation').value = '';
+  byId('ddSEGPreparationDropDown').innerHTML = "&nbsp;"; 
+  var rsltTbl = "";
+  if (parseInt(rtnData['responseCode']) === 200 ) { 
+    var dta = JSON.parse(rtnData['responseText']);
+    if (parseInt( dta['ITEMSFOUND'] ) > 0 ) {
+      rsltTbl = "<table border=0 class=menuDropTbl>";
+      dta['DATA'].forEach(function(element) { 
+        rsltTbl += "<tr><td onclick=\"fillField('fldSEGPreparation','"+element['menuvalue']+"','"+element['longvalue']+"');\" class=ddMenuItem>"+element['longvalue']+"</td></tr>";
+      }); 
+      rsltTbl += "</table>";  
+      byId('ddSEGPreparationDropDown').innerHTML = rsltTbl; 
+    } else { 
+      rsltTbl = "<table border=0 class=menuDropTbl>";
+      dta['DATA'].forEach(function(element) { 
+        rsltTbl += "<tr><td onclick=\"fillField('fldSEGPreparation','NOVAL','NO VALUE');\" class=ddMenuItem>NO VALUE</td></tr>";
+      }); 
+      rsltTbl += "</table>";  
+      byId('ddSEGPreparationDropDown').innerHTML = rsltTbl; 
+    }
+  }
+}
+
 
 JAVASCR;
 return $rtnThis;

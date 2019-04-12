@@ -415,6 +415,38 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #PRUPHoldTbl .ttholder:hover .tt { display: block; }
 #PRUPHoldTbl .tt { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; z-index: 40; }
 
+
+.prcFldLbl { font-size: 1.3vh; color: rgba({$this->color_dblue},1);  padding: 0 0 0 0; font-weight: bold; }
+input {font-size: 1.3vh; padding: 1vh .5vw; }
+textarea { font-size: 1.3vh; }
+#preparationAdditions { display: none;  }
+.addTblHeader {font-size: 1.3vh; color: rgba({$this->color_dblue},1);  padding: 0 0 0 0; font-weight: bold;  border-bottom: 1px solid rgba({$this->color_dblue},1); } 
+.addHolder { padding: 1vh 0; border-bottom: 1px solid rgba({$this->color_dblue},1);   }
+#assignTbl { margin-top: 1vh; }
+#assignTbl #noteBlock { font-size: 1vh; font-weight: bold; padding: 0 0 1vh 0; color: rgba({$this->color_darkgrey},.7);   }
+#fldSEGAddMetric {width: 5vw; text-align: right; }
+
+#ddSEGPreparationDropDown { min-width: 20vw; }
+#fldSEGselectorAssignInv { width: 15vw; }
+#fldSEGselectorAssignReq { width: 10vw; }
+
+.suggestionHolder { position: relative; }
+.suggestionDisplay {min-width: 25vw; position: absolute; left: 0; max-height: 30vh; min-height: 15vh; overflow: auto; z-index: 25; box-sizing: border-box; display: none;background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); }
+.suggestionTable { max-width: 24vw; box-sizing: border-box; }
+#fldSEGSGComments { width: 100%; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw 0 .3vw; text-align: justify;  }
+#segBGDXD { font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); font-weight: bold; padding: 1vh 0;  }
+
+#fldParentSegment { width: 10vw; }
+#divSegmentDisplayLister { width: 10vw; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); height: 30vh; overflow: auto;     }
+#fldDefinitionRepeater { width: 8vw; text-align: right; }
+.reqInd {font-size: 1.3vh; color: rgba({$this->color_bred},1); font-weight: bold; }
+
+#tblSegmentLister { width: 100%; font-size: 1.2vh; }
+#tblSegmentLister thead tr td { text-align: left; font-weight: bold; color: rgba({$this->color_zackgrey},.8); background: rgba({$this->color_white},1); padding: 5px; }
+#tblSegmentLister tbody tr:nth-child(even) { background: rgba({$this->color_lightgrey},1);  }
+#tblSegmentLister tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},.8); }
+#tblSegmentLister tbody tr td { padding: 5px; }
+
 STYLESHEET;
 return $rtnThis;
 }
