@@ -2179,10 +2179,11 @@ break;
 case 'biogroupdefinition':
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSeg><tr><td><i class="material-icons">cancel</i></td><td>Void Segment</td></tr></table></td>
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnEditDX><tr><td><i class="material-icons">edit</i></td><td>Edit DX</td></tr></table></td>
+    //  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnEditSeg><tr><td><i class="material-icons">edit</i></td><td>Edit Segment</td></tr></table></td>
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSegment><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnEditSeg><tr><td><i class="material-icons">edit</i></td><td>Edit Segment</td></tr></table></td>        
+        
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnQMSActions><tr><td><i class="material-icons">thumbs_up_down</i></td><td>QMS Actions</td></tr></table></td>        
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAssocGrp><tr><td><i class="material-icons">group_work</i></td><td>Associative</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPHIRecord><tr><td><i class="material-icons">group</i></td><td>Encounter</td></tr></table></td>
@@ -2819,7 +2820,7 @@ function bldDialogMasterAddSegment ( $passeddata ) {
     $rtnThis = "ERROR!";
     session_start();      
     $sessid = session_id();
-    $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+    $chkUsrSQL = "SELECT originalaccountname, presentinstitution, inst.dspvalue as institutionname FROM four.sys_userbase usr left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on usr.presentinstitution = inst.menuvalue where 1=1 and sessionid = :sessid and (allowInd = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
     $rs = $conn->prepare($chkUsrSQL); 
     $rs->execute(array(':sessid' => $sessid));
     if ($rs->rowCount() === 1) { 
@@ -2828,10 +2829,7 @@ function bldDialogMasterAddSegment ( $passeddata ) {
       (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
     }
 
-
-
-  //TODO: TURN INTO A WEBSERVICE
- 
+    //TODO: TURN INTO A WEBSERVICE
     $dxdSQL = "select concat(ucase(ifnull(anatomicSite,'')), if(ifnull(tisstype,'') ='','',concat(' :: ',ifnull(tisstype,''),'')), concat(' ',ifnull(diagnosis,''), if(ifnull(subdiagnos,'')='','',concat(' / ',ifnull(subdiagnos,'')))), if(ifnull(metssite,'')='','', concat(' [',ifnull(metssite,''),']'))) as dxd from masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
     $dxdRS = $conn->prepare($dxdSQL); 
     $dxdRS->execute(array(':pbiosample' => $bg));
@@ -2841,11 +2839,11 @@ function bldDialogMasterAddSegment ( $passeddata ) {
     $segListSQL = "SELECT substr(bgs,1,6) as pbiosamplelabel, ifnull(prepmethod,'') as prepmethod, ifnull(preparation,'') as preparation, ifnull(slidegroupid,'') as slidegroup, ifnull(assignedto,'') as assignedto, if(min(SegmentLabel) = max(SegmentLabel), min(SegmentLabel), concat(min(SegmentLabel),'-', max(SegmentLabel))) as segrange FROM masterrecord.ut_procure_segment where biosamplelabel = :bg group by substr(bgs,1,6), prepmethod, preparation, slidegroupid, assignedto";
     $segListRS = $conn->prepare($segListSQL); 
     $segListRS->execute(array(':bg' => $bg));
-    $segTbl = "<table><tr><td class=prcFldLbl>Cut From <span class=reqInd>*</span></td></tr><tr><td><input type=text id=fldParentSegment READONLY></td></tr><tr><td><center><input type=checkbox id=fldNoParentIndicator><label for=fldNoParentIndicator>No Parent</label></center></td></tr><tr><td><div id=divSegmentDisplayLister><table id=tblSegmentLister cellspacing=0 cellpadding=0><thead><tr><th>Segment #</th><th>Preparation</th></tr></thead></tbody>";
+    $segTbl = "<table><tr><td class=prcFldLbl>Cut From <span class=reqInd>*</span></td></tr><tr><td><input type=text id=fldParentSegment READONLY></td></tr><tr><td align=right><input type=checkbox id=fldNoParentIndicator onchange=\"byId('fldParentSegment').value = '';\"><label for=fldNoParentIndicator>No Parent</label></td></tr><tr><td><div id=divSegmentDisplayLister><table id=tblSegmentLister cellspacing=0 cellpadding=0><thead><tr><th>Segment #</th><th>Preparation</th></tr></thead></tbody>";
     while ($r = $segListRS->fetch(PDO::FETCH_ASSOC)) {
         if ( strtoupper(trim($r['prepmethod'])) !== 'SLIDE' ) {
             //CUT ALLOWED
-            $clicker = "fillField('fldParentSegment','','{$r['pbiosamplelabel']}{$r['segrange']}');";
+            $clicker = "fillField('fldParentSegment','','{$r['pbiosamplelabel']}{$r['segrange']}');byId('fldNoParentIndicator').checked = false; ";
         } else { 
             $clicker = "alert('SLIDES ARE NOT ALLOWED AS PARENT SEGMENTS');";
         }
@@ -2856,6 +2854,7 @@ function bldDialogMasterAddSegment ( $passeddata ) {
   //END TODO
 
 
+    if ( $errorInd === 0 ) {
     $si = serverIdent;
     $sp = serverpw;
     $preparr = json_decode(callrestapi("GET", dataTree . "/globalmenu/all-preparation-methods",$si,$sp),true);
@@ -2884,9 +2883,9 @@ $rtnThis = <<<RTNTHIS
 
 <div id=divSegmentAddHolder>
 
-<table><tr><td valign=top>{$segTbl}</td><td>
-<table border=0>
-<tr><td id=segBGDXD>{$dxd}</td></tr>
+<table border=0><tr><td valign=top>{$segTbl}</td><td>
+<table border=0 cellspacing=0 cellpadding=0 id=dxdTbl>
+<tr><td id=segBGDXD>{$dxd}<input type=hidden id=fldSEGBGNum value='{$bg}'></td></tr>
 </table> 
 
 <table border=0>
@@ -2894,8 +2893,8 @@ $rtnThis = <<<RTNTHIS
   <td class=prcFldLbl>Preparation Method <span class=reqInd>*</span></td>
   <td class=prcFldLbl>Preparation <span class=reqInd>*</span></td>
 <tr>
-   <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationMethodValue><input type=text id=fldSEGPreparationMethod READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prp}</div></div></td>
-   <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationValue><input type=text id=fldSEGPreparation READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 20vw;" id=ddSEGPreparationDropDown><center>(Select a Preparation Method)</div></div></td></tr>
+   <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationMethodValue><input type=text id=fldSEGPreparationMethod READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 15vw;">{$prp}</div></div></td>
+   <td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationValue><input type=text id=fldSEGPreparation READONLY class="inputFld" style="width: 19vw;"><div class=valueDropDown style="min-width: 25vw;" id=ddSEGPreparationDropDown><center>(Select a Preparation Method)</div></div></td></tr>
 </table>      
 
 
@@ -2905,8 +2904,8 @@ $rtnThis = <<<RTNTHIS
   <td class=prcFldLbl>Container</td></tr>
 </tr>
 <tr>
-   <td><table><tr><td><input type=text id=fldSEGAddMetric></td><td><div class=menuHolderDiv><input type=hidden id=fldSEGAddMetricUOMValue><input type=text id=fldSEGAddMetricUOM READONLY class="inputFld" style="width: 8vw;"><div class=valueDropDown style="min-width: 8vw;">{$met}</div></div></td></tr></table>  </td>
-<td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationContainerValue><input type=text id=fldSEGPreparationContainer READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$prpcon}</div></div></td>
+   <td><table><tr><td><input type=text id=fldSEGAddMetric></td><td><div class=menuHolderDiv><input type=hidden id=fldSEGAddMetricUOMValue><input type=text id=fldSEGAddMetricUOM READONLY class="inputFld" style="width: 10vw;"><div class=valueDropDown style="min-width: 10vw;">{$met}</div></div></td></tr></table>  </td>
+<td><div class=menuHolderDiv><input type=hidden id=fldSEGPreparationContainerValue><input type=text id=fldSEGPreparationContainer READONLY class="inputFld" style="width: 18vw;"><div class=valueDropDown style="min-width: 15vw;">{$prpcon}</div></div></td>
 </tr>
 </table>
 
@@ -2914,7 +2913,7 @@ $rtnThis = <<<RTNTHIS
   <tr>
    <td class=prcFldLbl>Assignment <span class=reqInd>*</span></td>
    <td class=prcFldLbl>Request #</td>
-   <td rowspan=2 valign=bottom style="padding: 0;"><table class=tblBtn id=btnSaveSeg onclick="markAsBank();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table></td>
+   <td rowspan=2 valign=bottom style="padding: 0;"><table class=tblBtn id=btnBankBank onclick="markAsBank();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table></td>
   </tr>
   <tr>
     <td valign=top><input type=hidden id=requestsasked value=0>
@@ -2939,21 +2938,27 @@ $rtnThis = <<<RTNTHIS
    
    
 <table width=100% border=0>
-<tr><td class=prcFldLbl>Repeat <span class=reqInd>*</span></td><td align=right rowspan=2 valign=bottom>
+<tr><td class=prcFldLbl>Repeat <span class=reqInd>*</span></td><td align=right rowspan=3 valign=bottom>
 
   <table cellspacing=0 cellpadding=0 border=0><tr>
-    <td><table class=tblBtn id=btnSaveSeg style="width: 6vw;" onclick="addDefinedSegment();"><tr><td style=" font-size: 1.1vh;"><center>Save Segment</td></tr></table></td>
+    <td><table class=tblBtn id=btnSaveSeg style="width: 6vw;" onclick="addDefinedSegment(0);"><tr><td style=" font-size: 1.1vh;"><center>Save Segment</td></tr></table></td>
+    <td><table class=tblBtn id=btnSaveSegPrnt style="width: 6vw;" onclick="addDefinedSegment(1);"><tr><td style=" font-size: 1.1vh;"><center>Save &amp; Print</td></tr></table></td>
   </tr></table>
 
 </td></tr>
-<tr><td valign=top><input type=text id=fldDefinitionRepeater value=1></td></tr>
+<tr><td valign=top><input type=text id=fldSEGDefinitionRepeater value=1></td></tr>
+<tr><td><input type=checkbox id=fldSEGParentExhaustInd><label for=fldSEGParentExhaustInd>Parent Component has been Exhausted</label></td></tr>
+<tr><td colspan=2 style="text-align: right; font-size: 1vh; color: rgba(237, 35, 0, 1); font-weight: bold;">{$usrrecord['originalaccountname']} / {$usrrecord['institutionname']} ({$usrrecord['presentinstitution']}) </td></tr>
 </table>
 
-</td></tr></table>
+</td></tr>
+</table>
 </div>
 
 RTNTHIS;
-
+    } else { 
+        $rtnThis[] = $msgArr;
+    }
   
 
    return $rtnThis;

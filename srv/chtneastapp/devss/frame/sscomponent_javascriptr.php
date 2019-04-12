@@ -572,8 +572,7 @@ function markAsBank() {
   } 
 }
 
-function updatePrepmenu(whatvalue) { 
-            
+function updatePrepmenu(whatvalue) {         
   byId('fldSEGPreparationValue').value = '';
   byId('fldSEGPreparation').value = '';
   byId('ddSEGPreparationDropDown').innerHTML = "&nbsp;"; 
@@ -608,8 +607,59 @@ function answerUpdatePrepmenu(rtnData) {
     }
   }
 }
+    
+function addDefinedSegment(printInd) { 
+  
+    var dta = new Object();
+    var noErrorInd = 1;
+    
+    ( byId('fldSEGBGNum') ) ? dta['bgNum'] = byId('fldSEGBGNum').value : noErrorInd = 0;
+    ( byId('fldParentSegment') ) ? dta['parentSegment'] = byId('fldParentSegment').value : noErrorInd = 0;
+    ( byId('fldNoParentIndicator') ) ? dta['noParentInd'] = byId('fldNoParentIndicator').checked : noErrorInd = 0;
+    ( byId('fldSEGPreparationMethodValue') ) ? dta['preparationMethodValue'] = byId('fldSEGPreparationMethodValue').value : noErrorInd = 0;
+    ( byId('fldSEGPreparationMethod') ) ? dta['preparationMethod'] = byId('fldSEGPreparationMethod').value : noErrorInd = 0;
+    ( byId('fldSEGPreparation') ) ? dta['preparation'] = byId('fldSEGPreparation').value : noErrorInd = 0;
+    ( byId('fldSEGPreparationValue') ) ? dta['preparationValue'] = byId('fldSEGPreparationValue').value : noErrorInd = 0;
+    ( byId('fldSEGAddMetric') ) ? dta['addMetric'] = byId('fldSEGAddMetric').value : noErrorInd = 0;
+    ( byId('fldSEGAddMetricUOMValue') ) ? dta['addMetricUOMValue'] = byId('fldSEGAddMetricUOMValue').value : noErrorInd = 0;
+    ( byId('fldSEGAddMetricUOM') ) ? dta['addMetricUOM'] = byId('fldSEGAddMetricUOM').value : noErrorInd = 0;
+    ( byId('fldSEGPreparationContainerValue') ) ? dta['preparationContainerValue'] = byId('fldSEGPreparationContainerValue').value : noErrorInd = 0;
+    ( byId('fldSEGPreparationContainer') ) ? dta['preparationContainer'] = byId('fldSEGPreparationContainer').value : noErrorInd = 0;
+    ( byId('fldSEGselectorAssignInv') ) ? dta['assignInv'] = byId('fldSEGselectorAssignInv').value : noErrorInd = 0;
+    ( byId('fldSEGselectorAssignReq') ) ? dta['assignReq'] = byId('fldSEGselectorAssignReq').value : noErrorInd = 0;
+    ( byId('fldSEGSGComments') ) ? dta['segComments'] = byId('fldSEGSGComments').value : noErrorInd = 0;
+    ( byId('fldSEGDefinitionRepeater') ) ? dta['definitionRepeater'] = parseInt(byId('fldSEGDefinitionRepeater').value) : noErrorInd = 0;
+    ( byId('fldSEGParentExhaustInd') ) ? dta['parentExhaustedInd'] = byId('fldSEGParentExhaustInd').checked : noErrorInd = 0;        
+    dta['printSlideInd'] = printInd;
+    if ( noErrorInd === 1 ) {
+      byId('btnSaveSeg').style.display = 'none';
+      byId('btnSaveSegPrnt').style.display = 'none';
+      var passdata = JSON.stringify(dta); 
+      //TODO MAKE A 'PLEASE WAIT' INDICATION - AS THIS PROCESS CAN TAKE UP TO 10+ SECONDS 
+      var mlURL = "/data-doers/coordinator-add-segment";
+      universalAJAX("POST",mlURL,passdata, answerCoordinatorAddSegments,2);              
+    } else { 
+      alert('NOT ALL ELEMENTS EXIST IN THE SCREEN.  SEE A CHTNEASTERN INFORMATICS PERSON');
+    }
+}
 
-
+function answerCoordinatorAddSegments(rtnData) { 
+ if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('btnSaveSeg').style.display = 'block';
+    byId('btnSaveSegPrnt').style.display = 'block';
+   } else {
+      alert('GOLDEN');
+     //alert('Diagnosis Designation Saved - Your Page will now refresh ... ');
+     //location.reload(true);
+    
+   }    
+}
 JAVASCR;
 return $rtnThis;
 }
