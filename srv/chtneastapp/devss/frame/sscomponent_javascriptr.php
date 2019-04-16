@@ -628,7 +628,7 @@ function addDefinedSegment(printInd) {
     ( byId('fldSEGselectorAssignInv') ) ? dta['assignInv'] = byId('fldSEGselectorAssignInv').value : noErrorInd = 0;
     ( byId('fldSEGselectorAssignReq') ) ? dta['assignReq'] = byId('fldSEGselectorAssignReq').value : noErrorInd = 0;
     ( byId('fldSEGSGComments') ) ? dta['segComments'] = byId('fldSEGSGComments').value : noErrorInd = 0;
-    ( byId('fldSEGDefinitionRepeater') ) ? dta['definitionRepeater'] = parseInt(byId('fldSEGDefinitionRepeater').value) : noErrorInd = 0;
+    ( byId('fldSEGDefinitionRepeater') ) ? dta['definitionRepeater'] = byId('fldSEGDefinitionRepeater').value : noErrorInd = 0;
     ( byId('fldSEGParentExhaustInd') ) ? dta['parentExhaustedInd'] = byId('fldSEGParentExhaustInd').checked : noErrorInd = 0;        
     dta['printSlideInd'] = printInd;
     if ( noErrorInd === 1 ) {
@@ -654,10 +654,24 @@ function answerCoordinatorAddSegments(rtnData) {
     byId('btnSaveSeg').style.display = 'block';
     byId('btnSaveSegPrnt').style.display = 'block';
    } else {
-      alert('GOLDEN');
-     //alert('Diagnosis Designation Saved - Your Page will now refresh ... ');
-     //location.reload(true);
-    
+      alert('SEGMENTS HAVE BEEN ADDED\\n\\nREFRESH YOUR SCREEN TO SEE CHANGES OR CONTINUE ADDING OTHER SEGMENTS');
+      byId('fldSEGBGNum').value = "";
+      byId('fldParentSegment').value = "";
+      byId('fldNoParentIndicator').checked = false;
+      byId('fldSEGPreparationMethodValue').value = "";
+      byId('fldSEGPreparationMethod').value = "";
+      byId('fldSEGPreparation').value = "";
+      byId('fldSEGPreparationValue').value = "";
+      byId('fldSEGAddMetric').value = "";
+      byId('fldSEGAddMetricUOMValue').value = "";
+      byId('fldSEGAddMetricUOM').value = "";
+      byId('fldSEGPreparationContainerValue').value = "";
+      byId('fldSEGPreparationContainer').value = "";
+      byId('fldSEGselectorAssignInv').value = "";
+      byId('fldSEGselectorAssignReq').value = "";
+      byId('fldSEGSGComments').value = "";
+      byId('fldSEGDefinitionRepeater').value = 1;
+      byId('fldSEGParentExhaustInd').checked = false;
    }    
 }
 JAVASCR;

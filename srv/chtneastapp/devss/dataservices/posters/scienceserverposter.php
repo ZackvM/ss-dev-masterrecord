@@ -81,7 +81,7 @@ class datadoers {
       if ( $authuser !== $authchk || $authuser !== $sess ) {
          (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
       } 
-      $chkUsrSQL = "SELECT originalaccountname, emailaddress FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrSQL = "SELECT originalaccountname, presentinstitution FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
       $chkUsrR = $conn->prepare($chkUsrSQL); 
       $chkUsrR->execute(array(':sess' => $sess));
       if ($chkUsrR->rowCount() <> 1) { 
@@ -91,7 +91,6 @@ class datadoers {
       }        
       
       //DATA CHECKS        
-      //( 1 === 1) ? (list( $errorInd, $msgArr[] ) = array(1 , "{$pdta['preparationMethodValue']} / {$pdta['preparationValue']}")) : "";
       ( trim($pdta['bgNum']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO BIOGROUP SPECIFIED - SEE A CHTNEASTERN INFORMATICS PERSON.")) : "";
       ( !$pdta['noParentInd'] && trim($pdta['parentSegment']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "IF NO PARENT SEGMENT IS SPECIFIED YOU MUST EXPLICITLY MARK THE 'NO PARENT' CHECK BOX")) : "";  
       if ( trim($pdta['preparationMethodValue']) === "") { 
@@ -104,8 +103,6 @@ class datadoers {
           (list( $errorInd, $msgArr[] ) = array(1 , "PREPARATION METHOD ({$pdta['preparationMethod']}) NOT FOUND AS A VALID MENU OPTION."));
         } else { 
            $prp = $prpChkRS->fetch(PDO::FETCH_ASSOC);
-           //CHECK PREPARATION
-          
            if (  trim($pdta['preparationValue']) === ""  ) { 
                (list( $errorInd, $msgArr[] ) = array(1 , "A PREPARATION IS REQUIRED")); 
            } else { 
@@ -119,14 +116,11 @@ class datadoers {
         }
       }
       
-      // ( !preg_match('/^[0-9]{1,2}?/',$pdta['agemetric']) ) 
-      ( $pdta['preparationMethodValue'] !== 'Slide' && trim($pdta['addMetric']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FOR ALL PREPARATIONS BUT SLIDES, A METRIC MUST BE STATED")) : "";
-      ( !is_numeric( trim($pdta['addMetric'])) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "METRIC VALUES MUST BE NUMERIC")) : "";
-      ( !(floatval($pdta['addMetric']) > 0) ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC VALUE MUST BE GREATER THAN ZERO")) : "";
-      
-      ( $pdta['preparationMethodValue'] !== 'Slide' && trim($pdta['addMetricUOMValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FOR ALL PREPARATIONS BUT SLIDES, A METRIC UNIT OF MEASURE (UOM) MUST BE STATED")) : "";
+      ( strtoupper(trim($pdta['preparationMethodValue'])) !== 'SLIDE' && trim($pdta['addMetric']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FOR ALL PREPARATIONS BUT SLIDES, A METRIC MUST BE STATED")) : "";
+      ( strtoupper(trim($pdta['preparationMethodValue'])) !== 'SLIDE' && !is_numeric( trim($pdta['addMetric'])) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "METRIC VALUES MUST BE NUMERIC")) : "";
+      ( strtoupper(trim($pdta['preparationMethodValue'])) !== 'SLIDE' && !(floatval($pdta['addMetric']) > 0) ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC VALUE MUST BE GREATER THAN ZERO")) : ""; 
+      ( strtoupper(trim($pdta['preparationMethodValue'])) !== 'SLIDE' && trim($pdta['addMetricUOMValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FOR ALL PREPARATIONS BUT SLIDES, A METRIC UNIT OF MEASURE (UOM) MUST BE STATED")) : "";
       if ( trim($pdta['addMetricUOMValue']) !== "" ) { 
-          //CHECK TRUE VALUE
           $chkMetSQL = "SELECT menuid FROM four.sys_master_menus where menu = :mnu  and menuvalue = :val";
           $chkMetRS = $conn->prepare($chkMetSQL);
           $chkMetRS->execute(array(':mnu' => 'METRIC', ':val' => $pdta['addMetricUOMValue'] ));
@@ -141,15 +135,11 @@ class datadoers {
           $chkRS->execute(array(':mnu' => 'CONTAINER', ':val' => $pdta['preparationContainer']));
           ( $chkRS->rowCount() < 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE CONTAINER VALUE ({$pdta['preparationContainer']}) IS NOT A VALID MENU OPTION")) : "";
       }
-      //{"bgNum":"82106","parentSegment":"","noParentInd":false,"preparationMethodValue":"","preparationMethod":"","preparation":""
-      //,"preparationValue":"","addMetric":"","addMetricUOMValue":"","addMetricUOM":"","preparationContainerValue":"","preparationContainer":""
-      //,"assignInv":"","assignReq":"","segComments":"","definitionRepeater":1,"parentExhaustedInd":false,"printSlideInd":0}
       
-     ( trim($pdta['assignInv']) === "" ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE ASSIGNMENT CANNOT BE BLANK")) : "";
-     ( trim($pdta['assignInv']) !== "" && strtoupper(trim($pdta['assignInv'])) !== "BANK"  && strtoupper(substr(trim($pdta['assignInv']),0,3)) !== 'INV' ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE ASSIGNMENT FIELD MUST BE 'BANK' OR A VALID INVESTIGATOR CODE")) : "" ;
+      ( trim($pdta['assignInv']) === "" ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE ASSIGNMENT CANNOT BE BLANK")) : "";
+      ( trim($pdta['assignInv']) !== "" && strtoupper(trim($pdta['assignInv'])) !== "BANK" && strtoupper(substr(trim($pdta['assignInv']),0,3)) !== 'INV' ) ? (list( $errorInd, $msgArr[]) = array(1 ,"THE ASSIGNMENT FIELD MUST BE 'BANK' OR A VALID INVESTIGATOR CODE")) : "";
      
-     if ( trim($pdta['assignInv']) !== "" && strtoupper(trim($pdta['assignInv'])) !== "BANK"  && strtoupper(substr(trim($pdta['assignInv']),0,3)) === 'INV' ) { 
-         //CHECK INVESTIGATOR
+      if ( trim($pdta['assignInv']) !== "" && strtoupper(trim($pdta['assignInv'])) !== "BANK"  && strtoupper(substr(trim($pdta['assignInv']),0,3)) === 'INV' ) { 
          $invSQL = "SELECT ucase(concat(ifnull(invest_lname,''),', ', ifnull(invest_fname,''))) as investname FROM vandyinvest.invest where investid = :icode";
          $invRS = $conn->prepare($invSQL); 
          $invRS->execute(array(':icode' => strtoupper(trim($pdta['assignInv']))));
@@ -159,17 +149,100 @@ class datadoers {
              $inv = $invRS->fetch(PDO::FETCH_ASSOC);
              $i = $inv['investname'];
          }
-     }
-     
-     if ( strtoupper(trim($pdta['assignInv'])) === 'BANK' ) {  $i = "BANK"; }
+      }
+      if ( strtoupper(trim($pdta['assignInv'])) === 'BANK' ) {  $i = "BANK"; } 
+      ( strtoupper(trim($pdta['assignInv'])) !== "BANK" && substr(strtoupper(trim($pdta['assignReq'])),0,3) !== 'REQ'  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE REQUEST NUMBER MUST BE REQ##### ")) : "";
+      if ( ( trim($pdta['assignInv']) !== "" && strtoupper(trim($pdta['assignInv'])) !== 'BANK' ) && trim($pdta['assignReq']) !== "" ) {
+        $iChkSQL = "SELECT rq.requestid, pr.projid, i.investid FROM vandyinvest.investtissreq rq left join vandyinvest.investproj pr on rq.projid = pr.projid left join vandyinvest.invest i on pr.investid = i.investid where requestid = :rq and i.investid = :iv";
+        $iRS = $conn->prepare($iChkSQL); 
+        $iRS->execute(array(':rq' => strtoupper(trim($pdta['assignReq'])), ':iv' => strtoupper(trim($pdta['assignInv']))  ));
+        ( $iRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE INVESTIGATOR/REQUEST COMBINATION SUPPLIED IS INVALID ({$pdta['assignInv']}/{$pdta['assignReq']}).  IF YOU FEEL THIS IS IN ERROR, SEE A CHTNEASTERN INFORMATICS PERSON")) : "";
+      } 
+
+      ( trim($pdta['definitionRepeater']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'REPEAT' VALUE MUST NOT BE BLANK ")) : "";
+      ( !is_numeric($pdta['definitionRepeater'])) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'REPEAT' VALUE MUST BE A NUMBER")) : "";
+      ( intval($pdta['definitionRepeater']) < 0 || intval($pdta['definitionRepeater']) > 125 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'REPEAT' VALUE CAN ONLY BE BETWEEN 1 AND 125")) : "";
+
+      if ( $errorInd === 0 ) { 
+        //SAVE SEGMENTS
+        $cntr = 0;  
+        $nxtSegSQL = "SELECT CAST(max(segmentlabel) AS UNSIGNED) as topSegment FROM masterrecord.ut_procure_segment where biosamplelabel = :pbiosample"; 
+        $nxtRS = $conn->prepare($nxtSegSQL);
       
-     (trim($pdta['assignInv']) !== "" && strtoupper(trim($pdta['assignInv'])) !== "BANK"  && strtoupper(substr(trim($pdta['assignInv']),0,3)) === 'INV' && substr(strtoupper(trim($pdta['assignReq'])),1,3) !== 'REQ'  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE REQUEST NUMBER (" . strtoupper($pdta['assignReq']) . ") MUST BE REQ#####")) : "";
-      
-      // CHANGE THIS TO BLANK REQUEST CHECK (trim($pdta['assignInv']) !== "" && strtoupper(trim($pdta['assignInv'])) !== "BANK"  && strtoupper(substr(trim($pdta['assignInv']),0,3)) === 'INV' && substr(strtoupper(trim($pdta['assignReq'])),1,3) !== 'REQ'  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE REQUEST NUMBER (" . strtoupper($pdta['assignReq']) . ") MUST BE REQ#####")) : "";
-      
-      
-      
-      
+        $entrySQL = "insert into masterrecord.ut_procure_segment(biosampleLabel, SegmentLabel, bgs, segStatus, statusDate, statusBy, HoursPost, Metric, metricUOM, prepMethod, Preparation, QTY, assignedTo, assignedReq, assignmentdate, assignedby, procurementDate, SlideGroupID, enteredBy, enteredOn, internalComments, segmentComments, slideFromBlockId, procuredAt, prpcontainer) values (:biosampleLabel, :segmentLabel, :bgs, 'ONOFFER', now(), :statusBy, :hoursPost, :metric, :metricUOM, :prepMethod, :preparation, 1, :assignedTo, :assignedReq, now(), :assignedby, now(), :slideGroupID, :enteredBy, now(), 'MASTERRECORD COORDINATOR SCREEN ENTRY', :segmentComments, :slideFromBlockId, :procuredAt, :prpcontainer)";
+        $entryRS = $conn->prepare($entrySQL);
+
+        //PARENT SEGMENT HOURS POST
+        $bgReadLabelSQL = "SELECT replace(read_Label,'_','') as readlabel FROM masterrecord.ut_procure_biosample where pbiosample = :bgnum";
+        $bgReadLabelRS = $conn->prepare($bgReadLabelSQL); 
+        $bgReadLabelRS->execute(array(':bgnum' => $pdta['bgNum'] ));
+        $bgReadLabel = $bgReadLabelRS->fetch(PDO::FETCH_ASSOC);
+
+        if ( trim($pdta['parentSegment']) === "" ) { 
+          $parentHRPost = 0;
+        } else {
+          $hrpostSQL = "SELECT ifnull(HoursPost,0) as hourspost FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :segment";           
+          $hrpostRS = $conn->prepare($hrpostSQL);
+          $hrpostRS->execute(array(':segment' => trim($pdta['parentSegment'])));
+          if ( $hrpostRS->rowCount() < 1 ) { 
+            $parentHRPost = 0;
+          } else { 
+            $hrpost = $hrpostRS->fetch(PDO::FETCH_ASSOC);
+            $parentHRPost = $hrpost['hourspost'];   
+          }  
+        } 
+
+        $slideGroup = generateRandomString(15);
+
+        while ( $cntr < intval($pdta['definitionRepeater'])) {  
+           $nxtRS->execute(array(':pbiosample' => $pdta['bgNum']));
+           $nxt = $nxtRS->fetch(PDO::FETCH_ASSOC);
+           (list( $errorInd, $msgArr[] ) = array(1 , "{$nxt['topSegment']} / {$bgReadLabel['readlabel']} / {$parentHRPost} "));
+        //{"bgNum":"82106","parentSegment":"","noParentInd":false,"preparationMethodValue":"","preparationMethod":"","preparation":""
+        //,"preparationValue":"","addMetric":"","addMetricUOMValue":"","addMetricUOM":"","preparationContainerValue":"","preparationContainer":""
+        //,"assignInv":"","assignReq":"","segComments":"","definitionRepeater":1,"parentExhaustedInd":false,"printSlideInd":0}
+
+           $newBGS = $bgReadLabel['readlabel'] . substr(('000' . ((int)$nxt['topSegment'] + 1)),-3);
+           $entryRS->execute(array(
+              ':biosampleLabel' => $pdta['bgNum']  
+             ,':segmentLabel' => substr(('000' . ((int)$nxt['topSegment'] + 1)),-3)
+             ,':bgs' =>  $newBGS
+             ,':statusBy' => $u['originalaccountname']  
+             ,':hoursPost' => $parentHRPost
+             ,':metric' => trim($pdta['addMetric'])
+             ,':metricUOM' => (int)$pdta['addMetricUOMValue']
+             ,':prepMethod' => $pdta['preparationMethodValue']
+             ,':preparation' => $pdta['preparationValue']
+             ,':assignedTo' => $pdta['assignInv']
+             ,':assignedReq' => $pdta['assignReq']
+             ,':assignedby' => $u['originalaccountname']
+             ,':slideGroupID' => $slideGroup
+             ,':enteredBy' => $u['originalaccountname']
+             ,':segmentComments' => $pdta['segComments']
+             ,':slideFromBlockId' => trim($pdta['parentSegment'])
+             ,':procuredAt' => $u['presentinstitution']
+             ,':prpcontainer' => $pdta['preparationContainerValue']
+           ));
+           $cntr++;
+        }
+        $responseCode = 200;   
+      }
+
+      if ( $pdta['printSlideInd'] === 1 ) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "BIOSAMPLES HAVE BEEN SAVED.  HOWEVER, THE PRINT FUNCTION AT THIS TIME IS NOT OPERATIONAL! REFRESH YOUR SCREEN TO SEE CHANGES."));
+      }   
+
+      if ( $pdta['parentExhaustedInd'] ) { 
+          //MARK PARENT PENDING DESTROY
+          $histSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) SELECT segmentId, segstatus, statusby, statusdate, now(), :usr FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :parentbgs";
+          $histRS = $conn->prepare($histSQL);
+          $histRS->execute(array(':usr' => $u['originalaccountname'], ':parentbgs' => trim($pdta['parentSegment'])));
+          //TODO:  MAKE THIS SEGMENT STATUS 'PENDDEST' DYNAMIC
+          $updSQL = "update masterrecord.ut_procure_segment set segStatus = 'PENDDEST', statusdate = now(), statusBy = :bywho  where replace(bgs,'_','') = :parentbgs";
+          $updRS = $conn->prepare($updSQL); 
+          $updRS->execute(array(':bywho' => $u['originalaccountname'], ':parentbgs' => trim($pdta['parentSegment']))); 
+      }
+
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -363,12 +436,6 @@ class datadoers {
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;           
     }
-
-
-
-
-
-
 
     function validatechtnvocabulary ( $request, $passdata ) { 
       $rows = array(); 

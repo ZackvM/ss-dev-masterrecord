@@ -60,7 +60,7 @@ if ($whichpage !== "login") {
         } else { 
            //HEADER AND ITEMS
            $controlList .= "<td valign=bottom class=menuHolderSqr><div class=mnuHldr><div class=hdrItem>{$modval[1]}</div>"; 
-              //GET ITEMS
+           //GET ITEMS
            $controlList .= "<div class=menuDrpItems><table border=0 cellspacing=0 cellpadding=0>";
            foreach ($modval[3] as $lstItem) {
              if ( (int)$lstItem['dspinmenu'] === 1 ) {     

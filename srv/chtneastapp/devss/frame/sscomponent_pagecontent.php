@@ -2836,7 +2836,7 @@ function bldDialogMasterAddSegment ( $passeddata ) {
     $dxdDesig = $dxdRS->fetch(PDO::FETCH_ASSOC);
     $dxd = "[{$bg}] " . $dxdDesig['dxd'];
  
-    $segListSQL = "SELECT substr(bgs,1,6) as pbiosamplelabel, ifnull(prepmethod,'') as prepmethod, ifnull(preparation,'') as preparation, ifnull(slidegroupid,'') as slidegroup, ifnull(assignedto,'') as assignedto, if(min(SegmentLabel) = max(SegmentLabel), min(SegmentLabel), concat(min(SegmentLabel),'-', max(SegmentLabel))) as segrange FROM masterrecord.ut_procure_segment where biosamplelabel = :bg group by substr(bgs,1,6), prepmethod, preparation, slidegroupid, assignedto";
+    $segListSQL = "SELECT substr(bgs,1,6) as pbiosamplelabel, ifnull(prepmethod,'') as prepmethod, ifnull(preparation,'') as preparation, ifnull(slidegroupid,'') as slidegroup, ifnull(assignedto,'') as assignedto, if(min(SegmentLabel) = max(SegmentLabel), min(SegmentLabel), concat(min(SegmentLabel),'-', max(SegmentLabel))) as segrange FROM masterrecord.ut_procure_segment where biosamplelabel = :bg group by substr(bgs,1,6), prepmethod, preparation, slidegroupid, assignedto order by segrange";
     $segListRS = $conn->prepare($segListSQL); 
     $segListRS->execute(array(':bg' => $bg));
     $segTbl = "<table><tr><td class=prcFldLbl>Cut From <span class=reqInd>*</span></td></tr><tr><td><input type=text id=fldParentSegment READONLY></td></tr><tr><td align=right><input type=checkbox id=fldNoParentIndicator onchange=\"byId('fldParentSegment').value = '';\"><label for=fldNoParentIndicator>No Parent</label></td></tr><tr><td><div id=divSegmentDisplayLister><table id=tblSegmentLister cellspacing=0 cellpadding=0><thead><tr><th>Segment #</th><th>Preparation</th></tr></thead></tbody>";
@@ -2948,7 +2948,7 @@ $rtnThis = <<<RTNTHIS
 </td></tr>
 <tr><td valign=top><input type=text id=fldSEGDefinitionRepeater value=1></td></tr>
 <tr><td><input type=checkbox id=fldSEGParentExhaustInd><label for=fldSEGParentExhaustInd>Parent Component has been Exhausted</label></td></tr>
-<tr><td colspan=2 style="text-align: right; font-size: 1vh; color: rgba(237, 35, 0, 1); font-weight: bold;">{$usrrecord['originalaccountname']} / {$usrrecord['institutionname']} ({$usrrecord['presentinstitution']}) </td></tr>
+<tr><td colspan=2 style="text-align: right; font-size: 1vh; color: rgba(237, 35, 0, 1); font-weight: bold;">{$usrrecord['originalaccountname']} / {$usrrecord['institutionname']} </td></tr>
 </table>
 
 </td></tr>
