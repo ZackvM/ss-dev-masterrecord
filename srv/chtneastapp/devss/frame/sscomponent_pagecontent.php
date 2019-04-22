@@ -747,6 +747,27 @@ return $rtnthis;
 
 }
 
+
+function inventory ( $rqststr, $whichusr ) { 
+
+  
+  if ( (int)$whichusr->allowinventory === 1 ) {
+    switch ( strtolower(trim($rqststr[2]))) {      
+      case 'checkinbiosamples':
+        $rtnthis = bldInventoryAction_CheckIn($whichusr);
+        break;
+      default: 
+        $rtnthis = "<h2>{$rqststr[2]} NOT FOUND";
+    }
+
+  } else { 
+   $rtnthis = "<h2>USER NOT ALLOWED ACCESS TO INVENTORY";
+  }
+  return $rtnthis; 
+}
+
+
+
 function reports($rqststr, $whichusr) { 
 
 //  if ((int)$whichusr->allowcoord !== 1     ) { 
@@ -3483,6 +3504,13 @@ function bldWeeklyGoals( $whichUsr ) {
     
     return "Our Weekly Goals " . $whichUsr->username . " ... " . $whichUsr->allowweeklyupdate;
 }
+
+function bldInventoryAction_CheckIn ( $whichusr ) { 
+
+
+   return "<h1>INVENTORY CHECK-IN!";
+}
+
 
 function bldDialogAddSegment( $passeddata ) { 
 

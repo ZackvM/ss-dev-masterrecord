@@ -814,6 +814,20 @@ STYLESHEET;
 return $rtnThis;
 }
 
+function inventory ( $mobileind ) { 
+
+      $rtnThis = <<<STYLESHEET
+
+body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
+
+
+
+STYLESHEET;
+      return $rtnThis;
+
+}
+
+
 function reports($mobileind) { 
       $rtnThis = <<<STYLESHEET
 

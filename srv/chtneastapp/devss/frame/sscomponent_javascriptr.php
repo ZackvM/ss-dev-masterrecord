@@ -57,6 +57,112 @@ return $rtnThis;
 
 }
 
+function inventory ( $rqststr ) { 
+
+  session_start(); 
+  $tt = treeTop;
+  $ott = ownerTree;
+  $si = serverIdent;
+  $sp = serverpw;
+
+//JAVASCRIPT AS APPLIES TO ALL INVENTORY SCREENS  
+$rtnThis = <<<JAVASCR
+
+var pressed = false; 
+var chars = []; 
+
+document.addEventListener('DOMContentLoaded', function() {  
+   //THIS IS BARCODE SCANNER CODE
+   document.addEventListener('keypress', function( event ) {
+
+     if ( event.which >= 33 && event.which <= 126 ) { 
+       chars.push(String.fromCharCode(event.which)); 
+     }
+     if ( pressed == false ) { 
+       pressed = true; 
+       t = setTimeout( function() { 
+         var barcode = chars.join("");
+         if ( barcode.toString().trim() !== "" ) {  
+           readBarcodeAction( barcode.toString() );
+         }
+         chars = [];
+         pressed = false;
+       }, 400);
+     }
+
+   }, false); 
+}, false);
+
+JAVASCR;
+
+//PAGE SPECIFIC JAVASCRIPT
+switch ( $rqststr[2] ) { 
+  case 'checkinbiosamples':
+//ADD ON CHECKIN
+    $rtnThis .= <<<JADDON
+
+var scanlist = [];
+
+function readBarcodeAction( barcode ) { 
+ return new Promise(function (resolve, reject) {
+   if (window.XMLHttpRequest) {
+     xhr = new XMLHttpRequest(); // code for modern browsers
+   } else {
+     xhr = new ActiveXObject("Microsoft.XMLHTTP"); // code for old IE browsers
+   }
+
+
+   var dta = new Object(); 
+   dta['barcode'] = barcode;
+   var sndthis = JSON.stringify(dta);
+
+   var grandurl = dataPath+"/check-in-barcode-status";
+   xhr.open("POST", grandurl);
+   xhr.onload = function () {
+     if (this.status >= 200 && this.status < 300) {
+       resolve(xhr.response);
+     } else {
+       console.log( this.status );
+       reject({
+         status: this.status,
+         statusText: xhr.statusText
+       });
+
+     }
+   };
+   xhr.onerror = function () {
+     reject({
+       status: this.status,
+       statusText: xhr.statusText
+     });
+   };
+   xhr.send(sndthis);
+  });
+};
+
+
+readBarcodeAction()
+   .then( function( rtndata ) { 
+       console.log( rtndata );
+   }, function( rtndata ) { 
+       console.log( 'ERROR: '+JSON.stringify(rtndata));
+   })
+   .catch( function(error) { 
+
+   }); 
+
+
+
+JADDON;
+  break;
+  default:
+
+}
+  return $rtnThis;
+}
+
+
+
 function biogroupdefinition ( $rqststr ) { 
 
   session_start(); 

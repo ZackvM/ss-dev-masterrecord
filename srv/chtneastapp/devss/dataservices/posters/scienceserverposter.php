@@ -63,6 +63,27 @@ class datadoers {
       return $rows;   
     }
 
+    function checkinbarcodestatus ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      session_start();
+      $sess = session_id();
+      $pdta = json_decode($passdata, true);
+
+
+
+      $responseCode = 200; 
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;        
+    }
+
     function coordinatoraddsegment ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 400;
