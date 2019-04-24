@@ -64,27 +64,34 @@ function inventory ( $rqststr ) {
   $ott = ownerTree;
   $si = serverIdent;
   $sp = serverpw;
+  
+  //LOCAL USER CREDENTIALS BUILT HERE
+  $regUsr = session_id();  
+  $regCode = registerServerIdent($regUsr);  
 
 //JAVASCRIPT AS APPLIES TO ALL INVENTORY SCREENS  
 $rtnThis = <<<JAVASCR
-
+        
 var pressed = false; 
 var chars = []; 
 
 document.addEventListener('DOMContentLoaded', function() {  
+
    //THIS IS BARCODE SCANNER CODE
    document.addEventListener('keypress', function( event ) {
-
      if ( event.which >= 33 && event.which <= 126 ) { 
        chars.push(String.fromCharCode(event.which)); 
      }
+        
+     if ( event.which == 13 && chars.length > 4 ) { 
+       var barcode = chars.join("");          
+       readBarcodeAction( barcode ); 
+       chars = [];
+     }
+        
      if ( pressed == false ) { 
        pressed = true; 
        t = setTimeout( function() { 
-         var barcode = chars.join("");
-         if ( barcode.toString().trim() !== "" ) {  
-           readBarcodeAction( barcode.toString() );
-         }
          chars = [];
          pressed = false;
        }, 400);
@@ -92,64 +99,93 @@ document.addEventListener('DOMContentLoaded', function() {
 
    }, false); 
 }, false);
+        
+        
+        
 
 JAVASCR;
 
 //PAGE SPECIFIC JAVASCRIPT
 switch ( $rqststr[2] ) { 
-  case 'checkinbiosamples':
+  case 'inventorybiosamples':
 //ADD ON CHECKIN
-    $rtnThis .= <<<JADDON
 
-var scanlist = [];
+$rtnThis .= <<<JADDON
 
+var scanlist = new Object();
+var scandetail = new Object();
+
+var cntr = 0;          
 function readBarcodeAction( barcode ) { 
- return new Promise(function (resolve, reject) {
-   if (window.XMLHttpRequest) {
-     xhr = new XMLHttpRequest(); // code for modern browsers
-   } else {
-     xhr = new ActiveXObject("Microsoft.XMLHTTP"); // code for old IE browsers
-   }
-
-
-   var dta = new Object(); 
-   dta['barcode'] = barcode;
-   var sndthis = JSON.stringify(dta);
-
-   var grandurl = dataPath+"/check-in-barcode-status";
-   xhr.open("POST", grandurl);
-   xhr.onload = function () {
-     if (this.status >= 200 && this.status < 300) {
-       resolve(xhr.response);
+  return new Promise(function (resolve, reject) {
+   if ( !Object.values(scanlist).includes( barcode ) || Object.keys(scanlist).length == 0 ) {  
+    var loccntr = cntr;      
+    if (window.XMLHttpRequest) {
+      xhr = new XMLHttpRequest(); // code for modern browsers
      } else {
-       console.log( this.status );
-       reject({
-         status: this.status,
-         statusText: xhr.statusText
-       });
-
+       xhr = new ActiveXObject("Microsoft.XMLHTTP"); // code for old IE browsers
      }
-   };
-   xhr.onerror = function () {
-     reject({
-       status: this.status,
-       statusText: xhr.statusText
-     });
-   };
-   xhr.send(sndthis);
+   
+     if (barcode.substring(0,3).toUpperCase() !== 'FRZ') {                      
+       scanlist[cntr] = barcode;    
+     }
+      var dta = new Object(); 
+     dta['barcode'] = barcode;
+     var sndthis = JSON.stringify(dta);
+     var grandurl = dataPath+"/data-doers/inventory-barcode-status";
+     xhr.open("POST", grandurl);
+     xhr.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));    
+     xhr.onload = () => resolve( buildScanGrid(xhr.responseText, loccntr ) );
+     xhr.onerror = () => reject( xhr.statusText );     
+     xhr.send(sndthis);
+     buildScannedList();
+     cntr++;
+     } else { 
+        byId('errorDsp').innerHTML = "ERROR: "+barcode+" has already been scanned ...";
+       //console.log('already scanned');
+     }
   });
-};
-
-
-readBarcodeAction()
-   .then( function( rtndata ) { 
-       console.log( rtndata );
-   }, function( rtndata ) { 
-       console.log( 'ERROR: '+JSON.stringify(rtndata));
-   })
-   .catch( function(error) { 
-
-   }); 
+}
+     
+function buildScannedList() { 
+  var dspTbl = "<table border=1><tr>";
+  var cellCntr = 0;    
+  const keys = Object.keys(scanlist);
+  for (const key of keys) {
+     dspTbl += "<td><div id=\"scancode"+key+"\">"+scanlist[key]+"</div></td>";   
+     cellCntr++;
+  } 
+  dspTbl += "</tr></table>";
+  byId('dspScanList').innerHTML = dspTbl;    
+}
+     
+function buildScanGrid( xhrresponse, whichcntr ) { 
+  //RETURN = {"MESSAGE":[],"ITEMSFOUND":1,"DATA":{"bgs":"87281T002","segstatus":"ASSIGNED","prepmethod":"FROZEN","dx":"NORMAL::BLOOD","scantype":"BIOSAMPLE"}} 11
+  //OR RETURN = {"MESSAGE":[],"ITEMSFOUND":1,"DATA":{"typeolocation":"STORAGE CONTAINER","scancode":"FRZB606","locationnote":"Box #1 (SC0184)","scantype":"LOCATION"}}
+  
+  var rsp = JSON.parse(xhrresponse);
+  switch ( rsp['DATA']['scantype'] ) { 
+    case 'LOCATION':
+       if ( parseInt(rsp['ITEMSFOUND']) !== 1) { 
+         alert('SCAN ERROR'); 
+       } else { 
+         if ( byId('fldLocationScanCode') ) { 
+           byId('fldLocationScanCode').value = rsp['DATA']['scancode'];
+         }
+         if ( byId('fldDspScanToLocation') ) { 
+           byId('fldDspScanToLocation').value = rsp['DATA']['lvl2parent'] + " / " + rsp['DATA']['lvl1parent'] + " / " + rsp['DATA']['locationnote'] + " [" + rsp['DATA']['typeolocation'] +"]";
+         }
+     }
+     break; 
+     case 'BIOSAMPLE': 
+       
+       if ( byId('scancode'+whichcntr) ) {
+           byId('scancode'+whichcntr).innerHTML = rsp['DATA']['bgs'] + " ... " + rsp['DATA']['segstatus'];
+       }
+     break; 
+  }
+     
+}
 
 
 
@@ -187,7 +223,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }   
 
   if (byId('btnQMSActions')) { 
-    byId('btnQMSActions').addEventListener('click', function() { alert('QMS Action'); }, false);
+    byId('btnQMSActions').addEventListener('click', function() { 
+        generateDialog('masterQMSAction',byId('masterBGEncy').value);
+    }, false);
   }      
 
   if (byId('btnAssocGrp')) { 
@@ -208,6 +246,9 @@ document.addEventListener('DOMContentLoaded', function() {
       
 }, false); 
 
+        
+        
+        
 function rowselector(whichrow) { 
   if (byId(whichrow)) { 
     if (byId(whichrow).dataset.selected === "false") { 

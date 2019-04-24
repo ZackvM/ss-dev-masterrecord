@@ -284,6 +284,18 @@ STYLESHEET;
  return $rtnThis;
   }
 
+function shipmentdocument($mobileind) { 
+$rtnThis = <<<STYLESHEET
+body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.5vh; } 
+
+#mainShipDocHoldTable { width: 98vw; box-sizing: border-box; margin-left: 1vw; margin-right: 1vw; }
+   
+STYLESHEET;
+return $rtnThis;
+    
+}  
+  
+  
 function biogroupdefinition($mobileind) { 
 $rtnThis = <<<STYLESHEET
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.5vh; } 
@@ -819,7 +831,9 @@ function inventory ( $mobileind ) {
       $rtnThis = <<<STYLESHEET
 
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
-
+#fldDspScanToLocation { width: 60vw; border: none;  }
+#fldDspScanToLocation:focus, input:active { background: rgba($this->color_white},1); }              
+              
 
 
 STYLESHEET;

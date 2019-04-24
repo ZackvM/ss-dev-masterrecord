@@ -1184,6 +1184,10 @@ class globalMenus {
       return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'QMSStatus' and mnu.dspInd = 1 order by mnu.dsporder";
     }
 
+    function qmsassignablestatus() { 
+        return "SELECT ucase(ifnull(menuvalue,'')) as codevalue, ifnull(dspvalue,'') as menuvalue, 0 as useasdefault, ucase(ifnull(menuvalue,'')) as lookupvalue FROM four.sys_master_menus where menu = 'QMSStatus' and dspind = 1 and assignablestatus = 1 order by dsporder";
+    }
+    
     function fouryesno() {
       return "SELECT ifnull(mnu.menuvalue,0) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'YESNO' and mnu.dspInd = 1 order by mnu.dsporder";
     }

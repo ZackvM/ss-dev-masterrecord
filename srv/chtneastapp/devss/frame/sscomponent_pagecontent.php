@@ -16,6 +16,14 @@ function sysDialogBuilder($whichdialog, $passedData) {
     $standardSysDialog = 1;
     switch($whichdialog) {
 
+      case 'masterQMSAction':  
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "QMS Functions";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";        
+        $innerDialog = bldDialogMasterQMSAction( $passedData);
+        //$footerBar = "SEGMENT ADD";       
+        break;
       case 'masterAddSegment':
         $pdta = json_decode($passedData, true);          
         $titleBar = "Segment Additions (Master-Record)";
@@ -501,6 +509,31 @@ PAGEHERE;
 return $rtnthis;
 }
 
+function shipmentdocument ( $rqststr, $usr ) { 
+  $url = explode("/",$_SERVER['REQUEST_URI']);   
+  if ( trim($url[2]) !== "" ) {
+    $sd = cryptservice($url[2],'d',false);
+    $headr = $sd;
+  } else { 
+    $headr = "NO SD - LOOKUP ONLY";  
+  }
+  
+  
+               
+   $topBtnBar = generatePageTopBtnBar('shipdocedit', $usr);
+   $rtnThis = <<<RTNTHIS
+           {$topBtnBar}
+           <table border=1 id=mainShipDocHoldTable>
+           <tr><td>{$headr}</td></tr>
+           </table>
+RTNTHIS;
+  
+  
+
+    return $rtnThis;    
+
+}
+
 function biogroupdefinition( $rqststr, $usr ) { 
   $u = json_encode($usr);
   $r = json_encode($rqststr);
@@ -753,9 +786,12 @@ function inventory ( $rqststr, $whichusr ) {
   
   if ( (int)$whichusr->allowinventory === 1 ) {
     switch ( strtolower(trim($rqststr[2]))) {      
-      case 'checkinbiosamples':
-        $rtnthis = bldInventoryAction_CheckIn($whichusr);
+      case 'inventorybiosamples':
+        $rtnthis = bldInventoryAction_Inventorymaster($whichusr);
         break;
+      case 'count':
+          $rtnthis = bldInventoryAction_Inventorytally($whichusr);
+          break;
       default: 
         $rtnthis = "<h2>{$rqststr[2]} NOT FOUND";
     }
@@ -1129,7 +1165,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
         if (trim($val['sdstatus']) === "") { 
             $dspSD .= "<div class=tt>&nbsp;</div>";
         } else { 
-            $dspSD .= "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]<p><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">print</i> Print Ship-Doc (" . substr(('000000' . $val['shipdocnbr']),-6) . ")</div></div>";
+            $dspSD .= "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]<p><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">print</i> Print Ship-Doc (" . substr(('000000' . $val['shipdocnbr']),-6) . ")</div><p><div onclick=\"navigateSite('shipment-document/{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">edit</i> Edit Ship-Doc (" . substr(('000000' . $val['shipdocnbr']),-6) . ")</div></div>";
         }
         $dspSD .= "</div>";
     }
@@ -2156,7 +2192,13 @@ function generatePageTopBtnBar($whichpage, $whichusr) {
 //TODO:  MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
 
 switch ($whichpage) { 
-
+case 'shipdocedit':
+    $innerBar = <<<BTNTBL
+<tr>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><i class="material-icons">layers_clear</i></td><td>Look-Up SD</td></tr></table></td> 
+        
+BTNTBL;
+    break;
 case 'procurebiosampleedit':
 $pxibtn = "";
 //<!-- <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPRCSaveEdit border=0><tr><td><!--ICON //--></td><td>Save Edit</td></tr></table></td> //-->
@@ -2830,6 +2872,80 @@ return $rtnThis;
 
 }
 
+function bldDialogMasterQMSAction( $passeddata ) { 
+
+    $pdta = json_decode( $passeddata, true);    
+    //{"whichdialog":"masterQMSAction","objid":"aEMrL0VTWmdCZXRHcU52K1p6K3N1Zz09","dialogid":"zESKLRskcIZ2tLC"}
+    $bg = cryptservice( $pdta['objid'] , 'd', false ); 
+$errorInd = 0;
+    session_start(); 
+    $sess = session_id();
+    require(serverkeys . "/sspdo.zck");
+    $rtnThis = "ERROR!";
+    session_start();      
+    $sessid = session_id();
+    $chkUsrSQL = "SELECT originalaccountname, presentinstitution, inst.dspvalue as institutionname FROM four.sys_userbase usr left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on usr.presentinstitution = inst.menuvalue where 1=1 and sessionid = :sessid and (allowInd = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+    $rs = $conn->prepare($chkUsrSQL); 
+    $rs->execute(array(':sessid' => $sessid));
+    if ($rs->rowCount() === 1) { 
+      $usrrecord = $rs->fetch(PDO::FETCH_ASSOC);
+    } else { 
+      (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+    }
+    
+    $pdta['bglookup'] = $bg;
+    $payload = json_encode($pdta);
+    $bgqmsdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-bg-qmsstat",serverIdent, serverpw, $payload), true);
+    //{"MESSAGE":[],"ITEMSFOUND":3,"DATA":[{"readlabel":"34204A1","hprind":"1","hprmarkbyon":"LINUS 2015-08-20 15:12","qcind":"1","qcmarkbyon":"dee 2015-08-21 09:27:23","qcprocstatus":"Q","qcprocstatusdsp":"QC Process Complete","qmsstatusby":"","qmsstatuson":"","hprdecision":"ADDITIONAL","hprresult":"14002","hprslidereviewed":"34204A1007","hprby":"LINUS","hpron":"08\/20\/2015","hprreviewer":"linus","hprreviewedon":"08\/20\/2015"},{"readlabel":"34204A2","hprind":"1","hprmarkbyon":"","qcind":"1","qcmarkbyon":"","qcprocstatus":"Q","qcprocstatusdsp":"QC Process Complete","qmsstatusby":"","qmsstatuson":"","hprdecision":"","hprresult":"","hprslidereviewed":"","hprby":"","hpron":"","hprreviewer":"","hprreviewedon":""},{"readlabel":"34204A3","hprind":"1","hprmarkbyon":"","qcind":"1","qcmarkbyon":"","qcprocstatus":"Q","qcprocstatusdsp":"QC Process Complete","qmsstatusby":"","qmsstatuson":"","hprdecision":"","hprresult":"","hprslidereviewed":"","hprby":"","hpron":"","hprreviewer":"","hprreviewedon":""}]}    
+    
+    
+    if ((int)$bgqmsdta['ITEMSFOUND'] === 0 ) { 
+    } else {
+
+        $qmsstatus = json_decode(callrestapi("GET", dataTree . "/globalmenu/qms-assignable-status",serverIdent,serverpw), true);
+
+        
+       
+        foreach ($bgqmsdta['DATA'] as $key => $value) { 
+            if ( strtoupper(trim($value['qcprocstatus'])) === 'Q' ) { 
+                //QMS COMPLETE
+                $inner = "<table border=1>";
+                $inner .= " <tr><td>{$value['readlabel']}</td><td>{$value['qcmarkbyon']}</td><td>{$value['qcprocstatus']}</td></tr>";
+            } else { 
+                //DROP DOWNS
+                $idsuffix = generateRandomString(8);
+                $met = "<table border=0 class=menuDropTbl>";
+                foreach ($qmsstatus['DATA'] as $metval) {
+                  $met .= "<tr><td onclick=\"fillField('fldQMSStat{$idsuffix}','{$metval['lookupvalue']}','{$metval['menuvalue']}');\" class=ddMenuItem>{$metval['menuvalue']}</td></tr>";
+                }
+                $met .= "</table>";                
+                
+                $inner = "<table border=1><tr><th>Biogroup</th><th>QC Proc</th><th>HPR Decision</th><th>QC Status</th></tr>";
+                
+                $inner .= " <tr><td>{$value['readlabel']}</td><td>{$value['qcprocstatusdsp']}</td><td>{$value['hprdecision']}</td><td><div class=menuHolderDiv><input type=hidden id=fldQMSStat{$idsuffix}Value><input type=text id=fldQMSStat{$idsuffix} READONLY class=\"inputFld qmsDivCls\" style=\"width: 10vw;\"><div class=valueDropDown style=\"min-width: 10vw;\">{$met}</div></div></td><td><div id=labdiv>L</div><div id=tumdiv>Q</div></td><td><button onclick=\"alert('{$idsuffix} / {$value['readlabel']}');\">Save</button></tr>";
+            }
+            
+        }
+        $inner .= "</table>";
+        
+        
+$rtnThis = <<<RTNTHIS
+<style>
+#labdiv { display: none; } 
+#tumdiv { display: none; }        
+</style>
+        
+<table border=1>
+    <tr><td><b>Biogroup</b>: {$pdta['bglookup']} </td></tr>
+    <tr><td>{$inner}</td></tr>
+</table>
+        
+RTNTHIS;
+    }
+return $rtnThis;
+}
+
+
 function bldDialogMasterAddSegment ( $passeddata ) { 
 
     $pdta = json_decode( $passeddata, true);
@@ -3499,16 +3615,30 @@ function bldWeeklyGoals( $whichUsr ) {
     //$whichUsr THIS IS THE USER ARRAY {"statusCode":200,"loggedsession":"i46shslvmj1p672lskqs7anmu1","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":20,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"googleiconcode":"lock_open","menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"googleiconcode":"account_balance","menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""}]],["472","REPORTS","",[{"googleiconcode":"account_balance","menuvalue":"All Reports","pagesource":"all-reports","additionalcode":""}]],["473","UTILITIES","",[{"googleiconcode":"account_balance","menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474",null,null,[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]} 
   
     
-    
-    
-    
     return "Our Weekly Goals " . $whichUsr->username . " ... " . $whichUsr->allowweeklyupdate;
 }
 
-function bldInventoryAction_CheckIn ( $whichusr ) { 
+function bldInventoryAction_Inventorytally ( $whichusr ) { 
+    
+       return "<h1>INVENTORY TALLY!";
+}
 
+function bldInventoryAction_Inventorymaster ( $whichusr ) { 
+    
+    $rtnThis = <<<RTNTHIS
+            
+<table>     
+    <tr><td class=fldLabel>Scan ... </td></tr>
+    <tr><td><input type=hidden READONLY id=fldLocationScanCode><input type=text READONLY id=fldDspScanToLocation></td></tr>
+    <tr><td><div id=errorDsp></div></td></tr>        
+    <tr><td><div id=dspScanList></div></td></tr>       
+</table>
+            
+RTNTHIS;
+    
+    
 
-   return "<h1>INVENTORY CHECK-IN!";
+   return $rtnThis;
 }
 
 
@@ -5302,7 +5432,7 @@ NEXTLINETWO;
                       <td class=seg-rqst>{$svl['assignedrequest']}&nbsp;</td>
                       <td class=seg-shpdoc>{$shipdoc}&nbsp;</td>
                       <td class=seg-shpdte>{$svl['shippeddate']}&nbsp;</td>
-                      <td>{$sgcomments}&nbsp;</td>
+                      <td>{$sgcmt}&nbsp;</td>
                       <td class="endCell ">{$scnDsp}</td>
                   </tr>
 SEGMENTLINES;

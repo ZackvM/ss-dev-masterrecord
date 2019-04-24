@@ -34,6 +34,36 @@ function __construct() {
 
 class datadoers {
 
+    function getbgqmsstat( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $qmssql = "SELECT ifnull(read_label,'') as readlabel, ifnull(bs.hprind,0) as hprind, ifnull(bs.hprmarkbyon,'') as hprmarkbyon, ifnull(bs.QCInd,0) as qcind, ifnull(bs.qcmarkbyon,'') as qcmarkbyon, ifnull(bs.qcprocstatus,'') as qcprocstatus, ifnull(qc.longvalue,'') as qcprocstatusdsp, ifnull(bs.qmsstatusby,'') as qmsstatusby, ifnull(date_format(bs.qmsstatuson,'%m/%d/%Y'),'') as qmsstatuson, ifnull(bs.hprdecision,'') as hprdecision, ifnull(bs.hprresult,'') as hprresult, ifnull(bs.hprslidereviewed,'') as hprslidereviewed, ifnull(bs.hprby,'') as hprby, ifnull(date_format(bs.hpron,'%m/%d/%Y'),'') as hpron , ifnull(hpr.reviewer,'') as hprreviewer, ifnull(date_format(hpr.reviewedon,'%m/%d/%Y'),'') as hprreviewedon, ucase(ifnull(hpr.decision,'')) as hprdecision  FROM masterrecord.ut_procure_biosample bs left join (SELECT  menuvalue, longvalue FROM four.sys_master_menus where menu = 'QMSStatus') qc on bs.qcprocstatus = qc.menuvalue left join masterrecord.ut_hpr_biosample hpr on bs.hprresult = hpr.biohpr where read_label like :likebg order by bs.read_label";
+      $qmsRS = $conn->prepare($qmssql);
+      $qmsRS->execute(array(':likebg' => "{$pdta['bglookup']}%"));
+      if ( $qmsRS->rowCount() < 1) { 
+          //ERROR - SHOULD ALWAYS HAVE AT LEAST ONE
+      } else { 
+          $itemsfound = $qmsRS->rowCount();
+          while ($r = $qmsRS->fetch(PDO::FETCH_ASSOC)) { 
+              $dta[] = $r;
+          }
+      }
+      
+      
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;       
+    }
+    
+    
     function pristinebarcoderun ( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 
@@ -63,27 +93,67 @@ class datadoers {
       return $rows;   
     }
 
-    function checkinbarcodestatus ( $request, $passdata ) { 
+    
+    
+    function inventorybarcodestatus ( $request, $passdata ) {   
       $rows = array(); 
       $responseCode = 400;
       $msgArr = array(); 
       $errorInd = 0;
       $msg = "BAD REQUEST";
       $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
       session_start();
       $sess = session_id();
       $pdta = json_decode($passdata, true);
 
-
-
+      $bc = $pdta['barcode'];
+      if ( strtoupper(substr($pdta['barcode'],0,3)) === 'FRZ' ) { 
+          //LOOKUP CONTAINER
+          $locLookupSQL = "SELECT mainscan.typeolocation, mainscan.scancode, mainscan.locationnote, ifnull(lvl1up.locationnote,'') as lvl1parent,  ifnull(lvl2up.locationnote,'') as lvl2parent FROM four.sys_inventoryLocations mainscan left join ( select locationid, locationnote, parentid from four.sys_inventoryLocations) as lvl1up on mainscan.parentId = lvl1up.locationid left join ( select locationid, locationnote, parentid from four.sys_inventoryLocations) as lvl2up on lvl1up.parentId = lvl2up.locationid where mainscan.scancode = :locscancode and activelocation = 1"; 
+          $locRS = $conn->prepare($locLookupSQL); 
+          $locRS->execute(array(':locscancode' => $bc));
+          if ( $locRS->rowCount() === 1 ) { 
+              while ( $r = $locRS->fetch(PDO::FETCH_ASSOC) ) { 
+                $dta = $r;
+              }
+              $dta['scantype'] = "LOCATION";
+              $itemsfound = 1;
+          } else { 
+           //location error
+           $dta['scantype'] = "LOCATION";
+           $itemsfound = 0;
+          }          
+      } else { 
+          //LOOK UP SAMPLE STATUS
+          $bc = $pdta['barcode'];
+          $biosampSQL = "SELECT replace(sg.bgs,'_','') as bgs, upper(ifnull(sg.segstatus,'')) as segstatus, upper(ifnull(sg.prepmethod,'')) as prepmethod, concat(ifnull(bs.tisstype,''), if(ifnull(bs.anatomicsite, '')='','',concat('::',ifnull(bs.anatomicsite, ''))), if(ifnull(bs.diagnosis,'')='','', concat('::',ifnull(bs.diagnosis,''))), if(ifnull(bs.subdiagnos,'')='','',concat('::',ifnull(bs.subdiagnos,'')))) as dx FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where replace(sg.bgs,'_','') = :scanbc";
+          $biosampRS = $conn->prepare($biosampSQL);
+          $biosampRS->execute(array(':scanbc' => $bc));
+          if ( $biosampRS->rowCount() === 1) { 
+              while ($r = $biosampRS->fetch(PDO::FETCH_ASSOC)) { 
+                  $dta = $r;
+              }
+              $dta['scantype'] = "BIOSAMPLE";
+              $itemsfound = 1;
+          } else { 
+              //BIOSAMPLE ERROR
+              
+          }
+          
+          
+      }
       $responseCode = 200; 
-
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;        
     }
 
+    
+    
+    
+    
     function coordinatoraddsegment ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 400;
@@ -670,6 +740,11 @@ class datadoers {
              $left = '27vw';
              $top = '13vh';               
             break;
+           case 'masterQMSAction':
+             $primeFocus = "";
+             $left = '27vw';
+             $top = '13vh';
+             break;
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);
