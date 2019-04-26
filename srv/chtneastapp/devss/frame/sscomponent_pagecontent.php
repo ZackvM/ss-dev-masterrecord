@@ -1139,6 +1139,11 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
         $qcstatustxt = "QMS Process: NOT STATUSED!";
     }
 
+    $qcstatustxt .= ( trim($val['hprdecision']) !== "" && (int)$val['hprresultid'] !== 0 ) ? "<br>HPR Decision: <a href=\"javascript:void(0);\" class=hprindication onclick=\"alert('Not functional yet ... {$val['hprresultid']}');\">{$val['hprdecision']}</a>" : ""; 
+    $qcstatustxt .= ( trim($val['hprdecision']) !== "" && (int)$val['hprresultid'] === 0 ) ? "<br>HPR Decision: {$val['hprdecision']}" : ""; 
+    $qcstatustxt .= ( trim($val['reviewedon']) !== "" ) ? "<br>HPR Review: {$val['reviewedon']}" : ""; 
+    $qcstatustxt .= ( trim($val['hprreviewer']) !== "" ) ? " ({$val['hprreviewer']})" : ""; 
+
     $sglabel = preg_replace( '/[Tt]_/','',$val['bgs']);
     $stsDte = (trim($val['statusdate']) === "") ? "&nbsp;" : "Status Date: {$val['statusdate']}";
     $stsDte .= (trim($val['statusby']) === "") ? "" : "<br>Status by: {$val['statusby']}";
@@ -1857,6 +1862,7 @@ $pg = <<<CONFIRMFRM
            <div id=dspDefinedMolecularTestsConfirm>
            </div>
     </table>
+
    </td> </tr>
        
   <tr>
@@ -2892,7 +2898,13 @@ $errorInd = 0;
     } else { 
       (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
     }
-    
+
+
+    if ($errorInd !== 0 ) { 
+
+      $rtnThis .= json_encode($msgArr);
+
+    } else { 
     $pdta['bglookup'] = $bg;
     $payload = json_encode($pdta);
     $bgqmsdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-bg-qmsstat",serverIdent, serverpw, $payload), true);
@@ -2903,8 +2915,8 @@ $errorInd = 0;
     } else {
 
         $qmsstatus = json_decode(callrestapi("GET", dataTree . "/globalmenu/qms-assignable-status",serverIdent,serverpw), true);
-
-        
+        $qmsstatusla = json_decode(callrestapi("GET", dataTree . "/globalmenu/qms-lab-actions",serverIdent,serverpw), true);
+        $moletest = json_decode(callrestapi("GET", dataTree . "/immuno-mole-testlist",serverIdent,serverpw),true);
        
         foreach ($bgqmsdta['DATA'] as $key => $value) { 
             if ( strtoupper(trim($value['qcprocstatus'])) === 'Q' ) { 
@@ -2914,34 +2926,179 @@ $errorInd = 0;
             } else { 
                 //DROP DOWNS
                 $idsuffix = generateRandomString(8);
+                //molecular test
+                $molemnu = "<table border=0><tr><td align=right onclick=\"triggerMolecularFill(0,'','','{$idsuffix}');\" class=ddMenuClearOption>[clear]</td></tr>";
+                foreach ($moletest['DATA'] as $moleval) { 
+                  $molemnu .= "<tr><td onclick=\"triggerMolecularFill({$moleval['menuid']},'{$moleval['menuvalue']}','{$moleval['dspvalue']}','{$idsuffix}');\" class=ddMenuItem>{$moleval['dspvalue']}</td></tr>";
+                }
+                $molemnu .= "</table>";
+                //qms actions
                 $met = "<table border=0 class=menuDropTbl>";
                 foreach ($qmsstatus['DATA'] as $metval) {
-                  $met .= "<tr><td onclick=\"fillField('fldQMSStat{$idsuffix}','{$metval['lookupvalue']}','{$metval['menuvalue']}');\" class=ddMenuItem>{$metval['menuvalue']}</td></tr>";
+                  $met .= "<tr><td onclick=\"fillField('fldQMSStat{$idsuffix}','{$metval['lookupvalue']}','{$metval['menuvalue']}');revealFurtherQMSActions('{$metval['lookupvalue']}','{$idsuffix}');\" class=ddMenuItem>{$metval['menuvalue']}</td></tr>";
                 }
                 $met .= "</table>";                
-                
-                $inner = "<table border=1><tr><th>Biogroup</th><th>QC Proc</th><th>HPR Decision</th><th>QC Status</th></tr>";
-                
-                $inner .= " <tr><td>{$value['readlabel']}</td><td>{$value['qcprocstatusdsp']}</td><td>{$value['hprdecision']}</td><td><div class=menuHolderDiv><input type=hidden id=fldQMSStat{$idsuffix}Value><input type=text id=fldQMSStat{$idsuffix} READONLY class=\"inputFld qmsDivCls\" style=\"width: 10vw;\"><div class=valueDropDown style=\"min-width: 10vw;\">{$met}</div></div></td><td><div id=labdiv>L</div><div id=tumdiv>Q</div></td><td><button onclick=\"alert('{$idsuffix} / {$value['readlabel']}');\">Save</button></tr>";
+                //lab Action Menu 
+                $la = "<table border=0 class=menuDropTbl>";
+                foreach ($qmsstatusla['DATA'] as $laval) {
+                  $la .= "<tr><td onclick=\"fillField('fldQMSLA{$idsuffix}','{$laval['lookupvalue']}','{$laval['menuvalue']}');\" class=ddMenuItem>{$laval['menuvalue']}</td></tr>";
+                }
+                $la .= "</table>";                
+
+                $labAction = <<<LATBL
+<table border=0>
+  <tr>
+    <th class=faHead>Lab Action to Perform</th>
+    <th class=faHead>Note</th>
+  </tr>
+  <tr>
+    <td>
+      <div class=menuHolderDiv>
+        <input type=hidden id=fldQMSLA{$idsuffix}Value>
+        <input type=text id=fldQMSLA{$idsuffix} READONLY class="inputFld qmsDivCls" style="width: 15vw;">
+        <div class=valueDropDown style="min-width: 10vw;">{$la}</div>
+      </div>
+    </td>
+    <td>
+      <input type=text id="fldLabActNote{$idsuffix}" style="width: 23vw;">
+    </td>
+  </tr>
+</table>
+LATBL;
+
+
+
+                $tumorAction = <<<TUMACTTBL
+<table border=0>
+  <tr><th colspan=2>Percentages</th><th>Indicated Immuno/Molecular Test Results</th></tr>
+  <tr>
+    <td class=faHead>Tumor</td>
+    <td class=faHead>Cellularity</td>
+
+    <td rowspan=8 valign=top>
+
+      <table border=0 width=100%>
+       <tr><td class=faHead colspan=2>Indicated Immuno/Molecular Test Results</td><td rowspan=4 valign=top><table class=tblBtn onclick="manageMoleTest(1,'','{$idsuffix}');"><tr><td><i class="material-icons">playlist_add</i></td></tr></table></td></tr>
+       <tr><td class=fieldHolder valign=top colspan=2>
+                    <div class=menuHolderDiv>
+                      <input type=hidden id=hprFldMoleTest{$idsuffix}Value>
+                      <input type=text id=hprFldMoleTest{$idsuffix} READONLY style="width: 25vw;">
+                      <div class=valueDropDown>{$molemnu}</div>
+                    </div>
+            </td>
+       </tr>
+       <tr><td class=faHead>Result Index</td><td class=faHead>Scale Degree</td></tr>
+       <tr><td class=fieldHolder valign=top>
+             <div class=menuHolderDiv>
+               <input type=hidden id='hprFldMoleResult{$idsuffix}Value'>
+               <input type=text id='hprFldMoleResult{$idsuffix}' READONLY style="width: 12.5vw;">
+               <div class=valueDropDown id=moleResultDropDown style="min-width: 12.5vw;"> </div>
+             </div>
+            </td>
+            <td class=fieldHolder valign=top>
+              <input type=text id=hprFldMoleScale{$idsuffix} style="width: 12.5vw;">
+            </td>
+       </tr>
+       <tr><td colspan=3 class=fieldHolder valign=top>
+           <input type=hidden id=molecularTestJsonHolderConfirm{$idsuffix}>
+           <div id=dspDefinedMolecularTestsConfirm{$idsuffix} class=dspDefinedMoleTests>
+           </div>
+           </td>
+       </tr>
+      </table>
+
+    </td></tr>
+
+  <tr>
+    <td><input type=text id=fldTmrTumor{$idsuffix} class=prcFld></td>
+    <td><input type=text id=fldTmrCell{$idsuffix} class=prcFld></td>
+</tr>
+
+<tr>
+    <td class=faHead>Necrosis</td>
+    <td class=faHead>Acell Mucin</td>
+</tr>
+<tr>
+    <td><input type=text id=fldTmrNecros{$idsuffix} class=prcFld></td>
+    <td><input type=text id=fldTmrACell{$idsuffix} class=prcFld></td>
+</tr>
+
+<tr>
+    <td class=faHead>Neo-Plastic Stroma</td>
+    <td class=faHead>Non-Neo Stroma</td>
+</tr>
+<tr>
+    <td><input type=text id=fldTmrNeoPlas{$idsuffix} class=prcFld></td>
+    <td><input type=text id=fldTmrNonNeo{$idsuffix} class=prcFld></td>
+</tr>
+<tr>
+    <td class=faHead>Epipthelial</td>
+    <td class=faHead>Inflammation</td>
+</tr>
+<tr>
+    <td><input type=text id=fldTmrEpip{$idsuffix} class=prcFld></td>
+    <td><input type=text id=fldTmrInFlam{$idsuffix} class=prcFld></td>
+</tr>
+</table>
+TUMACTTBL;
+
+$readlabel = preg_replace('/_/','',$value['readlabel']);
+
+$inner = <<<TBLONE
+<table border=0 cellspacing=0 cellpadding=0>
+   <tr>
+     <th class=topTHCell>BG #</th>
+     <th class=topTHCell>Present QMS Status</th>
+     <th class=topTHCell>HPR Decision</th>
+     <th class=topTHCell>QC Status</th>
+     <th colspan=2 class=topTHCell>Further Information</th>
+</tr>
+TBLONE;
+$inner .= <<<TBLTWO
+ <tr>
+   <td valign=top class=topDataCell style="width: 3vw;">{$readlabel}&nbsp;</td>
+   <td valign=top class=topDataCell style="width: 12vw;">{$value['qcprocstatusdsp']}&nbsp;</td>
+   <td valign=top class=topDataCell style="width: 8vw;">{$value['hprdecision']}&nbsp;</td>
+   <td valign=top class=topDataCell>
+     <div class=menuHolderDiv>
+       <input type=hidden id=fldQMSStat{$idsuffix}Value>
+       <input type=text id=fldQMSStat{$idsuffix} READONLY class="inputFld qmsDivCls" style="width: 8vw;">
+         <div class=valueDropDown style="min-width: 8vw;">{$met}</div></div>
+   </td>
+   <td valign=top style="width: 40vw;">
+     <div id="labdiv{$idsuffix}" style="display: none;">{$labAction}</div>
+     <div id="tumdiv{$idsuffix}" style="display: none;">{$tumorAction}</div>
+   </td>
+   <td valign=top><table class=tblBtn  onclick="alert('{$idsuffix} / {$readlabel}');"><tr><td><i class="material-icons">add_circle_outline</i></td></tr></table></td>
+ </tr>
+TBLTWO;
             }
-            
         }
         $inner .= "</table>";
         
         
 $rtnThis = <<<RTNTHIS
 <style>
+
+.topTHCell { background: rgba(160,160,160,1); text-align: left; padding: 8px; font-size: 1.3vh; border-right: 1px solid #fff; }
+.topDataCell { border-bottom: 1px solid rgba(160,160,160,1);border-right: 1px solid rgba(160,160,160,1); font-size: 1.3vh; padding: 8px; }
+.faHead { text-align: left; font-size: 1.1vh; border-bottom: 1px solid rgba(160,160,160,1); padding: 0 8px 0 4px; }
+
 #labdiv { display: none; } 
-#tumdiv { display: none; }        
+#tumdiv { display: none; }       
+
+.dspDefinedMoleTests { border: 1px solid rgba(160,160,160,1); width: 25vw; height: 10.4vh; overflow: auto; font-size: 1.1vh; color: rgba(145,145,145,1);  padding: 4px;  }
+
 </style>
         
-<table border=1>
-    <tr><td><b>Biogroup</b>: {$pdta['bglookup']} </td></tr>
+<table border=0 cellspacing=0 cellpadding=0>
     <tr><td>{$inner}</td></tr>
 </table>
         
 RTNTHIS;
     }
+}
+
 return $rtnThis;
 }
 

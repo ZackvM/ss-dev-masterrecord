@@ -742,7 +742,7 @@ class datadoers {
             break;
            case 'masterQMSAction':
              $primeFocus = "";
-             $left = '27vw';
+             $left = '13vw';
              $top = '13vh';
              break;
          }

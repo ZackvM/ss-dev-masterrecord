@@ -458,6 +458,8 @@ textarea { font-size: 1.3vh; }
 #tblSegmentLister tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},.8); }
 #tblSegmentLister tbody tr td { padding: 5px; }
 
+.prcFld {width: 5vw; text-align: right; }
+
 STYLESHEET;
 return $rtnThis;
 }
@@ -1281,6 +1283,11 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 .checkInHead {font-size: 1.8vh;  background: rgba(48,57,71,1); color: rgba(255,255,255,1); padding: .5vh .3vw .5vh .3vw; }
 #waitgifADD { width: 1.4vw; padding: 1vh 0; }
 #waiterIndicator { display: none; }
+
+
+.hprindication { color: rgba({$this->color_darkgreen},1); text-decoration: underline;  }
+
+
 STYLESHEET;
 return $rtnThis;
 } 

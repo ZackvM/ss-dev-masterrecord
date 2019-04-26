@@ -1187,6 +1187,10 @@ class globalMenus {
     function qmsassignablestatus() { 
         return "SELECT ucase(ifnull(menuvalue,'')) as codevalue, ifnull(dspvalue,'') as menuvalue, 0 as useasdefault, ucase(ifnull(menuvalue,'')) as lookupvalue FROM four.sys_master_menus where menu = 'QMSStatus' and dspind = 1 and assignablestatus = 1 order by dsporder";
     }
+
+    function qmslabactions() { 
+      return "SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'QMSLABACTIONS' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
     
     function fouryesno() {
       return "SELECT ifnull(mnu.menuvalue,0) as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'YESNO' and mnu.dspInd = 1 order by mnu.dsporder";
@@ -1579,6 +1583,10 @@ select bs.pbiosample
       , ifnull(date_format(sg.statusdate,'%m/%d/%Y'),'') as statusdate
       , ifnull(sg.statusby,'') as statusby
       , ifnull(bs.qcprocstatus,'') as qcstatuscode
+      , trim(ifnull(hprdecision,'')) as hprdecision
+      , ifnull(hprresult,0) as hprresultid
+      , trim(ifnull(hprby,'')) as hprreviewer
+      , ifnull(date_format(hpron,'%m/%d/%Y'),'') as reviewedon
       , ucase(ifnull(mnuqms.dspvalue,'')) as qcstatus
       , ifnull(bs.pxiage,'') as phiage
       , ucase(substr(ifnull(bs.pxirace,''),1,3)) as phiracecode
