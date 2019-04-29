@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   if (byId('btnEditSeg')) { 
-    byId('btnEditSeg').addEventListener('click', function() { alert('Edit Segment'); }, false);
+    byId('btnEditSeg').addEventListener('click', function() { alert('Edit Segment is not yet operational.  Try later.'); }, false);
   }   
 
   if (byId('btnQMSActions')) { 
@@ -229,19 +229,19 @@ document.addEventListener('DOMContentLoaded', function() {
   }      
 
   if (byId('btnAssocGrp')) { 
-    byId('btnAssocGrp').addEventListener('click', function() { alert('Associative Grouping'); }, false);
+    byId('btnAssocGrp').addEventListener('click', function() { alert('Associative Grouping display is not yet operational. Try later.'); }, false);
   }    
 
   if (byId('btnPHIRecord')) { 
-    byId('btnPHIRecord').addEventListener('click', function() { alert('Patient Record'); }, false);
+    byId('btnPHIRecord').addEventListener('click', function() { alert('Encounter Record display is not yet operational. Try later.'); }, false);
   } 
 
   if (byId('btnPristine')) { 
-    byId('btnPristine').addEventListener('click', function() { alert('View Pristine Record'); }, false);
+    byId('btnPristine').addEventListener('click', function() { alert('Viewing the Pristine Record is not yet operational.  Try later.'); }, false);
   }    
          
   if (byId('btnHPRRecord')) { 
-    byId('btnHPRRecord').addEventListener('click', function() { alert('View HPR Record'); }, false);
+    byId('btnHPRRecord').addEventListener('click', function() { alert('Viewing the HPR Record is not yet operational. Try later.'); }, false);
   }   
       
 }, false); 
@@ -866,10 +866,10 @@ function manageMoleTest(addIndicator, referencenumber, fldsuffix) {
     byId('hprFldMoleResult'+fldsuffix+'Value').value = "";
     byId('hprFldMoleResult'+fldsuffix).value = "";
     byId('hprFldMoleScale'+fldsuffix).value = "";            
-    var moleTestTbl = "<table cellspacing=0 cellpadding=0>";
+    var moleTestTbl = "<table cellspacing=0 cellpadding=0 border=0 width=100%>";
     var cntr = 0;         
     hldVal.forEach(function(element) {         
-      moleTestTbl += "<tr onclick=\"manageMoleTest(0,"+cntr+",'"+fldsuffix+"');\"><td><td>"+element[1]+"</td><td>"+element[3]+"</td><td>"+element[4]+"</td></tr>";
+      moleTestTbl += "<tr onclick=\"manageMoleTest(0,"+cntr+",'"+fldsuffix+"');\" class=ddMenuItem><td style=\"border-bottom: 1px solid rgba(160,160,160,1);\"><i class=\"material-icons\" style=\"font-size: 1.8vh; color:rgba(237, 35, 0,1); width: .3vw; padding: 8px 0 8px 0;\">cancel</i><td style=\"width: 15vw; padding: 8px 0 8px 8px;border-bottom: 1px solid rgba(160,160,160,1);\">"+element[1]+"</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1);\">"+element[3]+"</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1);\">"+element[4]+"</td></tr>";
       cntr++;
      });
      moleTestTbl += "</table>";
@@ -918,6 +918,43 @@ function answerHPRTriggerMolecularFill(rtnData) {
    }
 }
 
+function saveQMSAction( suffixid, biogrouplabel ) { 
+  var dta = new Object(); 
+  dta['bglabel'] = biogrouplabel;
+  dta['qmsaction'] = byId('fldQMSStat'+suffixid+'Value').value;
+  dta['furtheraction'] = byId('fldQMSLA'+suffixid+'Value').value.trim();
+  dta['furtheractionnote'] = byId('fldLabActNote'+suffixid).value.trim();
+  dta['prctumor'] = byId('fldTmrTumor'+suffixid).value;
+  dta['prccell'] =  byId('fldTmrCell'+suffixid).value;
+  dta['prcnecro'] =  byId('fldTmrNecros'+suffixid).value;
+  dta['prcacellmucin'] = byId('fldTmrACell'+suffixid).value;
+  dta['prcneoplaststrom'] = byId('fldTmrNeoPlas'+suffixid).value;
+  dta['prcnonneoplast'] = byId('fldTmrNonNeo'+suffixid).value;
+  dta['prcepipth'] = byId('fldTmrEpip'+suffixid).value;
+  dta['prcinflame'] = byId('fldTmrInFlam'+suffixid).value; 
+  dta['moleculartests'] = byId('molecularTestJsonHolderConfirm'+suffixid).value; 
+  dta['qmsnote'] = byId('qmsNotes'+suffixid).value; 
+  var passdata = JSON.stringify(dta);
+  console.log(passdata);
+  var mlURL = "/data-doers/mark-QMS";
+  universalAJAX("POST",mlURL,passdata, answerSaveQMSAction,2);              
+}
+
+function answerSaveQMSAction(rtnData) { 
+ if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    //byId('btnSaveSeg').style.display = 'block';
+    //byId('btnSaveSegPrnt').style.display = 'block';
+   } else {
+    alert("DATA HAS BEEN SAVED! \\nThe screen will now reload");
+    location.reload(true);
+   } 
+}
 
 JAVASCR;
 return $rtnThis;

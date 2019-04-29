@@ -34,6 +34,123 @@ function __construct() {
 
 class datadoers {
 
+    function markqms ( $request, $passdata ) {
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $sess = session_id();
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      if ( $authuser !== $authchk || $authuser !== $sess ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } 
+      $chkUsrSQL = "SELECT originalaccountname, presentinstitution FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrR = $conn->prepare($chkUsrSQL); 
+      $chkUsrR->execute(array(':sess' => $sess));
+      if ($chkUsrR->rowCount() <> 1) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your Session has expired, your password has expired, or don't have access to the coordinator function"));
+      } else { 
+        $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
+      }        
+      ( !array_key_exists('qmsaction', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'qms-action' missing from passed data")) : "";
+      ( !array_key_exists('bglabel', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'bg-label' missing from passed data")) : "";
+      ( !array_key_exists('furtheraction', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'further-action' missing from passed data")) : "";
+      ( !array_key_exists('furtheractionnote', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'further-note' missing from passed data")) : "";
+      ( !array_key_exists('moleculartests', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'molecular-tests' missing from passed data")) : "";
+      ( !array_key_exists('prcacellmucin', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'percent-acell-mucin' missing from passed data")) : "";
+      ( !array_key_exists('prccell', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'percent-cellularity' missing from passed data")) : "";
+      ( !array_key_exists('prcepipth', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'percent-epipthelial' missing from passed data")) : "";
+      ( !array_key_exists('prcinflame', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'percent-inflammation' missing from passed data")) : "";
+      ( !array_key_exists('prcnecro', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'percent-necro' missing from passed data")) : "";
+      ( !array_key_exists('prcneoplaststrom', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'percent-neo-plastic-stroma' missing from passed data")) : "";
+      ( !array_key_exists('prcnonneoplast', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'percent-non-neo-plastic-stroma' missing from passed data")) : "";
+      ( !array_key_exists('prctumor', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'percent-tumor' missing from passed data")) : "";
+      ( !array_key_exists('qmsnote', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'qms-note' missing from passed data")) : "";
+
+      ( $pdta['qmsaction'] !== "L" && $pdta['qmsaction'] !== "Q" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The only values allowed in the QMS Action field are either 'L' or 'Q'")) : "";
+      //TODO:  CONTINUE DATA CHECKS
+ 
+      if ( $errorInd === 0 ) { 
+         //DO BACKUPS OF DATA
+         $backupSQL = "insert into masterrecord.history_procure_biosample_qms (pbiosample, readlabel, qcvalv2, hprindicator, hprmarkbyon, qcindicator, qcmarkbyon, qcprocstatus, labaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresultid, slidereviewed, hpron, hprby, historyrecordon, historyrecordby) SELECT pbiosample, read_label, ifnull(qcvalv2,'') as qcval2, ifnull(hprind,0) as hprind, ifnull(hprmarkbyon,'') as hprmarkbyon, ifnull(qcind,0) as qcind, ifnull(qcmarkbyon,'') as qcmarkbyon, ifnull(qcprocstatus,'') as qcprocstatus, ifnull(labactionaction,'') as labactionaction, ifnull(labactionnote,'') as labactionnote, ifnull(qmsstatusby,'') as qmsstatusby, ifnull(qmsstatuson,'') as qmsstatuson, ifnull(hprdecision,'') as hprdecision, ifnull(hprresult,'') as hprresult, ifnull(hprslidereviewed,'') as hprslidereviewed, hpron as hpron, ifnull(hprby,'') as hprby, now(), :usr as usr FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') = :readlabel";
+        $backupRS = $conn->prepare($backupSQL); 
+        $backupRS->execute(array(':readlabel' => $pdta['bglabel'], ':usr' => $u['originalaccountname'])); 
+
+        switch ( $pdta['qmsaction'] ) { 
+          case 'Q':
+
+//              $moTests = json_decode($pdta['moleculartests'], true);
+//              $moSQL = "update masterrecord.ut_procure_biosample_molecular set dspind = 0, updatedby = :usr, updatedon = now() where replace(bgprcnbr,'_','') = :readlabel";
+//                  (list( $errorInd, $msgArr[] ) = array(1 , $u['originalaccountname']   ));
+//              $moR = $conn->prepare($moSQL); 
+//              $moR->execute(array(':readlabel' => $pdta['bglabel'], ':usr' => $u['originalaccountname'] ));
+//            
+//              $moInsSQL = "insert into masterrecord.ut_procure_biosample_molecular (bgprcnbr, testid, testresultid, molenote, onwhen, onby, dspind) value (:readlabel, :testid, :testresultid, :molenote, now(), :onby, 1)";
+//              $moIns = $conn->prepare($moInsSQL);
+//              if ( count($moTests) > 0 ) { 
+//                foreach ($moTests  as $key => $value ) { 
+//                    $moIns->execute(array(
+//                        ':readlabel' => $pdta['bglabel']
+//                      , ':testid' => $value[0]
+//                      , ':testresultid' => $value[2]
+//                      , ':molenote' => trim($value[4])
+//                      , ':onby' => $u['originalaccountname'] 
+//                   ));
+//                }
+//              }
+
+              $prcUpdSQL = "update masterrecord.ut_procure_biosample_samplemakeup set dspind = 0, updateon = now(), updateby = :usr where readlabel = :readlabel";
+              $prcUpdR = $conn->prepare($prcUpdSQL); 
+              $prcUpdR->execute(array(':usr' => $u['originalaccountname'], ':readlabel' => $pdta['bglabel']));
+              //bglabel 87106T /  prcepipth	7 / prcinflame	8  
+
+              $prcInsSQL = "insert into masterrecord.ut_procure_biosample_samplemakeup (readlabel, prctype, prcvalue, dspind, inputon, inputby) value (:readlabel, :prctype, :prcvalue, 1, now(), :inputby)";
+              $prcIns = $conn->prepare($prcInsSQL);
+              if ( trim($pdta['prctumor']) !== "" && is_numeric($pdta['prctumor'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-TMR', ':prcvalue' => $pdta['prctumor'], ':inputby' => $u['originalaccountname'])); }
+              if ( trim($pdta['prccell']) !== "" && is_numeric($pdta['prccell'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-CELL', ':prcvalue' => $pdta['prccell'], ':inputby' => $u['originalaccountname'])); }
+              if ( trim($pdta['prcnecro']) !== "" && is_numeric($pdta['prcnecro'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-NECR', ':prcvalue' => $pdta['prcnecro'], ':inputby' => $u['originalaccountname'])); }
+              if ( trim($pdta['prcacellmucin']) !== "" && is_numeric($pdta['prcacellmucin'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-ACEL', ':prcvalue' => $pdta['prcacellmucin'], ':inputby' => $u['originalaccountname'])); }
+              if ( trim($pdta['prcneoplaststrom']) !== "" && is_numeric($pdta['prcneoplaststrom'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-NEOP', ':prcvalue' => $pdta['prcneoplaststrom'], ':inputby' => $u['originalaccountname'])); }
+              if ( trim($pdta['prcnonneoplast']) !== "" && is_numeric($pdta['prcnonneoplast'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-NNEO', ':prcvalue' => $pdta['prcnonneoplast'], ':inputby' => $u['originalaccountname'])); }
+              if ( trim($pdta['prcepipth']) !== "" && is_numeric($pdta['prcepipth'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-EPIP', ':prcvalue' => $pdta['prcepipth'], ':inputby' => $u['originalaccountname'])); }
+              if ( trim($pdta['prcinflame']) !== "" && is_numeric($pdta['prcinflame'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-INFLM', ':prcvalue' => $pdta['prcinflame'], ':inputby' => $u['originalaccountname'])); }
+
+
+                (list( $errorInd, $msgArr[] ) = array(1 , $u['originalaccountname']   ));
+
+
+              //WRITE DATA
+//              $laSQL = "update masterrecord.ut_procure_biosample set qcvalv2 = '', qcind = 1, qcmarkbyon = :u, qcprocstatus = :qmsstat, qmsstatusby = :usr, qmsnote = :qmsnote, qmsstatuson = now() where replace(read_label,'_','') = :readlabel";
+//              $laR = $conn->prepare($laSQL); 
+//              $laR->execute(array(':readlabel' => $pdta['bglabel'], ':usr' => $u['originalaccountname'], ':u' => date('Y-m-d') . " {$u['originalaccountname']}", ':qmsnote' => $pdta['qmsnote'] ,':qmsstat' => $pdta['qmsaction'] ));
+//              $responseCode = 200;
+              //WRITE ALL MOLE TESTS AND TUMOR PRCs
+
+              break;
+          case 'L':
+              //WRITE DATA
+              //TODO: ASK DEE IF ALREADY QC'ed BIOSAMPLES SHOULD BE ALLOWED TO BE PUT BACK IN A STATE OF LAB ACTION
+              $laSQL = "update masterrecord.ut_procure_biosample set qcvalv2 = '', qcind = 0, qcmarkbyon = '', qcprocstatus = :qmsstat, qmsstatusby = :usr, qmsstatuson = now(), labactionaction = :laval, labactionnote = :lanote where replace(read_label,'_','') = :readlabel";
+              $laR = $conn->prepare($laSQL); 
+              $laR->execute(array(':readlabel' => $pdta['bglabel'], ':lanote' => $pdta['furtheractionnote'], ':laval' => $pdta['furtheraction'], ':usr' => $u['originalaccountname'], ':qmsstat' => $pdta['qmsaction']));
+              $responseCode = 200;
+            break;
+        }
+
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;       
+    } 
+
     function getbgqmsstat( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 
@@ -149,11 +266,7 @@ class datadoers {
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;        
     }
-
-    
-    
-    
-    
+ 
     function coordinatoraddsegment ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 400;

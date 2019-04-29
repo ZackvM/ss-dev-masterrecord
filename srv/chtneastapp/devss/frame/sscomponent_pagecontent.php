@@ -2927,7 +2927,7 @@ $errorInd = 0;
                 //DROP DOWNS
                 $idsuffix = generateRandomString(8);
                 //molecular test
-                $molemnu = "<table border=0><tr><td align=right onclick=\"triggerMolecularFill(0,'','','{$idsuffix}');\" class=ddMenuClearOption>[clear]</td></tr>";
+                $molemnu = "<table border=0 width=100%><tr><td align=right onclick=\"triggerMolecularFill(0,'','','{$idsuffix}');\" class=ddMenuClearOption>[clear]</td></tr>";
                 foreach ($moletest['DATA'] as $moleval) { 
                   $molemnu .= "<tr><td onclick=\"triggerMolecularFill({$moleval['menuid']},'{$moleval['menuvalue']}','{$moleval['dspvalue']}','{$idsuffix}');\" class=ddMenuItem>{$moleval['dspvalue']}</td></tr>";
                 }
@@ -2983,7 +2983,7 @@ LATBL;
                     <div class=menuHolderDiv>
                       <input type=hidden id=hprFldMoleTest{$idsuffix}Value>
                       <input type=text id=hprFldMoleTest{$idsuffix} READONLY style="width: 25vw;">
-                      <div class=valueDropDown>{$molemnu}</div>
+                      <div class=valueDropDown style="min-width: 25vw;">{$molemnu}</div>
                     </div>
             </td>
        </tr>
@@ -2999,7 +2999,7 @@ LATBL;
               <input type=text id=hprFldMoleScale{$idsuffix} style="width: 12.5vw;">
             </td>
        </tr>
-       <tr><td colspan=3 class=fieldHolder valign=top>
+       <tr><td colspan=3 valign=top>
            <input type=hidden id=molecularTestJsonHolderConfirm{$idsuffix}>
            <div id=dspDefinedMolecularTestsConfirm{$idsuffix} class=dspDefinedMoleTests>
            </div>
@@ -3039,6 +3039,8 @@ LATBL;
     <td><input type=text id=fldTmrEpip{$idsuffix} class=prcFld></td>
     <td><input type=text id=fldTmrInFlam{$idsuffix} class=prcFld></td>
 </tr>
+<tr><td colspan=3 class=faHead>Notes</td></tr>
+<tr><td colspan=3><TEXTAREA class=qmsNotes id='qmsNotes{$idsuffix}'></TEXTAREA></td></tr> 
 </table>
 TUMACTTBL;
 
@@ -3069,7 +3071,7 @@ $inner .= <<<TBLTWO
      <div id="labdiv{$idsuffix}" style="display: none;">{$labAction}</div>
      <div id="tumdiv{$idsuffix}" style="display: none;">{$tumorAction}</div>
    </td>
-   <td valign=top><table class=tblBtn  onclick="alert('{$idsuffix} / {$readlabel}');"><tr><td><i class="material-icons">add_circle_outline</i></td></tr></table></td>
+   <td valign=top><table class=tblBtn  onclick="saveQMSAction('{$idsuffix}','{$readlabel}');"><tr><td><i class="material-icons">add_circle_outline</i></td></tr></table></td>
  </tr>
 TBLTWO;
             }
@@ -3087,7 +3089,8 @@ $rtnThis = <<<RTNTHIS
 #labdiv { display: none; } 
 #tumdiv { display: none; }       
 
-.dspDefinedMoleTests { border: 1px solid rgba(160,160,160,1); width: 25vw; height: 10.4vh; overflow: auto; font-size: 1.1vh; color: rgba(145,145,145,1);  padding: 4px;  }
+.dspDefinedMoleTests { border: 1px solid rgba(160,160,160,1); width: 25.2vw; height: 10.4vh; overflow: auto;   padding: 4px; box-sizing: border-box; }
+.qmsNotes { width: 36vw; height: 8vh; box-sizing: border-box; }
 
 </style>
         
@@ -5339,22 +5342,22 @@ function bldBiogroupDefitionDisplay($biogroup, $bgency) {
       case 'L': //LAB ACTION  
         $qmsicon = "<i class=\"material-icons\">schedule</i>";  
         $clssuffix = " 107, 18, 102, 1";
-        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>In Lab Action</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slided Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>In Lab Action</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
       break;
       case 'R': //RESUBMITTED 
         $qmsicon = "<i class=\"material-icons\">history</i>";
         $clssuffix = "226,226,125,1";
-        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>Re-Submitted</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slided Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>Re-Submitted</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
       break;
       case 'H':
         $qmsicon = "<i class=\"material-icons\">offline_pin</i>";
         $clssuffix = "84,113,210,1";
-        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>HPR Review Complete</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slided Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>HPR Review Complete</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
       break;
       case 'Q':
         $qmsicon = "<i class=\"material-icons\">stars</i>";
         $clssuffix = "0, 112, 13, 1";
-        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>QMS PROCESS Complete</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slided Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>QMS PROCESS Complete</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
       break;
       case 'N':
         $qmsicon = "<i class=\"material-icons\">play_circle_outline</i>";
