@@ -512,20 +512,19 @@ return $rtnthis;
 function shipmentdocument ( $rqststr, $usr ) { 
   $url = explode("/",$_SERVER['REQUEST_URI']);   
   if ( trim($url[2]) !== "" ) {
-    $sd = cryptservice($url[2],'d',false);
-    $headr = $sd;
+      $sdPage = bldShipDocEditPage( $url[2] );
   } else { 
     $headr = "NO SD - LOOKUP ONLY";  
-  }
-  
-  
-               
+    $sdPage = <<<SDPAGE
+<table border=1 id=mainShipDocHoldTable>
+  <tr><td>{$headr}</td></tr>
+</table>
+SDPAGE;
+  }               
    $topBtnBar = generatePageTopBtnBar('shipdocedit', $usr);
    $rtnThis = <<<RTNTHIS
            {$topBtnBar}
-           <table border=1 id=mainShipDocHoldTable>
-           <tr><td>{$headr}</td></tr>
-           </table>
+           {$sdPage}
 RTNTHIS;
   
   
@@ -1593,6 +1592,9 @@ STANDARDHEAD;
 }    
 
 }
+
+
+
 
 function bldHPRWorkBenchSide($SGObj, $allSGObj, $pastHPRObj, $pbiosample) {  
 
@@ -2881,9 +2883,8 @@ return $rtnThis;
 function bldDialogMasterQMSAction( $passeddata ) { 
 
     $pdta = json_decode( $passeddata, true);    
-    //{"whichdialog":"masterQMSAction","objid":"aEMrL0VTWmdCZXRHcU52K1p6K3N1Zz09","dialogid":"zESKLRskcIZ2tLC"}
     $bg = cryptservice( $pdta['objid'] , 'd', false ); 
-$errorInd = 0;
+    $errorInd = 0;
     session_start(); 
     $sess = session_id();
     require(serverkeys . "/sspdo.zck");
@@ -2899,152 +2900,35 @@ $errorInd = 0;
       (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
     }
 
-
     if ($errorInd !== 0 ) { 
-
       $rtnThis .= json_encode($msgArr);
-
     } else { 
     $pdta['bglookup'] = $bg;
     $payload = json_encode($pdta);
     $bgqmsdta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-bg-qmsstat",serverIdent, serverpw, $payload), true);
-    //{"MESSAGE":[],"ITEMSFOUND":3,"DATA":[{"readlabel":"34204A1","hprind":"1","hprmarkbyon":"LINUS 2015-08-20 15:12","qcind":"1","qcmarkbyon":"dee 2015-08-21 09:27:23","qcprocstatus":"Q","qcprocstatusdsp":"QC Process Complete","qmsstatusby":"","qmsstatuson":"","hprdecision":"ADDITIONAL","hprresult":"14002","hprslidereviewed":"34204A1007","hprby":"LINUS","hpron":"08\/20\/2015","hprreviewer":"linus","hprreviewedon":"08\/20\/2015"},{"readlabel":"34204A2","hprind":"1","hprmarkbyon":"","qcind":"1","qcmarkbyon":"","qcprocstatus":"Q","qcprocstatusdsp":"QC Process Complete","qmsstatusby":"","qmsstatuson":"","hprdecision":"","hprresult":"","hprslidereviewed":"","hprby":"","hpron":"","hprreviewer":"","hprreviewedon":""},{"readlabel":"34204A3","hprind":"1","hprmarkbyon":"","qcind":"1","qcmarkbyon":"","qcprocstatus":"Q","qcprocstatusdsp":"QC Process Complete","qmsstatusby":"","qmsstatuson":"","hprdecision":"","hprresult":"","hprslidereviewed":"","hprby":"","hpron":"","hprreviewer":"","hprreviewedon":""}]}    
-    
     
     if ((int)$bgqmsdta['ITEMSFOUND'] === 0 ) { 
     } else {
-
         $qmsstatus = json_decode(callrestapi("GET", dataTree . "/globalmenu/qms-assignable-status",serverIdent,serverpw), true);
-        $qmsstatusla = json_decode(callrestapi("GET", dataTree . "/globalmenu/qms-lab-actions",serverIdent,serverpw), true);
-        $moletest = json_decode(callrestapi("GET", dataTree . "/immuno-mole-testlist",serverIdent,serverpw),true);
-       
         foreach ($bgqmsdta['DATA'] as $key => $value) { 
             if ( strtoupper(trim($value['qcprocstatus'])) === 'Q' ) { 
                 //QMS COMPLETE
-                $inner = "<table border=1>";
-                $inner .= " <tr><td>{$value['readlabel']}</td><td>{$value['qcmarkbyon']}</td><td>{$value['qcprocstatus']}</td></tr>";
+                $inner = "<table border=0>";
+                $inner .= " <tr><td style=\"padding: 1vh 1vw 1vh 1vw; \">{$value['readlabel']} HAS A STATUS OF QMS COMPLETE - NO FURTHER ACTION MAY BE TAKEN.</td><td style=\"padding: 1vh 1vw 1vh 1vw; \">Statused On/By: {$value['qcmarkbyon']}</td></tr>";
             } else { 
                 //DROP DOWNS
                 $idsuffix = generateRandomString(8);
-                //molecular test
-                $molemnu = "<table border=0 width=100%><tr><td align=right onclick=\"triggerMolecularFill(0,'','','{$idsuffix}');\" class=ddMenuClearOption>[clear]</td></tr>";
-                foreach ($moletest['DATA'] as $moleval) { 
-                  $molemnu .= "<tr><td onclick=\"triggerMolecularFill({$moleval['menuid']},'{$moleval['menuvalue']}','{$moleval['dspvalue']}','{$idsuffix}');\" class=ddMenuItem>{$moleval['dspvalue']}</td></tr>";
-                }
-                $molemnu .= "</table>";
                 //qms actions
                 $met = "<table border=0 class=menuDropTbl>";
                 foreach ($qmsstatus['DATA'] as $metval) {
                   $met .= "<tr><td onclick=\"fillField('fldQMSStat{$idsuffix}','{$metval['lookupvalue']}','{$metval['menuvalue']}');revealFurtherQMSActions('{$metval['lookupvalue']}','{$idsuffix}');\" class=ddMenuItem>{$metval['menuvalue']}</td></tr>";
                 }
                 $met .= "</table>";                
-                //lab Action Menu 
-                $la = "<table border=0 class=menuDropTbl>";
-                foreach ($qmsstatusla['DATA'] as $laval) {
-                  $la .= "<tr><td onclick=\"fillField('fldQMSLA{$idsuffix}','{$laval['lookupvalue']}','{$laval['menuvalue']}');\" class=ddMenuItem>{$laval['menuvalue']}</td></tr>";
-                }
-                $la .= "</table>";                
-
-                $labAction = <<<LATBL
-<table border=0>
-  <tr>
-    <th class=faHead>Lab Action to Perform</th>
-    <th class=faHead>Note</th>
-  </tr>
-  <tr>
-    <td>
-      <div class=menuHolderDiv>
-        <input type=hidden id=fldQMSLA{$idsuffix}Value>
-        <input type=text id=fldQMSLA{$idsuffix} READONLY class="inputFld qmsDivCls" style="width: 15vw;">
-        <div class=valueDropDown style="min-width: 10vw;">{$la}</div>
-      </div>
-    </td>
-    <td>
-      <input type=text id="fldLabActNote{$idsuffix}" style="width: 23vw;">
-    </td>
-  </tr>
-</table>
-LATBL;
-
-
-
-                $tumorAction = <<<TUMACTTBL
-<table border=0>
-  <tr><th colspan=2>Percentages</th><th>Indicated Immuno/Molecular Test Results</th></tr>
-  <tr>
-    <td class=faHead>Tumor</td>
-    <td class=faHead>Cellularity</td>
-
-    <td rowspan=8 valign=top>
-
-      <table border=0 width=100%>
-       <tr><td class=faHead colspan=2>Indicated Immuno/Molecular Test Results</td><td rowspan=4 valign=top><table class=tblBtn onclick="manageMoleTest(1,'','{$idsuffix}');"><tr><td><i class="material-icons">playlist_add</i></td></tr></table></td></tr>
-       <tr><td class=fieldHolder valign=top colspan=2>
-                    <div class=menuHolderDiv>
-                      <input type=hidden id=hprFldMoleTest{$idsuffix}Value>
-                      <input type=text id=hprFldMoleTest{$idsuffix} READONLY style="width: 25vw;">
-                      <div class=valueDropDown style="min-width: 25vw;">{$molemnu}</div>
-                    </div>
-            </td>
-       </tr>
-       <tr><td class=faHead>Result Index</td><td class=faHead>Scale Degree</td></tr>
-       <tr><td class=fieldHolder valign=top>
-             <div class=menuHolderDiv>
-               <input type=hidden id='hprFldMoleResult{$idsuffix}Value'>
-               <input type=text id='hprFldMoleResult{$idsuffix}' READONLY style="width: 12.5vw;">
-               <div class=valueDropDown id=moleResultDropDown style="min-width: 12.5vw;"> </div>
-             </div>
-            </td>
-            <td class=fieldHolder valign=top>
-              <input type=text id=hprFldMoleScale{$idsuffix} style="width: 12.5vw;">
-            </td>
-       </tr>
-       <tr><td colspan=3 valign=top>
-           <input type=hidden id=molecularTestJsonHolderConfirm{$idsuffix}>
-           <div id=dspDefinedMolecularTestsConfirm{$idsuffix} class=dspDefinedMoleTests>
-           </div>
-           </td>
-       </tr>
-      </table>
-
-    </td></tr>
-
-  <tr>
-    <td><input type=text id=fldTmrTumor{$idsuffix} class=prcFld></td>
-    <td><input type=text id=fldTmrCell{$idsuffix} class=prcFld></td>
-</tr>
-
-<tr>
-    <td class=faHead>Necrosis</td>
-    <td class=faHead>Acell Mucin</td>
-</tr>
-<tr>
-    <td><input type=text id=fldTmrNecros{$idsuffix} class=prcFld></td>
-    <td><input type=text id=fldTmrACell{$idsuffix} class=prcFld></td>
-</tr>
-
-<tr>
-    <td class=faHead>Neo-Plastic Stroma</td>
-    <td class=faHead>Non-Neo Stroma</td>
-</tr>
-<tr>
-    <td><input type=text id=fldTmrNeoPlas{$idsuffix} class=prcFld></td>
-    <td><input type=text id=fldTmrNonNeo{$idsuffix} class=prcFld></td>
-</tr>
-<tr>
-    <td class=faHead>Epipthelial</td>
-    <td class=faHead>Inflammation</td>
-</tr>
-<tr>
-    <td><input type=text id=fldTmrEpip{$idsuffix} class=prcFld></td>
-    <td><input type=text id=fldTmrInFlam{$idsuffix} class=prcFld></td>
-</tr>
-<tr><td colspan=3 class=faHead>Notes</td></tr>
-<tr><td colspan=3><TEXTAREA class=qmsNotes id='qmsNotes{$idsuffix}'></TEXTAREA></td></tr> 
-</table>
-TUMACTTBL;
 
 $readlabel = preg_replace('/_/','',$value['readlabel']);
+$labAction = bldDialogMasterQMSActionLabAction();                
+$tumorAction = bldDialogMasterQMSActionQMS();
+//$hprAction = bldDialogMasterQMSActionHPR($bg, $readlabel );
 
 $inner = <<<TBLONE
 <table border=0 cellspacing=0 cellpadding=0>
@@ -3052,7 +2936,7 @@ $inner = <<<TBLONE
      <th class=topTHCell>BG #</th>
      <th class=topTHCell>Present QMS Status</th>
      <th class=topTHCell>HPR Decision</th>
-     <th class=topTHCell>QC Status</th>
+     <th class=topTHCell>QMS Process Status</th>
      <th colspan=2 class=topTHCell>Further Information</th>
 </tr>
 TBLONE;
@@ -3070,6 +2954,7 @@ $inner .= <<<TBLTWO
    <td valign=top style="width: 40vw;">
      <div id="labdiv{$idsuffix}" style="display: none;">{$labAction}</div>
      <div id="tumdiv{$idsuffix}" style="display: none;">{$tumorAction}</div>
+     <div id="hprdiv{$idsuffix}" style="display: none;">{$hprAction}</div>
    </td>
    <td valign=top><table class=tblBtn  onclick="saveQMSAction('{$idsuffix}','{$readlabel}');"><tr><td><i class="material-icons">add_circle_outline</i></td></tr></table></td>
  </tr>
@@ -3105,6 +2990,160 @@ RTNTHIS;
 return $rtnThis;
 }
 
+function bldShipDocEditPage( $whichsdency ) { 
+
+ $pdta = array(); 
+ $pdta['sdency'] = $whichsdency; 
+ $payload = json_encode($payload);
+ $sd = json_decode(callrestapi("POST", dataTree . "/data-doers/shipment-document-data",serverIdent, serverpw, $payload), true); 
+ 
+ $dspsd = json_encode($sd);
+    
+    
+$sdPage = <<<SDPAGE
+<table border=1 id=mainShipDocHoldTable>
+  <tr><td>{$dspsd}</td></tr>
+</table>
+SDPAGE;
+    return $sdPage;
+}
+
+
+
+function bldDialogMasterQMSActionHPR ($biogroup, $readlabel) { 
+    
+    //<td class=faHead>Technician Accuracy</td> - No Longer Relevant on this screen
+    
+    $hprAction = <<<HPRACTION
+
+   <table border=0>
+        <tr><td colspan=2>Histo-Pathologic Review</td></tr>
+        <tr><td class=faHead>Decision</td></tr>
+        <tr><td>{$biogroup} / {$readlabel}</td></tr>   
+    </table>
+        
+HPRACTION;
+    return $hprAction;
+    
+}
+
+function bldDialogMasterQMSActionQMS () {
+    $idsuffix = generateRandomString(8);
+    $moletest = json_decode(callrestapi("GET", dataTree . "/immuno-mole-testlist",serverIdent,serverpw),true);
+    
+    //molecular test
+    $molemnu = "<table border=0 width=100%><tr><td align=right onclick=\"triggerMolecularFill(0,'','','{$idsuffix}');\" class=ddMenuClearOption>[clear]</td></tr>";
+    foreach ($moletest['DATA'] as $moleval) { 
+        $molemnu .= "<tr><td onclick=\"triggerMolecularFill({$moleval['menuid']},'{$moleval['menuvalue']}','{$moleval['dspvalue']}','{$idsuffix}');\" class=ddMenuItem>{$moleval['dspvalue']}</td></tr>";
+    }
+    $molemnu .= "</table>";
+    
+    $tumorAction = <<<TUMACTTBL
+<table border=0>
+  <tr><th colspan=2>Percentages</th><th>Indicated Immuno/Molecular Test Results</th></tr>
+  <tr>
+    <td class=faHead>Tumor</td>
+    <td class=faHead>Cellularity</td>
+    <td rowspan=8 valign=top>
+      <table border=0 width=100%>
+       <tr><td class=faHead colspan=2>Indicated Immuno/Molecular Test Results</td><td rowspan=4 valign=top><table class=tblBtn onclick="manageMoleTest(1,'','{$idsuffix}');"><tr><td><i class="material-icons">playlist_add</i></td></tr></table></td></tr>
+       <tr><td class=fieldHolder valign=top colspan=2>
+                    <div class=menuHolderDiv>
+                      <input type=hidden id=hprFldMoleTest{$idsuffix}Value>
+                      <input type=text id=hprFldMoleTest{$idsuffix} READONLY style="width: 25vw;">
+                      <div class=valueDropDown style="min-width: 25vw;">{$molemnu}</div>
+                    </div>
+            </td>
+       </tr>
+       <tr><td class=faHead>Result Index</td><td class=faHead>Scale Degree</td></tr>
+       <tr><td class=fieldHolder valign=top>
+             <div class=menuHolderDiv>
+               <input type=hidden id='hprFldMoleResult{$idsuffix}Value'>
+               <input type=text id='hprFldMoleResult{$idsuffix}' READONLY style="width: 12.5vw;">
+               <div class=valueDropDown id=moleResultDropDown style="min-width: 12.5vw;"> </div>
+             </div>
+            </td>
+            <td class=fieldHolder valign=top>
+              <input type=text id=hprFldMoleScale{$idsuffix} style="width: 12.5vw;">
+            </td>
+       </tr>
+       <tr><td colspan=3 valign=top>
+           <input type=hidden id=molecularTestJsonHolderConfirm{$idsuffix}>
+           <div id=dspDefinedMolecularTestsConfirm{$idsuffix} class=dspDefinedMoleTests>
+           </div>
+           </td>
+       </tr>
+      </table>
+    </td></tr>
+  <tr>
+    <td><input type=text id=fldTmrTumor{$idsuffix} class=prcFld></td>
+    <td><input type=text id=fldTmrCell{$idsuffix} class=prcFld></td>
+</tr>
+<tr>
+    <td class=faHead>Necrosis</td>
+    <td class=faHead>Acell Mucin</td>
+</tr>
+<tr>
+    <td><input type=text id=fldTmrNecros{$idsuffix} class=prcFld></td>
+    <td><input type=text id=fldTmrACell{$idsuffix} class=prcFld></td>
+</tr>
+<tr>
+    <td class=faHead>Neo-Plastic Stroma</td>
+    <td class=faHead>Non-Neo Stroma</td>
+</tr>
+<tr>
+    <td><input type=text id=fldTmrNeoPlas{$idsuffix} class=prcFld></td>
+    <td><input type=text id=fldTmrNonNeo{$idsuffix} class=prcFld></td>
+</tr>
+<tr>
+    <td class=faHead>Epipthelial</td>
+    <td class=faHead>Inflammation</td>
+</tr>
+<tr>
+    <td><input type=text id=fldTmrEpip{$idsuffix} class=prcFld></td>
+    <td><input type=text id=fldTmrInFlam{$idsuffix} class=prcFld></td>
+</tr>
+<tr><td colspan=3 class=faHead>Notes</td></tr>
+<tr><td colspan=3><TEXTAREA class=qmsNotes id='qmsNotes{$idsuffix}'></TEXTAREA></td></tr> 
+</table>
+TUMACTTBL;
+
+return $tumorAction;
+    
+}
+
+function bldDialogMasterQMSActionLabAction ( ) { 
+    $idsuffix = generateRandomString(8);
+    $qmsstatusla = json_decode(callrestapi("GET", dataTree . "/globalmenu/qms-lab-actions",serverIdent,serverpw), true);
+    //lab Action Menu 
+    $la = "<table border=0 class=menuDropTbl>";
+    foreach ($qmsstatusla['DATA'] as $laval) {
+        $la .= "<tr><td onclick=\"fillField('fldQMSLA{$idsuffix}','{$laval['lookupvalue']}','{$laval['menuvalue']}');\" class=ddMenuItem>{$laval['menuvalue']}</td></tr>";
+    }
+    $la .= "</table>"; 
+$labAction = <<<LATBL
+<table border=0>
+  <tr>
+    <th class=faHead>Lab Action to Perform</th>
+    <th class=faHead>Note</th>
+  </tr>
+  <tr>
+    <td>
+      <div class=menuHolderDiv>
+        <input type=hidden id=fldQMSLA{$idsuffix}Value>
+        <input type=text id=fldQMSLA{$idsuffix} READONLY class="inputFld qmsDivCls" style="width: 15vw;">
+        <div class=valueDropDown style="min-width: 10vw;">{$la}</div>
+      </div>
+    </td>
+    <td>
+      <input type=text id="fldLabActNote{$idsuffix}" style="width: 23vw;">
+    </td>
+  </tr>
+</table>
+LATBL;
+      return $labAction;
+    
+}
 
 function bldDialogMasterAddSegment ( $passeddata ) { 
 
@@ -3260,7 +3299,6 @@ RTNTHIS;
 
    return $rtnThis;
 }
-
 
 function bldDialogUploadPathRpt ( $passeddata ) { 
 
@@ -3699,10 +3737,6 @@ RTNTHIS;
 return $rtnThis;
 }
 
-
-
-
-
 function bldDialogCoordEditComments ( $passeddata ) { 
   $pdta = json_decode($passeddata, true); 
   $rqstobj = explode(":",$pdta['objid']); 
@@ -3800,7 +3834,6 @@ RTNTHIS;
 
    return $rtnThis;
 }
-
 
 function bldDialogAddSegment( $passeddata ) { 
 
@@ -3938,8 +3971,6 @@ RTNTHIS;
 //</table>
 
 }
-
-
 
 function bldQuickPRUpload($passeddata) { 
     
@@ -4761,7 +4792,6 @@ RTNTBL;
   return $rtnTbl;    
 }
 
-
 function dropmenuPennSOGI( $dspvalue ) { 
 //upennsogi
   $si = serverIdent;
@@ -4905,8 +4935,6 @@ function dropmenuVocASitePositions( $defaultDsp = "", $screenref = "" ) {
   return array('menuObj' => $aspmenu,'defaultDspValue' => $aspDefaultDsp, 'defaultLookupValue' => $aspDefaultValue);
 }
 
-
-
 function dropmenuProcedureTypes($passvalue = "", $lock = 0 ) {  
   $si = serverIdent;
   $sp = serverpw;
@@ -4939,9 +4967,6 @@ function dropmenuProcedureTypes($passvalue = "", $lock = 0 ) {
 
   return array('menuObj' => $procedureType,'defaultDspValue' => $procTDefaultDsp, 'defaultLookupValue' => $procTDefaultValue);
 }
-
-
-
 
 function dropmenuCollectionType($givenlookup) { 
   $collectionTypeDropMenu = "&nbsp;";
@@ -5153,8 +5178,6 @@ HOLDINGTBL;
     return $holdingTbl;
 }
 
-
-
 function bldBiosampleProcurement($usr) { 
     if ((int)$usr->allowprocure <> 1) { 
       //USER NOT ALLOWED TO PROCURE
@@ -5195,7 +5218,6 @@ HOLDINGTBL;
     }
     return $holdingTbl;
 }
-
 
 function bldReportParameterScreen($whichrpt, $usr) { 
 
@@ -5325,6 +5347,7 @@ function bldBiogroupDefitionDisplay($biogroup, $bgency) {
   $pdta['bgency'] = $bgency;
   $passdata = json_encode($pdta);
   $bgarr = json_decode(callrestapi("POST",dataTree."/data-doers/master-bg-record",serverIdent,serverpw,$passdata), true);
+  
   if ( (int)$bgarr['ITEMSFOUND'] === 1 ) { 
       $bg = $bgarr['DATA'];          
 
@@ -5382,6 +5405,17 @@ function bldBiogroupDefitionDisplay($biogroup, $bgency) {
               </td></tr>
 TOPLINE;
       //DESIGNATION
+                            
+if ( strtoupper($bg['qcprocstatus']) === 'L' ) {
+    $qdta = array();  
+    $qdta['bgency'] = cryptservice($bg['readlabel'],'e');                
+    $qpassdata = json_encode($qdta);                
+    $bglarr = json_decode(callrestapi("POST",dataTree."/data-doers/master-bg-lab-action-notes",serverIdent,serverpw,$qpassdata), true);
+    $rtnThis .= "<tr><td valign=top>";                                  
+    $rtnThis .= "<table border=0  style=\"border: 1px solid rgba(107, 18, 102, 1); width: 96.5vw;\"><tr><td colspan=2 style=\"background: rgba(107, 18, 102, 1); color: rgba(255,255,255,1); padding: 8px 5px 8px 5px;\">LAB ACTIONS REQUIRED</td></tr><tr><td style=\"width: 15vw; padding: 8px;\">" . $bglarr['DATA'][0]['labactionactiondsp'] .  "</td><td style=\"padding: 8px;\">" . $bglarr['DATA'][0]['labactionnote'] . "</td></tr></table>";
+    $rtnThis .= "</td></tr>";        
+}                             
+                                                     
       $rtnThis .= "<tr><td valign=top>";
 
       $rtnThis .= <<<LINEONE
@@ -5547,6 +5581,48 @@ $rtnThis .= <<<NEXTLINETWO
  </tr></table>
 </td></tr>            
 NEXTLINETWO;
+
+if ( strtoupper($bg['qcprocstatus']) === 'Q' ) {                 
+  $qdta = array();  
+  $qdta['bgency'] = cryptservice($bg['readlabel'],'e');                
+  $qpassdata = json_encode($qdta);                
+  $bgqarr = json_decode(callrestapi("POST",dataTree."/data-doers/master-bg-qms",serverIdent,serverpw,$qpassdata), true);  
+  if ( count($bgqarr['DATA']['molecular']) > 0 || count($bgqarr['DATA']['percents']) > 0 ) {     
+    if ( count($bgqarr['DATA']['molecular']) > 0 ) { 
+        //BUILD MOLECULAR TESTS
+        $moleTbl = "<td valign=top><table border=0 cellspacing=0 cellpading=0 style=\"border: 1px solid rgba(0,32,113,1);\"><tr><td colspan=4 class=elementLabel>Molecular Tests &amp; Other Test Results</td></tr><tr><td><table><tr><td class=topHeadCell>Specified Test</td><td class=topHeadCell>Test Results</td><td class=topHeadCell>Scale Degree/Note</td><td class=topHeadCell style=\"border-right: none;\">Input On/By</td></tr>";
+        foreach ($bgqarr['DATA']['molecular'] as $mval) { 
+            $moleTbl .= "<tr><td data-moleid={$mval['molecularid']} class=moletestdatadsp>{$mval['moletest']}</td><td class=moletestdatadsp>{$mval['testreslt']}</td><td class=moletestdatadsp>{$mval['molenote']}</td><td class=moletestdatadsp style=\"border-right: none;\">{$mval['inputdate']} {$mval['onby']}</td></tr>";
+        }
+        $moleTbl .= "</table></td></tr></table></td>";
+    } 
+    if ( count($bgqarr['DATA']['percents']) > 0 ) { 
+        //BUILD PERCENTS        
+        $percentTbl = "<td valign=top><table border=0  cellspacing=0 cellpading=0 style=\"border: 1px solid rgba(0,32,113,1);\"><tr><td class=elementLabel colspan=10>Biosample Composition</td></tr>";
+        $trcellcntr = 0;
+        foreach ( $bgqarr['DATA']['percents'] as $pval ) { 
+            if ( $trcellcntr === 4) { 
+              $percentTbl .= "</tr><tr>";
+              $trcellcntr = 0;
+            }
+            $innerCompTbl = "<table border=0 data-compid={$pval['prcid']} class=compDspTbl><tr><td class=topHeadCell style=\"border-right: 1px solid rgba(0,32,113,1);\">{$pval['prctype']}</td></tr><tr><td  class=moletestdatadsp style=\"text-align: right;\">{$pval['prcvalue']} %</td></tr></table>";
+            $percentTbl .= "<td valign=top>{$innerCompTbl}</td>";                     
+            $trcellcntr++;
+        }
+        $percentTbl .= "</table></td>";
+    }
+    $rtnThis .= "<tr><td valign=top>"; 
+    
+    $qmnote = ( trim($bgqarr['DATA']['qmsnote'][0]['qmsnote']) !== "") ? trim($bgqarr['DATA']['qmsnote'][0]['qmsnote']) : ""; 
+    $qmnoteby = ( trim($bgqarr['DATA']['qmsnote'][0]['qmsstatusby']) !== "" ) ? "<p>(" . trim($bgqarr['DATA']['qmsnote'][0]['qmsstatusby']) : "";
+    $qmnoteby .= ( trim($bgqarr['DATA']['qmsnote'][0]['qmsstatuson']) !== "" ) ?  ( trim($qmnoteby) === "" ) ?  "<p>(" . trim($bgqarr['DATA']['qmsnote'][0]['qmsstatuson'])   :  " :: "  . trim($bgqarr['DATA']['qmsnote'][0]['qmsstatuson'])  : "";
+    $qmnoteby .= ( trim($qmnoteby) === "") ? "" : ")";  
+    
+    $rtnThis .= "<table border=0 ><tr>{$percentTbl}{$moleTbl}</tr><tr><td colspan=2><table  cellspacing=0 cellpading=0 style=\"border: 1px solid rgba(0,32,113,1);\" width=100%><tr><td  class=elementLabel>QMS Note</td></tr><tr><td colspan=2 style=\"padding: 8px;\">{$qmnote}&nbsp;<div style=\"text-align: right; font-size: 1.1vh; font-style: italic;\">{$qmnoteby}</div></td></tr></table></table>" ;
+    $rtnThis .= "</td></tr>";
+  }
+}
+
 //END BG METRICS
       
       //"reconcilind":0

@@ -822,6 +822,7 @@ function answerCoordinatorAddSegments(rtnData) {
 function revealFurtherQMSActions( whatAction, whatToReveal ) { 
   byId('labdiv'+whatToReveal).style.display = 'none';
   byId('tumdiv'+whatToReveal).style.display = 'none';
+//  byId('hprdiv'+whatToReveal).style.display = 'none';
   switch ( whatAction ) { 
     case 'L':
       byId('labdiv'+whatToReveal).style.display = 'block';
@@ -829,6 +830,9 @@ function revealFurtherQMSActions( whatAction, whatToReveal ) {
     case 'Q':
       byId('tumdiv'+whatToReveal).style.display = 'block';
     break;
+//    case 'H':
+//      byId('hprdiv'+whatToReveal).style.display = 'block';
+//    break;
   }
 }
 

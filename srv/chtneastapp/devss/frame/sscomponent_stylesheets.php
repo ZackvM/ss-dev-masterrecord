@@ -460,6 +460,12 @@ textarea { font-size: 1.3vh; }
 
 .prcFld {width: 5vw; text-align: right; }
 
+.topHeadCell { padding: 5px; background: rgba({$this->color_dblue},1); font-size: 1.2vh;  color: rgba({$this->color_white},1); border-right: 1px solid rgba({$this->color_white},1); }
+.moletestdatadsp { font-size: 1.5vh; padding: 4px; border-bottom: 1px solid rgba({$this->color_dblue},1); border-right: 1px solid rgba({$this->color_dblue},1);  }
+.smlTxt { font-size: .9vh; text-align: right;  }
+
+.compDspTbl { width: 10vw; }
+
 STYLESHEET;
 return $rtnThis;
 }

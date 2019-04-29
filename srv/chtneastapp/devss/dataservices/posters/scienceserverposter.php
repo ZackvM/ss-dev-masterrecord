@@ -34,6 +34,28 @@ function __construct() {
 
 class datadoers {
 
+    function shipmentdocumentdata ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      if ( $authuser === "chtneast" && $authpw === serverpw ) { 
+        require(serverkeys . "/sspdo.zck");
+        $pdta = json_decode($passdata, true);
+        $dta = $passdata;
+        $msg = $authuser . " ZZZZ";
+      } 
+      //$msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows; 
+        
+    }
+    
     function markqms ( $request, $passdata ) {
       $rows = array(); 
       $responseCode = 503;
@@ -85,32 +107,30 @@ class datadoers {
         switch ( $pdta['qmsaction'] ) { 
           case 'Q':
 
-//              $moTests = json_decode($pdta['moleculartests'], true);
-//              $moSQL = "update masterrecord.ut_procure_biosample_molecular set dspind = 0, updatedby = :usr, updatedon = now() where replace(bgprcnbr,'_','') = :readlabel";
-//                  (list( $errorInd, $msgArr[] ) = array(1 , $u['originalaccountname']   ));
-//              $moR = $conn->prepare($moSQL); 
-//              $moR->execute(array(':readlabel' => $pdta['bglabel'], ':usr' => $u['originalaccountname'] ));
-//            
-//              $moInsSQL = "insert into masterrecord.ut_procure_biosample_molecular (bgprcnbr, testid, testresultid, molenote, onwhen, onby, dspind) value (:readlabel, :testid, :testresultid, :molenote, now(), :onby, 1)";
-//              $moIns = $conn->prepare($moInsSQL);
-//              if ( count($moTests) > 0 ) { 
-//                foreach ($moTests  as $key => $value ) { 
-//                    $moIns->execute(array(
-//                        ':readlabel' => $pdta['bglabel']
-//                      , ':testid' => $value[0]
-//                      , ':testresultid' => $value[2]
-//                      , ':molenote' => trim($value[4])
-//                      , ':onby' => $u['originalaccountname'] 
-//                   ));
-//                }
-//              }
+              $moTests = json_decode($pdta['moleculartests'], true);
+              $moSQL = "update masterrecord.ut_procure_biosample_molecular set dspind = 0, updatedby = :usr, updatedon = now() where replace(bgprcnbr,'_','') = :readlabel";
+              $moR = $conn->prepare($moSQL); 
+              $moR->execute(array(':readlabel' => $pdta['bglabel'], ':usr' => $u['originalaccountname'] ));
+            
+              $moInsSQL = "insert into masterrecord.ut_procure_biosample_molecular (bgprcnbr, testid, testresultid, molenote, onwhen, onby, dspind) value (:readlabel, :testid, :testresultid, :molenote, now(), :onby, 1)";
+              $moIns = $conn->prepare($moInsSQL);
+              if ( count($moTests) > 0 ) { 
+                foreach ($moTests  as $key => $value ) { 
+                    $moIns->execute(array(
+                        ':readlabel' => $pdta['bglabel']
+                      , ':testid' => $value[0]
+                      , ':testresultid' => $value[2]
+                      , ':molenote' => trim($value[4])
+                      , ':onby' => $u['originalaccountname'] 
+                   ));
+                }
+              }
 
-              $prcUpdSQL = "update masterrecord.ut_procure_biosample_samplemakeup set dspind = 0, updateon = now(), updateby = :usr where readlabel = :readlabel";
+              $prcUpdSQL = "update masterrecord.ut_procure_biosample_samplecomposition set dspind = 0, updateon = now(), updateby = :usr where readlabel = :readlabel";
               $prcUpdR = $conn->prepare($prcUpdSQL); 
               $prcUpdR->execute(array(':usr' => $u['originalaccountname'], ':readlabel' => $pdta['bglabel']));
-              //bglabel 87106T /  prcepipth	7 / prcinflame	8  
 
-              $prcInsSQL = "insert into masterrecord.ut_procure_biosample_samplemakeup (readlabel, prctype, prcvalue, dspind, inputon, inputby) value (:readlabel, :prctype, :prcvalue, 1, now(), :inputby)";
+              $prcInsSQL = "insert into masterrecord.ut_procure_biosample_samplecomposition (readlabel, prctype, prcvalue, dspind, inputon, inputby) value (:readlabel, :prctype, :prcvalue, 1, now(), :inputby)";
               $prcIns = $conn->prepare($prcInsSQL);
               if ( trim($pdta['prctumor']) !== "" && is_numeric($pdta['prctumor'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-TMR', ':prcvalue' => $pdta['prctumor'], ':inputby' => $u['originalaccountname'])); }
               if ( trim($pdta['prccell']) !== "" && is_numeric($pdta['prccell'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-CELL', ':prcvalue' => $pdta['prccell'], ':inputby' => $u['originalaccountname'])); }
@@ -121,16 +141,11 @@ class datadoers {
               if ( trim($pdta['prcepipth']) !== "" && is_numeric($pdta['prcepipth'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-EPIP', ':prcvalue' => $pdta['prcepipth'], ':inputby' => $u['originalaccountname'])); }
               if ( trim($pdta['prcinflame']) !== "" && is_numeric($pdta['prcinflame'])) { $prcIns->execute(array(':readlabel' => $pdta['bglabel'], ':prctype' => 'PRC-INFLM', ':prcvalue' => $pdta['prcinflame'], ':inputby' => $u['originalaccountname'])); }
 
-
-                (list( $errorInd, $msgArr[] ) = array(1 , $u['originalaccountname']   ));
-
-
               //WRITE DATA
-//              $laSQL = "update masterrecord.ut_procure_biosample set qcvalv2 = '', qcind = 1, qcmarkbyon = :u, qcprocstatus = :qmsstat, qmsstatusby = :usr, qmsnote = :qmsnote, qmsstatuson = now() where replace(read_label,'_','') = :readlabel";
-//              $laR = $conn->prepare($laSQL); 
-//              $laR->execute(array(':readlabel' => $pdta['bglabel'], ':usr' => $u['originalaccountname'], ':u' => date('Y-m-d') . " {$u['originalaccountname']}", ':qmsnote' => $pdta['qmsnote'] ,':qmsstat' => $pdta['qmsaction'] ));
-//              $responseCode = 200;
-              //WRITE ALL MOLE TESTS AND TUMOR PRCs
+              $laSQL = "update masterrecord.ut_procure_biosample set qcvalv2 = '', qcind = 1, qcmarkbyon = :u, qcprocstatus = :qmsstat, qmsstatusby = :usr, qmsnote = :qmsnote, qmsstatuson = now() where replace(read_label,'_','') = :readlabel";
+              $laR = $conn->prepare($laSQL); 
+              $laR->execute(array(':readlabel' => $pdta['bglabel'], ':usr' => $u['originalaccountname'], ':u' => date('Y-m-d') . " {$u['originalaccountname']}", ':qmsnote' => $pdta['qmsnote'] ,':qmsstat' => $pdta['qmsaction'] ));
+              $responseCode = 200;
 
               break;
           case 'L':
@@ -870,6 +885,91 @@ class datadoers {
        return $rows;           
     } 
 
+    function masterbgqms ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      if ( $authuser === "chtneast" && $authpw === serverpw ) { 
+  
+        require(serverkeys . "/sspdo.zck");
+        $pdta = json_decode($passdata, true);
+        $bgn = cryptservice($pdta['bgency'],'d',false);
+        //TODO:  DATA CHECKS AND SECURITY CHECKS???
+        $moleSQL = "SELECT mo.molecularid, concat(ifnull(mot.longvalue,''), ' (' , ifnull(mot.dspvalue,''),')') as moletest, rslt.longvalue as testreslt,   mo.molenote, date_format(mo.onwhen,'%m/%d/%Y') as inputdate, mo.onby FROM masterrecord.ut_procure_biosample_molecular mo left join (SELECT longvalue, dspvalue, menuvalue FROM four.sys_master_menus where menu = 'MOLECULARTEST') mot on mo.testid = mot.menuvalue left join (SELECT longvalue, dspvalue, menuvalue FROM four.sys_master_menus where menu ='MOLECULARTESTRESULTS') rslt on mo.testResultId = rslt.menuvalue where dspind = 1 and bgprcnbr = :readlabel";
+        $moleRS = $conn->prepare($moleSQL);
+        $moleRS->execute(array(':readlabel' => $bgn));
+        if ( $moleRS->rowCount() > 0 ) { 
+            while ($mr = $moleRS->fetch(PDO::FETCH_ASSOC)) { 
+               $dta['molecular'][] = $mr;
+            }
+        } else { 
+            //NO DATA
+            $dta['molecular'] = null;
+        }
+        $prcSQL = "SELECT prc.prcid, mprc.dspvalue prctype, prcvalue, date_format(inputon, '%m/%d/%Y') as inputon, inputby FROM masterrecord.ut_procure_biosample_samplecomposition prc left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSPERCENTMAKEUP') as mprc on prc.prctype = mprc.menuvalue where dspind = 1 and readlabel = :readlabel";
+        $prcRS = $conn->prepare($prcSQL); 
+        $prcRS->execute(array(':readlabel' => $bgn));
+        if ( $prcRS->rowCount() > 0 ) { 
+            while ( $pr = $prcRS->fetch(PDO::FETCH_ASSOC)) { 
+              $dta['percents'][] = $pr;
+            }
+        } else { 
+            $dta['percents'] = null;
+        }
+        
+        $noteSQL = "SELECT replace(bs.read_label,'_','') as readlabel, ifnull(qmsnote,'') as qmsnote, qmsstatusby, date_format(qmsstatuson,'%m/%d/%Y') as qmsstatuson  FROM masterrecord.ut_procure_biosample bs where replace(read_label,'_','') = :readlabel";
+        $noteRS= $conn->prepare($noteSQL);
+        $noteRS->execute(array(':readlabel' => $bgn));
+        if ( $prcRS->rowCount() > 0 ) { 
+            while ( $nr = $noteRS->fetch(PDO::FETCH_ASSOC)) { 
+              $dta['qmsnote'][] = $nr;
+            }
+        } else { 
+            $dta['qmsnote'] = null;
+        }        
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;              
+    }
+    
+    function masterbglabactionnotes ( $request, $passdata ) { 
+      $rows = array(); 
+      //$dta = array(); 
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      if ( $authuser === "chtneast" && $authpw === serverpw ) { 
+        require(serverkeys . "/sspdo.zck");
+        $pdta = json_decode($passdata, true);
+        $bgn = cryptservice($pdta['bgency'],'d',false);
+        //TODO:  DATA CHECKS AND SECURITY CHECKS???
+        $labSQL = "SELECT replace(bs.read_label,'_','') as readlabel, bs.labactionaction, mnu.labactionactiondsp, bs.labactionnote FROM masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, longValue as labactionactiondsp FROM four.sys_master_menus where menu = 'QMSLABACTIONS') as mnu on bs.labactionaction = mnu.menuvalue where replace(read_label,'_','') = :bgn";
+        $labRS = $conn->prepare($labSQL);
+        $labRS->execute(array(':bgn' => $bgn)); 
+        while ($r = $labRS->fetch(PDO::FETCH_ASSOC)) { 
+            $dta[] = $r;
+        }
+      }        
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows; 
+    }
+    
+    
     function masterbgrecord ( $request, $passdata ) { 
       $rows = array(); 
       //$dta = array(); 
