@@ -57,7 +57,7 @@ class datadoers {
             $dta['sdhead'][] = $s;
           }
      
-          $detSQL = "SELECT sdd.shipdocDetId, sdd.shipdocrefId, sg.segmentid, ifnull(date_format(sdd.addon,'%m/%d/%Y'),'') as addtosdon, ifnull(sdd.addedBy,'') as addtosdby, ifnull(date_format(sdd.pulledOn,'%m/%d/%Y'),'') as pulledon, ifnull(sdd.pulledby,'') as pulledby , sg.bgs, ucase(trim(concat(ifnull(bs.tissType,''), if(ifnull(bs.anatomicSite,'')='','',concat(' :: ',ifnull(bs.anatomicSite,''))) , if(ifnull(bs.subSite,'')='','', concat(' (',ifnull(bs.subSite,''),')')) , if(ifnull(bs.diagnosis,'')='','',concat(' :: ',ifnull(bs.diagnosis,''))), if(ifnull(bs.subdiagnos,'')='','',concat(' (', ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.metsSite,'')='','',concat(' METS: ',ifnull(bs.metsSite,'')))))) as dxdesig,  if( trim(ifnull(sg.metric,'')) = '','',concat( ifnull(sg.metric,''), ifnull(uom.dspvalue,''))) as metric, concat(ifnull(sg.prepMethod,''), if(ifnull(sg.Preparation,'')='','',concat(' / ',ifnull(sg.Preparation,'')))) preparation, ifnull(sg.qty,1) as qty, ifnull(sg.scannedLocation,'') as inventorylocation FROM masterrecord.ut_shipdocdetails sdd left join masterrecord.ut_procure_segment sg on sdd.segID = sg.segmentId left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricUOM = uom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where sdd.shipdocrefid = :sdnbr";
+          $detSQL = "SELECT sdd.shipdocDetId, sdd.shipdocrefId, sg.segmentid, ifnull(date_format(sdd.addon,'%m/%d/%Y'),'') as addtosdon, ifnull(sdd.addedBy,'') as addtosdby,  ifnull(sdd.pulledind,0) as pulledind, ifnull(date_format(sdd.pulledOn,'%m/%d/%Y'),'') as pulledon, ifnull(sdd.pulledby,'') as pulledby , sg.bgs, ucase(trim(concat(ifnull(bs.tissType,''), if(ifnull(bs.anatomicSite,'')='','',concat(' :: ',ifnull(bs.anatomicSite,''))) , if(ifnull(bs.subSite,'')='','', concat(' (',ifnull(bs.subSite,''),')')) , if(ifnull(bs.diagnosis,'')='','',concat(' :: ',ifnull(bs.diagnosis,''))), if(ifnull(bs.subdiagnos,'')='','',concat(' (', ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.metsSite,'')='','',concat(' METS: ',ifnull(bs.metsSite,'')))))) as dxdesig,  if( trim(ifnull(sg.metric,'')) = '','',concat( ifnull(sg.metric,''), ifnull(uom.dspvalue,''))) as metric, concat(ifnull(sg.prepMethod,''), if(ifnull(sg.Preparation,'')='','',concat(' / ',ifnull(sg.Preparation,'')))) preparation, ifnull(sg.qty,1) as qty, ifnull(sg.scannedLocation,'') as inventorylocation FROM masterrecord.ut_shipdocdetails sdd left join masterrecord.ut_procure_segment sg on sdd.segID = sg.segmentId left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricUOM = uom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where sdd.shipdocrefid = :sdnbr";
           $detRS = $conn->prepare($detSQL); 
           $detRS->execute(array(':sdnbr' => $sdnbr));
           if ( $detRS->rowCount() > 0 ) { 
@@ -4971,7 +4971,22 @@ SQLSTMT;
          ($statusFound === 0) ? ( list( $errorInd, $msgArr[] ) = array( 1 , "SEGMENT {$sgv['bgs']} IS NOT STATUSED IN AN ASSIGNABLE STATE.  EITHER EXCLUDE THIS SEGMENT OR CORRECT THIS DATA.")) : "" ;
        }
      }
-
+     
+     if ( trim($pdta['sdcCourierInfoValue']) !== "" ) { 
+         //CHECK VALID COURIER ID FOR INVESTIGATOR
+         $courierChkSQL = "SELECT courierid, ucase(trim(ifnull(courier_name,''))) as courier, ucase(trim(ifnull(courier_num,''))) as couriernbr  FROM vandyinvest.eastern_courier where investid = :invest and courierid = :courier";
+         $courierChkRS = $conn->prepare($courierChkSQL);
+         $courierChkRS->execute(array(':invest' => $pdta['sdcInvestCode'], ':courier' => $pdta['sdcCourierInfoValue']  ));
+         if ( $courierChkRS->rowCount() <> 1) {
+             ( list( $errorInd, $msgArr[] ) = array( 1 , "THE COURIER ACCOUNT SELECTED FOR {$pdta['sdcInvestCode']} IS NOT VALID"));
+         } else { 
+             $cr =  $courierChkRS->fetch(PDO::FETCH_ASSOC);
+             $crID = ( trim($cr['courierid']) === '' ) ? 0 : trim($cr['courierid']);
+             $crName = ( trim($cr['courier']) === '' ) ? "" : trim($cr['courier']);
+             $crNbr = ( trim($cr['couriernbr']) === '' ) ? "" : trim($cr['couriernbr']);
+         }
+     }
+     
      if (  $errorInd === 0 ) { 
        //WRITE THE SHIPDOC - SEND BACK NUMBER
        $usrSQL = "SELECT originalAccountName as usrname FROM four.sys_userbase where sessionid = :sessionid";
@@ -4982,12 +4997,19 @@ SQLSTMT;
        } else { 
          $u = $usrR->fetch(PDO::FETCH_ASSOC);
          $usr = $u['usrname']; 
-         $sdInsSQL = "insert into masterrecord.ut_shipdoc (sdstatus, statusdate, acceptedby, acceptedbyemail, ponbr, rqstshipdate, rqstpulldate, comments, investcode, investname, investemail, investinstitution, institutiontype, investdivision, oncreationinveststatus, shipaddy, shipphone, billaddy, billphone, setupby, setupon) values('OPEN', now(), :acceptedby, :acceptedbyemail, :ponbr, :rqstshipdate, :rqstpulldate, :comments, :investcode, :investname, :investemail, :investinstitution, :institutiontype, :investdivision, :oncreationinveststatus, :shipaddy, :shipphone, :billaddy, :billphone, :setupby, now())";   
+
+         //TODO: Status should be dynamic!
+         $sdInsSQL = "insert into masterrecord.ut_shipdoc (sdstatus, statusdate, acceptedby, acceptedbyemail, ponbr, rqstshipdate, rqstpulldate, comments, investcode, investname, investemail, investinstitution, institutiontype, investdivision, oncreationinveststatus, shipaddy, shipphone, billaddy, billphone, setupby, setupon, courier, couriernbr, tqcourierid) values('OPEN', now(), :acceptedby, :acceptedbyemail, :ponbr, :rqstshipdate, :rqstpulldate, :comments, :investcode, :investname, :investemail, :investinstitution, :institutiontype, :investdivision, :oncreationinveststatus, :shipaddy, :shipphone, :billaddy, :billphone, :setupby, now(), :courier, :couriernbr, :tqcourierid )";   
          $sdR = $conn->prepare($sdInsSQL); 
-         $sdR->execute(array(':acceptedby' => trim($pdta['sdcAcceptedBy']) ,':acceptedbyemail' => trim($pdta['sdcAcceptorsEmail']),':ponbr' => trim($pdta['sdcPurchaseOrder']) ,':rqstshipdate' => trim($pdta['sdcRqstShipDateValue']),':rqstpulldate' => trim($pdta['sdcRqstToLabDateValue']),':comments' => trim($pdta['sdcPublicComments']),':investcode' => strtoupper(trim($pdta['sdcInvestCode'])),':investname' => trim($pdta['sdcInvestName']),':investemail' => trim($pdta['sdcInvestEmail']),':investinstitution' => strtoupper(trim($pdta['sdcInvestInstitution'])),':institutiontype' => trim($pdta['sdcInvestTQInstType']),':investdivision' => trim($pdta['sdcInvestPrimeDiv']),':oncreationinveststatus' => trim($pdta['sdcInvestTQStatus']),':shipaddy' => trim($pdta['sdcInvestShippingAddress']),':shipphone' => trim($pdta['sdcShippingPhone']),':billaddy' => trim($pdta['sdcInvestBillingAddress']),':billphone' => trim($pdta['sdcBillPhone']),':setupby'  => $usr )); 
+         $sdR->execute(array(':acceptedby' => trim($pdta['sdcAcceptedBy']) ,':acceptedbyemail' => trim($pdta['sdcAcceptorsEmail']),':ponbr' => trim($pdta['sdcPurchaseOrder']) ,':rqstshipdate' => trim($pdta['sdcRqstShipDateValue']),':rqstpulldate' => trim($pdta['sdcRqstToLabDateValue']),':comments' => trim($pdta['sdcPublicComments']),':investcode' => strtoupper(trim($pdta['sdcInvestCode'])),':investname' => trim($pdta['sdcInvestName']),':investemail' => trim($pdta['sdcInvestEmail']),':investinstitution' => strtoupper(trim($pdta['sdcInvestInstitution'])),':institutiontype' => trim($pdta['sdcInvestTQInstType']),':investdivision' => trim($pdta['sdcInvestPrimeDiv']),':oncreationinveststatus' => trim($pdta['sdcInvestTQStatus']),':shipaddy' => trim($pdta['sdcInvestShippingAddress']),':shipphone' => trim($pdta['sdcShippingPhone']),':billaddy' => trim($pdta['sdcInvestBillingAddress']),':billphone' => trim($pdta['sdcBillPhone']),':setupby'  => $usr, ':courier' => $crName, ':couriernbr' => $crNbr, ':tqcourierid' => $crID  )); 
+
+
          $shipdocnbr = $conn->lastInsertId();         
          $dta['shipdocrefid'] = $shipdocnbr; 
 
+         
+         
+         
          $sdStsInsSQL = "insert into masterrecord.ut_shipdochistory(shipdocrefid, status, statusdate, bywhom, ondate) values( :shipdocrefid, :status, now(), :bywhom, now())";
          $sdStsInsR = $conn->prepare($sdStsInsSQL); 
          $sdStsInsR->execute(array(':shipdocrefid' => $shipdocnbr, ':status' => 'SHIPDOCCREATED', ':bywhom' => $usr)); 

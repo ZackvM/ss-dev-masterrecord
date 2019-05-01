@@ -629,7 +629,7 @@ function getShipmentDocument($sdid, $originalURL) {
     
 
         //TODO:  TURN THIS INTO A WEBSERVICE
-        $topSQL = "SELECT ifnull(sdstatus,'NEW') as sdstatus, date_format(statusdate, '%m/%d/%Y') as statusdate, ifnull(shipmenttrackingnbr,'') as trackingnbr, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as shipdate, ifnull(investcode,'') as invcode, ifnull(investname,'') as investname, ifnull(shipaddy,'') as shipaddress, ifnull(billaddy,'') as billaddress, ifnull(investemail,'') as invemail, ifnull(ponbr,'') as ponbr, ifnull(salesorder,'') as salesorder, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as tolab, ifnull(acceptedby,'') as acceptedby, ifnull(acceptedbyemail,'') as acceptedbyemail, ifnull(comments,'') as comments, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
+        $topSQL = "SELECT ifnull(sdstatus,'NEW') as sdstatus, date_format(statusdate, '%m/%d/%Y') as statusdate, ifnull(shipmenttrackingnbr,'') as trackingnbr, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as shipdate, ifnull(investcode,'') as invcode, ifnull(investname,'') as investname, ifnull(shipaddy,'') as shipaddress, ifnull(billaddy,'') as billaddress, ifnull(investemail,'') as invemail, ifnull(ponbr,'') as ponbr, ifnull(salesorder,'') as salesorder, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as tolab, ifnull(acceptedby,'') as acceptedby, ifnull(acceptedbyemail,'') as acceptedbyemail, ifnull(comments,'') as comments, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby, ifnull(courier,'') as courier, ifnull(couriernbr,'') as couriernbr FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
         
         $topR = $conn->prepare($topSQL);
         $topR->execute(array(':sdnbr' => $sdid));
@@ -640,7 +640,7 @@ function getShipmentDocument($sdid, $originalURL) {
             $sd = $topR->fetch(PDO::FETCH_ASSOC);
             $sts = $sd['sdstatus'];
             $stsdte = $sd['statusdate'];
-            $trcknbr = (trim($sd['trackingnbr']) === "") ? "" : " / {$sd['trackingnbr']}";
+            $trcknbr = (trim($sd['trackingnbr']) === "") ? "" : "{$sd['trackingnbr']}";
             $shpdte = $sd['shipdate'];
             $icode = $sd['invcode'];
             $shpadd = nl2br($sd['shipaddress']);
@@ -651,6 +651,8 @@ function getShipmentDocument($sdid, $originalURL) {
             $tolab = $sd['tolab']; 
             $acceptedby = $sd['acceptedby'];
             $acceptedby .= (trim($sd['acceptedbyemail']) !== "") ? "<br>({$sd['acceptedbyemail']})" : "";
+            $courier = ( trim($sd['courier']) === "") ? "" : trim($sd['courier']);
+            $couriernbr = ( trim($sd['couriernbr']) === "") ? "" : trim($sd['couriernbr']);
             $cmt = $sd['comments']; 
             $setupon = $sd['setupon'];
             $setupby = $sd['setupby'];
@@ -819,15 +821,15 @@ body { margin: 0; font-family: Roboto; font-size: 9pt; color: rgba(48,57,71,1); 
     <tr><td style="height: 8px;" colspan=5></td></tr>
     <tr> 
         <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;" valign=top>Investigator</td>
-        <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;" valign=top>Ship Via</td>
-        <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;" valign=top>Courier/Tracking #</td>
+        <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;" valign=top>Ship Courier</td>
+        <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;" valign=top>Courier #/Tracking #</td>
         <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold;" valign=top>Purchase Order / Sales Order #</td>
         <td style="border: 1px solid rgba(0,0,0,1); border-left: none; padding: 2px; font-weight: bold; border-right: none;" valign=top>Accepted By</td>
     </tr>
     <tr>
       <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);" valign=top>{$icode} {$iname}{$invemail}</td>
-      <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);" valign=top>&nbsp;</td>
-      <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);" valign=top>&nbsp; {$trcknbr}</td>
+      <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);" valign=top>{$courier}</td>
+      <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);" valign=top>{$couriernbr}<br>{$trcknbr}</td>
       <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);border-right: 1px solid rgba(0,0,0,1);" valign=top>{$ponbr} {$salesorder}</td>
       <td style="padding: 2px 3px 2px 3px;border-bottom: 1px solid rgba(0,0,0,1);">{$acceptedby}</td>
     </tr>

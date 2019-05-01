@@ -4,9 +4,115 @@ class javascriptr {
 
 function shipmentdocument ( $rqststr ) { 
 
+    $tt = treeTop;
+    
     $rtnThis = <<<RTNTHIS
 
+document.addEventListener('DOMContentLoaded', function() {
+    
+  if (byId('btnSDLookup')) { 
+    byId('btnSDLookup').addEventListener('click', function() { 
+      navigateSite('shipment-document');
+    }, false);
+  }
+      
+ if (byId('btnCreateNewSD')) { 
+    byId('btnCreateNewSD').addEventListener('click', function() { 
+      navigateSite('shipment-document/set-up-new-ship-doc');
+    }, false);
+  } 
 
+ if (byId('btnSaveSD')) { 
+    byId('btnSaveSD').addEventListener('click', function() { 
+      saveShipDoc();
+    }, false);
+  }
+
+ if ( byId('btnPrintSD') ) {
+   byId('btnPrintSD').addEventListener('click', function() { 
+       if ( byId('sdnbrency') ) {       
+         openOutSidePage("{$tt}/print-obj/shipment-manifest/"+byId('sdnbrency').value);
+      }
+    }, false);     
+ }
+            
+ if (byId('btnAddSegment')) { 
+    byId('btnAddSegment').addEventListener('click', function() { 
+      alert('BTN CLICK');
+    }, false);
+  }
+
+ if (byId('btnShipOverride')) { 
+    byId('btnShipOverride').addEventListener('click', function() { 
+      alert('BTN CLICK');
+    }, false);
+  }
+
+ if (byId('btnVoidSD')) { 
+    byId('btnVoidSD').addEventListener('click', function() { 
+      alert('BTN CLICK');
+    }, false);
+  }   
+         
+  if (byId('btnLookup')) { 
+    byId('btnLookup').addEventListener('click', function() { 
+      performLookup();
+    }, false);      
+  }            
+
+  if ( byId('qryShipDoc')) {            
+    byId("qryShipDoc").focus();
+  }   
+                                 
+}, false); 
+            
+
+function performLookup() { 
+   var obj = new Object();
+   var allfieldsfound = 1;
+   ( byId('qryShipDoc') ) ? obj['qryshipdoc'] = byId('qryShipDoc').value : allfieldsfound = 0;     
+   if ( allfieldsfound === 1 ) { 
+     var passdata = JSON.stringify(obj);
+     var mlURL = "/data-doers/lookup-ship-doc-qry";
+     universalAJAX("POST",mlURL,passdata,answerLookupShipDocQry,1);
+     console.log(passdata);
+  } else { 
+     alert('ERROR WITH PAYLOAD PACKAGE.  SEE A CHTNEASTERN INFORMATICS MEMBER');
+  }    
+}
+    
+function answerLookupShipDocQry ( rtndata ) { 
+    console.log(rtndata);
+}
+         
+function saveShipDoc() { 
+   var obj = new Object();
+   var allfieldsfound = 1;
+   ( byId('sdency') ) ? obj['sdency'] = byId('sdency').value : allfieldsfound = 0;
+   ( byId('sdcRqstShipDateValue') ) ? obj['rqstshpdate'] = byId('sdcRqstShipDateValue').value : allfieldsfound = 0;
+   ( byId('sdcRqstToLabDateValue') ) ? obj['tolabdate'] = byId('sdcRqstToLabDateValue').value : allfieldsfound = 0;   
+            
+   ( byId('sdcAcceptedBy') ) ? obj['acceptedby'] = byId('sdcAcceptedBy').value : allfieldsfound = 0;          
+   ( byId('sdcAcceptorsEmail') ) ? obj['acceptedemail'] = byId('sdcAcceptorsEmail').value : allfieldsfound = 0;   
+   ( byId('sdtrack') ) ? obj['tracknbr'] = byId('sdtrack').value : allfieldsfound = 0;   
+   ( byId('sdcPurchaseOrder') ) ? obj['ponbr'] = byId('sdcPurchaseOrder').value : allfieldsfound = 0;   
+   ( byId('sdcShipDocSalesOrder') ) ? obj['sonbr'] = byId('sdcShipDocSalesOrder').value : allfieldsfound = 0;   
+   ( byId('sdcInvestShippingAddress') ) ? obj['shipaddress'] = byId('sdcInvestShippingAddress').value : allfieldsfound = 0;   
+   ( byId('sdcShippingPhone') ) ? obj['shipphone'] = byId('sdcShippingPhone').value : allfieldsfound = 0;   
+   ( byId('sdcInvestBillingAddress') ) ? obj['billaddress'] = byId('sdcInvestBillingAddress').value : allfieldsfound = 0;   
+   ( byId('sdcBillPhone') ) ? obj['billphone'] = byId('sdcBillPhone').value : allfieldsfound = 0;   
+   ( byId('sdcPublicComments') ) ? obj['pubcomments'] = byId('sdcPublicComments').value : allfieldsfound = 0;          
+            
+  if ( allfieldsfound === 1 ) { 
+    var passdata = JSON.stringify(obj);
+    //var mlURL = "/data-doers/dialog-action-bg-definition-encounter-save";
+    //universalAJAX("POST",mlURL,passdta,answerBGDefinitionEncounterSave,2);
+    console.log(passdata);
+  } else { 
+    alert('ERROR WITH PAYLOAD PACKAGE.  SEE A CHTNEASTERN INFORMATICS MEMBER');
+  }                         
+}
+            
 function fillField(whichfield, whichvalue, whichdisplay) {
   if (byId(whichfield)) { 
      byId(whichfield).value = whichdisplay; 

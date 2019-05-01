@@ -855,7 +855,16 @@ function investigatorhead($whichobj, $rqst) {
     if ($rs->rowCount() < 1) { 
        $msg = "QUERY OBJECT NOT FOUND";    
     } else { 
-       $dta = $rs->fetch(PDO::FETCH_ASSOC);       
+       $dta = $rs->fetch(PDO::FETCH_ASSOC); 
+       
+       $courierSQL = "SELECT courierid, ucase(trim(ifnull(courier_name,''))) as courier, ucase(trim(ifnull(courier_num,''))) as couriernbr, trim(ifnull(courier_comment,'')) as couriercmt  FROM vandyinvest.eastern_courier where investid = :investid and ( trim(ifnull(courier_num,'')) <> '' OR courier_name like '%local%' )  order by courierid desc";
+       $courierRS = $conn->prepare($courierSQL);
+       $courierRS->execute(array(':investid' => strtoupper($whichobj)));
+
+       while ($r = $courierRS->fetch(PDO::FETCH_ASSOC)) { 
+           $dta['courier'][] = $r;
+       }        
+       
        $itemsfound = 1;
        $responseCode = 200;
        $msg = "";

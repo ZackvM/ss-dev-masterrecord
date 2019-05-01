@@ -331,7 +331,20 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #sdcBillPhone { width: 30vw; }
 #sdcPublicComments { width: 35vw; height: 20.5vh; }
 
+#segDemarkation { padding: 1vh 0; text-align: center; font-size: 2vh; color: rgba({$this->color_zackgrey},1); border-top: 4px double rgba({$this->color_mgrey},1); border-bottom: 4px double rgba({$this->color_mgrey},1); background: rgba({$this->color_lgrey},1); }
 
+.segmentInfoHolder { border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); width: 24vw; height: 9vh; }
+.segmentInfoHolder:hover { background: rgba({$this->color_lamber},1); }
+.action-icon { color: rgba({$this->color_zackgrey},1); } 
+.action-icon:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
+
+.delbtnholder { width: 2vw; text-align: center; } 
+.pulledyes { font-size: 1.1vh; text-align: right; border-bottom: 1px solid rgba({$this->color_mgrey},1); }
+.pulledno { font-size: 1.1vh; }
+.segbgsdsp { font-size: 1.6vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); }
+.segdxdesig { font-size: 1.3vh; color: rgba({$this->color_cornflowerblue},1); }
+.segprpdsp { font-size: 1.2vh; color: rgba({$this->color_mgrey},1); }
+.seginvdsp { font-size: 1.2vh; color: rgba({$this->color_mgrey},1); }
 
 STYLESHEET;
 return $rtnThis;
@@ -1272,6 +1285,7 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #sdcPublicComments {width: 62vw; height: 10vh; }
 
 #TQAnnouncement { font-family: Roboto; font-size:  2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); border-top: 1px solid rgba({$this->color_zackgrey},1);  }
+#TQWarning { font-family: Roboto; font-size:  1.3vh; font-weight: bold; color: rgba({$this->color_bred},1); }
 
 #sdcInvestCode { width: 6vw; }
 #sdcInvestName { width: 18vw; }
@@ -1287,6 +1301,7 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #sdcInvestBillingAddress {width: 29.7vw; height: 18vh; resize:none; }
 #sdcBillPhone { width: 29.7vw;  }
 #sdcBillEmail { width: 14.8vw; }
+#sdcCourierInfo { width: 25vw; }
 
 #sdcSegmentListDiv {border: none; height: 72vh; overflow: auto; }
 
