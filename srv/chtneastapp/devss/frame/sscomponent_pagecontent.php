@@ -374,7 +374,8 @@ CALENDAR;
           $segmentTbl .= "</table>";
 
         $innerDialog = <<<DIALOGINNER
-<form id=frmShipDocCreate><table border=0  id=sdcMainHolderTbl>
+<form id=frmShipDocCreate>
+<table border=0  id=sdcMainHolderTbl>
     <tr><td>Ship Doc</td><td>Shipment Accepted By *</td><td>Acceptor's Email *</td><td>Shipment Purchase Order # *</td><td>Requested Ship Date *</td><td>Date to Pull *</td><td>Segments For Shipment *</td></tr>
     <tr>
             <td><input type=text id=sdcShipDocNbr READONLY value="NEW"></td>
@@ -2994,17 +2995,208 @@ function bldShipDocEditPage( $whichsdency ) {
 
  $pdta = array(); 
  $pdta['sdency'] = $whichsdency; 
- $payload = json_encode($payload);
+ $payload = json_encode($pdta);
  $sd = json_decode(callrestapi("POST", dataTree . "/data-doers/shipment-document-data",serverIdent, serverpw, $payload), true); 
- 
- $dspsd = json_encode($sd);
-    
-    
+ if ( (int)$sd['ITEMSFOUND'] > 0 ) {
+   $sdnbr = substr('000000' . $sd['DATA']['sdhead'][0]['shipdocrefid'],-6);
+   $sdstatus =  $sd['DATA']['sdhead'][0]['sdstatus']; // NEW // OPEN // LOCKED-PULLED // CLOSED-SHIPPED
+   //TODO: MAKE THIS DYNAMIC
+   switch ( $sdstatus ) { 
+     case 'NEW':
+         $topcellclass = "sdnew";
+         break;
+     case 'OPEN':
+         $topcellclass = "sdopen";
+         break;
+     case 'LOCKED':
+         $topcellclass = "sdlocked";
+         break;
+     case 'CLOSED':
+         $topcellclass = "sdclosed";
+         break;
+   }
+   $sdstatusdate = $sd['DATA']['sdhead'][0]['statusdate'];
+   $sdacceptedby = $sd['DATA']['sdhead'][0]['acceptedby'];
+   $sdacceptedbyemail = $sd['DATA']['sdhead'][0]['acceptedbyemail'];
+   $sdponbr = $sd['DATA']['sdhead'][0]['ponbr'];
+   $rqstshipdate = $sd['DATA']['sdhead'][0]['rqstshipdate'];
+   $rqstshipdateval = $sd['DATA']['sdhead'][0]['rqstshipdateval'];
+   $rqstpulldate = $sd['DATA']['sdhead'][0]['rqstpulldate'];
+   $rqstpulldateval = $sd['DATA']['sdhead'][0]['rqstpulldateval'];
+   $sdsetupon = $sd['DATA']['sdhead'][0]['setupon'];
+   $sdsetupby = $sd['DATA']['sdhead'][0]['setupby'];
+   $sdsonbr = ( (int)$sd['DATA']['sdhead'][0]['salesorder'] === 0 ) ? "" : substr('000000' .  (int)$sd['DATA']['sdhead'][0]['salesorder'], -6);
+   $sdsoon =  $sd['DATA']['sdhead'][0]['salesorderon'];
+   $sdsoby =  $sd['DATA']['sdhead'][0]['salesorderby'];
+   $sdshiptrck = $sd['DATA']['sdhead'][0]['shipmenttrackingnbr'];
+   $sdcomments = $sd['DATA']['sdhead'][0]['comments'];
+   $sdinvcode =  $sd['DATA']['sdhead'][0]['investcode'];
+   $sdiname =  $sd['DATA']['sdhead'][0]['investname']; //IF BLANK - HISTORIC DATA
+   $sdiemail =  $sd['DATA']['sdhead'][0]['investemail']; //IF BLANK - HISTORIC DATA
+   $sdidiv =  $sd['DATA']['sdhead'][0]['investdivision']; //IF BLANK - HISTORIC DATA
+   $sdiinstitution =  $sd['DATA']['sdhead'][0]['investinstitution']; //IF BLANK - HISTORIC DATA
+   $sdiinstittype =  $sd['DATA']['sdhead'][0]['institutiontype']; //IF BLANK - HISTORIC DATA
+   $sditqstatus =  $sd['DATA']['sdhead'][0]['tqstatusoncreation']; //IF BLANK - HISTORIC DATA
+   $sdshpadd =  $sd['DATA']['sdhead'][0]['shipmentaddress'];
+   $sdshpphn =  $sd['DATA']['sdhead'][0]['shipmentphone'];
+   $sdbladd =  $sd['DATA']['sdhead'][0]['billaddress'];
+   $sdblphn =  $sd['DATA']['sdhead'][0]['billphone'];
+
+   $shpTbl = <<<SHTBL
+<table><tr><td class=sdFieldLabel>Shipping Address *</td></tr><tr><td><TEXTAREA class=sdinput id=sdcInvestShippingAddress>{$sdshpadd}</TEXTAREA></td></tr><tr><td class=sdFieldLabel>Shipping Phone * (format: '(123) 456-7890 x0000' / x is optional)</td></tr><tr><td><input type=text class=sdinput id=sdcShippingPhone value="{$sdshpphn}"></td></tr></table>
+SHTBL;
+
+   $bilTbl = <<<SHTBL
+<table><tr><td class=sdFieldLabel>Billing Address *</td></tr><tr><td><TEXTAREA class=sdinput id=sdcInvestBillingAddress>{$sdbladd}</TEXTAREA></td></tr><tr><td class=sdFieldLabel>Billing Phone * (format: '(123) 456-7890 x0000' / x is optional)</td></tr><tr><td><input type=text class=sdinput id=sdcBillPhone value="{$sdblphn}"></td></tr></table>
+SHTBL;
+
+$shCalendar = buildcalendar('shipSDCFrom'); 
+$shpCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=hidden id=sdcRqstShipDateValue value="{$rqstshipdateval}"><input type=text READONLY id=sdcRqstShipDate class="sdinput" value="{$rqstshipdate}"></div>
+  <div class=valueDropDown id=sdshpcal><div id=rShpCalendar>{$shCalendar}</div></div>
+</div>
+CALENDAR;
+
+$lbCalendar = buildcalendar('shipSDCToLab'); 
+$labCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=hidden id=sdcRqstToLabDateValue value="{$rqstpulldateval}"><input type=text READONLY id=sdcRqstToLabDate class="sdinput" value="{$rqstpulldate}"></div>
+  <div class=valueDropDown id=tolabcal><div id=rToLabCalendar>{$lbCalendar}</div></div>
+</div>
+CALENDAR;
+
+//GET PO ALLOW VALUES
+          $poarr = json_decode(callrestapi("GET", dataTree . "/global-menu/ship-doc-po-values",serverIdent,serverpw),true);
+          $po = "<table border=0 class=menuDropTbl>";
+          foreach ($poarr['DATA'] as $poval) { 
+            $po .= "<tr><td onclick=\"fillField('sdcPurchaseOrder','{$poval['lookupvalue']}','{$poval['menuvalue']}');\" class=ddMenuItem>{$poval['menuvalue']}</td></tr>";
+          }
+          $po .= "</table>";
+
+$sosetup = ( trim($sdsoon) !== "" || trim($sdsoby) !== "") ? ( trim($sdsoby) !== "" ) ?  "{$sdsoon} :: {$sdsoby}" : "{$sdsoon}" : "";
+$sdsetup = ( trim($sdsetupon) !== "" || trim($sdsetupby) !== "") ? ( trim($sdsetupby) !== "" ) ?  "{$sdsetupon} :: {$sdsetupby}" : "{$sdsetupon}" : "";
+
+
+//<td><input type=text id=sdcShipDocStsDte READONLY value="{$sdstatusdate}"></td>
+   $sdheadtbl = <<<SDHDR
+<table border=0>
+    <tr><td class=sdFieldLabel>Shipdoc #</td>
+        <td class=sdFieldLabel>Requested Ship Date *</td>
+        <td class=sdFieldLabel>Date to Pull *</td>
+        <td class=sdFieldLabel>Accepted By *</td>
+        <td class=sdFieldLabel>Acceptor's Email *</td>
+        <td class=sdFieldLabel>Setup On :: By</td>
+        <td class=sdFieldLabel>(Scan) Ship Tracking #</td>
+        <td class=sdFieldLabel>Shipment Purchase Order # *</td>
+       <td class=sdFieldLabel>Sales Order # </td>
+       <td class=sdFieldLabel>Sales Order On :: By</td></tr>
+    <tr>
+            <td id=sdnbrdsp>{$sdnbr}</td>
+            <td>{$shpCalendar}</td>
+            <td>{$labCalendar}</td>
+            <td><input type=text id=sdcAcceptedBy class=sdinput value="{$sdacceptedby}"></td>
+            <td><input type=text id=sdcAcceptorsEmail class=sdinput value="{$sdacceptedbyemail}"></td>
+            <td><input type=text READONLY id=sdsetupdsp class=sdinput value="{$sdsetup}"></td>
+            <td><input type=text id=sdtrack class=sdinput value="{$sdshiptrck}"></td>
+            <td><div class=menuHolderDiv><input type=text id=sdcPurchaseOrder class=sdinput value="{$sdponbr}"><div class=valueDropDown style="min-width: 20vw;">{$po}</div></div></td>
+            <td><input type=text id=sdcShipDocSalesOrder class=sdinput value="{$sdsonbr}"></td>
+            <td><input type=text id=sdShipDocSalesSetup class=sdinput READONLY value="{$sosetup}"></td>
+    </tr>
+</table>
+
+<table>
+<tr>
+  <td class=sdFieldLabel>Invest #</td>
+  <td class=sdFieldLabel>Invest Name</td>
+  <td class=sdFieldLabel>Invest Email</td>
+  <td class=sdFieldLabel>Institution</td>
+  <td class=sdFieldLabel>Institution Type</td>
+  <td class=sdFieldLabel>Primary Division</td>
+  <td class=sdFieldLabel>TQ Status at Setup</td>
+</tr>
+<tr>
+  <td id=sdinvcodedsp>{$sdinvcode}</td>
+  <td><input type=text id=sdcIName class=sdinput value="{$sdiname}"></td>
+  <td><input type=text id=sdcIEmail class=sdinput value="{$sdiemail}"></td>
+  <td><input type=text id=sdcInstitution class=sdinput value="{$sdiinstitution}"></td>
+  <td><input type=text id=sdcInstitutioniType class=sdinput value="{$sdiinstittype}"></td>
+  <td><input type=text id=sdcIDivision class=sdinput value="{$sdidiv}" READONLY></td>
+  <td><input type=text READONLY id=sdcTQStatus class=sdinput value="{$sditqstatus}"></td>
+</tr>
+</table>
+<table>
+  <tr><td valign=top>
+   {$shpTbl}
+  </td><td valign=top> 
+   {$bilTbl}
+  </td> 
+  <td valign=top>
+    <table><tr><td class=sdFieldLabel>Public Comments</td></tr><tr><td><textarea class=sdinput id=sdcPublicComments>{$sdcomments}</TEXTAREA></td></tr></table>
+  </td>
+</tr>
+</table>
+SDHDR;
+
+ //{"DATA":{"sdhead":[]
+ //,"sddetail":[{"shipdocDetId":64068,"shipdocrefId":5435,"segmentid":448484,"addtosdon":"04\/22\/2019","addtosdby":"proczack","pulledon":"","pulledby":"","bgs":"87106T001","dxdesig":"MALIGNANT :: THYROID :: CARCINOMA (FOLLICULAR)","metric":".8g","preparation":"PB \/ FFPE","qty":1,"inventorylocation":"Walk-In Cooler :: FFPE 02 (CB 793) :: SHELF 1 (SH-823) :: FFPE BIN (BN-829) [STORAGE CONTAINER]"},{"shipdocDetId":64069,"shipdocrefId":5435,"segmentid":449032,"addtosdon":"04\/22\/2019","addtosdby":"proczack","pulledon":"","pulledby":"","bgs":"87106T004","dxdesig":"MALIGNANT :: THYROID :: CARCINOMA (FOLLICULAR)","metric":"","preparation":"SLIDE \/ H&E Slide","qty":1,"inventorylocation":"OVERRIDE CHECKIN PROCESS"},{"shipdocDetId":64070,"shipdocrefId":5435,"segmentid":449033,"addtosdon":"04\/22\/2019","addtosdby":"proczack","pulledon":"","pulledby":"","bgs":"87106T005","dxdesig":"MALIGNANT :: THYROID :: CARCINOMA (FOLLICULAR)","metric":"","preparation":"SLIDE \/ H&E Slide","qty":1,"inventorylocation":"OVERRIDE CHECKIN PROCESS"},{"shipdocDetId":64071,"shipdocrefId":5435,"segmentid":449034,"addtosdon":"04\/22\/2019","addtosdby":"proczack","pulledon":"","pulledby":"","bgs":"87106T006","dxdesig":"MALIGNANT :: THYROID :: CARCINOMA (FOLLICULAR)","metric":"","preparation":"SLIDE \/ H&E Slide","qty":1,"inventorylocation":"OVERRIDE CHECKIN PROCESS"}]}} 
+
+
+$detailSegmentTbl = "<table><tr>";
+$cellRowCntr = 0;
+foreach ( $sd['DATA']['sddetail'] as $dkey => $dval ) { 
+  if ( $cellRowCntr === 3 ) { 
+    $cellRowCntr = 0; 
+    $detailSegmentTbl .= "</tr><tr>";
+  }
+
+  $infoTbl = <<<INFOTBL
+<table>
+<tr><td>{$dval['bgs']}</td></tr>
+<tr><td>{$dval['dxdesig']}</td></tr>
+</table>
+INFOTBL;
+
+  $innerDet = <<<INNDETTBL
+<table>
+<tr><td>DELBTN</td><td>{$infoTbl}</td></tr>
+</table>
+INNDETTBL;
+
+  $detailSegmentTbl .= "<td style=\"border: 1px solid #000;\">{$innerDet}</td>";
+  $cellRowCntr++;
+}
+$detailSegmentTbl .= "</tr></table>";
+
+
+
+
 $sdPage = <<<SDPAGE
-<table border=1 id=mainShipDocHoldTable>
-  <tr><td>{$dspsd}</td></tr>
+<table border=0 id=mainShipDocHoldTable>
+  <tr><td id=banner class={$topcellclass} colspan=2><table border=0 width=100%><tr><td id=sdnbrdsp>{$sdstatus}</td></tr></table></td></tr>
+  <tr><td><div id=shipdocheaderdiv>{$sdheadtbl}</div></td></tr>
+  <tr><td style="padding-top: 2vh; ">SEGMENT DETAILS</td></tr>
+  <tr><td> {$detailSegmentTbl} </td></tr> 
 </table>
 SDPAGE;
+
+
+
+
+ } else { 
+     foreach ($sd['MESSAGE'] as $value) { 
+       $errorList .= "<br><h3>{$value}</h3>";
+     }
+$sdPage = <<<SDPAGE
+<table border=1 id=mainShipDocHoldTable>
+  <tr><td>{$errorList}</td></tr>
+</table>
+SDPAGE;
+
+ }
+
+
+
     return $sdPage;
 }
 

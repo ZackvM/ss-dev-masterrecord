@@ -46,10 +46,34 @@ class datadoers {
       if ( $authuser === "chtneast" && $authpw === serverpw ) { 
         require(serverkeys . "/sspdo.zck");
         $pdta = json_decode($passdata, true);
-        $dta = $passdata;
-        $msg = $authuser . " ZZZZ";
+        $sdnbr = cryptservice( $pdta['sdency'] , 'd');
+
+        $sdHeadSQL = "SELECT shipdocrefid, ifnull(sdstatus,'CLOSED') as sdstatus, ifnull(date_format(statusdate,'%m/%d/%Y'),'') as statusdate, ifnull(acceptedby,'') as acceptedby, ifnull(acceptedbyemail,'') as acceptedbyemail, ifnull(ponbr,'') as ponbr,ifnull(date_format(rqstshipdate,'%Y-%m-%d'),'') as rqstshipdateval, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as rqstshipdate, ifnull(date_format(rqstpulldate,'%Y-%m-%d'),'') as rqstpulldateval, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as rqstpulldate, ifnull(comments,'') as comments, ifnull(investcode,'') as investcode, ifnull(investname,'') as investname, ifnull(investemail,'') as investemail, ifnull(investinstitution,'') as investinstitution, ifnull(institutiontype,'') as institutiontype, ifnull(investdivision,'') as investdivision, ifnull(oncreationinveststatus,'') as tqstatusoncreation, ifnull(shipmentTrackingNbr,'') as shipmenttrackingnbr, ifnull(shipAddy,'') as shipmentaddress, ifnull(shipphone,'') as shipmentphone, ifnull(billAddy,'') as billaddress, ifnull(billphone,'') as billphone, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby, ifnull(salesorder,0) as salesorder, ifnull(SOBY,'') as salesorderby, ifnull(date_format(SOON,'%m/%d/%Y'),'') as salesorderon FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
+        $sdHeadRS = $conn->prepare($sdHeadSQL);
+        $sdHeadRS->execute(array(':sdnbr' => $sdnbr));
+        if ( $sdHeadRS->rowCount() > 0 ) { 
+          $itemsfound = $sdHeadRS->rowCount();
+          while ($s = $sdHeadRS->fetch(PDO::FETCH_ASSOC)) { 
+            $dta['sdhead'][] = $s;
+          }
+     
+          $detSQL = "SELECT sdd.shipdocDetId, sdd.shipdocrefId, sg.segmentid, ifnull(date_format(sdd.addon,'%m/%d/%Y'),'') as addtosdon, ifnull(sdd.addedBy,'') as addtosdby, ifnull(date_format(sdd.pulledOn,'%m/%d/%Y'),'') as pulledon, ifnull(sdd.pulledby,'') as pulledby , sg.bgs, ucase(trim(concat(ifnull(bs.tissType,''), if(ifnull(bs.anatomicSite,'')='','',concat(' :: ',ifnull(bs.anatomicSite,''))) , if(ifnull(bs.subSite,'')='','', concat(' (',ifnull(bs.subSite,''),')')) , if(ifnull(bs.diagnosis,'')='','',concat(' :: ',ifnull(bs.diagnosis,''))), if(ifnull(bs.subdiagnos,'')='','',concat(' (', ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.metsSite,'')='','',concat(' METS: ',ifnull(bs.metsSite,'')))))) as dxdesig,  if( trim(ifnull(sg.metric,'')) = '','',concat( ifnull(sg.metric,''), ifnull(uom.dspvalue,''))) as metric, concat(ifnull(sg.prepMethod,''), if(ifnull(sg.Preparation,'')='','',concat(' / ',ifnull(sg.Preparation,'')))) preparation, ifnull(sg.qty,1) as qty, ifnull(sg.scannedLocation,'') as inventorylocation FROM masterrecord.ut_shipdocdetails sdd left join masterrecord.ut_procure_segment sg on sdd.segID = sg.segmentId left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricUOM = uom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where sdd.shipdocrefid = :sdnbr";
+          $detRS = $conn->prepare($detSQL); 
+          $detRS->execute(array(':sdnbr' => $sdnbr));
+          if ( $detRS->rowCount() > 0 ) { 
+            while ($sd = $detRS->fetch(PDO::FETCH_ASSOC)) { 
+              $dta['sddetail'][] = $sd;
+            }
+          } else { 
+              $dta['sddetail'][] = null;
+          }
+          $responseCode = 200;    
+        } else { 
+          (list( $errorind, $msgArr[] ) = array(1 , "ERROR:  NO SHIPMENT DOCUMENT FOUND (REQUESTED: " . substr('000000' . $sdnbr,-6) . ")"));
+          $responseCode = 404;
+        }
       } 
-      //$msg = $msgArr;
+      $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows; 

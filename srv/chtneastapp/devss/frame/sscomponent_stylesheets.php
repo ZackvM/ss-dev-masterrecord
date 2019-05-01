@@ -286,10 +286,53 @@ STYLESHEET;
 
 function shipmentdocument($mobileind) { 
 $rtnThis = <<<STYLESHEET
-body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.5vh; } 
+body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.4vh; } 
 
-#mainShipDocHoldTable { width: 98vw; box-sizing: border-box; margin-left: 1vw; margin-right: 1vw; }
-   
+#mainShipDocHoldTable { width: 98vw; box-sizing: border-box; margin-left: 1vw; margin-right: 1vw; border: 1px solid rgba({$this->color_dblue},1); }
+#mainShipDocHoldTable .sdnew { background: rgba({$this->color_darkgreen},1); color: rgba({$this->color_white},1); }
+#mainShipDocHoldTable .sdopen { background: rgba({$this->color_darkgreen},1); color: rgba({$this->color_white},1); }
+#mainShipDocHoldTable .sdlocked { background: rgba({$this->color_mamber},1); color: rgba({$this->color_zackgrey},1); }
+#mainShipDocHoldTable .sdclosed { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_dblue},1); }
+
+
+.sdFieldLabel { font-size: 1.2vh; color: rgba({$this->color_zackgrey},1); border-bottom: 1px solid rgba({$this->color_mgrey},1);  }
+.sdinput { padding: .7vh .5vw; font-size: 1.3vh; }
+
+#sdnbrdsp {font-size: 2vh; font-weight: bold; text-align: center; padding-top: 8px; padding-bottom: 8px; width: 5vw; }
+#sdcRqstShipDate {width: 7vw; }
+#sdcRqstToLabDate {width: 7vw; }
+#sdsetupdsp { width: 10vw; }
+#sdtrack { width: 18vw; }
+#sdShipDocSalesSetup { width: 10vw; }
+#sdcPurchaseOrder { width: 10vw; }
+#sdcShipDocSalesOrder { width: 5vw; text-align: right; } 
+
+
+#sdshpcal {min-width: 17vw; }
+#tolabcal { min-width: 17vw; }
+#sdcShipDocNbr { width: 6vw }
+#sdcShipDocStsDte { width: 8vw; }
+#sdcAcceptedBy { width: 8vw; }
+#sdcAcceptorsEmail { width: 15vw; }
+#sdcShipDocSetupOn { width: 12vw; }
+
+
+#sdinvcodedsp {font-size: 2vh; font-weight: bold; text-align: center; padding-top: 8px; padding-bottom: 8px; width: 5vw; }
+#sdcIName { width: 16vw; }
+#sdcIEmail {width: 20vw; }
+#sdcTQStatus { width: 5.5vw; }
+#sdcInstitution { width: 25vw; }
+#sdcInstitutioniType { width: 12vw; }
+#sdcIDivision { width: 12vw; }
+
+#sdcInvestShippingAddress { width: 30vw; height: 15vh; }
+#sdcInvestBillingAddress { width: 30vw; height: 15vh; }
+#sdcShippingPhone {width: 30vw; }
+#sdcBillPhone { width: 30vw; }
+#sdcPublicComments { width: 35vw; height: 20.5vh; }
+
+
+
 STYLESHEET;
 return $rtnThis;
     
