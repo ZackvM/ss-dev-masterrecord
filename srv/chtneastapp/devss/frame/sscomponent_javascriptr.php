@@ -86,32 +86,31 @@ function answerLookupShipDocQry ( rtndata ) {
 }
          
 function saveShipDoc() { 
-   var obj = new Object();
-   var allfieldsfound = 1;
-   ( byId('sdency') ) ? obj['sdency'] = byId('sdency').value : allfieldsfound = 0;
-   ( byId('sdcRqstShipDateValue') ) ? obj['rqstshpdate'] = byId('sdcRqstShipDateValue').value : allfieldsfound = 0;
-   ( byId('sdcRqstToLabDateValue') ) ? obj['tolabdate'] = byId('sdcRqstToLabDateValue').value : allfieldsfound = 0;   
-            
-   ( byId('sdcAcceptedBy') ) ? obj['acceptedby'] = byId('sdcAcceptedBy').value : allfieldsfound = 0;          
-   ( byId('sdcAcceptorsEmail') ) ? obj['acceptedemail'] = byId('sdcAcceptorsEmail').value : allfieldsfound = 0;   
-   ( byId('sdtrack') ) ? obj['tracknbr'] = byId('sdtrack').value : allfieldsfound = 0;   
-   ( byId('sdcPurchaseOrder') ) ? obj['ponbr'] = byId('sdcPurchaseOrder').value : allfieldsfound = 0;   
-   ( byId('sdcShipDocSalesOrder') ) ? obj['sonbr'] = byId('sdcShipDocSalesOrder').value : allfieldsfound = 0;   
-   ( byId('sdcInvestShippingAddress') ) ? obj['shipaddress'] = byId('sdcInvestShippingAddress').value : allfieldsfound = 0;   
-   ( byId('sdcShippingPhone') ) ? obj['shipphone'] = byId('sdcShippingPhone').value : allfieldsfound = 0;   
-   ( byId('sdcInvestBillingAddress') ) ? obj['billaddress'] = byId('sdcInvestBillingAddress').value : allfieldsfound = 0;   
-   ( byId('sdcBillPhone') ) ? obj['billphone'] = byId('sdcBillPhone').value : allfieldsfound = 0;   
-   ( byId('sdcPublicComments') ) ? obj['pubcomments'] = byId('sdcPublicComments').value : allfieldsfound = 0;          
-            
-  if ( allfieldsfound === 1 ) { 
-    var passdata = JSON.stringify(obj);
-    //var mlURL = "/data-doers/dialog-action-bg-definition-encounter-save";
-    //universalAJAX("POST",mlURL,passdta,answerBGDefinitionEncounterSave,2);
-    console.log(passdata);
-  } else { 
-    alert('ERROR WITH PAYLOAD PACKAGE.  SEE A CHTNEASTERN INFORMATICS MEMBER');
-  }                         
+  var elements = byId("frmSDHeadSection").elements;
+  var dta = new Object();
+  for (var i = 0; i < elements.length; i++) { 
+    if ( parseInt(elements[i].dataset.frminclude) === 1 ) {
+      dta[elements[i].id] = elements[i].value.trim();      
+    }
+  }
+  var passdata = JSON.stringify(dta);
+  var mlURL = "/data-doers/shipdoc-screen-save";
+  universalAJAX("POST",mlURL,passdata,answerShipDocScreenSave,1);
 }
+
+function answerShipDocScreenSave( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("SHIPMENT DOCUMENT ERROR:\\n"+dspMsg);
+   } else { 
+    alert('SHIP-DOC HEADER SUCCESSFULLY SAVED.  YOUR SCREEN WILL NOW REFRESH');
+    location.reload(true); 
+  }
+} 
             
 function fillField(whichfield, whichvalue, whichdisplay) {
   if (byId(whichfield)) { 

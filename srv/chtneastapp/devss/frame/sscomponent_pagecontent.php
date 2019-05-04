@@ -285,6 +285,7 @@ BGTBL;
 DIALOGINNER;
         $footerBar = "";
       break;
+
       case 'dataCoordinatorShipDocCreate': 
         $si = serverIdent;
         $sp = serverpw;
@@ -374,13 +375,17 @@ CALENDAR;
           $segmentTbl .= "</table>";
 
           $cdrop = "<table border=0 class=menuDropTbl>";
-          foreach ( $idta['DATA']['courier'] as $cval) { 
-             $courierDsp =  $cval['courier'];
-             $courierDsp .= ( trim($cval['couriernbr']) !== "" ) ? " :: " . trim($cval['couriernbr']) : "";
-             $courierDsp .= ( trim($cval['couriercmt']) !== "" ) ? "  (" . trim($cval['couriercmt']) . ")" : "";
-             $mcourierDsp =  $cval['courier'];
-             $mcourierDsp .= ( trim($cval['couriernbr']) !== "" ) ? " :: " . trim($cval['couriernbr']) : "";
-             $cdrop .= "<tr><td onclick=\"fillField('sdcCourierInfo','{$cval['courierid']}','{$mcourierDsp}');\" class=ddMenuItem>{$courierDsp}</td></tr>";
+          if ( count($idta['DATA']['courier']) > 0 ) {
+            foreach ( $idta['DATA']['courier'] as $cval) { 
+              $courierDsp =  $cval['courier'];
+              $courierDsp .= ( trim($cval['couriernbr']) !== "" ) ? " :: " . trim($cval['couriernbr']) : "";
+              $courierDsp .= ( trim($cval['couriercmt']) !== "" ) ? "  (" . trim($cval['couriercmt']) . ")" : "";
+              $mcourierDsp =  $cval['courier'];
+              $mcourierDsp .= ( trim($cval['couriernbr']) !== "" ) ? " :: " . trim($cval['couriernbr']) : "";
+              $cdrop .= "<tr><td onclick=\"fillField('sdcCourierInfo','{$cval['courierid']}','{$mcourierDsp}');\" class=ddMenuItem>{$courierDsp}</td></tr>";
+            }
+          } else { 
+            $cdrop .= "<tr><td>THERE IS NO COURIER INFORMATION LISTED FOR INVESTIGATOR {$dta['inv']}</td></tr>";
           }
           $cdrop .= "</table>";
           $couriermnu = "<table><tr><td>Courier</td></tr><tr><td><div class=menuHolderDiv><input type=hidden id=sdcCourierInfoValue value=\"\"><input type=text id=sdcCourierInfo value=\"\"><div class=valueDropDown style=\"min-width: 50vw;\">{$cdrop}</div></div></td></tr></table>";
@@ -3011,10 +3016,7 @@ RTNTHIS;
 return $rtnThis;
 }
 
-function bldShipDocLookup() { 
-    
-    
-    
+function bldShipDocLookup() {  
     
     $thisPage = <<<THISPAGE
             <table>
@@ -3081,18 +3083,42 @@ function bldShipDocEditPage( $whichsdency ) {
    $sdbladd =  $sd['DATA']['sdhead'][0]['billaddress'];
    $sdblphn =  $sd['DATA']['sdhead'][0]['billphone'];
 
+   $sdcourier =  $sd['DATA']['sdhead'][0]['courier'];
+   $sdcouriernbr =  $sd['DATA']['sdhead'][0]['couriernbr'];
+   $valcourier = ( trim($sdcourier) !== "" ) ? trim($sdcourier) : "";
+   $valcourier .= ( trim($sdcouriernbr) !== "" ) ? ( trim($valcourier) !== "" ) ? " :: {$sdcouriernbr}" : "{$sdcouriernbr}" : "";
+   $tqcourierid =  ( (int)$sd['DATA']['sdhead'][0]['tqcourierid'] <> 0 ) ? (int)$sd['DATA']['sdhead'][0]['tqcourierid'] : "";
+
+   $idta = json_decode(callrestapi("GET", dataTree . "/investigator-head/{$sdinvcode}", serverIdent, serverpw),true);
+   $cdrop = "<table border=0 class=menuDropTbl>";
+   if ( count($idta['DATA']['courier']) > 0 ) {
+     foreach ( $idta['DATA']['courier'] as $cval) { 
+       $courierDsp =  $cval['courier'];
+       $courierDsp .= ( trim($cval['couriernbr']) !== "" ) ? " :: " . trim($cval['couriernbr']) : "";
+       $courierDsp .= ( trim($cval['couriercmt']) !== "" ) ? "  (" . trim($cval['couriercmt']) . ")" : "";
+       $mcourierDsp =  $cval['courier'];
+       $mcourierDsp .= ( trim($cval['couriernbr']) !== "" ) ? " :: " . trim($cval['couriernbr']) : "";
+       $cdrop .= "<tr><td onclick=\"fillField('sdcCourierInfo','{$cval['courierid']}','{$mcourierDsp}');\" class=ddMenuItem>{$courierDsp}</td></tr>";
+     }
+   } else { 
+     $cdrop .= "<tr><td>THERE IS NO COURIER INFORMATION LISTED FOR INVESTIGATOR {$sdinvcode}</td></tr>";
+   }
+   $cdrop .= "</table>";
+   $couriermnu = "<table cellpadding=0 cellspacing=0 border=0><tr><td><div class=menuHolderDiv><input type=hidden id=sdcCourierInfoValue value=\"{$tqcourierid}\" data-frminclude=1><input type=text id=sdcCourierInfo class=sdinput value=\"{$valcourier}\" READONLY><div class=valueDropDown style=\"min-width: 50vw;\">{$cdrop}</div></div></td></tr></table>";
+
+
    $shpTbl = <<<SHTBL
-<table><tr><td class=sdFieldLabel>Shipping Address *</td></tr><tr><td><TEXTAREA class=sdinput id=sdcInvestShippingAddress>{$sdshpadd}</TEXTAREA></td></tr><tr><td class=sdFieldLabel>Shipping Phone * (format: '(123) 456-7890 x0000' / x is optional)</td></tr><tr><td><input type=text class=sdinput id=sdcShippingPhone value="{$sdshpphn}"></td></tr></table>
+<table><tr><td class=sdFieldLabel>Shipping Address *</td></tr><tr><td><TEXTAREA class=sdinput id=sdcInvestShippingAddress data-frminclude=1>{$sdshpadd}</TEXTAREA></td></tr><tr><td class=sdFieldLabel>Shipping Phone * (format: '(123) 456-7890 x0000' / x is optional)</td></tr><tr><td><input type=text class=sdinput id=sdcShippingPhone value="{$sdshpphn}" data-frminclude=1></td><tr><td class=sdFieldLabel>Courier</td></tr><tr><td>{$couriermnu}</td></tr></table>
 SHTBL;
 
    $bilTbl = <<<SHTBL
-<table><tr><td class=sdFieldLabel>Billing Address *</td></tr><tr><td><TEXTAREA class=sdinput id=sdcInvestBillingAddress>{$sdbladd}</TEXTAREA></td></tr><tr><td class=sdFieldLabel>Billing Phone * (format: '(123) 456-7890 x0000' / x is optional)</td></tr><tr><td><input type=text class=sdinput id=sdcBillPhone value="{$sdblphn}"></td></tr></table>
+<table><tr><td class=sdFieldLabel>Billing Address *</td></tr><tr><td><TEXTAREA class=sdinput id=sdcInvestBillingAddress data-frminclude=1>{$sdbladd}</TEXTAREA></td></tr><tr><td class=sdFieldLabel>Billing Phone * (format: '(123) 456-7890 x0000' / x is optional)</td></tr><tr><td><input type=text class=sdinput id=sdcBillPhone value="{$sdblphn}" data-frminclude=1></td></tr></table>
 SHTBL;
 
 $shCalendar = buildcalendar('shipSDCFrom'); 
 $shpCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
-  <div class=valueHolder><input type=hidden id=sdcRqstShipDateValue value="{$rqstshipdateval}"><input type=text READONLY id=sdcRqstShipDate class="sdinput" value="{$rqstshipdate}"></div>
+  <div class=valueHolder><input type=hidden id=sdcRqstShipDateValue value="{$rqstshipdateval}" data-frminclude=1><input type=text READONLY id=sdcRqstShipDate class="sdinput" value="{$rqstshipdate}"></div>
   <div class=valueDropDown id=sdshpcal><div id=rShpCalendar>{$shCalendar}</div></div>
 </div>
 CALENDAR;
@@ -3100,7 +3126,7 @@ CALENDAR;
 $lbCalendar = buildcalendar('shipSDCToLab'); 
 $labCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
-  <div class=valueHolder><input type=hidden id=sdcRqstToLabDateValue value="{$rqstpulldateval}"><input type=text READONLY id=sdcRqstToLabDate class="sdinput" value="{$rqstpulldate}"></div>
+  <div class=valueHolder><input type=hidden id=sdcRqstToLabDateValue value="{$rqstpulldateval}" data-frminclude=1><input type=text READONLY id=sdcRqstToLabDate class="sdinput" value="{$rqstpulldate}"></div>
   <div class=valueDropDown id=tolabcal><div id=rToLabCalendar>{$lbCalendar}</div></div>
 </div>
 CALENDAR;
@@ -3113,14 +3139,14 @@ CALENDAR;
           }
           $po .= "</table>";
 
-$sosetup = ( trim($sdsoon) !== "" || trim($sdsoby) !== "") ? ( trim($sdsoby) !== "" ) ?  "{$sdsoon} :: {$sdsoby}" : "{$sdsoon}" : "";
+//$sosetup = ( trim($sdsoon) !== "" || trim($sdsoby) !== "") ? ( trim($sdsoby) !== "" ) ?  "{$sdsoon} :: {$sdsoby}" : "{$sdsoon}" : "";
 $sdsetup = ( trim($sdsetupon) !== "" || trim($sdsetupby) !== "") ? ( trim($sdsetupby) !== "" ) ?  "{$sdsetupon} :: {$sdsetupby}" : "{$sdsetupon}" : "";
 
+//<td class=sdFieldLabel>Sales Order On :: By</td></tr>
+//<td><input type=text id=sdShipDocSalesSetup class=sdinput value="{$sosetup}" READONLY></td>
 
-//<td><input type=text id=sdcShipDocStsDte READONLY value="{$sdstatusdate}"></td>
-//$sdnbrency
    $sdheadtbl = <<<SDHDR
- <input type=hidden id=sdency value="{$whichsdency}"><input type=hidden id=sdnbrency value="{$sdnbrency}">                    
+ <form id=frmSDHeadSection><input type=hidden id=sdency value="{$whichsdency}" data-frminclude=1><input type=hidden id=sdnbrency value="{$sdnbrency}">                    
 <table border=0>
     <tr><td class=sdFieldLabel>Shipdoc #</td>
         <td class=sdFieldLabel>Requested Ship Date *</td>
@@ -3128,25 +3154,24 @@ $sdsetup = ( trim($sdsetupon) !== "" || trim($sdsetupby) !== "") ? ( trim($sdset
         <td class=sdFieldLabel>Accepted By *</td>
         <td class=sdFieldLabel>Acceptor's Email *</td>
         <td class=sdFieldLabel>Setup On :: By</td>
-        <td class=sdFieldLabel>(Scan) Ship Tracking #</td>
+        <td class=sdFieldLabel>Ship Tracking #</td>
         <td class=sdFieldLabel>Purchase Order # *</td>
        <td class=sdFieldLabel>Sales Order # </td>
-       <td class=sdFieldLabel>Sales Order On :: By</td></tr>
     <tr>
             <td id=sdnbrdsp>{$sdnbr}</td>
             <td>{$shpCalendar}</td>
             <td>{$labCalendar}</td>
-            <td><input type=text id=sdcAcceptedBy class=sdinput value="{$sdacceptedby}"></td>
-            <td><input type=text id=sdcAcceptorsEmail class=sdinput value="{$sdacceptedbyemail}"></td>
+            <td><input type=text id=sdcAcceptedBy class=sdinput value="{$sdacceptedby}" data-frminclude=1></td>
+            <td><input type=text id=sdcAcceptorsEmail class=sdinput value="{$sdacceptedbyemail}" data-frminclude=1></td>
             <td><input type=text id=sdsetupdsp class=sdinput value="{$sdsetup}" READONLY></td>
-            <td><input type=text id=sdtrack class=sdinput value="{$sdshiptrck}"></td>
-            <td><div class=menuHolderDiv><input type=text id=sdcPurchaseOrder class=sdinput value="{$sdponbr}"><div class=valueDropDown style="min-width: 20vw;">{$po}</div></div></td>
-            <td><input type=text id=sdcShipDocSalesOrder class=sdinput value="{$sdsonbr}"></td>
-            <td><input type=text id=sdShipDocSalesSetup class=sdinput value="{$sosetup}" READONLY></td>
+            <td><input type=text id=sdtrack class=sdinput value="{$sdshiptrck}" READONLY></td>
+            <td><div class=menuHolderDiv><input type=text id=sdcPurchaseOrder class=sdinput value="{$sdponbr}" data-frminclude=1><div class=valueDropDown style="min-width: 20vw;">{$po}</div></div></td>
+            <td><input type=text id=sdcShipDocSalesOrder class=sdinput value="{$sdsonbr}" data-frminclude=1></td> 
     </tr>
 </table>
 
 <table>
+<tr><td style="height: 2vh;"></td></tr>
 <tr>
   <td class=sdFieldLabel>Invest #</td>
   <td class=sdFieldLabel>Invest Name</td>
@@ -3167,16 +3192,17 @@ $sdsetup = ( trim($sdsetupon) !== "" || trim($sdsetupby) !== "") ? ( trim($sdset
 </tr>
 </table>
 <table>
+<tr><td style="height: 2vh;"></td></tr>
   <tr><td valign=top>
    {$shpTbl}
   </td><td valign=top> 
    {$bilTbl}
   </td> 
   <td valign=top>
-    <table><tr><td class=sdFieldLabel>Public Comments</td></tr><tr><td><textarea class=sdinput id=sdcPublicComments>{$sdcomments}</TEXTAREA></td></tr></table>
+    <table><tr><td class=sdFieldLabel>Public Comments</td></tr><tr><td><textarea class=sdinput id=sdcPublicComments data-frminclude=1>{$sdcomments}</TEXTAREA></td></tr></table>
   </td>
 </tr>
-</table>
+</table></form>
 SDHDR;
 
  //{"DATA":{"sdhead":[]
@@ -3245,8 +3271,11 @@ $detailSegmentTbl .= "</tr></table>";
 $sdPage = <<<SDPAGE
 <table border=0 id=mainShipDocHoldTable>
   <tr><td id=banner class={$topcellclass} colspan=2><table border=0 width=100%><tr><td id=sdnbrdsp>{$sdstatus}</td></tr></table></td></tr>
+  <tr><td style="height: 1vh;"></td></tr>
   <tr><td><div id=shipdocheaderdiv>{$sdheadtbl}</div></td></tr>
+  <tr><td style="height: 2vh;"></td></tr>
   <tr><td id=segDemarkation>SEGMENT DETAILS</td></tr>
+  <tr><td style="height: 2vh;"></td></tr>
   <tr><td> {$detailSegmentTbl} </td></tr> 
 </table>
 SDPAGE;

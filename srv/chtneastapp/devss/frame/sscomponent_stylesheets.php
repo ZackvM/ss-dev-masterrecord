@@ -294,7 +294,6 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #mainShipDocHoldTable .sdlocked { background: rgba({$this->color_mamber},1); color: rgba({$this->color_zackgrey},1); }
 #mainShipDocHoldTable .sdclosed { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_dblue},1); }
 
-
 .sdFieldLabel { font-size: 1.2vh; color: rgba({$this->color_zackgrey},1); border-bottom: 1px solid rgba({$this->color_mgrey},1);  }
 .sdinput { padding: .7vh .5vw; font-size: 1.3vh; }
 
@@ -302,20 +301,18 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #sdcRqstShipDate {width: 7vw; }
 #sdcRqstToLabDate {width: 7vw; }
 #sdsetupdsp { width: 10vw; }
-#sdtrack { width: 18vw; }
+#sdtrack { width: 20vw; }
 #sdShipDocSalesSetup { width: 10vw; }
-#sdcPurchaseOrder { width: 10vw; }
-#sdcShipDocSalesOrder { width: 5vw; text-align: right; } 
-
+#sdcPurchaseOrder { width: 12vw; }
+#sdcShipDocSalesOrder { width: 7vw; text-align: right; } 
 
 #sdshpcal {min-width: 17vw; }
 #tolabcal { min-width: 17vw; }
 #sdcShipDocNbr { width: 6vw }
 #sdcShipDocStsDte { width: 8vw; }
-#sdcAcceptedBy { width: 8vw; }
-#sdcAcceptorsEmail { width: 15vw; }
+#sdcAcceptedBy { width: 10vw; }
+#sdcAcceptorsEmail { width: 17vw; }
 #sdcShipDocSetupOn { width: 12vw; }
-
 
 #sdinvcodedsp {font-size: 2vh; font-weight: bold; text-align: center; padding-top: 8px; padding-bottom: 8px; width: 5vw; }
 #sdcIName { width: 16vw; }
@@ -325,11 +322,12 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #sdcInstitutioniType { width: 12vw; }
 #sdcIDivision { width: 12vw; }
 
-#sdcInvestShippingAddress { width: 30vw; height: 15vh; }
-#sdcInvestBillingAddress { width: 30vw; height: 15vh; }
+#sdcInvestShippingAddress { width: 30vw; height: 12vh; }
+#sdcInvestBillingAddress { width: 30vw; height: 12vh; }
 #sdcShippingPhone {width: 30vw; }
+#sdcCourierInfo { width: 30vw; }
 #sdcBillPhone { width: 30vw; }
-#sdcPublicComments { width: 35vw; height: 20.5vh; }
+#sdcPublicComments { width: 35vw; height: 22vh; }
 
 #segDemarkation { padding: 1vh 0; text-align: center; font-size: 2vh; color: rgba({$this->color_zackgrey},1); border-top: 4px double rgba({$this->color_mgrey},1); border-bottom: 4px double rgba({$this->color_mgrey},1); background: rgba({$this->color_lgrey},1); }
 
