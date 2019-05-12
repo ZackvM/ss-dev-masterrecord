@@ -331,22 +331,34 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 
 #segDemarkation { padding: 1vh 0; text-align: center; font-size: 2vh; color: rgba({$this->color_zackgrey},1); border-top: 4px double rgba({$this->color_mgrey},1); border-bottom: 4px double rgba({$this->color_mgrey},1); background: rgba({$this->color_lgrey},1); }
 
-.segmentInfoHolder { border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); width: 24vw; height: 9vh; }
+.segmentInfoHolder { border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); height: 17vh; }
 .segmentInfoHolder:hover { background: rgba({$this->color_lamber},1); }
+
+.dualHoldTable { width: 24vw; height: 5vw; }
 .action-icon { color: rgba({$this->color_zackgrey},1); } 
 .action-icon:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
 
-.delbtnholder { width: 2vw; text-align: center; } 
-.pulledyes { font-size: 1.1vh; text-align: right; border-bottom: 1px solid rgba({$this->color_mgrey},1); }
-.pulledno { font-size: 1.1vh; }
-.segbgsdsp { font-size: 1.6vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); }
-.segdxdesig { font-size: 1.3vh; color: rgba({$this->color_cornflowerblue},1); }
-.segprpdsp { font-size: 1.2vh; color: rgba({$this->color_mgrey},1); }
-.seginvdsp { font-size: 1.2vh; color: rgba({$this->color_mgrey},1); }
+.delbtnholder { width: 2vw; text-align: center; padding-top: 8px; } 
+.pulledyes { font-size: 1.1vh; text-align: right; border-top: 1px solid rgba({$this->color_mgrey},1); height: 2vh; }
+.pulledno { font-size: 1.1vh; height: 2vh;}
+.infoHolderSideTbl {width: 22vw; }
+.segbgsdsp { font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); height: 2vh; padding-top: 8px; }
+.segdxdesig { font-size: 1.3vh; color: rgba({$this->color_cornflowerblue},1); height: 4vh; }
+.segprpdsp { font-size: 1.2vh; color: rgba({$this->color_mgrey},1); height: 2vh; }
+.seginvdsp { font-size: 1.2vh; color: rgba({$this->color_mgrey},1); height: 4vh; }
+
+.rTableCell { float: left; margin-right: 3px; margin-bottom: 3px;  }
+
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; } 
 
 STYLESHEET;
-return $rtnThis;
-    
+//.rTable    { display: table; }
+//.rTableRow       { display: table-row; }
+//.rTableCell, .rTableHead  { display: table-cell; }
+//.rTableHeading    { display: table-header-group; }
+//.rTableBody    { display: table-row-group; }
+//.rTableFoot    { display: table-footer-group; }
+return $rtnThis;    
 }  
   
   

@@ -65,7 +65,95 @@ document.addEventListener('DOMContentLoaded', function() {
   }   
                                  
 }, false); 
+
+function sendRemovalCmd() { 
+  if ( !byId('pdSegId') || !byId('pdDspCell') || !byId('pdSDEncy') || !byId('pdRestockStatusValue') || !byId('pdRestockReasonValue') || !byId('pdRestockNote') ) { 
+    alert('MISSING ELEMENT.  SEE CHTNEASTERN INFORMATICS STAFF');
+  } else { 
+   var obj = new Object();
+   obj['sdency'] = byId('pdSDEncy').value.trim();
+   obj['segid'] = byId('pdSegId').value.trim();
+   obj['dspcell'] = byId('pdDspCell').value.trim();
+   obj['segstatus'] = byId('pdRestockStatusValue').value.trim();
+   obj['rreason'] = byId('pdRestockReasonValue').value.trim();
+   obj['rnote'] = byId('pdRestockNote').value.trim();
+   obj['dialogid'] = byId('pdDialogId').value.trim();
+   var passdata = JSON.stringify(obj);
+   var mlURL = "/data-doers/shipdoc-remove-segment";
+   universalAJAX("POST",mlURL,passdata,answerRemoveBGSFromSD,2);
+  }
+}
+
+function answerRemoveBGSFromSD(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("SHIPMENT DOCUMENT ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse(rtnData['responseText']); 
+     var elem = document.getElementById("cell"+dta['DATA']['dspcellid']);
+     elem.parentElement.removeChild(elem); 
+     closeThisDialog ( dta['DATA']['dialogid'] );
+   }
+}        
+
+function removeBGSfromSD(segid, cellid) {
+  if (!byId('sdency') || byId('sdency').value.trim() === "") { 
+  } else { 
+   var obj = new Object();
+   obj['sdency'] = byId('sdency').value.trim();
+   obj['segid'] = segid;
+   obj['dspcell'] = cellid; 
+   var passdata = JSON.stringify(obj);
+   generateDialog( 'preprocremovesdsegment', passdata );
+  }
+}
+
+function generateDialog( whichdialog, whatobject ) { 
+  var dta = new Object(); 
+  dta['whichdialog'] = whichdialog;
+  dta['objid'] = whatobject;   
+  var passdta = JSON.stringify(dta);
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/preprocess-generate-dialog";
+  universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
+}
             
+function answerPreprocessGenerateDialog( rtnData ) {
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+        var dta = JSON.parse(rtnData['responseText']);         
+        //TODO: MAKE SURE ALL ELEMENTS EXIST BEFORE CREATION
+        var d = document.createElement('div');
+        d.setAttribute("id", dta['DATA']['dialogID']); 
+        d.setAttribute("class","floatingDiv");
+        d.style.left = dta['DATA']['left'];
+        d.style.top = dta['DATA']['top'];
+        d.innerHTML = dta['DATA']['pageElement']; 
+        document.body.appendChild(d);
+        byId(dta['DATA']['dialogID']).style.display = 'block';
+        if ( dta['DATA']['primeFocus'].trim() !== "" ) { 
+          byId(dta['DATA']['primeFocus'].trim()).focus();
+        }
+        byId('standardModalBacker').style.display = 'block';
+  }
+}
+        
+function closeThisDialog(dlog) { 
+   byId(dlog).parentNode.removeChild(byId(dlog));
+   byId('standardModalBacker').style.display = 'none';        
+}
 
 function performLookup() { 
    var obj = new Object();

@@ -16,6 +16,16 @@ function sysDialogBuilder($whichdialog, $passedData) {
     $standardSysDialog = 1;
     switch($whichdialog) {
 
+      case 'preprocremovesdsegment':  
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Remove Segment from Shipdoc";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";       
+        //$innerDialog = $passedData; 
+        $innerDialog = bldDialogShipDocPreRemoveSeg( $passedData);
+        //$footerBar = "SEGMENT ADD";       
+        break;
+
       case 'masterQMSAction':  
         $pdta = json_decode($passedData, true);          
         $titleBar = "QMS Functions";
@@ -2906,6 +2916,77 @@ return $rtnThis;
 
 }
 
+function bldDialogShipDocPreRemoveSeg ( $passeddata ) { 
+    require(serverkeys . "/sspdo.zck");
+
+    //$passeddata = {"whichdialog":"preprocremovesdsegment","objid":"{\"sdency\":\"ZkFBTkJsZUM5SXhVcEtvOURscGUwQT09\",\"segid\":\"449032\",\"dspcell\":\"BJZsPcjs\"}","dialogid":"ByPQjoMeGia4U2u"}
+$pdta = json_decode ( $passeddata, true );
+$obj = json_decode ( $pdta['objid'], true );     
+
+$sd = cryptservice($obj['sdency'], 'd' );
+$dspsd = substr('000000' . $sd, -6);
+$segid = $obj['segid']; 
+$dspcellid = $obj['dspcell'];
+
+$bgsSQL = "select ucase(replace(ifnull(bgs,''),'_','')) as bgs from masterrecord.ut_procure_segment where segmentid = :sid";
+$bgsRS = $conn->prepare($bgsSQL); 
+$bgsRS->execute(array(':sid' => $segid));
+if ( $bgsRS->rowCount() <> 1 ) { 
+   $rtnThis = "ERROR:  SEGMENT NOT FOUND BY ID.  SEE CHTNEASTERN INFORMATICS PERSON";
+} else { 
+  $bgs = $bgsRS->fetch(PDO::FETCH_ASSOC); 
+  //New Segment Statuses Allowed - Assign, Bank, Permanent Collection, X_NFIPI 
+  
+  $poarr = json_decode(callrestapi("GET", dataTree . "/global-menu/ship-doc-restock-segment-values",serverIdent,serverpw),true);
+  $po = "<table border=0 class=menuDropTbl>";
+  foreach ($poarr['DATA'] as $poval) { 
+    $po .= "<tr><td onclick=\"fillField('pdRestockStatus','{$poval['lookupvalue']}','{$poval['menuvalue']}');\" class=ddMenuItem>{$poval['menuvalue']}</td></tr>";
+  }
+  $po .= "</table>";
+ 
+  $rarr = json_decode(callrestapi("GET", dataTree . "/global-menu/shipdoc-restock-reasons",serverIdent,serverpw),true);
+  $rr = "<table border=0 class=menuDropTbl>";
+  foreach ($rarr['DATA'] as $rval) { 
+    $rr .= "<tr><td onclick=\"fillField('pdRestockReason','{$rval['lookupvalue']}','{$rval['menuvalue']}');\" class=ddMenuItem>{$rval['menuvalue']}</td></tr>";
+  }
+  $rr .= "</table>";
+
+
+$reasonTbl = <<<REASONS
+
+<table border=1>
+<tr><td>Segment Status *</td><td>Removal Reason *</td></tr>
+<tr>
+  <td><div class=menuHolderDiv><input type=hidden id=pdRestockStatusValue><input type=text id=pdRestockStatus><div class=valueDropDown>{$po}</div></div></td>
+  <td><div class=menuHolderDiv><input type=hidden id=pdRestockReasonValue><input type=text id=pdRestockReason><div class=valueDropDown>{$rr}</div></div></td>
+</tr>
+<tr><td colspan=2>Note</td></tr>
+<tr>
+  <td colspan=2><input type=text id=pdRestockNote></td>
+</tr>
+</table>
+REASONS;
+
+$btnTbl = <<<BTTNS
+<table><tr><td><table class=tblBtn id=btnLookup style="width: 6vw;" onclick="sendRemovalCmd();"><tr><td style="font-size: 1.3vh;"><center>Confirm</td></tr></table></td><td><table class=tblBtn id=btnLookup style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td></tr></table>
+BTTNS;
+
+$rtnThis = <<<RTNTHIS
+<style>
+
+</style>      
+<table border=0 cellspacing=0 cellpadding=0>
+    <tr><td>This action will remove segment <b>&laquo;{$bgs['bgs']}&raquo;</b> from <b>&laquo;{$dspsd}&raquo;</b>.  You must re-status the segment and state a reason for removal from the shipment document.<input type=hidden id=pdSegId value={$segid}><input type=hidden id=pdDspCell value="{$dspcellid}"><input type=hidden id=pdSDEncy value="{$obj['sdency']}"><input type=hidden id=pdDialogId value="{$pdta['dialogid']}"></td></tr>
+    <tr><td>{$reasonTbl}</td></tr>
+    <tr><td align=right>{$btnTbl}</td></tr>
+</table>
+        
+RTNTHIS;
+}
+
+return $rtnThis;
+}
+
 function bldDialogMasterQMSAction( $passeddata ) { 
 
     $pdta = json_decode( $passeddata, true);    
@@ -3024,7 +3105,6 @@ function bldShipDocLookup() {
             <tr><td><input type=text id=qryShipDoc></td><td><table class=tblBtn id=btnLookup style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Lookup</td></tr></table></td></tr>
             </table>
             
-            
 THISPAGE;
     return $thisPage;
 }
@@ -3139,11 +3219,7 @@ CALENDAR;
           }
           $po .= "</table>";
 
-//$sosetup = ( trim($sdsoon) !== "" || trim($sdsoby) !== "") ? ( trim($sdsoby) !== "" ) ?  "{$sdsoon} :: {$sdsoby}" : "{$sdsoon}" : "";
 $sdsetup = ( trim($sdsetupon) !== "" || trim($sdsetupby) !== "") ? ( trim($sdsetupby) !== "" ) ?  "{$sdsetupon} :: {$sdsetupby}" : "{$sdsetupon}" : "";
-
-//<td class=sdFieldLabel>Sales Order On :: By</td></tr>
-//<td><input type=text id=sdShipDocSalesSetup class=sdinput value="{$sosetup}" READONLY></td>
 
    $sdheadtbl = <<<SDHDR
  <form id=frmSDHeadSection><input type=hidden id=sdency value="{$whichsdency}" data-frminclude=1><input type=hidden id=sdnbrency value="{$sdnbrency}">                    
@@ -3208,45 +3284,45 @@ SDHDR;
  //{"DATA":{"sdhead":[]
  //,"sddetail":[{"shipdocDetId":64068,"pulledon":"","pulledby":inventorylocation":"Walk-In Cooler :: FFPE 02 (CB 793) :: SHELF 1 (SH-823) :: FFPE BIN (BN-829) [STORAGE CONTAINER]"},{"shipdocDetId":64069,"shipdocrefId":5435,"segmentid":449032,"addtosdon":"04\/22\/2019","addtosdby":"proczack","pulledon":"","pulledby":"","bgs":"87106T004","dxdesig":"MALIGNANT :: THYROID :: CARCINOMA (FOLLICULAR)","metric":"","preparation":"SLIDE \/ H&E Slide","qty":1,"inventorylocation":"OVERRIDE CHECKIN PROCESS"},{"shipdocDetId":64070,"shipdocrefId":5435,"segmentid":449033,"addtosdon":"04\/22\/2019","addtosdby":"proczack","pulledon":"","pulledby":"","bgs":"87106T005","dxdesig":"MALIGNANT :: THYROID :: CARCINOMA (FOLLICULAR)","metric":"","preparation":"SLIDE \/ H&E Slide","qty":1,"inventorylocation":"OVERRIDE CHECKIN PROCESS"},{"shipdocDetId":64071,"shipdocrefId":5435,"segmentid":449034,"addtosdon":"04\/22\/2019","addtosdby":"proczack","pulledon":"","pulledby":"","bgs":"87106T006","dxdesig":"MALIGNANT :: THYROID :: CARCINOMA (FOLLICULAR)","metric":"","preparation":"SLIDE \/ H&E Slide","qty":1,"inventorylocation":"OVERRIDE CHECKIN PROCESS"}]}} 
 
-$detailSegmentTbl = "<table><tr>";
+//TURN THIS INTO A DIV TABLE
+$detailSegmentTbl = "<div class=rtTable><div class=rTableRow>";
 $cellRowCntr = 0;
 foreach ( $sd['DATA']['sddetail'] as $dkey => $dval ) { 
   if ( $cellRowCntr === 4 ) { 
     $cellRowCntr = 0; 
-    $detailSegmentTbl .= "</tr><tr>";
+    $detailSegmentTbl .= "</div><div class=rTableRow>";
   }
 
+  $cellident = generateRandomString(8);
   $prpdsp = ( trim($dval['qty']) !== "" ) ? "[Qty: {$dval['qty']}]" : "" ;
   $prpdsp .= ( trim($dval['metric']) !== "" ) ? " :: {$dval['metric']}" : "";
   $prpdsp .= ( trim($dval['preparation']) !== "" ) ? ( trim($prpdsp) !== "" ) ? " :: {$dval['preparation']}" : "{$dval['preparation']}" : "";
   $prpdsp = trim($prpdsp);
-
   $atloc = ( trim($dval['inventorylocation']) !== "" ) ? "{$dval['inventorylocation']}" : ""; 
-  
   $plld = ( (int)$dval['pulledind'] === 1) ? "<tr><td class=pulledyes>Pulled: {$dval['pulledon']}</td></tr>": "<tr><td class=pulledno>&nbsp;</td></tr>"; 
   
   $infoTbl = <<<INFOTBL
-<table border=0>
-{$plld}
+<table border=0 class=infoHolderSideTbl>
 <tr><td colspan=2 class=segbgsdsp>{$dval['bgs']}</td></tr>
-<tr><td colspan=2 class=segdxdesig>{$dval['dxdesig']}</td></tr>
+<tr><td colspan=2 class=segdxdesig valign=top>{$dval['dxdesig']}</td></tr>
 <tr><td class=segprpdsp>{$prpdsp}</td></tr>
 <tr><td class=seginvdsp>{$atloc}</td></tr>
+{$plld}
 </table>
 INFOTBL;
 
 switch ( $sdstatus ) {
      case 'NEW':
          //ALLOW DELBTN
-         $delbtn = "<i class=\"material-icons action-icon\" onclick=\"alert('REMOVE: {$dval['shipdocDetId']}');\">remove_circle_outline</i>";
+         $delbtn = "<i class=\"material-icons action-icon\" onclick=\"removeBGSfromSD('{$dval['segmentid']}','{$cellident}');\">remove_circle_outline</i>";
          break;
      case 'OPEN':
          //ALLOW DELBTN
-         $delbtn = "<i class=\"material-icons action-icon\" onclick=\"alert('REMOVE: {$dval['shipdocDetId']}');\">remove_circle_outline</i>";
+         $delbtn = "<i class=\"material-icons action-icon\" onclick=\"removeBGSfromSD('{$dval['segmentid']}','{$cellident}');\">remove_circle_outline</i>";
          break;
      case 'LOCKED':
          //ALLOW ONLY IF NOT PULLED       
-         $delbtn =  ( (int)$dval['pulledind'] === 0 )  ?  "<i class=\"material-icons action-icon\" onclick=\"alert('REMOVE: {$dval['shipdocDetId']}');\">remove_circle_outline</i>" : "<i class=\"material-icons\">vpn_lock</i>";
+         $delbtn =  ( (int)$dval['pulledind'] === 0 )  ?  "<i class=\"material-icons action-icon\" onclick=\"removeBGSfromSD('{$dval['segmentid']}','{$cellident}');\">remove_circle_outline</i>" : "<i class=\"material-icons\">vpn_lock</i>";
          break;
      case 'CLOSED':
          //DON'T ALLOW
@@ -3254,16 +3330,17 @@ switch ( $sdstatus ) {
          break;    
 }
 
+//INNER DISPLAY TABLE 
 $innerDet = <<<INNDETTBL
-<table>
-    <tr><td class=delbtnholder>{$delbtn}</td><td>{$infoTbl}</td></tr>
+<table border=0 class=dualHoldTable>
+    <tr><td class=delbtnholder valign=top>{$delbtn}</td><td>{$infoTbl}</td></tr>
 </table>
 INNDETTBL;
 
-  $detailSegmentTbl .= "<td class=segmentInfoHolder valign=top>{$innerDet}</td>";
+  $detailSegmentTbl .= "<div id=\"cell{$cellident}\" class=\"segmentInfoHolder rTableCell\">{$innerDet}</div>";
   $cellRowCntr++;
 }
-$detailSegmentTbl .= "</tr></table>";
+$detailSegmentTbl .= "</div></div>";
 
 
 

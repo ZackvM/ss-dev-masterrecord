@@ -34,6 +34,144 @@ function __construct() {
 
 class datadoers {
 
+    function shipdocremovesegment ( $request, $passdata ) {
+      //dialogid	TWaECoPecCCtJEN // dspcell	BKgdTzqg // rnote	// rreason	// sdency	ZkFBTkJsZUM5SXhVcEtvOURscGUwQT09 // segid	449032 // segstatus	  
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $sess = session_id();
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      $goodUser = 0;
+
+      $dta['dspcellid'] = $pdta['dspcell'];
+      $dta['dialogid'] = $pdta['dialogid'];
+      $sd = cryptservice( $pdta['sdency'], 'd');
+      $dspsd = substr(('000000' . $sd),-6);
+      $sid = $pdta['segid'];
+      
+      //DATACHECKS     
+      if ( $authuser !== $authchk || $authuser !== $sess ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } 
+      $chkUsrSQL = "SELECT originalaccountname, presentinstitution FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrR = $conn->prepare($chkUsrSQL); 
+      $chkUsrR->execute(array(':sess' => $sess));
+      if ($chkUsrR->rowCount() <> 1) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your Session has expired, your password has expired, or don't have access to the coordinator function"));
+      } else { 
+          $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
+          $goodUser = 1;
+      }
+
+
+      if ( $goodUser === 1 ) { 
+        
+        ( trim($pdta['segstatus']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A \"SEGMENT STATUS\" IS REQUIRED")) : "";
+        //CHECK THAT SEGSTATUS iS VALID VALUE
+
+        if ( trim($pdta['segstatus']) !== "" ) {
+          $chkSQL = "SELECT menuid FROM four.sys_master_menus where menu = :menu and academvalue = :limiter and dspind = :dspind and menuvalue = :menuvalue"; 
+          $chkRS = $conn->prepare($chkSQL);
+          $chkRS->execute(array(':menu' => 'SEGMENTSTATUS',':limiter' => 'RESTOCK',':dspind' => 1,':menuvalue' => $pdta['segstatus']));
+          ( $chkRS->rowCount() === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE SEGMENT STATUS DOES NOT EXIST - SEE A CHTNEASTERN INFORMATICS PERSON")) : "";
+        }
+
+        ( trim($pdta['rreason']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A \"REMOVAL REASON\" IS REQUIRED")) : "";
+        //CHECK VALID REASON VALUE
+        if ( trim($pdta['rreason']) !== "" ) { 
+          $chkaSQL = "SELECT menuid FROM four.sys_master_menus where menu = :menu and dspind = :dspind and menuvalue = :menuvalue"; 
+          $chkaRS = $conn->prepare($chkaSQL);
+          $chkaRS->execute(array(':menu' => 'SEGMENTRESTOCKREASON', ':dspind' => 1, ':menuvalue' => trim($pdta['rreason']) ));
+          ( $chkaRS->rowCount() === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE REMOVAL REASON DOES NOT EXIST - SEE A CHTNEASTERN INFORMATICS PERSON")) : "";
+        }
+
+        //1. Make Sure Segment is real
+        $chkSQL = "SELECT ucase(replace( ifnull(bgs,''),'_','')) as bgs, ifnull(segstatus,'') as segstatus, ifnull(date_format(shippedDate,'%Y-%m-%d'),'') as shippeddate, ifnull(assignedto,'') as assignedto, ifnull(assignedreq,'') as assignedreq FROM masterrecord.ut_procure_segment where segmentid = :segmentid and shipDocRefID = :shipdocref";
+        $chkRS = $conn->prepare($chkSQL); 
+        $chkRS->execute(array(':segmentid' => $sid, ':shipdocref' => $sd)); 
+        if ( $chkRS->rowCount() <> 1 ) { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "EITHER THE PASSED SEGMENT ID OR THE SHIPDOC ENCRYPTION ID FAILED - SEE A CHTNEASTERN INFORMATICS PERSON"));
+        } else { 
+           $segR = $chkRS->fetch(PDO::FETCH_ASSOC);
+           $segBGS = $segR['bgs'];
+           $segStat = $segR['segstatus'];
+           $segSDte = $segR['shippeddate'];
+           $segAss = $segR['assignedto'];
+           $segReq = $segR['assignedreq'];
+           //2. Make sure its not shipped
+           ( trim($segBGS) === "" || strtoupper(trim($segStat)) === "SHIPPED" || trim($segSDte) !== "" || trim($segAss) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THERE IS A PROBLEM WITH THE SEGMENT.  EITHER THE SEGMENT IS SHIPPED OR THERE IS NO INVESTIGATOR ASSIGNMENT.  SEE A CHTNEASTERN INFORMATICS PERSON IF THIS IS IN ERROR.")) : "";
+        }
+        //3. Make sure it exists on the referenced shipdoc
+        $onSDSQL = "SELECT * FROM masterrecord.ut_shipdocdetails where shipdocrefid = :sd and segid = :segid and pulledind = :pulledind";
+        $onSDRS = $conn->prepare($onSDSQL); 
+        $onSDRS->execute(array(':sd' => $sd, ':segid' => $sid, ':pulledind' => 0));
+        ( $onSDRS->rowCount() === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THIS SHIPMENT DOCUMENT ({$dspsd}) IS ALREADY MARKED AS CLOSED.  YOU MAY NOT MODIFY IT.")) : "";
+
+        //4. Make sure the shipdoc is not closed
+        $sdChkSQL = "SELECT shipdocrefid  FROM masterrecord.ut_shipdoc where shipdocrefid = :sd and sdstatus <> :closedstatus";
+        $sdChkRS = $conn->prepare($sdChkSQL); 
+        //TODO:  Make this dynamic
+        $sdChkRS->execute(array(':sd' => $sd, ':closedstatus' => 'CLOSED'));
+        ( $sdChkRS->rowCount() === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THIS SHIPMENT DOCUMENT ({$dspsd}) IS ALREADY MARKED AS CLOSED.  YOU MAY NOT MODIFY IT.")) : "";
+
+      }
+
+
+      if ( $errorInd === 0 && $goodUser === 1 ) { 
+
+          //WRITE DELETION ACTION to masterrecord.history_shipdoc_actions
+          $bckSQL = "insert into masterrecord.history_shipdoc_actions (shipdocrefid, status, statusdate, bywhom, ondate, removalreason, removalnote, segmentreference) values (:sd,:message,now(), :usr, now(),:rvr, :rvn, :sid)";
+          $bckRS = $conn->prepare($bckSQL);
+          $bckRS->execute(array(':sd' => $sd, ':message' => "SEGMENT DELETED. SEGID={$sid} BGS={$segBGS}",':usr' => $u['originalaccountname'], ':rvr' => trim($pdta['rreason']), ':rvn' => trim($pdta['rnote']), ':sid' => $sid ));
+
+          //WRITE HISTORY to masterrecord.history_procure_segment_status // masterrecord.history_procure_segment_assignment 
+          $sgBckSQL = "insert masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby, newstatus) SELECT segmentid, segstatus, statusby, statusdate, now(), :usr, :newstatus FROM masterrecord.ut_procure_segment where segmentId = :sid";
+          $sgBckRS = $conn->prepare($sgBckSQL);
+          $sgBckRS->execute(array( ':sid' => $sid, ':usr' => $u['originalaccountname'], ':newstatus' => trim($pdta['segstatus']) ));
+          
+          //UPDATE SEGMENT (ASSIGNED / BANKED / PENDDEST / XNFIPI ) 
+          $bckAssSQL = "insert into masterrecord.history_procure_segment_assignment(segmentid, previousassignment, previousproject, previousrequest, previousassignmentdate, previousassignmentby, enteredon, enteredby) select segmentid, ifnull(assignedTo,'NO-INV-ASSIGNMENT') as assignedto, ifnull(assignedProj,'NO-PROJ-ASSIGNMENT') as assignedproj, ifnull(assignedReq,'NO-REQ-ASSIGNMENT') as assignedreq, ifnull(assignmentdate, now()) as assignmentdate, ifnull(assignedby,'NO-BY-ASSIGNMENT'), now(), :usr from masterrecord.ut_procure_segment where segmentid = :sid";
+          $bckAssRS = $conn->prepare($bckAssSQL);
+          $bckAssRS->execute(array(':sid' => $sid, ':usr' => $u['originalaccountname']));
+          //TODO: MAKE THE STATUSES DYNAMIC
+          switch ( strtoupper(trim($pdta['segstatus'])) ) { 
+            case 'ASSIGNED':
+                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = 0 where segmentId = :sid";
+                break;
+            case 'BANKED':
+                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = 0, assignedto = '', assignedReq = '', assignmentdate = now(), assignedby = '' where segmentId = :sid";
+                break;
+            case 'PENDDEST':
+                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = 0, assignedto = '', assignedReq = '', assignmentdate = now(), assignedby = '' where segmentId = :sid";
+                break;
+            case 'XNFIPI':
+                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = 0, assignedto = '', assignedReq = '', assignmentdate = now(), assignedby = '' where segmentId = :sid";
+                break;
+          }
+          $updRS = $conn->prepare($updSQL);
+          $updRS->execute(array(':usr' => $u['originalaccountname'], ':sid' => $sid, ':sts' => strtoupper(trim($pdta['segstatus']))));
+
+          //Remove Segment from shipdoc record 
+          //TODO:  THIS IS BAD BAD - SHOULD MAKE IT A DSPIND FIELD INSTEAD OF DELETION - BUT ...
+          $delSQL = "delete FROM masterrecord.ut_shipdocdetails where shipdocrefid = :shpdoc and segid = :segid";
+          $delRS = $conn->prepare($delSQL); 
+          $delRS->execute(array(':shpdoc' => $sd, ':segid' => $sid));
+          //TODO: IF ALL SEGMENTS DELETED FROM SHIPDOC - VOID SHIPDOC!!
+          $responseCode = 200; 
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;       
+    }
+
     function shipdocscreensave ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 503;
@@ -176,11 +314,6 @@ class datadoers {
           } else { 
               $dta['sddetail'][] = null;
           }
-
-
-
-
-
           $responseCode = 200;    
         } else { 
           (list( $errorind, $msgArr[] ) = array(1 , "ERROR:  NO SHIPMENT DOCUMENT FOUND (REQUESTED: " . substr('000000' . $sdnbr,-6) . ")"));
@@ -1011,6 +1144,11 @@ class datadoers {
              $left = '13vw';
              $top = '13vh';
              break;
+           case 'preprocremovesdsegment':
+             $primeFocus = "";
+             $left = '13vw';
+             $top = '13vh';
+            break;
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);
@@ -4626,7 +4764,7 @@ SQLSTMT;
             $msgArr[] = "Segment Label {$r['bgs']} has a shipment date ({$r['shippeddate']}) .  This segment is unable to be assigned.";
           }                 
           //CHECK SHIPDOCID 
-          if ($r['shipdocrefid'] !== "") { 
+          if ( (int)$r['shipdocrefid'] <> 0 ) { 
             $error = 1;
             $sddsp = substr(('000000' . $r['shipdocrefid']),-6);
             $msgArr[] = "Segment Label {$r['bgs']} is listed on ship-doc ({$sddsp}) .  This segment is unable to be assigned.";
@@ -4987,7 +5125,7 @@ SQLSTMT;
             $msgArr[] .= "{$r['bgs']} has a shipment date ({$r['shippeddate']}).  This segment is unable to be added to a shipment document.";
           }                
           //CHECK SHIPDOCID 
-          if ($r['shipdocrefid'] !== "") { 
+          if ( (int)$r['shipdocrefid'] <> 0  ) { 
             $errorInd = 1;
             $sddsp = substr(('000000' . $r['shipdocrefid']),-6);
             $msgArr[] .= "{$r['bgs']} is listed on ship-doc ({$sddsp}) already.  This segment is unable to be added to a shipment document.";
@@ -5124,9 +5262,9 @@ SQLSTMT;
          
          
          
-         $sdStsInsSQL = "insert into masterrecord.history_shipdoc_actions(shipdocrefid, status, statusdate, bywhom, ondate) values( :shipdocrefid, :status, now(), :bywhom, now())";
+         $sdStsInsSQL = "insert into masterrecord.history_shipdoc_actions(shipdocrefid, status, statusdate, bywhom, ondate, segmentreference) values( :shipdocrefid, :status, now(), :bywhom, now(), :sid)";
          $sdStsInsR = $conn->prepare($sdStsInsSQL); 
-         $sdStsInsR->execute(array(':shipdocrefid' => $shipdocnbr, ':status' => 'SHIPDOCCREATED', ':bywhom' => $usr)); 
+         $sdStsInsR->execute(array(':shipdocrefid' => $shipdocnbr, ':status' => 'SHIPDOCCREATED', ':bywhom' => $usr, ':sid' => 0)); 
 
          //ADD SEGMENTS TO SHIPDOCDETAIL / UPDATE MASTERRECORD SEGMENT
          $segstsSQL = "SELECT menuvalue, additionalinformation FROM four.sys_master_menus where menu = :menu and additionalinformation = :addinformation and dspind = 1";
@@ -5151,7 +5289,7 @@ SQLSTMT;
            $addHistoryR->execute(array( ':sg' => $sg['segmentid'], ':psegstat' => $pr['segstatus'], ':pstatby' => $pr['segstatusby'], ':pdte' => $pr['statusdate'], ':updusr' => $usr ));
            $detailR->execute(array(":shipdocrefid" => $shipdocnbr, ":segid" => $sg['segmentid'], ":addedby" => $usr)); 
            $updSegR->execute(array(":segstatus" => $segsts['menuvalue'], ":statby" => $usr, ":shipdocref" => $shipdocnbr, ":segmentid" => $sg['segmentid']));
-           $sdStsInsR->execute(array(':shipdocrefid' => $shipdocnbr, ':status' => "SEGMENT ADDED. SEGID={$sg['segmentid']}", ':bywhom' => $usr)); 
+           $sdStsInsR->execute(array(':shipdocrefid' => $shipdocnbr, ':status' => "SEGMENT ADDED. SEGID={$sg['segmentid']}", ':bywhom' => $usr, ':sid' => $sg['segmentid']  )); 
          }
          $responseCode = 200; 
        }
