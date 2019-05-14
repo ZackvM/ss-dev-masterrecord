@@ -38,19 +38,25 @@ document.addEventListener('DOMContentLoaded', function() {
             
  if (byId('btnAddSegment')) { 
     byId('btnAddSegment').addEventListener('click', function() { 
-      alert('BTN CLICK');
+     var obj = new Object();
+     obj['sdency'] = byId('sdency').value.trim();
+     var passdata = JSON.stringify(obj);
+     generateDialog( 'shipdocaddsegment', passdata );
     }, false);
   }
 
  if (byId('btnShipOverride')) { 
     byId('btnShipOverride').addEventListener('click', function() { 
-      alert('BTN CLICK');
+     var obj = new Object();
+     obj['sdency'] = byId('sdency').value.trim();
+     var passdata = JSON.stringify(obj);
+     generateDialog( 'shipdocshipoverride', passdata );
     }, false);
   }
 
  if (byId('btnVoidSD')) { 
     byId('btnVoidSD').addEventListener('click', function() { 
-      alert('BTN CLICK');
+      alert('THIS FUNCTION IS NOT YET OPERATIONAL.  TRY AGAIN LATER');
     }, false);
   }   
          
@@ -58,13 +64,106 @@ document.addEventListener('DOMContentLoaded', function() {
     byId('btnLookup').addEventListener('click', function() { 
       performLookup();
     }, false);      
-  }            
+  }           
+
+  if (byId('btnAddSO')) { 
+    byId('btnAddSO').addEventListener('click', function() { 
+     var obj = new Object();
+     obj['sdency'] = byId('sdency').value.trim();
+     var passdata = JSON.stringify(obj);
+     generateDialog( 'shipdocaddso', passdata );
+    }, false);      
+  } 
 
   if ( byId('qryShipDoc')) {            
-    byId("qryShipDoc").focus();
+    byId('qryShipDoc').focus();
   }   
                                  
-}, false); 
+}, false);
+
+function sendOverrideShip() { 
+   var obj = new Object();
+   obj['sdency'] = byId('sdency').value.trim();
+   obj['sdshipdte'] = byId('sdcActualShipDateValue').value;
+   obj['couriertrck'] = byId('sdcCourierTrack').value;
+   obj['deviationreason'] = byId('sdcActDeviationReason').value;
+   obj['usrpin'] = window.btoa( encryptedString(key, byId('fldUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );
+   obj['dialogid'] = byId('pdDialogId').value.trim();
+   var passdata = JSON.stringify(obj);
+   var mlURL = "/data-doers/shipdoc-override-shipdate";
+   universalAJAX("POST",mlURL,passdata,answerOverrideShipdate,2);
+}
+
+function answerOverrideShipdate( rtnData ) { 
+   console.log( rtnData );
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("SHIPMENT DOCUMENT ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse(rtnData['responseText']); 
+     closeThisDialog ( dta['DATA']['dialogid'] );
+     alert('OVERRIDE SAVED');
+     location.reload(true);  
+   }
+}
+
+function BGSLookupRqst(sdency) { 
+   var obj = new Object();
+   obj['bgs'] = byId('qryBGS').value;
+   obj['sdency'] = sdency;   
+   var passdata = JSON.stringify(obj);
+   var mlURL = "/data-doers/bgs-look-up-request";
+   universalAJAX("POST",mlURL,passdata,answerDisplayBGSLookup,2);
+}
+
+function answerDisplayBGSLookup( rtnData ) { 
+// console.log( rtnData );
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("SHIPMENT DOCUMENT ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse(rtnData['responseText']); 
+     byId('segBGSLookupRslts').innerHTML = dta['DATA']['return']; 
+   }
+}
+
+function addSegmentToShipDoc( sdency, sidency, whichsegdsp ) { 
+   var obj = new Object();
+   obj['sdency'] = sdency;
+   obj['segid'] = sidency;
+   obj['dspnbr'] = whichsegdsp;
+   var passdata = JSON.stringify(obj);
+   var mlURL = "/data-doers/shipdoc-add-segment";
+   universalAJAX("POST",mlURL,passdata,answerAddBGSToSD,2);
+} 
+
+function answerAddBGSToSD ( rtnData ) { 
+ // console.log( rtnData );
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("SHIPMENT DOCUMENT ERROR:\\n"+dspMsg);
+   } else {
+     alert('SEGMENT HAS BEEN ADDED TO THE SHIP DOC. CONTINUE ADDING SEGMENTS OR RE-FRESH YOUR SCREEN TO REVIEW CHANGES.');
+     var dta = JSON.parse(rtnData['responseText']); 
+     var elem = byId("sgAssList"+dta['DATA']['dspid']);
+     elem.parentElement.removeChild(elem); 
+   }
+}
 
 function sendRemovalCmd() { 
   if ( !byId('pdSegId') || !byId('pdDspCell') || !byId('pdSDEncy') || !byId('pdRestockStatusValue') || !byId('pdRestockReasonValue') || !byId('pdRestockNote') ) { 
@@ -169,8 +268,22 @@ function performLookup() {
   }    
 }
     
-function answerLookupShipDocQry ( rtndata ) { 
-    console.log(rtndata);
+function answerLookupShipDocQry ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('displayLookedupData').innerHTML = "";
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+     //SUCCESS
+     var dta = JSON.parse( rtnData['responseText'] );
+     byId('displayLookedupData').innerHTML = dta['DATA'];
+   }
+
 }
          
 function saveShipDoc() { 
@@ -211,15 +324,21 @@ function fillField(whichfield, whichvalue, whichdisplay) {
 
 var lastRequestCalendarDiv = "";
 function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
+  //console.log(whichdiv);          
   var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;
   lastRequestCalendarDiv = whichdiv;
   universalAJAX("GET",mlURL,"",answerGetCalendar,modalCtl);
 }
 
 function answerGetCalendar(rtnData) {
+  //console.log( rtnData );
   if (parseInt(rtnData['responseCode']) === 200) {     
     var rcd = JSON.parse(rtnData['responseText']);
-    byId(lastRequestCalendarDiv).innerHTML = rcd['DATA']; 
+    if (byId(lastRequestCalendarDiv)) { 
+      byId(lastRequestCalendarDiv).innerHTML = rcd['DATA']; 
+    } else { 
+      console.log('NO DIV');
+    }
   } else { 
     alert("ERROR");  
   }
@@ -241,7 +360,7 @@ function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
   obj['whichcalendar'] = whichcalendar; 
   obj['monthyear'] = monthyear;  
   var passeddata = JSON.stringify(obj);
-  var mlURL = "/data-doers/front-sscalendar";            
+  var mlURL = "/data-doers/front-sscalendar";  
   lastRequestCalendarDiv = whichdiv;      
   universalAJAX("POST",mlURL,passeddata,answerGetCalendar,modalCtl);
 }

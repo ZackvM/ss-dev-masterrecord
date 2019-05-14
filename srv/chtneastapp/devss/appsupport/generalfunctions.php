@@ -473,6 +473,27 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";       
         break;
+
+
+     case 'shipactual':
+        $calTblId = "shpSDCTbl";
+        $leftBtnId = "shpFromLeft";
+        $calTitle = "shpFromTitle";
+        $rightBtnId = "shpFromRight";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmSpacer = "btmSpacer";
+        $btmLine = "shpFromBtmLine";
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        $leftBtnAction  = " onclick=\"getCalendar('shipactual','sdShpCalendar', '{$lastMonth}/{$lastYear}',2);\" ";
+        $rightBtnAction = " onclick=\"getCalendar('shipactual','sdShpCalendar' ,'{$nextMonth}/{$nextYear}',2);\" ";  
+        break;
+
+
      case 'shipsdcfrom':
         $calTblId = "shpSDCTbl";
         $leftBtnId = "shpFromLeft";
@@ -633,7 +654,15 @@ while ($currentDay <= $numberOfDays) {
          $action = " onclick=\" fillField('bsqueryToDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
          $dayDsp = $currentDayDsp;
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('bsqueryToDate','','');\" ><center>[clear]</td></tr>";
-         break;     
+         break;    
+
+         case 'shipactual':
+         $sqrID = "daySqr{$currentDayDsp}";
+         $action = " onclick=\" fillField('sdcActualShipDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
+         $dayDsp = $currentDayDsp;
+         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('sdcActualShipDate','','');\" ><center>[clear]</td></tr>";
+         break;
+
          case 'shipsdcfrom':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('sdcRqstShipDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";

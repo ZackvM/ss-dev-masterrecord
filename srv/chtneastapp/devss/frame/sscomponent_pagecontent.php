@@ -15,7 +15,33 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
-
+      case 'shipdocaddso':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Add Sales Order to Ship-Doc";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";       
+        $innerDialog = $passedData; 
+        //$innerDialog = bldDialogShipDocShipOverride ( $passedData );
+        //$footerBar = "SEGMENT ADD";       
+        break;
+      case 'shipdocshipoverride':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Ship &amp; Close Shipment Document";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";       
+        //$innerDialog = $passedData; 
+        $innerDialog = bldDialogShipDocShipOverride ( $passedData );
+        //$footerBar = "SEGMENT ADD";       
+        break;
+      case 'shipdocaddsegment':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Add Segment";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";       
+        //$innerDialog = $passedData; 
+        $innerDialog = bldDialogShipDocAddSegment ( $passedData );
+        //$footerBar = "SEGMENT ADD";       
+        break;
       case 'preprocremovesdsegment':  
         $pdta = json_decode($passedData, true);          
         $titleBar = "Remove Segment from Shipdoc";
@@ -2239,6 +2265,7 @@ case 'shipdocedit':
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintSD border=0><tr><td><i class="material-icons">print</i></td><td>Print</td></tr></table></td>             
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSegment border=0><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td>         
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnShipOverride border=0><tr><td><i class="material-icons">local_shipping</i></td><td>Ship Override</td></tr></table></td>         
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSO border=0><tr><td><i class="material-icons">monetization_on</i></td><td>Add Sales Order</td></tr></table></td>         
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSD border=0><tr><td><i class="material-icons">block</i></td><td>Void</td></tr></table></td>         
 </tr>        
 BTNTBL;
@@ -2916,6 +2943,149 @@ return $rtnThis;
 
 }
 
+function bldDialogShipDocShipOverride ( $passeddata ) { 
+  //{"whichdialog":"shipdocshipoverride","objid":"{\"sdency\":\"aEU0c21vMFU5eUtYazJ5aldxUGNBQT09\"}","dialogid":"VDFJp1o0nDfa6r7"}
+  require(serverkeys . "/sspdo.zck");
+  $pdta = json_decode ( $passeddata, true );
+  $obj = json_decode ( $pdta['objid'], true );     
+  $sd = cryptservice($obj['sdency'], 'd' );
+  $dspsd = substr('000000' . $sd, -6);
+
+$shCalendar = buildcalendar('shipactual'); 
+$shpCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=hidden id=sdcActualShipDateValue value=""><input type=text READONLY id=sdcActualShipDate class="sdinput"></div>
+  <div class=valueDropDown id=sdshpcal><div id=sdShpCalendar>{$shCalendar}</div></div>
+</div>
+CALENDAR;
+
+  $devarr = json_decode(callrestapi("GET", dataTree . "/global-menu/dev-menu-ship-doc-actual-ship",serverIdent, serverpw), true);
+  $devm = "<table border=0 class=menuDropTbl style=\"width: 15vw;\">";
+  foreach ($devarr['DATA'] as $devval) {
+    $devm .= "<tr><td onclick=\"fillField('sdcActDeviationReason','','{$devval['menuvalue']}');\" class=ddMenuItem>{$devval['menuvalue']}</td></tr>";
+  }
+  $devm .= "</table>";
+
+  $inner = <<<BLDDIALOG
+<input type=hidden id=pdDialogId value="{$pdta['dialogid']}">
+<table border=0>
+<tr><td colspan=5 style="width: 12vw; padding: 1vh .5vw; text-align: justify; line-height: 1.3em;">This dialog will status ship-doc {$dspsd} as shipped, mark all segments on the ship-doc as being shipped to investigator and close the ship doc and all segments.  This will effectively make the Ship-Doc un-editable!  This is a Standard Operating Procedure (SOP) override.  This action should be performed within the inventory module.</td></tr>  
+<tr><td>Actual Ship Date *</td><td>Courier Tracking #</td><td> <div class="ttholder headhead">Deviation Reason * (?)<div class=tt style="width: 25vw;">This is NOT a standard operational screen and should only be used in extenuating circumstances.  The use of this screen will be tracked as a deviation from standard operating procedures. Please enter a reason for the deviation in the field provided.</div></div></td><td>User Pin</td></tr>
+<tr><td>{$shpCalendar}</td><td><input type=text id=sdcCourierTrack></td><td> <div class=menuHolderDiv><input type=text id=sdcActDeviationReason READONLY style="width: 15vw;"><div class=valueDropDown>{$devm}</div></div> </td><td><input type=password id=fldUsrPIN style="width: 7vw;">  </td></tr>
+<tr><td align=right colspan=4>
+    <table>
+     <tr>
+       <td><table class=tblBtn id=btnSDCShip style="width: 6vw;" onclick="sendOverrideShip();"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table></td>
+       <td><table class=tblBtn id=btnSDCCancel style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td>
+     </tr>
+   </table>
+</td></tr>
+</table>
+BLDDIALOG;
+
+$rtnThis = <<<RTNTHIS
+<style>
+ #sdcActualShipDate { font-size: 1.7vh; width: 6vw; padding: 1.3vh .5vw;} 
+ #sdcCourierTrack { font-size: 1.7vh; width: 20vw; }
+ .ttholder { position: relative; }
+ .ttholder:hover .tt { display: block; }
+ .tt { position: absolute; background: rgba(240,240,240,1); color: rgba(0,0,0,,1); padding: 7px 5px; display: none; z-index: 40; text-align: justify; line-height: 1.3em; }
+</style>      
+{$inner}
+RTNTHIS;
+
+return $rtnThis;
+}
+
+
+function bldDialogShipDocAddSegment ( $passeddata ) { 
+  require(serverkeys . "/sspdo.zck");
+  $pdta = json_decode ( $passeddata, true );
+  $obj = json_decode ( $pdta['objid'], true );     
+  $sd = cryptservice($obj['sdency'], 'd' );
+  $dspsd = substr('000000' . $sd, -6);
+
+  $chkSQL = "SELECT sdstatus, ifnull(investcode,'') as investcode, ifnull(investname,'') as investname  FROM masterrecord.ut_shipdoc where shipdocrefid = :sd";
+  $chkRS = $conn->prepare($chkSQL);
+  $chkRS->execute(array( ':sd' => $sd ));
+
+  if ( $chkRS->rowCount() <> 1 ) {
+    $inner = "<table id=errorDsp><tr><td>ERROR: NO SHIP DOC FOUND ({$dspsd}). SEE CHTNEASTERN INFORMATICS STAFF</td></tr></table>";
+  } else { 
+    $sddata = $chkRS->fetch(PDO::FETCH_ASSOC);
+    if ( strtoupper(trim($sddata['sdstatus'])) === 'CLOSED' ) { 
+      $inner = "<table id=errorDsp><tr><td>SHIPMENT DOCUMENT {$dspsd} IS CLOSED/SHIPPED.  YOU MAY NOT MODIFY OR ADD SEGMENTS TO IT.</td></tr></table>";
+    } else { 
+ 
+        $iname = trim($sddata['investname']); 
+        if ( trim($iname) === "" ) { 
+          //GET INVESTIGATOR'S NAME
+        }
+
+        //TODO:  Turn into a webservice
+        $sgAssListSQL = "SELECT sg.segmentid, replace(sg.bgs,'_','') as bgs, ucase(concat(ifnull(sg.prepmethod,''), if(ifnull(sg.preparation,'')='','',concat(' / ',ifnull(sg.preparation,''))))) as prepdsp, ucase(concat(ifnull(bs.tisstype,''), if(ifnull(bs.anatomicsite,'')='','',concat(' :: ',ifnull(bs.anatomicsite,''))), if(ifnull(bs.diagnosis,'') =  '','',concat(' :: ',ifnull(bs.diagnosis,''))), if(ifnull(bs.subdiagnos,'') = '','',concat(' (',ifnull(bs.subdiagnos,''),')')))) as dx FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample where segstatus = :segstatus and assignedTo = :investcode order by bgs asc";
+        $sgAssListRS = $conn->prepare($sgAssListSQL); 
+        $sgAssListRS->execute(array(':segstatus' => 'ASSIGNED', ':investcode' => $sddata['investcode'] ));
+        if ( $sgAssListRS->rowCount() === 0 ) { 
+          //NO SEGMENTS
+          $bgsTbl = "<table><tr><td>NO SEGMENTS ARE PRESENTLY ASSIGNED TO INVESTIGATOR {$sddata['investcode']}</td></tr></table>";
+        } else { 
+
+            $bgsCnt = 0; 
+            $bgsMasterCnt = 0;
+            $bgsTbl = "<table border=0><tr>"; 
+            while ( $sg = $sgAssListRS->fetch(PDO::FETCH_ASSOC) ) { 
+                if ($bgsCnt === 3) { 
+                  $bgsTbl .= "</tr><tr>";
+                  $bgsCnt = 0;
+                }
+
+                   $bgsDsp = "<table border=0><tr><td class=clsBGS>{$sg['bgs']}</td><td class=clsPrp>&nbsp;[{$sg['prepdsp']}]</td></tr><td colspan=2 class=clsDX>{$sg['dx']}</td></tr></table>";
+                   $sdency = cryptservice($sd,'e');
+                   $sid = cryptservice($sg['segmentid'],'e'); 
+                $bgsTbl .= "<td onclick=\"addSegmentToShipDoc('{$sdency}','{$sid}',{$bgsMasterCnt});\" ><div id='sgAssList{$bgsMasterCnt}' class=\"offeredSegCell\">{$bgsDsp}</div></td>";
+                $bgsCnt++;
+                $bgsMasterCnt++;
+            }
+            $bgsTbl .= "</tr></table>";
+        }
+        $inner = <<<INNERDLOG
+<table border=0>
+<tr><td id=topInstr>Enter a CHTN label # or select from the assigned segments below</td></tr>
+<tr><td style="padding: 0 0 0 .9vw;"><table><tr><td><input type=text id=qryBGS></td><td><table class=tblBtn id=btnBGSLookup style="width: 6vw;" onclick="BGSLookupRqst('{$sdency}');"><tr><td style="font-size: 1.3vh;"><center>Look-up</td></tr></table></td></tr></table></td></tr>
+<tr><td><div id=segBGSLookupRslts></div></td></tr>
+<tr><td id=segInstr>The segments below are currently assigned to investigator {$sddata['investcode']} ({$iname}).  Click to add to Ship-Doc {$dspsd}. </td></tr>
+<tr><td><div id=BGSSegAssignedList>{$bgsTbl}</div></td></tr>
+<tr><td align=right><table><tr><td><table class=tblBtn id=btnBGSLookup style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');location.reload(true);"><tr><td style="font-size: 1.3vh;"><center>Refresh Screen</td></tr></table><td><table class=tblBtn id=btnBGSLookup style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td></tr></table></td></tr>
+</table>
+INNERDLOG;
+    } 
+  }
+
+$rtnThis = <<<RTNTHIS
+<style>
+  #errorDsp { font-size: 1.8vh; color: rgba(0,0,0,1);  }
+  #errorDsp tr td { text-align: center; width: 25vw; box-sizing: border-box; line-height: 1.8em; padding: 1vh 1vw; }
+  #BGSSegAssignedList { max-height: 20vh; overflow: auto; }
+  .offeredSegCell { border: 1px solid rgba(145,145,145,1); background: rgba(255,255,255,1); height: 7vh; padding: 7px; box-sizing: border-box; }
+  .offeredSegCell:hover { background: rgba(255,248,225,1); cursor: pointer; }
+  .clsBGS { font-size: 1.5vh; font-weight: bold; width: 3vw; }
+  .clsPrp { }
+  .clsDX { font-size: 1.1vh; font-style: italic; }
+
+  #segBGSLookupRslts { height: 8vh; }
+
+  #segInstr { font-size: 1.4vh; padding: 1vh 1vw 0 1vw; text-align: center; width: 38vw; border-top: 1px solid rgba(145,145,145,1);  } 
+  #topInstr { font-size: 1.4vh; padding: 2vh 1vw 0 1vw;  width: 38vw;  }
+  #qryBGS { font-size: 1.2vh; width: 15vw; }
+  .statAss { font-size: 1.1vh; text-align: right;  }
+</style>      
+{$inner}
+RTNTHIS;
+
+return $rtnThis;
+}
+
 function bldDialogShipDocPreRemoveSeg ( $passeddata ) { 
     require(serverkeys . "/sspdo.zck");
 
@@ -2935,17 +3105,16 @@ if ( $bgsRS->rowCount() <> 1 ) {
    $rtnThis = "ERROR:  SEGMENT NOT FOUND BY ID.  SEE CHTNEASTERN INFORMATICS PERSON";
 } else { 
   $bgs = $bgsRS->fetch(PDO::FETCH_ASSOC); 
-  //New Segment Statuses Allowed - Assign, Bank, Permanent Collection, X_NFIPI 
-  
+  //New Segment Statuses Allowed - Assign, Bank, Permanent Collection, X_NFIPI   
   $poarr = json_decode(callrestapi("GET", dataTree . "/global-menu/ship-doc-restock-segment-values",serverIdent,serverpw),true);
-  $po = "<table border=0 class=menuDropTbl>";
+  $po = "<table border=0 id=rsdropdown class=menuDropTbl>";
   foreach ($poarr['DATA'] as $poval) { 
     $po .= "<tr><td onclick=\"fillField('pdRestockStatus','{$poval['lookupvalue']}','{$poval['menuvalue']}');\" class=ddMenuItem>{$poval['menuvalue']}</td></tr>";
   }
   $po .= "</table>";
  
   $rarr = json_decode(callrestapi("GET", dataTree . "/global-menu/shipdoc-restock-reasons",serverIdent,serverpw),true);
-  $rr = "<table border=0 class=menuDropTbl>";
+  $rr = "<table border=0 id=rrdropdown class=menuDropTbl>";
   foreach ($rarr['DATA'] as $rval) { 
     $rr .= "<tr><td onclick=\"fillField('pdRestockReason','{$rval['lookupvalue']}','{$rval['menuvalue']}');\" class=ddMenuItem>{$rval['menuvalue']}</td></tr>";
   }
@@ -2954,13 +3123,13 @@ if ( $bgsRS->rowCount() <> 1 ) {
 
 $reasonTbl = <<<REASONS
 
-<table border=1>
+<table border=0>
 <tr><td>Segment Status *</td><td>Removal Reason *</td></tr>
 <tr>
   <td><div class=menuHolderDiv><input type=hidden id=pdRestockStatusValue><input type=text id=pdRestockStatus><div class=valueDropDown>{$po}</div></div></td>
   <td><div class=menuHolderDiv><input type=hidden id=pdRestockReasonValue><input type=text id=pdRestockReason><div class=valueDropDown>{$rr}</div></div></td>
 </tr>
-<tr><td colspan=2>Note</td></tr>
+<tr><td colspan=2 style="padding: .8vh 0; ">Note</td></tr>
 <tr>
   <td colspan=2><input type=text id=pdRestockNote></td>
 </tr>
@@ -2968,16 +3137,24 @@ $reasonTbl = <<<REASONS
 REASONS;
 
 $btnTbl = <<<BTTNS
-<table><tr><td><table class=tblBtn id=btnLookup style="width: 6vw;" onclick="sendRemovalCmd();"><tr><td style="font-size: 1.3vh;"><center>Confirm</td></tr></table></td><td><table class=tblBtn id=btnLookup style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td></tr></table>
+<table><tr><td><table class=tblBtn id=btnConfirmRemoval style="width: 6vw;" onclick="sendRemovalCmd();"><tr><td style="font-size: 1.3vh;"><center>Confirm</td></tr></table></td><td><table class=tblBtn id=btnCancelRemoval style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td></tr></table>
 BTTNS;
 
 $rtnThis = <<<RTNTHIS
 <style>
 
+#delHolderTbl { width: 20vw; }
+#instructionCell { font-size: 1.3vh; padding: 1vh .5vw; width: 20vw; box-sizing: border-box; line-height: 1.8em; text-align: justify; }
+#pdRestockStatus { width: 15vw; font-size: 1.2vh; }
+#rsdropdown { min-width: 15vw; }
+#pdRestockReason { width: 18vw; font-size: 1.2vh; }
+#rrdropdown { min-width: 18vw; }
+#pdRestockNote { width: 34vw; font-size: 1.2vh; box-sizing: border-box; }
+
 </style>      
-<table border=0 cellspacing=0 cellpadding=0>
-    <tr><td>This action will remove segment <b>&laquo;{$bgs['bgs']}&raquo;</b> from <b>&laquo;{$dspsd}&raquo;</b>.  You must re-status the segment and state a reason for removal from the shipment document.<input type=hidden id=pdSegId value={$segid}><input type=hidden id=pdDspCell value="{$dspcellid}"><input type=hidden id=pdSDEncy value="{$obj['sdency']}"><input type=hidden id=pdDialogId value="{$pdta['dialogid']}"></td></tr>
-    <tr><td>{$reasonTbl}</td></tr>
+<table border=0 cellspacing=0 cellpadding=0 id=delHolderTbl>
+    <tr><td id=instructionCell>This action will remove segment <b>&laquo;{$bgs['bgs']}&raquo;</b> from <b>&laquo;{$dspsd}&raquo;</b>.  You must re-status the segment and state a reason for removal from the shipment document.<input type=hidden id=pdSegId value={$segid}><input type=hidden id=pdDspCell value="{$dspcellid}"><input type=hidden id=pdSDEncy value="{$obj['sdency']}"><input type=hidden id=pdDialogId value="{$pdta['dialogid']}"></td></tr>
+    <tr><td style="padding: 0 .5vw;">{$reasonTbl}</td></tr>
     <tr><td align=right>{$btnTbl}</td></tr>
 </table>
         
@@ -3100,9 +3277,10 @@ return $rtnThis;
 function bldShipDocLookup() {  
     
     $thisPage = <<<THISPAGE
-            <table>
-            <tr><td>Shipment Document #</td></tr>
-            <tr><td><input type=text id=qryShipDoc></td><td><table class=tblBtn id=btnLookup style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Lookup</td></tr></table></td></tr>
+            <table border=0>
+            <tr><td colspan=2 style="padding: 1vh .5vw 0 .5vw;">Shipment Document #</td></tr>
+            <tr><td style="padding: 0 .5vw;"><input type=text id=qryShipDoc></td><td><table class=tblBtn id=btnLookup style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Lookup</td></tr></table></td><td></td></tr>
+            <tr><td colspan=3 id=resultTblHolderCell><div id=displayLookedupData></div></td></tr>
             </table>
             
 THISPAGE;

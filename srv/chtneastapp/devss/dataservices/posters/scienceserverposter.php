@@ -34,6 +34,299 @@ function __construct() {
 
 class datadoers {
 
+    function shipdocoverrideshipdate ( $request, $passdata ) {
+      //{"sdency":"aEU0c21vMFU5eUtYazJ5aldxUGNBQT09","sdshipdte":"2019-05-01","couriertrck":"fr5t4f","deviationreason":"Inventory Module Not Working","usrpin":"is3t9hxECdrYlSixuGctsz0TkexFjU4p4dscrmWJn510deukKIebgDL4whrfqXafaHHBCY5xD1UdGltCG/1jY8YlROOGOGjwExPxu4+PWbW/9IqgvOfffV6ZEMUyrBv2L0yNoJrGZtCJ2gbTfBdlp+R5fNMOnC4g/ac8kQWRwxxRwxSIV4Px7r3OrGohKTWUeQ+rmkKw/TFDaXKEJaeK0Qf7jeuhzPbt2djU8uj3FlekRydOyBdh0IB49zieEm+Rfc/y/sxc10FjELbPPmyQQOv4zdpaeRNzbJWDShwq0Y6RvN559TP42Vq6bQJITvMp6vlF5WTcEPouk1N056p5cw=="}  
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start();
+      $sessid = session_id();
+
+      //DATA CHECKS
+      $sd = cryptservice($pdta['sdency'],'d');
+      $dspsd = substr('000000' . $sdnbr, -6);
+      ( !array_key_exists('sdency', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdency' missing from passed data")) : "";
+      ( !array_key_exists('sdshipdte', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdshipdte' missing from passed data")) : "";
+      ( !array_key_exists('couriertrck', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'courier track' missing from passed data")) : "";
+      ( !array_key_exists('deviationreason', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'deviationreason' missing from passed data")) : "";
+      ( !array_key_exists('usrpin', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'usrpin' missing from passed data")) : "";
+
+      $usrpin = "";
+      ( array_key_exists('usrpin',$pdta) && chtndecrypt($pdta['usrpin'], true) === "" ) ? (list( $errorind, $msgArr[] ) = array(1 , "Inventory User Pin is required. Please supply a value.")) : (list( $usrpin ) = array( chtndecrypt($pdta['usrpin'], true))); 
+      ( array_key_exists('sdency', $pdta) && trim($pdta['sdency']) === "" ) ? (list( $errorind, $msgArr[] ) = array(1 , "Ship-Doc Number is missing")) : "";
+      ( array_key_exists('sdshipdte', $pdta) && trim($pdta['sdshipdte']) === "" ) ? (list( $errorind, $msgArr[] ) = array(1 , "Ship-Doc Ship Date cannot be blank.  Please supply a value.")) : "";
+      ( array_key_exists('couriertrck', $pdta) && trim($pdta['couriertrck']) === "" ) ? (list( $errorind, $msgArr[] ) = array(1 , "Ship-Doc Courier Tracking Number cannot be blank.  Please supply a value.")) : "";
+      ( array_key_exists('deviationreason', $pdta) && trim($pdta['deviationreason']) === "" ) ? (list( $errorind, $msgArr[] ) = array(1 , "Ship-Doc Shipping Deviation Reason is blank.  Please supply a value.")) : "";
+
+      $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and inventorypinkey = :pinkey and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid, ':pinkey' => $usrpin));
+      if ($rs->rowCount() === 1) { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER WITH PIN INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+      }
+    
+      ( trim($pdta['sdshipdte']) !== "" &&  !verifyDate(trim($pdta['sdshipdte']),'Y-m-d', true) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE DATE SPECIFIED FOR THE SHIPMENT IS INVALID")) : "" ;
+      $givendate = new DateTime($pdta['sdshipdte']);
+      $currentdate = new DateTime();
+      ( $givendate > $currentdate ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "SHIPMENT DATE CANNOT BE IN THE FUTURE")) : "" ;
+
+      $valChkSQL = "SELECT * FROM four.sys_master_menus where menu = :mnu and dspvalue = :mnuvalue";
+      $valChkRS = $conn->prepare($valChkSQL); 
+      $valChkRS->execute(array(':mnuvalue' => $pdta['deviationreason'], ':mnu' => 'DEVIATIONREASON_HPROVERRIDE')); 
+      ( $valChkRS->rowCount() === 0 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE REASON FOR SOP DEVIATION IS NOT VALID")) : "" ;
+
+      //MAKE SURE THAT THE SHIPDOC IS NOT ALREADY CLOSED
+      $sdChkSQL = "SELECT shipdocrefid FROM masterrecord.ut_shipdoc where shipdocrefid = :sd and sdstatus <> 'CLOSED' and ifnull(shipmentTrackingNbr,'') = ''";
+      $sdChkRS = $conn->prepare($sdChkSQL);
+      $sdChkRS->execute(array( ':sd' => $sd ));
+      ( $sdChkRS-> rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "SHIPDOC {$sd} IS CLOSED, ALREADY HAS A COURIER TRACKING NUMBER OR DOES NOT EXIST. IT CANNOT BE MODIFIED")) : "" ;
+
+
+      if ( $errorInd === 0 ) {
+          //UPDATE SHIPDOC AND ALL SEGMENTS WITH SHIPDOC SHIPDATE AND THEN CLOSED SHIPDOC
+
+          //BACK-UP SCAN HISTORY
+          $inventoryHistSQL = "insert into masterrecord.history_procure_segment_inventory (segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) select segmentid, bgs, scannedlocation, scanloccode, scannedstatus, scannedby, scanneddate, now(), 'proczack' from masterrecord.ut_procure_segment where shipdocrefid = :sd";
+          $inventoryHistRS = $conn->prepare($inventoryHistSQL); 
+          $inventoryHistRS->execute(array(':sd' => $sd));
+
+          //BACK-UP STATUS HISTORY
+          $segStatSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby, newstatus) SELECT segmentid, segstatus, statusby, statusdate, now(), 'proczack', 'SHIPPED'  FROM masterrecord.ut_procure_segment where shipdocrefid = :sd";
+          $segStatRS = $conn->prepare($segStatSQL); 
+          $segStatRS->execute(array(':sd' => $sd));
+
+          //UPDATE SEGMENTS
+          $updSegSQL = "update masterrecord.ut_procure_segment set shippeddate = :shipdate, segstatus = 'SHIPPED', statusdate = now(), statusby = :usr, scanloccode = 'SHIPPEDOUT', scannedlocation = 'SHIPPED TO INVESTIGATOR', scannedstatus = 'SHIPPED TO INVESTIGATOR', scanneddate = now() where shipdocrefid = :sd";
+          $updSegRS = $conn->prepare($updSegSQL);
+          $updSegRS->execute(array(':usr' => $u['originalaccountname'], ':sd' => $sd, ':shipdate' => $pdta['sdshipdte'] ));
+
+          //UPDATE SHIPDOC
+          $insHistSQL = "insert into masterrecord.history_shipdoc (historyon, historyby   , shipdocrefid, sdstatus, statusdate, acceptedby, acceptedbyemail, ponbr, rqstshipdate, actualshipdate, rqstpulldate, comments, investcode, investname, investemail, investinstitution, institutiontype, investdivision, oncreationinveststatus, tqcourierid, courier, couriernbr, shipmentTrackingNbr, shipAddy, shipphone, billAddy, billphone, setupon, setupby, salesorder, SAPified, SOBY, SOON, reconciledInd, reconciledBy, closedOn, closedBy, surveyEmailSent, lasteditby, lastediton) SELECT now(), :usr, shipdocrefid, sdstatus, statusdate, acceptedby, acceptedbyemail, ponbr, rqstshipdate, actualshipdate, rqstpulldate, comments, investcode, investname, investemail, investinstitution, institutiontype, investdivision, oncreationinveststatus, tqcourierid, courier, couriernbr, shipmentTrackingNbr, shipAddy, shipphone, billAddy, billphone, setupon, setupby, salesorder, SAPified, SOBY, SOON, reconciledInd, reconciledBy, closedOn, closedBy, surveyEmailSent, lasteditby, lastediton FROM masterrecord.ut_shipdoc where shipdocrefid = :sd";
+          $insHistRS = $conn->prepare($insHistSQL);
+          $insHistRS->execute(array(':usr' => $u['originalaccountname'], ':sd' => $sd));
+
+          //CLOSE SHIPDOC      
+          $updShpDocSQL = "update masterrecord.ut_shipdoc set sdstatus = 'CLOSED', actualshipdate = :shipdate, shipmentTrackingNbr = :tracknbr, lasteditby = :usr, lastediton = now() where shipdocrefid = :sd"; 
+          $updShpDocRS = $conn->prepare($updShpDocSQL);
+          $updShpDocRS->execute(array( ':sd' => $sd, ':usr' => $u['originalaccountname'], ':shipdate' => $pdta['sdshipdte'], ':tracknbr' => $pdta['couriertrck'] ));
+
+          //TODO: CAPTURE DEVIATION REASON AND ALL OTHER DEVIATION REASONS THROUGH OUT CODE ....
+          $dta['dialogid'] = $pdta['dialogid'];
+          //$dta['r'] = array( ':sd' => $sd, ':usr' => $u['originalaccountname'], ':shipdate' => $pdta['sdshipdte'], ':tracknbr' => $pdta['couriertrck'] );
+          $responseCode = 200;
+      }
+      
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;       
+    }  
+
+    function bgslookuprequest( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+
+      $sdency = $pdta['sdency'];
+       
+      $bgs = trim($pdta['bgs']);
+      ( $bgs === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE CHTN LABEL # FIELD CANNOT BE LEFT BLANK WHEN PERFOMING A LOOKUP FUNCTION")) : "";
+
+      if ( $errorInd === 0 ) {
+          $lookupSQL = "SELECT sg.segmentid, replace(sg.bgs,'_','') as bgs, ucase(concat(ifnull(sg.prepmethod,''), if(ifnull(sg.preparation,'')='','',concat(' / ',ifnull(sg.preparation,''))))) as prepdsp, ucase(concat(ifnull(bs.tisstype,''), if(ifnull(bs.anatomicsite,'')='','',concat(' :: ',ifnull(bs.anatomicsite,''))), if(ifnull(bs.diagnosis,'') =  '','',concat(' :: ',ifnull(bs.diagnosis,''))), if(ifnull(bs.subdiagnos,'') = '','',concat(' (',ifnull(bs.subdiagnos,''),')')))) as dx, ifnull(segstat.longvalue,'') as segmentstatus, if(ifnull(sg.assignedto,'')='','',concat(' :: ', ifnull(sg.assignedto,'')))  as assignedto  FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'segmentstatus') as segstat on sg.segstatus = segstat.menuvalue where replace(sg.bgs,'_','') = :bgs order by bgs asc";
+          $lookupRS = $conn->prepare($lookupSQL); 
+          $lookupRS->execute(array(':bgs' => preg_replace( '/[\_]/', '', $pdta['bgs']) ));
+          if ( $lookupRS->rowCount() === 0 ) { 
+            (list( $errorInd, $msgArr[] ) = array(1 , "NO CHTN LABELLED SEGMENTS MATCH YOUR SEARCH REQUEST ({$pdta['bgs']})"));
+            $responseCode = 404;
+          } else {
+            $bgsCnt = 0; 
+            $bgsMasterCnt = 1111;
+            $bgsTbl = "<table border=0><tr>"; 
+            while ( $sg = $lookupRS->fetch(PDO::FETCH_ASSOC) ) { 
+                if ($bgsCnt === 3) { 
+                  $bgsTbl .= "</tr><tr>";
+                  $bgsCnt = 0;
+                }
+                   $bgsDsp = "<table border=0><tr><td class=clsBGS>{$sg['bgs']}</td><td class=clsPrp>&nbsp;[{$sg['prepdsp']}]</td></tr><td colspan=2 class=clsDX>{$sg['dx']}</td></tr><tr><td class=statAss colspan=2>{$sg['segmentstatus']}{$sg['assignedto']}</td></tr></table>";
+
+                   //$sdency = cryptservice($sd,'e');
+                   $sid = cryptservice($sg['segmentid'],'e'); 
+                $bgsTbl .= "<td onclick=\"addSegmentToShipDoc('{$sdency}','{$sid}',{$bgsMasterCnt});\" ><div id='sgAssList{$bgsMasterCnt}' class=\"offeredSegCell\">{$bgsDsp}</div></td>";
+                $bgsCnt++;
+                $bgsMasterCnt++;
+            }
+            $bgsTbl .= "</tr></table>";
+            $dta['return'] = $bgsTbl;
+            $responseCode = 200;
+          }
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;       
+    }
+
+    function shipdocaddsegment ( $request, $passdata ) { 
+      //{"sdency":"ZkFBTkJsZUM5SXhVcEtvOURscGUwQT09","segid":"QXQwUVNrL08vL25uc3gxZjJxK2MvQT09","dspnbr":1}  
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $sess = session_id();
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      $goodUser = 0;
+
+      //DATACHECKS     
+      if ( $authuser !== $authchk || $authuser !== $sess ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } 
+      $chkUsrSQL = "SELECT originalaccountname, presentinstitution FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrR = $conn->prepare($chkUsrSQL); 
+      $chkUsrR->execute(array(':sess' => $sess));
+      if ($chkUsrR->rowCount() <> 1) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your Session has expired, your password has expired, or don't have access to the coordinator function"));
+      } else { 
+          $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
+          $goodUser = 1;
+      }
+
+      if ( $goodUser === 1 ) { 
+        //DATACHECKS
+        $sd = cryptservice($pdta['sdency'],'d');
+        $dspsd = substr(('000000' . $sd),-6);
+        $sid = cryptservice($pdta['segid'],'d');
+        $sdChkSQL = "SELECT shipdocrefid, investcode FROM masterrecord.ut_shipdoc where shipdocrefid = :sd and sdstatus <> :closedstatus";
+        $sdChkRS = $conn->prepare($sdChkSQL); 
+        //TODO:  Make this dynamic
+        $sdChkRS->execute(array(':sd' => $sd, ':closedstatus' => 'CLOSED'));
+        ( $sdChkRS->rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THIS SHIPMENT DOCUMENT ({$dspsd}) IS ALREADY MARKED AS CLOSED.  YOU MAY NOT MODIFY IT.")) : $sddta = $sdChkRS->fetch(PDO::FETCH_ASSOC);
+        //SHIPDOC INVESTIGATOR $sddta['investcode']
+        $bgsChkSQL = "SELECT assignedto, segstatus, replace(bgs,'_','') as bgs, ifnull(shippeddate,'') as shippeddate FROM masterrecord.ut_procure_segment where segmentid = :segid and ( segstatus = 'BANKED' OR segstatus = 'ASSIGNED')";
+        $bgsChkRS = $conn->prepare($bgsChkSQL); 
+        $bgsChkRS->execute(array(':segid' => $sid));
+        ( $bgsChkRS->rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE SEGMENT SPECIFIED MUST BE STATUSED 'ASSIGNED' OR 'BANKED'.  YOU MAY NOT ADD IT TO THIS SHIP-DOC.")) : $sgdta = $bgsChkRS->fetch(PDO::FETCH_ASSOC);
+        if ( trim($sgdta['segstatus']) === 'ASSIGNED' ) { 
+          //CHECK ASSIGNMENT
+          (strtoupper(trim($sddta['investcode'])) !== strtoupper(trim($sgdta['assignedto']))) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE ASSIGNED SEGMENTS MUST BE ASSIGNED TO THE INVESTIGATOR ON THE SHIPDOC. YOU MAY NOT ADD IT TO THIS SHIP-DOC.")) : "";
+        }
+        (trim($sgdta['shippeddate']) !== "") ? (list( $errorInd, $msgArr[] ) = array(1 , "THE SEGMENT HAS ALREADY BEEN SHIPPED. YOU MAY NOT ADD IT TO THIS SHIP-DOC.")) : "";
+        //MAKE SURE NOT ON SHIPDOC ALREADY
+        $detChkSQL = "SELECT shipdocDetId FROM masterrecord.ut_shipdocdetails where shipdocrefid = :sd and segid = :sid";
+        $detRS = $conn->prepare($detChkSQL); 
+        $detRS->execute(array(':sd' => $sd, ':sid' => $sid)); 
+        ( $detRS->rowCount() <> 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE SEGMENT IS ALREADY ON THE SHIPDOC. YOU MAY NOT ADD IT AGAIN TO THIS SHIP-DOC.")) : "";
+      }
+
+      if ( $errorInd === 0 ) { 
+        $addSQL = "insert into masterrecord.ut_shipdocdetails ( shipdocrefid, segid, addon, addedby, pulledind) values(:sd,:sid,now(),:usr,0)";
+        $addRS = $conn->prepare($addSQL); 
+        $addRS->execute(array(':sd' => $sd, ':sid' => $sid, ':usr' => $u['originalaccountname']));
+        
+        $logSQL = "insert into masterrecord.history_shipdoc_actions (shipdocrefid, status, statusdate, bywhom, ondate, segmentreference) values(:sd, :stsmsg, now(),:usr,now(),:sid)";
+        $logRS = $conn->prepare($logSQL); 
+        $logRS->execute(array(':sd' => $sd, ':stsmsg' => "SEGMENT ADDED. SEGID={$sid}",':usr' => $u['originalaccountname'], ':sid' => $sid));
+        
+        $bckSegStsSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby, newstatus) select segmentid, segstatus, statusBy, statusDate, now(), :usr, :newstatus from  masterrecord.ut_procure_segment where segmentid = :sid";
+        $bckSegStsRS = $conn->prepare($bckSegStsSQL); 
+        $bckSegStsRS->execute(array(':usr' => $u['originalaccountname'], ':newstatus' => 'ONPICKLIST', ':sid' => $sid));
+        
+        $updSegSQL = "update masterrecord.ut_procure_segment set segstatus = :newsts, statusdate = now(), statusby = :usr, shipdocrefid = :sd where segmentid = :sid";
+        $updSegRS = $conn->prepare($updSegSQL); 
+        $updSegRS->execute(array(':sid' => $sid, ':sd' => $sd, ':usr' => $u['originalaccountname'], ':newsts' => 'ONPICKLIST'));
+        
+        $dta['dspid'] = $pdta['dspnbr'];
+        $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;       
+    }
+
+    function lookupshipdocqry ( $request, $passdata ) {
+      //{"qryshipdoc":"5435"}  
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $sess = session_id();
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      $goodUser = 0;
+
+      //DATACHECKS     
+      if ( $authuser !== $authchk || $authuser !== $sess ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } 
+      $chkUsrSQL = "SELECT originalaccountname, presentinstitution FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrR = $conn->prepare($chkUsrSQL); 
+      $chkUsrR->execute(array(':sess' => $sess));
+      if ($chkUsrR->rowCount() <> 1) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your Session has expired, your password has expired, or don't have access to the coordinator function"));
+      } else { 
+          $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
+          $goodUser = 1;
+      }
+
+      if ( $goodUser === 1 ) { 
+        ( trim($pdta['qryshipdoc']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A Shipment Document Number query is required")) : "";
+      }
+
+
+      if ( $errorInd === 0 ) { 
+          //$pdta['qryshipdoc']
+          $lookupSQL = "SELECT substr(concat('000000',shipdocrefid),-6) as shipdocrefnbr, ucase(ifnull(sdstatus,'')) as shipdocstatus, date_format(statusdate,'%m/%d/%Y') as statusdate, ifnull(investcode,'') as investcode, ifnull(investname,'') as investname, if(ifnull(salesorder,'')='','',substr(concat('000000',ifnull(salesorder,'')),-6)) as salesorder FROM masterrecord.ut_shipdoc where shipdocrefid like :lookupvalue order by shipdocrefid desc";
+          $lookupRS = $conn->prepare($lookupSQL); 
+          $lookupRS->execute(array(':lookupvalue' => "%{$pdta['qryshipdoc']}%"));
+
+          if ( $lookupRS->rowCount() === 0 ) { 
+             (list( $errorInd, $msgArr[] ) = array(1 , "NO SHIPDOCs FOUND"));
+          } else {
+            $itemsfound = $lookupRS->rowCount();
+
+            $rsltTbl = "<table border=0 id=shipDocQryRsltTbl><tr><td colspan=15 id=rsltCount>Shipment Documents: " . $lookupRS->rowCount() . "</td></tr><tr><th>Ship-Doc #</th><th>Status / Date</th><th>Investigator</th><th>Sales Order #</th></tr>";
+            while ($r = $lookupRS->fetch(PDO::FETCH_ASSOC)) {
+              $urlency = cryptservice( $r['shipdocrefnbr'], 'e');  
+              $rsltTbl .= "<tr class=rowDsp onclick=\"navigateSite('shipment-document/{$urlency}');\"><td class=dspCell>{$r['shipdocrefnbr']}</td><td class=dspCell>{$r['shipdocstatus']} ({$r['statusdate']})</td><td class=dspCell>{$r['investname']} ({$r['investcode']})</td><td class=dspCell>{$r['salesorder']}</td></tr>";
+            }
+            $rsltTbl .= "</table>";
+            $dta = $rsltTbl;          
+          }
+          $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;       
+    }
+
     function shipdocremovesegment ( $request, $passdata ) {
       //dialogid	TWaECoPecCCtJEN // dspcell	BKgdTzqg // rnote	// rreason	// sdency	ZkFBTkJsZUM5SXhVcEtvOURscGUwQT09 // segid	449032 // segstatus	  
       $rows = array(); 
@@ -112,7 +405,7 @@ class datadoers {
         $onSDSQL = "SELECT * FROM masterrecord.ut_shipdocdetails where shipdocrefid = :sd and segid = :segid and pulledind = :pulledind";
         $onSDRS = $conn->prepare($onSDSQL); 
         $onSDRS->execute(array(':sd' => $sd, ':segid' => $sid, ':pulledind' => 0));
-        ( $onSDRS->rowCount() === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THIS SHIPMENT DOCUMENT ({$dspsd}) IS ALREADY MARKED AS CLOSED.  YOU MAY NOT MODIFY IT.")) : "";
+        ( $onSDRS->rowCount() === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "EITHER THE SEGMENT DOES NOT EXIST ON THE SHIPDOC OR IS IN A PULLED STATE AND SO CANNOT BE REMOVED.")) : "";
 
         //4. Make sure the shipdoc is not closed
         $sdChkSQL = "SELECT shipdocrefid  FROM masterrecord.ut_shipdoc where shipdocrefid = :sd and sdstatus <> :closedstatus";
@@ -216,10 +509,11 @@ class datadoers {
 
       //1. check the the shipdoc is open/locked!!!!!
       //TODO:  MAKE STATUSES DYNAMIC
-      $chkSDSQL = "SELECT sdstatus, investcode  FROM masterrecord.ut_shipdoc where shipdocrefid = :sdrefid and ( sdstatus <> :sdstatus and sdstatus <> :sdstattoo )";
+      $chkSDSQL = "SELECT sdstatus, investcode FROM masterrecord.ut_shipdoc where shipdocrefid = :sdrefid and ( sdstatus <> :sdstatus and sdstatus <> :sdstattoo )";
       $chkSDRS = $conn->prepare($chkSDSQL); 
-      $chkSDRS->execute( array( ':sdrefid' => $sdnbr, ':sdstatus' => 'CLOSED', ':sdstattoo' => 'VOID' ));
-      ( $chkSDRS->rowCount() <> 1 ) ? (list( $errorind, $msgArr[] ) = array(1 , "SHIP DOC ({$dspsd}) DOESN'T EXIST OR IS NOT STATUSED TO BE EDITED")) : $sd = $chkSDRS->fetch(PDO::FETCH_ASSOC);
+      $chkSDRS->execute( array( ':sdrefid' => $sdnbr, ':sdstatus' => 'CLOSED', ':sdstattoo' => 'VOIDED' ));
+      ( $chkSDRS->rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SHIP DOC ({$dspsd}) DOESN'T EXIST OR IS NOT STATUSED TO BE EDITED")) : $sd = $chkSDRS->fetch(PDO::FETCH_ASSOC);
+
       //2: VALID DATES ON SHIPREQUEST AND TO LAB
       ( trim($pdta['sdcRqstShipDateValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "A REQUESTED SHIPMENT DATE IS REQUIRED")) : "" ;
       ( trim($pdta['sdcRqstShipDateValue']) !== "" &&  !verifyDate(trim($pdta['sdcRqstShipDateValue']),'Y-m-d', true) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE DATE SPECIFIED FOR THE SHIPMENT IS INVALID")) : "" ;
@@ -253,7 +547,6 @@ class datadoers {
       (trim($pdta['sdcBillPhone']) !== "" && !preg_match('/^\(\d{3}\)\s\d{3}-\d{4}(\s[x]\d{1,7})*$/',trim($pdta['sdcBillPhone']))) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE BILLING PHONE NUMBER IS IN AN INVALID FORMAT.  FORMAT IS (123) 456-7890 x0000")) : "" ; 
       //7. CHECK SALES ORDER
       ( trim($pdta['sdcShipDocSalesOrder']) !== "" && !is_numeric($pdta['sdcShipDocSalesOrder']) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE SALES ORDER NUMBER MUST BE A NUMERIC VALUE")) : "" ; 
-
 
       if ( $errorInd === 0 ) {
         //GET ORIGINAL VALUES
@@ -1146,9 +1439,24 @@ class datadoers {
              break;
            case 'preprocremovesdsegment':
              $primeFocus = "";
-             $left = '13vw';
+             $left = '33vw';
              $top = '13vh';
-            break;
+             break;
+           case 'shipdocaddsegment':
+             $primeFocus = "";
+             $left = '30vw';
+             $top = '10vh';
+             break;
+           case 'shipdocshipoverride':
+             $primeFocus = "";
+             $left = '20vw';
+             $top = '30vh';
+             break;
+           case 'shipdocaddso':
+             $primeFocus = "";
+             $left = '20vw';
+             $top = '30vh';
+             break;
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);

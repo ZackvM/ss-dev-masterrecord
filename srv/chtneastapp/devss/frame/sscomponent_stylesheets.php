@@ -214,7 +214,7 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 
 /* GENERAL CONTROLS */
 .fldLabel {font-family: Roboto; font-size: 1.4vh;  color: rgba({$this->color_zackgrey},1); padding-top: 1vh; }
-input {width: 25vw; box-sizing: border-box; font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_mgrey},1);  }
+input {width: 25vw; box-sizing: border-box; font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw; border: 1px solid rgba({$this->color_mgrey},1);  }
 input:focus, input:active {background: rgba({$this->color_lamber},.5); border: 1px solid rgba({$this->color_dblue},.5);  outline: none;  }
 textarea { box-sizing: border-box; font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_mgrey},1); resize: none; }
 .pageTitle {font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1);}
@@ -350,6 +350,16 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 .rTableCell { float: left; margin-right: 3px; margin-bottom: 3px;  }
 
 .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; } 
+
+#qryShipDoc { font-size: 1.2vh; }
+
+#resultTblHolderCell { padding: 1vh .5vw; }
+#shipDocQryRsltTbl { border: 1px solid rgba({$this->color_zackgrey},1); }
+#shipDocQryRsltTbl #rsltCount { padding: 1vh 1vw; border-bottom: 2px solid rgba({$this->color_zackgrey},1); }
+#shipDocQryRsltTbl th { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 8px; }
+#shipDocQryRsltTbl .dspCell { padding: 8px; border-bottom: 1px solid rgba({$this->color_mgrey},.6); border-right: 1px solid rgba({$this->color_mgrey},.6);  }
+#shipDocQryRsltTbl .rowDsp:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
+
 
 STYLESHEET;
 //.rTable    { display: table; }
