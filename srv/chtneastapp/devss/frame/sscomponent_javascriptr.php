@@ -81,6 +81,34 @@ document.addEventListener('DOMContentLoaded', function() {
                                  
 }, false);
 
+ function saveSOOverride() { 
+   var obj = new Object();
+   obj['sdency'] = byId('soSDEncy').value.trim();
+   obj['dialogid'] = byId('soDLGId').value.trim(); 
+   obj['sonbr'] = byId('soSONbr').value;    
+   var passdata = JSON.stringify(obj);
+   var mlURL = "/data-doers/shipdoc-override-salesorder";
+   universalAJAX("POST",mlURL,passdata,answerOverrideSalesOrder,2);         
+ }
+         
+function answerOverrideSalesOrder (rtnData) { 
+   //console.log( rtnData );
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("SHIPMENT DOCUMENT ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse(rtnData['responseText']); 
+     closeThisDialog ( dta['DATA']['dialogid'] );
+     alert('SALES ORDER SAVED');
+     location.reload(true);  
+   }         
+}
+         
 function sendOverrideShip() { 
    var obj = new Object();
    obj['sdency'] = byId('sdency').value.trim();

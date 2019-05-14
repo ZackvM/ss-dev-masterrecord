@@ -33,6 +33,59 @@ function __construct() {
 }
 
 class datadoers {
+    
+    function shipdocoverridesalesorder ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start();
+      $sessid = session_id();
+      
+      $sd = cryptservice($pdta['sdency'],'d');
+      //$dspsd = substr('000000' . $sd, -6);      
+
+      $chkUsrSQL = "SELECT originalaccountname as usr FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1 and allowfinancials = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ($rs->rowCount() === 1) { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  USER MUST BE A MEMBER OF THE FINANCIAL USERS GROUP.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+      }
+      
+      ( trim($pdta['sonbr']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU HAVE NOT SUPPLIED A SALES ORDER NUMBER.")) : "";
+      ( !is_numeric(trim($pdta['sonbr'])) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SALES ORDER NUMBERS MUST BE NUMERIC")) : "";
+      
+      ( !array_key_exists('sdency', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'sdency' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('dialogid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'dialogid' is missing.  Fatal Error")) : "";
+      
+      ( trim($sd) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SHIP DOC NUMBER IS INCORRECT")) : "";
+      
+      if ( $errorInd === 0 ) { 
+
+          //UPDATE SHIPDOC
+          $insHistSQL = "insert into masterrecord.history_shipdoc (historyon, historyby   , shipdocrefid, sdstatus, statusdate, acceptedby, acceptedbyemail, ponbr, rqstshipdate, actualshipdate, rqstpulldate, comments, investcode, investname, investemail, investinstitution, institutiontype, investdivision, oncreationinveststatus, tqcourierid, courier, couriernbr, shipmentTrackingNbr, shipAddy, shipphone, billAddy, billphone, setupon, setupby, salesorder, SAPified, SOBY, SOON, reconciledInd, reconciledBy, closedOn, closedBy, surveyEmailSent, lasteditby, lastediton) SELECT now(), :usr, shipdocrefid, sdstatus, statusdate, acceptedby, acceptedbyemail, ponbr, rqstshipdate, actualshipdate, rqstpulldate, comments, investcode, investname, investemail, investinstitution, institutiontype, investdivision, oncreationinveststatus, tqcourierid, courier, couriernbr, shipmentTrackingNbr, shipAddy, shipphone, billAddy, billphone, setupon, setupby, salesorder, SAPified, SOBY, SOON, reconciledInd, reconciledBy, closedOn, closedBy, surveyEmailSent, lasteditby, lastediton FROM masterrecord.ut_shipdoc where shipdocrefid = :sd";
+          $insHistRS = $conn->prepare($insHistSQL);
+          $insHistRS->execute(array(':usr' => $u['usr'], ':sd' => $sd));
+          
+          $updSQL = "update masterrecord.ut_shipdoc set salesorder = :so, soby = :usr, soon = now() where shipdocrefid = :sd";
+          $updRS = $conn->prepare($updSQL);
+          $updRS->execute(array(':so' => $pdta['sonbr'] , ':usr' => $u['usr'], ':sd' => $sd));            
+          
+          $dta['dialogid'] = $pdta['dialogid']; 
+          $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    }
 
     function shipdocoverrideshipdate ( $request, $passdata ) {
       //{"sdency":"aEU0c21vMFU5eUtYazJ5aldxUGNBQT09","sdshipdte":"2019-05-01","couriertrck":"fr5t4f","deviationreason":"Inventory Module Not Working","usrpin":"is3t9hxECdrYlSixuGctsz0TkexFjU4p4dscrmWJn510deukKIebgDL4whrfqXafaHHBCY5xD1UdGltCG/1jY8YlROOGOGjwExPxu4+PWbW/9IqgvOfffV6ZEMUyrBv2L0yNoJrGZtCJ2gbTfBdlp+R5fNMOnC4g/ac8kQWRwxxRwxSIV4Px7r3OrGohKTWUeQ+rmkKw/TFDaXKEJaeK0Qf7jeuhzPbt2djU8uj3FlekRydOyBdh0IB49zieEm+Rfc/y/sxc10FjELbPPmyQQOv4zdpaeRNzbJWDShwq0Y6RvN559TP42Vq6bQJITvMp6vlF5WTcEPouk1N056p5cw=="}  
@@ -49,7 +102,7 @@ class datadoers {
 
       //DATA CHECKS
       $sd = cryptservice($pdta['sdency'],'d');
-      $dspsd = substr('000000' . $sdnbr, -6);
+      $dspsd = substr('000000' . $sd, -6);
       ( !array_key_exists('sdency', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdency' missing from passed data")) : "";
       ( !array_key_exists('sdshipdte', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdshipdte' missing from passed data")) : "";
       ( !array_key_exists('couriertrck', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'courier track' missing from passed data")) : "";

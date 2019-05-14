@@ -20,8 +20,8 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $titleBar = "Add Sales Order to Ship-Doc";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";       
-        $innerDialog = $passedData; 
-        //$innerDialog = bldDialogShipDocShipOverride ( $passedData );
+        //$innerDialog = $passedData; 
+        $innerDialog = bldDialogShipDocAddSalesOrder ( $passedData );
         //$footerBar = "SEGMENT ADD";       
         break;
       case 'shipdocshipoverride':
@@ -2257,16 +2257,15 @@ function generatePageTopBtnBar($whichpage, $whichusr) {
 switch ($whichpage) { 
 case 'shipdocedit':
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnCreateNewSD border=0><tr><td><i class="material-icons">fiber_new</i></td><td>New Ship-Doc</td></tr></table></td>       
+    //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSD border=0><tr><td><i class="material-icons">block</i></td><td>Void</td></tr></table></td>         
     $innerBar = <<<BTNTBL
 <tr>
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnSDLookup border=0><tr><td><i class="material-icons">layers_clear</i></td><td>Look-Up</td></tr></table></td> 
-
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnSaveSD border=0><tr><td><i class="material-icons">save</i></td><td>Save</td></tr></table></td> 
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintSD border=0><tr><td><i class="material-icons">print</i></td><td>Print</td></tr></table></td>             
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSegment border=0><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td>         
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnShipOverride border=0><tr><td><i class="material-icons">local_shipping</i></td><td>Ship Override</td></tr></table></td>         
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSO border=0><tr><td><i class="material-icons">monetization_on</i></td><td>Add Sales Order</td></tr></table></td>         
-<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSD border=0><tr><td><i class="material-icons">block</i></td><td>Void</td></tr></table></td>         
 </tr>        
 BTNTBL;
     break;
@@ -2941,6 +2940,56 @@ RTNTHIS;
 
 return $rtnThis;
 
+}
+
+function bldDialogShipDocAddSalesOrder ( $passeddata ) { 
+  require(serverkeys . "/sspdo.zck");
+  $pdta = json_decode ( $passeddata, true );
+  $obj = json_decode ( $pdta['objid'], true );     
+  $sd = cryptservice($obj['sdency'], 'd' );
+  $dspsd = substr('000000' . $sd, -6);
+  $lock = 0;
+  
+  $getSOSQL = "SELECT shipdocrefid, ifnull(salesorder,'') salesorder, ifnull(soby,'') as soby, ifnull(date_format(soon,'%m/%d/%Y'),'') as soon FROM masterrecord.ut_shipdoc where shipdocrefid = :sd"; 
+  $getSORS = $conn->prepare($getSOSQL); 
+  $getSORS->execute(array(':sd' => $sd));
+  if ($getSORS->rowCount() <> 1 ) { 
+     $lock = 1;
+     $inner = "ERROR:  SHIP DOC REFERENCE NOT FOUND.   SEE CHTN INFORMATICS PERSONNEL"; 
+  } else { 
+      $so = $getSORS->fetch(pdo::FETCH_ASSOC);
+      if ( trim($so['salesorder']) === "" ) { 
+          //ALLOW EDIT 
+          $inner = <<<INNERTBL
+                <input type=hidden id=soSDEncy value='{$obj['sdency']}'>
+                <input type=hidden id=soDLGId value='{$pdta['dialogid']}'>  
+                <table border=0><tr><td id=editinstructions>Enter the Sales Order Document for Ship-Doc {$dspsd} below:</td></tr>
+                <tr><td><input type=text id=soSONbr></td></tr>
+                <tr><td align=right><table><tr><td><table class=tblBtn id=btnSDCCancel style="width: 6vw;" onclick="saveSOOverride();"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table></td><td><table class=tblBtn id=btnSDCCancel style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td></tr></table></td></tr>
+                </table>
+INNERTBL;
+          
+      } else { 
+          //DISPLAY SALES ORDER INFORMATION
+          $dspso = substr('000000' . $so['salesorder'],-6);
+          $inner = "<table border=0><tr><td colspan=4 id=lockinstr>This Ship-Doc already has a referenced Sales Order.  If this is incorrect, see a CHTN-Informatics Staff Member. Information is outlined below.</td></tr><tr><td class=lockhead>Ship Doc</td><td class=lockhead>Sales Order</td><td class=lockhead>Entered by</td><td class=lockhead>Entered On</td></tr>";
+          $inner .= "<tr><td class=lockdata>{$dspsd}</td><td class=lockdata>{$dspso}</td><td class=lockdata>{$so['soby']}</td><td class=lockdata>{$so['soon']}</td></tr></table>";
+      }
+
+  }
+  
+$rtnThis = <<<RTNTHIS
+<style>
+ #lockinstr { width: 25vw; text-align: justify; line-height: 1.3em; padding: .8vh 0; }
+ .lockhead { font-weight: bold; border-bottom: 1px solid rgba(145,145,145,1); }        
+ .lockdata { padding: 0 0 .8vh 0; }      
+ #soSONbr { width: 21vw; text-align: right; } 
+ #editinstructions { width: 21vw; font-size: 1.4vh; padding: 1vh 0; }     
+</style>      
+{$inner}
+RTNTHIS;
+
+return $rtnThis;    
 }
 
 function bldDialogShipDocShipOverride ( $passeddata ) { 

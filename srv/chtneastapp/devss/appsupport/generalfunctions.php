@@ -369,7 +369,8 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $leftBtnAction  = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$nextMonth}/{$nextYear}');\" ";         
 
-        $chkToday = date('m/d/Y');;
+        
+        $chkToday = date('m/d/Y');
         //TODO:  CHECK THAT THE OVERLOAD ELEMENTS CONTAIN VALUES
         $fn = func_get_arg(3);
         $em = func_get_arg(4);  
@@ -378,12 +379,14 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         //[{"date":{"day":1,"month":1,"year":2019,"dayOfWeek":2},"name":[{"lang":"en","text":"New Year's Day"}],"holidayType":"public_holiday"}]
         $pbholidayws = json_decode(callrestapi("GET","https://kayaposoft.com/enrico/json/v2.0/?action=getHolidaysForMonth&month={$pmonth}&year={$pyear}&country=us&region=pa&holidayType=public_holiday"),true);   ///GET ALL HOLIDAYS FOR A MONTH IN US/PA
     
+        
         $pubholiday = array();
         foreach ( $pbholidayws as $pbk => $pbv ) { 
-            $pubholiday['E' . (int)$pbv['date']['day']] = array("type" => "PUBLICHOLIDAY", "name" => $pbv['name'][0]['text']);
+            $pubholiday[$pbv['date']['month']][(int)$pbv['date']['day'] ] = array("type" => "PUBLICHOLIDAY", "name" => $pbv['name'][0]['text']);
             $tdyEventList .= ( (int)date('d') == (int)$pbv['date']['day'] ) ? "&raquo; {$pbv['name'][0]['text']}" : "";
         }
-        $dspChkToday =  "<div id=saluations>Hi {$fn}<br>Today is " . date('l, jS \of F, Y') . ". Here's what's happening today:<br>{$tdyEventList}</div>";
+        $dspChkToday =  "<div id=saluations>Hi {$fn}<br>Today is " . date('l, jS \of F, Y') . ". Here's what's happening today:</div>";
+        
         break;
      case 'procedureprocurequery':
         $calTblId = "pqcTbl";
@@ -473,8 +476,6 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";       
         break;
-
-
      case 'shipactual':
         $calTblId = "shpSDCTbl";
         $leftBtnId = "shpFromLeft";
@@ -492,8 +493,6 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $leftBtnAction  = " onclick=\"getCalendar('shipactual','sdShpCalendar', '{$lastMonth}/{$lastYear}',2);\" ";
         $rightBtnAction = " onclick=\"getCalendar('shipactual','sdShpCalendar' ,'{$nextMonth}/{$nextYear}',2);\" ";  
         break;
-
-
      case 'shipsdcfrom':
         $calTblId = "shpSDCTbl";
         $leftBtnId = "shpFromLeft";
@@ -623,14 +622,14 @@ while ($currentDay <= $numberOfDays) {
    
     //INDIVIDUAL BUTTON ACTION HERE
     switch (strtolower($whichcalendar)) {
-        case 'procedureprocurequery':
+         case 'procedureprocurequery':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('fldPRCProcedureDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
          $dayDsp = $currentDayDsp;
          //         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('fldPRCProcedureDate','','');\" ><center>[clear]</td></tr>";         
          $btmLineDsp = "<tr><td colspan=7></td></tr>";          
          break;
-       case 'procquery':
+         case 'procquery':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\"fillTopDate('{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
          $dayDsp = "<table><tr><td>{$currentDayDsp}</td></tr></table>";
@@ -655,14 +654,12 @@ while ($currentDay <= $numberOfDays) {
          $dayDsp = $currentDayDsp;
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('bsqueryToDate','','');\" ><center>[clear]</td></tr>";
          break;    
-
          case 'shipactual':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('sdcActualShipDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
          $dayDsp = $currentDayDsp;
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('sdcActualShipDate','','');\" ><center>[clear]</td></tr>";
          break;
-
          case 'shipsdcfrom':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('sdcRqstShipDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
@@ -690,8 +687,8 @@ while ($currentDay <= $numberOfDays) {
          case 'mainroot':
 
          $caldayeventlistdsp = "";
-         if ( array_key_exists( 'E'.(int)$currentDayDsp , $pubholiday) ) { 
-           $caldayeventlistdsp = $pubholiday['E'.(int)$currentDayDsp]['name'];
+         if ( array_key_exists( (int)$currentDayDsp , $pubholiday[(int)$monthNbr]) ) { 
+           $caldayeventlistdsp = $pubholiday[(int)$monthNbr][(int)$currentDayDsp]['name'];
          }  
              
           if ( "{$monthNbr}/{$currentDayDsp}/{$pyear}" === $chkToday ) {

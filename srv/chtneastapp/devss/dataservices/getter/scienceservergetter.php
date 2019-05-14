@@ -1509,7 +1509,7 @@ function runbiogroupsearchquery($srchrqstjson) {
             break;
 
         case 'shipdocstatus':
-            $sqlCritAdd .= " and ( sd.status = :sdstatus ) ";
+            $sqlCritAdd .= " and ( sd.sdstatus = :sdstatus ) ";
             $qryArr += [':sdstatus' => "{$fldvalue}"];
             $fieldsQueried++;
             break;
