@@ -1045,11 +1045,28 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #mainRootTbl #mainRootBtmLine { border-top: 1px solid rgba({$this->color_darkgrey},.5); padding: 1vh 1vw; background: rgba({$this->color_lightgrey},1); }
 #mainRootTbl #saluations { font-size: 1.2vh; font-weight: bold; }
 
-.caldayeventholder { font-size: 1.1vh;  }
-.caldayday { float: left; margin-right: 4px; padding-left: 4px; font-size: 1.5vh; color: rgba({$this->color_darkgrey},.8); }
+.caldayeventholder { font-size: 1vh; position: relative; padding: 0 3px 0 3px; box-sizing: border-box;  }
+.caldayday { float: left; margin-top: 2px; margin-right: 4px; padding-left: 2px; font-size: 1.8vh; color: rgba({$this->color_darkgrey},.8); }
 .caldaytoday { color: rgba({$this->color_darkgreen},1); font-weight: bold; }
+.eventHoverDisplay { position: absolute; top: 30px; left: 20px; background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; display: none;  }
+.caldayeventholder:hover .eventHoverDisplay { display: block; }
 
-              
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; }
+
+.rEventFld { font-size: 1.3vh; }
+
+#rootEventDate { width: 8vw; }
+#rootEventDropCal { width: 12vw; }
+#rootEventStart { width: 6vw; }
+#rootEventEnd { width: 6vw; }
+#rootEventtype { width: 12vw; }
+#rootEventTitle { width: 8vw; }
+#rootEventDesc { width: 100%; } 
+#rootICInitials {width: 4vw; display: none; }
+#rootMDInitials {width: 4vw; display: none; }
+#icmdheader { display: none; }
+#rootEventInstitution { width: 100%; }
+
 STYLESHEET;
 return $rtnThis;
   }    

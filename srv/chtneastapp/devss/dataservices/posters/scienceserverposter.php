@@ -1510,6 +1510,11 @@ class datadoers {
              $left = '20vw';
              $top = '30vh';
              break;
+           case 'eventCalendarEventAdd':
+             $primeFocus = "";
+             $left = '12vw';
+             $top = '15vh';
+             break;
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);

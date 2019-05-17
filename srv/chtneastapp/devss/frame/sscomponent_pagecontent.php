@@ -15,6 +15,15 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'eventCalendarEventAdd':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Calendar Event Editor";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";       
+        //$innerDialog = $passedData; 
+        $innerDialog = bldDialogCalendarAddEvent ( $passedData );
+        //$footerBar = "SEGMENT ADD";       
+        break;  
       case 'shipdocaddso':
         $pdta = json_decode($passedData, true);          
         $titleBar = "Add Sales Order to Ship-Doc";
@@ -1527,6 +1536,10 @@ function root($rqstStr, $whichUsr) {
   
 
   $fsCalendar = buildcalendar('mainroot', date('m'), date('Y'), $whichUsr->friendlyname, $whichUsr->useremail, $whichUsr->loggedsession );
+  
+
+
+
 
 //DISPLAY WEEKLY GOALS
 //  if ($whichUsr->primaryinstitution === 'HUP') { 
@@ -2941,6 +2954,127 @@ RTNTHIS;
 return $rtnThis;
 
 }
+
+function bldDialogCalendarAddEvent ( $passeddata ) { 
+  require(serverkeys . "/sspdo.zck");
+  session_start(); 
+  $sess = session_id();
+  $pdta = json_decode ( $passeddata, true );
+
+  //TODO:  TURN INTO A WEBSERVICE 
+  $usrSQL = "SELECT ifnull(originalAccountName,'') as acctname , presentinstitution, friendlyName, inme.menuvalue as institutioncode, inme.dspvalue institutionname FROM four.sys_userbase usr left join four.sys_userbase_allowinstitution ins on usr.userid = ins.userid left join (SELECT menuid, menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inme on ins.institutionmenuid = inme.menuid where sessionid = :sess and allowInd = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and ins.onoffind = 1";
+  $usrRS = $conn->prepare($usrSQL); 
+  $usrRS->execute(array(':sess' => $sess)); 
+
+  if ( $usrRS->rowCount() === 0 ) { 
+$inner = <<<INNNNER
+  <h2> User account not found - or session has expired </h2>
+INNNNER;
+  } else {     
+
+  $usr = "";
+  $friendly = "";
+  $presentInstitution = "";
+
+  $instMnu = "<table border=0 class=menuDropTbl>";
+  $instMnu .= "<tr><td onclick=\"fillField('rootEventInstitution','ALLINST','All CHTN Eastern Institutions');\" class=ddMenuItem>All CHTN Eastern Institutions</td></tr>";
+  while ($u = $usrRS->fetch(PDO::FETCH_ASSOC)) { 
+    $usr = $u['acctname']; 
+    $friendly = $u['friendlyName']; 
+    $presentInstitution = $u['presentinstitution']; 
+    $instMnu .= "<tr><td onclick=\"fillField('rootEventInstitution','{$u['institutioncode']}','{$u['institutionname']}');\" class=ddMenuItem>{$u['institutionname']}</td></tr>";
+  } 
+  $instMnu .= "<tr><td onclick=\"fillField('rootEventInstitution','{$usr}','Just for {$friendly}');\" class=ddMenuItem>[Private Event] Just for {$friendly}</td></tr>";
+  $instMnu .= "</table>";
+
+  $rqDate = DateTime::createFromFormat('Ymd', date('Ymd'));
+  $py = $rqDate->format('Y');
+  $pm = $rqDate->format('m');
+  $pd = $rqDate->format('d'); 
+  $dteDefault = "";
+  $dteDefaultVal = ""; 
+
+  if ( trim($pdta['objid']) !== "" ) { 
+    //default date passed 
+      if ( verifyDate( trim($pdta['objid']), 'Ymd',true) ) { 
+          //GOOD DATE
+          $rqDate = DateTime::createFromFormat('Ymd', $pdta['objid']);
+          $py = $rqDate->format('Y');
+          $pm = $rqDate->format('m');
+          $pd = $rqDate->format('d'); 
+          $dteDefault = "{$pm}/{$pd}/{$py}";
+          $dteDefaultVal = "{$py}-{$pm}-{$pd}"; 
+      }     
+  }
+
+  $timesval = json_decode(callrestapi("GET", dataTree . "/globalmenu/time-value-list",serverIdent,serverpw),true);
+  $etypeval = json_decode(callrestapi("GET", dataTree . "/globalmenu/calendar-event-types",serverIdent,serverpw),true);
+  $sTime = "<table border=0 class=menuDropTbl>";
+  foreach ($timesval['DATA'] as $tval) {
+    $sTime .= "<tr><td onclick=\"fillField('rootEventStart','{$tval['lookupvalue']}','{$tval['menuvalue']}');\" class=ddMenuItem>{$tval['menuvalue']}</td></tr>";
+  }
+  $sTime .= "</table>";
+  $eTime = "<table border=0 class=menuDropTbl>";
+  foreach ($timesval['DATA'] as $tval) {
+    $eTime .= "<tr><td onclick=\"fillField('rootEventEnd','{$tval['lookupvalue']}','{$tval['menuvalue']}');\" class=ddMenuItem>{$tval['menuvalue']}</td></tr>";
+  }
+  $eTime .= "</table>";
+  $eType = "<table border=0 class=menuDropTbl>";
+  foreach ($etypeval['DATA'] as $etval) {
+    $eType .= "<tr><td onclick=\"fillField('rootEventtype','{$etval['lookupvalue']}','{$etval['menuvalue']}');\" class=ddMenuItem>{$etval['menuvalue']}</td></tr>";
+  }
+  $eType .= "</table>";
+  $r = buildcalendar('rootevent', $pm, $py ); 
+  $rootEventCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=hidden id=rootEventDateValue value="{$dteDefaultVal}"><input type=text READONLY id=rootEventDate class=rEventFld value="{$dteDefault}"></div>
+  <div class=valueDropDown><div id=rootEventDropCal>{$r}</div></div>
+</div>
+CALENDAR;
+
+  $inner = <<<INNNER
+<table border=0>
+<tr><th>Event Date</th><th>Start Time</th><th>End Time</th><th>Event Type</th><th colspan=2 id=icmdheader>IC/MD Initials</th></tr>
+<tr>
+    <td>{$rootEventCalendar}</td>
+    <td><div class=menuHolderDiv><input type=hidden id=rootEventStartValue><input type=text id=rootEventStart READONLY class=rEventFld><div class=valueDropDown style="width: 6vw;">{$sTime}</div></div></td>
+    <td><div class=menuHolderDiv><input type=hidden id=rootEventEndValue><input type=text id=rootEventEnd READONLY class=rEventFld><div class=valueDropDown style="width: 6vw;">{$eTime}</div></div></td>
+    <td><div class=menuHolderDiv><input type=hidden id=rootEventtypeValue><input type=text id=rootEventtype READONLY class=rEventFld><div class=valueDropDown style="width: 12vw;">{$eType}</div></div></td>
+    <td><input type=text id=rootICInitials class=rEventFld value="" maxlength=2></td>
+    <td><input type=text id=rootMDInitials class=rEventFld value="" maxlength=2></td>
+</tr>
+<tr><td></td><td colspan=2><center><input type=checkbox id=rootAllDayInd onchange="byId('rootEventStartValue').value='';byId('rootEventStart').value='';byId('rootEventEndValue').value='';byId('rootEventEnd').value='';"><label for=rootAllDayInd>All-Day Event</label></td></tr>
+<tr><th>Event Title</th><th colspan=5>Event Description</th></tr>
+<tr>
+  <td><input type=text id=rootEventTitle class=rEventFld value="" maxlength=15></td>
+  <td colspan=5><input type=text id=rootEventDesc class=rEventFld value=""></td>  
+</tr>
+<tr><th colspan=3>Display at</th><td rowspan=2 colspan=3 align=right valign=bottom> 
+
+<table>
+<tr>
+<td><table class=tblBtn id=btnEventSave style="width: 6vw;" onclick="alert('Save');"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table></td>
+<td><table class=tblBtn id=btnEventCanel style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td>
+</tr>
+</table>
+
+</td></tr>
+<tr><td colspan=3><div class=menuHolderDiv><input type=hidden id=rootEventInstitutionValue value="ALLINST"><input type=text id=rootEventInstitution READONLY class=rEventFld value="All CHTN Eastern Institutions"><div class=valueDropDown style="width: 21vw;">{$instMnu}</div></div></td></tr> 
+</table>
+
+INNNER;
+  }
+
+$rtnThis = <<<RTNTHIS
+<style>
+
+</style>      
+{$inner}
+RTNTHIS;
+
+return $rtnThis;    
+}
+
 
 function bldDialogShipDocAddSalesOrder ( $passeddata ) { 
   require(serverkeys . "/sspdo.zck");
@@ -6285,3 +6419,4 @@ SEGMENTLINES;
 return $rtnThis;
 
 }
+

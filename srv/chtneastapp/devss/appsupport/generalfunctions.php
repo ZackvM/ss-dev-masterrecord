@@ -378,14 +378,35 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         //SELECT * FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1
         //[{"date":{"day":1,"month":1,"year":2019,"dayOfWeek":2},"name":[{"lang":"en","text":"New Year's Day"}],"holidayType":"public_holiday"}]
         $pbholidayws = json_decode(callrestapi("GET","https://kayaposoft.com/enrico/json/v2.0/?action=getHolidaysForMonth&month={$pmonth}&year={$pyear}&country=us&region=pa&holidayType=public_holiday"),true);   ///GET ALL HOLIDAYS FOR A MONTH IN US/PA
-    
-        
-        $pubholiday = array();
+         
+        $eventListArr = array();
+        $eventListArr[2019][5][15][0] = array("type" => "Informed Consent","name" => "TEST EVENT");
+        $eventListArr[2019][5][15][1] = array("type" => "CHTN Event","name" => "TEST EVENT II");
+        $eventListArr[2019][5][15][2] = array("type" => "CONFERENCE","name" => "ISBER");
+
         foreach ( $pbholidayws as $pbk => $pbv ) { 
-            $pubholiday[$pbv['date']['month']][(int)$pbv['date']['day'] ] = array("type" => "PUBLICHOLIDAY", "name" => $pbv['name'][0]['text']);
-            $tdyEventList .= ( (int)date('d') == (int)$pbv['date']['day'] ) ? "&raquo; {$pbv['name'][0]['text']}" : "";
+          $eventListArr[(int)$pbv['date']['year']][(int)$pbv['date']['month']][(int)$pbv['date']['day']][ count( $eventListArr[(int)$pbv['date']['year']][(int)$pbv['date']['month']][(int)$pbv['date']['day']] )] = array("type" => "Holiday", "name" => $pbv['name'][0]['text']);
         }
-        $dspChkToday =  "<div id=saluations>Hi {$fn}<br>Today is " . date('l, jS \of F, Y') . ". Here's what's happening today:</div>";
+
+        if ( count($eventListArr[(int)date('Y')][(int)date('m')][(int)date('d')]) > 0 ) {
+          $cellCntr = 0;  
+          $tdyEventList = "<p>Here's what's happening today:<table border=0><tr>";
+          foreach ( $eventListArr[(int)date('Y')][(int)date('m')][(int)date('d')] as $k => $v ) {
+            if ( $cellCntr === 4 ) { 
+              $tdyEventList .= "</tr><tr>";
+              $cellCntr = 0;
+            }
+            $tdyEventList .= "<td> <table><tr><td>&raquo; {$v['type']}:&nbsp;</td><td>{$v['name']}</td></tr></table> </td>";
+            $cellCntr++;
+          }
+          $tdyEventList .= "</tr></table>";
+        } else { 
+            //NO EVENTS
+            $tdyEventList = "<p>There's nothing on the agenda for today";
+        }
+
+        $dspChkToday =  "<div id=saluations>Hi {$fn}! Today is " . date('l, jS \of F, Y') . ". {$tdyEventList}</div>";
+        //$dspChkToday =  "<div id=saluations>Hi {$fn}<br>Today is " . date('l, jS \of F, Y') . ". Here's what's happening today: {$tdyEventList}<hr> " . json_encode( $pubholiday ) . "</div>";
         
         break;
      case 'procedureprocurequery':
@@ -476,6 +497,26 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $leftBtnAction  = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar', '{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('biosampleQueryTo','bsqtCalendar' ,'{$nextMonth}/{$nextYear}');\" ";       
         break;
+
+     case 'rootevent':
+        $calTblId = "shpSDCTbl";
+        $leftBtnId = "shpFromLeft";
+        $calTitle = "shpFromTitle";
+        $rightBtnId = "shpFromRight";
+        $dayHeadClass = "ddCalHeadDay";
+        $topSpacer = "topSpacer";
+        $daySquare = "mnuDaySquare";
+        $btmSpacer = "btmSpacer";
+        $btmLine = "shpFromBtmLine";
+        $calendarClass = "ddMenuCalendar";
+        $calTitleClass = "ddMenuCalTitle";
+        $topBarClass = "ddMenuCalTopRow";
+        $topCtlBtnClass= "smallCtlBtn";
+        $leftBtnAction  = " onclick=\"getCalendar('rootevent','rootEventDropCal', '{$lastMonth}/{$lastYear}',2);\" ";
+        $rightBtnAction = " onclick=\"getCalendar('rootevent','rootEventDropCal' ,'{$nextMonth}/{$nextYear}',2);\" ";  
+        break;
+
+
      case 'shipactual':
         $calTblId = "shpSDCTbl";
         $leftBtnId = "shpFromLeft";
@@ -654,6 +695,12 @@ while ($currentDay <= $numberOfDays) {
          $dayDsp = $currentDayDsp;
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('bsqueryToDate','','');\" ><center>[clear]</td></tr>";
          break;    
+         case 'rootevent':
+         $sqrID = "daySqr{$currentDayDsp}";
+         $action = " onclick=\" fillField('rootEventDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
+         $dayDsp = $currentDayDsp;
+         $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('rootEventDate','','');\" ><center>[clear]</td></tr>";
+         break;
          case 'shipactual':
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\" fillField('sdcActualShipDate','{$pyear}-{$monthNbr}-{$currentDayDsp}','{$monthNbr}/{$currentDayDsp}/{$pyear}'); \" ";
@@ -687,34 +734,38 @@ while ($currentDay <= $numberOfDays) {
          case 'mainroot':
 
          $caldayeventlistdsp = "";
-         if ( array_key_exists( (int)$currentDayDsp , $pubholiday[(int)$monthNbr]) ) { 
-           $caldayeventlistdsp = $pubholiday[(int)$monthNbr][(int)$currentDayDsp]['name'];
+         $caleventpop = "";
+         $eventcnt = 0;
+         if ( array_key_exists( (int)$currentDayDsp , $eventListArr[(int)$pyear][(int)$monthNbr]) ) {
+           $caleventpop = "<div class=\"eventHoverDisplay\">";   
+           foreach ( $eventListArr[(int)$pyear][(int)$monthNbr][(int)$currentDayDsp] as $ck => $cv) {
+               //$cv['type']
+               $caldayeventlistdsp .= ( trim($caldayeventlistdsp) === "" ) ? "{$cv['name']}" : "<br>{$cv['name']}";
+               $caleventpop .= ( $eventcnt  === 0 ) ? "{$cv['name']}" : "<br>{$cv['name']}";
+               $eventcnt++;
+           }
+           $caleventpop .= "</div>";
          }  
              
           if ( "{$monthNbr}/{$currentDayDsp}/{$pyear}" === $chkToday ) {
-
             //THIS IS TODAY  
             $daySquare = ( $dayOfWeek === 0 ) ? "mnuMainRootDaySquare calendarEndDay todayDsp" : "mnuMainRootDaySquare todayDsp";
-            $dayDsp = <<<DAYDSP
-<div class=caldayeventholder>
-  <div class="caldayday caldaytoday">{$currentDayDsp}</div>
-  {$caldayeventlistdsp}
-</div>
-DAYDSP;
+            $nbrSquare = "caldayday caldaytoday";
           } else { 
             //THIS IS NOT TODAY  
             $daySquare = ( $dayOfWeek === 0 ) ? "mnuMainRootDaySquare calendarEndDay" : "mnuMainRootDaySquare";
-            $dayDsp = <<<DAYDSP
-<div class=caldayeventholder>
-  <div class=caldayday>{$currentDayDsp}</div>
-  {$caldayeventlistdsp}
-</div>
-DAYDSP;
-
+            $nbrSquare = "caldayday";
           }
 
+          $dayDsp = <<<DAYDSP
+<div class=caldayeventholder>
+  <div class="{$nbrSquare}">{$currentDayDsp}</div>
+  {$caldayeventlistdsp}
+  {$caleventpop}
+</div>
+DAYDSP;
           $sqrID = "daySqr{$currentDayDsp}";
-          $action = " onclick=\"alert('{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";
+          $action = " onclick=\"makeEventDialog('{$pyear}{$monthNbr}{$currentDayDsp}');\" ";
 
           //TODO:  THIS IS WHERE THE CURRENT DAY SQUARE DISPLAY GOES
           

@@ -400,7 +400,89 @@ function answerGetCalendar(rtnData) {
   } else { 
     alert("ERROR");  
   }
-}             
+}        
+
+function makeEventDialog(eventDate) { 
+  generateDialog('eventCalendarEventAdd',eventDate);
+}
+
+
+function generateDialog( whichdialog, whatobject ) { 
+  var dta = new Object(); 
+  dta['whichdialog'] = whichdialog;
+  dta['objid'] = whatobject;   
+  var passdta = JSON.stringify(dta);
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/preprocess-generate-dialog";
+  universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
+}
+            
+function answerPreprocessGenerateDialog( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+        var dta = JSON.parse(rtnData['responseText']);         
+        //TODO: MAKE SURE ALL ELEMENTS EXIST BEFORE CREATION
+        var d = document.createElement('div');
+        d.setAttribute("id", dta['DATA']['dialogID']); 
+        d.setAttribute("class","floatingDiv");
+        d.style.left = dta['DATA']['left'];
+        d.style.top = dta['DATA']['top'];
+        d.innerHTML = dta['DATA']['pageElement'];
+        document.body.appendChild(d);
+        byId(dta['DATA']['dialogID']).style.display = 'block';
+        if ( dta['DATA']['primeFocus'].trim() !== "" ) { 
+          byId(dta['DATA']['primeFocus'].trim()).focus();
+        }
+        byId('standardModalBacker').style.display = 'block';
+  }
+}
+        
+function closeThisDialog(dlog) { 
+   byId(dlog).parentNode.removeChild(byId(dlog));
+   byId('standardModalBacker').style.display = 'none';        
+}
+
+function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) { 
+  if (byId(whichfield)) { 
+    if (byId(whichfield+'Value')) {
+      byId(whichfield+'Value').value = whatvalue;
+    }    
+    byId(whichfield).value = whatplaintext; 
+    switch ( whichfield ) { 
+      case 'rootEventStart':
+         byId('rootAllDayInd').checked = false; 
+      break;
+      case 'rootEventEnd':
+         byId('rootAllDayInd').checked = false; 
+      break;
+      case 'rootEventtype':
+        if ( whatvalue === 'INFCEVT') { 
+         byId('icmdheader').style.display = 'block';
+         byId('rootICInitials').style.display = 'block';
+         byId('rootMDInitials').style.display = 'block';
+         byId('rootEventTitle').value = '!NO HIPAA INFORMATION!'; 
+         byId('rootEventDesc').value = '!NO HIPAA INFORMATION!';
+         byId('rootICInitials').focus();
+        } else { 
+         byId('icmdheader').style.display = 'none';
+         byId('rootICInitials').style.display = 'none';
+         byId('rootMDInitials').style.display = 'none';
+         byId('rootICInitials').value = '';
+         byId('rootMDInitials').value = '';
+         byId('rootEventTitle').value = ''; 
+         byId('rootEventDesc').value = ''; 
+        } 
+      break;
+    }
+  }
+}
             
 RTNTHIS;
     return $rtnThis;
