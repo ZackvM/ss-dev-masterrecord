@@ -406,6 +406,36 @@ function makeEventDialog(eventDate) {
   generateDialog('eventCalendarEventAdd',eventDate);
 }
 
+function rootCalendarDeleteEvent(whichEventId) { 
+  var dta = new Object(); 
+  dta['calEventId'] = whichEventId; 
+  dta['calEventDialogId'] = byId('dialogidhld').value;
+  var passdta = JSON.stringify(dta);
+  //console.log( passdta);          
+  var mlURL = "/data-doers/root-calendar-event-delete";
+  universalAJAX("POST",mlURL,passdta,answerCalendarDeleteEvent,2);      
+}            
+
+function answerCalendarDeleteEvent( rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else { 
+     var dta = JSON.parse(rtnData['responseText']);
+     alert('Event has been deleted');
+     closeThisDialog ( dta['DATA']['dialogid'] );
+     //RELOAD CALENDAR
+     var mmnth = byId('calendarMasterMonthId').value;
+     var myear = byId('calendarMasterYearId').value;
+     getCalendar('mainroot','mainRootCalendar',mmnth,myear,1);
+            
+   }            
+}
+               
 function saveRootEvent() { 
   var dta = new Object(); 
   dta['calEventDte'] = byId('rootEventDateValue').value; 
@@ -421,7 +451,7 @@ function saveRootEvent() {
   dta['calEventDialogId'] = byId('dialogidhld').value;
   var passdta = JSON.stringify(dta);
   var mlURL = "/data-doers/root-calendar-event-save";
-  universalAJAX("POST",mlURL,passdta,answerCalendarEventSave,2);
+  universalAJAX("POST",mlURL,passdta,answerCalendarEventSave,1);
 }
 
 function answerCalendarEventSave(rtnData) { 
@@ -439,7 +469,7 @@ function answerCalendarEventSave(rtnData) {
      //RELOAD CALENDAR
      var mmnth = byId('calendarMasterMonthId').value;
      var myear = byId('calendarMasterYearId').value;
-     getCalendar('rootevent','rootEventDropCal','\''+mmnth+'/'+myear+'\'',2);
+     getCalendar('mainroot','mainRootCalendar',mmnth,myear,1);
    }
 }
 

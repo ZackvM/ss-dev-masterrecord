@@ -49,7 +49,7 @@ class datadoers {
       $rs->execute(array(':sessid' => $sessid));
       if ($rs->rowCount() === 1) { 
           $u = $rs->fetch(PDO::FETCH_ASSOC);
-          $dateLookupSQL = "SELECT ifnull(cal.eventid,'') as eventid, ifnull(cal.eyear,'1999') as eyear, ifnull(cal.emonth,'1') as emonth, ifnull(cal.eday,'1') as eday, ifnull(cal.alldayind,1) as allday, ifnull(cal.alldayind,1) as allday, if( ifnull(cal.alldayind,1) = 1, '',ifnull(cal.eventstarttime,'')) as stime, if( ifnull(cal.alldayind,1) = 1, 'All Day', concat( ifnull(cal.eventstarttime,''), if(ifnull(cal.eventendtime,'')='','',concat('&#45;',ifnull(cal.eventendtime,''))))) as eventendtime, ifnull(cal.eventtype,'RMDR') as eventtype, ifnull(evt.dspvalue,'General Staff Reminder') as dspeventtype, if(ifnull(cal.eventtitle,'')='',concat(ifnull(cal.icdonorinitials,''), if(ifnull(cal.icsurgeon,'')='','',concat('::', ifnull(cal.icsurgeon,'')))),ifnull(cal.eventtitle,'')) as eventtitle, ifnull(cal.eventdesc,'') as eventdesc FROM four.sys_master_calendar cal left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1) as evt on cal.eventtype = evt.menuvalue  where dspind = :dspind and eyear = :yr  and emonth = :mn and ( dspForWhom = 'ALLINST' OR dspForWhom = :presinst OR lcase(dspForWhom) = :usr) order by cast(eday as unsigned), stime";
+          $dateLookupSQL = "SELECT ifnull(cal.eventid,'') as eventid, ifnull(cal.eyear,'1999') as eyear, ifnull(cal.emonth,'1') as emonth, ifnull(cal.eday,'1') as eday, ifnull(cal.alldayind,1) as allday, ifnull(cal.alldayind,1) as allday, if( ifnull(cal.alldayind,1) = 1, '',ifnull(cal.eventstarttime,'')) as stime, if( ifnull(cal.alldayind,1) = 1, 'All Day', concat( ifnull(cal.eventstarttime,''), if(ifnull(cal.eventendtime,'')='','',concat('&#45;',ifnull(cal.eventendtime,''))))) as eventendtime, ifnull(cal.eventtype,'RMDR') as eventtype, ifnull(evt.dspvalue,'General Staff Reminder') as dspeventtype, ifnull(evt.dspcolor,'') as dspeventcolor, if(ifnull(cal.eventtitle,'')='',concat(ifnull(cal.icdonorinitials,''), if(ifnull(cal.icsurgeon,'')='','',concat('::', ifnull(cal.icsurgeon,'')))),ifnull(cal.eventtitle,'')) as eventtitle, ifnull(cal.eventdesc,'') as eventdesc FROM four.sys_master_calendar cal left join (SELECT menuvalue, dspvalue, googleiconcode as dspcolor FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1) as evt on cal.eventtype = evt.menuvalue  where dspind = :dspind and eyear = :yr  and emonth = :mn and ( dspForWhom = 'ALLINST' OR dspForWhom = :presinst OR lcase(dspForWhom) = :usr) order by cast(eday as unsigned), stime";
           $dateLookupRS = $conn->prepare($dateLookupSQL);
           $dateLookupRS->execute(array(':dspind' => 1,':yr' => (int)$pdta['year'],':mn' => (int)$pdta['month'],':presinst' => $u['presentinstitution'],':usr' => strtolower($u['usr'])));
           while ($r = $dateLookupRS->fetch(PDO::FETCH_ASSOC)) { 
@@ -64,7 +64,59 @@ class datadoers {
       return $rows;         
     } 
 
-
+    function rootcalendareventdelete ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start();
+      $sessid = session_id();
+      //{"calEventDte":"18","calEventDialogId":"QBxy3znNsOlvcgP"}
+      $chkUsrSQL = "SELECT originalaccountname as usr, presentinstitution as loc FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ($rs->rowCount() === 1) { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+      }
+      
+      ( trim($pdta['calEventId']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE CALENDAR EVENT ID IS BLANK - SEE CHTNEASTERN INFORMATICS PERSONNEL")) : "" ;
+      ( !is_numeric($pdta['calEventId']) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE CALENDAR EVENT ID IS NON NUMERIC - SEE CHTNEASTERN INFORMATICS PERSONNEL")) : "" ;
+      
+      $chkSQL ="SELECT eventid as eventFound FROM four.sys_master_calendar where inputby = :usr and  eventdate > date_sub(now(), interval 1 day) and dspind = :dsp and eventid = :evid";
+      $chkRS = $conn->prepare($chkSQL);
+      $chkRS->execute(array(':usr' => $u['usr'], ':dsp' => 1, ':evid' => (int)$pdta['calEventId']  ));
+      
+      ( $chkRS->rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "NO EVENT EXISTS.  EITHER YOU DON'T HAVE ACCESS RIGHTS TO DELETE IT, IT IS AN EVENT IN THE PAST OR THE ID DOESN'T EXIST.  IF YOU BELEIVE THAT THIS IS IN ERROR, CONTACT A CHTNEASTERN INFORMATICS PERSON")) : "" ;
+      
+      
+      if ( $errorInd === 0 ) {
+     
+          $updSQL = "update four.sys_master_calendar set dspind = :newdsp, modifiedon = now(), modifiedby = :logusr where inputby = :usr and  eventdate > date_sub(now(), interval 1 day) and dspind = :olddsp and eventid = :evid";
+          $updRS = $conn->prepare($updSQL);
+          $updRS->execute(array( 
+              ':newdsp' => 0
+            , ':logusr' => $u['usr']
+            , ':usr' => $u['usr']
+            , ':olddsp' => 1
+            , ':evid' => (int)$pdta['calEventId']  
+            ));    
+          $dta['dialogid'] = $pdta['calEventDialogId'];
+          $responseCode = 200;
+      }
+        
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+    
+    
     function rootcalendareventsave ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 503;

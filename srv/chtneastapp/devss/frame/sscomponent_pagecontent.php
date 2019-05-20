@@ -2973,7 +2973,7 @@ INNNNER;
   $presentInstitution = "";
 
   $instMnu = "<table border=0 class=menuDropTbl>";
-  $instMnu .= "<tr><td onclick=\"fillField('rootEventInstitution','ALLINST','All CHTN Eastern Institutions');\" class=ddMenuItem>All CHTN Eastern Institutions</td></tr>";
+  $instMnu .= "<tr><td onclick=\"fillField('rootEventInstitution','ALLINST','All CHTN Eastern Locations');\" class=ddMenuItem>All CHTN Eastern Institutions</td></tr>";
   while ($u = $usrRS->fetch(PDO::FETCH_ASSOC)) { 
     $usr = $u['acctname']; 
     $friendly = $u['friendlyName']; 
@@ -3028,10 +3028,50 @@ INNNNER;
 </div>
 CALENDAR;
 
+  
+  //TODO: TURN INTO WEBSERVICE
+  session_start();
+  $sessid = session_id();
+  $chkUsrSQL = "SELECT originalaccountname as usr, presentinstitution as presentinstitution FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+  $rs = $conn->prepare($chkUsrSQL); 
+  $rs->execute(array(':sessid' => $sessid));
+  if ($rs->rowCount() === 1) { 
+    $u = $rs->fetch(PDO::FETCH_ASSOC); 
+  }
+  
+  
+  $curSQL = "SELECT eventid, inputby, inputon, date_format(eventdate,'%m/%d/%Y') as eventdate, loc.dspvalue as location, if (alldayind = 1,'AllDay', concat( ifnull(cal.eventstarttime,''), if(ifnull(cal.eventendtime,'')='','',concat('&#45;',ifnull(cal.eventendtime,''))))) as eventtime, evt.dspvalue dspEventType, if(ifnull(cal.eventtitle,'')='',concat(ifnull(cal.icdonorinitials,''), if(ifnull(cal.icsurgeon,'')='','',concat('::', ifnull(cal.icsurgeon,'')))),ifnull(cal.eventtitle,'')) as eventtitle, ifnull(cal.eventdesc,'') as eventdesc FROM four.sys_master_calendar cal left join (SELECT menuvalue, dspvalue, googleiconcode as dspcolor FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1) as evt on cal.eventtype = evt.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION' union select 'ALLINST','All CHTN Eastern Locations' union SELECT originalaccountname, concat('Display for Me (', ifnull(displayname,''),')') usrAsLoc FROM four.sys_userbase) as loc on cal.dspForWhom = loc.menuvalue where dspind = :dsp and eyear = :yr and emonth = :mn and eday = :dy and ( dspForWhom = 'ALLINST' OR dspForWhom = :presinst OR lcase(dspForWhom) = :usr) order by eventstarttime";
+  $curRS = $conn->prepare($curSQL);
+  $curRS->execute(array(':dsp' => 1, ':yr' => $py, ':mn' => $pm, ':dy' => $pd, ':presinst' => $u['presentinstitution'], ':usr' => $u['usr']));
+  if ( $curRS->rowCount() === 0 ) {
+      $currentEvntList = "";
+  } else { 
+      //BUILD DELETE TABLE
+      $curEvTbl = "<table><tr><td><span id=annc>Today's Events</span> (click 'trash' icon to delete)</td></tr></table><table border=0 cellspacing=0 cellpadding=0 id=tblTodaysEventList>";
+      while ($e = $curRS->fetch(PDO::FETCH_ASSOC)) {           
+         $evDate = DateTime::createFromFormat('m/d/Y', $e['eventdate']);
+         $nwDate = DateTime::createFromFormat('m/d/Y', date('m/d/Y'));         
+         $delAction = "";
+         $evIcon = "<i class=\"material-icons indIcon\">check_box</i>";
+          if ( strtolower($e['inputby']) === strtolower($u['usr']) ) {
+            if ( $evDate < $nwDate ) {
+            } else {
+              $evIcon = "<i class=\"material-icons indIcon delIcon\">delete_forever</i>";
+              $delAction = " onclick=\"rootCalendarDeleteEvent('{$e['eventid']}');\" ";
+              
+            }
+          }
+          $curEvTbl .= "<tr><td {$delAction}>{$evIcon}</td><td>{$e['eventtime']}</td><td>{$e['eventdesc']}</td><td>{$e['dspEventType']}</td><td>{$e['location']}</td></tr>";          
+      }
+      $curEvTbl .= "</table>";
+      
+      $currentEvntList = "<div id=divTodaysEventList>{$curEvTbl}</div>";
+  }
+  
   $inner = <<<INNNER
 <input type=hidden id=dialogidhld value="{$pdta['dialogid']}">
 <table border=0>
-<tr><th>Event Date</th><th>Start Time</th><th>End Time</th><th>Event Type</th><th colspan=2 id=icmdheader>IC/MD Initials</th></tr>
+<tr><td rowspan = 7 valign=top> {$currentEvntList} </td><th>Event Date</th><th>Start Time</th><th>End Time</th><th>Event Type</th><th colspan=3 id=icmdheader>IC/MD Initials</th></tr>
 <tr>
     <td>{$rootEventCalendar}</td>
     <td><div class=menuHolderDiv><input type=hidden id=rootEventStartValue><input type=text id=rootEventStart READONLY class=rEventFld><div class=valueDropDown style="width: 6vw;">{$sTime}</div></div></td>
@@ -3064,7 +3104,17 @@ INNNER;
 
 $rtnThis = <<<RTNTHIS
 <style>
-
+#divTodaysEventList { width: 25vw; height: 21vh; border: 1px solid rgba(48,57,71,1); overflow: auto; }
+#tblTodaysEventList { width: 25vw; }
+#tblTodaysEventList tr:nth-child(even) { background: rgba(160,160,160,.5); }      
+#tblTodaysEventList tr:hover {cursor: pointer; background: rgba(255,248,225,.8); }
+#tblTodaysEventList tr td { padding: 4px; }        
+        
+#annc { font-size: 1.6vh; color: rgba(48,57,71,1); }         
+        
+.indIcon { font-size: 2vh;  }         
+.delIcon:hover  { color:  rgba(237, 35, 0, 1); }         
+        
 </style>      
 {$inner}
 RTNTHIS;

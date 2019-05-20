@@ -1046,10 +1046,17 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #mainRootTbl #saluations { font-size: 1.2vh; font-weight: bold; }
 
 .caldayeventholder { font-size: 1vh; position: relative; padding: 0 3px 0 3px; box-sizing: border-box;  }
-.caldayday { float: left; margin-top: 2px; margin-right: 4px; padding-left: 2px; font-size: 1.8vh; color: rgba({$this->color_darkgrey},.8); }
+.caldayday { float: left; margin-top: 1px; margin-right: 1px; padding-left: 1px; font-size: 1.6vh; color: rgba({$this->color_darkgrey},.8); }
 .caldaytoday { color: rgba({$this->color_darkgreen},1); font-weight: bold; }
-.eventHoverDisplay { position: absolute; top: 30px; left: 20px; background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; display: none; z-index: 48; width: 12vw;  }
+.eventHoverDisplay { position: absolute; top: 30px; left: -30px; background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; display: none; z-index: 48; width: 15vw;  }
 .caldayeventholder:hover .eventHoverDisplay { display: block; }
+
+.eventDspItemTable { border-collapse: collapse; } 
+.eventDspItemTable tr td { white-space: nowrap; }
+
+.popEvntTbl { width: 15vw; }
+.popTimeCell {  white-space: nowrap; width: 3.5vw; border-top: 1px solid rgba({$this->color_darkgrey},.5);  }
+.popEvtType {  font-size: 1vh;  color: rgba({$this->color_darkgrey},.5); text-align: right; border-top: 1px solid rgba({$this->color_darkgrey},.5);  }
 
 .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; }
 
