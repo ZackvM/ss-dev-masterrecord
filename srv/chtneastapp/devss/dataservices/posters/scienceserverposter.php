@@ -33,6 +33,124 @@ function __construct() {
 }
 
 class datadoers {
+ 
+    function getmontheventlist ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $sessid = cryptservice( $pdta['sess'], 'd');       
+      $chkUsrSQL = "SELECT originalaccountname as usr, presentinstitution as presentinstitution FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ($rs->rowCount() === 1) { 
+          $u = $rs->fetch(PDO::FETCH_ASSOC);
+          $dateLookupSQL = "SELECT ifnull(cal.eventid,'') as eventid, ifnull(cal.eyear,'1999') as eyear, ifnull(cal.emonth,'1') as emonth, ifnull(cal.eday,'1') as eday, ifnull(cal.alldayind,1) as allday, ifnull(cal.alldayind,1) as allday, if( ifnull(cal.alldayind,1) = 1, '',ifnull(cal.eventstarttime,'')) as stime, if( ifnull(cal.alldayind,1) = 1, 'All Day', concat( ifnull(cal.eventstarttime,''), if(ifnull(cal.eventendtime,'')='','',concat('&#45;',ifnull(cal.eventendtime,''))))) as eventendtime, ifnull(cal.eventtype,'RMDR') as eventtype, ifnull(evt.dspvalue,'General Staff Reminder') as dspeventtype, if(ifnull(cal.eventtitle,'')='',concat(ifnull(cal.icdonorinitials,''), if(ifnull(cal.icsurgeon,'')='','',concat('::', ifnull(cal.icsurgeon,'')))),ifnull(cal.eventtitle,'')) as eventtitle, ifnull(cal.eventdesc,'') as eventdesc FROM four.sys_master_calendar cal left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1) as evt on cal.eventtype = evt.menuvalue  where dspind = :dspind and eyear = :yr  and emonth = :mn and ( dspForWhom = 'ALLINST' OR dspForWhom = :presinst OR lcase(dspForWhom) = :usr) order by cast(eday as unsigned), stime";
+          $dateLookupRS = $conn->prepare($dateLookupSQL);
+          $dateLookupRS->execute(array(':dspind' => 1,':yr' => (int)$pdta['year'],':mn' => (int)$pdta['month'],':presinst' => $u['presentinstitution'],':usr' => strtolower($u['usr'])));
+          while ($r = $dateLookupRS->fetch(PDO::FETCH_ASSOC)) { 
+            $dta[] = $r;
+          }
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    } 
+
+
+    function rootcalendareventsave ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start();
+      $sessid = session_id();
+
+      $chkUsrSQL = "SELECT originalaccountname, presentinstitution as usr FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ($rs->rowCount() === 1) { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+      }
+      //{{\"calEventDte\":\"2019-05-15\",\"calEventStartTime\":\"\",\"calEventEndTime\":\"\",\"calEventAllDayInd\":false,\"calEventType\":\"\",\"calEventPHIIni\":\"\",\"calEventSurgeon\":\"\",\"calEventTitle\":\"\",\"calEventDesc\":\"\",\"calEventForWho\":\"ALLINST\"}"}}
+      //DATACHECKS
+      ( trim($pdta['calEventDte']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE CALENDAR EVENT MUST BE SPECIFIED")) : "" ;
+      ( trim($pdta['calEventDte']) !== "" &&  !verifyDate(trim($pdta['calEventDte']),'Y-m-d', true) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE DATE SPECIFIED FOR THE CALENDAR EVENT IS INVALID")) : "" ;
+      ( $pdta['calEventAllDayInd'] && ( trim($pdta['calEventStartTime']) !== "" || trim($pdta['calEventEndTime']) !== "" )) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE EVENT CANNOT BE BOTH 'ALL DAY' AND HAVE A START AND/OR END TIME")) : "";
+      ( !$pdta['calEventAllDayInd'] && ( trim($pdta['calEventStartTime']) === "" || trim($pdta['calEventEndTime']) === "" )) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE EVENT CANNOT BE WITHOUT A TIME INDICATOR")) : "";
+      ( !$pdta['calEventAllDayInd'] && ( date('H:i', strtotime($pdta['calEventStartTime'])) > date('H:i', strtotime($pdta['calEventEndTime'])))) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE START TIME CANNOT BE AFTER THE END TIME")) : "";
+      ( trim($pdta['calEventType']) === "" ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE EVENT TYPE IS REQUIRED")) : "" ;
+      //TODO:  DON'T HARD CODE THIS
+      ( trim($pdta['calEventType']) === "INFCEVT" && ( trim($pdta['calEventPHIIni']) === "" || trim($pdta['calEventSurgeon']) === "" ))  ? (list( $errorInd, $msgArr[] ) = array( 1 , "WHEN SPECIFYING AN INFORMED CONSENT WATCH, A DONOR'S INITIALS AND THE MD MUST BE SPECIFIED (NO HIPAA INFORMATION ALLOWED!)")) : "" ;
+      ( trim($pdta['calEventType']) === "INFCEVT" && ( trim($pdta['calEventForWho']) === 'ALLINST' || strtolower(trim($pdta['calEventForWho'])) === strtolower($u['originalaccountname']))) ?  (list( $errorInd, $msgArr[] ) = array( 1 , "INFORMED CONSENTS MUST LIST A SINGLE INSTITUTION ONLY (NOT ALL INSTITUTIONS AND NOT INDIVIDUALS)")) : "" ;
+
+      ( trim($pdta['calEventTitle']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "AN EVENT TITLE IS REQUIRED" )) : "";
+      ( trim($pdta['calEventDesc']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "AN EVENT DESCRIPTION IS REQUIRED" )) : "";
+      //TODO: MAKE SURE USER HAS ACCESS TO THIS INSTITUTION IF SPECIFIED
+      ( trim($pdta['calEventForWho']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A 'DISPLAY AT' VALUE IS REQUIRED" )) : "";
+      //TODO:  CHECK THAT ALL MENU VALUES ARE ACCEPTABLE VALUES
+
+      if ( $errorInd === 0 ) { 
+        //SAVE EVENT 
+        $evDate = DateTime::createFromFormat('Y-m-d', $pdta['calEventDte']);
+        $evY = (int)$evDate->format('Y');
+        $evM = (int)$evDate->format('m');
+        $evD = (int)$evDate->format('d');
+        $eDate = $evDate->format('Y-m-d');
+        $eAllDay = ( $pdta['calEventAllDayInd'] ) ? 1 : 0;
+        $eStart = trim($pdta['calEventStartTime']);        
+        $eEnd = trim($pdta['calEventEndTime']);
+        $eType = trim($pdta['calEventType']);
+        $eICDonor = ( trim($pdta['calEventType']) === 'INFCEVT' ) ? strtoupper(trim($pdta['calEventPHIIni'])) : "";
+        $eICMD = ( trim($pdta['calEventType']) === 'INFCEVT' ) ? strtoupper(trim($pdta['calEventSurgeon'])) : "";
+        $eTitle = ( trim($pdta['calEventType']) !== 'INFCEVT' ) ? substr( trim($pdta['calEventTitle']), 0, 10) : "";
+        $eDesc = ( trim($pdta['calEventType']) !== 'INFCEVT' ) ? trim($pdta['calEventDesc']) : "";
+        $eFor = trim($pdta['calEventForWho']);
+
+        (list( $errorInd, $msgArr[] ) = array(1 , "{$evY} // {$evM} // {$evD} // {$eFor}" ));
+
+        $insSQL = "insert into four.sys_master_calendar (eyear, emonth, eday, eventdate, eventstarttime, eventendtime, allDayInd, eventtype, icdonorinitials, icsurgeon, eventtitle, eventdesc, dspForWhom, inputon, inputby) values (:eyear, :emonth, :eday, :eventdate, :eventstarttime, :eventendtime, :allDayInd, :eventtype, :icdonorinitials, :icsurgeon, :eventtitle, :eventdesc, :dspForWhom, now(), :inputby)";
+        $iRS = $conn->prepare($insSQL); 
+        $iRS->execute(array(
+          ':eyear' => $evY
+         ,':emonth' => $evM
+         ,':eday' => $evD
+         ,':eventdate' => $eDate 
+         ,':eventstarttime' => $eStart
+         ,':eventendtime' => $eEnd
+         ,':allDayInd' => $eAllDay
+         ,':eventtype' => $eType
+         ,':icdonorinitials' => $eICDonor
+         ,':icsurgeon' => $eICMD
+         ,':eventtitle' => $eTitle
+         ,':eventdesc' => $eDesc
+         ,':dspForWhom' => $eFor
+         ,':inputby' => $u['originalaccountname']
+        ));
+
+        $dta['dialogid'] = $pdta['calEventDialogId'];
+        $responseCode = 200;
+
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    }
     
     function shipdocoverridesalesorder ( $request, $passdata ) { 
       $rows = array(); 

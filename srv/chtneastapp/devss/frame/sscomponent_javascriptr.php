@@ -406,6 +406,42 @@ function makeEventDialog(eventDate) {
   generateDialog('eventCalendarEventAdd',eventDate);
 }
 
+function saveRootEvent() { 
+  var dta = new Object(); 
+  dta['calEventDte'] = byId('rootEventDateValue').value; 
+  dta['calEventStartTime'] = byId('rootEventStartValue').value; 
+  dta['calEventEndTime'] = byId('rootEventEndValue').value; 
+  dta['calEventAllDayInd'] = byId('rootAllDayInd').checked;
+  dta['calEventType'] = byId('rootEventtypeValue').value; 
+  dta['calEventPHIIni'] = byId('rootICInitials').value;
+  dta['calEventSurgeon'] = byId('rootMDInitials').value;
+  dta['calEventTitle'] = byId('rootEventTitle').value;
+  dta['calEventDesc'] = byId('rootEventDesc').value;
+  dta['calEventForWho'] = byId('rootEventInstitutionValue').value;
+  dta['calEventDialogId'] = byId('dialogidhld').value;
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/root-calendar-event-save";
+  universalAJAX("POST",mlURL,passdta,answerCalendarEventSave,2);
+}
+
+function answerCalendarEventSave(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else { 
+     var dta = JSON.parse(rtnData['responseText']);
+     alert('Event has been saved');
+     closeThisDialog ( dta['DATA']['dialogid'] );
+     //RELOAD CALENDAR
+     var mmnth = byId('calendarMasterMonthId').value;
+     var myear = byId('calendarMasterYearId').value;
+     getCalendar('rootevent','rootEventDropCal','\''+mmnth+'/'+myear+'\'',2);
+   }
+}
 
 function generateDialog( whichdialog, whatobject ) { 
   var dta = new Object(); 

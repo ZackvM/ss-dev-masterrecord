@@ -1537,10 +1537,6 @@ function root($rqstStr, $whichUsr) {
 
   $fsCalendar = buildcalendar('mainroot', date('m'), date('Y'), $whichUsr->friendlyname, $whichUsr->useremail, $whichUsr->loggedsession );
   
-
-
-
-
 //DISPLAY WEEKLY GOALS
 //  if ($whichUsr->primaryinstitution === 'HUP') { 
 //      $weekGoal = bldWeeklyGoals($whichUsr);
@@ -3033,6 +3029,7 @@ INNNNER;
 CALENDAR;
 
   $inner = <<<INNNER
+<input type=hidden id=dialogidhld value="{$pdta['dialogid']}">
 <table border=0>
 <tr><th>Event Date</th><th>Start Time</th><th>End Time</th><th>Event Type</th><th colspan=2 id=icmdheader>IC/MD Initials</th></tr>
 <tr>
@@ -3046,14 +3043,14 @@ CALENDAR;
 <tr><td></td><td colspan=2><center><input type=checkbox id=rootAllDayInd onchange="byId('rootEventStartValue').value='';byId('rootEventStart').value='';byId('rootEventEndValue').value='';byId('rootEventEnd').value='';"><label for=rootAllDayInd>All-Day Event</label></td></tr>
 <tr><th>Event Title</th><th colspan=5>Event Description</th></tr>
 <tr>
-  <td><input type=text id=rootEventTitle class=rEventFld value="" maxlength=15></td>
+  <td><input type=text id=rootEventTitle class=rEventFld value="" maxlength=10></td>
   <td colspan=5><input type=text id=rootEventDesc class=rEventFld value=""></td>  
 </tr>
 <tr><th colspan=3>Display at</th><td rowspan=2 colspan=3 align=right valign=bottom> 
 
 <table>
 <tr>
-<td><table class=tblBtn id=btnEventSave style="width: 6vw;" onclick="alert('Save');"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table></td>
+<td><table class=tblBtn id=btnEventSave style="width: 6vw;" onclick="saveRootEvent();"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table></td>
 <td><table class=tblBtn id=btnEventCanel style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td>
 </tr>
 </table>

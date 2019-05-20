@@ -350,8 +350,12 @@ $nextYear = $pyear;
 if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1); }
 
 //******FORMATTING
+    $cMasterMId = "MID";
+    $cMasterYid = "YID";
     switch (strtolower($whichcalendar)) {
      case 'mainroot':
+        session_start(); 
+        $sessid = session_id();
         $daysofweek = array('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'); 
         $calTblId = "mainRootTbl";
         $leftBtnId = "mainRootLeftCtl";
@@ -368,24 +372,33 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $topCtlBtnClass= "smallMainRootCtlBtn";
         $leftBtnAction  = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$lastMonth}/{$lastYear}');\" ";
         $rightBtnAction = " onclick=\"getCalendar('mainroot','mainRootCalendar','{$nextMonth}/{$nextYear}');\" ";         
-
-        
+        $cMasterMId = "calendarMasterMonthId";
+        $cMasterYId = "calendarMasterYearId";
         $chkToday = date('m/d/Y');
         //TODO:  CHECK THAT THE OVERLOAD ELEMENTS CONTAIN VALUES
         $fn = func_get_arg(3);
         $em = func_get_arg(4);  
         $ls = func_get_arg(5); 
-        //SELECT * FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1
         //[{"date":{"day":1,"month":1,"year":2019,"dayOfWeek":2},"name":[{"lang":"en","text":"New Year's Day"}],"holidayType":"public_holiday"}]
         $pbholidayws = json_decode(callrestapi("GET","https://kayaposoft.com/enrico/json/v2.0/?action=getHolidaysForMonth&month={$pmonth}&year={$pyear}&country=us&region=pa&holidayType=public_holiday"),true);   ///GET ALL HOLIDAYS FOR A MONTH IN US/PA
-         
         $eventListArr = array();
-        $eventListArr[2019][5][15][0] = array("type" => "Informed Consent","name" => "TEST EVENT");
-        $eventListArr[2019][5][15][1] = array("type" => "CHTN Event","name" => "TEST EVENT II");
-        $eventListArr[2019][5][15][2] = array("type" => "CONFERENCE","name" => "ISBER");
-
         foreach ( $pbholidayws as $pbk => $pbv ) { 
-          $eventListArr[(int)$pbv['date']['year']][(int)$pbv['date']['month']][(int)$pbv['date']['day']][ count( $eventListArr[(int)$pbv['date']['year']][(int)$pbv['date']['month']][(int)$pbv['date']['day']] )] = array("type" => "Holiday", "name" => $pbv['name'][0]['text']);
+          $eventListArr[(int)$pbv['date']['year']][(int)$pbv['date']['month']][(int)$pbv['date']['day']][ count( $eventListArr[(int)$pbv['date']['year']][(int)$pbv['date']['month']][(int)$pbv['date']['day']] )] = array("type" => "Holiday", "typedsc" => "Holiday", "name" => $pbv['name'][0]['text'], 'time' => 'All-Day' );
+        }
+        $pd['month'] = $pmonth;
+        $pd['year'] = $pyear;
+        $pd['sess'] = cryptservice( $sessid, 'e');
+        $payload = json_encode($pd);
+        $monthEvntList = json_decode(callrestapi("POST", dataTree . "/data-doers/get-month-event-list",serverIdent, serverpw, $payload), true);
+        foreach ( $monthEvntList['DATA'] as $mekey => $meval ) { 
+            $eventListArr[(int)$meval['eyear']][(int)$meval['emonth']][(int)$meval['eday']][ count( $eventListArr[(int)$meval['eyear']][(int)$meval['emonth']][(int)$meval['eday']] )] = array( 
+                           "type" => "{$meval['eventtype']}"
+                         , "typedsc" => "{$meval['dspeventtype']}"
+                         , "stime" => "{$meval['stime']}"           
+                         , "time" => "{$meval['eventendtime']}"
+                         , "name" => "{$meval['eventtitle']}"
+                         , "description" => "{$meval['eventdesc']}"  
+                     );
         }
 
         if ( count($eventListArr[(int)date('Y')][(int)date('m')][(int)date('d')]) > 0 ) {
@@ -396,7 +409,7 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
               $tdyEventList .= "</tr><tr>";
               $cellCntr = 0;
             }
-            $tdyEventList .= "<td> <table><tr><td>&raquo; {$v['type']}:&nbsp;</td><td>{$v['name']}</td></tr></table> </td>";
+            $tdyEventList .= "<td> <table><tr><td rowspan=3 valign=top>{$v['time']}<td>{$v['name']}</td></tr><tr><td>{$v['description']}</td></tr><td>{$v['typedsc']}:&nbsp;</td></table> </td>";
             $cellCntr++;
           }
           $tdyEventList .= "</tr></table>";
@@ -405,9 +418,8 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
             $tdyEventList = "<p>There's nothing on the agenda for today";
         }
 
-        $dspChkToday =  "<div id=saluations>Hi {$fn}! Today is " . date('l, jS \of F, Y') . ". {$tdyEventList}</div>";
-        //$dspChkToday =  "<div id=saluations>Hi {$fn}<br>Today is " . date('l, jS \of F, Y') . ". Here's what's happening today: {$tdyEventList}<hr> " . json_encode( $pubholiday ) . "</div>";
-        
+        $dspChkToday =  "<div id=saluations>Hi {$fn}! Today is " . date('l, jS \of F, Y') . ". {$tdyEventList}  </div>";
+
         break;
      case 'procedureprocurequery':
         $calTblId = "pqcTbl";
@@ -515,7 +527,6 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $leftBtnAction  = " onclick=\"getCalendar('rootevent','rootEventDropCal', '{$lastMonth}/{$lastYear}',2);\" ";
         $rightBtnAction = " onclick=\"getCalendar('rootevent','rootEventDropCal' ,'{$nextMonth}/{$nextYear}',2);\" ";  
         break;
-
 
      case 'shipactual':
         $calTblId = "shpSDCTbl";
@@ -629,7 +640,7 @@ $rtnthiscalendar = <<<CALSTRT
    <table border=0 cellspacing=0 cellpadding=0 id="{$calTblId}" class="{$calendarClass}">
      <tr class="{$topBarClass}">
        <td id="{$leftBtnId}"{$leftBtnAction}><i class="material-icons {$topCtlBtnClass}">keyboard_arrow_left</i></td>
-       <td colspan=5 id="{$calTitle}" class="{$calTitleClass}">{$monthName} {$pyear}</td>
+       <td colspan=5 id="{$calTitle}" class="{$calTitleClass}">{$monthName} {$pyear}    <input type=hidden id="{$cMasterMId}" value="{$pmonth}"><input type=hidden id="{$cMasterYId}" value="{$pyear}"></td>
        <td id="{$rightBtnId}" align=right><i class="material-icons {$topCtlBtnClass}" {$rightBtnAction}>keyboard_arrow_right</i></td>
     </tr>
 CALSTRT;
@@ -738,10 +749,9 @@ while ($currentDay <= $numberOfDays) {
          $eventcnt = 0;
          if ( array_key_exists( (int)$currentDayDsp , $eventListArr[(int)$pyear][(int)$monthNbr]) ) {
            $caleventpop = "<div class=\"eventHoverDisplay\">";   
-           foreach ( $eventListArr[(int)$pyear][(int)$monthNbr][(int)$currentDayDsp] as $ck => $cv) {
-               //$cv['type']
-               $caldayeventlistdsp .= ( trim($caldayeventlistdsp) === "" ) ? "{$cv['name']}" : "<br>{$cv['name']}";
-               $caleventpop .= ( $eventcnt  === 0 ) ? "{$cv['name']}" : "<br>{$cv['name']}";
+           foreach ( $eventListArr[(int)$pyear][(int)$monthNbr][(int)$currentDayDsp] as $ck => $cv) { 
+               $caldayeventlistdsp .= ( trim($caldayeventlistdsp) === "" ) ? "{$cv['stime']} {$cv['name']}" : "<br>{$cv['stime']} {$cv['name']}";
+               $caleventpop .= ( $eventcnt  === 0 ) ? "<table border=0><tr><td rowspan=2 valign=top style=\"white-space: nowrap; width: 3.5vw;\">{$cv['time']}</td><td>{$cv['name']} </td></tr><tr><td>{$cv['description']}</td></tr></table>" : "<table border=0><tr><td rowspan=2 valign=top style=\"white-space: nowrap; width: 3.5vw;\">{$cv['time']}</td><td>{$cv['name']} </td></tr><tr><td>{$cv['description']}</td></tr></table>";              
                $eventcnt++;
            }
            $caleventpop .= "</div>";
@@ -766,11 +776,7 @@ while ($currentDay <= $numberOfDays) {
 DAYDSP;
           $sqrID = "daySqr{$currentDayDsp}";
           $action = " onclick=\"makeEventDialog('{$pyear}{$monthNbr}{$currentDayDsp}');\" ";
-
           //TODO:  THIS IS WHERE THE CURRENT DAY SQUARE DISPLAY GOES
-          
-          
-          
           $btmLineDsp = "<tr><td colspan=7 id={$btmLine}><div id=mainRootTodayActivityDsp>{$dspChkToday}</div></td></tr>";
          break;
        default: 
