@@ -417,6 +417,16 @@ function rootCalendarDeleteEvent(whichEventId) {
   universalAJAX("POST",mlURL,passdta,answerCalendarDeleteEvent,2);      
 }            
 
+function rootCalendarDeleteEvent(whichEventId) { 
+  var dta = new Object(); 
+  dta['calEventId'] = whichEventId; 
+  dta['calEventDialogId'] = byId('dialogidhld').value;
+  var passdta = JSON.stringify(dta);
+  //console.log( passdta);          
+  var mlURL = "/data-doers/root-calendar-event-delete";
+  universalAJAX("POST",mlURL,passdta,answerCalendarDeleteEvent,2);      
+}            
+
 function answerCalendarDeleteEvent( rtnData) { 
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);

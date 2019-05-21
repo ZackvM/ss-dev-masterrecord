@@ -372,7 +372,6 @@ STYLESHEET;
 return $rtnThis;    
 }  
   
-  
 function biogroupdefinition($mobileind) { 
 $rtnThis = <<<STYLESHEET
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.5vh; } 
@@ -546,7 +545,6 @@ textarea { font-size: 1.3vh; }
 STYLESHEET;
 return $rtnThis;
 }
-
 
 function collectiongrid($mobileind) {     
 $rtnThis = <<<STYLESHEET
@@ -926,7 +924,6 @@ STYLESHEET;
 
 }
 
-
 function reports($mobileind) { 
       $rtnThis = <<<STYLESHEET
 
@@ -1047,9 +1044,9 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #mainRootTbl #saluations { font-size: 1.2vh; font-weight: bold; }
 
 .caldayeventholder { font-size: 1vh; position: relative; padding: 0 3px 0 3px; box-sizing: border-box;  }
-.caldayday { float: left; margin-top: 2px; margin-right: 4px; padding-left: 2px; font-size: 1.8vh; color: rgba({$this->color_darkgrey},.8); }
+.caldayday { float: left; margin-top: 1px; margin-right: 1px; padding-left: 1px; font-size: 1.6vh; color: rgba({$this->color_darkgrey},.8); }
 .caldaytoday { color: rgba({$this->color_darkgreen},1); font-weight: bold; }
-.eventHoverDisplay { position: absolute; top: 30px; left: 20px; background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; display: none; z-index: 48; width: 12vw;  }
+.eventHoverDisplay { position: absolute; top: 30px; left: -30px; background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; display: none; z-index: 48; width: 15vw;  }
 .caldayeventholder:hover .eventHoverDisplay { display: block; }
 
 .eventDspItemTable { border-collapse: collapse; } 
@@ -1210,7 +1207,6 @@ input:focus, input:active {background: rgba({$this->color_lamber},.5); border: 1
 STYLESHEET;
 return $rtnThis;
 }
-
 
 function datacoordinator($mobileind) { 
       $rtnThis = <<<STYLESHEET
