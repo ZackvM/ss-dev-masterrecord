@@ -301,10 +301,11 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #sdcRqstShipDate {width: 7vw; }
 #sdcRqstToLabDate {width: 7vw; }
 #sdsetupdsp { width: 10vw; }
-#sdtrack { width: 20vw; }
+#sdtrack { width: 19vw; background: rgba({$this->color_lgrey},1); }
 #sdShipDocSalesSetup { width: 10vw; }
-#sdcPurchaseOrder { width: 12vw; }
-#sdcShipDocSalesOrder { width: 7vw; text-align: right; } 
+#sdcPurchaseOrder { width: 10vw; }
+#sdcShipDocSalesOrder { width: 5vw; text-align: right; background: rgba({$this->color_lgrey},1); } 
+#sdcShipDocSalesOrderAmt { width: 5vw; text-align: right; background: rgba({$this->color_lgrey},1);}
 
 #sdshpcal {min-width: 17vw; }
 #tolabcal { min-width: 17vw; }
@@ -315,12 +316,12 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #sdcShipDocSetupOn { width: 12vw; }
 
 #sdinvcodedsp {font-size: 2vh; font-weight: bold; text-align: center; padding-top: 8px; padding-bottom: 8px; width: 5vw; }
-#sdcIName { width: 16vw; }
-#sdcIEmail {width: 20vw; }
-#sdcTQStatus { width: 5.5vw; }
-#sdcInstitution { width: 25vw; }
-#sdcInstitutioniType { width: 12vw; }
-#sdcIDivision { width: 12vw; }
+#sdcIName { width: 16vw; background: rgba({$this->color_lgrey},1);}
+#sdcIEmail {width: 20vw; background: rgba({$this->color_lgrey},1);}
+#sdcTQStatus { width: 5.5vw; background: rgba({$this->color_lgrey},1); }
+#sdcInstitution { width: 25vw; background: rgba({$this->color_lgrey},1); }
+#sdcInstitutioniType { width: 12vw; background: rgba({$this->color_lgrey},1); }
+#sdcIDivision { width: 12vw; background: rgba({$this->color_lgrey},1); }
 
 #sdcInvestShippingAddress { width: 30vw; height: 12vh; }
 #sdcInvestBillingAddress { width: 30vw; height: 12vh; }
@@ -1050,6 +1051,13 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 .caldaytoday { color: rgba({$this->color_darkgreen},1); font-weight: bold; }
 .eventHoverDisplay { position: absolute; top: 30px; left: 20px; background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; display: none; z-index: 48; width: 12vw;  }
 .caldayeventholder:hover .eventHoverDisplay { display: block; }
+
+.eventDspItemTable { border-collapse: collapse; } 
+.eventDspItemTable tr td { white-space: nowrap; }
+
+.popEvntTbl { width: 12vw; }
+.popTimeCell {  white-space: nowrap; width: 3.5vw; border-top: 1px solid rgba({$this->color_darkgrey},.5);  }
+.popEvtType {  font-size: 1vh;  color: rgba({$this->color_darkgrey},.5); text-align: right; border-top: 1px solid rgba({$this->color_darkgrey},.5);  }
 
 .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; }
 

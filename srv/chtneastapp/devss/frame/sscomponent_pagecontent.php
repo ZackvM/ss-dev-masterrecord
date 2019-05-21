@@ -2973,7 +2973,7 @@ INNNNER;
   $presentInstitution = "";
 
   $instMnu = "<table border=0 class=menuDropTbl>";
-  $instMnu .= "<tr><td onclick=\"fillField('rootEventInstitution','ALLINST','All CHTN Eastern Institutions');\" class=ddMenuItem>All CHTN Eastern Institutions</td></tr>";
+  $instMnu .= "<tr><td onclick=\"fillField('rootEventInstitution','ALLINST','All CHTN Eastern Locations');\" class=ddMenuItem>All CHTN Eastern Institutions</td></tr>";
   while ($u = $usrRS->fetch(PDO::FETCH_ASSOC)) { 
     $usr = $u['acctname']; 
     $friendly = $u['friendlyName']; 
@@ -3028,10 +3028,50 @@ INNNNER;
 </div>
 CALENDAR;
 
+  
+  //TODO: TURN INTO WEBSERVICE
+  session_start();
+  $sessid = session_id();
+  $chkUsrSQL = "SELECT originalaccountname as usr, presentinstitution as presentinstitution FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+  $rs = $conn->prepare($chkUsrSQL); 
+  $rs->execute(array(':sessid' => $sessid));
+  if ($rs->rowCount() === 1) { 
+    $u = $rs->fetch(PDO::FETCH_ASSOC); 
+  }
+  
+  
+  $curSQL = "SELECT eventid, inputby, inputon, date_format(eventdate,'%m/%d/%Y') as eventdate, loc.dspvalue as location, if (alldayind = 1,'AllDay', concat( ifnull(cal.eventstarttime,''), if(ifnull(cal.eventendtime,'')='','',concat('&#45;',ifnull(cal.eventendtime,''))))) as eventtime, evt.dspvalue dspEventType, if(ifnull(cal.eventtitle,'')='',concat(ifnull(cal.icdonorinitials,''), if(ifnull(cal.icsurgeon,'')='','',concat('::', ifnull(cal.icsurgeon,'')))),ifnull(cal.eventtitle,'')) as eventtitle, ifnull(cal.eventdesc,'') as eventdesc FROM four.sys_master_calendar cal left join (SELECT menuvalue, dspvalue, googleiconcode as dspcolor FROM four.sys_master_menus where menu = 'EVENTTYPE' and dspind = 1) as evt on cal.eventtype = evt.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION' union select 'ALLINST','All CHTN Eastern Locations' union SELECT originalaccountname, concat('Display for Me (', ifnull(displayname,''),')') usrAsLoc FROM four.sys_userbase) as loc on cal.dspForWhom = loc.menuvalue where dspind = :dsp and eyear = :yr and emonth = :mn and eday = :dy and ( dspForWhom = 'ALLINST' OR dspForWhom = :presinst OR lcase(dspForWhom) = :usr) order by eventstarttime";
+  $curRS = $conn->prepare($curSQL);
+  $curRS->execute(array(':dsp' => 1, ':yr' => $py, ':mn' => $pm, ':dy' => $pd, ':presinst' => $u['presentinstitution'], ':usr' => $u['usr']));
+  if ( $curRS->rowCount() === 0 ) {
+      $currentEvntList = "";
+  } else { 
+      //BUILD DELETE TABLE
+      $curEvTbl = "<table><tr><td><span id=annc>Today's Events</span> (click 'trash' icon to delete)</td></tr></table><table border=0 cellspacing=0 cellpadding=0 id=tblTodaysEventList>";
+      while ($e = $curRS->fetch(PDO::FETCH_ASSOC)) {           
+         $evDate = DateTime::createFromFormat('m/d/Y', $e['eventdate']);
+         $nwDate = DateTime::createFromFormat('m/d/Y', date('m/d/Y'));         
+         $delAction = "";
+         $evIcon = "<i class=\"material-icons indIcon\">check_box</i>";
+          if ( strtolower($e['inputby']) === strtolower($u['usr']) ) {
+            if ( $evDate < $nwDate ) {
+            } else {
+              $evIcon = "<i class=\"material-icons indIcon delIcon\">delete_forever</i>";
+              $delAction = " onclick=\"rootCalendarDeleteEvent('{$e['eventid']}');\" ";
+              
+            }
+          }
+          $curEvTbl .= "<tr><td {$delAction}>{$evIcon}</td><td>{$e['eventtime']}</td><td>{$e['eventdesc']}</td><td>{$e['dspEventType']}</td><td>{$e['location']}</td></tr>";          
+      }
+      $curEvTbl .= "</table>";
+      
+      $currentEvntList = "<div id=divTodaysEventList>{$curEvTbl}</div>";
+  }
+  
   $inner = <<<INNNER
 <input type=hidden id=dialogidhld value="{$pdta['dialogid']}">
 <table border=0>
-<tr><th>Event Date</th><th>Start Time</th><th>End Time</th><th>Event Type</th><th colspan=2 id=icmdheader>IC/MD Initials</th></tr>
+<tr><td rowspan = 7 valign=top> {$currentEvntList} </td><th>Event Date</th><th>Start Time</th><th>End Time</th><th>Event Type</th><th colspan=3 id=icmdheader>IC/MD Initials</th></tr>
 <tr>
     <td>{$rootEventCalendar}</td>
     <td><div class=menuHolderDiv><input type=hidden id=rootEventStartValue><input type=text id=rootEventStart READONLY class=rEventFld><div class=valueDropDown style="width: 6vw;">{$sTime}</div></div></td>
@@ -3064,7 +3104,17 @@ INNNER;
 
 $rtnThis = <<<RTNTHIS
 <style>
-
+#divTodaysEventList { width: 25vw; height: 21vh; border: 1px solid rgba(48,57,71,1); overflow: auto; }
+#tblTodaysEventList { width: 25vw; }
+#tblTodaysEventList tr:nth-child(even) { background: rgba(160,160,160,.5); }      
+#tblTodaysEventList tr:hover {cursor: pointer; background: rgba(255,248,225,.8); }
+#tblTodaysEventList tr td { padding: 4px; }        
+        
+#annc { font-size: 1.6vh; color: rgba(48,57,71,1); }         
+        
+.indIcon { font-size: 2vh;  }         
+.delIcon:hover  { color:  rgba(237, 35, 0, 1); }         
+        
 </style>      
 {$inner}
 RTNTHIS;
@@ -3081,7 +3131,7 @@ function bldDialogShipDocAddSalesOrder ( $passeddata ) {
   $dspsd = substr('000000' . $sd, -6);
   $lock = 0;
   
-  $getSOSQL = "SELECT shipdocrefid, ifnull(salesorder,'') salesorder, ifnull(soby,'') as soby, ifnull(date_format(soon,'%m/%d/%Y'),'') as soon FROM masterrecord.ut_shipdoc where shipdocrefid = :sd"; 
+  $getSOSQL = "SELECT shipdocrefid, ifnull(salesorder,'') salesorder, ifnull(salesorderamount,'') as soamount, ifnull(soby,'') as soby, ifnull(date_format(soon,'%m/%d/%Y'),'') as soon FROM masterrecord.ut_shipdoc where shipdocrefid = :sd"; 
   $getSORS = $conn->prepare($getSOSQL); 
   $getSORS->execute(array(':sd' => $sd));
   if ($getSORS->rowCount() <> 1 ) { 
@@ -3094,17 +3144,19 @@ function bldDialogShipDocAddSalesOrder ( $passeddata ) {
           $inner = <<<INNERTBL
                 <input type=hidden id=soSDEncy value='{$obj['sdency']}'>
                 <input type=hidden id=soDLGId value='{$pdta['dialogid']}'>  
-                <table border=0><tr><td id=editinstructions>Enter the Sales Order Document for Ship-Doc {$dspsd} below:</td></tr>
-                <tr><td><input type=text id=soSONbr></td></tr>
-                <tr><td align=right><table><tr><td><table class=tblBtn id=btnSDCCancel style="width: 6vw;" onclick="saveSOOverride();"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table></td><td><table class=tblBtn id=btnSDCCancel style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td></tr></table></td></tr>
+                <table border=0><tr><td id=editinstructions colspan=2>Enter the Sales Order Document for Ship-Doc {$dspsd} below:</td></tr>
+                <tr><th>Sales Order #</th><th>Amount</th></tr>
+                <tr><td><input type=text id=soSONbr></td><td><input type=text id=soSOAmt></td></tr>
+                <tr><td align=right colspan=2><table><tr><td><table class=tblBtn id=btnSDCCancel style="width: 6vw;" onclick="saveSOOverride();"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table></td><td><table class=tblBtn id=btnSDCCancel style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td></tr></table></td></tr>
                 </table>
 INNERTBL;
           
       } else { 
           //DISPLAY SALES ORDER INFORMATION
           $dspso = substr('000000' . $so['salesorder'],-6);
-          $inner = "<table border=0><tr><td colspan=4 id=lockinstr>This Ship-Doc already has a referenced Sales Order.  If this is incorrect, see a CHTN-Informatics Staff Member. Information is outlined below.</td></tr><tr><td class=lockhead>Ship Doc</td><td class=lockhead>Sales Order</td><td class=lockhead>Entered by</td><td class=lockhead>Entered On</td></tr>";
-          $inner .= "<tr><td class=lockdata>{$dspsd}</td><td class=lockdata>{$dspso}</td><td class=lockdata>{$so['soby']}</td><td class=lockdata>{$so['soon']}</td></tr></table>";
+          $dspsoamt = ((int)$so['soamount'] === 0 ) ? "" : sprintf("$%01.2f", $so['soamount']); //salesorderamount
+          $inner = "<table border=0><tr><td colspan=4 id=lockinstr>This Ship-Doc already has a referenced Sales Order.  If this is incorrect, see a CHTN-Informatics Staff Member. Information is outlined below.</td></tr><tr><td class=lockhead>Ship Doc</td><td class=lockhead>Sales Order</td><td class=lockhead>Amount</td><td class=lockhead>Entered by</td><td class=lockhead>Entered On</td></tr>";
+          $inner .= "<tr><td class=lockdata>{$dspsd}</td><td class=lockdata>{$dspso}</td><td class=lockdata>{$dspsoamt}</td><td class=lockdata>{$so['soby']}</td><td class=lockdata>{$so['soon']}</td></tr></table>";
       }
 
   }
@@ -3114,7 +3166,8 @@ $rtnThis = <<<RTNTHIS
  #lockinstr { width: 25vw; text-align: justify; line-height: 1.3em; padding: .8vh 0; }
  .lockhead { font-weight: bold; border-bottom: 1px solid rgba(145,145,145,1); }        
  .lockdata { padding: 0 0 .8vh 0; }      
- #soSONbr { width: 21vw; text-align: right; } 
+ #soSONbr { width: 11vw; text-align: right; }
+ #soSOAmt { width: 10vw; text-align: right; }
  #editinstructions { width: 21vw; font-size: 1.4vh; padding: 1vh 0; }     
 </style>      
 {$inner}
@@ -3505,6 +3558,7 @@ function bldShipDocEditPage( $whichsdency ) {
    $sdsetupon = $sd['DATA']['sdhead'][0]['setupon'];
    $sdsetupby = $sd['DATA']['sdhead'][0]['setupby'];
    $sdsonbr = ( (int)$sd['DATA']['sdhead'][0]['salesorder'] === 0 ) ? "" : substr('000000' .  (int)$sd['DATA']['sdhead'][0]['salesorder'], -6);
+   $sdsoamt = ( $sd['DATA']['sdhead'][0]['salesorderamount'] === 0 ) ? "" : sprintf("$%01.2f", $sd['DATA']['sdhead'][0]['salesorderamount']); //salesorderamount
    $sdsoon =  $sd['DATA']['sdhead'][0]['salesorderon'];
    $sdsoby =  $sd['DATA']['sdhead'][0]['salesorderby'];
    $sdshiptrck = $sd['DATA']['sdhead'][0]['shipmenttrackingnbr'];
@@ -3544,7 +3598,6 @@ function bldShipDocEditPage( $whichsdency ) {
    $cdrop .= "</table>";
    $couriermnu = "<table cellpadding=0 cellspacing=0 border=0><tr><td><div class=menuHolderDiv><input type=hidden id=sdcCourierInfoValue value=\"{$tqcourierid}\" data-frminclude=1><input type=text id=sdcCourierInfo class=sdinput value=\"{$valcourier}\" READONLY><div class=valueDropDown style=\"min-width: 50vw;\">{$cdrop}</div></div></td></tr></table>";
 
-
    $shpTbl = <<<SHTBL
 <table><tr><td class=sdFieldLabel>Shipping Address *</td></tr><tr><td><TEXTAREA class=sdinput id=sdcInvestShippingAddress data-frminclude=1>{$sdshpadd}</TEXTAREA></td></tr><tr><td class=sdFieldLabel>Shipping Phone * (format: '(123) 456-7890 x0000' / x is optional)</td></tr><tr><td><input type=text class=sdinput id=sdcShippingPhone value="{$sdshpphn}" data-frminclude=1></td><tr><td class=sdFieldLabel>Courier</td></tr><tr><td>{$couriermnu}</td></tr></table>
 SHTBL;
@@ -3579,7 +3632,8 @@ CALENDAR;
 
 $sdsetup = ( trim($sdsetupon) !== "" || trim($sdsetupby) !== "") ? ( trim($sdsetupby) !== "" ) ?  "{$sdsetupon} :: {$sdsetupby}" : "{$sdsetupon}" : "";
 
-   $sdheadtbl = <<<SDHDR
+//   $sdheadtbl = json_encode($sd['DATA']['sdhead'][0]);
+   $sdheadtbl .= <<<SDHDR
  <form id=frmSDHeadSection><input type=hidden id=sdency value="{$whichsdency}" data-frminclude=1><input type=hidden id=sdnbrency value="{$sdnbrency}">                    
 <table border=0>
     <tr><td class=sdFieldLabel>Shipdoc #</td>
@@ -3590,7 +3644,8 @@ $sdsetup = ( trim($sdsetupon) !== "" || trim($sdsetupby) !== "") ? ( trim($sdset
         <td class=sdFieldLabel>Setup On :: By</td>
         <td class=sdFieldLabel>Ship Tracking #</td>
         <td class=sdFieldLabel>Purchase Order # *</td>
-       <td class=sdFieldLabel>Sales Order # </td>
+        <td class=sdFieldLabel>Sales Order # </td>
+        <td class=sdFieldLabel>Amount </td>
     <tr>
             <td id=sdnbrdsp>{$sdnbr}</td>
             <td>{$shpCalendar}</td>
@@ -3600,7 +3655,8 @@ $sdsetup = ( trim($sdsetupon) !== "" || trim($sdsetupby) !== "") ? ( trim($sdset
             <td><input type=text id=sdsetupdsp class=sdinput value="{$sdsetup}" READONLY></td>
             <td><input type=text id=sdtrack class=sdinput value="{$sdshiptrck}" READONLY></td>
             <td><div class=menuHolderDiv><input type=text id=sdcPurchaseOrder class=sdinput value="{$sdponbr}" data-frminclude=1><div class=valueDropDown style="min-width: 20vw;">{$po}</div></div></td>
-            <td><input type=text id=sdcShipDocSalesOrder class=sdinput value="{$sdsonbr}" data-frminclude=1></td> 
+            <td><input type=text id=sdcShipDocSalesOrder READONLY class=sdinput value="{$sdsonbr}" data-frminclude=0></td> 
+            <td><input type=text id=sdcShipDocSalesOrderAmt READONLY class=sdinput value="{$sdsoamt}" data-frminclude=0></td> 
     </tr>
 </table>
 

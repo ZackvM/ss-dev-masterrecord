@@ -375,6 +375,7 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
         $cMasterMId = "calendarMasterMonthId";
         $cMasterYId = "calendarMasterYearId";
         $chkToday = date('m/d/Y');
+        $chkMonth = date('m');
         //TODO:  CHECK THAT THE OVERLOAD ELEMENTS CONTAIN VALUES
         $fn = func_get_arg(3);
         $em = func_get_arg(4);  
@@ -398,27 +399,32 @@ if ((int)$nextMonth === 13) { $nextMonth = '01'; $nextYear = ((int)$nextYear + 1
                          , "time" => "{$meval['eventendtime']}"
                          , "name" => "{$meval['eventtitle']}"
                          , "description" => "{$meval['eventdesc']}"  
+                         , "icondspcolor" => "{$meval['dspeventcolor']}"   
                      );
         }
 
-        if ( count($eventListArr[(int)date('Y')][(int)date('m')][(int)date('d')]) > 0 ) {
-          $cellCntr = 0;  
-          $tdyEventList = "<p>Here's what's happening today:<table border=0><tr>";
-          foreach ( $eventListArr[(int)date('Y')][(int)date('m')][(int)date('d')] as $k => $v ) {
-            if ( $cellCntr === 4 ) { 
-              $tdyEventList .= "</tr><tr>";
-              $cellCntr = 0;
+        if ( $pmonth === $chkMonth ) {  
+          if ( count($eventListArr[(int)date('Y')][(int)date('m')][(int)date('d')]) > 0 ) {
+            $cellCntr = 0;  
+            $tdyEventList = "<p>Here's what's happening today: {$pmonth} {$chkMonth}  <table border=0><tr>";
+            foreach ( $eventListArr[(int)date('Y')][(int)date('m')][(int)date('d')] as $k => $v ) {
+              if ( $cellCntr === 4 ) { 
+                $tdyEventList .= "</tr><tr>";
+                $cellCntr = 0;
+              }
+              $tdyEventList .= "<td> <table><tr><td rowspan=3 valign=top>{$v['time']}<td>{$v['name']}</td></tr><tr><td>{$v['description']}</td></tr><td>{$v['typedsc']}:&nbsp;</td></table> </td>";
+              $cellCntr++;
             }
-            $tdyEventList .= "<td> <table><tr><td rowspan=3 valign=top>{$v['time']}<td>{$v['name']}</td></tr><tr><td>{$v['description']}</td></tr><td>{$v['typedsc']}:&nbsp;</td></table> </td>";
-            $cellCntr++;
-          }
-          $tdyEventList .= "</tr></table>";
-        } else { 
+            $tdyEventList .= "</tr></table>";
+          } else { 
             //NO EVENTS
             $tdyEventList = "<p>There's nothing on the agenda for today";
+          }
+          $dspChkToday =  "<div id=saluations>Hi {$fn}! Today is " . date('l, jS \of F, Y') . ". {$tdyEventList}  </div>";
+        } else { 
+            //TODO:  BECAUSE THE MONTH THE CALENDAR DISPLAYS IS NOT THE MONTH IT WILL NOT DISPLAY THE DAY'S AGENDA - THATS WRONG FIX
+            $dspChkToday =  "<div id=saluations>Hi {$fn}! Today is " . date('l, jS \of F, Y') . "<br>To View Today's agenda, display the current month.</div>";
         }
-
-        $dspChkToday =  "<div id=saluations>Hi {$fn}! Today is " . date('l, jS \of F, Y') . ". {$tdyEventList}  </div>";
 
         break;
      case 'procedureprocurequery':
@@ -748,12 +754,17 @@ while ($currentDay <= $numberOfDays) {
          $caleventpop = "";
          $eventcnt = 0;
          if ( array_key_exists( (int)$currentDayDsp , $eventListArr[(int)$pyear][(int)$monthNbr]) ) {
+           //$caldayeventlistdsp = "<table border=1 class=eventDspItemTable>";  
            $caleventpop = "<div class=\"eventHoverDisplay\">";   
            foreach ( $eventListArr[(int)$pyear][(int)$monthNbr][(int)$currentDayDsp] as $ck => $cv) { 
-               $caldayeventlistdsp .= ( trim($caldayeventlistdsp) === "" ) ? "{$cv['stime']} {$cv['name']}" : "<br>{$cv['stime']} {$cv['name']}";
-               $caleventpop .= ( $eventcnt  === 0 ) ? "<table border=0><tr><td rowspan=2 valign=top style=\"white-space: nowrap; width: 3.5vw;\">{$cv['time']}</td><td>{$cv['name']} </td></tr><tr><td>{$cv['description']}</td></tr></table>" : "<table border=0><tr><td rowspan=2 valign=top style=\"white-space: nowrap; width: 3.5vw;\">{$cv['time']}</td><td>{$cv['name']} </td></tr><tr><td>{$cv['description']}</td></tr></table>";              
+
+               $colorSqr = "<table style=\"border-collapse: collapse;\"><tr><td style=\" background: rgba({$cv['icondspcolor']}); width: 3px; height: 4px;\"></td></tr></table>";
+               $caldayeventlistdsp .= "<table border=0 class=eventDspItemTable><tr><td>{$colorSqr}</td><td>{$cv['stime']} {$cv['name']}</td></tr></table>";
+               
+               $caleventpop .= ( $eventcnt  === 0 ) ? "<table border=0 cellspacing=0 cellpadding=0 class=popEvntTbl><tr><td rowspan=3 valign=top class=popTimeCell>{$cv['time']}</td><td class=popEvtType>{$cv['typedsc']}</td></tr><tr><td>{$cv['name']} </td></tr><tr><td>{$cv['description']}</td></tr></table>" : "<table border=0 cellspacing=0 cellpadding=0 class=popEvntTbl><tr><td rowspan=3 valign=top class=popTimeCell>{$cv['time']}</td><td class=popEvtType>{$cv['typedsc']}</td></tr><tr><td>{$cv['name']} </td></tr><tr><td>{$cv['description']}</td></tr></table>";              
                $eventcnt++;
            }
+           //$caldayeventlistdsp .= "</table>";
            $caleventpop .= "</div>";
          }  
              
