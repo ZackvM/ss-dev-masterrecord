@@ -1072,6 +1072,9 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #icmdheader { display: none; }
 #rootEventInstitution { width: 100%; }
 
+#grphfreezer { width: 25vw; }
+
+
 STYLESHEET;
 return $rtnThis;
   }    
