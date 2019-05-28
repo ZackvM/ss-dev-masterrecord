@@ -15,6 +15,15 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'enlargeDashboardGraphic':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Dashboard Metric";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";       
+        //$innerDialog = $passedData . " " . $pdta['objid']; 
+        $innerDialog = bldEnlargeDashboardGraphic ( $pdta['objid'] );
+        //$footerBar = "SEGMENT ADD";       
+        break;  
       case 'eventCalendarEventAdd':
         $pdta = json_decode($passedData, true);          
         $titleBar = "Calendar Event Editor";
@@ -1537,8 +1546,6 @@ function root($rqstStr, $whichUsr) {
 
 $fsCalendar = buildcalendar('mainroot', date('m'), date('Y'), $whichUsr->friendlyname, $whichUsr->useremail, $whichUsr->loggedsession );
 
-
-
 //DISPLAY WEEKLY GOALS
 //  if ($whichUsr->primaryinstitution === 'HUP') { 
 //      $weekGoal = bldWeeklyGoals($whichUsr);
@@ -1546,18 +1553,31 @@ $fsCalendar = buildcalendar('mainroot', date('m'), date('Y'), $whichUsr->friendl
 //      $weekGoal = "";
 //  }
 
-$graphListArr = ["grphfreezer" => "root_freezers.png"];
-$graphics = "";
+$graphListArr = ["grphfreezer" => "root_freezers.png", "grphrollshipgrid" => "root_yearrollship.png" , "grphinvestigatorinf" => "root_invnbrs.png", "grphsegshiptotal" => "root_totlshipped.png"];
+$graphics = array();
 $at = genAppFiles;
+
 foreach ( $graphListArr as $key => $grph ) {
     if ( file_exists("{$at}/publicobj/graphics/sysgraphics/{$grph}" ) ) { 
-      $graphics .= base64file("{$at}/publicobj/graphics/sysgraphics/{$grph}", "{$key}", "png", true);         
+      $graphics[$key] = base64file("{$at}/publicobj/graphics/sysgraphics/{$grph}", "{$key}", "png", true , " onclick = \"enlargeDashboardGraphic('{$grph}');\" class=\"rootScreenGraph dashboardimage\" ");         
     }
 }
 
+$grphTbl = <<<METRICGRPHS
+
+<table border=0>
+<tr><td rowspan=3 valign=top class=dashBoardGraphic> {$graphics['grphrollshipgrid']} </td><td valign=top class=dashBoardGraphic style="height: 10vh;"> {$graphics['grphinvestigatorinf']} </td><td class=dashBoardGraphic rowspan=3 valign=top>{$graphics['grphfreezer']} </td></tr>
+<tr><td valign=top class=dashBoardGraphic style="height: 10vh;"> {$graphics['grphsegshiptotal']} </td></tr>
+<tr><td valign=top> &nbsp; </td></tr>
+
+</table>
+
+
+METRICGRPHS;
+
   $rtnthis = <<<PAGEHERE
 <table border=0 id=rootTable>
-    <tr><td rowspan=2 valign=top>{$graphics}</td><td style="width: 42vw;" align=right valign=top>{$weekGoal}</td></tr>
+    <tr><td rowspan=2 valign=top>{$grphTbl}</td><td style="width: 42vw;" align=right valign=top>{$weekGoal}</td></tr>
     <tr><td style="width: 42vw;" align=right valign=top><div id="mainRootCalendar">{$fsCalendar}</div></td></tr>    
 </table>
   
@@ -2960,6 +2980,26 @@ RTNTHIS;
 return $rtnThis;
 
 }
+
+function bldEnlargeDashboardGraphic ( $whichgraphic ) { 
+  require(serverkeys . "/sspdo.zck");
+  $at = genAppFiles;
+  if ( file_exists("{$at}/publicobj/graphics/sysgraphics/{$whichgraphic}" ) ) { 
+    $id = generateRandomString();  
+    $graphics = base64file("{$at}/publicobj/graphics/sysgraphics/{$whichgraphic}", "{$id}", "png", true);         
+  } else { 
+    $graphics = "NO GRAPHIC FOUND ({$whichgraphic})";
+  }
+
+  $pgGraphics = <<<ENLRGDGRPH
+<table border=0>
+<tr><td style="padding: 2vh 2vw;">{$graphics}</td></tr>
+</table>
+
+ENLRGDGRPH;
+return $pgGraphics;
+}
+
 
 function bldDialogCalendarAddEvent ( $passeddata ) { 
   require(serverkeys . "/sspdo.zck");

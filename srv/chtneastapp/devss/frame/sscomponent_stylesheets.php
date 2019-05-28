@@ -1072,7 +1072,16 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #icmdheader { display: none; }
 #rootEventInstitution { width: 100%; }
 
-#grphfreezer { width: 25vw; }
+.dashBoardGraphic { padding-left: .5vw; padding-right: .5vw; padding-bottom: .5vh; border-right: 1px solid rgba({$this->color_mgrey},.5); border-bottom: 1px solid rgba({$this->color_mgrey},.5); }
+.dashBoardGraphic:hover {  border-right: 1px solid rgba({$this->color_bred},1); border-bottom: 1px solid rgba({$this->color_bred},1); cursor: pointer; }
+
+#grphfreezer { width: 28vw; }
+#grphinvestigatorinf { width: 13vw; }
+#grphrollshipgrid { height: 37vh;}
+#grphsegshiptotal { width: 13vw; }
+
+
+
 
 
 STYLESHEET;

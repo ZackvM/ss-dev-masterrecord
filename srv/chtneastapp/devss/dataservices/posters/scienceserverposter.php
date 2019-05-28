@@ -1691,6 +1691,11 @@ class datadoers {
              $left = '12vw';
              $top = '15vh';
              break;
+           case 'enlargeDashboardGraphic':
+             $primeFocus = "";
+             $left = '12vw';
+             $top = '15vh';
+             break;
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);

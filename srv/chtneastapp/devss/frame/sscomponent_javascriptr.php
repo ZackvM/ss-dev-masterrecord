@@ -406,6 +406,10 @@ function answerGetCalendar(rtnData) {
 function makeEventDialog(eventDate) { 
   generateDialog('eventCalendarEventAdd',eventDate);
 }
+
+function enlargeDashboardGraphic(whichgraphic) { 
+  generateDialog('enlargeDashboardGraphic',whichgraphic);
+}
             
 function rootCalendarDeleteEvent(whichEventId) { 
   var dta = new Object(); 
