@@ -1588,36 +1588,30 @@ return $rtnthis;
 function hprreview($rqststr, $whichusr) { 
 
 if (trim($rqststr[2]) === "") { 
-
-//HPR Query Grid and Scanner
-$grid = buildHPRGrid(); 
-    $pg = <<<PAGECONTENT
+  //HPR Query Grid and Scanner
+  $grid = buildHPRGrid(); 
+  $pg = <<<PAGECONTENT
 {$grid}
 PAGECONTENT;
-
 } else { 
 
-if (trim($rqststr[2]) !== 'pastreview') {
-
+  if (trim($rqststr[2]) !== 'pastreview') {
     //GET SLIDE LIST AND METRICS
-   $pgContent = buildHPRBenchTop($rqststr);
-   //$topBtnBar = generatePageTopBtnBar('hprreviewactions');  //THE ACTION BUTTONS HAVE BEEN MOVED TO THE SCREEN REAL ESTATE
+   $pgContent = bldHPRBenchTop($rqststr);
+   $topBtnBar = generatePageTopBtnBar('hprreviewactions');  //THE ACTION BUTTONS HAVE BEEN MOVED TO THE SCREEN REAL ESTATE
    $pg = <<<PAGECONTENT
    {$topBtnBar} 
-{$pgContent}
+   {$pgContent}
 PAGECONTENT;
 
-} else { 
-
-    $pgContent = "PAST HPReview";
+  } else { 
+   $pgContent = "PAST HPReview";
    $topBtnBar = generatePageTopBtnBar('hprpast');
    $pg = <<<PAGECONTENT
    {$topBtnBar} 
-{$pgContent}
+   {$pgContent}
 PAGECONTENT;
-
-}
-
+  }
 }
 
 return $pg;
@@ -1730,12 +1724,6 @@ function bldHPRWorkBenchSide($SGObj, $allSGObj, $pastHPRObj, $pbiosample) {
   $selector = cryptservice($sgDta['prprid'] . "-" . $sgDta['prrecordselector'], "e");
   $prTxtBtns = (trim($sgDta['pathologyreporttext']) === "") ? "" : "<td onclick=\"openOutSidePage('{$tt}/print-obj/pathology-report/{$selector}');\" align=right><i class=\"material-icons prntbtn\">print</i></td>";
 
-  $revGridConfirm   = buildHPRConfirmGrid($pbiosample,$segLabel,$sgDta);
-  $revGridAdd       = buildHPRAddGrid($pbiosample,$segLabel);
-  $revGridDeny      = buildHPRDenyGrid($pbiosample,$segLabel);
-  $revGridIncon     = buildHPRInconGrid($pbiosample,$segLabel);
-  $revGridUnuse     = buildHPRUnuseGrid($pbiosample,$segLabel);
-
   if ((int)$allSGObj['ITEMSFOUND'] > 0) {
     $segPartsDsp = "<table border=0 cellspacing=0 cellpadding=0 width=100% id=constituentTbl><tr><td class=littleFieldLabelEnd>Segment</td><td class=littleFieldLabelEnd>Status</td><td class=littleFieldLabelEnd>Preparation</td><td class=littleFieldLabelEnd>Metric</td><td class=littleFieldLabelEnd>Assignment</td></tr>";
     foreach ($allSgDta as $rcd) {
@@ -1760,26 +1748,32 @@ function bldHPRWorkBenchSide($SGObj, $allSGObj, $pastHPRObj, $pbiosample) {
       $hprDX .= (trim($rcd['speccat']) === "") ? "" : " [" . trim($rcd['speccat']) . "]";
       $hprDX = trim($hprDX);
       $hprCmt = trim($rcd['reviewercomments']);
-      $hprDsp .= "<tr class=hoverRow onclick=\"navigateSite('hpr-review/past-review/{$rcd['biohprid']}');\"><td class=conDataCell>{$hprSegLabel}</td><td class=conDataCell>{$rcd['reviewer']}</td><td class=conDataCell>{$rcd['reviewedon']}</td><td class=conDataCell>{$rcd['decision']}</td><td class=conDataCell>{$hprDX}&nbsp;</td><td class=conDataCell>{$hprCmt}&nbsp;</td></tr>";
+      $hprDsp .= "<tr class=hoverRow onclick=\"alert('Zack:change this to a dialog: {$rcd['biohprid']}');\"><td class=conDataCell>{$hprSegLabel}</td><td class=conDataCell>{$rcd['reviewer']}</td><td class=conDataCell>{$rcd['reviewedon']}</td><td class=conDataCell>{$rcd['decision']}</td><td class=conDataCell>{$hprDX}&nbsp;</td><td class=conDataCell>{$hprCmt}&nbsp;</td></tr>";
       $pastSlideCntr++;
       } 
     }
     $hprDsp .= "</table>";
 
     if ($pastSlideCntr < 1) { 
-      $hprDsp = "NO PAST HPR PERFORMED";
+      $hprDsp = "<table><tr><td style=\"padding: 1vw;\"><h3>NO PAST HPR PERFORMED ON BIOGROUP: {$conBGDsp}</h3></td></tr></table>";
     }
+
+$revGridConfirm   = buildHPRConfirmGrid($pbiosample,$segLabel,$sgDta);
+$revGridAdd       = buildHPRAddGrid($pbiosample,$segLabel);
+$revGridDeny      = buildHPRDenyGrid($pbiosample,$segLabel);
+$revGridIncon     = buildHPRInconGrid($pbiosample,$segLabel);
+$revGridUnuse     = buildHPRUnuseGrid($pbiosample,$segLabel);
+
 
     $pg = <<<PAGECONTENT
 <table border=0 cellspacing=0 cellpadding=0 id=workBenchHolding>
     <tr><td valign=top id=workBenchPrelimInfoHold>
-
             <div id=divWorkBenchPrelimInfo>
             <table border=0 cellspacing=0 cellpadding=0 width=100%>
             <tr><td class=workbenchheader>SLIDE: {$segLabel}</td></tr>
             <tr><td>
-               <!-- TECHNICIAN INFO //--> 
-                <table border=0 width=100% cellpadding=0 cellspacing=0>
+                 <!-- TECHNICIAN INFO //--> 
+                 <table border=0 width=100% cellpadding=0 cellspacing=0>
                  <tr><td colspan=3 valign=top class=littleFieldLabel width=50%>Site / Subsite (Specimen Category)</td><td colspan=3 valign=top class=littleFieldLabelEnd width=50%>Diagnosis / Modifier</td></tr>
                  <tr><td colspan=3 valign=top class=dataFieldDsp>{$dspSite}&nbsp;</td><td colspan=3 valign=top class=dataFieldDspEnd>{$dx}&nbsp;</td></tr> 
                  <tr><td colspan=3 valign=top class=littleFieldLabel width=50%>METS Site</td><td colspan=3 valign=top class=littleFieldLabelEnd width=50%>Mets Site DX</tr>   
@@ -1815,7 +1809,7 @@ function bldHPRWorkBenchSide($SGObj, $allSGObj, $pastHPRObj, $pbiosample) {
             <tr><td class=workbenchheader>PAST HPR PERFORMED ON BIOGROUP {$conBGDsp}</td></tr>
             <tr><td>
             <!-- PAST HPR SEGMENTS //-->
-            <div id=allSegHolder>
+            <div id=allSegPast>
             {$hprDsp} 
             </div>
             </td></tr>
@@ -1824,21 +1818,6 @@ function bldHPRWorkBenchSide($SGObj, $allSGObj, $pastHPRObj, $pbiosample) {
 
             </td>
 
-            <td valign=top id=buttonStripHolder>
-  
-               <table>
-                 <tr><td><div class=sideActionBtn id=btnNewHPRReview onclick="navigateSite('hpr-review');"><div class=iconGraphic><i class="material-icons">panorama_fish_eye</i></div><div class=btnExplainer>New HPR Search</div></div></td></tr>
-                 <tr><td><div class=sideActionBtn id=btnPathReportDsp onclick="changeReviewDisplay('divWorkBenchPathRptDsp');"><div class=iconGraphic><i class="material-icons">stars</i></div><div class=btnExplainer>View the Pathology Report</div></div></td></tr>
-                 <tr><td>&nbsp;</td></tr>
-                 <tr><td><div class=sideActionBtn id=btnConfirmHPR onclick="changeReviewDisplay('reviewersWorkBenchConfirm');"><div class=iconGraphic><i class="material-icons">check_circle_outline</i></div><div class=btnExplainer>Confirm Designation</div></div></td></tr>
-                 <tr><td><div class=sideActionBtn id=btnAddHPR onclick="changeReviewDisplay('reviewersWorkBenchAdd');"><div class=iconGraphic><i class="material-icons">add_circle_outline</i></div><div class=btnExplainer>Add to Designation</div></div></td></tr>
-                 <tr><td><div class=sideActionBtn id=btnDenyHPR onclick="changeReviewDisplay('reviewersWorkBenchDeny');"><div class=iconGraphic><i class="material-icons">error_outline</i></div><div class=btnExplainer>Deny Designation</div></div></td></tr>
-                 <tr><td><div class=sideActionBtn id=btnUnusableHPR onclick="changeReviewDisplay('reviewersWorkBenchUnuse');"><div class=iconGraphic><i class="material-icons">highlight_off</i></div><div class=btnExplainer>Mark Biosample Unusable</div></div></td></tr>
-                 <tr><td><div class=sideActionBtn id=btnInconHPR onclick="changeReviewDisplay('reviewersWorkBenchIncon');"><div class=iconGraphic><i class="material-icons">help_outline</i></div><div class=btnExplainer>Inconclusive Dsignation</div></div></td></tr>
-               </table> 
-
-
-            </td>
             <td valign=top>
 
             <div id=workBenchDisplayHolder>
@@ -1867,7 +1846,7 @@ function bldHPRWorkBenchSide($SGObj, $allSGObj, $pastHPRObj, $pbiosample) {
     </tr>
  </table>
 PAGECONTENT;
-   
+
     return $pg;          
 }
 
@@ -1904,33 +1883,45 @@ $pg = <<<CONFIRMFRM
 <input type=hidden id=fldSld value={$slidenbr}>
 <div id=divHPRConfirm>
 
-  <table border=0 cellspacing=0 cellpadding=0 width=100%>
-  <tr><td class=workbenchheaderconfirm><table width=100% cellpadding=0 cellspacing=0><tr><td>Confirm Diagnosis Designation for Biogroup {$biogroupnbr}</td></tr></table> </td></tr>
-  </table>
+  <table border=1 cellspacing=0 cellpadding=0 width=100% id=hprConfirmMainHoldTbl>
+  <tr><td class=workbenchheaderconfirm>
+           <table width=100% cellpadding=0 cellspacing=0><tr><td>Confirm Diagnosis Designation for Biogroup {$biogroupnbr}</td></tr></table> 
+      </td></tr>
+  <tr><td>
 
-  <table border=0 width=100% cellspacing=0 cellpadding=0>
+    <table>
     <tr><td class=littleFieldLabelWork>Specimen Category</td><td class=littleFieldLabelWork>Site</td><td class=littleFieldLabelWork>Sub-Site</td></tr>
-    <tr><td class=fieldHolder><input type=text id=hprFldSpecCatConfirm value="{$spc}" READONLY></td><td class=fieldHolder><input type=text id=hprFldSiteConfirm value="{$site}" READONLY></td><td class=fieldHolder><input type=text id=hprFldSubSiteConfirm value="{$subsite}" READONLY></td></tr>
-  </table>
+    <tr><td class=fieldHolder><input type=text id=hprFldSpecCatConfirm value="{$spc}" READONLY></td><td class=fieldHolder><input type=text id=hprFldSiteConfirm value="{$site}" READONLY></td><td class=fieldHolder><input type=text id=hprFldSubSiteConfirm value="{$subsite}" READONLY></td></tr></table>
+      </td></tr>
+      <tr><td>
 
   <table border=0 width=100% cellspacing=0 cellpadding=0>
     <tr><td class=littleFieldLabelWork>Diagnosis</td><td class=littleFieldLabelWork>Diagnosis Modifier</td></tr>
     <tr><td class=fieldHolder><input type=text id=hprFldDiagnosisConfirm value="{$dx}" READONLY></td><td class=fieldHolder><input type=text id=hprFldDXModifierConfirm value="{$dxm}" READONLY></td></tr>
   </table>
+    </td></tr>
+
+    <tr><td>
  
   <table border=0 width=100% cellspacing=0 cellpadding=0>
     <tr><td class=littleFieldLabelWork>Metastatic Site</td><td class=littleFieldLabelWork>Metastatic Diagnosis</td></tr>
     <tr><td class=fieldHolder><input type=text id=hprFldMetsSiteConfirm value="{$mets}" READONLY></td><td class=fieldHolder><input type=text id=hprFldMetsDXConfirm value="{$metsdx}" READONLY></td></tr>
   </table>
 
-  <table border=1 cellspacing=0 cellpadding=0 width=100%>
-  <tr><td class=workbenchheaderconfirm><table width=100% cellpadding=0 cellspacing=0><tr><td><center>Biosample Configuration Annotation</td></tr></table> </td></tr>
-  </table>
+   </td></tr>
+   <tr><td>
+
+     <table border=0 cellspacing=0 cellpadding=0 width=100%>
+       <tr><td class=workbenchheaderconfirm><table width=100% cellpadding=0 cellspacing=0><tr><td><center>Biosample Configuration Annotation</td></tr></table> </td></tr>
+     </table>
+
+   </td></tr>
+   <tr><td>
 
  <table border=0 width=100% cellspacing=0 cellpadding=0> 
  <tr>
  <td valign=top width=33%>
-  <table border=0 cellspacing=0 cellpadding=0>
+  <table border=1 cellspacing=0 cellpadding=0>
     <tr><td class=littleFieldLabelWork>Tumor</td><td class=littleFieldLabelWork>Tumor Cellularity</td></tr>
     <tr><td class=fieldHolder><input type=text id=hprFldPRCTumorConfirm value=""></td>
         <td class=fieldHolder><input type=text id=hprFldPRCCellConfirm value=""></td></tr>
@@ -1952,9 +1943,9 @@ $pg = <<<CONFIRMFRM
        <tr><td class=fieldHolder  valign=top colspan=2><div class=menuHolderDiv><input type=hidden id=hprFldMoleTestValue><input type=text id=hprFldMoleTest READONLY><div class=valueDropDown id=moleTestDropDown>{$molemnu}</div></div></td></tr>
        <!-- TODO:  BIOSAMPLE ANALYTIC TESTING DATE (BAT) //-->
        <tr><td class=littleFieldLabelWork>Result Index</td><td class=littleFieldLabelWork>Scale Degree</td></tr>
-       <tr><td class=fieldHolder  valign=top><div class=menuHolderDiv><input type=hidden id=hprFldMoleResultValue><input type=text id=hprFldMoleResult READONLY><div class=valueDropDown id=moleResultDropDown> </div></div></td><td class=fieldHolder  valign=top><input type=text id=hprFldMoleScale></td></tr>
+      <tr><td class=fieldHolder  valign=top><div class=menuHolderDiv><input type=hidden id=hprFldMoleResultValue><input type=text id=hprFldMoleResult READONLY><div class=valueDropDown id=moleResultDropDown> </div></div></td><td class=fieldHolder valign=top><input type=text id=hprFldMoleScale></td></tr>
        <tr><td colspan=3 class=fieldHolder  valign=top>
-           <input type=hidden id=molecularTestJsonHolderConfirm>
+           <input type=hidden id=hprMolecularTestJsonHolderConfirm>
            <div id=dspDefinedMolecularTestsConfirm>
            </div>
     </table>
@@ -1967,12 +1958,15 @@ $pg = <<<CONFIRMFRM
       <td class=fieldHolder  valign=top><TEXTAREA id=hprFldRareCommentsConfirm></textarea></td>
 <td class=fieldHolder  valign=top><div class=menuHolderDiv><input type=hidden id=hprFldTechAccValue><input type=text id=hprFldTechAcc READONLY><div class=valueDropDown id=TechAccDropDown>{$tacc}</div></div></td></tr>
 </table>
-
+  
+   </td></tr>
+   </table>
 
 
 </div>
 </form>
 CONFIRMFRM;
+
 
   return $pg;
 }
@@ -2042,7 +2036,7 @@ function buildHPRGrid() {
 $grid = <<<HPRGRID
 <div id=hprInnerScan>
 <table>
-<tr><th class=fldLabel>Scan or Type Tray # / Biogroup / Segment label</th></tr>
+<tr><th class=fldLabel>Scan or Type Tray # / Biogroup </th></tr>
 <tr><td><input type=text id=fldHPRScan></td></tr>
 <tr><td align=right>
   <table class=tblBtn id=btnHPRScanSearch style="width: 6vw;"><tr><td><center>Go!</td></tr></table>
@@ -2053,23 +2047,29 @@ HPRGRID;
 return $grid;
 }
 
-function buildHPRBenchTop($whichQryId) { 
+function bldHPRBenchTop($whichQryId) { 
 
   $dta = json_decode(callrestapi("GET", dataTree . "/hpr-request-code/{$whichQryId[2]}", serverIdent, serverpw), true);
+
   if ((int)$dta['ITEMSFOUND'] === 1) { 
-    //GET WORKBENCH
-    
+  
+    //GET WORKBENCH 
     $pdta = json_encode(array('srchTrm' => $dta['DATA'][0]));
     $sidedta = json_decode(callrestapi("POST", dataTree . "/data-doers/hpr-workbench-side-panel",serverIdent, serverpw, $pdta), true);          
+  
     if ((int)$sidedta['ITEMSFOUND'] < 1) { 
         //NO SLIDES FOUND
         $pg = "<div id=hprwbHeadErrorHolder><H1>{$sidedta['MESSAGE'][0]} - See a CHTNEastern Staff if you feel this is incorrect.</div>";
+
     } else {
+
         $sidePanelTbl = "<table border=0 cellspacing=0 cellpadding=0 id=sidePanelSlideListTbl>"; 
         $sidePanelTbl .= "<tr><th class=workbenchheader>{$sidedta['MESSAGE'][0]}</th></tr>";
+
         foreach ($sidedta['DATA'] as $skey => $sval) {
            $freshDsp = ((int)$sval['freshcount'] > 0) ? "[CONTAINS DIRECT SHIPMENT]" : "";
            $cntr = ($skey + 1); 
+
            $sidePanelTbl .= <<<SLIDELINE
 <tr class=rowBacker><td onclick="requestSegmentInfo('{$sval['segmentid']}',{$sval['pbiosample']});" class=rowHolder>
     <table border=0 class=slide>
@@ -2084,9 +2084,9 @@ function buildHPRBenchTop($whichQryId) {
 </td></tr>
 SLIDELINE;
         }
+
         $sidePanelTbl .= "<tr><td class=slidesfound><b>Slides Found</b>: {$cntr}</td></tr>";
         $sidePanelTbl .= "</table>";
-
 
         $pg = <<<PGCONTNT
 <table border=0 id=masterWorkBenchTbl>
@@ -2390,17 +2390,15 @@ BTNTBL;
 break;   
 case 'hprreviewactions': 
 $innerBar = <<<BTNTBL
-<!--
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">layers_clear</i></td><td>New Review</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPathReportDsp><tr><td><i class="material-icons">description</i></td><td>Pathology Report</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnConfirmHPR><tr><td><i class="material-icons">check_circle_outline</i></td><td>Confirm</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddHPR><tr><td><i class="material-icons">add_circle_outline</i></td><td>Additional</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnDenyHPR><tr><td><i class="material-icons">error_outline</i></td><td>Denied</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnUnusableHPR><tr><td><i class="material-icons">highlight_off</i></td><td>Unusable</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnInconHPR><tr><td><i class="material-icons">help_outline</i></td><td>Inconclusive</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="changeReviewDisplay('divWorkBenchPathRptDsp');"><table class=topBtnDisplayer id=btnPathReportDsp><tr><td><i class="material-icons">description</i></td><td>Pathology Report</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="changeReviewDisplay('reviewersWorkBenchConfirm');"><table class=topBtnDisplayer id=btnConfirmHPR><tr><td><i class="material-icons">check_circle_outline</i></td><td>Confirm</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="changeReviewDisplay('reviewersWorkBenchAdd');"><table class=topBtnDisplayer id=btnAddHPR><tr><td><i class="material-icons">add_circle_outline</i></td><td>Additional</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="changeReviewDisplay('reviewersWorkBenchDeny');"><table class=topBtnDisplayer id=btnDenyHPR><tr><td><i class="material-icons">error_outline</i></td><td>Denied</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="changeReviewDisplay('reviewersWorkBenchUnuse');"><table class=topBtnDisplayer id=btnUnusableHPR><tr><td><i class="material-icons">highlight_off</i></td><td>Unusable</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="changeReviewDisplay('reviewersWorkBenchIncon');"><table class=topBtnDisplayer id=btnInconHPR><tr><td><i class="material-icons">help_outline</i></td><td>Inconclusive</td></tr></table></td>
 </tr>
-//-->
 BTNTBL;
 break; 
 case 'coordinatorResultGrid':
@@ -3901,7 +3899,7 @@ function bldDialogMasterQMSActionQMS () {
             </td>
        </tr>
        <tr><td colspan=3 valign=top>
-           <input type=hidden id=molecularTestJsonHolderConfirm{$idsuffix}>
+           <input type=hidden id=hprMolecularTestJsonHolderConfirm{$idsuffix}>
            <div id=dspDefinedMolecularTestsConfirm{$idsuffix} class=dspDefinedMoleTests>
            </div>
            </td>

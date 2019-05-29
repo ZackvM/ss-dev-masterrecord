@@ -4952,8 +4952,7 @@ SQLSTMT;
       $itemsfound = 0;
       $dta = array();
       $msgArr = array();
-      $pdta = json_decode($passdata,true);
-      
+      $pdta = json_decode($passdata,true); 
       if ($pdta['segmentid'] === "" || !$pdta['segmentid'] || !$pdta['pbiosample'] || $pdta['pbiosample'] === "" ) { 
           //BAD REQUEST
           //TODO:  BUILD ERROR RESPONSE
@@ -4963,10 +4962,10 @@ SQLSTMT;
         $allSegData = json_decode(callrestapi("GET", dataTree. "/biogroup-segment-short-listing/" . $pdta['segmentid'],serverIdent, serverpw), true);
         $pHPRSegData = json_decode(callrestapi("GET", dataTree. "/past-hpr-by-segment/" . $pdta['segmentid'],serverIdent, serverpw), true);
         require(genAppFiles . "/frame/sscomponent_pagecontent.php");
+
         $dta['workbenchpage'] = bldHPRWorkBenchSide($segData, $allSegData,$pHPRSegData, $pdta['pbiosample']); 
         $responseCode = 200;
         $msg = $msgArr;        
-
       }
       $rows['statusCode'] = $responseCode;   
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
@@ -4986,7 +4985,7 @@ SQLSTMT;
       $bldSidePanel = 0;
       $typeOfSearch = "";
       switch ($srchTrm) { 
-        case (preg_match('/\b\d{1,4}\b/',$srchTrm) ? true : false) :
+        case (preg_match('/\b\d{1,3}\b/',$srchTrm) ? true : false) :
           $sidePanelSQL .= "and sg.hprboxnbr = :hprboxnbr";
           $qryArr = array(':hprboxnbr' => ('HPRT' . substr(('0000' . $srchTrm),-3)));
           $bldSidePanel = 1;
@@ -4996,20 +4995,20 @@ SQLSTMT;
           $sidePanelSQL .= "and sg.prepMethod = :prpmet and sg.biosamplelabel  = :biogroup and sg.segstatus <> :segstatus"; 
           $qryArr = array(':biogroup' => (int)$srchTrm, ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED');
           $bldSidePanel = 1;
-          $typeOfSearch = "Biogroup Slides for " . $srchTrm;
+          $typeOfSearch = "Slides in Biogroup " . $srchTrm;
           break;         
-        case (preg_match('/\bED\d{5}.{1,}\b/i', $srchTrm) ? true : false) :  
-          $sidePanelSQL .= "and concat('ED',replace(sg.bgs,'_','')) = :edbgs "; 
-          $qryArr = array(':edbgs' =>  str_replace('_','',strtoupper($srchTrm)));
-          $bldSidePanel = 1;
-          $typeOfSearch = "Slide Label Search for " .  $srchTrm;
-          break;
-        case (preg_match('/\b\d{5}[a-zA-Z]{1,}.{1,}\b/', $srchTrm) ? true : false) :  
-          $sidePanelSQL .= "and replace(sg.bgs,'_','') = :bgs "; 
-          $qryArr = array(':bgs' =>  str_replace('_','',strtoupper($srchTrm)));
-          $bldSidePanel = 1;
-          $typeOfSearch = "Slide Label Search for " . $srchTrm;
-          break;
+        //case (preg_match('/\bED\d{5}.{1,}\b/i', $srchTrm) ? true : false) :  
+        //  $sidePanelSQL .= "and concat('ED',replace(sg.bgs,'_','')) = :edbgs "; 
+        //  $qryArr = array(':edbgs' =>  str_replace('_','',strtoupper($srchTrm)));
+        //  $bldSidePanel = 1;
+        //  $typeOfSearch = "Slide Label Search for " .  $srchTrm;
+        //  break;
+        //case (preg_match('/\b\d{5}[a-zA-Z]{1,}.{1,}\b/', $srchTrm) ? true : false) :  
+        //  $sidePanelSQL .= "and replace(sg.bgs,'_','') = :bgs "; 
+        //  $qryArr = array(':bgs' =>  str_replace('_','',strtoupper($srchTrm)));
+        //  $bldSidePanel = 1;
+        //  $typeOfSearch = "Slide Label Search for " . $srchTrm;
+        //  break;
         case (preg_match('/\bHPRT\d{3}\b/i', $srchTrm) ? true : false) :  
           $sidePanelSQL .= "and sg.hprboxnbr = :hprboxnbr "; 
           $qryArr = array(':hprboxnbr' =>  $srchTrm);
@@ -5522,6 +5521,7 @@ SQLSTMT;
        return $rows;      
     }
 
+
     function docsearch($request, $passedData) { 
        require(serverkeys . "/sspdo.zck");  
        session_start(); 
@@ -5553,6 +5553,7 @@ SQLSTMT;
        $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => "");
        return $rows;      
     }
+
 
     function preprocessphiedit($request, $passdata) { 
       $responseCode = 400; 

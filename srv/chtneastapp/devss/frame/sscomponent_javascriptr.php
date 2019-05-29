@@ -3956,6 +3956,42 @@ function answerSendHPRReviewRequest(rtnData) {
   }
 }
 
+function generateDialog( whichdialog, whatobject ) { 
+  var dta = new Object(); 
+  dta['whichdialog'] = whichdialog;
+  dta['objid'] = whatobject;   
+  var passdta = JSON.stringify(dta);
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/preprocess-generate-dialog";
+  universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
+}
+            
+function answerPreprocessGenerateDialog( rtnData ) {
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+        var dta = JSON.parse(rtnData['responseText']);         
+        //TODO: MAKE SURE ALL ELEMENTS EXIST BEFORE CREATION
+        var d = document.createElement('div');
+        d.setAttribute("id", dta['DATA']['dialogID']); 
+        d.setAttribute("class","floatingDiv");
+        d.style.left = dta['DATA']['left'];
+        d.style.top = dta['DATA']['top'];
+        d.innerHTML = dta['DATA']['pageElement']; 
+        document.body.appendChild(d);
+        byId(dta['DATA']['dialogID']).style.display = 'block';
+        if ( dta['DATA']['primeFocus'].trim() !== "" ) { 
+          byId(dta['DATA']['primeFocus'].trim()).focus();
+        }
+        byId('standardModalBacker').style.display = 'block';
+  }
+}
 
 JAVASCR;
   
