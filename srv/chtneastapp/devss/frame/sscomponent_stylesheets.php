@@ -1075,7 +1075,7 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 .dashBoardGraphic { padding-left: .5vw; padding-right: .5vw; padding-bottom: .5vh; border-right: 1px solid rgba({$this->color_mgrey},.5); border-bottom: 1px solid rgba({$this->color_mgrey},.5); }
 .dashBoardGraphic:hover {  border-right: 1px solid rgba({$this->color_bred},1); border-bottom: 1px solid rgba({$this->color_bred},1); cursor: pointer; }
 
-#grphfreezer { width: 28vw; }
+#grphfreezer { width: 25vw; }
 #grphinvestigatorinf { width: 13vw; }
 #grphrollshipgrid { height: 37vh;}
 #grphsegshiptotal { width: 13vw; }
@@ -1106,27 +1106,25 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 input {width: 25vw; box-sizing: border-box; font-family: Roboto; font-size: 1.4vh;color: rgba({$this->color_zackgrey},1); padding: .8vh .5vw .8vh .5vw; border: 1px solid rgba({$this->color_mgrey},1);  }
 input:focus, input:active {background: rgba({$this->color_lamber},.5); border: 1px solid rgba({$this->color_dblue},.5);  outline: none;  }
 
-#hprInnerScan { position: absolute; width: 25vw; height: 16vh; left: 50%; top: 50%; transform: translate(-50%, -50%);  }
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; } 
+
+#hprInnerScan { position: absolute; width: 10vw; height: 16vh; left: 50%; top: 50%; transform: translate(-50%, -50%);  }
 #hprInnerScan table tr th {font-size: 1.5vh; text-align: left; }
+#fldHPRScan {width: 10vw; text-align: center; }
 #hprwbHeadErrorHolder { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); Text-align: center; } 
 
 #masterWorkBenchTbl { width: 97vw; }
-#masterWorkBenchTbl #sidePanelTD {  }
-#masterWorkBenchTbl #sidePanelTD #sidePanel {width: 15vw; height: 85vh; box-sizing: border-box;  overflow: auto;border: 1px solid rgba({$this->color_zackgrey},1); }
-#masterWorkBenchTbl #workBenchTD { box-sizing: border-box; }
-#masterWorkBenchTbl #workBenchTD #workBench {   }
-#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl {width: 100%; border-collapse: collapse; box-sizing: border-box; }
+#masterWorkBenchTbl #sidePanelTD { width: 15vw; height: 87vh; border: 1px solid rgba({$this->color_zackgrey},1); }
+#masterWorkBenchTbl #sidePanelTD #sidePanel {width: 15vw; height: 87vh; box-sizing: border-box;  overflow: auto; }
 
-.workbenchheader { font-size: 1.5vh; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
-.workbenchheaderconfirm { font-size: 1.5vh; background: rgba({$this->color_darkgreen},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
-.workbenchheaderadd { font-size: 1.5vh; background: rgba({$this->color_dullyellow},1); color: rgba({$this->color_dblue},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
-.workbenchheaderdeny { font-size: 1.5vh; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
-.workbenchheaderincon { font-size: 1.5vh; background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
-.workbenchheaderunuse { font-size: 1.5vh; background: rgba({$this->color_bred},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
+
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .slidesfound { font-size: 1.2vh; text-align: right; background: rgba({$this->color_white},1); color: rgba({$this->color_zackgrey},1); padding: 1vh .3vw 0 0; border-top: 1px solid rgba({$this->color_zackgrey},1);  }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowHolder { padding: .3vh 0 ; }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowBacker:nth-child(even) { background: rgba({$this->color_grey},1);  }
 #masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowBacker:hover { background: rgba({$this->color_lamber},1); cursor: pointer; }
+
+#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl {width: 100%; border-collapse: collapse; box-sizing: border-box; }
+.workbenchheader { font-size: 1.5vh; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
 .slide { width: 14.8vw; }
 .slide .slidecountr { font-size: 2vh; font-weight: bold; text-align: center; width: 2vw; }
 .slide .slidenbr { font-size: 1.3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); }
@@ -1135,84 +1133,24 @@ input:focus, input:active {background: rgba({$this->color_lamber},.5); border: 1
 .slide .slidetech { font-size: 1vh; text-align: right; white-space:nowrap;}
 .slide .slidefreshdsp { font-size: 1.2vh; color: rgba({$this->color_bred},1); font-weight: bold; text-align: center; }
 
-
-#workBenchHolding { width: 83vw; height: 85vh; box-sizing: border-box; border-collapse: collapse; }
-
-#workBenchPrelimInfoHold { width: 35vw; padding: 0 0 0 0;  box-sizing: border-box; height: 85vh; overflow: hidden; }
-
-#divWorkBenchPrelimInfo {border: 1px solid rgba({$this->color_zackgrey},1); height: 48vh; overflow: auto; margin-right: .2vw; margin-bottom: .5vh;}
+#workBenchTechTD { width: 35vw; padding: 0 0 0 0; height: 48vh;  } 
+#workBenchTechTD #workBenchPrelimInfoHold { width: 35vw; padding: 0 0 0 0;  box-sizing: border-box; overflow: hidden; }
+#divWorkBenchPrelimInfo { height: 48vh; overflow: auto; }
 .littleFieldLabel { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); padding: .5vh 0 .5vh .3vw; border-right: 1px solid rgba({$this->color_mgrey},1);}
 .littleFieldLabelEnd { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); padding: .5vh 0 .5vh .3vw; } 
 .dataFieldDsp { font-size: 1.2vh; background: rgba({$this->color_white},1); padding: .8vh .3vw; border-bottom: 1px solid rgba({$this->color_mgrey},1); border-right: 1px solid rgba({$this->color_mgrey},1);  }
 .dataFieldDspEnd { font-size: 1.2vh; background: rgba({$this->color_white},1); padding: .8vh .3vw; border-bottom: 1px solid rgba({$this->color_mgrey},1);   }
 
-#allSegmentDsp { box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); margin-right: .2vw; margin-bottom: .5vh;}
-#allSegHolder { height: 18vh; overflow: auto; }
+#workBenchPRTD { width: 35vw; padding: 0 0 0 0; height: 100%; } 
+#workBenchPRHolding { width: 35vw;  color: rgba({$this->color_zackgrey},1); }
+#divWorkBenchPRDisplay { width: 100%; height: 34vh; overflow: auto; color: rgba({$this->color_zackgrey},1); font-size: 1.3vh; line-height: 1.8em; text-align: justify; padding: 0 8px 0 8px; box-sizing: border-box;  }
 
-  #constituentTbl tr:nth-child(odd) { background: rgba({$this->color_grey},1); }
-  #constituentTbl .conDataCell { font-size: 1.2vh; padding: .5vh .3vw .5vh .3vw; border-bottom: 1px solid rgba({$this->color_mgrey},1); }
-
-#pastHPRDsp { box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); margin-right: .2vw;  }
-#allSegPast { height: 10.5vh; overflow: auto; }
-
-
-#workBenchDisplayHolder {position: relative; box-sizing: border-box;  }
-#divWorkBenchPathRptDsp {border: 1px solid rgba({$this->color_zackgrey},1); display: block; }
 .prntbtn { font-size: 1.6vh; }
 .prntbtn:hover { cursor: pointer; color: rgba({$this->color_neongreen},1); } 
-#hprPathRptTextDsp { height: 81vh; overflow: auto; padding: .8vh .3vw 1vh .3vw; box-sizing: border-box; font-size: 1.3vh; line-height: 1.8em; text-align: justify; }
 
-.hoverRow:hover {background: rgba({$this->color_lamber},1); cursor: pointer; }
+.ttholder { position: relative; }
+.ttholder:hover .tt { display: block; text-align: left; }
 
-#reviewersWorkBenchConfirm { display: none;}
-#reviewersWorkBenchAdd { display: none;}
-#reviewersWorkBenchDeny { display: none; }
-#reviewersWorkBenchIncon { display: none; }
-#reviewersWorkBenchUnuse { display: none; }
-
-#divHPRConfirm {border: 1px solid rgba({$this->color_zackgrey},1); }
-#hprConfirmMainHoldTbl { border: 2px solid #000; }
-  .littleFieldLabelWork { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .5vh 0 .5vh .4vw; } 
-  .fieldHolder {padding: 0 0 .5vh .1vw; }
-  .prcFld {width: 5vw; text-align: right; }
-  #hprFldSpecCatConfirm { width: 12vw; }
-  #hprFldSiteConfirm { width: 12vw; }
-  #hprFldSubSiteConfirm {width: 12vw; }
-  #hprFldDiagnosisConfirm {width: 12vw; }
-  #hprFldDXModifierConfirm {width: 12vw; }
-  #hprFldMetsSiteConfirm {width: 12vw; }
-  #hprFldMetsDXConfirm {width: 12vw; }
-  #hprFldPRCTumorConfirm {width: 7vw; text-align: right; }
-  #hprFldPRCCellConfirm {width: 7vw; text-align: right; }
-  #hprFldPRCNecroConfirm {width: 7vw; text-align: right; }
-  #hprFldPRCNeoPlasticConfirm {width: 7vw; text-align: right; }
-  #hprFldPRCNonNeoConfirm {width: 7vw; text-align: right; }
-  #hprFldPRCACellConfirm {width: 7vw; text-align: right; }
-  #hprFldPRCEpiCellConfirm {width: 7vw; text-align: right; }
-  #hprFldPRCInflamConfirm {width: 7vw; text-align: right; }
-  #hprFldTechAcc {width: 16vw; }
-  #hprFldMoleResult {width: 15.5vw; }
-  #hprFldMoleScale {width: 15vw; }
-
-/*
-#buttonStripHolder { width: 2vw; }
-#workBenchTD { width: 35vw; box-sizing: border-box; height: 85vh; overflow: hidden; }
-.sideActionBtn { position: relative; }
-.sideActionBtn .iconGraphic {    }
-.sideActionBtn .iconGraphic .material-icons { font-size: 2vh; color: rgba({$this->color_grey},1); }
-.sideActionBtn .btnExplainer { display: none; position: absolute; z-index: 40; white-space: nowrap; background: rgba({$this->color_grey},1); padding: .5vh .5vw; font-size: 1.2vh; left: 1vw;  }
-.sideActionBtn:hover { cursor: pointer; }
-.sideActionBtn:hover .iconGraphic .material-icons { color: rgba({$this->color_darkgreen},1); }
-.sideActionBtn:hover .btnExplainer { display: block;  }
-#TechAccDropDown {width: 16vw;  font-size: 1.5vh;}
-#hprFldBSCommentsConfirm { width: 16vw; height: 9vh; font-size: 1.3vh; }
-#hprFldRareCommentsConfirm { width: 16vw; height: 9vh; font-size: 1.3vh; }
-#hprFldMoleTest {width: 31vw; }
-#moleTestDropDown {width: 31vw; }
-#moleResultDropDown {width: 15vw; }
-.moleaddbtn:hover {color: rgba({$this->color_darkgreen},1); cursor: pointer; }
-#dspDefinedMolecularTestsConfirm { border: 1px solid rgba({$this->color_mgrey},1);  overflow: auto;  width: 31vw; box-sizing: border-box; height: 12vh;  }
-*/
 
 STYLESHEET;
 return $rtnThis;

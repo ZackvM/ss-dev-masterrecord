@@ -3908,9 +3908,7 @@ function hprreview($rqststr) {
   if (trim($rqststr[2]) === "") { 
     //THIS IS THE JAVASCRIPT FOR THE QUERY GRID PAGE
     $rtnthis = <<<JAVASCR
-            
-        
-            
+                        
 document.addEventListener('DOMContentLoaded', function() {  
 
   if (byId('fldHPRScan')) { 
@@ -3933,17 +3931,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function sendHPRReviewRequest() { 
   if (byId('fldHPRScan')) { 
-    if (byId('fldHPRScan').value.trim() !== "") { 
       var dta = new Object();
       dta['doctype'] = 'HPRWorkBenchRequest';
       dta['srchterm'] = byId('fldHPRScan').value.trim();    
       var passdata = JSON.stringify(dta);
       var mlURL = "/data-doers/doc-search";
       universalAJAX("POST",mlURL,passdata,answerSendHPRReviewRequest,1);
-    } else { 
-      alert('You haven\'t scanned/entered a tray #, biogroup, or slide');
-    }
-  }
+   }
 }
 
 function answerSendHPRReviewRequest(rtnData) { 
@@ -3954,6 +3948,44 @@ function answerSendHPRReviewRequest(rtnData) {
     var rcd = JSON.parse(rtnData['responseText']);
     alert(rcd['MESSAGE']);  
   }
+}
+            
+JAVASCR;
+  
+  } else { 
+    //THIS IS THE JAVASCRIPT FOR THE RESULTS-WORK PAGE
+    $rtnthis = <<<JAVASCR
+                        
+function requestSegmentInfo(whichsegment, whichpbiosample) { 
+  if (whichsegment.trim() !== "") {  
+      var dta = new Object();
+      dta['segmentid'] = whichsegment;
+      dta['pbiosample'] = whichpbiosample;
+      var passdata = JSON.stringify(dta);
+      console.log( passdata ) ;
+      var mlURL = "/data-doers/hpr-workbench-builder";
+      universalAJAX("POST",mlURL,passdata,answerHPRWorkBenchSegmentLookup,1);
+  }
+}
+
+function answerHPRWorkBenchSegmentLookup(rtnData) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("HPR WORKBENCH ERROR:\\n"+dspMsg);  //DSIPLAY ERROR MESSAGE
+   } else {  
+            var prts = JSON.parse(rtnData['responseText']);
+            if (byId('workBench')) { 
+              byId('workBenchTech').innerHTML = prts['DATA']['workbenchpage']['technicianside'];
+              byId('workBenchTechTD').style.border = "1px solid rgba(48,57,71,1)";
+              byId('workBenchPR').innerHTML =prts['DATA']['workbenchpage']['prdsp'];
+              byId('workBenchPRTD').style.border = "1px solid rgba(48,57,71,1)";
+            }
+            
+   }
 }
 
 function generateDialog( whichdialog, whatobject ) { 
@@ -3992,147 +4024,11 @@ function answerPreprocessGenerateDialog( rtnData ) {
         byId('standardModalBacker').style.display = 'block';
   }
 }
-
-JAVASCR;
-  
-  } else { 
-    //THIS IS THE JAVASCRIPT FOR THE RESULTS-WORK PAGE
-    $rtnthis = <<<JAVASCR
-                        
-document.addEventListener('DOMContentLoaded', function() {  
-
-
-}, false);
-
-function changeReviewDisplay(whichdisplay) {
-  if (byId('reviewersWorkBenchConfirm')) { byId('reviewersWorkBenchConfirm').style.display = 'none'; }
-  if (byId('reviewersWorkBenchAdd')) { byId('reviewersWorkBenchAdd').style.display = 'none'; }
-  if (byId('reviewersWorkBenchDeny')) { byId('reviewersWorkBenchDeny').style.display = 'none'; }
-  if (byId('reviewersWorkBenchIncon')) { byId('reviewersWorkBenchIncon').style.display = 'none'; }
-  if (byId('reviewersWorkBenchUnuse')) { byId('reviewersWorkBenchUnuse').style.display = 'none'; } 
-  if (byId('divWorkBenchPathRptDsp')) { byId('divWorkBenchPathRptDsp').style.display = 'none'; }
-  if (byId(whichdisplay)) { byId(whichdisplay).style.display = 'block'; }
-}
-
-function requestSegmentInfo(whichsegment, whichpbiosample) { 
-  if (whichsegment.trim() !== "") {  
-      var dta = new Object();
-      dta['segmentid'] = whichsegment;
-      dta['pbiosample'] = whichpbiosample;
-      var passdata = JSON.stringify(dta);
-      var mlURL = "/data-doers/hpr-workbench-builder";
-      universalAJAX("POST",mlURL,passdata,answerHPRWorkBenchSegmentLookup,1);
-  }
-}
-
-function answerHPRWorkBenchSegmentLookup(rtnData) { 
-   if (parseInt(rtnData['responseCode']) !== 200) { 
-     var msgs = JSON.parse(rtnData['responseText']);
-     var dspMsg = ""; 
-     msgs['MESSAGE'].forEach(function(element) { 
-       dspMsg += "\\n - "+element;
-     });
-     //alert("HPR WORKBENCH ERROR:\\n"+dspMsg);  //DSIPLAY ERROR MESSAGE
-   } else {  
-            var prts = JSON.parse(rtnData['responseText']);
-            if (byId('workBench')) { 
-              byId('workBench').innerHTML = prts['DATA']['workbenchpage'];
-            }
-   }
-}
-
-function fillField(whichfield, whichvalue, whichdisplay) { 
-  if (byId(whichfield)) { 
-     byId(whichfield).value = whichdisplay; 
-     if (byId(whichfield+'Value')) { 
-        byId(whichfield+'Value').value = whichvalue;    
-     }
-  }       
+            
+function closeThisDialog(dlog) { 
+   byId(dlog).parentNode.removeChild(byId(dlog));
+   byId('standardModalBacker').style.display = 'none';        
 }            
-            
-function triggerMolecularFill(menuid, menuval, valuedsp) { 
-
-   if (menuid === 0) { 
-     //CLEAR FIELD
-       byId('hprFldMoleTestValue').value = "";
-       byId('hprFldMoleTest').value = "";     
-       byId('hprFldMoleResult').value = "";
-       byId('hprFldMoleResultValue').value = "";    
-   } else { 
-       byId('hprFldMoleTestValue').value = menuval;
-       byId('hprFldMoleTest').value = valuedsp;    
-       var mlURL = "/immuno-mole-result-list/" + menuid;
-      universalAJAX("GET",mlURL,'',answerHPRTriggerMolecularFill,1);            
-   }
-            
-}
-            
-function answerHPRTriggerMolecularFill(rtnData) {
-   var resultTbl = "";         
-   if (parseInt(rtnData['responseCode']) !== 200) {             
-   } else { 
-   
-     var dta = JSON.parse(rtnData['responseText']);
-     var resultTbl = "<table border=0 class=\"menuDropTbl\">";
-     resultTbl += "<tr><td onclick=\"fillField('hprFldMoleResult','','');\" align=right class=ddMenuClearOption>[clear]</td></tr>";            
-     dta['DATA'].forEach(function(element) { 
-       //element['menuvalue']      
-       resultTbl += "<tr><td class=ddMenuItem onclick=\"fillField('hprFldMoleResult','"+element['menuvalue']+"','"+element['dspvalue']+"');\">"+element['dspvalue']+"</td></tr>";
-     });  
-     resultTbl += "</table>";    
-        
-   }
-   if (byId('moleResultDropDown')) { 
-     byId('moleResultDropDown').innerHTML = resultTbl;         
-   }
-}
-            
-            
-function manageMoleTest(addIndicator, referencenumber) { 
- 
-  if (byId('molecularTestJsonHolderConfirm')) {  
-   if (byId('molecularTestJsonHolderConfirm').value === "") { 
-     if (addIndicator === 1) { 
-        var hldVal = [];
-        hldVal.push(  [ byId('hprFldMoleTestValue').value,  byId('hprFldMoleTest').value, byId('hprFldMoleResultValue').value, byId('hprFldMoleResult').value, byId('hprFldMoleScale').value.trim()      ] );    
-        byId('molecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);
-      }
-    } else { 
-      if (addIndicator === 1) { 
-        var hldVal = JSON.parse(byId('molecularTestJsonHolderConfirm').value);
-        hldVal.push(  [ byId('hprFldMoleTestValue').value,  byId('hprFldMoleTest').value, byId('hprFldMoleResultValue').value, byId('hprFldMoleResult').value, byId('hprFldMoleScale').value.trim()      ] );    
-        byId('molecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);
-      }
-      if (addIndicator === 0) { 
-         var hldVal = JSON.parse(byId('molecularTestJsonHolderConfirm').value);             
-         var newVal = [];
-         var key = 0;   
-         hldVal.forEach(function(ele) { 
-            if (key !== referencenumber) {
-              newVal.push(ele);    
-            }
-            key++;
-         });
-         hldVal = newVal;
-         byId('molecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);   
-      }      
-    }
-    byId('hprFldMoleTestValue').value = "";
-    byId('hprFldMoleTest').value = "";
-    byId('hprFldMoleResultValue').value = "";
-    byId('hprFldMoleResult').value = "";
-    byId('hprFldMoleScale').value = "";            
-    var moleTestTbl = "<table cellspacing=0 cellpadding=0>";
-    var cntr = 0;         
-    hldVal.forEach(function(element) {         
-      moleTestTbl += "<tr onclick=\"manageMoleTest(0,"+cntr+");\"><td><td>"+element[1]+"</td><td>"+element[3]+"</td><td>"+element[4]+"</td></tr>";
-      cntr++;
-     });
-     moleTestTbl += "</table>";
-     byId('dspDefinedMolecularTestsConfirm').innerHTML = moleTestTbl;               
-  }
-
-}
            
 JAVASCR;
 

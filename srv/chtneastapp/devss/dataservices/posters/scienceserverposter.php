@@ -1693,9 +1693,20 @@ class datadoers {
              break;
            case 'enlargeDashboardGraphic':
              $primeFocus = "";
-             $left = '12vw';
-             $top = '15vh';
+             $left = '5vw';
+             $top = '5vh';
              break;
+           case 'hprBigPathRpt':
+             $primeFocus = "";
+             $left = '12vw';
+             $top = '12vh';
+             break;         
+           case 'hprAssistEmailer':
+             $primeFocus = "";
+             $left = '12vw';
+             $top = '12vh';
+             break; 
+         
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);
@@ -4980,7 +4991,8 @@ SQLSTMT;
       $dta = array();
       $msgArr = array();
       $pdta = json_decode($passdata,true);
-      $srchTrm = $pdta['srchTrm'];
+      $srchTrm = preg_replace("/[^[:alnum:]]/iu", '',$pdta['srchTrm']);
+
       $sidePanelSQL = "SELECT bs.pbiosample, replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
       $bldSidePanel = 0;
       $typeOfSearch = "";
@@ -4991,24 +5003,24 @@ SQLSTMT;
           $bldSidePanel = 1;
           $typeOfSearch = "HPR Inventory Tray " . substr(('0000' . $srchTrm),-3);
           break;
-        case (preg_match('/\b\d{5}\b/',$srchTrm) ? true : false) :
-          $sidePanelSQL .= "and sg.prepMethod = :prpmet and sg.biosamplelabel  = :biogroup and sg.segstatus <> :segstatus"; 
-          $qryArr = array(':biogroup' => (int)$srchTrm, ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED');
+        //case (preg_match('/\b\d{5}\b/',$srchTrm) ? true : false) :
+        //  $sidePanelSQL .= "and sg.prepMethod = :prpmet and sg.biosamplelabel  = :biogroup and sg.segstatus <> :segstatus"; 
+        //  $qryArr = array(':biogroup' => (int)$srchTrm, ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED');
+        //  $bldSidePanel = 1;
+        //  $typeOfSearch = "Slides in Biogroup " . $srchTrm;
+        //  break;         
+        case (preg_match('/\bED\d{5}.{1,}\b/i', $srchTrm) ? true : false) :  
+          $sidePanelSQL .= "and concat('ED',replace(sg.bgs,'_','')) = :edbgs  and sg.prepMethod = :prpmet and sg.segstatus <> :segstatus"; 
+          $qryArr = array(':edbgs' =>  str_replace('_','',strtoupper($srchTrm)) , ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED');
           $bldSidePanel = 1;
-          $typeOfSearch = "Slides in Biogroup " . $srchTrm;
-          break;         
-        //case (preg_match('/\bED\d{5}.{1,}\b/i', $srchTrm) ? true : false) :  
-        //  $sidePanelSQL .= "and concat('ED',replace(sg.bgs,'_','')) = :edbgs "; 
-        //  $qryArr = array(':edbgs' =>  str_replace('_','',strtoupper($srchTrm)));
-        //  $bldSidePanel = 1;
-        //  $typeOfSearch = "Slide Label Search for " .  $srchTrm;
-        //  break;
-        //case (preg_match('/\b\d{5}[a-zA-Z]{1,}.{1,}\b/', $srchTrm) ? true : false) :  
-        //  $sidePanelSQL .= "and replace(sg.bgs,'_','') = :bgs "; 
-        //  $qryArr = array(':bgs' =>  str_replace('_','',strtoupper($srchTrm)));
-        //  $bldSidePanel = 1;
-        //  $typeOfSearch = "Slide Label Search for " . $srchTrm;
-        //  break;
+          $typeOfSearch = "Slide Label Search for " .  $srchTrm;
+          break;
+        case (preg_match('/\b\d{5}[a-zA-Z]{1,}.{1,}\b/', $srchTrm) ? true : false) :  
+          $sidePanelSQL .= "and replace(sg.bgs,'_','') = :bgs and sg.prepMethod = :prpmet and sg.segstatus <> :segstatus"; 
+          $qryArr = array(':bgs' =>  str_replace('_','',strtoupper($srchTrm)), ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED' );
+          $bldSidePanel = 1;
+          $typeOfSearch = "Slide Label Search for " . $srchTrm;
+          break;
         case (preg_match('/\bHPRT\d{3}\b/i', $srchTrm) ? true : false) :  
           $sidePanelSQL .= "and sg.hprboxnbr = :hprboxnbr "; 
           $qryArr = array(':hprboxnbr' =>  $srchTrm);
@@ -5528,7 +5540,7 @@ SQLSTMT;
        $responseCode = 503; 
        $params = json_decode($passedData, true);
        if (trim($params['srchterm']) === "" || trim($params['doctype']) === "")  { 
-          $msg = "YOU MUST SPECIFY A SEARCH TERM AND A DOCUMENT TYPE"; 
+          $msg = "YOU MUST SPECIFY A SEARCH TERM AND/OR A DOCUMENT TYPE"; 
        }  else { 
           if ( trim($params['doctype']) === 'SHIPDOC'  && !is_numeric($params['srchterm']))  { 
            $msg = "WHEN SEARCHING FOR A SHIPMENT DOCUMENT ONLY NUMERIC SEARCHES ARE ALLOWED"; 

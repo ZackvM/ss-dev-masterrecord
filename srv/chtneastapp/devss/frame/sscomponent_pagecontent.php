@@ -15,6 +15,22 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+        case 'hprAssistEmailer':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Direct Emailer";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPREmailerDialog();
+        //$footerBar = "SEGMENT ADD";       
+        break;        
+        case 'hprBigPathRpt':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "Pathology Report Viewer";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPRPathReportViewer ( $pdta['objid'] );
+        //$footerBar = "SEGMENT ADD";       
+        break;
       case 'enlargeDashboardGraphic':
         $pdta = json_decode($passedData, true);          
         $titleBar = "Dashboard Metric";
@@ -1688,8 +1704,8 @@ function bldHPRWorkBenchSide($SGObj, $allSGObj, $pastHPRObj, $pbiosample) {
 
   $tt = treeTop;
   $sgDta = $SGObj['DATA'][0];
-  $allSgDta = $allSGObj['DATA'];
-  $pHPRDta = $pastHPRObj['DATA'];
+  //$allSgDta = $allSGObj['DATA'];
+  //$pHPRDta = $pastHPRObj['DATA'];
 
   $segLabel = strtoupper(preg_replace('/\_/', '', $sgDta['bgs']));
   $dspSite = strtoupper($sgDta['site']);
@@ -1720,50 +1736,9 @@ function bldHPRWorkBenchSide($SGObj, $allSGObj, $pastHPRObj, $pbiosample) {
   $procedure .= (trim($procedureLine2) !== "" ) ? "<br>{$procedureLine2}" : "";
   $hprquestion = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','', trim($sgDta['hprquestion'])));
   $bscomment = $hrcmt = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','',trim($sgDta['biosamplecomment'])));
-  $prTxt = (trim($sgDta['pathologyreporttext']) === "") ? "NO PATHOLOGY REPORT FOUND" : trim($sgDta['pathologyreporttext']);
+  $prTxt = (trim($sgDta['pathologyreporttext']) === "") ? "NO PATHOLOGY REPORT FOUND" : trim($sgDta['pathologyreporttext']) . "<p>";
   $selector = cryptservice($sgDta['prprid'] . "-" . $sgDta['prrecordselector'], "e");
-  $prTxtBtns = (trim($sgDta['pathologyreporttext']) === "") ? "" : "<td onclick=\"openOutSidePage('{$tt}/print-obj/pathology-report/{$selector}');\" align=right><i class=\"material-icons prntbtn\">print</i></td>";
-
-  if ((int)$allSGObj['ITEMSFOUND'] > 0) {
-    $segPartsDsp = "<table border=0 cellspacing=0 cellpadding=0 width=100% id=constituentTbl><tr><td class=littleFieldLabelEnd>Segment</td><td class=littleFieldLabelEnd>Status</td><td class=littleFieldLabelEnd>Preparation</td><td class=littleFieldLabelEnd>Metric</td><td class=littleFieldLabelEnd>Assignment</td></tr>";
-    foreach ($allSgDta as $rcd) {
-      $partSegLabel = strtoupper(preg_replace('/\_/', '', $rcd['bgs']));
-      $conBGDsp = substr($partSegLabel,0,5); 
-      $prp = trim(strtoupper($rcd['prepmethod']));
-      $met = (trim($rcd['metricdsp']) === "") ?  "" : strtoupper(trim($rcd['metricdsp']));
-      $ass = (trim($rcd['invest']) === "") ? "" : strtoupper(trim($rcd['invest']));
-      $segPartsDsp .= "<tr><td class=conDataCell>{$partSegLabel}</td><td class=conDataCell>{$rcd['segstatus']}</td><td class=conDataCell>{$prp}</td><td class=conDataCell>{$met}</td><td class=conDataCell>{$ass}</td></tr>";
-    }
-    $segPartsDsp .= "</table>";
-  } else { 
-    $segPartDsp = "NO CONSTITUENT SEGMENTS FOUND";
-  }
-
-  $hprDsp = "<table border=0 cellspacing=0 cellpadding=0 width=100% id=constituentTbl><tr><td class=littleFieldLabelEnd>Slide</td><td class=littleFieldLabelEnd>Reviewer</td><td class=littleFieldLabelEnd>Read On</td><td class=littleFieldLabelEnd>Decision</td><td class=littleFieldLabelEnd>Diagnosis Designation</td><td class=littleFieldLabelEnd>Reviewer Comments</td></tr>";
-    $pastSlideCntr = 0;  
-    foreach ($pHPRDta as $rcd) {
-      if (trim($rcd['slide']) !== "") {  
-      $hprSegLabel = strtoupper(preg_replace('/\_/', '', $rcd['slide']));
-      $hprDX = $rcd['desig'];
-      $hprDX .= (trim($rcd['speccat']) === "") ? "" : " [" . trim($rcd['speccat']) . "]";
-      $hprDX = trim($hprDX);
-      $hprCmt = trim($rcd['reviewercomments']);
-      $hprDsp .= "<tr class=hoverRow onclick=\"alert('Zack:change this to a dialog: {$rcd['biohprid']}');\"><td class=conDataCell>{$hprSegLabel}</td><td class=conDataCell>{$rcd['reviewer']}</td><td class=conDataCell>{$rcd['reviewedon']}</td><td class=conDataCell>{$rcd['decision']}</td><td class=conDataCell>{$hprDX}&nbsp;</td><td class=conDataCell>{$hprCmt}&nbsp;</td></tr>";
-      $pastSlideCntr++;
-      } 
-    }
-    $hprDsp .= "</table>";
-
-    if ($pastSlideCntr < 1) { 
-      $hprDsp = "<table><tr><td style=\"padding: 1vw;\"><h3>NO PAST HPR PERFORMED ON BIOGROUP: {$conBGDsp}</h3></td></tr></table>";
-    }
-
-$revGridConfirm   = buildHPRConfirmGrid($pbiosample,$segLabel,$sgDta);
-$revGridAdd       = buildHPRAddGrid($pbiosample,$segLabel);
-$revGridDeny      = buildHPRDenyGrid($pbiosample,$segLabel);
-$revGridIncon     = buildHPRInconGrid($pbiosample,$segLabel);
-$revGridUnuse     = buildHPRUnuseGrid($pbiosample,$segLabel);
-
+  $prTxtBtns = (trim($sgDta['pathologyreporttext']) === "") ? "" : "<td style=\"width: 20px;\" onclick=\"openOutSidePage('{$tt}/print-obj/pathology-report/{$selector}');\" align=right><i class=\"material-icons prntbtn\">print</i></td><td style=\"width: 20px;\" onclick=\"generateDialog('hprBigPathRpt','{$selector}');\" align=right><i class=\"material-icons prntbtn\">settings_overscan</i></td>";
 
     $pg = <<<PAGECONTENT
 <table border=0 cellspacing=0 cellpadding=0 id=workBenchHolding>
@@ -1791,63 +1766,28 @@ $revGridUnuse     = buildHPRUnuseGrid($pbiosample,$segLabel);
             </td></tr>
             </table>
             </div>   
-
-            <div id=allSegmentDsp>
-            <table border=0 cellspacing=0 cellpadding=0 width=100%>
-            <tr><td class=workbenchheader>CONSTITUENT SEGMENTS FOR {$conBGDsp}</td></tr>
-            <tr><td>
-            <!-- CONSTITUENT SEGMENTS //-->
-            <div id=allSegHolder>
-            {$segPartsDsp} 
-            </div>
-            </td></tr>
-            </table> 
-            </div>
-
-            <div id=pastHPRDsp>
-            <table border=0 cellspacing=0 cellpadding=0 width=100%>
-            <tr><td class=workbenchheader>PAST HPR PERFORMED ON BIOGROUP {$conBGDsp}</td></tr>
-            <tr><td>
-            <!-- PAST HPR SEGMENTS //-->
-            <div id=allSegPast>
-            {$hprDsp} 
-            </div>
-            </td></tr>
-            </table> 
-            </div>
-
-            </td>
-
-            <td valign=top>
-
-            <div id=workBenchDisplayHolder>
-
-              <div id=divWorkBenchPathRptDsp>
-                <!-- PATH REPORT DISPLAY //--> 
-                <table border=0 cellspacing=0 cellpadding=0 width=100%>
-                <tr><td class=workbenchheader><table width=100% cellpadding=0 cellspacing=0><tr><td>Pathology Report</td>{$prTxtBtns}</tr></table> </td></tr>
-                <tr><td>
-                    <div id=hprPathRptTextDsp>
-                      {$prTxt}
-                    </div>
-                </td></tr>
-                </table>
-                <!-- END PATH REPORT DISPLAY //-->
-              </div>
-
-              <div id=reviewersWorkBenchConfirm>{$revGridConfirm}</div>
-              <div id=reviewersWorkBenchAdd>{$revGridAdd}</div>
-              <div id=reviewersWorkBenchDeny>{$revGridDeny}</div>
-              <div id=reviewersWorkBenchIncon>{$revGridIncon}</div>
-              <div id=reviewersWorkBenchUnuse>{$revGridUnuse}</div>
-
-            </div>
             </td>
     </tr>
  </table>
 PAGECONTENT;
 
-    return $pg;          
+   $prDspTxt = <<<PRCONTENT
+   <table border=0 cellpadding=0 cellspacing=0 id=workBenchPRHolding>
+    <tr><td valign=top>
+            <table border=0 cellspacing=0 cellpadding=0 width=100%>
+            <tr><td class=workbenchheader><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Pathology Report for {$pbiosample}</td>{$prTxtBtns}</tr></table></td></tr>
+            <tr><td>
+                   <div id=divWorkBenchPRDisplay>    
+                       {$prTxt}
+                    </div>   
+            </td></tr>
+            </table>
+    </td></tr>           
+    </table>           
+PRCONTENT;
+                 
+
+    return array( 'technicianside' => $pg, 'prdsp' => $prDspTxt );          
 }
 
 function buildHPRConfirmGrid($biogroupnbr, $slidenbr, $designation) {
@@ -1879,17 +1819,20 @@ function buildHPRConfirmGrid($biogroupnbr, $slidenbr, $designation) {
 
 $pg = <<<CONFIRMFRM
 <form id=frmConfirmation>
+        
 <input type=hidden id=fldBG value={$biogroupnbr}>
 <input type=hidden id=fldSld value={$slidenbr}>
 <div id=divHPRConfirm>
 
-  <table border=1 cellspacing=0 cellpadding=0 width=100% id=hprConfirmMainHoldTbl>
-  <tr><td class=workbenchheaderconfirm>
-           <table width=100% cellpadding=0 cellspacing=0><tr><td>Confirm Diagnosis Designation for Biogroup {$biogroupnbr}</td></tr></table> 
+  <table border=0 cellspacing=0 cellpadding=0 id=hprConfirmMainHoldTbl>
+   <tr>
+     <td class=workbenchheaderconfirm>
+           <table cellpadding=0 cellspacing=0><tr><td>Confirm Diagnosis Designation for Biogroup {$biogroupnbr}</td></tr></table> 
       </td></tr>
-  <tr><td>
 
-    <table>
+<tr><td>
+
+    <table border=0 cellpadding=0 cellspacing=0>
     <tr><td class=littleFieldLabelWork>Specimen Category</td><td class=littleFieldLabelWork>Site</td><td class=littleFieldLabelWork>Sub-Site</td></tr>
     <tr><td class=fieldHolder><input type=text id=hprFldSpecCatConfirm value="{$spc}" READONLY></td><td class=fieldHolder><input type=text id=hprFldSiteConfirm value="{$site}" READONLY></td><td class=fieldHolder><input type=text id=hprFldSubSiteConfirm value="{$subsite}" READONLY></td></tr></table>
       </td></tr>
@@ -1921,7 +1864,7 @@ $pg = <<<CONFIRMFRM
  <table border=0 width=100% cellspacing=0 cellpadding=0> 
  <tr>
  <td valign=top width=33%>
-  <table border=1 cellspacing=0 cellpadding=0>
+  <table border=0 cellspacing=0 cellpadding=0>
     <tr><td class=littleFieldLabelWork>Tumor</td><td class=littleFieldLabelWork>Tumor Cellularity</td></tr>
     <tr><td class=fieldHolder><input type=text id=hprFldPRCTumorConfirm value=""></td>
         <td class=fieldHolder><input type=text id=hprFldPRCCellConfirm value=""></td></tr>
@@ -2033,13 +1976,14 @@ CONFIRMFRM;
 }
 
 function buildHPRGrid() { 
+    //<table class=tblBtn id=btnHPRScanSearch style="width: 6vw;"><tr><td><center>Go!</td></tr></table>  // TRIGGERED BY chr(13) REMOVED BY ZACK ON 2019-05-29
 $grid = <<<HPRGRID
 <div id=hprInnerScan>
-<table>
-<tr><th class=fldLabel>Scan or Type Tray # / Biogroup </th></tr>
+<table border=0>
+<tr><th class=fldLabel>Tray # / Slide Label</th></tr>
 <tr><td><input type=text id=fldHPRScan></td></tr>
 <tr><td align=right>
-  <table class=tblBtn id=btnHPRScanSearch style="width: 6vw;"><tr><td><center>Go!</td></tr></table>
+  
 </td></tr>
 </table>
 </div>
@@ -2048,30 +1992,36 @@ return $grid;
 }
 
 function bldHPRBenchTop($whichQryId) { 
-
   $dta = json_decode(callrestapi("GET", dataTree . "/hpr-request-code/{$whichQryId[2]}", serverIdent, serverpw), true);
-
   if ((int)$dta['ITEMSFOUND'] === 1) { 
-  
     //GET WORKBENCH 
     $pdta = json_encode(array('srchTrm' => $dta['DATA'][0]));
     $sidedta = json_decode(callrestapi("POST", dataTree . "/data-doers/hpr-workbench-side-panel",serverIdent, serverpw, $pdta), true);          
-  
     if ((int)$sidedta['ITEMSFOUND'] < 1) { 
         //NO SLIDES FOUND
         $pg = "<div id=hprwbHeadErrorHolder><H1>{$sidedta['MESSAGE'][0]} - See a CHTNEastern Staff if you feel this is incorrect.</div>";
-
     } else {
-
+        $technicianWorkArea = "";
+        $prArea = "";       
+        $brdDsp = "";
+        //SIDE PANEL BUILD 
         $sidePanelTbl = "<table border=0 cellspacing=0 cellpadding=0 id=sidePanelSlideListTbl>"; 
         $sidePanelTbl .= "<tr><th class=workbenchheader>{$sidedta['MESSAGE'][0]}</th></tr>";
-
         foreach ($sidedta['DATA'] as $skey => $sval) {
            $freshDsp = ((int)$sval['freshcount'] > 0) ? "[CONTAINS DIRECT SHIPMENT]" : "";
            $cntr = ($skey + 1); 
-
+           if ( $sidedta['ITEMSFOUND'] === 1) { 
+               $pdta = json_encode( array( 'segmentid' => $sval['segmentid'], 'pbiosample' => $sval['pbiosample']));
+               $bldComponents = json_decode(callrestapi("POST", dataTree . "/data-doers/hpr-workbench-builder",serverIdent, serverpw, $pdta), true);
+               $clickAction = "";
+               $technicianWorkArea = "{$bldComponents['DATA']['workbenchpage']['technicianside']} ";
+               $brdDsp = " style=\"border: 1px solid rgba(48,57,71,1); \" ";
+               $prArea = "{$bldComponents['DATA']['workbenchpage']['prdsp']}";               
+           } else {
+               $clickAction = " onclick=\"requestSegmentInfo('{$sval['segmentid']}',{$sval['pbiosample']});\" ";
+           }
            $sidePanelTbl .= <<<SLIDELINE
-<tr class=rowBacker><td onclick="requestSegmentInfo('{$sval['segmentid']}',{$sval['pbiosample']});" class=rowHolder>
+<tr class=rowBacker><td {$clickAction}  class=rowHolder>
     <table border=0 class=slide>
       <tr>
         <td rowspan=3 class=slidecountr>{$cntr}</td>
@@ -2084,16 +2034,18 @@ function bldHPRBenchTop($whichQryId) {
 </td></tr>
 SLIDELINE;
         }
-
         $sidePanelTbl .= "<tr><td class=slidesfound><b>Slides Found</b>: {$cntr}</td></tr>";
         $sidePanelTbl .= "</table>";
-
+        //SIDE PANEL BUILD END
+               
         $pg = <<<PGCONTNT
 <table border=0 id=masterWorkBenchTbl>
   <tr>
-    <td valign=top id=sidePanelTD><div id=sidePanel>{$sidePanelTbl}</div></td>
-    <td valign=top id=workBenchTD><div id=workBench>&nbsp;</div></td>
+    <td valign=top id=sidePanelTD rowspan=2 valign=top><div id=sidePanel>{$sidePanelTbl}</div></td>
+    <td valign=top id=workBenchTechTD valign=top {$brdDsp}><div id=workBenchTech>{$technicianWorkArea}</div></td>
+    <td valign=top id=workBenchTD rowspan=2 valign=top><div id=workBench>&nbsp;</div></td>
   </tr>
+    <tr><td valign=top id=workBenchPRTD {$brdDsp}><div id=workBenchPR>{$prArea}</div></td></tr>
 </table>
 PGCONTNT;
     } 
@@ -2391,13 +2343,8 @@ break;
 case 'hprreviewactions': 
 $innerBar = <<<BTNTBL
 <tr>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">layers_clear</i></td><td>New Review</td></tr></table></td>
-  <td class=topBtnHolderCell onclick="changeReviewDisplay('divWorkBenchPathRptDsp');"><table class=topBtnDisplayer id=btnPathReportDsp><tr><td><i class="material-icons">description</i></td><td>Pathology Report</td></tr></table></td>
-  <td class=topBtnHolderCell onclick="changeReviewDisplay('reviewersWorkBenchConfirm');"><table class=topBtnDisplayer id=btnConfirmHPR><tr><td><i class="material-icons">check_circle_outline</i></td><td>Confirm</td></tr></table></td>
-  <td class=topBtnHolderCell onclick="changeReviewDisplay('reviewersWorkBenchAdd');"><table class=topBtnDisplayer id=btnAddHPR><tr><td><i class="material-icons">add_circle_outline</i></td><td>Additional</td></tr></table></td>
-  <td class=topBtnHolderCell onclick="changeReviewDisplay('reviewersWorkBenchDeny');"><table class=topBtnDisplayer id=btnDenyHPR><tr><td><i class="material-icons">error_outline</i></td><td>Denied</td></tr></table></td>
-  <td class=topBtnHolderCell onclick="changeReviewDisplay('reviewersWorkBenchUnuse');"><table class=topBtnDisplayer id=btnUnusableHPR><tr><td><i class="material-icons">highlight_off</i></td><td>Unusable</td></tr></table></td>
-  <td class=topBtnHolderCell onclick="changeReviewDisplay('reviewersWorkBenchIncon');"><table class=topBtnDisplayer id=btnInconHPR><tr><td><i class="material-icons">help_outline</i></td><td>Inconclusive</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="navigateSite('hpr-review');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">layers_clear</i></td><td>New Review</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">textsms</i></td><td>Assistance</td></tr></table></td>
 </tr>
 BTNTBL;
 break; 
@@ -2979,8 +2926,94 @@ return $rtnThis;
 
 }
 
+function bldHPREmailerDialog() { 
+   require(serverkeys . "/sspdo.zck");
+   $at = genAppFiles;
+   $boypic = base64file("{$at}/publicobj/graphics/usrprofile/avatar_male.png", "", "png", true, " class=\"hpremailprofilepicture\" " );   
+   $girlpic =  base64file("{$at}/publicobj/graphics/usrprofile/avatar_female.png", "", "png", true, " class=\"hpremailprofilepicture\" "); 
+   $recipListSQL = "SELECT userid, username, displayname, dspjobtitle, profilepicurl FROM four.sys_userbase where allowind = 1 and trim(ifnull(emailaddress,'')) <> '' and allowHPRInquirer = 1 order by lastname";
+   $recipListRS = $conn->prepare($recipListSQL); 
+   $recipListRS->execute(); 
+   $recipList = "<div id=recipList><table border=1>";
+   //BUILD RECIP LIST
+   while ( $rl = $recipListRS->fetch(PDO::FETCH_ASSOC)) { 
+       
+       switch ($rl['profilepicurl']) { 
+      case 'avatar_male':
+         $profPicture = "{$boypic}";
+         break;
+      case 'avatar_female':
+         $profPicture = "{$girlpic}";
+         break;
+      default:
+         $profpic = base64file("{$at}/publicobj/graphics/usrprofile/{$rl['profilepicurl']}", "", "png", true, " class=\"hpremailprofilepicture\" " );   
+         $profPicture = "{$profpic}";    
+    }
+       
+       
+       $recipItem = <<<RTBL
+<table><tr><td rowspan=2>{$profPicture}</td><td>{$rl['username']} ({$rl['displayname']})</td></tr>
+ <tr><td>{$rl['dspjobtitle']}</td></tr>
+ </table>               
+RTBL;
+       
+       $recipList .= "<tr><td onclick=\"alert('{$rl['userid']}');\"> {$recipItem}</td></tr>";
+   }
+   $recipList .= "</table></div>";
+    
+$pg = <<<PAGECONTENT
+<style>
+        #HPREmailHoldTbl { width: 50vw; height: 50vh; }
+        #HPREmailHoldTbl #instruct { text-align: justify; line-height: 1.8em; font-size: 1.2vh;  height: 5vh; }
+        #recipList { border: 1px solid #000; height: 43vh; overflow: auto; }
+        .hpremailprofilepicture { height: 8vh; }
+</style>        
+<table id=HPREmailHoldTbl border=0 cellspacing=0 cellpadding=0>
+<tr><td colspan=2 valign=top id=instruct><b>Instructions: </b>On this dialog, you can send inquiries, issues and questions to CHTNEastern staff who are listed as having access to a UPHS Institution.  1) Select the recipients from the list on the left,  2) then type your message, 3) Fill in the biospecimen group number, a slide number or indicate a topic area,  4) then click send.</td></tr>        
+<tr><td valign=top rowspan=2>{$recipList}</td><td valign=top>MESSAGE</td></tr>
+<tr><td align=right> BTN </td></tr>           
+</table>        
+        
+PAGECONTENT;
+return $pg;
+}
+
+function bldHPRPathReportViewer ( $encrypPRID ) { 
+   require(serverkeys . "/sspdo.zck");    
+   $prTxt = "";
+   $bg = "";
+   $bywho = "";
+   
+   $objComp = explode('-',cryptservice( $encrypPRID, 'd'));
+   $sql = "SELECT ifnull(biospecimen,'') as biospecimen, ifnull(pathreport, 'ERROR: NO PATHOLOGY REPORT IN DATABASE') as pathologyrpt, concat(if(ifnull(lasteditby, '') = '', ifnull(uploadedby, ''), ifnull(lasteditby, '')), if( trim(if(ifnull(date_format(lastedited, '%m/%d/%Y'), '') = '', ifnull(date_format(uploadedon, '%m/%d/%Y'), ''), ifnull(date_format(lastedited, '%m/%d/%Y'), ''))) = '', '', concat(' [', trim(if(ifnull(date_format(lastedited, '%m/%d/%Y'), '') = '', ifnull(date_format(uploadedon, '%m/%d/%Y'), ''), ifnull(date_format(lastedited, '%m/%d/%Y'), ''))), ']'))) as byusr FROM masterrecord.qcpathreports where selector = :objid and prid = :recordid";
+   $rs = $conn->prepare($sql);
+   $rs->execute(array(':objid' => $objComp[1], ':recordid' => $objComp[0]));
+   if ( $rs->rowCount() === 1 ) { 
+     $pr = $rs->fetch(PDO::FETCH_ASSOC);
+     $prTxt = trim($pr['pathologyrpt']) . "<p>";
+     $bg = $pr['biospecimen']; 
+     $bywho = trim($pr['byusr']);
+   } 
+  
+  
+
+    $prviewer = <<<PRVIEWER
+<style>        
+        #hprBigPRHolderTbl { width: 75vw; height: 75vh; }
+        #pathologyreporttextdisplay { height: 66vh; overflow: auto; border: 1px solid rgba(48,57,71,1); font-size: 1.5vh; line-height: 1.8em; text-align: justify; padding: 8px; }    
+        #BGDisplay { font-size: 1.8vh; rgba(48,57,71,1); font-weight: bold; height: 4vh; padding: 8px;  }    
+        #lastEditMetric { font-size: 1.1vh; font-style: italic; text-align: right; padding: 8px; }    
+</style> 
+<table border=0 cellspacing=0 cellpadding=0 id=hprBigPRHolderTbl>
+<tr><td id=BGDisplay>Pathology Report for biospecimen {$bg}</td><td id=lastEditMetric>Last Edited: {$bywho}</td></tr>
+<tr><td colspan=2 valign=top><div id=pathologyreporttextdisplay>{$prTxt}</div></td></tr>
+</table>
+PRVIEWER;
+return $prviewer;
+  
+}
+
 function bldEnlargeDashboardGraphic ( $whichgraphic ) { 
-  require(serverkeys . "/sspdo.zck");
   $at = genAppFiles;
   if ( file_exists("{$at}/publicobj/graphics/sysgraphics/{$whichgraphic}" ) ) { 
     $id = generateRandomString();  
@@ -2989,11 +3022,13 @@ function bldEnlargeDashboardGraphic ( $whichgraphic ) {
     $graphics = "NO GRAPHIC FOUND ({$whichgraphic})";
   }
 
+  list($iwidth, $iheight, $itype, $iattr) = getimagesize("{$at}/publicobj/graphics/sysgraphics/{$whichgraphic}");
+  
   $pgGraphics = <<<ENLRGDGRPH
 <table border=0>
+<tr><td>{$iwidth} / {$iheight} / {$itype} / {$iattr} </td></tr>
 <tr><td style="padding: 2vh 2vw;">{$graphics}</td></tr>
 </table>
-
 ENLRGDGRPH;
 return $pgGraphics;
 }
