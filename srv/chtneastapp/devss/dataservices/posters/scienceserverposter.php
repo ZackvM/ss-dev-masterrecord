@@ -1869,6 +1869,10 @@ MBODY;
              $left = '12vw';
              $top = '12vh';
              break;  
+           case 'hprprviewer': 
+             $left = '10vw';
+             $top = '12vh';
+             break;                 
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);

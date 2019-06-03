@@ -15,6 +15,14 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'hprprviewer':  
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Pathology Report Viewer";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPRPRBigViewer( $pdta['dialogid'], $pdta['objid']   );
+        //$footerBar = "SEGMENT ADD";       
+        break;        
         case 'hprAssistEmailer':
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Direct Emailer";
@@ -1612,11 +1620,14 @@ if ( trim($rqststr[3]) === "" ) {
 } else { 
     //GET WORKBENCH WITH BACK BUTTON TO TRAY
     $topBtnBar = generatePageTopBtnBar('hprreviewactions',$whichusr, $rqststr[2] );  //THE ACTION BUTTONS HAVE BEEN MOVED TO THE SCREEN REAL ESTATE
-    $rurl =  explode("/",$_SERVER['REQUEST_URI']);
-    $segbg = explode("::",cryptservice( $rurl[3], 'd', false));
-    $segData = callrestapi("GET", dataTree. "/do-single-segment/" . $segbg[0],serverIdent, serverpw);
+    $technicianSide = buildHPRTechnicianSide ( $_SERVER['REQUEST_URI'] );    
   $pgContent = <<<REVIEWTBL
-<table border=1><tr><td>METRIC SIDE<p> {$segData} </td><td>WORK BENCH SIDE</td></tr></table>
+  <table border=0 id=masterHPRSlideReviewTbl>
+      <tr><td colspan=2 id=masterHPRSlideAnnounceLine>{$technicianSide['topLineAnnouncement']}</td></tr>
+      <tr><td id=masterHPRTechnicianSide valign=top>{$technicianSide['techMetrics']}</td><td valign=top rowspan=3>WORK BENCH SIDE</td></tr>
+      <tr><td id=masterHPRDivBtns>BTNS</td></tr>
+      <tr><td id=masterHPRDocumentSide valign=top>{$technicianSide['documentMetrics']}</td></tr>
+  </table>
 REVIEWTBL;
 
 
@@ -1631,13 +1642,14 @@ PAGECONTENT;
 }
 
 function login($rqststr) {
+ 
 //THIS SETS THE COOKIE
 //$number_of_days = 30 ;
 //$date_of_expiry = time() + 60 * 60 * 24 * $number_of_days ; 
 //setcookie("ssv7_dualcode","857885",$date_of_expiry,"/");
 //AUTHENTICATION WILL IGNORE COOKIES
 //if(!isset($_COOKIE['ssv7_dualcode'])) {
-    $addLine = "<tr><td class=label>Dual-Authentication Code <span class=pseudoLink id=btnSndAuthCode>(Send Authentication Code)</span></td></tr><tr><td><input type=text id=ssDualCode></td></tr>";
+    $addLine = "<tr><td class=label>Dual-Authentication Code <span class=pseudoLink id=btnSndAuthCode>(Send Authentication Code)</span></td></tr><tr><td><input type=text id=ssDualCode value=\"\"></td></tr>";
 //} else {             
 //}
 
@@ -1692,6 +1704,51 @@ STANDARDHEAD;
   return $rtnThis;
 }    
 
+}
+
+function buildHPRTechnicianSide ( $rqsturi ) { 
+    $tt = treeTop;
+    $rurl =  explode( "/", $rqsturi );
+    $segbg = explode("::",cryptservice( $rurl[3], 'd', false));
+    $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $segbg[0],serverIdent, serverpw), true);    
+    $sg = $segData['DATA'][0];
+    //{"MESSAGE":"","ITEMSFOUND":0
+    //,"DATA":[{"biosamplelabel":82870,"segmentid":435211,"bgs":"82870T_002","segstatuscode":"PERMCOLLECT","statusdate":"2018-02-26 11:55:05"
+    //,"statusby":"piermatg","shipdocrefid":"","shippeddate":"","hourspost":"1","metric":"","metricuomcode":"4","prepmethod":"SLIDE","preparation":"HE SLIDE"
+    //,"prepmodifier":"","prepadditive":"","assignedto":"","assignedproject":"","assignedrequest":"","assigneddate":"1900-01-01 00:00:00","assignedby":""
+    //,"procurementdate":"2018-01-31 15:40:29","procurementdbdate":"2018-01-31 15:40:29","procuringtechnician":"jballiet"
+    //,"procuringinstitution":"LANC","hprblockind":0,"slidegroupid":"0","reqrequestbloodmatch":"","reqrequestchartreview":"","slidefromblockid":""
+    //,"voidind":0,"segmentvoidreason":"","scannedlocation":"Tray: 001","scanloccode":"HPRT001","scannedstatus":"INVENTORY-HPRTRAY-OVERRIDE"
+    //,"scannedby":"proczack","scanneddate":"2018-11-29 10:48:09","tohprind":1,"hprboxnbr":"HPRT001","tohprby":"proczack"
+    //,"tohpron":"2018-11-29 10:48:09","segmentcomments":"SSV5 SEGMENT COMMENTS--------- ","qty":1
+    //,"specimencategory":"DISEASE","site":"KIDNEY","subsite":"","dx":"","dxmod":"","metssite":"","metssitedx":"","systemicdx":""
+    //,"siteposition":"","cx":"No","rx":"No","hprind":1,"qcind":0,"pthrpt":"Yes","infc":"No","uninvolvedind":"No","phirace":"Hispanic"
+    //,"phisex":"Female","phiage":"62","phiageuom":"yrs","proceduretype":"Surgery","procedureinstitution":"LANC","proceduredate":"01\/31\/2018"
+    //,"proctechnician":"jballiet","hpquestion":"SSV5 ----------","biosamplecomment":"SSV5 -----------"
+    //,"bsreadlabel":"82870T","pathologyreporttext":"AGE:      62 YEARS","prprid":"41678","prrecordselector":"KFBQKEBR"}]}
+    $dspSlide =  "Slide: " . strtoupper(preg_replace("/[^[:alnum:]]/iu", '', $sg['bgs']));
+    $dspSlide .= ( trim($sg['hprboxnbr']) !== "") ? " / Tray: "  .  substr(( '000' . preg_replace('/[^0-9]/' , '', $sg['hprboxnbr'])), -3) : "";
+
+    
+    
+
+    //$oselector = cryptservice( $rs['prid'], "e");      
+    if ( trim($sg['prprid']) !== "" ) { 
+      $selector = cryptservice("PR-" . $sg['prprid'] .  "-" . $sg['prrecordselector'], "e");         
+      $oselector = cryptservice( $sg['prprid'], "e");      
+      $pBtnTbl = "<table><tr><td class=prntIcon onclick=\"generateDialog('hprprviewer','{$selector}');\"><i class=\"material-icons\">pageview</i></td><td onclick=\"openOutSidePage('{$tt}/print-obj/pathology-report/{$oselector}');\" class=prntIcon><i class=\"material-icons\">print</i></td></tr></table>";
+    }
+    
+    $docSide = <<<DOCSIDE
+            <div id=dspPRTxt  class=HPRReviewDocument><div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Pathology Report for {$sg['biosamplelabel']}</td><td align=right>{$pBtnTbl}</td></tr></table></div><div  id=dspPathologyRptTxt>{$sg['pathologyreporttext']}</div></div>
+            <div id=dspConstituents class=HPRReviewDocument>CONSTITS</div>
+            <div id=dspPastHPR class=HPRReviewDocument>PAST HPR</div>
+            <div id=dspMoveSlide class=HPRReviewDocument>Virtual Slide</div>            
+            <div id=dspImageFiles class=HPRReviewDocument>IMAGES</div>
+DOCSIDE;
+    
+    
+    return array( "techMetrics" => "{$sg['biosamplelabel']} {$sg['bgs']} {$sg['hprboxnbr']}", "topLineAnnouncement" => "{$dspSlide}", "documentMetrics" => $docSide );
 }
 
 function buildHPRTrayDisplay( $rqst ) { 
@@ -2039,7 +2096,6 @@ break;
 case 'hprreviewactions': 
 $innerBar = <<<BTNTBL
 <tr>
-  <td class=topBtnHolderCell onclick="navigateSite('hpr-review');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">layers_clear</i></td><td>New Review</td></tr></table></td>
   <td class=topBtnHolderCell onclick="navigateSite('hpr-review/{$additionalinfo}');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">arrow_back_ios</i></td><td>Back To Tray</td></tr></table></td>
   <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">textsms</i></td><td>Assistance</td></tr></table></td>
 </tr>
@@ -2623,6 +2679,48 @@ return $rtnThis;
 
 }
 
+function bldHPRPRBigViewer( $dialogid, $objectid ) { 
+  require(serverkeys . "/sspdo.zck");    
+  $obj = explode( '-' , cryptservice( $objectid, 'd' ));    
+  $prTxtSQL = "SELECT  biospecimen, pathreport FROM masterrecord.qcpathreports where prid = :prid and selector = :selector";
+  $prTxtRS = $conn->prepare($prTxtSQL);    
+  $prTxtRS->execute(array(':prid' => $obj[1] , ':selector' => $obj[2]));
+if ( $prTxtRS->rowCount() < 1) { 
+    $prTxt = "NO PATHOLOGY REPORT FOUND!";
+    $prBG = "";
+} else { 
+    $pr = $prTxtRS->fetch(PDO::FETCH_ASSOC);
+    $prTxt = $pr['pathreport'];
+    $prBG = "Pathology Report for {$pr['biospecimen']}";
+}
+  
+  
+$pg = <<<PAGECONTENT
+<style>
+#HPRDialogPRText { width: 80vw; }
+#HPRDialogPRTxtDsp { width: 80vw; box-sizing: border-box; height: 60vh; }
+#HPRDialogPRHoldDiv {  width: 80vw; box-sizing: border-box; height: 60vh; overflow: auto; font-size: 1.6vh; padding: 8px; color:  rgba(48,57,71,1); line-height: 1.8em; text-align: justify; }   
+#HPRDialogAnncLine { background: rgba(100,149,237,1);  font-size: 2vh; font-weight: bold; padding: 8px; color: rgba(255,255,255,1); }        
+</style>
+ <table id=HPRDialogPRText>
+     <tr><td id=HPRDialogAnncLine>{$prBG}</td></tr>
+     <tr><td id=HPRDialogPRTxtDsp><div id=HPRDialogPRHoldDiv>{$prTxt}</div></td></tr>
+     <tr><td align=right>  
+   
+   <table>
+<tr>
+<td><table class=tblBtn id=btnEventCanel style="width: 6vw;" onclick="closeThisDialog('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Close</td></tr></table></td>
+</tr>
+</table>
+     
+     </td></tr>
+ </table>
+   
+PAGECONTENT;
+ return $pg;
+}
+
+
 function bldHPREmailerDialog( $dialogid ) { 
 require(serverkeys . "/sspdo.zck");
 $at = genAppFiles;
@@ -2646,18 +2744,13 @@ $recipListRS = $conn->prepare($recipListSQL);
          $profpic = base64file("{$at}/publicobj/graphics/usrprofile/{$rl['profilepicurl']}", "", "png", true, " class=\"hpremailprofilepicture\" " );   
          $profPicture = "{$profpic}";    
     }
-       
-       
        $recipItem = <<<RTBL
 <div class=itemHolderDiv><div class=emlProfPic>{$profPicture}</div><div class=emlName>{$rl['username']} ({$rl['displayname']})</div>
  <div class=emlTitle>{$rl['dspjobtitle']}</div></div>               
 RTBL;
-       
        $recipList .= "<tr data-selected=\"false\" class=recipitemlisting id=\"recip{$rl['userid']}\" onclick=\"recipSelector(this.id);\"><td> {$recipItem}</td></tr>";
    }
    $recipList .= "</table></div>";
-
-//<tr><td colspan=2 valign=top id=instruct><b>Instructions: </b>On this dialog, you can send inquiries, issues and questions to CHTNEastern staff who are listed as having access to a UPHS Institution.  1) Select the recipients from the list on the left,  2) then type your message, 3) Fill in the biospecimen group number, a slide number or indicate a topic area,  4) then click send.</td></tr>        
 
 $pg = <<<PAGECONTENT
 <style>

@@ -164,7 +164,7 @@ function cryptservice( $string, $action = 'e', $usedbkey = false, $passedsid = "
         $secret_key = $localsecretkey;
         $secret_iv = $localsecretkey;
         $encrypt_method = "AES-256-CBC";
-        $key = hash( 'sha256', $localsecret_key );
+        $key = hash( 'sha256', $localsecretkey );
         $iv = substr( hash( 'sha256', $secret_iv ), 0, 16 );
         if ( $action == 'e' ) {
           $output = base64_encode( openssl_encrypt( $string, $encrypt_method, $key, 0, $iv ) );
