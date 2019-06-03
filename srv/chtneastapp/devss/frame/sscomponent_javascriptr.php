@@ -3911,29 +3911,23 @@ function hprreview($rqststr) {
                         
 document.addEventListener('DOMContentLoaded', function() {  
 
-  if (byId('fldHPRScan')) { 
-    byId('fldHPRScan').focus();
-  }
-
-  if (byId('btnHPRScanSearch')) { 
-    byId('btnHPRScanSearch').addEventListener('click', function() { 
-      sendHPRReviewRequest();
-    } , false);
+  if ( byId('dspScanType') ) {
+    byId('dspScanType').focus();
   }
 
   document.addEventListener('keypress', function(event) { 
     if (event.which === 13) { 
       sendHPRReviewRequest();
-    }
+    }  
   }, false);
 
 }, false);
 
 function sendHPRReviewRequest() { 
-  if (byId('fldHPRScan')) { 
+  if (byId('dspScanType')) { 
       var dta = new Object();
       dta['doctype'] = 'HPRWorkBenchRequest';
-      dta['srchterm'] = byId('fldHPRScan').value.trim();    
+      dta['srchterm'] = byId('dspScanType').value.trim();    
       var passdata = JSON.stringify(dta);
       var mlURL = "/data-doers/doc-search";
       universalAJAX("POST",mlURL,passdata,answerSendHPRReviewRequest,1);
@@ -3955,38 +3949,6 @@ JAVASCR;
   } else { 
     //THIS IS THE JAVASCRIPT FOR THE RESULTS-WORK PAGE
     $rtnthis = <<<JAVASCR
-                        
-function requestSegmentInfo(whichsegment, whichpbiosample) { 
-  if (whichsegment.trim() !== "") {  
-      var dta = new Object();
-      dta['segmentid'] = whichsegment;
-      dta['pbiosample'] = whichpbiosample;
-      var passdata = JSON.stringify(dta);
-      console.log( passdata ) ;
-      var mlURL = "/data-doers/hpr-workbench-builder";
-      universalAJAX("POST",mlURL,passdata,answerHPRWorkBenchSegmentLookup,1);
-  }
-}
-
-function answerHPRWorkBenchSegmentLookup(rtnData) { 
-   if (parseInt(rtnData['responseCode']) !== 200) { 
-     var msgs = JSON.parse(rtnData['responseText']);
-     var dspMsg = ""; 
-     msgs['MESSAGE'].forEach(function(element) { 
-       dspMsg += "\\n - "+element;
-     });
-     alert("HPR WORKBENCH ERROR:\\n"+dspMsg);  //DSIPLAY ERROR MESSAGE
-   } else {  
-            var prts = JSON.parse(rtnData['responseText']);
-            if (byId('workBench')) { 
-              byId('workBenchTech').innerHTML = prts['DATA']['workbenchpage']['technicianside'];
-              byId('workBenchTechTD').style.border = "1px solid rgba(48,57,71,1)";
-              byId('workBenchPR').innerHTML =prts['DATA']['workbenchpage']['prdsp'];
-              byId('workBenchPRTD').style.border = "1px solid rgba(48,57,71,1)";
-            }
-            
-   }
-}
 
 function generateDialog( whichdialog, whatobject ) { 
   var dta = new Object(); 
@@ -4028,7 +3990,49 @@ function answerPreprocessGenerateDialog( rtnData ) {
 function closeThisDialog(dlog) { 
    byId(dlog).parentNode.removeChild(byId(dlog));
    byId('standardModalBacker').style.display = 'none';        
-}            
+}        
+
+function recipSelector(whichrecip) {
+  if ( byId(whichrecip).dataset.selected === 'false' ) { 
+    byId(whichrecip).dataset.selected = 'true';
+  } else { 
+    byId(whichrecip).dataset.selected = 'false';
+  }
+}   
+
+function sendHPREmail() {
+  var reciplist = new Array();
+  var cntr = 0; 
+  var dta = new Object(); 
+  var x = document.getElementsByClassName("recipitemlisting");
+   for ( var i = 0; i < x.length; i++ ) {
+     if ( x[i].dataset.selected === 'true' ) {
+       reciplist[cntr] = x[i].id;
+       cntr++;
+     }
+   }
+   dta['recipientlist'] = JSON.stringify ( reciplist );
+   dta['messagetext'] = byId('hprEmlMsg').value.trim();
+   dta['dialogid'] = byId('identDialogid').value;
+   var passdta = JSON.stringify(dta);
+   var mlURL = "/data-doers/hpr-send-email";
+   universalAJAX("POST",mlURL,passdta,answerHPRSendEmail,2);
+}
+
+function answerHPRSendEmail( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     alert('Message Sent'); 
+     var diddta = JSON.parse( rtnData['responseText'] ); 
+     closeThisDialog( diddta['DATA'] );
+   }
+}
            
 JAVASCR;
 

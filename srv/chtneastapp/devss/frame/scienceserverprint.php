@@ -629,16 +629,19 @@ function getShipmentDocument($sdid, $originalURL) {
     
 
         //TODO:  TURN THIS INTO A WEBSERVICE
-        $topSQL = "SELECT ifnull(sdstatus,'NEW') as sdstatus, date_format(statusdate, '%m/%d/%Y') as statusdate, ifnull(shipmenttrackingnbr,'') as trackingnbr, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as shipdate, ifnull(investcode,'') as invcode, ifnull(investname,'') as investname, ifnull(shipaddy,'') as shipaddress, ifnull(billaddy,'') as billaddress, ifnull(investemail,'') as invemail, ifnull(ponbr,'') as ponbr, ifnull(salesorder,'') as salesorder, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as tolab, ifnull(acceptedby,'') as acceptedby, ifnull(acceptedbyemail,'') as acceptedbyemail, ifnull(comments,'') as comments, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby, ifnull(courier,'') as courier, ifnull(couriernbr,'') as couriernbr FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
+        $topSQL = "SELECT ifnull(sdstatus,'NEW') as sdstatus, sdte.shippeddate as actualshipmentdate, date_format(statusdate, '%m/%d/%Y') as statusdate, ifnull(shipmenttrackingnbr,'') as trackingnbr, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as shipdate, ifnull(investcode,'') as invcode, ifnull(investname,'') as investname, ifnull(shipaddy,'') as shipaddress, ifnull(billaddy,'') as billaddress, ifnull(investemail,'') as invemail, ifnull(ponbr,'') as ponbr, ifnull(salesorder,'') as salesorder, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as tolab, ifnull(acceptedby,'') as acceptedby, ifnull(acceptedbyemail,'') as acceptedbyemail, ifnull(comments,'') as comments, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby, ifnull(courier,'') as courier, ifnull(couriernbr,'') as couriernbr FROM masterrecord.ut_shipdoc sh left join (SELECT distinct shipDocRefID, ifnull(date_format(shippeddate,'%m/%d/%Y'),'') as shippeddate FROM masterrecord.ut_procure_segment where shipdocrefid = :matchsd limit 1) as sdte on sh.shipdocrefid = sdte.shipdocrefid where sh.shipdocrefid = :sdnbr";
         
         $topR = $conn->prepare($topSQL);
-        $topR->execute(array(':sdnbr' => $sdid));
+        $topR->execute(array(':sdnbr' => $sdid, ':matchsd' => $sdid ));
         if ($topR->rowCount() < 1) { 
            //NO SD FOUND
         } else { 
         
             $sd = $topR->fetch(PDO::FETCH_ASSOC);
+
+            //ACTUAL SHIPMENT DATE GOES HERE
             $sts = $sd['sdstatus'];
+            $actshpdte = ( $sd['actualshipmentdate'] !== "" ) ? "({$sd['actualshipmentdate']})" : "";             
             $stsdte = $sd['statusdate'];
             $trcknbr = (trim($sd['trackingnbr']) === "") ? "" : "{$sd['trackingnbr']}";
             $shpdte = $sd['shipdate'];
@@ -793,8 +796,11 @@ body { margin: 0; font-family: Roboto; font-size: 9pt; color: rgba(48,57,71,1); 
             
             <table  cellspacing=0 cellpadding=0 border=0>
                 <tr><td style="font-size: 10pt; border: 1px solid rgba(0,0,0,1); border-right: none; width: 100px;padding: 4px; font-weight: bold;" align=right>STATUS:</td><td colspan=2 style="font-size: 10pt; border: 1px solid rgba(0,0,0,1); border-left: none; padding: 4px;">{$sts}</td></tr>
-                <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Requested Ship Date:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$shpdte}</td><td style="width: 150px; font-size: 8pt; font-weight: bold; padding: 2px 4px 2px 4px; border: 1px solid rgba(0,0,0,1); border-bottom: none; border-top: none;">Comments</td></tr>
-                <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Date To Pull:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$tolab}</td><td rowspan=5 valign=top style="padding: 0 4px 1px 0; border: 1px solid rgba(0,0,0,1); border-top: none;font-size: 8pt; padding: 0 4px 0 4px;">{$cmt}</td></tr>
+                <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Date To Pull:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$tolab}</td>
+                   <td style="width: 150px; font-size: 8pt; font-weight: bold; padding: 2px 4px 2px 4px; border: 1px solid rgba(0,0,0,1); border-bottom: none; border-top: none;">Comments</td></tr>
+                <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Requested Ship Date:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$shpdte}</td>
+                   <td rowspan=6 valign=top style="padding: 0 4px 1px 0; border: 1px solid rgba(0,0,0,1); border-top: none;font-size: 8pt; padding: 0 4px 0 4px;">{$cmt}</td></tr>
+                <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Actual Ship Date:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$actshpdte}</td>
                 <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Setup Date:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$setupon}</td></tr>
                 <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Setup By:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$setupby}</td></tr>
                 <tr><td style="font-size: 8pt; white-space: nowrap; font-weight: bold; text-align: right; padding: 2px 4px 2px 0;">Status Date:</td><td style="white-space: nowrap; padding: 2px 4px 2px 2px; font-size: 8pt;">{$stsdte}</td></tr>

@@ -1,5 +1,9 @@
 <?php
 
+//HPR STUFF
+//$srchTrm = preg_replace("/[^[:alnum:]]/iu", '',$pdta['srchTrm']);
+//$sidePanelSQL = "SELECT bs.pbiosample, replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
+
 class dataposters { 
 
   public $responseCode = 400;
@@ -33,7 +37,166 @@ function __construct() {
 }
 
 class datadoers {
- 
+
+   function hprworkbenchsidepanel($request, $passdata) {  
+      $responseCode = 400; 
+      $error = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $dta = array();
+      $msgArr = array();
+      $pdta = json_decode($passdata,true);
+      $srchTrm = preg_replace("/[^[:alnum:]]/iu", '',$pdta['srchTrm']);
+
+      $sidePanelSQL = "SELECT bs.pbiosample, replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
+      $bldSidePanel = 0;
+      $typeOfSearch = "";
+      switch ($srchTrm) { 
+        case (preg_match('/\b\d{1,3}\b/',$srchTrm) ? true : false) :
+          $sidePanelSQL .= "and sg.hprboxnbr = :hprboxnbr";
+          $qryArr = array(':hprboxnbr' => ('HPRT' . substr(('0000' . $srchTrm),-3)));
+          $bldSidePanel = 1;
+          $typeOfSearch = "HPR Inventory Tray " . substr(('0000' . $srchTrm),-3);
+          break;
+        //case (preg_match('/\b\d{5}\b/',$srchTrm) ? true : false) :
+        //  $sidePanelSQL .= "and sg.prepMethod = :prpmet and sg.biosamplelabel  = :biogroup and sg.segstatus <> :segstatus"; 
+        //  $qryArr = array(':biogroup' => (int)$srchTrm, ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED');
+        //  $bldSidePanel = 1;
+        //  $typeOfSearch = "Slides in Biogroup " . $srchTrm;
+        //  break;         
+        case (preg_match('/\bED\d{5}.{1,}\b/i', $srchTrm) ? true : false) :  
+          $sidePanelSQL .= "and concat('ED',replace(sg.bgs,'_','')) = :edbgs  and sg.prepMethod = :prpmet and sg.segstatus <> :segstatus"; 
+          $qryArr = array(':edbgs' =>  str_replace('_','',strtoupper($srchTrm)) , ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED');
+          $bldSidePanel = 1;
+          $typeOfSearch = "Slide Label Search for " .  $srchTrm;
+          break;
+        case (preg_match('/\b\d{5}[a-zA-Z]{1,}.{1,}\b/', $srchTrm) ? true : false) :  
+          $sidePanelSQL .= "and replace(sg.bgs,'_','') = :bgs and sg.prepMethod = :prpmet and sg.segstatus <> :segstatus"; 
+          $qryArr = array(':bgs' =>  str_replace('_','',strtoupper($srchTrm)), ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED' );
+          $bldSidePanel = 1;
+          $typeOfSearch = "Slide Label Search for " . $srchTrm;
+          break;
+        case (preg_match('/\bHPRT\d{3}\b/i', $srchTrm) ? true : false) :  
+          $sidePanelSQL .= "and sg.hprboxnbr = :hprboxnbr "; 
+          $qryArr = array(':hprboxnbr' =>  $srchTrm);
+          $bldSidePanel = 1;
+          $typeOfSearch = "HPR Inventory Tray " . preg_replace('/HPRT/i','',$srchTrm);
+          break;
+        default:
+         //DEFAULT 
+      }
+      if ($bldSidePanel === 1) {  
+        require(serverkeys . "/sspdo.zck");  
+        $listRS = $conn->prepare($sidePanelSQL); 
+        $listRS->execute($qryArr);
+
+        if ($listRS->rowCount() < 1) { 
+          $responseCode = 404;
+          $itemsfound = 0; 
+          $msgArr[] = "NO ITEMS FOUND MATCHING YOUR CRITERIA ({$srchTrm}) ";
+        } else { 
+          $itemsfound = $listRS->rowCount();
+          $item = 0;
+          while ($rs = $listRS->fetch(PDO::FETCH_ASSOC)) { 
+            $dta[$item]['bgs']               = $rs['bgs'];
+            $dta[$item]['pbiosample']        = $rs['biosamplelabel'];
+            $dta[$item]['prepmethod']        = $rs['prepmethod'];
+            $dta[$item]['preparation']       = $rs['preparation'];
+            $dta[$item]['segmentid']         = $rs['segmentid'];
+            $dta[$item]['procurementdate']   = $rs['procurementdate'];
+            $dta[$item]['procuringtech']     = $rs['procuringtech'];
+            $dta[$item]['institution']       = $rs['procuredat'];
+            $dta[$item]['institutionname']   = $rs['institutionname'];
+            $dta[$item]['designation']       = $rs['designation'];
+            //CHECK FOR FRESH
+            $frshSQL = "SELECT count(1) as cnt FROM masterrecord.ut_procure_segment where prepmethod = 'FRESH' and voidind <> 1 and (segstatus = 'SHIPPED' or segstatus = 'ASSIGNED' or segstatus = 'ONOFFFER') and biosamplelabel = :biosamplelabel";
+            $frshRS = $conn->prepare($frshSQL); 
+            $frshRS->execute(array(':biosamplelabel' => $rs['biosamplelabel']));
+            $frsh = $frshRS->fetch(PDO::FETCH_ASSOC); 
+            $dta[$item]['freshcount'] = $frsh['cnt'];
+            $item++;
+          }
+          $msgArr[] = $typeOfSearch;
+          $responseCode = 200;
+        }
+      } else { 
+        $msgArr[] = "BAD SEARCH STRING";
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode;   
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+
+
+    function hprsendemail( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start();
+      $sessid = session_id();
+      //{"recipientlist":"[\"recip65\",\"recip1\"]","messagetext":"message this","dialogid":"lJakKGiAMKh2eQy"}
+
+      $chkUsrSQL = "SELECT friendlyname, emailaddress, profilephone, originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and allowHPR = 1"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ($rs->rowCount() === 1) { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+      }
+
+      ( !array_key_exists('recipientlist', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'recipientlist' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('messagetext', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'messagetext' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('dialogid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'dialogid' is missing.  Fatal Error")) : "";
+      ( trim($pdta['messagetext']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MESSAGE CAN'T BE BLANK")) : "";
+      ( trim($pdta['dialogid']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "DIALOG ID IS BLANK BUT IS REQUIRED")) : "";
+      ( trim($pdta['recipientlist']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "RECIPIENTLIST IS BLANK - SELECT SOME RECIPIENTS")) : "";
+      ( count(json_decode($pdta['recipientlist'])) < 1  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "RECIPIENT LIST IS BLANK ... SELECT SOME RECIPIENTS TO CONTINUE")) : "";
+
+      if ( $errorInd === 0 ) {  
+        //EMAIL LOOKUP
+        $el = array();
+        $emlSQL = "SELECT emailaddress FROM four.sys_userbase where concat('recip',userid) = :recip and allowind = 1 and allowHPRInquirer = 1";
+        $emlRS = $conn->prepare( $emlSQL );
+        foreach ( json_decode($pdta['recipientlist']) as $rkey => $rval ) { 
+          $emlRS->execute(array(':recip' => $rval));
+          if ( $emlRS->rowCount() > 0 ) { 
+             $eml = $emlRS->fetch(PDO::FETCH_ASSOC); 
+             $el[] = $eml['emailaddress'];
+          } 
+        }
+        $sbjt = "Histopathologic Review Message [SCIENCESERVER v7]";
+        $tmedsp = date('m/d/Y h:i A');
+        $omsgtxt = $pdta['messagetext'];
+        $htmlized = preg_replace('/\n\n/','<p>',$pdta['messagetext']);
+        $htmlized = preg_replace('/\r\n/','<p>', $htmlized);
+        $htmlized = preg_replace('/\r\r/','<p>', $htmlized);
+        $htmlized = preg_replace('/\n/','<br>',$htmlized);
+        $msgbody = <<<MBODY
+<table border=1 cellpadding=0 cellspacing=0 style="font-family: arial; font-size: 12pt;"><tr><td style="padding: 20px;">This message is from the Histopathologic Review Module in ScienceServer v7.  It was sent by {$u['friendlyname']} at {$tmedsp}.  The message is displayed below. <p><center><b>DO NOT REPLY TO THIS MESSAGE BUT REPLY TO {$u['friendlyname']} AT {$u['emailaddress']} OR BY CALLING {$u['profilephone']}.</b></td></tr> 
+<tr><td style="border: 1px solid #000; padding: 8px;">{$htmlized}</td></tr>
+</table>
+MBODY;
+        $insSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgbody, htmlind, wheninput, bywho, sentind) value (:towhoaddressarray, :sbjtline, :msgbody, 1, now(), :bywho, 0)";
+        $insRS = $conn->prepare($insSQL); 
+        $insRS->execute(array(':towhoaddressarray' => json_encode($el), ':sbjtline' => $sbjt, ':msgbody' => $msgbody, ':bywho' => $u['originalaccountname']));
+        $responseCode = 200;
+        $dta = $pdta['dialogid']; //THIS WILL CLOSE THE DIALOG SCEEN
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+   
+
+
     function getmontheventlist ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 503;
@@ -1705,8 +1868,7 @@ class datadoers {
              $primeFocus = "";
              $left = '12vw';
              $top = '12vh';
-             break; 
-         
+             break;  
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);
@@ -4955,124 +5117,7 @@ SQLSTMT;
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;
     } 
-
-   function hprworkbenchbuilder($request, $passdata) {  
-      $responseCode = 400; 
-      $error = 0;
-      $msg = "";
-      $itemsfound = 0;
-      $dta = array();
-      $msgArr = array();
-      $pdta = json_decode($passdata,true); 
-      if ($pdta['segmentid'] === "" || !$pdta['segmentid'] || !$pdta['pbiosample'] || $pdta['pbiosample'] === "" ) { 
-          //BAD REQUEST
-          //TODO:  BUILD ERROR RESPONSE
-      } else {
-
-        $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $pdta['segmentid'],serverIdent, serverpw), true);
-        $allSegData = json_decode(callrestapi("GET", dataTree. "/biogroup-segment-short-listing/" . $pdta['segmentid'],serverIdent, serverpw), true);
-        $pHPRSegData = json_decode(callrestapi("GET", dataTree. "/past-hpr-by-segment/" . $pdta['segmentid'],serverIdent, serverpw), true);
-        require(genAppFiles . "/frame/sscomponent_pagecontent.php");
-
-        $dta['workbenchpage'] = bldHPRWorkBenchSide($segData, $allSegData,$pHPRSegData, $pdta['pbiosample']); 
-        $responseCode = 200;
-        $msg = $msgArr;        
-      }
-      $rows['statusCode'] = $responseCode;   
-      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
-      return $rows;
-    }
-
-   function hprworkbenchsidepanel($request, $passdata) {  
-      $responseCode = 400; 
-      $error = 0;
-      $msg = "";
-      $itemsfound = 0;
-      $dta = array();
-      $msgArr = array();
-      $pdta = json_decode($passdata,true);
-      $srchTrm = preg_replace("/[^[:alnum:]]/iu", '',$pdta['srchTrm']);
-
-      $sidePanelSQL = "SELECT bs.pbiosample, replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
-      $bldSidePanel = 0;
-      $typeOfSearch = "";
-      switch ($srchTrm) { 
-        case (preg_match('/\b\d{1,3}\b/',$srchTrm) ? true : false) :
-          $sidePanelSQL .= "and sg.hprboxnbr = :hprboxnbr";
-          $qryArr = array(':hprboxnbr' => ('HPRT' . substr(('0000' . $srchTrm),-3)));
-          $bldSidePanel = 1;
-          $typeOfSearch = "HPR Inventory Tray " . substr(('0000' . $srchTrm),-3);
-          break;
-        //case (preg_match('/\b\d{5}\b/',$srchTrm) ? true : false) :
-        //  $sidePanelSQL .= "and sg.prepMethod = :prpmet and sg.biosamplelabel  = :biogroup and sg.segstatus <> :segstatus"; 
-        //  $qryArr = array(':biogroup' => (int)$srchTrm, ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED');
-        //  $bldSidePanel = 1;
-        //  $typeOfSearch = "Slides in Biogroup " . $srchTrm;
-        //  break;         
-        case (preg_match('/\bED\d{5}.{1,}\b/i', $srchTrm) ? true : false) :  
-          $sidePanelSQL .= "and concat('ED',replace(sg.bgs,'_','')) = :edbgs  and sg.prepMethod = :prpmet and sg.segstatus <> :segstatus"; 
-          $qryArr = array(':edbgs' =>  str_replace('_','',strtoupper($srchTrm)) , ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED');
-          $bldSidePanel = 1;
-          $typeOfSearch = "Slide Label Search for " .  $srchTrm;
-          break;
-        case (preg_match('/\b\d{5}[a-zA-Z]{1,}.{1,}\b/', $srchTrm) ? true : false) :  
-          $sidePanelSQL .= "and replace(sg.bgs,'_','') = :bgs and sg.prepMethod = :prpmet and sg.segstatus <> :segstatus"; 
-          $qryArr = array(':bgs' =>  str_replace('_','',strtoupper($srchTrm)), ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED' );
-          $bldSidePanel = 1;
-          $typeOfSearch = "Slide Label Search for " . $srchTrm;
-          break;
-        case (preg_match('/\bHPRT\d{3}\b/i', $srchTrm) ? true : false) :  
-          $sidePanelSQL .= "and sg.hprboxnbr = :hprboxnbr "; 
-          $qryArr = array(':hprboxnbr' =>  $srchTrm);
-          $bldSidePanel = 1;
-          $typeOfSearch = "HPR Inventory Tray " . preg_replace('/HPRT/i','',$srchTrm);
-          break;
-        default:
-         //DEFAULT 
-      }
-      if ($bldSidePanel === 1) {  
-        require(serverkeys . "/sspdo.zck");  
-        $listRS = $conn->prepare($sidePanelSQL); 
-        $listRS->execute($qryArr);
-
-        if ($listRS->rowCount() < 1) { 
-          $responseCode = 404;
-          $itemsfound = 0; 
-          $msgArr[] = "NO ITEMS FOUND MATCHING YOUR CRITERIA ({$srchTrm}) ";
-        } else { 
-          $itemsfound = $listRS->rowCount();
-          $item = 0;
-          while ($rs = $listRS->fetch(PDO::FETCH_ASSOC)) { 
-            $dta[$item]['bgs']               = $rs['bgs'];
-            $dta[$item]['pbiosample']        = $rs['biosamplelabel'];
-            $dta[$item]['prepmethod']        = $rs['prepmethod'];
-            $dta[$item]['preparation']       = $rs['preparation'];
-            $dta[$item]['segmentid']         = $rs['segmentid'];
-            $dta[$item]['procurementdate']   = $rs['procurementdate'];
-            $dta[$item]['procuringtech']     = $rs['procuringtech'];
-            $dta[$item]['institution']       = $rs['procuredat'];
-            $dta[$item]['institutionname']   = $rs['institutionname'];
-            $dta[$item]['designation']       = $rs['designation'];
-            //CHECK FOR FRESH
-            $frshSQL = "SELECT count(1) as cnt FROM masterrecord.ut_procure_segment where prepmethod = 'FRESH' and voidind <> 1 and (segstatus = 'SHIPPED' or segstatus = 'ASSIGNED' or segstatus = 'ONOFFFER') and biosamplelabel = :biosamplelabel";
-            $frshRS = $conn->prepare($frshSQL); 
-            $frshRS->execute(array(':biosamplelabel' => $rs['biosamplelabel']));
-            $frsh = $frshRS->fetch(PDO::FETCH_ASSOC); 
-            $dta[$item]['freshcount'] = $frsh['cnt'];
-            $item++;
-          }
-          $msgArr[] = $typeOfSearch;
-          $responseCode = 200;
-        }
-      } else { 
-        $msgArr[] = "BAD SEARCH STRING";
-      }
-      $msg = $msgArr;
-      $rows['statusCode'] = $responseCode;   
-      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
-      return $rows;
-    }
-
+   
    function inventoryhprtrayoverride($request, $passdata) { 
       $responseCode = 400; 
       $error = 0;

@@ -1102,55 +1102,10 @@ function hprreview($mobileind) {
 $rtnThis = <<<STYLESHEET
 
 body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box; }
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
 
-input {width: 25vw; box-sizing: border-box; font-family: Roboto; font-size: 1.4vh;color: rgba({$this->color_zackgrey},1); padding: .8vh .5vw .8vh .5vw; border: 1px solid rgba({$this->color_mgrey},1);  }
-input:focus, input:active {background: rgba({$this->color_lamber},.5); border: 1px solid rgba({$this->color_dblue},.5);  outline: none;  }
-
-.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; } 
-
-#hprInnerScan { position: absolute; width: 10vw; height: 16vh; left: 50%; top: 50%; transform: translate(-50%, -50%);  }
-#hprInnerScan table tr th {font-size: 1.5vh; text-align: left; }
-#fldHPRScan {width: 10vw; text-align: center; }
-#hprwbHeadErrorHolder { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); Text-align: center; } 
-
-#masterWorkBenchTbl { width: 97vw; }
-#masterWorkBenchTbl #sidePanelTD { width: 15vw; height: 87vh; border: 1px solid rgba({$this->color_zackgrey},1); }
-#masterWorkBenchTbl #sidePanelTD #sidePanel {width: 15vw; height: 87vh; box-sizing: border-box;  overflow: auto; }
-
-
-#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .slidesfound { font-size: 1.2vh; text-align: right; background: rgba({$this->color_white},1); color: rgba({$this->color_zackgrey},1); padding: 1vh .3vw 0 0; border-top: 1px solid rgba({$this->color_zackgrey},1);  }
-#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowHolder { padding: .3vh 0 ; }
-#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowBacker:nth-child(even) { background: rgba({$this->color_grey},1);  }
-#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl .rowBacker:hover { background: rgba({$this->color_lamber},1); cursor: pointer; }
-
-#masterWorkBenchTbl #sidePanelTD #sidePanel #sidePanelSlideListTbl {width: 100%; border-collapse: collapse; box-sizing: border-box; }
-.workbenchheader { font-size: 1.5vh; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .8vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); }
-.slide { width: 14.8vw; }
-.slide .slidecountr { font-size: 2vh; font-weight: bold; text-align: center; width: 2vw; }
-.slide .slidenbr { font-size: 1.3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); }
-.slide .slidedesignation { font-size: 1.3vh; text-align: left; }
-.slide .slidedate { font-size: 1vh; white-space: nowrap;}
-.slide .slidetech { font-size: 1vh; text-align: right; white-space:nowrap;}
-.slide .slidefreshdsp { font-size: 1.2vh; color: rgba({$this->color_bred},1); font-weight: bold; text-align: center; }
-
-#workBenchTechTD { width: 35vw; padding: 0 0 0 0; height: 48vh;  } 
-#workBenchTechTD #workBenchPrelimInfoHold { width: 35vw; padding: 0 0 0 0;  box-sizing: border-box; overflow: hidden; }
-#divWorkBenchPrelimInfo { height: 48vh; overflow: auto; }
-.littleFieldLabel { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); padding: .5vh 0 .5vh .3vw; border-right: 1px solid rgba({$this->color_mgrey},1);}
-.littleFieldLabelEnd { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); padding: .5vh 0 .5vh .3vw; } 
-.dataFieldDsp { font-size: 1.2vh; background: rgba({$this->color_white},1); padding: .8vh .3vw; border-bottom: 1px solid rgba({$this->color_mgrey},1); border-right: 1px solid rgba({$this->color_mgrey},1);  }
-.dataFieldDspEnd { font-size: 1.2vh; background: rgba({$this->color_white},1); padding: .8vh .3vw; border-bottom: 1px solid rgba({$this->color_mgrey},1);   }
-
-#workBenchPRTD { width: 35vw; padding: 0 0 0 0; height: 100%; } 
-#workBenchPRHolding { width: 35vw;  color: rgba({$this->color_zackgrey},1); }
-#divWorkBenchPRDisplay { width: 100%; height: 34vh; overflow: auto; color: rgba({$this->color_zackgrey},1); font-size: 1.3vh; line-height: 1.8em; text-align: justify; padding: 0 8px 0 8px; box-sizing: border-box;  }
-
-.prntbtn { font-size: 1.6vh; }
-.prntbtn:hover { cursor: pointer; color: rgba({$this->color_neongreen},1); } 
-
-.ttholder { position: relative; }
-.ttholder:hover .tt { display: block; text-align: left; }
-
+#headAnnouncement { font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; padding: 4vh 0 0 0; }
+#dspScanType { font-size: 5vh; text-align: center; } 
 
 STYLESHEET;
 return $rtnThis;
