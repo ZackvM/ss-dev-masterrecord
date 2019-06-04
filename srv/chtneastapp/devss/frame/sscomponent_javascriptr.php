@@ -4033,6 +4033,13 @@ function answerHPRSendEmail( rtnData ) {
      closeThisDialog( diddta['DATA'] );
    }
 }
+
+function changeSupportingTab(whichtab) { 
+  for ( var i = 0; i < 5; i++ ) { 
+    byId('dspTabContent'+i).style.display = 'none';
+  }
+  byId('dspTabContent'+whichtab).style.display = 'block';
+} 
            
 JAVASCR;
 

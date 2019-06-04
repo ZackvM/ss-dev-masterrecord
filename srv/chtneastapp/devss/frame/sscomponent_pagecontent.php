@@ -20,7 +20,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $titleBar = "HPR Pathology Report Viewer";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";              
-        $innerDialog = bldHPRPRBigViewer( $pdta['dialogid'], $pdta['objid']   );
+        $innerDialog = bldHPRPRBigViewer ( $pdta['dialogid'], $pdta['objid'] );
         //$footerBar = "SEGMENT ADD";       
         break;        
         case 'hprAssistEmailer':
@@ -1615,17 +1615,28 @@ PAGECONTENT;
 
 if ( trim($rqststr[3]) === "" ) {
   //GET TRAY LIST 
-  $topBtnBar = generatePageTopBtnBar('hprreviewactionstray',$whichusr );  //THE ACTION BUTTONS HAVE BEEN MOVED TO THE SCREEN REAL ESTATE
-  $pgContent = buildHPRTrayDisplay( $rqststr[2] ) . " " . json_encode($whichusr);
+  $topBtnBar = generatePageTopBtnBar('hprreviewactionstray',$whichusr ); 
+  $pgContent = buildHPRTrayDisplay( $rqststr[2] );
 } else { 
     //GET WORKBENCH WITH BACK BUTTON TO TRAY
-    $topBtnBar = generatePageTopBtnBar('hprreviewactions',$whichusr, $rqststr[2] );  //THE ACTION BUTTONS HAVE BEEN MOVED TO THE SCREEN REAL ESTATE
-    $technicianSide = buildHPRTechnicianSide ( $_SERVER['REQUEST_URI'] );    
+    $topBtnBar = generatePageTopBtnBar('hprreviewactions',$whichusr, $rqststr[2] ); 
+    $technicianSide = buildHPRTechnicianSide ( $_SERVER['REQUEST_URI'] );   
+    $workBench = buildWorkBenchSide ( $_SERVER['REQUEST_URI'] ); 
   $pgContent = <<<REVIEWTBL
   <table border=0 id=masterHPRSlideReviewTbl>
       <tr><td colspan=2 id=masterHPRSlideAnnounceLine>{$technicianSide['topLineAnnouncement']}</td></tr>
-      <tr><td id=masterHPRTechnicianSide valign=top>{$technicianSide['techMetrics']}</td><td valign=top rowspan=3>WORK BENCH SIDE</td></tr>
-      <tr><td id=masterHPRDivBtns>BTNS</td></tr>
+      <tr><td id=masterHPRTechnicianSide valign=top>{$technicianSide['techMetrics']}</td><td valign=top rowspan=3 id=masterHPRWorkbenchSide> {$workBench['wrkBnch']} </td></tr>
+      <tr><td id=masterHPRDivBtns> 
+        <table cellpadding=0 cellspacing=0>
+          <tr>
+            <td class=tabBtn onclick="changeSupportingTab(0);">Pathology<br>Report</td>
+            <td class=tabBtn onclick="changeSupportingTab(1);">Constituent<br>Segments</td>
+            <td class=tabBtn onclick="changeSupportingTab(2);">Previous<br>Reviews</td>
+            <td class=tabBtn onclick="changeSupportingTab(3);">Images &amp;<br>Other Files</td>
+            <td class=tabBtn onclick="changeSupportingTab(4);">Virtual<br>Slide</td>
+          </tr>
+        </table>
+      </td></tr>
       <tr><td id=masterHPRDocumentSide valign=top>{$technicianSide['documentMetrics']}</td></tr>
   </table>
 REVIEWTBL;
@@ -1706,49 +1717,149 @@ STANDARDHEAD;
 
 }
 
+function buildWorkBenchSide ( $rqsturi ) { 
+    $tt = treeTop;
+    $rurl =  explode( "/", $rqsturi );
+    $segbg = explode("::",cryptservice( $rurl[3], 'd', false));
+    $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $segbg[0],serverIdent, serverpw), true);    
+    $sg = $segData['DATA'][0];
+
+    $dtaSpecCat = strtoupper(trim($sg['specimencategory']));
+    $spc = strtoupper(trim($sg['specimencategory']));
+    $dtaSiteSub = strtoupper(trim($sg['site']));
+    $ste = strtoupper(trim($sg['site']));
+    $dtaSiteSub .= ( trim($sg['subsite']) !== "" ) ? " [" . strtoupper(trim($sg['subsite'])) . "]" : "";
+    $sste = strtoupper(trim($sg['subsite']));
+    $dtaSiteSub .= ( trim($sg['siteposition']) !== "" ) ? " (" . strtoupper(trim($sg['siteposition'])) . ")" : "";
+    $spos = strtoupper(trim($sg['siteposition']));
+    $dtaDXMod = ( trim($sg['dx']) !== "") ? " / " . strtoupper(trim($sg['dx'])) : "";
+    $dx = strtoupper(trim($sg['dx']));
+    $dtaDXMod .= ( trim($sg['dxmod']) ) ? " [" . strtoupper(trim($sg['dxmod'])) . "]" : "";
+    $mdx = strtoupper(trim($sg['dxmod']));
+    $dtaMetsFrom = strtoupper(trim($sg['metssite']));
+    $dtaMetsFrom .= ( trim($sg['metssitedx']) !== "" ) ? " / " . strtoupper(trim($sg['metssitedx'])) : "";
+    $dtaSystemic = strtoupper(trim( $sg['systemicdx'] ));
+
+$dxtbl = <<<DXTBL
+<table border=0 cellspacing=0 cellpadding=0 id=HPRWBTbl data-segid="{$segbg[0]}" data-                  > 
+<tr><td rowspan=4 id=decisionSqr data-decision="confirm">&nbsp;</td><td colspan=4 class=hprPreLimFldLbl>Diagnosis Designation</td></tr>
+<tr><td colspan=4 class=hprPreLimDtaFld style="padding: 20px 0 0 .5vw;" valign=top>{$dtaSpecCat} {$dtaSiteSub} {$dtaDXMod} &nbsp;</td></tr>
+<tr><td colspan=2 class="hprPreLimFldLbl rightEndCap">METS From</td><td colspan=2 class="hprPreLimFldLbl">Systemic/Co-Mobid</td></tr>
+<tr><td colspan=2 class="hprPreLimDtaFld rightEndCap" style="padding: 20px 0 0 .5vw;" valign=top>{$dtaMetsFrom}&nbsp;</td><td colspan=2 class=hprPreLimDtaFld valign=top>{$dtaSystemic}&nbsp;</td></tr>
+</table>
+DXTBL;
+
+    $btnBar = "<table border=0><tr><td class=sideDesigBtns>Designation</td></tr><tr><td class=sideDesigBtns>Over Ride</td></tr><tr><td class=sideDesigBtns>Metastatic</td></tr><tr><td class=sideDesigBtns>Systemic</td></tr></table>";
+
+    $desig = <<<DDX
+<table border=0 cellpadding=0 cellspacing=0><tr><td valign=top>{$dxtbl}</td><td valign=top>{$btnBar}</td></tr></table>
+DDX;
+
+
+    $workBench = <<<WORKBENCH
+<div class=dspWBDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td><center>Work Bench</td></tr></table></div>
+<table border=0>
+  <tr><td valign=top>{$desig}</td></tr>
+  <tr><td>PERCENTAGE</td></tr>
+  <tr><td>FURTHER ACTIONS</td></tr>
+  <tr><td>MOLECULAR</td></tr>
+  <tr><td>COMMENTS</td></tr>
+  <tr><td>FILE UPLOADS</td></tr>
+  <tr><td>BTNS</td></tr>
+</table>
+
+WORKBENCH;
+
+    return array( "wrkBnch" => $workBench );
+}
+
 function buildHPRTechnicianSide ( $rqsturi ) { 
     $tt = treeTop;
     $rurl =  explode( "/", $rqsturi );
     $segbg = explode("::",cryptservice( $rurl[3], 'd', false));
     $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $segbg[0],serverIdent, serverpw), true);    
     $sg = $segData['DATA'][0];
-    //{"MESSAGE":"","ITEMSFOUND":0
-    //,"DATA":[{"biosamplelabel":82870,"segmentid":435211,"bgs":"82870T_002","segstatuscode":"PERMCOLLECT","statusdate":"2018-02-26 11:55:05"
-    //,"statusby":"piermatg","shipdocrefid":"","shippeddate":"","hourspost":"1","metric":"","metricuomcode":"4","prepmethod":"SLIDE","preparation":"HE SLIDE"
-    //,"prepmodifier":"","prepadditive":"","assignedto":"","assignedproject":"","assignedrequest":"","assigneddate":"1900-01-01 00:00:00","assignedby":""
-    //,"procurementdate":"2018-01-31 15:40:29","procurementdbdate":"2018-01-31 15:40:29","procuringtechnician":"jballiet"
-    //,"procuringinstitution":"LANC","hprblockind":0,"slidegroupid":"0","reqrequestbloodmatch":"","reqrequestchartreview":"","slidefromblockid":""
-    //,"voidind":0,"segmentvoidreason":"","scannedlocation":"Tray: 001","scanloccode":"HPRT001","scannedstatus":"INVENTORY-HPRTRAY-OVERRIDE"
-    //,"scannedby":"proczack","scanneddate":"2018-11-29 10:48:09","tohprind":1,"hprboxnbr":"HPRT001","tohprby":"proczack"
-    //,"tohpron":"2018-11-29 10:48:09","segmentcomments":"SSV5 SEGMENT COMMENTS--------- ","qty":1
-    //,"specimencategory":"DISEASE","site":"KIDNEY","subsite":"","dx":"","dxmod":"","metssite":"","metssitedx":"","systemicdx":""
-    //,"siteposition":"","cx":"No","rx":"No","hprind":1,"qcind":0,"pthrpt":"Yes","infc":"No","uninvolvedind":"No","phirace":"Hispanic"
-    //,"phisex":"Female","phiage":"62","phiageuom":"yrs","proceduretype":"Surgery","procedureinstitution":"LANC","proceduredate":"01\/31\/2018"
-    //,"proctechnician":"jballiet","hpquestion":"SSV5 ----------","biosamplecomment":"SSV5 -----------"
-    //,"bsreadlabel":"82870T","pathologyreporttext":"AGE:      62 YEARS","prprid":"41678","prrecordselector":"KFBQKEBR"}]}
-    $dspSlide =  "Slide: " . strtoupper(preg_replace("/[^[:alnum:]]/iu", '', $sg['bgs']));
-    $dspSlide .= ( trim($sg['hprboxnbr']) !== "") ? " / Tray: "  .  substr(( '000' . preg_replace('/[^0-9]/' , '', $sg['hprboxnbr'])), -3) : "";
 
-    
-    
+    $dtaAge = strtolower(trim("{$sg['phiage']} {$sg['phiageuom']}"));
+    $dtaRace = ucwords(trim($sg['phirace']));
+    $dtaSex = ucwords(trim($sg['phisex']));
+    $dtaBGCmts = preg_replace('/[Ss]{2}[Vv]\d\s{0,}\-{1,}/','',trim($sg['biosamplecomment'])) . "&nbsp;";
+    $dtaSGCmts = preg_replace('/[Ss]{2}[Vv]\d\s{0,}\-{1,}/','',trim($sg['segmentcomments']))  . "&nbsp;";
+    $dtaQstn =   preg_replace('/[Ss]{2}[Vv]\d\s{0,}\-{1,}/','',trim($sg['hpquestion']))       . "&nbsp;";
+    $dtaProcedure = $sg['proceduretype'];
+    $dtaProcedure .= ( trim($sg['procedureinstitution']) !== "" ) ? " / " . strtoupper(trim( $sg['procedureinstitution'])) : "";
+    $dtaProcedure .= "<br><span class=smlrTxt>";
+    $dtaProcedure .= $sg['proceduredate'];
+    $dtaProcedure .= ( trim($sg['proctechnician']) !== "" ) ? " [" . strtolower(trim($sg['proctechnician'])) . "]" : "";
+    $dtaProcedure .= "</span>";
+    $dtaUninv = $sg['uninvolvedind'];
+    $dtaCXRX = $sg['cx'];
+    $dtaCXRX .= "/{$sg['rx']}";
+    $dtaPRIC = $sg['pthrpt'];
+    $dtaPRIC .= "/{$sg['infc']}";
+    $dspSlide =  "<table width=100% border=0><tr><td> Slide: " . strtoupper(preg_replace("/[^[:alnum:]]/iu", '', $sg['bgs']));
+    $dspSlide .= ( trim($sg['scannedlocation']) !== "") ? " / {$sg['scannedlocation']}" : "";
+    $dspSlide .= "</td><td align=right>";
+    $dspSlide .= ( $sg['hprslideread'] === 'N' ) ? "<i class=\"material-icons topreadindicator needread\">error</i>" : "<i class=\"material-icons topreadindicator doneread\">check_circle</i>"   ;
+    $dspSlide .= "</td></tr></table>";
+    $dtaSpecCat = strtoupper(trim($sg['specimencategory']));
+    $dtaSiteSub = strtoupper(trim($sg['site']));
+    $dtaSiteSub .= ( trim($sg['subsite']) !== "" ) ? " [" . strtoupper(trim($sg['subsite'])) . "]" : "";
+    $dtaSiteSub .= ( trim($sg['siteposition']) !== "" ) ? " (" . strtoupper(trim($sg['siteposition'])) . ")" : "";
+    $dtaDXMod = ( trim($sg['dx']) !== "") ? " / " . strtoupper(trim($sg['dx'])) : "";
+    $dtaDXMod .= ( trim($sg['dxmod']) ) ? " [" . strtoupper(trim($sg['dxmod'])) . "]" : "";
+    $dtaMetsFrom = strtoupper(trim($sg['metssite']));
+    $dtaMetsFrom .= ( trim($sg['metssitedx']) !== "" ) ? " / " . strtoupper(trim($sg['metssitedx'])) : "";
+    $dtaSystemic = strtoupper(trim( $sg['systemicdx'] ));
+    $dtaProcInst = $sg['dspprocureinstitution'];
+    $dtaProcInst .= ( trim($sg['proctechnician']) !== "" ) ? " :: {$sg['proctechnician']}" : ""; 
+    $dtaProcDte = trim($sg['dspprocurementdate']);
+    $tohpr = trim($sg['tohprby']);
+    $tohpr .= ( trim($sg['tohpron']) !== "" ) ? " :: {$sg['tohpron']}" : "";
 
     //$oselector = cryptservice( $rs['prid'], "e");      
     if ( trim($sg['prprid']) !== "" ) { 
       $selector = cryptservice("PR-" . $sg['prprid'] .  "-" . $sg['prrecordselector'], "e");         
       $oselector = cryptservice( $sg['prprid'], "e");      
       $pBtnTbl = "<table><tr><td class=prntIcon onclick=\"generateDialog('hprprviewer','{$selector}');\"><i class=\"material-icons\">pageview</i></td><td onclick=\"openOutSidePage('{$tt}/print-obj/pathology-report/{$oselector}');\" class=prntIcon><i class=\"material-icons\">print</i></td></tr></table>";
+    } else { 
+      $pBtnTbl = "<table><tr><td class=prntIcon><i class=\"material-icons\">arrow_drop_down</i></td></tr></table>"; 
     }
-    
+    $thisBtn = "<table><tr><td class=prntIcon><i class=\"material-icons\">arrow_drop_down</i></td></tr></table>"; 
     $docSide = <<<DOCSIDE
-            <div id=dspPRTxt  class=HPRReviewDocument><div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Pathology Report for {$sg['biosamplelabel']}</td><td align=right>{$pBtnTbl}</td></tr></table></div><div  id=dspPathologyRptTxt>{$sg['pathologyreporttext']}</div></div>
-            <div id=dspConstituents class=HPRReviewDocument>CONSTITS</div>
-            <div id=dspPastHPR class=HPRReviewDocument>PAST HPR</div>
-            <div id=dspMoveSlide class=HPRReviewDocument>Virtual Slide</div>            
-            <div id=dspImageFiles class=HPRReviewDocument>IMAGES</div>
+<div id=dspTabContent0 class=HPRReviewDocument style="display: block;" >
+  <div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Pathology Report for {$sg['biosamplelabel']}</td><td align=right>{$pBtnTbl}</td></tr></table></div><div id=dspPathologyRptTxt>{$sg['pathologyreporttext']}<p></div></div>
+<div id=dspTabContent1 class=HPRReviewDocument>
+  <div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Constituent Segments of {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspConstituentst> --- </div></div></div>
+  <div id=dspTabContent2 class=HPRReviewDocument><div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Previous Reviews of {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspConstituentst> --- </div></div></div>
+<div id=dspTabContent3 class=HPRReviewDocument> 
+  <div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Images &amp; Other File for {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspConstituentst> --- </div></div> </div>            
+<div id=dspTabContent4 class=HPRReviewDocument> <!-- VIRTUAL SLIDE //-->   </div>
 DOCSIDE;
+
+$procMetrics = <<<PROCMETRICS
+<div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Preliminary Diagnosis/Procurement Metrics for Biogroup {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div>
+<div id=prelimDX> 
+<table border=0 cellspacing=0 cellpadding=0 id=HPRPreLimTbl> 
+<tr><td colspan=4 class=hprPreLimFldLbl>Diagnosis Designation</td></tr>
+<tr><td colspan=4 class=hprPreLimDtaFld valign=top>{$dtaSpecCat} {$dtaSiteSub} {$dtaDXMod}&nbsp;</td></tr>
+<tr><td colspan=2 class="hprPreLimFldLbl rightEndCap">METS From</td><td colspan=2 class="hprPreLimFldLbl">Systemic/Co-Mobid</td></tr>
+<tr><td colspan=2 class="hprPreLimDtaFld rightEndCap" valign=top>{$dtaMetsFrom}&nbsp;</td><td colspan=2 class=hprPreLimDtaFld valign=top>{$dtaSystemic}&nbsp;</td></tr>
+<tr><td colspan=4 class=hprPreLimFldLbl>Question for Reviewer</td></tr>
+<tr><td colspan=4 class=hprPreLimDtaFld style="height: 4vh;" valign=top><div style="height: 4vh; overflow: auto; color: rgba(237, 35, 0,1);">{$dtaQstn}</div></td></tr>
+<tr><td class="hprPreLimFldLbl rightEndCap">Donor Age</td><td colspan=2 class="hprPreLimFldLbl rightEndCap">Donor Race</td><td class=hprPreLimFldLbl>Donor Sex</td></tr>
+<tr><td class="hprPreLimDtaFld rightEndCap" valign=top>{$dtaAge}</td><td colspan=2 class="hprPreLimDtaFld rightEndCap" valign=top>{$dtaRace}</td><td class=hprPreLimDtaFld valign=top>{$dtaSex}</td></tr>
+<tr><td class="hprPreLimFldLbl rightEndCap twentyfive">CX/RX</td><td class="hprPreLimFldLbl rightEndCap twentyfive">Pathology Report/Informed Consent</td><td class="hprPreLimFldLbl rightEndCap twentyfive">Uninvolved Indicator</td><td class=hprPreLimFldLbl>Procedure</td></tr>
+<tr><td class="hprPreLimDtaFld rightEndCap twentyfive" valign=top>{$dtaCXRX}</td><td class="hprPreLimDtaFld rightEndCap twentyfive" valign=top>{$dtaPRIC}</td><td class="hprPreLimDtaFld rightEndCap twentyfive" valign=top>{$dtaUninv}</td><td class=hprPreLimDtaFld valign=top>{$dtaProcedure}</td></tr>
+<tr><td colspan=2 class="hprPreLimFldLbl rightEndCap">Biosample Comment</td><td colspan=2 class=hprPreLimFldLbl>Segment Comment</td></tr>
+<tr><td class="hprPreLimDtaFld rightEndCap" style="height: 6vh;" valign=top colspan=2><div style="height: 6vh; overflow: auto;">{$dtaBGCmts}</div></td><td class=hprPreLimDtaFld style="height: 6vh;" valign=top colspan=2><div style="height: 6vh; overflow: auto;">{$dtaSGCmt}</div></td></tr>
+<tr><td colspan=4 align=right style="padding: .5vh .5vw 0 0;"> <table border=0 id=submitTbl><tr><td>Submitted</td><td colspan=2>{$tohpr}</td></tr></table> </td></tr>
+</table>
+</div>
+
+PROCMETRICS;
     
-    
-    return array( "techMetrics" => "{$sg['biosamplelabel']} {$sg['bgs']} {$sg['hprboxnbr']}", "topLineAnnouncement" => "{$dspSlide}", "documentMetrics" => $docSide );
+    return array( "techMetrics" => $procMetrics, "topLineAnnouncement" => "{$dspSlide}", "documentMetrics" => $docSide );
 }
 
 function buildHPRTrayDisplay( $rqst ) { 
@@ -1763,18 +1874,19 @@ function buildHPRTrayDisplay( $rqst ) {
         //NO SLIDES FOUND
         $pg = "<div id=hprwbHeadErrorHolder><H1>{$sidedta['MESSAGE'][0]} - See a CHTNEastern Staff if you feel this is incorrect.</div>";
     } else {
-        //SIDE PANEL BUILD 
+        //SIDE PANEL BUILD
         foreach ($sidedta['DATA'] as $skey => $sval) {
            $freshDsp = ((int)$sval['freshcount'] > 0) ? "[CONTAINS DIRECT SHIPMENT]" : "";
            $cntr = ($skey + 1); 
            $slideidentifier = cryptservice(  "{$sval['segmentid']}::{$sval['pbiosample']}" );
            $clickAction = " onclick=\"navigateSite('hpr-review/{$rqst}/{$slideidentifier}');\" ";
+           $readYet = ( $sval['hprslideread'] !== 'N' ) ? "<i class=\"material-icons\">check_circle</i>" : "<i class=\"material-icons\">error</i>";
            $sidePanelTblInner .= <<<SLIDELINE
 <tr class=rowBacker><td {$clickAction} class=rowHolder>
     <table border=1 class=slide>
       <tr>
-        <td rowspan=3 class=slidecountr>{$cntr}</td>
-        <td colspan=3 class=slidenbr valign=top>{$sval['bgs']} / {$sval['preparation']}</td>
+        <td rowspan=3 class=slidecountr>{$readYet}</td>
+        <td colspan=3 class=slidenbr valign=top>{$sval['bgs']}</td>
       </tr>
       <tr><td colspan=3 class=slidedesignation valign=top>{$sval['designation']}</td></tr>
       <tr><td valign=top class=slidedate><b>Procurement</b>: {$sval['procurementdate']}</td><td valign=top class=slidetech><b>Tech</b>: {$sval['procuringtech']}</td></tr>
@@ -2097,6 +2209,7 @@ case 'hprreviewactions':
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell onclick="navigateSite('hpr-review/{$additionalinfo}');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">arrow_back_ios</i></td><td>Back To Tray</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="navigateSite('hpr-review');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">layers_clear</i></td><td>New Review</td></tr></table></td>
   <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">textsms</i></td><td>Assistance</td></tr></table></td>
 </tr>
 BTNTBL;
@@ -2705,8 +2818,7 @@ $pg = <<<PAGECONTENT
  <table id=HPRDialogPRText>
      <tr><td id=HPRDialogAnncLine>{$prBG}</td></tr>
      <tr><td id=HPRDialogPRTxtDsp><div id=HPRDialogPRHoldDiv>{$prTxt}</div></td></tr>
-     <tr><td align=right>  
-   
+     <tr><td align=right>   
    <table>
 <tr>
 <td><table class=tblBtn id=btnEventCanel style="width: 6vw;" onclick="closeThisDialog('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Close</td></tr></table></td>
