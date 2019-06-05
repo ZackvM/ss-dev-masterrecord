@@ -620,6 +620,38 @@ OBJECTSQL;
     return $rows;    
  }
 
+ function hprgetconstitlist ( $request, $urirqst ) { 
+    $rows = array(); 
+    $dta = array(); 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $itemsfound = 0;
+    $rq = explode("/",$urirqst);
+    if (trim($rq[3]) === ""  || !is_numeric($rq[3])) { 
+    } else { 
+       $segid = $rq[3];
+       $defineSQL = <<<OBJECTSQL
+Select sg.bgs, ifnull(sgs.dspvalue,'') as segstatus, ifnull(date_format(sg.statusDate,'%m/%d/%Y'),'') as segstatusdate , ifnull(sg.shipdocrefid,'') as shipdocrefid, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shippeddate, concat(ifnull(sg.metric,0), if(ifnull(sg.metric,0) = 0,'',ifnull(muom.dspvalue,''))) as metricdsp, ifnull(sg.prepMethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, ifnull(sg.qty,1) as qty, ifnull(sg.assignedTo,'') as assignedtocode, ifnull(sg.assignedReq,'') as assignedtoreq, ifnull(i.invest_lname,'') as investname, trim(concat(ifnull(i.invest_fname,''),' ', ifnull(i.invest_lname,''))) as investfullname, ifnull(i.invest_homeinstitute,'') as hinstitute, ifnull(i.invest_division,'') as investdivision, ifnull(hprslideread,0) as hprslideread, ifnull(scannedLocation,'') as scannedlocation, ifnull(toHPR,0) as tohpr  from (SELECT biosamplelabel FROM masterrecord.ut_procure_segment where segmentId = :objectid) bsgetter left join masterrecord.ut_procure_segment sg on bsgetter.biosamplelabel = sg.biosampleLabel left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') sgs on sg.segStatus = sgs.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'METRIC') muom on sg.metricuom = muom.menuvalue left join (SELECT investid, invest_lname, invest_fname, invest_homeinstitute, invest_division FROM vandyinvest.invest) as i on sg.assignedTo = i.investid order by sg.bgs 
+OBJECTSQL;
+
+     $obj = runObjectSQL($defineSQL, $segid);       
+     $itemsfound = count($obj);  
+     if (count($obj) > 0) { 
+         $dta = $obj;
+         $responseCode = 200;
+         $msg = ""; 
+     }  else { 
+         $responseCode = 404; 
+         $msg = "INDIVIDUAL DATA OBJECT NOT FOUND";
+     }
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;    
+ }
+
+
+
  function dosinglesegment($request, $urirqst) { 
     $rows = array(); 
     $dta = array(); 
@@ -1072,6 +1104,22 @@ function hprrequestcode($whichobj, $rqst) {
 }
 
 class globalMenus {
+
+    function hprfurtheractions() { 
+        return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'HPRFURTHERACTION' and dspind = 1 order by dsporder";
+    }
+
+    function hprtechaccuracy() { 
+        return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'HPRTECHACCURACY' and dspind = 1 order by dsporder";
+    }
+
+    function hprtumorgradescale() { 
+        return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'HPRTUMORSCALE' and dspind = 1 order by dsporder";
+    }
+
+    function hprpercentages() { 
+        return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(longvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'HPRPERCENTAGE' and dspind = 1 order by dsporder";
+    }
 
     function shipdocrestockreasons() { 
         return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'SEGMENTRESTOCKREASON' and dspind = 1 order by dsporder";

@@ -15,6 +15,14 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'hprDesignationSpecifier':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Vocabulary Browser";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPRVocabBrowser ( $pdta['dialogid'], $pdta['objid'] );
+        //$footerBar = "SEGMENT ADD";       
+        break;        
       case 'hprprviewer':  
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Pathology Report Viewer";
@@ -1621,7 +1629,7 @@ if ( trim($rqststr[3]) === "" ) {
     //GET WORKBENCH WITH BACK BUTTON TO TRAY
     $topBtnBar = generatePageTopBtnBar('hprreviewactions',$whichusr, $rqststr[2] ); 
     $technicianSide = buildHPRTechnicianSide ( $_SERVER['REQUEST_URI'] );   
-    $workBench = buildWorkBenchSide ( $_SERVER['REQUEST_URI'] ); 
+    $workBench = buildHPRWorkBenchSide ( $_SERVER['REQUEST_URI'] ); 
   $pgContent = <<<REVIEWTBL
   <table border=0 id=masterHPRSlideReviewTbl>
       <tr><td colspan=2 id=masterHPRSlideAnnounceLine>{$technicianSide['topLineAnnouncement']}</td></tr>
@@ -1631,7 +1639,7 @@ if ( trim($rqststr[3]) === "" ) {
           <tr>
             <td class=tabBtn onclick="changeSupportingTab(0);">Pathology<br>Report</td>
             <td class=tabBtn onclick="changeSupportingTab(1);">Constituent<br>Segments</td>
-            <td class=tabBtn onclick="changeSupportingTab(2);">Previous<br>Reviews</td>
+            <!-- <td class=tabBtn onclick="changeSupportingTab(2);">Previous<br>Reviews</td> //-->
             <td class=tabBtn onclick="changeSupportingTab(3);">Images &amp;<br>Other Files</td>
             <td class=tabBtn onclick="changeSupportingTab(4);">Virtual<br>Slide</td>
           </tr>
@@ -1717,13 +1725,20 @@ STANDARDHEAD;
 
 }
 
-function buildWorkBenchSide ( $rqsturi ) { 
+function buildHPRWorkBenchSide ( $rqsturi ) { 
     $tt = treeTop;
     $rurl =  explode( "/", $rqsturi );
     $segbg = explode("::",cryptservice( $rurl[3], 'd', false));
     $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $segbg[0],serverIdent, serverpw), true);    
     $sg = $segData['DATA'][0];
+    $prcList = json_decode(callrestapi("GET", dataTree . "/global-menu/hprpercentages",serverIdent,serverpw), true);
+    $techAccList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-technician-accuracy",serverIdent,serverpw), true);
+    $tmrGradeScaleList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-tumor-grade-scale",serverIdent,serverpw), true);
+    $faList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-further-actions",serverIdent,serverpw), true);
+    $idsuffix = generateRandomString(8);
+    $moletest = json_decode(callrestapi("GET", dataTree . "/immuno-mole-testlist",serverIdent,serverpw),true);
 
+//DESIGNATION BUILD
     $dtaSpecCat = strtoupper(trim($sg['specimencategory']));
     $spc = strtoupper(trim($sg['specimencategory']));
     $dtaSiteSub = strtoupper(trim($sg['site']));
@@ -1737,35 +1752,120 @@ function buildWorkBenchSide ( $rqsturi ) {
     $dtaDXMod .= ( trim($sg['dxmod']) ) ? " [" . strtoupper(trim($sg['dxmod'])) . "]" : "";
     $mdx = strtoupper(trim($sg['dxmod']));
     $dtaMetsFrom = strtoupper(trim($sg['metssite']));
-    $dtaMetsFrom .= ( trim($sg['metssitedx']) !== "" ) ? " / " . strtoupper(trim($sg['metssitedx'])) : "";
+    $mets = strtoupper(trim($sg['metssite']));
+//    $dtaMetsFrom .= ( trim($sg['metssitedx']) !== "" ) ? " / " . strtoupper(trim($sg['metssitedx'])) : "";
     $dtaSystemic = strtoupper(trim( $sg['systemicdx'] ));
-
+    $sysm =  strtoupper(trim( $sg['systemicdx'] ));
 $dxtbl = <<<DXTBL
-<table border=0 cellspacing=0 cellpadding=0 id=HPRWBTbl data-segid="{$segbg[0]}" data-                  > 
-<tr><td rowspan=4 id=decisionSqr data-decision="confirm">&nbsp;</td><td colspan=4 class=hprPreLimFldLbl>Diagnosis Designation</td></tr>
-<tr><td colspan=4 class=hprPreLimDtaFld style="padding: 20px 0 0 .5vw;" valign=top>{$dtaSpecCat} {$dtaSiteSub} {$dtaDXMod} &nbsp;</td></tr>
-<tr><td colspan=2 class="hprPreLimFldLbl rightEndCap">METS From</td><td colspan=2 class="hprPreLimFldLbl">Systemic/Co-Mobid</td></tr>
-<tr><td colspan=2 class="hprPreLimDtaFld rightEndCap" style="padding: 20px 0 0 .5vw;" valign=top>{$dtaMetsFrom}&nbsp;</td><td colspan=2 class=hprPreLimDtaFld valign=top>{$dtaSystemic}&nbsp;</td></tr>
+<table border=0 cellspacing=0 cellpadding=0 id=HPRWBTbl data-segid="{$segbg[0]}" data-ospecimencategory="{$spc}" data-specimencategory="{$spc}" data-osite="{$te}" data-site="{$ste}" data-ossite="{$sste}" data-ssite="{$sste}" data-ospos="{$spos}" data-spos="{$spos}" data-odx="{$dx}" data-dx="{$dx}" data-odxm="{$mdx}" data-dxm="{$mdx}" data-omets="{$mets}" data-mets="{$mets}" data-osysm="{$sysm}" data-sysm="{$sysm}"><tr><td rowspan=4 id=decisionSqr data-decision="confirm">&nbsp;</td><td colspan=4 class=hprPreLimFldLbl>Diagnosis Designation</td></tr><tr><td colspan=4 class=hprPreLimDtaFld style="padding: 20px 0 0 .5vw;" valign=top>{$dtaSpecCat} {$dtaSiteSub} {$dtaDXMod} &nbsp;</td></tr><tr><td colspan=2 class="hprPreLimFldLbl rightEndCap">METS From</td><td colspan=2 class="hprPreLimFldLbl">Systemic/Co-Mobid</td></tr><tr><td colspan=2 class="hprPreLimDtaFld rightEndCap" style="padding: 20px 0 0 .5vw;" valign=top>{$dtaMetsFrom}&nbsp;</td><td colspan=2 class=hprPreLimDtaFld valign=top>{$dtaSystemic}&nbsp;</td></tr>
 </table>
 DXTBL;
-
-    $btnBar = "<table border=0><tr><td class=sideDesigBtns>Designation</td></tr><tr><td class=sideDesigBtns>Over Ride</td></tr><tr><td class=sideDesigBtns>Metastatic</td></tr><tr><td class=sideDesigBtns>Systemic</td></tr></table>";
-
-    $desig = <<<DDX
+$btnBar = "<table border=0><tr><td class=sideDesigBtns onclick=\"loadDesignation();\">Designation</td></tr><tr><td class=sideDesigBtns>Over Ride</td></tr><tr><td class=sideDesigBtns>Metastatic</td></tr><tr><td class=sideDesigBtns>Systemic</td></tr></table>";
+$desig = <<<DDX
 <table border=0 cellpadding=0 cellspacing=0><tr><td valign=top>{$dxtbl}</td><td valign=top>{$btnBar}</td></tr></table>
 DDX;
+//END DESIGNATION BUILD
+//BUILD TUMOR GRADE 
+$tmrGrd = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldTumorGradeScale','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  foreach ( $tmrGradeScaleList['DATA'] as $procval) { 
+      $tmrGrd .= "<tr><td onclick=\"fillField('fldTumorGradeScale','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+  }
+$tmrGrd .= "</table>";
+//END TUMOR GRADE
+//PERCENTAGE BUILDER
+$prcTbl = "<table border=0><tr><td rowspan=50 valign=top><table><tr><td>Tumor Grade</td></tr><tr><td><input type=text id=fldTumorGrade style=\"width: 5vw;\"></td><td> <div class=menuHolderDiv><input type=hidden id=fldTumorGradeScaleValue value=\"\"><input type=text id=fldTumorGradeScale READONLY class=\"inputFld\" style=\"width: 8vw;\" value=\"\"><div class=valueDropDown style=\"min-width: 20vw;\">{$tmrGrd}</div></div></td></tr></table> </td>";
+$cntr = 0;
+foreach ( $prcList['DATA'] as $prcv ) { 
+  if ($cntr === 4) {
+    $prcTbl .= "</tr><tr>";
+    $cntr = 0;
+  }
+  $pdspTbl = "<table><tr><td>{$prcv['menuvalue']}</td><td><input type=text class=prcFld id='{$prcv['codevalue']}'></td></tr></table>";
+  $prcTbl .= "<td> {$pdspTbl} </td>";
+  $cntr++;
+}
+$prcTbl .= "</tr></table>";
+//END PERCENTAGE BUILDER
+//TECH ACC BUILDER
+$techAcc = "<table border=0 class=menuDropTbl>";
+$techAccDefault = "";
+$techAccDefaultCode = "";
+  foreach ($techAccList['DATA'] as $procval) { 
+      if ( (int)$procval['useasdefault'] === 1 ) { $techAccDefault = $procval['menuvalue'];  $techAccDefaultCode = $procval['lookupvalue']; }  
+      $techAcc .= "<tr><td onclick=\"fillField('fldTechAcc','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+  }
+$techAcc .= "</table>";
+//END TECH ACC BUILDER
+//FA LISTING
+$fa = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldFurtherAction','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+  foreach ($faList['DATA'] as $procval) { 
+      $fa .= "<tr><td onclick=\"fillField('fldFurtherAction','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+  }
+$fa .= "</table>";
 
-
+$faTbl = <<<FATBL
+<table border=0>
+<tr><td class=hprPreLimFldLbl>Further Action</td><td class=hprPreLimFldLbl>Note</td><td rowspan=3 valign=top><table class=tblBtn onclick="alert('addAction');"><tr><td><i class="material-icons">playlist_add</i></td></tr></table> </td></tr>
+<tr><td> <div class=menuHolderDiv><input type=hidden id=fldFurtherActionValue value=""><input type=text id=fldFurtherAction READONLY class="inputFld" style="width: 10vw;" value=""><div class=valueDropDown style="min-width: 20vw;">{$fa}</div></div></td><td><input type=text id=fldFANote style="width: 10vw;" ></td></tr>
+<tr><td colspan=2><div id=furtheractiondsplisting style="border: 1px solid #000; height: 8vh;"></div></td></tr>
+</table>
+FATBL;
+//END FA LISTING
+//MOLE TBL 
+    //molecular test
+    $molemnu = "<table border=0 width=100%><tr><td align=right onclick=\"triggerMolecularFill(0,'','','{$idsuffix}');\" class=ddMenuClearOption>[clear]</td></tr>";
+    foreach ($moletest['DATA'] as $moleval) { 
+        $molemnu .= "<tr><td onclick=\"triggerMolecularFill({$moleval['menuid']},'{$moleval['menuvalue']}','{$moleval['dspvalue']}','{$idsuffix}');\" class=ddMenuItem>{$moleval['dspvalue']}</td></tr>";
+    }
+    $molemnu .= "</table>";
+$moleTbl = <<<MOLETBL
+      <table border=0>
+       <tr><td class=faHead colspan=2>Indicated Immuno/Molecular Test Results</td><td rowspan=4 valign=top><table class=tblBtn onclick="manageMoleTest(1,'','{$idsuffix}');"><tr><td><i class="material-icons">playlist_add</i></td></tr></table></td></tr>
+       <tr><td class=fieldHolder valign=top colspan=2>
+                    <div class=menuHolderDiv>
+                      <input type=hidden id=hprFldMoleTest{$idsuffix}Value>
+                      <input type=text id=hprFldMoleTest{$idsuffix} READONLY style="width: 25vw;">
+                      <div class=valueDropDown style="min-width: 25vw;">{$molemnu}</div>
+                    </div>
+            </td>
+       </tr>
+       <tr><td class=faHead>Result Index</td><td class=faHead>Scale Degree</td></tr>
+       <tr><td class=fieldHolder valign=top>
+             <div class=menuHolderDiv>
+               <input type=hidden id='hprFldMoleResult{$idsuffix}Value'>
+               <input type=text id='hprFldMoleResult{$idsuffix}' READONLY style="width: 12.5vw;">
+               <div class=valueDropDown id=moleResultDropDown style="min-width: 12.5vw;"> </div>
+             </div>
+            </td>
+            <td class=fieldHolder valign=top>
+              <input type=text id=hprFldMoleScale{$idsuffix} style="width: 12.5vw;">
+            </td>
+       </tr>
+       <tr><td colspan=3 valign=top>
+           <input type=hidden id=hprMolecularTestJsonHolderConfirm{$idsuffix}>
+           <div id=dspDefinedMolecularTestsConfirm{$idsuffix} class=dspDefinedMoleTests>
+           </div>
+           </td>
+       </tr>
+      </table>
+MOLETBL;
+//MOLETBL END
+//onchange="readFilesChosen(this);" ///THIS IS FROM bonanzaboys.com
     $workBench = <<<WORKBENCH
 <div class=dspWBDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td><center>Work Bench</td></tr></table></div>
 <table border=0>
   <tr><td valign=top>{$desig}</td></tr>
-  <tr><td>PERCENTAGE</td></tr>
-  <tr><td>FURTHER ACTIONS</td></tr>
-  <tr><td>MOLECULAR</td></tr>
-  <tr><td>COMMENTS</td></tr>
-  <tr><td>FILE UPLOADS</td></tr>
-  <tr><td>BTNS</td></tr>
+  <tr><td><table><tr><td>Technican Accuracy</td><td><div class=menuHolderDiv><input type=hidden id=fldTechAccValue value="{$techAccDefaultCode}"><input type=text id=fldTechAcc READONLY class="inputFld" style="width: 25vw;" value="{$techAccDefault}"><div class=valueDropDown style="min-width: 20vw;">{$techAcc}</div></div></td></tr></table></td></tr>
+  <tr><td> {$prcTbl}  </td></tr>
+  <tr><td> <table><tr><td valign=top> {$faTbl} </td><td valign=top> {$moleTbl} </td></tr></table>  </td></tr>
+  <tr><td><table><tr><td class=hprPreLimFldLbl>Rare Reason</td><td class=hprPreLimFldLbl>Special Instructions to Staff</td></tr><tr><td><textarea></textarea></td><td><textarea></textarea></td></tr></table></td></tr>
+  <tr><td>
+     <div class="upload-btn-wrapper">
+       <button class="btn">Upload Supporting Files</button>
+       <input type="file" name="myfile" name="photos[]" id=zckPicSelector accept="image/jpeg, image/png" multiple  />
+     </div> 
+  </td></tr>
+  <tr><td align=right> SAVE | CANCEL     </td></tr>
 </table>
 
 WORKBENCH;
@@ -1779,6 +1879,7 @@ function buildHPRTechnicianSide ( $rqsturi ) {
     $segbg = explode("::",cryptservice( $rurl[3], 'd', false));
     $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $segbg[0],serverIdent, serverpw), true);    
     $sg = $segData['DATA'][0];
+    $segConstitList = json_decode( callrestapi("GET", dataTree. "/hpr-get-constit-list/" . $segbg[0],serverIdent, serverpw), true );
 
     $dtaAge = strtolower(trim("{$sg['phiage']} {$sg['phiageuom']}"));
     $dtaRace = ucwords(trim($sg['phirace']));
@@ -1816,25 +1917,64 @@ function buildHPRTechnicianSide ( $rqsturi ) {
     $dtaProcDte = trim($sg['dspprocurementdate']);
     $tohpr = trim($sg['tohprby']);
     $tohpr .= ( trim($sg['tohpron']) !== "" ) ? " :: {$sg['tohpron']}" : "";
-
-    //$oselector = cryptservice( $rs['prid'], "e");      
     if ( trim($sg['prprid']) !== "" ) { 
       $selector = cryptservice("PR-" . $sg['prprid'] .  "-" . $sg['prrecordselector'], "e");         
       $oselector = cryptservice( $sg['prprid'], "e");      
       $pBtnTbl = "<table><tr><td class=prntIcon onclick=\"generateDialog('hprprviewer','{$selector}');\"><i class=\"material-icons\">pageview</i></td><td onclick=\"openOutSidePage('{$tt}/print-obj/pathology-report/{$oselector}');\" class=prntIcon><i class=\"material-icons\">print</i></td></tr></table>";
     } else { 
-      $pBtnTbl = "<table><tr><td class=prntIcon><i class=\"material-icons\">arrow_drop_down</i></td></tr></table>"; 
+      $pBtnTbl = "<table><tr><td class=prntIcon><i class=\"material-icons\">crop_square</i></td></tr></table>"; 
     }
-    $thisBtn = "<table><tr><td class=prntIcon><i class=\"material-icons\">arrow_drop_down</i></td></tr></table>"; 
+    $thisBtn = "<table><tr><td class=prntIcon><i class=\"material-icons\">crop_square</i></td></tr></table>";
+
+    //CONSTITUENT TABLE
+    $constitAmt = $segConstitList['ITEMSFOUND'];
+    $constitTbl = "<table border=1><tr><td colspan=25>Constituent Segments Found: {$constitAmt}</td></tr>";
+    foreach ( $segConstitList['DATA'] as $ckey => $cval ) {
+      $bgs = trim(strtoupper( preg_replace( '/_/','',  $cval['bgs'])   ));   
+      $segdate = ( trim( $cval['segstatusdate'] ) !== "" ) ? "({$cval['segstatusdate']})" : "";
+      $assigned = $cval['investname']; 
+        $assigned .= ( trim( $cval['assignedtocode'] ) !== "" ) ? " ({$cval['assignedtocode']})" : "";
+        //$assigned .= ( trim( $cval['assignedtoreq'] ) !== "" ) ? " / {$cval['assignedtoreq']}" : "";
+      $assigned = strtoupper($assigned);
+
+      $invstPop = "";
+      if ( $cval['assignedtocode'] !== "BANK" ) { 
+          $invstPop = "<div class=popUpInfo><table><tr><td> {$cval['investfullname']} </td></tr><tr><td>Request: {$cval['assignedtoreq']}</td></tr><tr><td>Institution: {$cval['hinstitute']}</td></tr><tr><td>Division: {$cval['investdivision']}</table></div>"; 
+      }
+      $shipdoc = "";
+      $shipPop = "";
+      if ( trim($cval['shipdocrefid']) !== "" ) {
+        $shipdoc = substr('000000' . $cval['shipdocrefid'],-6);
+        $shipPop = "<div class=popUpInfo><table><tr><td>Ship Date: {$cval['shippeddate']} </td></tr></table>";
+      }     
+      $hprs = ( (int)$cval['tohpr'] === 1 ) ? "H" : ""; 
+      $hprcomp = ( (int)$cval['hprslideread'] === 1 ) ? "H" : "";
+ 
+      $constitTbl .= <<<TBLROW
+<tr>
+  <td>{$hprs}</td>
+  <td>{$hprcomp}</td>
+  <td>{$bgs}</td>
+  <td><div class=constitInfoHolder> <div class=primaryInfo>{$cval['segstatus']}</div> <div class=popUpInfo>Status Date: {$segdate}</div> </div></td>
+  <td><div class=constitInfoHolder> <div class=primaryInfo>{$cval['prepmethod']}</div> <div class=popUpInfo>{$cval['preparation']}</div> </div> </td>
+  <td>{$cval['metricdsp']}</td>
+  <td><div class=constitInfoHolder> <div class=primaryInfo>{$assigned} </div>{$invstPop} </div></td>
+  <td><div class=constitInfoHolder> <div class=primaryInfo>{$shipdoc} </div>{$shipPop} </div></td>
+</tr>
+TBLROW;
+    } 
+    $constitTbl .= "</table>";
+    //END CONSTITUENT TABLE
+
+
     $docSide = <<<DOCSIDE
 <div id=dspTabContent0 class=HPRReviewDocument style="display: block;" >
   <div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Pathology Report for {$sg['biosamplelabel']}</td><td align=right>{$pBtnTbl}</td></tr></table></div><div id=dspPathologyRptTxt>{$sg['pathologyreporttext']}<p></div></div>
 <div id=dspTabContent1 class=HPRReviewDocument>
-  <div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Constituent Segments of {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspConstituentst> --- </div></div></div>
-  <div id=dspTabContent2 class=HPRReviewDocument><div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Previous Reviews of {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspConstituentst> --- </div></div></div>
-<div id=dspTabContent3 class=HPRReviewDocument> 
-  <div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Images &amp; Other File for {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspConstituentst> --- </div></div> </div>            
-<div id=dspTabContent4 class=HPRReviewDocument> <!-- VIRTUAL SLIDE //-->   </div>
+  <div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Constituent Segments of {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspConstituentst> {$constitTbl} </div></div></div>
+  <div id=dspTabContent2 class=HPRReviewDocument><div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Previous Reviews of {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspprevrvw> </div></div></div>
+<div id=dspTabContent3 class=HPRReviewDocument><div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Images &amp; Other File for {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspFilesImg>THERE ARE NO FILES OR IMAGES PERTAINING TO THIS BIOGROUP AT THIS TIME. </div></div> </div>            
+<div id=dspTabContent4 class=HPRReviewDocument>THERE ARE NO VIRTUAL SLIDES AT THIS TIME <!-- VIRTUAL SLIDE //-->   </div>
 DOCSIDE;
 
 $procMetrics = <<<PROCMETRICS
@@ -2790,6 +2930,25 @@ RTNTHIS;
 
 return $rtnThis;
 
+}
+
+function bldHPRVocabBrowser ( $dialogid, $objectid ) { 
+
+
+$pg = <<<PAGECONTENT
+<style>
+
+</style>
+<table border=1>
+<tr><td colspan=2>INSTRUCTIONS: </td></tr>
+<tr><td>Vocabulary Term</td><td align=right><input type=checkbox id=srchIncludeSub><label for=srchIncludeSub>Include Sub-Sites</label></td></tr>
+<tr><td colspan=2><input type=text id=srchHPRVocab onkeyup="browseHPRVocabulary(this.value, byId('srchIncludeSub').checked);"></td></tr>
+<tr><td colspan=2><div id=vocabBrowserDsp></div></td></tr>
+<tr><td colspan=2 align=right>Close</td></tr>
+</table>
+
+PAGECONTENT;
+return $pg;
 }
 
 function bldHPRPRBigViewer( $dialogid, $objectid ) { 

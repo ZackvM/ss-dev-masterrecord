@@ -37,6 +37,29 @@ function __construct() {
 }
 
 class datadoers {
+ 
+    function hprvocabbrowser ( $request, $passdata ) { 
+      //SEE function searchvocabularyterms and searchVocabByTerm
+      $responseCode = 400; 
+      $errorInd = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $dta = array();
+      $msgArr = array();
+      $pdta = json_decode($passdata,true);
+      ( !array_key_exists('srchterm', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'srchterm' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('includess', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'includess' is missing.  Fatal Error")) : "";
+      if ( $errorInd === 0 ) { 
+         $prepareSrchTerm = ('%' . preg_replace('/\s/','%',  preg_replace( '/\s{2,}/',' ',     trim($pdta['srchterm'])  )) .'%');
+
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode;   
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    } 
+
 
    function hprworkbenchsidepanel($request, $passdata) {  
       $responseCode = 400; 
@@ -1873,7 +1896,12 @@ MBODY;
            case 'hprprviewer': 
              $left = '10vw';
              $top = '12vh';
-             break;                 
+             break;
+           case 'hprDesignationSpecifier':
+             $primeFocus = "srchHPRVocab";  
+             $left = '10vw';
+             $top = '12vh';
+             break;
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);

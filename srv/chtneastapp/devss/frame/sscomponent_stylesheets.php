@@ -1143,7 +1143,39 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .sideDesigBtns:hover { cursor: pointer; background: rgba({$this->color_lightgrey},1); }
 
 #decisionSqr { width: 5vw; border: 1px solid rgba({$this->color_dblue},1); }
- 
+
+
+.primaryInfo { } 
+.constitInfoHolder { position: relative; }
+.constitInfoHolder:hover .popUpInfo { cursor: pointer; display: block; }
+.popUpInfo { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; }
+
+.prcFld { width: 3vw; }
+.dspDefinedMoleTests { border: 1px solid rgba(160,160,160,1); width: 25.2vw; height: 8vh; overflow: auto;   padding: 4px; box-sizing: border-box; }
+
+.upload-btn-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.btn {
+  border: 2px solid gray;
+  color: gray;
+  background-color: white;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.upload-btn-wrapper input[type=file] {
+  font-size: 100px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+}
 
 STYLESHEET;
 return $rtnThis;
