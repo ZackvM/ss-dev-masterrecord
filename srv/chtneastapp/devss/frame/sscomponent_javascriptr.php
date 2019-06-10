@@ -4082,7 +4082,7 @@ function answerHPRTriggerMolecularFill(rtnData) {
    if (parseInt(rtnData['responseCode']) !== 200) {             
    } else {    
      var dta = JSON.parse(rtnData['responseText']);
-     var resultTbl = "<table border=0 style=\"min-width: 12.5vw;\">";
+     var resultTbl = "<table border=0 class=\"menuDropTbl hprNewDropDownFont\">";
      resultTbl += "<tr><td onclick=\"fillField('hprFldMoleResult','','');\" align=right class=ddMenuClearOption>[clear]</td></tr>";            
      dta['DATA'].forEach(function(element) { 
        //element['menuvalue']      
@@ -4141,18 +4141,63 @@ function manageMoleTest(addIndicator, referencenumber, fldsuffix) {
   }
 }
 
-function loadDesignation() {
-  //alert(byId('HPRWBTbl').dataset.ospecimencategory);
- generateDialog( 'hprDesignationSpecifier', 'xx' );
+function loadDXOverride() { 
+   generateDialog( 'hprDXOverride', 'xx' );
 }
 
-function browseHPRVocabulary ( srchvalue, includesubind ) {
+function loadDesignation() {
+   generateDialog( 'hprDesignationSpecifier', 'xx' );
+}
+
+function loadMETSBrowser() { 
+  if ( byId('HPRWBTbl').dataset.specimencategory.toUpperCase().trim() !== "MALIGNANT") { 
+    alert('Metastatic sites can only be specified for malignant biosamples');
+  } else { 
+    generateDialog( 'hprMetastaticSiteBrowser', 'xx');
+  }
+}
+
+function loadSystemicBrowser() {
+   generateDialog( 'hprSystemicListBrowser', 'xx' );
+}
+
+function browseHPRDxOverride ( srchvalue, dialogid ) { 
+
+  if ( srchvalue.length > 3 ) { 
+    var obj = new Object();
+    obj['srchterm'] = srchvalue;
+    obj['dialogid'] = dialogid;
+    var passdta = JSON.stringify(obj);
+    var mlURL = "/data-doers/hpr-vocab-browser-dx-override";
+    universalAJAX("POST",mlURL,passdta,answerHPRVocabBrowserDXOverride,2);
+  } 
+  if ( srchvalue.length < 4 ) { 
+    byId('vocabBrowserDsp').innerHTML = "";
+  }
+
+}
+
+function answerHPRVocabBrowserDXOverride( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     var voctbl = JSON.parse( rtnData['responseText'] );
+     byId('vocabBrowserDsp').innerHTML = voctbl['DATA'];  
+   }
+}
+
+function browseHPRVocabulary ( srchvalue, includesubind, dialogid ) {
   if ( srchvalue.length > 3 ) { 
     var obj = new Object();
     obj['srchterm'] = srchvalue;
     obj['includess'] = includesubind;
+    obj['dialogid'] = dialogid;
     var passdta = JSON.stringify(obj);
-    console.log( passdta );
     var mlURL = "/data-doers/hpr-vocab-browser";
     universalAJAX("POST",mlURL,passdta,answerHPRVocabBrowser,2);
   } 
@@ -4162,7 +4207,6 @@ function browseHPRVocabulary ( srchvalue, includesubind ) {
 } 
 
 function answerHPRVocabBrowser ( rtnData ) {
-  console.log ( rtnData ); 
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
     var dspMsg = ""; 
@@ -4171,11 +4215,237 @@ function answerHPRVocabBrowser ( rtnData ) {
     });
     alert("ERROR:\\n"+dspMsg);
    } else {
-     //var diddta = JSON.parse( rtnData['responseText'] ); 
-     console.log ( rtnData );
+     var voctbl = JSON.parse( rtnData['responseText'] );
+     byId('vocabBrowserDsp').innerHTML = voctbl['DATA'];  
    }
 }
 
+function makeHPRDXOverride ( dialogid, diagnosis, dmodifier ) { 
+  var decision = 'CONFIRM';
+  decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() === "" && byId('HPRWBTbl').dataset.specimencategory.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+  decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && byId('HPRWBTbl').dataset.specimencategory.trim() === "" ) ? "DENIED" : decision; 
+  decision = ( (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && byId('HPRWBTbl').dataset.specimencategory.trim() !== "") && (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== byId('HPRWBTbl').dataset.specimencategory.trim())) ? "DENIED" : decision;
+  if ( decision !== "DENIED") { 
+    //CHECK SITE  
+    decision = ( byId('HPRWBTbl').dataset.osite.trim() === "" && byId('HPRWBTbl').dataset.site.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.osite.trim() !== "" && byId('HPRWBTbl').dataset.site.trim() === "" ) ? "DENIED" : decision; 
+    decision = ((byId('HPRWBTbl').dataset.osite.trim() !== "" && byId('HPRWBTbl').dataset.site.trim() !== "") && (byId('HPRWBTbl').dataset.osite.trim() !== byId('HPRWBTbl').dataset.site.trim())) ? "DENIED" : decision; 
+  }
+  if ( decision !== "DENIED") { 
+    //CHECK SUB-SITE  
+    decision = ( byId('HPRWBTbl').dataset.ossite.trim() === "" && byId('HPRWBTbl').dataset.ssite.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.ossite.trim() !== "" && byId('HPRWBTbl').dataset.ssite.trim() === "" ) ? "DENIED" : decision; 
+    decision = ((byId('HPRWBTbl').dataset.ossite.trim() !== "" && byId('HPRWBTbl').dataset.ssite.trim() !== "") && (byId('HPRWBTbl').dataset.ossite.trim() !== byId('HPRWBTbl').dataset.ssite.trim())) ? "DENIED" : decision; 
+  }
+  if ( decision !== "DENIED") { 
+    //CHECK DX 
+    decision = ( byId('HPRWBTbl').dataset.odx.trim() === "" && diagnosis.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() === "" ) ? "DENIED" : decision; 
+    decision = ((byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() !== "") && (byId('HPRWBTbl').dataset.odx.trim() !== diagnosis.trim())) ? "DENIED" : decision; 
+  }
+  if ( decision !== "DENIED") { 
+    //CHECK DXM 
+    decision = ( byId('HPRWBTbl').dataset.odxm.trim() === "" && dmodifier.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() === "" ) ? "DENIED" : decision; 
+    decision = ((byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() !== "") && (byId('HPRWBTbl').dataset.odxm.trim() !== dmodifier.trim())) ? "DENIED" : decision; 
+  }
+  byId('decisionSqr').dataset.hprdecision = decision;
+
+  switch ( decision ) { 
+    case 'CONFIRM':
+       byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionconfirm\">thumb_up</i>";
+     break;
+     case 'CONFIRM-ADD':
+       byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionadd\">note_add</i>";
+     break;
+     case 'DENIED':
+       byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisiondenied\">thumb_down</i>";
+     break;
+  }
+
+  byId('HPRWBTbl').dataset.dx = diagnosis.trim(); 
+  byId('HPRWBTbl').dataset.dxm = dmodifier.trim(); 
+  var dspDesig = byId('HPRWBTbl').dataset.specimencategory.trim();
+  dspDesig += " " + byId('HPRWBTbl').dataset.site.trim(); 
+  dspDesig += ( byId('HPRWBTbl').dataset.ssite.trim() !== "" ) ? " (" + byId('HPRWBTbl').dataset.ssite.trim() + ")" : "";
+  dspDesig += ( diagnosis.trim() !== "" ) ? " / " + diagnosis.trim() : "";
+  dspDesig += ( dmodifier.trim() !== "" ) ? " [" + dmodifier.trim() + "]" : "";
+  byId('dspHPRDesignation').innerHTML = dspDesig.trim();
+  closeThisDialog ( dialogid );
+}
+
+function makeHPRDesignation( dialogid, spcat, site, subsite, diagnosis, dmodifier ) { 
+  var decision = 'CONFIRM';
+  decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() === "" && spcat.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+  decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && spcat.trim() === "" ) ? "DENIED" : decision; 
+  decision = ( (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && spcat.trim() !== "") && (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== spcat.trim())) ? "DENIED" : decision; 
+  if ( spcat.toUpperCase().trim() !== "MALIGNANT" ) {
+    //MAKE SURE METASTATIC IS NOT FILLED IN
+    if ( byId('HPRWBTbl').dataset.omets.trim() === "" ) {
+      byId('HPRWBTbl').dataset.mets = "";
+      byId('dspHPRMetsFrom').innerHTML = ""; 
+    } else { 
+      byId('HPRWBTbl').dataset.mets = "";
+      byId('dspHPRMetsFrom').innerHTML = ""; 
+      decision = "DENIED";
+    }
+  }
+  if ( decision !== "DENIED") { 
+    //CHECK SITE  
+    decision = ( byId('HPRWBTbl').dataset.osite.trim() === "" && site.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.osite.trim() !== "" && site.trim() === "" ) ? "DENIED" : decision; 
+    decision = ((byId('HPRWBTbl').dataset.osite.trim() !== "" && site.trim() !== "") && (byId('HPRWBTbl').dataset.osite.trim() !== site.trim())) ? "DENIED" : decision; 
+  }
+  if ( decision !== "DENIED") { 
+    //CHECK SUB-SITE  
+    decision = ( byId('HPRWBTbl').dataset.ossite.trim() === "" && subsite.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.ossite.trim() !== "" && subsite.trim() === "" ) ? "DENIED" : decision; 
+    decision = ((byId('HPRWBTbl').dataset.ossite.trim() !== "" && subsite.trim() !== "") && (byId('HPRWBTbl').dataset.ossite.trim() !== subsite.trim())) ? "DENIED" : decision; 
+  }
+  if ( decision !== "DENIED") { 
+    //CHECK DX 
+    decision = ( byId('HPRWBTbl').dataset.odx.trim() === "" && diagnosis.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() === "" ) ? "DENIED" : decision; 
+    decision = ((byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() !== "") && (byId('HPRWBTbl').dataset.odx.trim() !== diagnosis.trim())) ? "DENIED" : decision; 
+  }
+  if ( decision !== "DENIED") { 
+    //CHECK DXM 
+    decision = ( byId('HPRWBTbl').dataset.odxm.trim() === "" && dmodifier.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() === "" ) ? "DENIED" : decision; 
+    decision = ((byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() !== "") && (byId('HPRWBTbl').dataset.odxm.trim() !== dmodifier.trim())) ? "DENIED" : decision; 
+  }
+  byId('decisionSqr').dataset.hprdecision = decision;
+
+  switch ( decision ) { 
+    case 'CONFIRM':
+       byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionconfirm\">thumb_up</i>";
+     break;
+     case 'CONFIRM-ADD':
+       byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionadd\">note_add</i>";
+     break;
+     case 'DENIED':
+       byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisiondenied\">thumb_down</i>";
+     break;
+  }
+
+  byId('HPRWBTbl').dataset.specimencategory = spcat.trim(); 
+  byId('HPRWBTbl').dataset.site = site.trim(); 
+  byId('HPRWBTbl').dataset.ssite = subsite.trim(); 
+  byId('HPRWBTbl').dataset.dx = diagnosis.trim(); 
+  byId('HPRWBTbl').dataset.dxm = dmodifier.trim(); 
+  var dspDesig = spcat.trim();
+  dspDesig += " " + site.trim(); 
+  dspDesig += ( subsite.trim() !== "" ) ? " (" + subsite.trim() + ")" : "";
+  dspDesig += ( diagnosis.trim() !== "" ) ? " / " + diagnosis.trim() : "";
+  dspDesig += ( dmodifier.trim() !== "" ) ? " [" + dmodifier.trim() + "]" : "";
+  byId('dspHPRDesignation').innerHTML = dspDesig.trim();
+  closeThisDialog ( dialogid );
+}
+
+function makeHPRMetsFrom( dialogid, metssite, metsssite ) { 
+  var decision = byId('decisionSqr').dataset.hprdecision;
+  if ( byId('decisionSqr').dataset.hprdecision === 'DENIED' ) {
+  } else { 
+    decision = ( byId('HPRWBTbl').dataset.omets.trim() === "" && metssite.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.omets.trim() !== "" && metssite.trim() === "" ) ? "DENIED" : decision; 
+    decision = ((byId('HPRWBTbl').dataset.omets.trim() !== "" && metssite.trim() !== "") && (byId('HPRWBTbl').dataset.omets.trim() !== metssite.trim())) ? "DENIED" : decision;  
+  }
+  byId('decisionSqr').dataset.hprdecision = decision;
+
+  switch ( decision ) { 
+    case 'CONFIRM':
+       byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionconfirm\">thumb_up</i>";
+     break;
+     case 'CONFIRM-ADD':
+       byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionadd\">note_add</i>";
+     break;
+     case 'DENIED':
+       byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisiondenied\">thumb_down</i>";
+     break;
+  }
+  byId('HPRWBTbl').dataset.mets = metssite.trim(); 
+  byId('dspHPRMetsFrom').innerHTML = metssite.trim();
+  closeThisDialog ( dialogid );
+}
+
+function makeHPRSystemic ( dialogid, systemdesig ) { 
+  byId('HPRWBTbl').dataset.sysm = systemdesig;
+  byId('dspHPRSystemic').innerHTML = systemdesig.trim();
+  closeThisDialog ( dialogid );
+}
+
+function resetDesig() {
+  byId('HPRWBTbl').dataset.specimencategory = byId('HPRWBTbl').dataset.ospecimencategory; 
+  byId('HPRWBTbl').dataset.site = byId('HPRWBTbl').dataset.osite; 
+  byId('HPRWBTbl').dataset.ssite = byId('HPRWBTbl').dataset.ossite; 
+  byId('HPRWBTbl').dataset.dx = byId('HPRWBTbl').dataset.odx; 
+  byId('HPRWBTbl').dataset.dxm = byId('HPRWBTbl').dataset.odxm; 
+  var dspDesig = byId('HPRWBTbl').dataset.ospecimencategory;
+  dspDesig += " " + byId('HPRWBTbl').dataset.osite; 
+  dspDesig += ( byId('HPRWBTbl').dataset.ossite.trim() !== "" ) ? " (" + byId('HPRWBTbl').dataset.ossite.trim() + ")" : "";
+  dspDesig += ( byId('HPRWBTbl').dataset.odx.trim() !== "" ) ? " / " + byId('HPRWBTbl').dataset.odx.trim() : "";
+  dspDesig += ( byId('HPRWBTbl').dataset.odxm.trim() !== "" ) ? " [" + byId('HPRWBTbl').dataset.odxm.trim() + "]" : "";
+  byId('dspHPRDesignation').innerHTML = dspDesig.trim(); 
+  byId('HPRWBTbl').dataset.mets = byId('HPRWBTbl').dataset.omets;
+  byId('dspHPRMetsFrom').innerHTML = byId('HPRWBTbl').dataset.mets;
+  byId('HPRWBTbl').dataset.sysm = byId('HPRWBTbl').dataset.osysm;
+  byId('dspHPRSystemic').innerHTML = byId('HPRWBTbl').dataset.sysm;
+  byId('decisionSqr').dataset.hprdecision = "CONFIRM";
+  byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionconfirm\">thumb_up</i>";
+}
+
+function blankDesig( whichdesig ) { 
+  switch ( whichdesig ) { 
+    case 'dspHPRMetsFrom':
+      byId('HPRWBTbl').dataset.mets = "";
+      byId('dspHPRMetsFrom').innerHTML = byId('HPRWBTbl').dataset.mets;
+      var decision = 'CONFIRM';
+      decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() === "" && byId('HPRWBTbl').dataset.specimencategory.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+      decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && byId('HPRWBTbl').dataset.specimencategory.trim() === "" ) ? "DENIED" : decision; 
+      decision = ( (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && byId('HPRWBTbl').dataset.specimencategory.trim() !== "") && (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== byId('HPRWBTbl').dataset.specimencategory.trim())) ? "DENIED" : decision;
+      if ( decision !== "DENIED") { 
+        //CHECK SITE  
+        decision = ( byId('HPRWBTbl').dataset.osite.trim() === "" && byId('HPRWBTbl').dataset.site.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+        decision = ( byId('HPRWBTbl').dataset.osite.trim() !== "" && byId('HPRWBTbl').dataset.site.trim() === "" ) ? "DENIED" : decision; 
+        decision = ((byId('HPRWBTbl').dataset.osite.trim() !== "" && byId('HPRWBTbl').dataset.site.trim() !== "") && (byId('HPRWBTbl').dataset.osite.trim() !== byId('HPRWBTbl').dataset.site.trim())) ? "DENIED" : decision; 
+      }
+      if ( decision !== "DENIED") { 
+        //CHECK SUB-SITE  
+        decision = ( byId('HPRWBTbl').dataset.ossite.trim() === "" && byId('HPRWBTbl').dataset.ssite.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+        decision = ( byId('HPRWBTbl').dataset.ossite.trim() !== "" && byId('HPRWBTbl').dataset.ssite.trim() === "" ) ? "DENIED" : decision; 
+        decision = ((byId('HPRWBTbl').dataset.ossite.trim() !== "" && byId('HPRWBTbl').dataset.ssite.trim() !== "") && (byId('HPRWBTbl').dataset.ossite.trim() !== byId('HPRWBTbl').dataset.ssite.trim())) ? "DENIED" : decision; 
+      }
+      if ( decision !== "DENIED") { 
+        //CHECK DX 
+        decision = ( byId('HPRWBTbl').dataset.odx.trim() === "" && diagnosis.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+        decision = ( byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() === "" ) ? "DENIED" : decision; 
+        decision = ((byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() !== "") && (byId('HPRWBTbl').dataset.odx.trim() !== diagnosis.trim())) ? "DENIED" : decision; 
+      }
+      if ( decision !== "DENIED") { 
+        //CHECK DXM 
+        decision = ( byId('HPRWBTbl').dataset.odxm.trim() === "" && dmodifier.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+        decision = ( byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() === "" ) ? "DENIED" : decision; 
+        decision = ((byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() !== "") && (byId('HPRWBTbl').dataset.odxm.trim() !== dmodifier.trim())) ? "DENIED" : decision; 
+      }
+      byId('decisionSqr').dataset.hprdecision = decision;
+      switch ( decision ) { 
+        case 'CONFIRM':
+          byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionconfirm\">thumb_up</i>";
+          break;
+        case 'CONFIRM-ADD':
+          byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionadd\">note_add</i>";
+          break;
+        case 'DENIED':
+          byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisiondenied\">thumb_down</i>";
+          break;
+      }
+      break;
+    case 'dspHPRSystemic': 
+      byId('HPRWBTbl').dataset.sysm = "";
+      byId('dspHPRSystemic').innerHTML = byId('HPRWBTbl').dataset.sysm;
+      break;
+  }
+}
            
 JAVASCR;
 

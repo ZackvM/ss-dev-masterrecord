@@ -2,7 +2,7 @@
 
 //$randomBytes = bin2hex(random_bytes(8));
 //$randomBytes = '';
-$randomBytes = "CHTNEast";
+$randomBytes = "CHTNEast123";
 $options = [
     'cost' => 12,
 ];

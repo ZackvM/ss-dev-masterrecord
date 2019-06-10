@@ -37,7 +37,50 @@ function __construct() {
 }
 
 class datadoers {
- 
+
+    function hprvocabbrowserdxoverride ( $request, $passdata ) { 
+      //SEE function searchvocabularyterms and searchVocabByTerm
+      $responseCode = 400; 
+      $errorInd = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $dta = array();
+      $msgArr = array();
+      $pdta = json_decode($passdata,true);
+      require(serverkeys . "/sspdo.zck");
+
+      ( !array_key_exists('srchterm', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'srchterm' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('dialogid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'dialogid' is missing.  Fatal Error")) : "";
+      ( trim($pdta['srchterm']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Search Term cannot be blank")) : "";
+      ( trim($pdta['dialogid']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Dialog ID cannot be blank")) : "";
+
+      if ( $errorInd === 0 ) { 
+         $prepareSrchTerm = ('%' . preg_replace('/\s/','%', preg_replace('/\s{2,}/',' ', trim($pdta['srchterm']))) . '%');
+         $lookupSQL = "SELECT distinct diagnosis FROM four.sys_master_menu_vocabulary where ifnull(diagnosis,'') <> ''  and ifnull(diagnosis,'') like :srchterm  order by diagnosis";
+         $vocabRS = $conn->prepare($lookupSQL); 
+         $vocabRS->execute(array(':srchterm' => $prepareSrchTerm));
+         $itemsfound = $vocabRS->rowCount(); 
+         if ( $itemsfound > 0 ) { 
+           //BUILD TABLE
+             $dta = "<table><tr><td>Vocabulary Terms Found: {$itemsfound}</td></tr></table><table border=0 id=hprVocabResultTbl cellspacing=0 cellpadding=0><thead><tr><th>Diagnosis</th><th>Diagnosis Modifier</th></tr></thead></tbody>";
+             while ($r = $vocabRS->fetch(PDO::FETCH_ASSOC)) {
+               $dx = explode(" \ ",$r['diagnosis']);
+               $dta .= "<tr ondblclick=\"makeHPRDXOverride('{$pdta['dialogid']}','{$dx[0]}','{$dx[1]}');\"><td>{$dx[0]}</td><td>{$dx[1]}</td></tr>";             
+             }
+             $dta .= "</tbody></table>";
+         } else { 
+           $dta = "<table border=0><tr><td style=\"font-size: 1.5vh; font-weight: bold; padding: 1vh 1vw;\">No vocabulary terms match your search request ('{$pdta['srchterm']}' '{$prepareSrchTerm}')</td></tr></table"; 
+         }
+         $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode;   
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+
+
     function hprvocabbrowser ( $request, $passdata ) { 
       //SEE function searchvocabularyterms and searchVocabByTerm
       $responseCode = 400; 
@@ -47,12 +90,45 @@ class datadoers {
       $dta = array();
       $msgArr = array();
       $pdta = json_decode($passdata,true);
+      require(serverkeys . "/sspdo.zck");
+
       ( !array_key_exists('srchterm', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'srchterm' is missing.  Fatal Error")) : "";
       ( !array_key_exists('includess', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'includess' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('dialogid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'dialogid' is missing.  Fatal Error")) : "";
+      ( trim($pdta['srchterm']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Search Term cannot be blank")) : "";
+      ( trim($pdta['dialogid']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Dialog ID cannot be blank")) : "";
+      //( is_bool($pdta['includess']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Sub-Site Include Must Be Boolean")) : "";
       if ( $errorInd === 0 ) { 
-         $prepareSrchTerm = ('%' . preg_replace('/\s/','%',  preg_replace( '/\s{2,}/',' ',     trim($pdta['srchterm'])  )) .'%');
-
-        $responseCode = 200;
+         $prepareSrchTerm = ('%' . preg_replace('/\s/','%', preg_replace('/\s{2,}/',' ', trim($pdta['srchterm']))) . '%');
+         if ( !$pdta['includess'] ) {
+         $lookupSQL = "SELECT distinct ifnull(specimenCategory,'') as specimencategory, ifnull(site,'') as site, ifnull(diagnosis,'') as diagnosis FROM four.sys_master_menu_vocabulary where 1=1 and concat(ifnull(specimenCategory,''),'::',ifnull(site,''),'::', ifnull(Diagnosis,'')) like :searchterm and trim(ifnull(specimencategory,'')) <> '' order by specimencategory, site, diagnosis";
+         } else { 
+         $lookupSQL = "SELECT distinct ifnull(specimenCategory,'') as specimencategory, ifnull(site,'') as site, if ( ifnull(subsite,'') = 'NONE','', ifnull(subsite,''))    as subsite,  ifnull(diagnosis,'') as diagnosis FROM four.sys_master_menu_vocabulary where 1=1 and concat(ifnull(specimenCategory,''),'::',ifnull(site,''),'::', ifnull(Diagnosis,'')) like :searchterm and trim(ifnull(specimencategory,'')) <> '' order by specimencategory, site, diagnosis";
+         }
+         $vocabRS = $conn->prepare($lookupSQL); 
+         $vocabRS->execute(array(':searchterm' => $prepareSrchTerm));
+         $itemsfound = $vocabRS->rowCount(); 
+         if ( $itemsfound > 0 ) { 
+             //BUILD TABLE
+           $dta = "<table><tr><td>Vocabulary Terms Found: {$itemsfound} </td></tr></table>";
+           if ( !$pdta['includess'] ) { 
+             $dta .= "<table border=0 id=hprVocabResultTbl cellspacing=0 cellpadding=0><thead><tr><th>Specimen Category</th><th>Site</th><th>Diagnosis</th><th>Diagnosis Modifier</th></tr></thead><tbody>";
+             while ($r = $vocabRS->fetch(PDO::FETCH_ASSOC)) {
+               $dx = explode(" \ ",$r['diagnosis']);
+               $dta .= "<tr ondblclick=\"makeHPRDesignation('{$pdta['dialogid']}','{$r['specimencategory']}','{$r['site']}','','{$dx[0]}','{$dx[1]}');\"><td>{$r['specimencategory']}</td><td>{$r['site']}</td><td>{$dx[0]}</td><td>{$dx[1]}</td></tr>";             
+             }
+           } else {
+             $dta .= "<table border=0 id=hprVocabResultTbl><thead><tr><th>Specimen Category</th><th>Site</th><th>Sub-Site</th><th>Diagnosis</th><th>Diagnosis Modifier</th></tr></thead></tbody>";
+             while ($r = $vocabRS->fetch(PDO::FETCH_ASSOC)) {
+               $dx = explode(" \ ",$r['diagnosis']);
+               $dta .= "<tr ondblclick=\"makeHPRDesignation('{$pdta['dialogid']}','{$r['specimencategory']}','{$r['site']}','{$r['subsite']}','{$dx[0]}','{$dx[1]}');\"><td>{$r['specimencategory']}</td><td>{$r['site']}</td><td>{$r['subsite']}</td><td>{$dx[0]}</td><td>{$dx[1]}</td></tr>";             
+             }
+           }
+           $dta .= "</tbody></table>";
+         } else { 
+           $dta = "<table border=0><tr><td style=\"font-size: 1.5vh; font-weight: bold; padding: 1vh 1vw;\">No vocabulary terms match your search request ('{$pdta['srchterm']}' '{$prepareSrchTerm}')</td></tr></table"; 
+         }
+         $responseCode = 200;
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode;   
@@ -1901,6 +1977,21 @@ MBODY;
              $primeFocus = "srchHPRVocab";  
              $left = '10vw';
              $top = '12vh';
+             break;
+           case 'hprDXOverride':
+             $primeFocus = "srchHPRVocab";  
+             $left = '20vw';
+             $top = '20vh';
+             break;
+           case 'hprMetastaticSiteBrowser':
+             //$primeFocus = "srchHPRVocab";  
+             $left = '30vw';
+             $top = '15vh';
+             break;
+           case 'hprSystemicListBrowser':
+             //$primeFocus = "srchHPRVocab";  
+             $left = '30vw';
+             $top = '15vh';
              break;
          }
 

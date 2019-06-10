@@ -15,9 +15,34 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'hprSystemicListBrowser':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Vocabulary Browser - Systemic/Co-Mobid List";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPRVocabSystemic ( $pdta['dialogid'], $pdta['objid'] );
+        //$footerBar = "SEGMENT ADD";       
+        break;        
+      case 'hprMetastaticSiteBrowser':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Vocabulary Browser - METS FROM Site List";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPRVocabMETSSite ( $pdta['dialogid'], $pdta['objid'] );
+        //$footerBar = "SEGMENT ADD";       
+        break;        
+      case 'hprDXOverride':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Vocabulary Browser - Diagnosis Override";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        //$innerDialog = $passedData;
+        $innerDialog = bldHPRVocabDXOverride ( $pdta['dialogid'], $pdta['objid'] );
+        //$footerBar = "SEGMENT ADD";       
+        break;        
       case 'hprDesignationSpecifier':
         $pdta = json_decode($passedData, true);          
-        $titleBar = "HPR Vocabulary Browser";
+        $titleBar = "HPR Vocabulary Browser - Search Term";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";              
         $innerDialog = bldHPRVocabBrowser ( $pdta['dialogid'], $pdta['objid'] );
@@ -1757,37 +1782,72 @@ function buildHPRWorkBenchSide ( $rqsturi ) {
     $dtaSystemic = strtoupper(trim( $sg['systemicdx'] ));
     $sysm =  strtoupper(trim( $sg['systemicdx'] ));
 $dxtbl = <<<DXTBL
-<table border=0 cellspacing=0 cellpadding=0 id=HPRWBTbl data-segid="{$segbg[0]}" data-ospecimencategory="{$spc}" data-specimencategory="{$spc}" data-osite="{$te}" data-site="{$ste}" data-ossite="{$sste}" data-ssite="{$sste}" data-ospos="{$spos}" data-spos="{$spos}" data-odx="{$dx}" data-dx="{$dx}" data-odxm="{$mdx}" data-dxm="{$mdx}" data-omets="{$mets}" data-mets="{$mets}" data-osysm="{$sysm}" data-sysm="{$sysm}"><tr><td rowspan=4 id=decisionSqr data-decision="confirm">&nbsp;</td><td colspan=4 class=hprPreLimFldLbl>Diagnosis Designation</td></tr><tr><td colspan=4 class=hprPreLimDtaFld style="padding: 20px 0 0 .5vw;" valign=top>{$dtaSpecCat} {$dtaSiteSub} {$dtaDXMod} &nbsp;</td></tr><tr><td colspan=2 class="hprPreLimFldLbl rightEndCap">METS From</td><td colspan=2 class="hprPreLimFldLbl">Systemic/Co-Mobid</td></tr><tr><td colspan=2 class="hprPreLimDtaFld rightEndCap" style="padding: 20px 0 0 .5vw;" valign=top>{$dtaMetsFrom}&nbsp;</td><td colspan=2 class=hprPreLimDtaFld valign=top>{$dtaSystemic}&nbsp;</td></tr>
+<table border=0 cellspacing=0 cellpadding=0 
+            id=HPRWBTbl 
+            data-segid="{$segbg[0]}" 
+            data-ospecimencategory="{$spc}" 
+            data-specimencategory="{$spc}" 
+            data-osite="{$ste}" 
+            data-site="{$ste}" 
+            data-ossite="{$sste}" 
+            data-ssite="{$sste}" 
+            data-ospos="{$spos}" 
+            data-spos="{$spos}" 
+            data-odx="{$dx}" 
+            data-dx="{$dx}" 
+            data-odxm="{$mdx}" 
+            data-dxm="{$mdx}" 
+            data-omets="{$mets}" 
+            data-mets="{$mets}" 
+            data-osysm="{$sysm}" 
+            data-sysm="{$sysm}"> 
+     <tr>
+       <td rowspan=4 id=decisionSqr data-hprdecision="CONFIRM"><i class="material-icons hprdecisionicon hprdecisionconfirm">thumb_up</i></td>
+       <td colspan=4 class=hprPreLimFldLbl ondblclick="resetDesig();">Diagnosis Designation <span class=actionInstruction>(Double-Click Designation to Reset)</span></td></tr>
+     <tr>
+       <td colspan=4 class=hprPreLimDtaFld valign=top>
+         <table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td><div id=dspHPRDesignation ondblclick="resetDesig();">{$dtaSpecCat} {$dtaSiteSub} {$dtaDXMod}</div></td>
+       <td align=right><table border=0> <tr><td class=sideDesigBtns onclick="loadDesignation();">Designation</td><td class=sideDesigBtns onclick="loadDXOverride();">DX Override</td></tr></table></td></tr></table></td>
+     </tr>
+     <tr>
+       <td colspan=2 class="hprPreLimFldLbl rightEndCap" width=50% ondblclick="blankDesig('dspHPRMetsFrom');">METS From <span class=actionInstruction>(Double-Click Designation to Blank)</span></td>
+       <td colspan=2 class="hprPreLimFldLbl" ondblclick="blankDesig('dspHPRSystemic');">Systemic/Co-Mobid<span class=actionInstruction>(Double-Click Designation to blank)</span></td>
+     </tr>
+     <tr>
+       <td colspan=2 class="hprPreLimDtaFld rightEndCap" valign=top>
+         <table cellspacing=0 cellpadding=0 width=100%><tr><td id=dspHPRMetsFrom ondblclick="blankDesig('dspHPRMetsFrom');">{$dtaMetsFrom}</td><td align=right><table border=0 onclick="loadMETSBrowser();"><tr><td class=sideDesigBtns>Metastatic</td></tr></table></td></tr></table></td>
+       <td colspan=2 class=hprPreLimDtaFld valign=top>  <table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td id=dspHPRSystemic ondblclick="blankDesig('dspHPRSystemic');">{$dtaSystemic}&nbsp;</td><td align=right> <table border=0><tr><td class=sideDesigBtns onclick="loadSystemicBrowser();">Systemic</td></tr></table> </td></tr></table></td>
+     </tr>
 </table>
 DXTBL;
-$btnBar = "<table border=0><tr><td class=sideDesigBtns onclick=\"loadDesignation();\">Designation</td></tr><tr><td class=sideDesigBtns>Over Ride</td></tr><tr><td class=sideDesigBtns>Metastatic</td></tr><tr><td class=sideDesigBtns>Systemic</td></tr></table>";
+
 $desig = <<<DDX
-<table border=0 cellpadding=0 cellspacing=0><tr><td valign=top>{$dxtbl}</td><td valign=top>{$btnBar}</td></tr></table>
+{$dxtbl}
 DDX;
 //END DESIGNATION BUILD
 //BUILD TUMOR GRADE 
-$tmrGrd = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldTumorGradeScale','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+$tmrGrd = "<table border=0 class=\"menuDropTbl hprNewDropDownFont\"><tr><td align=right onclick=\"fillField('fldTumorGradeScale','','');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ( $tmrGradeScaleList['DATA'] as $procval) { 
       $tmrGrd .= "<tr><td onclick=\"fillField('fldTumorGradeScale','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
   }
 $tmrGrd .= "</table>";
 //END TUMOR GRADE
 //PERCENTAGE BUILDER
-$prcTbl = "<table border=0><tr><td rowspan=50 valign=top><table><tr><td>Tumor Grade</td></tr><tr><td><input type=text id=fldTumorGrade style=\"width: 5vw;\"></td><td> <div class=menuHolderDiv><input type=hidden id=fldTumorGradeScaleValue value=\"\"><input type=text id=fldTumorGradeScale READONLY class=\"inputFld\" style=\"width: 8vw;\" value=\"\"><div class=valueDropDown style=\"min-width: 20vw;\">{$tmrGrd}</div></div></td></tr></table> </td>";
+$prcTbl = "<table border=0 cellspacing=0 cellpadding=0 width=100%><tr><td rowspan=50 valign=top> </td><td colspan=4 class=hprPreLimFldLbl style=\"text-align: center; border-bottom: 1px solid rgba(160,160,160,.7);\">Percentages</td></tr>";
 $cntr = 0;
 foreach ( $prcList['DATA'] as $prcv ) { 
   if ($cntr === 4) {
     $prcTbl .= "</tr><tr>";
     $cntr = 0;
   }
-  $pdspTbl = "<table><tr><td>{$prcv['menuvalue']}</td><td><input type=text class=prcFld id='{$prcv['codevalue']}'></td></tr></table>";
-  $prcTbl .= "<td> {$pdspTbl} </td>";
+  $pdspTbl = "<table border=0 width=100%><tr><td class=hprPreLimFldLbl>{$prcv['menuvalue']}</td><td align=right><input type=text class=prcFld id='{$prcv['codevalue']}'></td></tr></table>";
+  $prcTbl .= "<td class=prcSqrHolder> {$pdspTbl} </td>";
   $cntr++;
 }
 $prcTbl .= "</tr></table>";
 //END PERCENTAGE BUILDER
 //TECH ACC BUILDER
-$techAcc = "<table border=0 class=menuDropTbl>";
+$techAcc = "<table border=0 class=\"menuDropTbl hprNewDropDownFont\">";
 $techAccDefault = "";
 $techAccDefaultCode = "";
   foreach ($techAccList['DATA'] as $procval) { 
@@ -1797,7 +1857,7 @@ $techAccDefaultCode = "";
 $techAcc .= "</table>";
 //END TECH ACC BUILDER
 //FA LISTING
-$fa = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('fldFurtherAction','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+$fa = "<table border=0  class=\"menuDropTbl hprNewDropDownFont\"><tr><td align=right onclick=\"fillField('fldFurtherAction','','');\" class=ddMenuClearOption>[clear]</td></tr>";
   foreach ($faList['DATA'] as $procval) { 
       $fa .= "<tr><td onclick=\"fillField('fldFurtherAction','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
   }
@@ -1805,40 +1865,40 @@ $fa .= "</table>";
 
 $faTbl = <<<FATBL
 <table border=0>
-<tr><td class=hprPreLimFldLbl>Further Action</td><td class=hprPreLimFldLbl>Note</td><td rowspan=3 valign=top><table class=tblBtn onclick="alert('addAction');"><tr><td><i class="material-icons">playlist_add</i></td></tr></table> </td></tr>
-<tr><td> <div class=menuHolderDiv><input type=hidden id=fldFurtherActionValue value=""><input type=text id=fldFurtherAction READONLY class="inputFld" style="width: 10vw;" value=""><div class=valueDropDown style="min-width: 20vw;">{$fa}</div></div></td><td><input type=text id=fldFANote style="width: 10vw;" ></td></tr>
-<tr><td colspan=2><div id=furtheractiondsplisting style="border: 1px solid #000; height: 8vh;"></div></td></tr>
+<tr><td class=hprPreLimFldLbl>Further Action</td><td class=hprPreLimFldLbl>Note</td><td rowspan=2 valign=top><table class=tblBtn style="width: 2.3vw;" onclick="alert('addAction');"><tr><td><center><i class="material-icons" style="font-size: 1.8vh;">playlist_add</i></td></tr></table> </td></tr>
+<tr><td> <div class=menuHolderDiv><input type=hidden id=fldFurtherActionValue value=""><input type=text id=fldFurtherAction READONLY class="inputFld hprDataField " style="width: 17vw;" value=""><div class=valueDropDown style="min-width: 20vw;">{$fa}</div></div></td><td><input type=text id=fldFANote class="hprDataField" style="width: 8vw;" ></td></tr>
+<tr><td colspan=3><div id=furtheractiondsplisting style="border: 1px solid rgba(160,160,160,.8); height: 16vh; overflow: auto;"></div></td></tr>
 </table>
 FATBL;
 //END FA LISTING
 //MOLE TBL 
     //molecular test
-    $molemnu = "<table border=0 width=100%><tr><td align=right onclick=\"triggerMolecularFill(0,'','','{$idsuffix}');\" class=ddMenuClearOption>[clear]</td></tr>";
+    $molemnu = "<table border=0 width=100% class=\"menuDropTbl hprNewDropDownFont\"><tr><td align=right onclick=\"triggerMolecularFill(0,'','','{$idsuffix}');\" class=ddMenuClearOption>[clear]</td></tr>";
     foreach ($moletest['DATA'] as $moleval) { 
         $molemnu .= "<tr><td onclick=\"triggerMolecularFill({$moleval['menuid']},'{$moleval['menuvalue']}','{$moleval['dspvalue']}','{$idsuffix}');\" class=ddMenuItem>{$moleval['dspvalue']}</td></tr>";
     }
     $molemnu .= "</table>";
 $moleTbl = <<<MOLETBL
       <table border=0>
-       <tr><td class=faHead colspan=2>Indicated Immuno/Molecular Test Results</td><td rowspan=4 valign=top><table class=tblBtn onclick="manageMoleTest(1,'','{$idsuffix}');"><tr><td><i class="material-icons">playlist_add</i></td></tr></table></td></tr>
+       <tr><td colspan=2 class=hprPreLimFldLbl>Indicated Immuno/Molecular Test Results</td><td rowspan=2 valign=top><table class=tblBtn style="width: 2.3vw;" onclick="manageMoleTest(1,'','{$idsuffix}');"><tr><td><i class="material-icons" style="font-size: 1.8vh;">playlist_add</i></td></tr></table></td></tr>
        <tr><td class=fieldHolder valign=top colspan=2>
                     <div class=menuHolderDiv>
                       <input type=hidden id=hprFldMoleTest{$idsuffix}Value>
-                      <input type=text id=hprFldMoleTest{$idsuffix} READONLY style="width: 25vw;">
+                      <input type=text id=hprFldMoleTest{$idsuffix} READONLY style="width: 25vw;" class=hprDataField>
                       <div class=valueDropDown style="min-width: 25vw;">{$molemnu}</div>
                     </div>
             </td>
        </tr>
-       <tr><td class=faHead>Result Index</td><td class=faHead>Scale Degree</td></tr>
+       <tr><td class=hprPreLimFldLbl>Result Index</td><td class=hprPreLimFldLbl colspan=2>Scale Degree</td></tr>
        <tr><td class=fieldHolder valign=top>
              <div class=menuHolderDiv>
                <input type=hidden id='hprFldMoleResult{$idsuffix}Value'>
-               <input type=text id='hprFldMoleResult{$idsuffix}' READONLY style="width: 12.5vw;">
+               <input type=text id='hprFldMoleResult{$idsuffix}' READONLY class=hprDataField style="width: 12.5vw;">
                <div class=valueDropDown id=moleResultDropDown style="min-width: 12.5vw;"> </div>
              </div>
             </td>
             <td class=fieldHolder valign=top>
-              <input type=text id=hprFldMoleScale{$idsuffix} style="width: 12.5vw;">
+              <input type=text id=hprFldMoleScale{$idsuffix} class=hprDataField style="width: 12.5vw;">
             </td>
        </tr>
        <tr><td colspan=3 valign=top>
@@ -1854,18 +1914,54 @@ MOLETBL;
     $workBench = <<<WORKBENCH
 <div class=dspWBDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td><center>Work Bench</td></tr></table></div>
 <table border=0>
-  <tr><td valign=top>{$desig}</td></tr>
-  <tr><td><table><tr><td>Technican Accuracy</td><td><div class=menuHolderDiv><input type=hidden id=fldTechAccValue value="{$techAccDefaultCode}"><input type=text id=fldTechAcc READONLY class="inputFld" style="width: 25vw;" value="{$techAccDefault}"><div class=valueDropDown style="min-width: 20vw;">{$techAcc}</div></div></td></tr></table></td></tr>
-  <tr><td> {$prcTbl}  </td></tr>
-  <tr><td> <table><tr><td valign=top> {$faTbl} </td><td valign=top> {$moleTbl} </td></tr></table>  </td></tr>
-  <tr><td><table><tr><td class=hprPreLimFldLbl>Rare Reason</td><td class=hprPreLimFldLbl>Special Instructions to Staff</td></tr><tr><td><textarea></textarea></td><td><textarea></textarea></td></tr></table></td></tr>
-  <tr><td>
+  <tr>
+    <td valign=top>{$desig}</td>
+  </tr>
+
+
+  <tr>
+    <td>
+      <table border=1 cellspacing=0 cellpadding=0 width=100%>
+        <tr>
+          <td rowspan=2 valign=top> <table border=0><tr><td class=sideDesigBtns onclick="alert('INCONCLUSIVE')">Inconclusive</td></tr></table>  </td>
+          <td class=hprPreLimFldLbl style="width: 21vw;">Tumor Grade (if applicable)</td>
+          <td class=hprPreLimFldLbl style="width: 21vw;">Technican Accuracy</td>  
+          </tr>
+        <tr>
+         <td><table><tr><td><input type=text id=fldTumorGrade class="hprDataField" style="width: 5vw;"></td><td> <div class=menuHolderDiv><input type=hidden id=fldTumorGradeScaleValue value=""><input type=text id=fldTumorGradeScale READONLY class="inputFld hprDataField" style="width: 8vw;" value=""><div class=valueDropDown style="min-width: 8vw;">{$tmrGrd}</div></div></td></tr></table></td>
+          <td><div class=menuHolderDiv><input type=hidden id=fldTechAccValue value="{$techAccDefaultCode}"><input type=text id=fldTechAcc READONLY class="inputFld hprDataField" style="width: 21vw;" value="{$techAccDefault}"><div class=valueDropDown style="min-width: 21vw;">{$techAcc}</div></div></td>
+         </tr>
+      </table>
+    </td>
+  </tr>
+
+
+  <tr>
+    <td style="padding: 2vh 0 0 0;"> {$prcTbl} </td>
+  </tr>
+  <tr>
+    <td style="padding: 3vh 0 0 0;"> <table border=0 cellspacing=0 cellpadding=0 width=100%>
+           <tr>
+             <td valign=top width=50%> {$faTbl} </td>
+             <td valign=top> {$moleTbl} </td>
+           </tr>
+         </table>  
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 2vh 0 0 0;"><table width=100% border=0><tr><td class=hprPreLimFldLbl>Rare Reason</td><td class=hprPreLimFldLbl>Special Instructions to Staff</td></tr><tr><td><textarea id=fldRareReasonTxt style="width: 28vw; height: 8vh;"></textarea></td><td><textarea id=fldSpecialInstructions style="width: 28vw; height: 8vh;"></textarea></td></tr></table></td>
+  </tr>
+  <tr>
+    <td style="padding: 3vh 0 0 0;"><center>
      <div class="upload-btn-wrapper">
        <button class="btn">Upload Supporting Files</button>
        <input type="file" name="myfile" name="photos[]" id=zckPicSelector accept="image/jpeg, image/png" multiple  />
      </div> 
-  </td></tr>
-  <tr><td align=right> SAVE | CANCEL     </td></tr>
+    </td>
+  </tr>
+  <tr>
+    <td align=right> SAVE | SAVE UNUSABLE | CANCEL     </td>
+  </tr>
 </table>
 
 WORKBENCH;
@@ -2932,19 +3028,92 @@ return $rtnThis;
 
 }
 
-function bldHPRVocabBrowser ( $dialogid, $objectid ) { 
+function bldHPRVocabSystemic ( $dialogid, $objectid ) { 
+//TODO: Turn into a webservice    
+require(serverkeys . "/sspdo.zck");    
+$allDXSQL = "SELECT diagnosis FROM four.sys_master_menu_vocabulary where ifnull(systemicIndicator,0) = 1 order by diagnosis";
+$allDXRS = $conn->prepare($allDXSQL); 
+$allDXRS->execute(); 
 
+$allDXTbl = "<table border=0 id=hprVocabResultTbl style=\"width: 100%;\" cellspacing=0 cellpadding=0><thead><tr><th>Systemic Diagnosis</th></tr><tbody>";
+while ( $r = $allDXRS->fetch(PDO::FETCH_ASSOC) ) { 
+  $allDXTbl .= "<tr ondblclick=\"makeHPRSystemic( '{$dialogid}','{$r['diagnosis']}');\" ><td>{$r['diagnosis']}</td></tr>";
+}
+$allDXTbl .= "</tbody></table>";
 
 $pg = <<<PAGECONTENT
 <style>
-
+#vocabBrowserDsp { height: 30vh; overflow: auto; border: 1px solid #000;  }
+#instructionblock {  box-sizing: border-box; font-size: 1.2vh; line-height: 1.5em; text-align:justify; }
 </style>
-<table border=1>
-<tr><td colspan=2>INSTRUCTIONS: </td></tr>
-<tr><td>Vocabulary Term</td><td align=right><input type=checkbox id=srchIncludeSub><label for=srchIncludeSub>Include Sub-Sites</label></td></tr>
-<tr><td colspan=2><input type=text id=srchHPRVocab onkeyup="browseHPRVocabulary(this.value, byId('srchIncludeSub').checked);"></td></tr>
-<tr><td colspan=2><div id=vocabBrowserDsp></div></td></tr>
-<tr><td colspan=2 align=right>Close</td></tr>
+<table border=0>
+<tr><td id=instructionblock style="width: 50vh;">INSTRUCTIONS: This is the list of possible co-mobidities/systemic diagnosis. To choose one, double-click that entry.  This list is designated by CHTN Eastern.  It has no bearing on the diagnosis designation but should be a condition which applies to the donor's complete system.  </td></tr>
+<tr><td colspan=2><div id=vocabBrowserDsp>{$allDXTbl}</div></td></tr>
+</table>
+PAGECONTENT;
+return $pg;
+}
+
+
+function bldHPRVocabMETSSite ( $dialogid, $objectid ) { 
+//TODO: Turn into a webservice    
+require(serverkeys . "/sspdo.zck");    
+$allDXSQL = "select * from (SELECT distinct site, '' as subsite FROM four.sys_master_menu_vocabulary where trim(ifnull(site,'')) <> '' ) uniontbl order by site, subsite";
+$allDXRS = $conn->prepare($allDXSQL); 
+$allDXRS->execute(); 
+
+$allDXTbl = "<table border=0 id=hprVocabResultTbl style=\"width: 100%;\" cellspacing=0 cellpadding=0><thead><tr><th>Site</th></tr></thead><tbody>";
+while ( $r = $allDXRS->fetch(PDO::FETCH_ASSOC) ) { 
+  $allDXTbl .= "<tr ondblclick=\"makeHPRMetsFrom( '{$dialogid}','{$r['site']}','{$r['subsite']}');\" ><td>{$r['site']}</td></tr>";
+}
+$allDXTbl .= "</tbody></table>";
+
+$pg = <<<PAGECONTENT
+<style>
+#vocabBrowserDsp { height: 30vh; overflow: auto; border: 1px solid #000;  }
+#instructionblock {  box-sizing: border-box; font-size: 1.2vh; line-height: 1.5em; text-align:justify; }
+</style>
+<table border=0>
+<tr><td id=instructionblock style="width: 50vh;" >INSTRUCTIONS: This is the 'metastatic from' site list.  This list is all sites from the CHTN Network Vocabulary without regard to diagnosis.  To choose a site to specify as 'metastatic from', double-click that choice on the list. </td></tr>
+<tr><td style="border: 1px solid rgba(160,160,160,1);"><div id=vocabBrowserDsp>{$allDXTbl}</div></td></tr>
+</table>
+PAGECONTENT;
+return $pg;
+}
+
+function bldHPRVocabDXOverride ( $dialogid, $objectid ) {
+
+$pg = <<<PAGECONTENT
+<style>
+#vocabBrowserDsp { height: 30vh; overflow: auto; border: 1px solid #000;  }
+#instructionblock { width: 51vw; box-sizing: border-box; font-size: 1.2vh; line-height: 1.5em; text-align:justify; }
+#voclbl { font-size: 1.5vh; font-weight: bold; color: rgba(0,32,113,1); padding: .5vh 0 0 0; }
+#srchHPRVocab {width: 51vw; }
+</style>
+<table border=0>
+<tr><td colspan=2 id=instructionblock>INSTRUCTIONS: Enter a diagnosis in the 'Diagnosis Term' Field.  These are 'like' value matches meaning that whole terms do not need to be entered.  For instance, if searching for Follicular-variant, the term entered could be: 'follicular' or more simply 'folli'.  ScienceServer will match terms as they are entered.  To select a term for use in the review, double-click the term in the result listing. <b>THIS IS A DIAGNOSIS OVERRIDE.  WITH THIS DIALOG ASSIGNMENT OF DIAGNOSIS IS PERFORMED WITHOUT REGARD TO SITE-SPECIMEN CATEGORY. THEREFORE LEAVING THE CONFINES OF THE CHTN NETWORK APPROVED VOCABULARY. </td></tr>
+<tr><td id=voclbl>Diagnosis Term</td><td align=right></td></tr>
+<tr><td colspan=2><input type=text id=srchHPRVocab onkeyup="browseHPRDxOverride(this.value, '{$dialogid}'  );"></td></tr>
+<tr><td colspan=2 style="border: 1px solid rgba(160,160,160,1);"><div id=vocabBrowserDsp>{$allDXTbl}</div></td></tr>
+</table>
+PAGECONTENT;
+return $pg;
+}
+
+
+function bldHPRVocabBrowser ( $dialogid, $objectid ) { 
+$pg = <<<PAGECONTENT
+<style>
+#vocabBrowserDsp { height: 30vh; overflow: auto; border: 1px solid #000;  }
+#instructionblock { width: 51vw; box-sizing: border-box; font-size: 1.2vh; line-height: 1.5em; text-align:justify; }
+#voclbl { font-size: 1.5vh; font-weight: bold; color: rgba(0,32,113,1); padding: .5vh 0 0 0; }
+#srchHPRVocab {width: 51vw; }
+</style>
+<table border=0>
+<tr><td colspan=2 id=instructionblock>INSTRUCTIONS: Enter a diagnosis in the 'Vocabulary Search Term' field in the following form: <b>specimen category site diagnosis modifier</b>.  These are 'like' value matches meaning that whole terms do not need to be entered.  For instance, if searching for Follicular-variant carcinoma of thyroid, a malignant condition, the term entered could be: 'malignant thyroid carcinoma follicular' or more simply 'thyro car foll'.  ScienceServer will match terms as they are entered.  To include Sub-site listings in the results, check the 'Include Sub-Site' check-box in the right corner before entering a term. To select a term for use in the review, double-click the term in the result listing.</td></tr>
+<tr><td id=voclbl>Vocabulary Term</td><td align=right><input type=checkbox id=srchIncludeSub><label for=srchIncludeSub>Include Sub-Sites</label></td></tr>
+<tr><td colspan=2><input type=text id=srchHPRVocab onkeyup="browseHPRVocabulary(this.value, byId('srchIncludeSub').checked, '{$dialogid}'  );"></td></tr>
+<tr><td colspan=2 style="border: 1px solid rgba(160,160,160,1);"><div id=vocabBrowserDsp></div></td></tr>
 </table>
 
 PAGECONTENT;
@@ -2952,6 +3121,8 @@ return $pg;
 }
 
 function bldHPRPRBigViewer( $dialogid, $objectid ) { 
+    //TODO:  Turn into a webservice
+    //TODO:  Search Document for $conn and turn all into webservices  
   require(serverkeys . "/sspdo.zck");    
   $obj = explode( '-' , cryptservice( $objectid, 'd' ));    
   $prTxtSQL = "SELECT  biospecimen, pathreport FROM masterrecord.qcpathreports where prid = :prid and selector = :selector";

@@ -1113,8 +1113,13 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .topreadindicator { font-size: 2.3vh; }
 .needread { color: rgba({$this->color_bred},1); }
 .doneread { color: rgba({$this->color_darkgreen},1); }
-.hprPreLimFldLbl { font-size: 1vh; font-weight: bold; color: rgba({$this->color_dblue},1); padding: .4vh 0 0 .1vw; }
+.hprPreLimFldLbl { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_dblue},1); padding: .4vh 0 0 .1vw; }
 .hprPreLimDtaFld { font-size: 1.5vh; color: rgba({$this->color_dblue},1); padding: .4vh 0 .2vh .2vw; border-bottom: 1px dashed rgba({$this->color_dblue},.5); }
+
+.prcSqrHolder { border-left: 1px solid rgba({$this->color_mgrey},.7);border-bottom: 1px solid rgba({$this->color_mgrey},1); }
+.hprDataField { font-size: 1.5vh; color: rgba({$this->color_dblue},1); padding: .8vh .5vw; }
+.hprNewDropDownFont { font-size: 1.5vh; color: rgba({$this->color_dblue},1); } 
+
 .rightEndCap { border-right: 1px solid rgba({$this->color_dblue},.5); }
 .twentyfive { width: 10.5vw; }
 .smlrTxt { font-size: 1.2vh; font-style: italic; }
@@ -1129,7 +1134,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 #masterHPRWorkbenchSide { box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1);}
 
 .HPRReviewDocument { position: absolute; top: 0; left: 0; display: none;  }
-#dspPathologyRptTxt { font-size: 1.5vh;  height: 35vh; overflow: auto; box-sizing: border-box; padding: 8px; line-height: 1.2em; text-align: justify; }
+#dspPathologyRptTxt { font-size: 1.5vh;  height: 32vh; overflow: auto; box-sizing: border-box; padding: 8px; line-height: 1.5em; text-align: justify; }
 #dspPRTxt { display: block; }
 .dspDocTitle { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; width: 42vw; box-sizing: border-box; padding: 4px; height: 3.5vh; }
 
@@ -1137,12 +1142,17 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .prntIcon .material-icons:hover { cursor: pointer; color: rgba({$this->color_dblue},1); }
 
 .dspWBDocTitle { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; box-sizing: border-box; height: 3.5vh; padding: 5px; }
-#HPRWBTbl { width: 52vw; }
+#HPRWBTbl { width: 56vw; }
 
-.sideDesigBtns { width: 8vw; padding: 7px 0; box-sizing: border-box; border: 1px solid rgba({$this->color_dblue},1); text-align: center; background: rgba({$this->color_white},1); color: rgba({$this->color_zackgrey},1); font-weight: bold; }
+.sideDesigBtns { width: 5vw; padding: 3px 0; box-sizing: border-box; border: 1px solid rgba({$this->color_dblue},1); text-align: center; background: rgba({$this->color_white},1); color: rgba({$this->color_zackgrey},1); font-size: 1vh;  font-weight: bold; }
 .sideDesigBtns:hover { cursor: pointer; background: rgba({$this->color_lightgrey},1); }
 
-#decisionSqr { width: 5vw; border: 1px solid rgba({$this->color_dblue},1); }
+#decisionSqr { width: 5vw; border: 1px solid rgba({$this->color_dblue},1); text-align: center; }
+#decisionSqr[data-hprdecision='CONFIRM'] { background: rgba({$this->color_darkgreen},.8); color: rgba({$this->color_white},1); }
+#decisionSqr[data-hprdecision='CONFIRM-ADD'] { background: rgba({$this->color_lamber},.8); color: rgba({$this->color_dblue},1); }
+#decisionSqr[data-hprdecision='DENIED'] { background: rgba({$this->color_bred},.8); color: rgba({$this->color_white},1); }
+#decisionSqr .hprdecisionicon { font-size: 5vh; }
+
 
 
 .primaryInfo { } 
@@ -1150,8 +1160,8 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .constitInfoHolder:hover .popUpInfo { cursor: pointer; display: block; }
 .popUpInfo { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; }
 
-.prcFld { width: 3vw; }
-.dspDefinedMoleTests { border: 1px solid rgba(160,160,160,1); width: 25.2vw; height: 8vh; overflow: auto;   padding: 4px; box-sizing: border-box; }
+.prcFld { width: 3vw; font-size: 1.5vh; color: rgba({$this->color_dblue},1); padding: .8vh .5vw; text-align: right;}
+.dspDefinedMoleTests { border: 1px solid rgba(160,160,160,1); height: 10vh; overflow: auto;   padding: 4px; box-sizing: border-box; }
 
 .upload-btn-wrapper {
   position: relative;
@@ -1176,6 +1186,14 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
   top: 0;
   opacity: 0;
 }
+
+.actionInstruction { color: rgba({$this->color_mgrey},.8); font-style: italic; }
+
+#hprVocabResultTbl { width: 51vw; font-size: 1.5vh; box-sizing: border-box; }
+#hprVocabResultTbl thead tr th { padding: .5vh 0 0 4px; border-bottom: 1px solid rgba({$this->color_zackgrey},1); text-align: left; }
+#hprVocabResultTbl tbody tr:nth-child(even) {background: rgba({$this->color_lgrey},1); }
+#hprVocabResultTbl tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
+#hprVocabResultTbl tbody tr td { padding: 4px; }
 
 STYLESHEET;
 return $rtnThis;
