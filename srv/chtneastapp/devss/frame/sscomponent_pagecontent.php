@@ -15,6 +15,13 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'hprInconclusiveDialog':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Inconclusive Biosample";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPRInconclusiveDesignation ( $pdta['dialogid'], $pdta['objid'] );
+        break;         
       case 'hprSystemicListBrowser':
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Vocabulary Browser - Systemic/Co-Mobid List";
@@ -1782,7 +1789,7 @@ function buildHPRWorkBenchSide ( $rqsturi ) {
     $dtaSystemic = strtoupper(trim( $sg['systemicdx'] ));
     $sysm =  strtoupper(trim( $sg['systemicdx'] ));
 $dxtbl = <<<DXTBL
-<table border=0 cellspacing=0 cellpadding=0 
+<table border=0  cellspacing=0 cellpadding=0 width=100%
             id=HPRWBTbl 
             data-segid="{$segbg[0]}" 
             data-ospecimencategory="{$spc}" 
@@ -1803,15 +1810,15 @@ $dxtbl = <<<DXTBL
             data-sysm="{$sysm}"> 
      <tr>
        <td rowspan=4 id=decisionSqr data-hprdecision="CONFIRM"><i class="material-icons hprdecisionicon hprdecisionconfirm">thumb_up</i></td>
-       <td colspan=4 class=hprPreLimFldLbl ondblclick="resetDesig();">Diagnosis Designation <span class=actionInstruction>(Double-Click Designation to Reset)</span></td></tr>
+       <td colspan=4 class=hprPreLimFldLbl ondblclick="resetDesig();"><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Diagnosis Designation&nbsp;<span class=actionInstruction>(Double-Click Designation to Reset)</span></td><td align=right> <table border=0><tr><td class=sideDesigBtns onclick="loadInconclusive('{$rurl[3]}');">Inconclusive</td></tr></table> </td></tr></table></td></tr>
      <tr>
        <td colspan=4 class=hprPreLimDtaFld valign=top>
          <table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td><div id=dspHPRDesignation ondblclick="resetDesig();">{$dtaSpecCat} {$dtaSiteSub} {$dtaDXMod}</div></td>
        <td align=right><table border=0> <tr><td class=sideDesigBtns onclick="loadDesignation();">Designation</td><td class=sideDesigBtns onclick="loadDXOverride();">DX Override</td></tr></table></td></tr></table></td>
      </tr>
      <tr>
-       <td colspan=2 class="hprPreLimFldLbl rightEndCap" width=50% ondblclick="blankDesig('dspHPRMetsFrom');">METS From <span class=actionInstruction>(Double-Click Designation to Blank)</span></td>
-       <td colspan=2 class="hprPreLimFldLbl" ondblclick="blankDesig('dspHPRSystemic');">Systemic/Co-Mobid<span class=actionInstruction>(Double-Click Designation to blank)</span></td>
+       <td colspan=2 class="hprPreLimFldLbl rightEndCap" width=50% ondblclick="blankDesig('dspHPRMetsFrom');">METS From&nbsp;<span class=actionInstruction>(Double-Click Designation to Blank)</span></td>
+       <td colspan=2 class="hprPreLimFldLbl" ondblclick="blankDesig('dspHPRSystemic');">Systemic/Co-Mobid&nbsp;<span class=actionInstruction>(Double-Click Designation to blank)</span></td>
      </tr>
      <tr>
        <td colspan=2 class="hprPreLimDtaFld rightEndCap" valign=top>
@@ -1833,7 +1840,7 @@ $tmrGrd = "<table border=0 class=\"menuDropTbl hprNewDropDownFont\"><tr><td alig
 $tmrGrd .= "</table>";
 //END TUMOR GRADE
 //PERCENTAGE BUILDER
-$prcTbl = "<table border=0 cellspacing=0 cellpadding=0 width=100%><tr><td rowspan=50 valign=top> </td><td colspan=4 class=hprPreLimFldLbl style=\"text-align: center; border-bottom: 1px solid rgba(160,160,160,.7);\">Percentages</td></tr>";
+$prcTbl = "<table border=0 cellspacing=0 cellpadding=0 width=100%>";
 $cntr = 0;
 foreach ( $prcList['DATA'] as $prcv ) { 
   if ($cntr === 4) {
@@ -1865,8 +1872,8 @@ $fa .= "</table>";
 
 $faTbl = <<<FATBL
 <table border=0>
-<tr><td class=hprPreLimFldLbl>Further Action</td><td class=hprPreLimFldLbl>Note</td><td rowspan=2 valign=top><table class=tblBtn style="width: 2.3vw;" onclick="alert('addAction');"><tr><td><center><i class="material-icons" style="font-size: 1.8vh;">playlist_add</i></td></tr></table> </td></tr>
-<tr><td> <div class=menuHolderDiv><input type=hidden id=fldFurtherActionValue value=""><input type=text id=fldFurtherAction READONLY class="inputFld hprDataField " style="width: 17vw;" value=""><div class=valueDropDown style="min-width: 20vw;">{$fa}</div></div></td><td><input type=text id=fldFANote class="hprDataField" style="width: 8vw;" ></td></tr>
+<tr><td class=hprPreLimFldLbl>Further Action</td><td class=hprPreLimFldLbl>Note</td><td rowspan=2 valign=top><table class=tblBtn style="width: 2.3vw;" onclick="manageFurtherActions(1,);"><tr><td><center><i class="material-icons" style="font-size: 1.8vh;">playlist_add</i></td></tr></table> </td></tr>
+<tr><td> <div class=menuHolderDiv><input type=hidden id=hprFAJsonHolder><input type=hidden id=fldFurtherActionValue value=""><input type=text id=fldFurtherAction READONLY class="inputFld hprDataField " style="width: 17vw;" value=""><div class=valueDropDown style="min-width: 20vw;">{$fa}</div></div></td><td><input type=text id=fldFANote class="hprDataField" style="width: 8vw;" ></td></tr>
 <tr><td colspan=3><div id=furtheractiondsplisting style="border: 1px solid rgba(160,160,160,.8); height: 16vh; overflow: auto;"></div></td></tr>
 </table>
 FATBL;
@@ -1921,10 +1928,10 @@ MOLETBL;
 
   <tr>
     <td>
-      <table border=1 cellspacing=0 cellpadding=0 width=100%>
+      <table border=0 cellspacing=0 cellpadding=0>
         <tr>
-          <td rowspan=2 valign=top> <table border=0><tr><td class=sideDesigBtns onclick="alert('INCONCLUSIVE')">Inconclusive</td></tr></table>  </td>
-          <td class=hprPreLimFldLbl style="width: 21vw;">Tumor Grade (if applicable)</td>
+          <td rowspan=2 valign=top>   </td>
+          <td class=hprPreLimFldLbl>Tumor Grade (if applicable)</td>
           <td class=hprPreLimFldLbl style="width: 21vw;">Technican Accuracy</td>  
           </tr>
         <tr>
@@ -1937,10 +1944,10 @@ MOLETBL;
 
 
   <tr>
-    <td style="padding: 2vh 0 0 0;"> {$prcTbl} </td>
+    <td style="padding: 1vh 0 0 0;"> {$prcTbl} </td>
   </tr>
   <tr>
-    <td style="padding: 3vh 0 0 0;"> <table border=0 cellspacing=0 cellpadding=0 width=100%>
+    <td style="padding: 1vh 0 0 0;"> <table border=0 cellspacing=0 cellpadding=0 width=100%>
            <tr>
              <td valign=top width=50%> {$faTbl} </td>
              <td valign=top> {$moleTbl} </td>
@@ -1949,18 +1956,11 @@ MOLETBL;
     </td>
   </tr>
   <tr>
-    <td style="padding: 2vh 0 0 0;"><table width=100% border=0><tr><td class=hprPreLimFldLbl>Rare Reason</td><td class=hprPreLimFldLbl>Special Instructions to Staff</td></tr><tr><td><textarea id=fldRareReasonTxt style="width: 28vw; height: 8vh;"></textarea></td><td><textarea id=fldSpecialInstructions style="width: 28vw; height: 8vh;"></textarea></td></tr></table></td>
+    <td style="padding: 1vh 0 0 0;"><table width=100% border=0><tr><td class=hprPreLimFldLbl>Rare Reason</td><td class=hprPreLimFldLbl>Special Instructions to Staff</td></tr><tr><td><textarea id=fldRareReasonTxt style="width: 28vw; height: 8vh;"></textarea></td><td><textarea id=fldSpecialInstructions style="width: 28vw; height: 8vh;"></textarea></td></tr></table></td>
   </tr>
+  <!-- //TODO ADD LATER TO TOOL BAR <tr><td style="padding: 3vh 0 0 0;"><center><div class="upload-btn-wrapper"><button class="btn">Upload Supporting Files</button><input type="file" name="myfile" name="photos[]" id=zckPicSelector accept="image/jpeg, image/png" multiple  /></div></td></tr> //-->
   <tr>
-    <td style="padding: 3vh 0 0 0;"><center>
-     <div class="upload-btn-wrapper">
-       <button class="btn">Upload Supporting Files</button>
-       <input type="file" name="myfile" name="photos[]" id=zckPicSelector accept="image/jpeg, image/png" multiple  />
-     </div> 
-    </td>
-  </tr>
-  <tr>
-    <td align=right> SAVE | SAVE UNUSABLE | CANCEL     </td>
+    <td align=right> SAVE | SAVE UNUSABLE | <span onclick="navigateSite('hpr-review/{$rurl[2]}');">CANCEL</span>    </td>
   </tr>
 </table>
 
@@ -2447,6 +2447,7 @@ $innerBar = <<<BTNTBL
   <td class=topBtnHolderCell onclick="navigateSite('hpr-review/{$additionalinfo}');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">arrow_back_ios</i></td><td>Back To Tray</td></tr></table></td>
   <td class=topBtnHolderCell onclick="navigateSite('hpr-review');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">layers_clear</i></td><td>New Review</td></tr></table></td>
   <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">textsms</i></td><td>Assistance</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">change_history</i></td><td>Request Vocabulary Change</td></tr></table></td>
 </tr>
 BTNTBL;
 break; 
@@ -3026,6 +3027,47 @@ RTNTHIS;
 
 return $rtnThis;
 
+}
+
+function bldHPRInconclusiveDesignation ( $dialogid, $objectid ) { 
+    
+    $faList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-further-actions",serverIdent,serverpw), true);
+    //FA LISTING
+    $fa = "<table border=0  class=\"menuDropTbl hprNewDropDownFont\"><tr><td align=right onclick=\"fillField('fldFurtherAction','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+    foreach ($faList['DATA'] as $procval) { 
+      $fa .= "<tr><td onclick=\"fillField('fldDGFurtherAction','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+    }
+    $fa .= "</table>";
+
+$faTbl = <<<FATBL
+<table border=0>
+<tr><td class=hprPreLimFldLbl>Further Action</td><td class=hprPreLimFldLbl>Note</td><td rowspan=2 valign=top><table class=tblBtn style="width: 2.3vw;" onclick="manageDGFurtherActions(1,);"><tr><td><center><i class="material-icons" style="font-size: 1.8vh;">playlist_add</i></td></tr></table> </td></tr>
+<tr><td> <div class=menuHolderDiv><input type=hidden id=hprDGFAJsonHolder><input type=hidden id=fldDGFurtherActionValue value=""><input type=text id=fldDGFurtherAction READONLY class="inputFld hprDataField " style="width: 17vw;" value=""><div class=valueDropDown style="min-width: 20vw;">{$fa}</div></div></td><td><input type=text id=fldDGFANote class="hprDataField" style="width: 8vw;" ></td></tr>
+<tr><td colspan=3><div id=dgfurtheractiondsplisting style="border: 1px solid rgba(160,160,160,.8); height: 16vh; overflow: auto;"></div></td></tr>
+</table>
+FATBL;
+//END FA LISTING
+    $obj = explode("::",cryptservice($objectid, 'd')); // 0 = segmentid / 1 = biosampleid
+    //TODO:  Turn Into a webservice
+    require(serverkeys . "/sspdo.zck");    
+    $lookupSQL = "SELECT ucase(replace(bs.read_label,'_','')) as readlabel,  replace(sg.bgs,'_','') as bgs, bs.procureinstitution, bs.createdby, ucase(concat(ifnull(bs.tisstype,''), ' ', ifnull(bs.anatomicsite,''), if(ifnull(bs.subsite,'')='','', concat(' (',ifnull(bs.subsite,''),')')) , ' ' , ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' (',ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.metssite,'')='','',concat(' [',ifnull(bs.metssite,''),']')))) as desig, ucase(concat(if(ifnull(bs.pxiage,'')='','',ifnull(bs.pxiage,'')), if(ifnull(bs.pxirace,'')='','',concat('/',ifnull(bs.pxirace,''))), if(ifnull(bs.pxigender,'')='','',concat('/',ifnull(bs.pxigender,''))))) as ars  FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where segmentid = :segid";
+    $segRS = $conn->prepare($lookupSQL); 
+    $segRS->execute(array(':segid' => $obj[0])); 
+    $seg = $segRS->fetch(PDO::FETCH_ASSOC); 
+    
+$pg = <<<PAGECONTENT
+        <table border=1><tr><td colspan=2>INCONCLUSIVE BIOSAMPLE ({$seg['readlabel']})</td></tr>
+        <tr><td>Slide Read: </td><td>{$seg['bgs']}</td></tr>
+        <tr><td>Sample From: </td><td>{$seg['procureinstitution']} ({$seg['createdby']})</td></tr>
+        <tr><td>Designation: </td><td>{$seg['desig']}</td></tr>
+        <tr><td>A/R/S: </td><td>{$seg['ars']}</td></tr>
+        <tr><td colspan=2>Reason Inconclusive</td></tr>
+        <tr><td colspan=2><textarea width=100%></textarea></td></tr>
+        <tr><td colspan=2>{$faTbl}</td></tr>
+        <tr><td colspan=2 align=right>Mark | <span onclick="closeThisDialog('{$dialogid}');">Cancel</span></td></tr>
+        </table>        
+PAGECONTENT;
+return $pg;       
 }
 
 function bldHPRVocabSystemic ( $dialogid, $objectid ) { 

@@ -1993,6 +1993,11 @@ MBODY;
              $left = '30vw';
              $top = '15vh';
              break;
+           case 'hprInconclusiveDialog':
+             //$primeFocus = "srchHPRVocab";  
+             $left = '30vw';
+             $top = '15vh';
+             break;         
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);

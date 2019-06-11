@@ -1109,7 +1109,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 #headAnnouncement { font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; padding: 4vh 0 0 0; }
 #dspScanType { font-size: 5vh; text-align: center; } 
 
-#HPRPreLimTbl { width: 42vw; }
+#HPRPreLimTbl { width: 40vw; }
 .topreadindicator { font-size: 2.3vh; }
 .needread { color: rgba({$this->color_bred},1); }
 .doneread { color: rgba({$this->color_darkgreen},1); }
@@ -1125,18 +1125,18 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .smlrTxt { font-size: 1.2vh; font-style: italic; }
 #submitTbl { font-size: 1vh; color: rgba({$this->color_mgrey},1); }
 
-#masterHPRSlideReviewTbl { width: 99vw; height: 88vh; box-sizing: border-box; }
+#masterHPRSlideReviewTbl { width: 98vw; height: 88vh; box-sizing: border-box; }
 #masterHPRSlideAnnounceLine { height: 3vh; font-size: 2vh; font-weight: bold; color: rgba({$this->color_dblue},1); box-sizing: border-box; padding: 8px 0 0 2px; border-bottom: 2px solid rgba({$this->color_dblue}, 1); }
-#masterHPRTechnicianSide { width: 42vw; height: 40vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); }
+#masterHPRTechnicianSide { width: 39vw; height: 40vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); }
 #masterHPRControlBtns { width:  2vw; }
 #masterHPRDocumentSide {position: relative; width: 40vw; border: 1px solid rgba({$this->color_cornflowerblue},1); } 
 #masterHPRDivBtns { height: 4vh; border: 1px solid rgba({$this->color_cornflowerblue},1); }
 #masterHPRWorkbenchSide { box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1);}
 
 .HPRReviewDocument { position: absolute; top: 0; left: 0; display: none;  }
-#dspPathologyRptTxt { font-size: 1.5vh;  height: 32vh; overflow: auto; box-sizing: border-box; padding: 8px; line-height: 1.5em; text-align: justify; }
+#dspPathologyRptTxt { font-size: 1.5vh;  height: 28vh; overflow: auto; box-sizing: border-box; padding: 8px; line-height: 1.5em; text-align: justify; }
 #dspPRTxt { display: block; }
-.dspDocTitle { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; width: 42vw; box-sizing: border-box; padding: 4px; height: 3.5vh; }
+.dspDocTitle { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; width: 40vw; box-sizing: border-box; padding: 4px; height: 3.5vh; }
 
 .prntIcon .material-icons { font-size: 2vh;  }
 .prntIcon .material-icons:hover { cursor: pointer; color: rgba({$this->color_dblue},1); }

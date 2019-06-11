@@ -4096,8 +4096,95 @@ function answerHPRTriggerMolecularFill(rtnData) {
    }
 }
 
+function manageDGFurtherActions( addIndicator, referencenumber ) { 
+if ( byId('hprDGFAJsonHolder') ) {
+   if ( addIndicator === 1 ) { 
+     //ADD FURTHER ACTION 
+     if ( byId('fldDGFurtherAction').value.trim() === "" ) { 
+       alert('You haven\'t choosen a \'further action\'');       
+     } else { 
+       if ( byId('hprDGFAJsonHolder').value === "" ) { 
+         var hldVal = [];    
+       } else { 
+         var hldVal = JSON.parse( byId('hprDGFAJsonHolder').value  );      
+      }
+      hldVal.push(  [ byId('fldDGFurtherActionValue').value,  byId('fldDGFurtherAction').value, byId('fldDGFANote').value.trim()   ] );             
+      byId('hprDGFAJsonHolder').value = JSON.stringify(hldVal);      
+      byId('fldDGFurtherActionValue').value = "";
+      byId('fldDGFurtherAction').value = "";
+      byId('fldDGFANote').value = "";    
+     }       
+   }
+   if ( addIndicator === 0 ) { 
+     //DELETE FURTHER ACTION 
+     var hldVal = JSON.parse(byId('hprDGFAJsonHolder').value); 
+     var newVal = [];
+     var key = 0;   
+     hldVal.forEach(function(ele) { 
+       if (key !== referencenumber) {
+         newVal.push(ele);    
+       }
+       key++;
+    });
+    hldVal = newVal;
+    byId('hprDGFAJsonHolder').value = JSON.stringify(hldVal);              
+   }
+    var faTestTbl = "<table cellspacing=0 cellpadding=0 border=0 width=100%>";
+    var cntr = 0;         
+    hldVal.forEach(function(element) {   
+      faTestTbl += "<tr class=ddMenuItem onclick=\"manageDGFurtherActions(0,"+cntr+");\" ><td style=\"border-bottom: 1px solid rgba(160,160,160,1);\"><i class=\"material-icons\" style=\"font-size: 1.8vh; color:rgba(237, 35, 0,1); width: .3vw; padding: 8px 0 8px 0;\">cancel</i><td style=\"width: 15vw; padding: 8px 0 8px 8px;border-bottom: 1px solid rgba(160,160,160,1);\">"+element[1]+"</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1);\">"+element[2]+"</td></tr>";
+      cntr++;
+    });   
+    faTestTbl += "</table>"; 
+   byId('dgfurtheractiondsplisting').innerHTML = faTestTbl;
+}
+}            
+                       
+function manageFurtherActions( addIndicator, referencenumber ) { 
+if ( byId('hprFAJsonHolder') ) {
+   if ( addIndicator === 1 ) { 
+     //ADD FURTHER ACTION 
+     if ( byId('fldFurtherAction').value.trim() === "" ) { 
+       alert('You haven\'t choosen a \'further action\'');       
+     } else { 
+       if ( byId('hprFAJsonHolder').value === "" ) { 
+         var hldVal = [];    
+       } else { 
+         var hldVal = JSON.parse( byId('hprFAJsonHolder').value  );      
+      }
+      hldVal.push(  [ byId('fldFurtherActionValue').value,  byId('fldFurtherAction').value, byId('fldFANote').value.trim()   ] );             
+      byId('hprFAJsonHolder').value = JSON.stringify(hldVal);      
+      byId('fldFurtherActionValue').value = "";
+      byId('fldFurtherAction').value = "";
+      byId('fldFANote').value = "";    
+     }       
+   }
+   if ( addIndicator === 0 ) { 
+     //DELETE FURTHER ACTION 
+     var hldVal = JSON.parse(byId('hprFAJsonHolder').value); 
+     var newVal = [];
+     var key = 0;   
+     hldVal.forEach(function(ele) { 
+       if (key !== referencenumber) {
+         newVal.push(ele);    
+       }
+       key++;
+    });
+    hldVal = newVal;
+    byId('hprFAJsonHolder').value = JSON.stringify(hldVal);              
+   }
+    var faTestTbl = "<table cellspacing=0 cellpadding=0 border=0 width=100%>";
+    var cntr = 0;         
+    hldVal.forEach(function(element) {   
+      faTestTbl += "<tr class=ddMenuItem onclick=\"manageFurtherActions(0,"+cntr+");\" ><td style=\"border-bottom: 1px solid rgba(160,160,160,1);\"><i class=\"material-icons\" style=\"font-size: 1.8vh; color:rgba(237, 35, 0,1); width: .3vw; padding: 8px 0 8px 0;\">cancel</i><td style=\"width: 15vw; padding: 8px 0 8px 8px;border-bottom: 1px solid rgba(160,160,160,1);\">"+element[1]+"</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1);\">"+element[2]+"</td></tr>";
+      cntr++;
+    });   
+    faTestTbl += "</table>"; 
+   byId('furtheractiondsplisting').innerHTML = faTestTbl;
+}
+}
+            
 function manageMoleTest(addIndicator, referencenumber, fldsuffix) { 
-  console.log(addIndicator+" "+ referencenumber+" "+ fldsuffix); 
   if (byId('hprMolecularTestJsonHolderConfirm'+fldsuffix)) {  
    if (byId('hprMolecularTestJsonHolderConfirm'+fldsuffix).value === "") { 
      if (addIndicator === 1) { 
@@ -4148,6 +4235,10 @@ function loadDXOverride() {
 function loadDesignation() {
    generateDialog( 'hprDesignationSpecifier', 'xx' );
 }
+            
+function loadInconclusive(objid) { 
+    generateDialog('hprInconclusiveDialog',objid);
+}
 
 function loadMETSBrowser() { 
   if ( byId('HPRWBTbl').dataset.specimencategory.toUpperCase().trim() !== "MALIGNANT") { 
@@ -4162,7 +4253,6 @@ function loadSystemicBrowser() {
 }
 
 function browseHPRDxOverride ( srchvalue, dialogid ) { 
-
   if ( srchvalue.length > 3 ) { 
     var obj = new Object();
     obj['srchterm'] = srchvalue;
@@ -4174,7 +4264,6 @@ function browseHPRDxOverride ( srchvalue, dialogid ) {
   if ( srchvalue.length < 4 ) { 
     byId('vocabBrowserDsp').innerHTML = "";
   }
-
 }
 
 function answerHPRVocabBrowserDXOverride( rtnData ) { 
