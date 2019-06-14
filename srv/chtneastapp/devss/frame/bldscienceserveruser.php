@@ -14,7 +14,8 @@ class bldssuser {
     public $allowpxi = 0;
     public $allowprocure = 0; 
     public $allowcoord = 0; 
-    public $allowhpr = 0; 
+    public $allowhpr = 0;
+    public $allowhprreview = 0; 
     public $allowinventory = 0;
     public $presentinstitution = "";
     public $primaryinstitution = "";
@@ -51,6 +52,7 @@ class bldssuser {
           $this->allowprocure = $userelements['allowprocurement'];
           $this->allowcoord = $userelements['allowcoordination'];
           $this->allowhpr = $userelements['allowhpr'];
+          $this->allowhprreview = $userelements['allowhprreview'];
           $this->allowinventory = $userelements['allowinventory'];
           $this->presentinstitution = $userelements['presentinstitution'] ;
           $this->primaryinstitution = $userelements['primaryinstcode'];
@@ -88,6 +90,7 @@ class bldssuser {
                 . ", ifnull(ub.allowproc,0) as allowprocurement"
                 . ", ifnull(ub.allowcoord,0) as allowcoordination"
                 . ", ifnull(ub.allowhpr,0) as allowhpr"
+                . ", ifnull(ub.allowhprreview,0) as allowhprreview"
                 . ", ifnull(ub.allowinvtry,0) as allowinventory"
                 . ", ifnull(ub.presentinstitution,'') as presentinstitution"
                 . ", timestampdiff(MINUTE, now(), ub.sessionexpire) minleftinsession"
@@ -130,6 +133,7 @@ class bldssuser {
            $elArr['allowprocurement'] = $ur['allowprocurement'];
            $elArr['allowcoordination'] = $ur['allowcoordination'];
            $elArr['allowhpr'] = $ur['allowhpr'];
+           $elArr['allowhprreview'] = $ur['allowhprreview'];
            $elArr['allowinventory'] = $ur['allowinventory'];
            $elArr['presentinstitution'] = $ur['presentinstitution'];
            $elArr['primaryinstcode'] = $ur['primaryinstcode'];
@@ -153,6 +157,7 @@ class bldssuser {
            $modR->execute(array(':userid' => $uid));
            $mods = array();
            while ($mod = $modR->fetch(PDO::FETCH_ASSOC)) {
+
               $subModMenuSQL = "SELECT menuvalue, pagesource, ifnull(explainerline,'') as additionalcode, ifnull(googleiconcode,'') as dspsystemicon, ifnull(queriable,0) as dspinmenu FROM four.sys_master_menus where menu = 'MODULEPAGES' and trim(ifnull(pagesource,'')) <> '' and dspind = 1 and ( additionalinformation <= :accesslevel) and parentid = :parentmodid order by dspOrder";
               $subModMenuR = $conn->prepare($subModMenuSQL); 
               $subModMenuR->execute(array(':parentmodid' => $mod['moduleid'], ':accesslevel' => (int)$ur['accessnbr']));
@@ -160,7 +165,18 @@ class bldssuser {
               while ($subModMenu = $subModMenuR->fetch(PDO::FETCH_ASSOC)) { 
                 $sbmod[] = $subModMenu;
               }
-             $mods[]  = array($mod['moduleid'],$mod['module'],$mod['pagesource'],$sbmod);
+
+              if ( (int)$mod['moduleid'] === 472 ) {
+
+                $rptListSQL = "SELECT concat(substr(rl.reportname,1,30),'...') as menuvalue, 'x' as pagesource, concat('navigateSite(\'reports/',ifnull(rl.urlpath,''),'\')') as additionalcode,'x' as dspsystemicon, 1 as dspinmenu FROM four.ut_reportgroup_to_reportlist rtr left join four.ut_reportlist rl on rtr.reportid = rl.reportid where userfav = :usr  and rtr.dspind = 1 and rl.dspind = 1 and rl.accesslvl <= :accessnbr order by rtr.dsporder limit 10";
+                $rptListRS = $conn->prepare($rptListSQL);
+                $rptListRS->execute(array(':accessnbr' => $ur['accessnbr'], ':usr' => $ur['ssusername']));
+                while ( $rpt = $rptListRS->fetch(PDO::FETCH_ASSOC) ) {
+                  $sbmod[] = $rpt; 
+                }
+              }
+
+              $mods[]  = array($mod['moduleid'],$mod['module'],$mod['pagesource'],$sbmod);
            }
            
            //GET ALLOWED INSTITUTIONS
@@ -204,6 +220,7 @@ class bldssuser {
            $elArr['allowprocurement'] = 0;
            $elArr['allowcoordination'] = 0;
            $elArr['allowhpr'] = 0;
+           $elArr['allowhprreview'] = 0;
            $elArr['allowinventory'] = 0;
            $elArr['presentinstitution'] = "";
            $elArr['primaryinstcode'] = "";

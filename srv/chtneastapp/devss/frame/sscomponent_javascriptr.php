@@ -1844,7 +1844,7 @@ function JSONToCSVConvertor(JSONData, ReportTitle, ShowLabel) {
     var arrData = typeof JSONData != 'object' ? JSON.parse(JSONData) : JSONData;
     var CSV = '';    
     //Set Report title in first row or line
-    CSV += ReportTitle + '\\n\\n\\n';
+    CSV += ReportTitle + '\\n';
     //This condition will generate the Label/Header
     if (ShowLabel) {
         var row = "";
@@ -1855,7 +1855,7 @@ function JSONToCSVConvertor(JSONData, ReportTitle, ShowLabel) {
         }
         row = row.slice(0, -1);
         //append Label row with line break
-        CSV += row + '\\n\\n';
+        CSV += row + '\\n';
     }
     //1st loop is to extract each row
     for (var i = 0; i < arrData.length; i++) {
@@ -1866,7 +1866,7 @@ function JSONToCSVConvertor(JSONData, ReportTitle, ShowLabel) {
         }
         row.slice(0, row.length - 1);
         //add a line break after each row
-        CSV += row + '\\n\\n';
+        CSV += row + '\\n';
     }
     if (CSV == '') {        
         alert("Invalid data");
@@ -3896,6 +3896,36 @@ function fillField(whichfield, whichvalue, whichdisplay) {
   }       
 }
 
+function reportListDisplay( id ) {
+  if ( byId('RL'+id).style.display === 'none' ) { 
+    byId('RL'+id).style.display = 'block';
+  } else { 
+    byId('RL'+id).style.display = 'none';
+  } 
+}
+
+function markFavorite( reporturl ) { 
+  var dta = new Object(); 
+  dta['reporturl'] = reporturl;
+  var passdata = JSON.stringify(dta);
+  var mlURL = "/data-doers/mark-report-favorite";
+  universalAJAX("POST",mlURL,passdata,answerMarkReportFavorite,1);
+}
+
+function answerMarkReportFavorite( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("Favorite Object Error:\\n"+dspMsg);  //DSIPLAY ERROR MESSAGE
+   } else {  
+     var prts = JSON.parse(rtnData['responseText']); 
+     alert('Report marked to your favorites'); 
+     location.reload(true);
+   }
+}
 
 JAVASCR;
 return $rtnthis;
@@ -3949,6 +3979,112 @@ JAVASCR;
   } else { 
     //THIS IS THE JAVASCRIPT FOR THE RESULTS-WORK PAGE
     $rtnthis = <<<JAVASCR
+
+document.addEventListener('DOMContentLoaded', function() {  
+
+  if (byId('btnHPRReviewSave')) { 
+    byId('btnHPRReviewSave').addEventListener('click', function() {
+      gatherAndSaveReview();
+    }, false);
+  }
+
+  if (byId('btnHPRReviewNotFit')) { 
+    byId('btnHPRReviewNotFit').addEventListener('click', function() {
+      gatherAndUnuseReview();
+    }, false);
+  }
+
+}, false);
+
+function gatherAndUnuseReview() { 
+  var dta = new Object();
+
+  if (byId('fldOnBehalfValue')) { 
+    dta['onbehalf'] = ( byId('fldOnBehalfValue').value.trim() === "" ) ? 0 : byId('fldOnBehalfValue').value;  
+  } else {
+    dta['onbehalf'] = 0;  
+  } 
+
+  dta['segid'] =  byId('HPRWBTbl').dataset.segid;
+  dta['decision'] = byId('decisionSqr').dataset.hprdecision;
+  dta['specimencategory'] = byId('HPRWBTbl').dataset.specimencategory;
+  dta['site'] = byId('HPRWBTbl').dataset.site;
+  dta['ssite'] = byId('HPRWBTbl').dataset.ssite;
+  dta['diagnosis'] = byId('HPRWBTbl').dataset.dx;
+  dta['diagnosismodifier'] = byId('HPRWBTbl').dataset.dxm;
+  dta['metsfrom'] = byId('HPRWBTbl').dataset.mets;
+  dta['systemic'] = byId('HPRWBTbl').dataset.sysm;
+  dta['uninvolved'] = byId('fldPRCUnInvolvedValue').value;
+  dta['tumorgrade'] = byId('fldTumorGrade').value;
+  dta['tumorgradescale'] = byId('fldTumorGradeScaleValue').value;
+  dta['techaccuracy'] = byId('fldTechAccValue').value;
+  var prcflds = document.getElementsByClassName("prcFld");
+  for ( var i = 0; i < prcflds.length; i++ ) {
+   dta['prc_'+prcflds[i].id.toLowerCase()] = prcflds[i].value; 
+  }
+  dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
+  dta['hprmoleculartests'] = byId('hprMolecularTestJsonHolderConfirm').value;
+  dta['rarereason'] = byId('fldRareReasonTxt').value;
+  dta['specialinstructions'] = byId('fldSpecialInstructions').value;
+  console.log( JSON.stringify( dta ));
+
+alert('Pop unusable dialog');
+
+}
+
+function gatherAndSaveReview() { 
+  var dta = new Object();
+
+  if (byId('fldOnBehalfValue')) { 
+    dta['onbehalf'] = ( byId('fldOnBehalfValue').value.trim() === "" ) ? 0 : byId('fldOnBehalfValue').value;  
+  } else {
+    dta['onbehalf'] = 0;  
+  } 
+
+  dta['segid'] =  byId('HPRWBTbl').dataset.segid;
+  dta['decision'] = byId('decisionSqr').dataset.hprdecision;
+  dta['specimencategory'] = byId('HPRWBTbl').dataset.specimencategory;
+  dta['site'] = byId('HPRWBTbl').dataset.site;
+  dta['ssite'] = byId('HPRWBTbl').dataset.ssite;
+  dta['diagnosis'] = byId('HPRWBTbl').dataset.dx;
+  dta['diagnosismodifier'] = byId('HPRWBTbl').dataset.dxm;
+  dta['metsfrom'] = byId('HPRWBTbl').dataset.mets;
+  dta['systemic'] = byId('HPRWBTbl').dataset.sysm;
+  dta['uninvolved'] = byId('fldPRCUnInvolvedValue').value;
+  dta['tumorgrade'] = byId('fldTumorGrade').value;
+  dta['tumorgradescale'] = byId('fldTumorGradeScaleValue').value;
+  dta['techaccuracy'] = byId('fldTechAccValue').value;
+
+  var prcflds = document.getElementsByClassName("prcFld");
+  var prcdta = new Object();
+  for ( var i = 0; i < prcflds.length; i++ ) {
+   prcdta['prc_'+prcflds[i].id.toLowerCase()] = prcflds[i].value; 
+  }
+  dta['complexion'] = prcdta;
+  
+  dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
+  dta['hprmoleculartests'] = byId('hprMolecularTestJsonHolderConfirm').value;
+  dta['rarereason'] = byId('fldRareReasonTxt').value;
+  dta['specialinstructions'] = byId('fldSpecialInstructions').value;
+  console.log( JSON.stringify( dta ));
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/hpr-save-review";
+  universalAJAX("POST",mlURL,passdta,answerHPRSaveReview,2);
+}
+
+function answerHPRSaveReview( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+
+   }
+}
 
 function generateDialog( whichdialog, whatobject ) { 
   var dta = new Object(); 
@@ -4185,21 +4321,21 @@ if ( byId('hprFAJsonHolder') ) {
 }
             
 function manageMoleTest(addIndicator, referencenumber, fldsuffix) { 
-  if (byId('hprMolecularTestJsonHolderConfirm'+fldsuffix)) {  
-   if (byId('hprMolecularTestJsonHolderConfirm'+fldsuffix).value === "") { 
+  if (byId('hprMolecularTestJsonHolderConfirm')) {  
+   if (byId('hprMolecularTestJsonHolderConfirm').value === "") { 
      if (addIndicator === 1) { 
         var hldVal = [];
         hldVal.push(  [ byId('hprFldMoleTest'+fldsuffix+'Value').value,  byId('hprFldMoleTest'+fldsuffix).value, byId('hprFldMoleResult'+fldsuffix+'Value').value, byId('hprFldMoleResult'+fldsuffix).value, byId('hprFldMoleScale'+fldsuffix).value.trim()      ] );    
-        byId('hprMolecularTestJsonHolderConfirm'+fldsuffix).value = JSON.stringify(hldVal);
+        byId('hprMolecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);
       }
     } else { 
       if (addIndicator === 1) { 
-        var hldVal = JSON.parse(byId('hprMolecularTestJsonHolderConfirm'+fldsuffix).value);
+        var hldVal = JSON.parse(byId('hprMolecularTestJsonHolderConfirm').value);
         hldVal.push(  [ byId('hprFldMoleTest'+fldsuffix+'Value').value,  byId('hprFldMoleTest'+fldsuffix).value, byId('hprFldMoleResult'+fldsuffix+'Value').value, byId('hprFldMoleResult'+fldsuffix).value, byId('hprFldMoleScale'+fldsuffix).value.trim()      ] );    
-        byId('hprMolecularTestJsonHolderConfirm'+fldsuffix).value = JSON.stringify(hldVal);
+        byId('hprMolecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);
       }
       if (addIndicator === 0) { 
-         var hldVal = JSON.parse(byId('hprMolecularTestJsonHolderConfirm'+fldsuffix).value);             
+         var hldVal = JSON.parse(byId('hprMolecularTestJsonHolderConfirm').value);             
          var newVal = [];
          var key = 0;   
          hldVal.forEach(function(ele) { 
@@ -4209,7 +4345,7 @@ function manageMoleTest(addIndicator, referencenumber, fldsuffix) {
             key++;
          });
          hldVal = newVal;
-         byId('hprMolecularTestJsonHolderConfirm'+fldsuffix).value = JSON.stringify(hldVal);   
+         byId('hprMolecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);   
       }      
     }
     byId('hprFldMoleTest'+fldsuffix+'Value').value = "";

@@ -32,7 +32,7 @@ class stylesheets {
   
 function globalstyles($mobileInd) {
 
- $rtnThis = <<<STYLESHEET
+$rtnThis = <<<STYLESHEET
 
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Bungee);
 html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh; color: rgba({$this->color_black},1);}
@@ -968,6 +968,20 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
 #jsonToExport {display: none; }
 
+.reportGroupHolder { border: 1px solid rgba({$this->color_zackgrey},1); margin-top: .1vh; }
+.groupHeaderName { font-size: 1.5vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); }
+.groupdescription { font-size: 1.1vh; color: rgba({$this->color_mgrey},1); }
+.favoritestar { font-size: 2.8vh; color: rgba(255,255,0,1); -webkit-text-stroke: 1px rgba({$this->color_mgrey},1); } 
+.basicrpt { font-size: 2.8vh; color: rgba({$this->color_mgrey},1); -webkit-text-stroke: 1px rgba({$this->color_zackgrey},1); }
+.primeiconholder { width: 2vw; padding: .2vh .2vw; box-sizing: border-box; }
+.hoverer { cursor: pointer; }
+
+.rptItemTblDsp { width: 18vw; height: 10vh; }
+.rptTitleDsp {font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); }
+.rptDescDsp {font-size: 1.2vh; color: rgba({$this->color_mgrey},1);  }
+.rptDspSqr { border:  1px solid rgba({$this->color_darkgrey},1); }
+.rptDspSqr:hover { cursor: pointer; background: rgba({$this->color_lamber},.5); }
+
 
 STYLESHEET;
 return $rtnThis;    
@@ -1194,6 +1208,9 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 #hprVocabResultTbl tbody tr:nth-child(even) {background: rgba({$this->color_lgrey},1); }
 #hprVocabResultTbl tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
 #hprVocabResultTbl tbody tr td { padding: 4px; }
+
+#fldPRCUnInvolved { font-size: 1.5vh; color: rgba({$this->color_dblue},1); padding: .8vh .5vw; width: 18vw; }
+#ddPRCUnInvolved { min-width: 18vw; }
 
 STYLESHEET;
 return $rtnThis;

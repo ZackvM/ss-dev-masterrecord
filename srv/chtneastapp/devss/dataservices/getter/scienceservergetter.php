@@ -34,7 +34,30 @@ class objgetter {
 }
 
 class objlisting { 
-    
+
+  function hprreviewerlist() {
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "Zack was here";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW'];
+     if ( $authuser === serverIdent) {
+          $prnSQL = "SELECT userid, displayname FROM four.sys_userbase where allowhprreview =1";     
+          $prnRS = $conn->prepare($prnSQL);
+          $prnRS->execute();
+          while ($r = $prnRS->fetch(PDO::FETCH_ASSOC)) { 
+              $dta[] = $r;
+          }
+     }                
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;     
+  }
+
   function thermalprinterlist() {
      $responseCode = 400;
      $rows = array();

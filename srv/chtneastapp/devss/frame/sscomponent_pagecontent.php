@@ -622,8 +622,19 @@ DIALOGINNER;
     }
 
     $closerAction = ( $standardSysDialog === 1 ) ? "closeSystemDialog();" : "{$closer}";
-    
-    
+
+if ( trim($titleBar) === "" && trim($closerAction) === "" ) {  
+  //return dialog with no dialog title bar
+  $rtnthis = <<<PAGEHERE
+<table border=0 cellspacing=0 cellpadding=0>
+<tr><td colspan=2>
+  {$innerDialog}
+</td></tr>
+<tr><td colspan=2>{$footerBar}</td></tr>
+</table>
+PAGEHERE;
+} else {
+  //return dialog with black title bar header  
   $rtnthis = <<<PAGEHERE
 <table border=0 cellspacing=0 cellpadding=0>
 <tr><td id=systemDialogTitle>{$titleBar}</td><td onclick="{$closerAction}" id=systemDialogClose>{$this->closeBtn}</td></tr>
@@ -632,8 +643,9 @@ DIALOGINNER;
 </td></tr>
 <tr><td colspan=2>{$footerBar}</td></tr>
 </table>
-
 PAGEHERE;
+}
+
 return $rtnthis;
 }
 
@@ -930,8 +942,80 @@ function inventory ( $rqststr, $whichusr ) {
 }
 
 
+function reports ( $rqststr, $whichusr ) {
 
-function reports($rqststr, $whichusr) { 
+
+$accesslvl = $whichusr->accessnbr;
+$user = $whichusr->userid;
+//$rststr[1] = REPORTS // $rqststr[2] = reportname-for-criteria-screen or report-results // $rqststr[3] = report-run-id 
+
+
+if ( trim($rqststr[2]) === "" ) { 
+    //GET FULL REPORT LIST
+  
+    $pdta = json_encode(array( "user" => cryptservice( "{$user}::{$whichusr->loggedsession}",'e')));
+    $rptdta = json_decode(callrestapi("POST", dataTree . "/data-doers/user-report-listing",serverIdent, serverpw, $pdta), true);
+    $rdta = $rptdta['DATA'];
+    $pg = "";
+    $rCntr = 0;
+    foreach ( $rdta as $key => $val ) {
+
+      if ( $key === 'myfavoritereports' ) { 
+        $sideicon = "<i class=\"material-icons favoritestar\">star</i>";
+        $displayThis = "block";
+      } else { 
+        $sideicon = "<i class=\"material-icons basicrpt\">reorder</i>";
+        $displayThis = "none";
+      }
+
+      $pg .= "<div class=reportGroupHolder id=RG{$rCntr}><table border=0 width=100% id=RGTBL{$rCntr} onclick=\"reportListDisplay({$rCntr});\"><tr><td class=groupHeaderName>{$val['name']}</td></tr><tr><td class=groupdescription>{$val['description']}</td></tr></table><div class=reportlist style=\"display: {$displayThis};\" id=RL{$rCntr}>";
+      $pg .= "<table border=0 style=\"margin-left: 2vw; margin-bottom: 1vh;\"><tr>";
+      $cllCntr = 0;
+      foreach ( $val['list'] as $k => $v ) { 
+        if ( $cllCntr === 5 ) { 
+          $pg .= "</tr><tr>";
+          $cllCntr = 0;
+        }  
+        $pg .= "<td valign=top class=rptDspSqr><table class=rptItemTblDsp><tr><td rowspan=2 class=\"primeiconholder hoverer\" onclick=\"markFavorite('{$v['reporturl']}');\">{$sideicon}</td><td onclick=\"navigateSite('reports/{$v['reporturl']}');\" class=rptTitleDsp>{$v['reportname']}</td></tr><tr><td onclick=\"navigateSite('reports/{$v['reporturl']}');\" class=rptDescDsp>{$v['description']}</td></tr></table></td>";
+        $cllCntr++;
+      }
+      $pg .= "</tr></table>";
+      $pg .= "</div></div>";
+      $rCntr++;
+    }
+
+}
+
+if ( $rqststr[2] === "reportresults" &&  trim($rqststr[3]) !== "" ) {
+     //TABULAR REPORT RESULTS   
+     $topBtnBar = generatePageTopBtnBar('reportresultsscreen');
+     $pgContent = bldReportResultsScreen(trim($rqststr[3]), $whichusr);
+     $pg = <<<CONTENT
+{$pgContent}
+CONTENT;
+}
+
+if ( trim($rqststr[2]) !== "" && trim($rqststr[2]) !== 'reportresults' ) {
+  //GET REPORT PARAMETERS
+  $topBtnBar = generatePageTopBtnBar('reportscreen');
+  $reportParameters = bldReportParameterScreen($rqststr[2], $whichusr);        
+  $pg = <<<CONTENT
+{$reportParameters}
+CONTENT;
+     }
+
+
+$rtnthis = <<<PAGEHERE
+{$topBtnBar} 
+{$pg}
+PAGEHERE;
+
+return $rtnthis;    
+}
+
+
+
+function reportsbu ( $rqststr, $whichusr ) { 
 
 //  if ((int)$whichusr->allowcoord !== 1     ) { 
 //    $pg = "<h1>USER IS NOT ALLOWED TO USE THE REPORT SCREEN";        
@@ -1642,68 +1726,71 @@ return $rtnthis;
 
 function hprreview($rqststr, $whichusr) { 
 
-
-if (trim($rqststr[2]) === "") { 
-  //HPR Query Grid and Scanner
-  $pg = <<<PAGECONTENT
-<div id=headAnnouncement>Scan or Type :: Tray or Slide Number</div>
-<center>
-<input type=text id=dspScanType>
+  if ((int)$whichusr->allowhpr <>  1) { 
+    //USER NOT ALLOWED TO PROCURE
+    $pg = "<h1>USER NOT ALLOWED TO ACCESS TO HISTOPATHOLOGIC REVIEW";
+  } else { 
+    if (trim($rqststr[2]) === "") { 
+      //HPR Query Grid and Scanner
+      $pg = <<<PAGECONTENT
+        <div id=headAnnouncement>Scan or Type :: Tray or Slide Number</div>
+        <center>
+        <input type=text id=dspScanType>
 PAGECONTENT;
-} else { 
-
-
-if ( trim($rqststr[3]) === "" ) {
-  //GET TRAY LIST 
-  $topBtnBar = generatePageTopBtnBar('hprreviewactionstray',$whichusr ); 
-  $pgContent = buildHPRTrayDisplay( $rqststr[2] );
-} else { 
-    //GET WORKBENCH WITH BACK BUTTON TO TRAY
-    $topBtnBar = generatePageTopBtnBar('hprreviewactions',$whichusr, $rqststr[2] ); 
-    $technicianSide = buildHPRTechnicianSide ( $_SERVER['REQUEST_URI'] );   
-    $workBench = buildHPRWorkBenchSide ( $_SERVER['REQUEST_URI'] ); 
-  $pgContent = <<<REVIEWTBL
-  <table border=0 id=masterHPRSlideReviewTbl>
-      <tr><td colspan=2 id=masterHPRSlideAnnounceLine>{$technicianSide['topLineAnnouncement']}</td></tr>
-      <tr><td id=masterHPRTechnicianSide valign=top>{$technicianSide['techMetrics']}</td><td valign=top rowspan=3 id=masterHPRWorkbenchSide> {$workBench['wrkBnch']} </td></tr>
-      <tr><td id=masterHPRDivBtns> 
-        <table cellpadding=0 cellspacing=0>
-          <tr>
-            <td class=tabBtn onclick="changeSupportingTab(0);">Pathology<br>Report</td>
-            <td class=tabBtn onclick="changeSupportingTab(1);">Constituent<br>Segments</td>
-            <!-- <td class=tabBtn onclick="changeSupportingTab(2);">Previous<br>Reviews</td> //-->
-            <td class=tabBtn onclick="changeSupportingTab(3);">Images &amp;<br>Other Files</td>
-            <td class=tabBtn onclick="changeSupportingTab(4);">Virtual<br>Slide</td>
-          </tr>
-        </table>
-      </td></tr>
-      <tr><td id=masterHPRDocumentSide valign=top>{$technicianSide['documentMetrics']}</td></tr>
-  </table>
+    } else { 
+      if ( trim($rqststr[3]) === "" ) {
+        //GET TRAY LIST 
+        $topBtnBar = generatePageTopBtnBar('hprreviewactionstray',$whichusr ); 
+        $pgContent = buildHPRTrayDisplay( $rqststr[2] );
+      } else { 
+        //GET WORKBENCH WITH BACK BUTTON TO TRAY
+        $topBtnBar = generatePageTopBtnBar('hprreviewactions',$whichusr, $rqststr[2] ); 
+        $technicianSide = buildHPRTechnicianSide ( $_SERVER['REQUEST_URI'] );   
+        $workBench = buildHPRWorkBenchSide ( $_SERVER['REQUEST_URI'] , $whichusr->allowhprreview    ); 
+        $pgContent = <<<REVIEWTBL
+          <table border=0 id=masterHPRSlideReviewTbl>
+            <tr><td colspan=2 id=masterHPRSlideAnnounceLine>{$technicianSide['topLineAnnouncement']}</td></tr>
+            <tr><td id=masterHPRTechnicianSide valign=top>{$technicianSide['techMetrics']}</td><td valign=top rowspan=3 id=masterHPRWorkbenchSide> {$workBench['wrkBnch']} </td></tr>
+            <tr><td id=masterHPRDivBtns> 
+              <table cellpadding=0 cellspacing=0>
+                <tr>
+                  <td class=tabBtn onclick="changeSupportingTab(0);">Pathology<br>Report</td>
+                  <td class=tabBtn onclick="changeSupportingTab(1);">Constituent<br>Segments</td>
+                  <!-- <td class=tabBtn onclick="changeSupportingTab(2);">Previous<br>Reviews</td> //-->
+                  <td class=tabBtn onclick="changeSupportingTab(3);">Images &amp;<br>Other Files</td>
+                  <td class=tabBtn onclick="changeSupportingTab(4);">Virtual<br>Slide</td>
+                </tr>
+              </table>
+             </td></tr>
+            <tr><td id=masterHPRDocumentSide valign=top>{$technicianSide['documentMetrics']}</td></tr>
+            </table>
 REVIEWTBL;
-
-
-}
-$pg = <<<PAGECONTENT
-{$topBtnBar} 
-{$pgContent}
+      }
+    //$u = json_encode($whichusr);  
+    $pg = <<<PAGECONTENT
+    {$topBtnBar} 
+    {$pgContent}
 PAGECONTENT;
+    }
+  }
 
-}
   return $pg;
 }
 
 function login($rqststr) {
  
 //THIS SETS THE COOKIE
-//$number_of_days = 30 ;
-//$date_of_expiry = time() + 60 * 60 * 24 * $number_of_days ; 
-//setcookie("ssv7_dualcode","857885",$date_of_expiry,"/");
-//AUTHENTICATION WILL IGNORE COOKIES
-//if(!isset($_COOKIE['ssv7_dualcode'])) {
-    $addLine = "<tr><td class=label>Dual-Authentication Code <span class=pseudoLink id=btnSndAuthCode>(Send Authentication Code)</span></td></tr><tr><td><input type=text id=ssDualCode value=\"\"></td></tr>";
-//} else {             
-//}
+$authCode = "";
+$authExpire = "";
+if(!isset($_COOKIE['ssv7auth'])) {
+} else {             
+    $authCodeAsset = json_decode( $_COOKIE['ssv7auth'] , true );
+    //{"dualcode":"dDhJVDB6S0EvdFRwaDBQYUZ5Q253dz09","expiry":1560793836}
+    $authCode = cryptservice( $authCodeAsset['dualcode'] , 'd');
+    $authExpire = " will expire on " .date( 'm/d/Y', strtotime($authCodeAsset['expirydate']));
+}
 
+$addLine = "<tr><td class=label>Dual-Authentication Code <span id=dspAuthExpiry>{$authExpire}</span>&nbsp;<span class=pseudoLink id=btnSndAuthCode>(Send Authentication Code)</span></td></tr><tr><td><input type=text id=ssDualCode value=\"{$authCode}\"></td></tr>";
 $controlBtn = "<table><tr><td class=adminBtn id=btnLoginCtl>Login</td></tr></table>";    
 $ssversion = scienceserverTagVersion;
 
@@ -1757,18 +1844,24 @@ STANDARDHEAD;
 
 }
 
-function buildHPRWorkBenchSide ( $rqsturi ) { 
+function buildHPRWorkBenchSide ( $rqsturi, $allowhprreview ) { 
     $tt = treeTop;
     $rurl =  explode( "/", $rqsturi );
     $segbg = explode("::",cryptservice( $rurl[3], 'd', false));
     $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $segbg[0],serverIdent, serverpw), true);    
     $sg = $segData['DATA'][0];
     $prcList = json_decode(callrestapi("GET", dataTree . "/global-menu/hprpercentages",serverIdent,serverpw), true);
+    $reviewList = json_decode( callrestapi("GET", dataTree . "/hpr-reviewer-list",serverIdent,serverpw), true);
     $techAccList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-technician-accuracy",serverIdent,serverpw), true);
     $tmrGradeScaleList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-tumor-grade-scale",serverIdent,serverpw), true);
     $faList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-further-actions",serverIdent,serverpw), true);
     $idsuffix = generateRandomString(8);
     $moletest = json_decode(callrestapi("GET", dataTree . "/immuno-mole-testlist",serverIdent,serverpw),true);
+
+    //UNINVOLVED SAMPLE
+    //TODO: MAKE ALL MENUS THROUGH THE WHOLE SYSTEM LIKE THIS!!! - I LIKE THE SIDE BUTTON
+    $univData = dropmenuUninvolvedIndicator();
+    $uninvmenu = $univData['menuObj'];
 
 //DESIGNATION BUILD
     $dtaSpecCat = strtoupper(trim($sg['specimencategory']));
@@ -1788,8 +1881,17 @@ function buildHPRWorkBenchSide ( $rqsturi ) {
 //    $dtaMetsFrom .= ( trim($sg['metssitedx']) !== "" ) ? " / " . strtoupper(trim($sg['metssitedx'])) : "";
     $dtaSystemic = strtoupper(trim( $sg['systemicdx'] ));
     $sysm =  strtoupper(trim( $sg['systemicdx'] ));
+
+    $rList = "<table border=0 class=\"menuDropTbl hprNewDropDownFont\">";
+    foreach ( $reviewList['DATA'] as $rval) { 
+      $rList .= "<tr><td onclick=\"fillField('fldOnBehalf','{$rval['userid']}','{$rval['displayname']}');\" class=ddMenuItem>{$rval['displayname']}</td></tr>";
+    }
+    $rList .= "</table>";
+     
+    $reviewersmenu = ((int)$allowhprreview === 1 ) ? "" : "<tr><td colspan=5><table><tr><td class=hprPreLimFldLbl>Proxy For: </td><td> <div class=menuHolderDiv><input type=hidden id=fldOnBehalfValue value=\"\"><input type=text id=fldOnBehalf READONLY class=\"inputFld hprDataField\" style=\"width: 10vw;\" value=\"\"><div class=valueDropDown style=\"min-width: 10vw;\">{$rList}</div></div></td></tr></table></td></tr>";
+    
 $dxtbl = <<<DXTBL
-<table border=0  cellspacing=0 cellpadding=0 width=100%
+<table border=0 cellspacing=0 cellpadding=0 width=100%
             id=HPRWBTbl 
             data-segid="{$segbg[0]}" 
             data-ospecimencategory="{$spc}" 
@@ -1807,7 +1909,8 @@ $dxtbl = <<<DXTBL
             data-omets="{$mets}" 
             data-mets="{$mets}" 
             data-osysm="{$sysm}" 
-            data-sysm="{$sysm}"> 
+            data-sysm="{$sysm}">
+     {$reviewersmenu}
      <tr>
        <td rowspan=4 id=decisionSqr data-hprdecision="CONFIRM"><i class="material-icons hprdecisionicon hprdecisionconfirm">thumb_up</i></td>
        <td colspan=4 class=hprPreLimFldLbl ondblclick="resetDesig();"><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Diagnosis Designation&nbsp;<span class=actionInstruction>(Double-Click Designation to Reset)</span></td><td align=right> <table border=0><tr><td class=sideDesigBtns onclick="loadInconclusive('{$rurl[3]}');">Inconclusive</td></tr></table> </td></tr></table></td></tr>
@@ -1909,7 +2012,7 @@ $moleTbl = <<<MOLETBL
             </td>
        </tr>
        <tr><td colspan=3 valign=top>
-           <input type=hidden id=hprMolecularTestJsonHolderConfirm{$idsuffix}>
+           <input type=hidden id=hprMolecularTestJsonHolderConfirm>
            <div id=dspDefinedMolecularTestsConfirm{$idsuffix} class=dspDefinedMoleTests>
            </div>
            </td>
@@ -1924,19 +2027,18 @@ MOLETBL;
   <tr>
     <td valign=top>{$desig}</td>
   </tr>
-
-
   <tr>
     <td>
       <table border=0 cellspacing=0 cellpadding=0>
         <tr>
-          <td rowspan=2 valign=top>   </td>
+          <td class=hprPreLimFldLbl>Uninvolved Sample</td>
           <td class=hprPreLimFldLbl>Tumor Grade (if applicable)</td>
           <td class=hprPreLimFldLbl style="width: 21vw;">Technican Accuracy</td>  
           </tr>
         <tr>
-         <td><table><tr><td><input type=text id=fldTumorGrade class="hprDataField" style="width: 5vw;"></td><td> <div class=menuHolderDiv><input type=hidden id=fldTumorGradeScaleValue value=""><input type=text id=fldTumorGradeScale READONLY class="inputFld hprDataField" style="width: 8vw;" value=""><div class=valueDropDown style="min-width: 8vw;">{$tmrGrd}</div></div></td></tr></table></td>
-          <td><div class=menuHolderDiv><input type=hidden id=fldTechAccValue value="{$techAccDefaultCode}"><input type=text id=fldTechAcc READONLY class="inputFld hprDataField" style="width: 21vw;" value="{$techAccDefault}"><div class=valueDropDown style="min-width: 21vw;">{$techAcc}</div></div></td>
+         <td>{$uninvmenu}</td>
+         <td><table><tr><td><input type=text id=fldTumorGrade class="hprDataField" style="width: 5vw;"></td><td> <div class=menuHolderDiv><input type=hidden id=fldTumorGradeScaleValue value=""><input type=text id=fldTumorGradeScale READONLY class="inputFld hprDataField" style="width: 10vw;" value=""><div class=valueDropDown style="min-width: 10vw;">{$tmrGrd}</div></div></td></tr></table></td>
+          <td><div class=menuHolderDiv><input type=hidden id=fldTechAccValue value="{$techAccDefaultCode}"><input type=text id=fldTechAcc READONLY class="inputFld hprDataField" style="width: 23vw;" value="{$techAccDefault}"><div class=valueDropDown style="min-width: 23vw;">{$techAcc}</div></div></td>
          </tr>
       </table>
     </td>
@@ -1960,7 +2062,7 @@ MOLETBL;
   </tr>
   <!-- //TODO ADD LATER TO TOOL BAR <tr><td style="padding: 3vh 0 0 0;"><center><div class="upload-btn-wrapper"><button class="btn">Upload Supporting Files</button><input type="file" name="myfile" name="photos[]" id=zckPicSelector accept="image/jpeg, image/png" multiple  /></div></td></tr> //-->
   <tr>
-    <td align=right> SAVE | SAVE UNUSABLE | <span onclick="navigateSite('hpr-review/{$rurl[2]}');">CANCEL</span>    </td>
+    <td align=right><table border=0><tr><td> <table class=tblBtn id=btnHPRReviewSave style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table> </td><td> <table class=tblBtn id=btnHPRReviewNotFit style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Save::Unusable</td></tr></table> </td><td> <table class=tblBtn id=btnCancel style="width: 6vw;" onclick="navigateSite('hpr-review/{$rurl[2]}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table> </td></tr></table>    </td>
   </tr>
 </table>
 
@@ -6167,7 +6269,7 @@ function dropmenuUninvolvedIndicator() {
    $si = serverIdent;
    $sp = serverpw;
    $unknmtarr = json_decode(callrestapi("GET", dataTree . "/global-menu/uninvolved-indicator-options",$si,$sp),true);
-   $uninv = "<table border=0 class=menuDropTbl>";
+   $uninv = "<table border=0 class=\"menuDropTbl hprNewDropDownFont\">";
    $uninvDefaultValue = "";
    $uninvDefaultDsp = "";
    foreach ($unknmtarr['DATA'] as $uninvval) {

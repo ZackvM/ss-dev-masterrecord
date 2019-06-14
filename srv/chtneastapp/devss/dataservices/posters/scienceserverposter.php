@@ -1,9 +1,5 @@
 <?php
 
-//HPR STUFF
-//$srchTrm = preg_replace("/[^[:alnum:]]/iu", '',$pdta['srchTrm']);
-//$sidePanelSQL = "SELECT bs.pbiosample, replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
-
 class dataposters { 
 
   public $responseCode = 400;
@@ -37,6 +33,335 @@ function __construct() {
 }
 
 class datadoers {
+
+    function hprsavereview ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id();
+      //DO DATA CHECKS
+      //MAKE SURE ALL ARRAY KEYS EXIST
+      ( !array_key_exists('onbehalf', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'segid' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('segid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'segid' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('decision', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'decision' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('specimencategory', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'specimencategory' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('site', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'site' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('ssite', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'ssite' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('diagnosis', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'diagnosis' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('diagnosismodifier', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'diagnosismodifier' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('metsfrom', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'metsfrom' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('systemic', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'systemic' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('uninvolved', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'uninvolved' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('tumorgrade', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'tumorgrade' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('tumorgradescale', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'tumorgradescale' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('techaccuracy', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'techaccuracy' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('complexion', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'complexion' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('hprfurtheraction', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'hprfurtheraction' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('hprmoleculartests', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'hprmoleculartests' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('rarereason', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'rarereason' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('specialinstructions', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'specialinstructions' is missing.  Fatal Error")) : "";
+
+      //CHECK USER IS AN HPR REVIEWER
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowHPR = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ($rs->rowCount() === 1) { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+        if ( (int)$u['allowhprreview'] === 0 ) {
+          if ( (int)$pdta['onbehalf'] === 0 ) {   
+            (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER IS NOT A LISTED REVIEWER FOR HPR/QMS SO THE 'PROXY FOR' FIELD IS REQUIRED."));
+          } else { 
+            $chkReviewerSQL = "SELECT displayname FROM four.sys_userbase where userid = :uid and allowhprreview = 1";
+            $chkReviewerRS = $conn->prepare($chkReviewerSQL);
+            $chkReviewerRS->execute(array(':uid' => (int)$pdta['onbehalf'] ));
+            
+            if ( $chkReviewerRS->rowCount() === 0 ) { 
+                (list( $errorInd, $msgArr[] ) = array(1 , "PROXIED REVIEWER IS NOT VALID.  TRY AGAIN"));
+            } else { 
+                $rvr = $chkReviewerRS->fetch(PDO::FETCH_ASSOC);
+                $reviewer = "{$rvr['displayname']} (proxied: {$u['usr']})";
+            }
+          }
+        } else { 
+          $reviewer = $u['usr'];
+        } 
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+      }
+      //CHECK SEGID EXISTS AND IS VALID
+      $segChkSQL = "SELECT sg.biosamplelabel, sg.bgs, ifnull(sg.hprslideread,0) as hprslideread, replace(read_label,'_','') as readlabel FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where sg.segmentid = :segid";
+      $segChkRS = $conn->prepare($segChkSQL);
+      $segChkRS->execute(array(':segid' => (int)$pdta['segid'] ));
+      ( $segChkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SEGMENT SPECIFIED IS INVLAID.  FATAL ERROR!")) : $bg = $segChkRS->fetch(PDO::FETCH_ASSOC);
+
+      //TODO:   TURN THIS INTO A FUNCTION - ITS A REPEATING ALGORITHM
+      $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'HPRDECISION' and menuvalue = :suppliedvalue";
+      $chkRS = $conn->prepare($chkSQL);
+      $chkRS->execute(array(':suppliedvalue' => $pdta['decision']));
+      ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'{$pdta['decision']}' IS NOT A VALID VALUE ON THE HPR-DECISION MENU TREE")) : "";
+
+      $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'UNINVOLVEDIND' and menuvalue = :suppliedvalue";
+      $chkRS = $conn->prepare($chkSQL);
+      $chkRS->execute(array(':suppliedvalue' => $pdta['uninvolved']));
+      ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE UNINVOLVED VALUE WAS NOT FOUND ON THE HPR-DECISION MENU TREE")) : "";
+
+      if ( trim( $pdta['tumorgradescale'] ) !== "" ) {
+        $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'HPRTUMORSCALE' and menuvalue = :suppliedvalue";
+        $chkRS = $conn->prepare($chkSQL);
+        $chkRS->execute(array(':suppliedvalue' => $pdta['tumorgradescale']));
+        ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE TUMOR GRADE VALUE WAS NOT FOUND ON THE HPR-DECISION MENU TREE")) : "";
+      }
+      
+      $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'HPRTECHACCURACY' and menuvalue = :suppliedvalue";
+      $chkRS = $conn->prepare($chkSQL);
+      $chkRS->execute(array(':suppliedvalue' => $pdta['techaccuracy'] ));
+      ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE TECHNICIAN ACCURACY VALUE WAS NOT FOUND ON THE HPR-DECISION MENU TREE")) : "";
+
+      foreach ( $pdta['complexion'] as $ckey => $cval ) {
+        $mvalue = preg_replace('/^prc_/','',$ckey);
+        if ( trim($cval) !== "" ) {
+          $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'HPRPERCENTAGE' and menuvalue = :suppliedvalue";
+          $chkRS = $conn->prepare($chkSQL);
+          $chkRS->execute(array(':suppliedvalue' => strtoupper($mvalue)));
+          ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'{$mvalue}' DOES NOT APPEAR AS A VALUE ON THE HPR-DECISION MENU TREE. SEE CHTNEastern Informatics!")) : "";
+          ( !is_numeric($cval) )  ? (list( $errorInd, $msgArr[] ) = array(1 , "'{$cval}' is Not a Numeric value ({$mvalue})")) : "";
+
+        }
+      }
+
+      if ( trim($pdta['hprfurtheraction']) !== "" ) { 
+        $fa = json_decode( $pdta['hprfurtheraction'] , true);
+        //(list( $errorInd, $msgArr[] ) = array(1 , $fa[0][0] ));
+        foreach ( $fa as $fkey => $fval ) {
+          $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'HPRFURTHERACTION' and menuvalue = :suppliedvalue";
+          $chkRS = $conn->prepare($chkSQL);
+          $chkRS->execute(array(':suppliedvalue' => $fval[0]  ));
+          ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'{$fval[0]}' DOES NOT APPEAR AS A VALUE ON THE HPR-FURTHER-ACTION MENU TREE. SEE CHTNEastern Informatics!")) : "";
+        }
+      }
+
+      if ( trim($pdta['hprmoleculartests']) !== "" ) { 
+        $mt = json_decode( $pdta['hprmoleculartests'], true); 
+        foreach ( $mt as $mkey => $mval) {
+
+            if ( trim($mval[0]) === "" ) { 
+              (list( $errorInd, $msgArr[] ) = array(1 , "A Molecular Test Value must be specified for all entered molecular tests"));
+            } else {   
+              $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'MOLECULARTEST' and menuvalue = :suppliedvalue";
+              $chkRS = $conn->prepare($chkSQL);
+              $chkRS->execute(array(':suppliedvalue' => $mval[0] ));
+              ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'{$mval[0]}' DOES NOT APPEAR AS A VALUE ON THE HPR-MOLECULAR MENU TREE. SEE CHTNEastern Informatics!")) : "";
+            }
+
+        }
+      }
+
+      if ( $errorInd === 0 ) {
+         //TODO:  IN THE FAR FUTURE MAKE THIS TRANSACTIONAL - THAT WOULD BE COOL 
+
+         //INSERT HEAD  
+          $insHPRHeadSQL = "insert into masterrecord.ut_hpr_biosample (bgs,   biogroupid,  bgreference,  reviewer, reviewedon, inputby,  decision,  speccat,  site,  subsite,  dx,  subdiagnosis,  mets,  systemiccomobid,  tumorgrade,  tumorscale,  uninvolvedsample,  rarereason,  specialinstructions,  technicianaccuracy) values (:bgs, :biogroupid, :bgreference, :reviewer, now(),     :inputby, :decision, :speccat, :site, :subsite, :dx, :subdiagnosis, :mets, :systemiccomobid, :tumorgrade, :tumorscale, :uninvolvedsample, :rarereason, :specialinstructions, :technicianaccuracy)";
+         $insHPRHeadRS = $conn->prepare($insHPRHeadSQL); 
+         $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':technicianaccuracy' => trim($pdta['techaccuracy'])));
+         $hprheadid = $conn->lastInsertId();
+         //INSERT FURTHER ACTIONS
+         $faInsSQL = "insert into masterrecord.ut_hpr_factions (biohpr, actiontypevalue, actiontype, actionnote, actionindicator, actionrequestedon) values (:biohpr, :actiontypevalue, :actiontype, :actionnote, 1, now())";
+         $faInsRS = $conn->prepare($faInsSQL);
+         if ( trim($pdta['hprfurtheraction']) !== "" ) { 
+          $fa = json_decode( $pdta['hprfurtheraction'] , true);
+          foreach ( $fa as $fkey => $fval ) {
+             $faInsRS->execute(array( ':biohpr' => $hprheadid, ':actiontypevalue' => $fval[0], ':actiontype' => $fval[1], ':actionnote' => trim($fval[2])));
+          } 
+         }
+         //INSERT PERCENTAGES
+         $insPrcSQL = "insert into masterrecord.ut_hpr_percentages ( biohpr, prcTypeValue, prcType, prcValue, inputon) values(:biohpr, :prcTypeValue, :prcType, :prcValue, now())";
+         $insPrcRS = $conn->prepare($insPrcSQL);
+         foreach ( $pdta['complexion'] as $ckey => $cval ) {
+           $mvalue = preg_replace('/^prc_/','',$ckey);
+           if ( trim($cval) !== "" ) {
+             $insPrcRS->execute(array(':biohpr' => $hprheadid, ':prcTypeValue' => strtoupper($mvalue), ':prcType' => '', ':prcValue' => $cval));
+           }
+         }
+         //INSERT MOLECULAR
+         $insMoleSQL = "insert into masterrecord.ut_hpr_moleculartests (biohpr, moletestvalue, moletest, resultindexvalue, resultindex, resultdegree, inputon) value (:biohpr, :moletestvalue, :moletest, :resultindexvalue, :resultindex, :resultdegree, now())";
+         $insMoleRS = $conn->prepare($insMoleSQL);
+         if ( trim($pdta['hprmoleculartests']) !== "" ) { 
+           $mt = json_decode( $pdta['hprmoleculartests'], true); 
+           foreach ( $mt as $mkey => $mval) { 
+            $insMoleRS->execute(array(':biohpr' => $hprheadid, ':moletestvalue' => trim($mval[0]), ':moletest' => trim($mval[1]), ':resultindexvalue' => trim($mval[2]), ':resultindex' => trim($mval[3]), ':resultdegree' => trim($mval[4])));
+          }
+         }
+         //WRITE BIOSAMPLE MOLECULAR 
+         $updSQL = "update masterrecord.ut_procure_biosample_molecular set dspind = 0, updatedby = 'HPR-REVIEW-MODULE', updatedon = now() where bgprcnbr = :readlabel"; 
+         $updRS = $conn->prepare($updSQL); 
+         $updRS->execute(array(':readlabel' => $bg['readlabel']));
+         $moleInsSQL = "insert into masterrecord.ut_procure_biosample_molecular (pbiosample, bgprcnbr, testid, testresultid, molenote, onwhen, onby, dspind) values(:pbiosample, :bgprcnbr, :testid, :testresultid, :molenote, now(), :onby, 1)";
+         $moleInsRS = $conn->prepare($moleInsSQL); 
+         if ( trim($pdta['hprmoleculartests']) !== "" ) { 
+           $mt = json_decode( $pdta['hprmoleculartests'], true); 
+           foreach ( $mt as $mkey => $mval) { 
+            $moleInsRS->execute(array(':pbiosample' => $bg['biosamplelabel'], ':bgprcnbr' => $bg['readlabel'], ':testid' => trim($mval[0]), ':testresultid' => trim($mval[2]), ':molenote' => trim($mval[4]), ':onby' => $reviewer ));
+          }
+         }
+
+         //WRITE BIOSAMPLE COMPOSITION (PERCENTAGES) 
+         $updSQL = "update masterrecord.ut_procure_biosample_samplecomposition set dspind = 0, updateon = now(), updateby = 'HPR-REVIEW-SCREEN' where readlabel = :readlabel"; 
+         $updRS = $conn->prepare($updSQL); 
+         $updRS->execute(array(':readlabel' => $bg['readlabel']));
+
+         $insPrcSQL = "insert into masterrecord.ut_procure_biosample_samplecomposition (readlabel, prctype, prcvalue, dspind, inputon, inputby) values (:readlabel, :prctype, :prcvalue, 1, now(), :inputby)";
+         $insPrcRS = $conn->prepare($insPrcSQL);
+         foreach ( $pdta['complexion'] as $ckey => $cval ) {
+           $mvalue = preg_replace('/^prc_/','',$ckey);
+           if ( trim($cval) !== "" ) {
+             $insPrcRS->execute(array(':readlabel' => $bg['readlabel'], ':prctype' => strtoupper($mvalue), ':prcvalue' => $cval, ':inputby' => $reviewer));
+           }
+         }
+         //UPDATE BIOSAMPLE WITH DECISION (AFTER BACKING UP TABLE) 
+
+
+
+         //UPDATE BIOSAMPLE SEGMENT SLIDE VIEWED
+         (list( $errorInd, $msgArr[] ) = array(1 , "DATA CHECKS COMPLETE // " . strtoupper(preg_replace('/_/','',$bg['bgs'])) . " // " . $hprheadid    ));
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $rptlist);
+      return $rows;
+    }
+
+    function markreportfavorite( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ($rs->rowCount() === 1) { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+      }
+
+
+      ( !array_key_exists('reporturl', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Passed Data Array Key 'reporturl' is missing.  Fatal Error")) : "";
+      ( trim($pdta['reporturl']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A Report URL must be passed")) : "";
+
+      if ( $errorInd === 0 ) { 
+  
+        $getRptSQL = "SELECT reportid FROM four.ut_reportlist where urlpath = :rpturl"; 
+        $getRptRS = $conn->prepare($getRptSQL); 
+        $getRptRS->execute(array(':rpturl' => trim($pdta['reporturl'])));
+        //TODO: CATCH THE ERROR WHERE NO REPORT IS FOUND - ASSUMING THAT THERE IS ALWAYS A MATCHING URL PATH
+        $rptIdRS = $getRptRS->fetch(PDO::FETCH_ASSOC); 
+        $rptId = $rptIdRS['reportid'];
+
+        $usrChkSQL = "SELECT rtorid, dspind FROM four.ut_reportgroup_to_reportlist rtr where reportid = :rptid and userfav = :usr";
+        $usrChkRS = $conn->prepare($usrChkSQL); 
+        $usrChkRS->execute(array(':rptid' => $rptId, ':usr' => $u['usr'])); 
+        if ( $usrChkRS->rowCount() < 1 ) { 
+            //ADD FAVORITE
+            $countSQL = "select count(1) cnt from  four.ut_reportgroup_to_reportlist where userfav = :userfav"; 
+            $countRS = $conn->prepare($countSQL); 
+            $countRS->execute(array(':userfav' => $u['usr']));
+            $cntR = $countRS->fetch(PDO::FETCH_ASSOC);
+            $cnt = ( $cntR['cnt'] + 1);
+            $thisSQL = "insert into four.ut_reportgroup_to_reportlist ( reportid, dspind, dsporder, userfav ) values(:reportid, 1, :cntr, :userfav)";
+            $thisRS = $conn->prepare($thisSQL); 
+            $thisRS->execute(array(':reportid' => $rptId, ':userfav' => $u['usr'], ':cntr' => $cnt ));
+        } else { 
+            $rd = $usrChkRS->fetch(PDO::FETCH_ASSOC);
+            if ( (int)$rd['dspind'] === 1 ) { 
+            //  //TURN OFF FAVORITE
+              $thisSQL = "update four.ut_reportgroup_to_reportlist set dspind = 0 where reportid = :rptid and userfav = :user";
+            } else { 
+              //Turn On
+              $thisSQL = "update four.ut_reportgroup_to_reportlist set dspind = 1 where reportid = :rptid and userfav = :user";
+            }
+            $thisRS = $conn->prepare($thisSQL);
+            $thisRS->execute(array( ':rptid' => $rptId, ':user' => $u['usr'] ));
+        }
+        $responseCode = 200;
+
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $rptlist);
+      return $rows;
+    }
+
+    function userreportlisting ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $usr = explode("::" , cryptservice( $pdta['user'] , 'd'));
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as user, accessnbr  FROM four.sys_userbase where 1=1 and originalaccountname = :givenuser  and sessionid = :sessid and allowInd = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 "; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':givenuser' => $usr[0], ':sessid' => $usr[1]));
+      if ($rs->rowCount() === 1) { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER. {$usr[0]}"));
+      }
+
+      if ( $errorInd === 0 ) {  
+        $friendly = $u['friendlyname'] . " " . $u['accessnbr'];
+        $rptSQL = <<<SQLSTMT
+select * from (
+(SELECT 0 as dsporder, rtr.rtorid,   0 as groupid, 'MY-FAVORITE-REPORTS' as groupingname, 'myfavoritereports' as groupurl, 'My Favorite Report Listing' as groupdescriptions, rl.urlpath, rl.reportname, rl.reportdescription, rl.accesslvl
+FROM four.ut_reportgroup_to_reportlist rtr 
+left join four.ut_reportlist rl on rtr.reportid = rl.reportid
+where rtr.dspind = 1 and rl.dspind = 1 and rtr.userfav = :usr and rl.accesslvl <= :accesslvlusr
+order by rtorid desc) 
+UNION
+(SELECT rg.orderind, rtr.dsporder,     rg.groupid, rg.groupingname, rg.groupingurl, rg.groupingdescriptions, rl.urlpath, rl.reportname, rl.reportdescription, rl.accesslvl 
+FROM four.ut_reportgrouping rg left join four.ut_reportgroup_to_reportlist rtr on rg.groupid = rtr.reportgroupid left join four.ut_reportlist rl on rtr.reportid = rl.reportid 
+where rg.dspind = 1 and rtr.dspind = 1 and rl.dspind = 1 and rl.accesslvl <= :accesslvl  
+order by orderind, rtorid asc)) unn
+order by unn.dsporder, unn.rtorid
+SQLSTMT;
+        $rptRS = $conn->prepare($rptSQL); 
+        $rptRS->execute(array(':usr' => $u['user'], ':accesslvlusr' => $u['accessnbr'], ':accesslvl' => $u['accessnbr']));
+        $rptgurl = "";
+        $rptlist = array();
+        while ( $r = $rptRS->fetch(PDO::FETCH_ASSOC) ) { 
+            if ( $rptgurl !== $r['groupurl'] ) { 
+              $rptlist[ $r['groupurl'] ]['name'] = $r['groupingname'];
+              $rptlist[ $r['groupurl'] ]['description'] = $r['groupdescriptions'];
+              $rptgurl = $r['groupurl'];
+            }
+            $rptlist[ $r['groupurl'] ]['list'][] = array( 'reporturl' => $r['urlpath'], 'reportname' => $r['reportname'], 'description' => $r['reportdescription'] ) ; 
+        }
+        $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $rptlist);
+      return $rows;
+    }
 
     function hprvocabbrowserdxoverride ( $request, $passdata ) { 
       //SEE function searchvocabularyterms and searchVocabByTerm
@@ -1875,7 +2200,7 @@ MBODY;
       if ( $authuser !== $authchk || $authuser !== $sess ) {
          (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
       } 
-      $chkUsrSQL = "SELECT originalaccountname, emailaddress FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrSQL = "SELECT originalaccountname, emailaddress FROM four.sys_userbase where allowind = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
       $chkUsrR = $conn->prepare($chkUsrSQL); 
       $chkUsrR->execute(array(':sess' => $sess));
       if ($chkUsrR->rowCount() <> 1) { 
@@ -6108,7 +6433,124 @@ SQLSTMT;
 
 class systemposts { 
 
-  function sessionlogin($request, $passedData) { 
+  function sessionlogin($request, $passedData) {
+    //TODO TURN REPEATING CODE IN THIS CODE BLOCK INTO A FUNCTION
+    session_start();   
+    $responseCode = 503; 
+    $params = json_decode($passedData, true);
+    $ec = $params['ency'];
+    $cred = json_decode(chtndecrypt($params['ency']), true); 
+    $u = $cred['user'];
+    $p = $cred['pword'];
+    $au = trim($cred['dauth']);
+    $sess = session_id(); 
+    $ip = clientipserver();
+    require(serverkeys . "/sspdo.zck"); 
+    $usrChk = "SELECT userid, username, emailaddress, fiveonepword FROM four.sys_userbase where allowind = 1 and failedlogins < 6 and emailaddress = :pword and datediff(passwordexpiredate, now()) > -1";
+    $usrR = $conn->prepare($usrChk); 
+    $usrR->execute(array(':pword' => $u)); 
+
+    $lockoutSQL = "update four.sys_userbase set failedlogins = (failedlogins + 1) where emailaddress = :useremail";
+    $lockout = $conn->prepare($lockoutSQL);
+    $lockoutChkSQL = "SELECT failedlogins FROM four.sys_userbase where emailaddress = :useremail";
+    $lockoutChkRS = $conn->prepare($lockoutChkSQL);
+    $lockAcctSQL = "update four.sys_userbase set allowind = 0 where emailaddress = :useremail";
+    $lockAcctRS = $conn->prepare($lockAcctSQL);
+
+    if ( $usrR->rowCount() === 1 ) { 
+      $r = $usrR->fetch(PDO::FETCH_ASSOC);  
+      $dbPword = $r['fiveonepword'];
+      $usrid = $r['userid'];
+      if (password_verify($p,  $dbPword)) { 
+        //USER NAME AND PASSWORD CORRECT - CHECK AUTH          
+           $auSQL = "select ifnull(useremail,'') as useridemail, ifnull(phpsessid,'NOTSET') as phpsessid, datediff(now(), inputon) dayssince FROM serverControls.sys_ssv7_authcodes where authcode = :acode and useremail = :uemail and datediff(now(), inputon) < 5"; 
+           $auR = $conn->prepare($auSQL);
+           $auR->execute(array(':acode' => $au, ':uemail' =>$u));
+           if ($auR->rowCount() === 1) {                
+               //CHECK DAYS SINCE
+               $authenR = $auR->fetch(PDO::FETCH_ASSOC);
+               //if ((int)$authenR['dayssince'] < 6) { 
+
+                   //GOOD - SESSION CREATE LOGGEDON - CAPTURE SYSTEM ACTIVITY - REDIRECT IN JAVASCRIPT WITH STATUSCODE = 200
+                   session_regenerate_id(true);
+                   $newsess = session_id();
+                   $updAuthSQL = "update serverControls.sys_ssv7_authcodes set phpsessid = :newsess, timesused = (timesused + 1)  where authcode = :acode and useremail = :uemail";
+                   $updAR = $conn->prepare($updAuthSQL);
+                   $updAR->execute(array(':newsess' => $newsess, ':acode' => $au, ':uemail' => $u)); 
+                   if (!isset($_COOKIE['ssv7auth'])) {
+                       $date = date();
+                       $dte = date('Y-m-d', strtotime($date. ' + 4 days'));
+                       $cookieArr = json_encode(array("dualcode" =>  cryptservice(  $au , 'e'), "expiry" =>  time() + 432000, 'expirydate' => $dte ));
+                       setcookie('ssv7auth', "{$cookieArr}", time() + 432000, '/','',true,true); // 2592000 = 30 days 3600 - is one hour
+                       //2592000 = 30 days
+                   }
+
+                   $updUSRSQL = "update four.sys_userbase set sessionid = :sess, sessionExpire = date_add(now(), INTERVAL 7 HOUR) where emailaddress = :emluser"; 
+                   $updUsrR = $conn->prepare($updUSRSQL); 
+                   $updUsrR->execute(array(':sess' => $newsess, ':emluser' => $u));
+
+                   $trckSQL = "insert into four.sys_lastLogins(userid, usremail, logdatetime, fromip) values(:userid, :usremail, now(), :ip)";
+                   $trckR = $conn->prepare($trckSQL);
+                   $trckR->execute(array(':userid' => $usrid, ':usremail' => $u, ':ip' => $ip));
+
+                   captureSystemActivity($newsess, '', 'true', $u, '', '', $u, 'POST', 'LOGIN SUCCESS');                   
+                   $_SESSION['loggedin'] = 'true';
+                   $_SESSION['userid'] = $u;
+                   $lockoutResetSQL = "update four.sys_userbase set failedlogins = 0 where emailaddress = :useremail";
+                   $lockoutResetRS = $conn->prepare($lockoutResetSQL);
+                   $lockoutResetRS->execute(array( ':useremail' => $u ));
+
+                   $msg = "SUCCESS " . session_id();
+                   $responseCode = 200;                    
+
+           } else { 
+
+               //BAD OR EXPIRED AUTH CODE
+               $lockout->execute(array( ':useremail' => $u ));        
+               $lockoutChkRS->execute(array(':useremail' => $u ));
+               if ( $lockoutChkRS->rowCount() > 0 ) { 
+                 $lockout = $lockoutChkRS->fetch(PDO::FETCH_ASSOC);
+                 if ( (int)$lockout['failedlogins'] < 6 ) {
+                   $msgAdd = " (Login Attempts: {$lockout['failedlogins']} of 5)";
+                 } else { 
+                   $lockAcctRS->execute(array(':useremail' => $u));
+                   $msgAdd = " (Account has been locked out.  See CHTNEastern Informatics)";
+                 }
+               }
+               captureSystemActivity($sess, '', 'false', $u, '', '', $u, 'POST', 'AUTH CODE INCORRECT');
+               $msg = trim("Either User-Name, password and/or dual-authentication code is incorrect{$msgAdd}");
+           }             
+      } else { 
+      //BAD PASSWORD
+ 
+         $lockout->execute(array( ':useremail' => $u ));        
+         $lockoutChkRS->execute(array(':useremail' => $u ));
+         if ( $lockoutChkRS->rowCount() > 0 ) { 
+           $lockout = $lockoutChkRS->fetch(PDO::FETCH_ASSOC);
+           if ( (int)$lockout['failedlogins'] < 6 ) {
+               $msgAdd = " (Login Attempts: {$lockout['failedlogins']} of 5)";
+           } else { 
+               $lockAcctRS->execute(array(':useremail' => $u));
+               $msgAdd = " (Account has been locked out.  See CHTNEastern Informatics)";
+           }
+         }
+
+         captureSystemActivity($sess, '', 'false', $u, '', '', $u, 'POST', 'CREDENTIALS INCORRECT');
+         $msg = trim("Either User-Name, password and/or dual-authentication code is incorrect{$msgAdd}");   
+      }
+    } else { 
+        //NO USER FOUND
+        captureSystemActivity($sess, '', 'false', $u, '', '', $u, 'POST', 'USER NOT FOUND');
+        $msg = trim("Either User-Name, password and/or dual-authentication code is incorrect");           
+    }                
+
+
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => "");
+    return $rows;      
+  }
+
+  function sessionloginbu($request, $passedData) { 
     session_start();   
     $responseCode = 503; 
     $params = json_decode($passedData, true);
@@ -6139,7 +6581,7 @@ class systemposts {
            if ($auR->rowCount() === 1) {                
                //CHECK DAYS SINCE
                $authenR = $auR->fetch(PDO::FETCH_ASSOC);
-               if ((int)$authenR['dayssince'] < 31) { 
+               if ((int)$authenR['dayssince'] < 7) { 
 
                    //GOOD - SESSION CREATE LOGGEDON - CAPTURE SYSTEM ACTIVITY - REDIRECT IN JAVASCRIPT WITH STATUSCODE = 200
                    session_regenerate_id(true);
@@ -6171,18 +6613,18 @@ class systemposts {
                }
            } else { 
                captureSystemActivity($sess, '', 'false', $u, '', '', $u, 'POST', 'AUTH CODE INCORRECT');
-               $msg = "The entered authentication code is not correct";
+               $msg = "Either User-Name, password and/or authentication code is incorrect";
            }             
          }
       } else { 
       //BAD PASSWORD
          captureSystemActivity($sess, '', 'false', $u, '', '', $u, 'POST', 'CREDENTIALS INCORRECT');
-         $msg = "Either User Name and/or password is incorrect";   
+         $msg = "Either User-Name, password and/or authentication code is incorrect";   
       }
     } else { 
         //NO USER FOUND
         captureSystemActivity($sess, '', 'false', $u, '', '', $u, 'POST', 'USER NOT FOUND');
-        $msg = "Either User Name and/or password is incorrect";           
+        $msg = "Either User-Name, password and/or authentication code is incorrect";           
     }                 
     $rows['statusCode'] = $responseCode; 
     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => "");
