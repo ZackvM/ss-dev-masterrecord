@@ -33,7 +33,7 @@ function __construct() {
 }
 
 class datadoers {
-
+    
     function hprsaveinconreview ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 503;
@@ -610,7 +610,7 @@ SQLSTMT;
       $pdta = json_decode($passdata,true);
       $srchTrm = preg_replace("/[^[:alnum:]]/iu", '',$pdta['srchTrm']);
 
-      $sidePanelSQL = "SELECT  if(ifnull(sg.hprslideread,'')='','N',if (sg.hprslideread = 0, 'N', 'Y')) as hprslideread , bs.pbiosample, replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
+      $sidePanelSQL = "SELECT  if(ifnull(sg.hprslideread,'')='','N',if (sg.hprslideread = 0, 'N', 'Y')) as hprslideread , bs.pbiosample, replace(sg.bgs,'_','') as bgs, sg.biosamplelabel, sg.segmentid, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, date_format(sg.procurementdate,'%m/%d/%Y') as procurementdate, sg.enteredby as procuringtech, ucase(ifnull(sg.procuredAt,'')) as procuredat, ifnull(inst.dspvalue,'') as institutionname, ucase(concat(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat('/',ifnull(bs.subsite,'')))), ' ', concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat('/',ifnull(bs.subdiagnos,'')))), ' ' ,if(trim(ifnull(bs.tissType,'')) = '','',concat('(',trim(ifnull(bs.tissType,'')),')')))) as designation, ifnull(HPRDecision,'') as hprdecision, ifnull(HPRSlideReviewed,'') as hprslidereviewed, ifnull(HPRBy,'') as hprby, ifnull(date_format(hpron,'%m/%d/%Y'),'') as hpron   FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') inst on sg.procuredAt = inst.menuvalue where 1=1 ";
       $bldSidePanel = 0;
       $typeOfSearch = "";
       switch ($srchTrm) { 
@@ -619,6 +619,8 @@ SQLSTMT;
           $qryArr = array(':hprboxnbr' => ('HPRT' . substr(('0000' . $srchTrm),-3)));
           $bldSidePanel = 1;
           $typeOfSearch = "HPR Inventory Tray " . substr(('0000' . $srchTrm),-3);
+          $searchtype = "T"; 
+          $tray = 'HPRT' . substr(('000' . $srchTrm),-3);
           break;
         //case (preg_match('/\b\d{5}\b/',$srchTrm) ? true : false) :
         //  $sidePanelSQL .= "and sg.prepMethod = :prpmet and sg.biosamplelabel  = :biogroup and sg.segstatus <> :segstatus"; 
@@ -631,18 +633,24 @@ SQLSTMT;
           $qryArr = array(':edbgs' =>  str_replace('_','',strtoupper($srchTrm)) , ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED');
           $bldSidePanel = 1;
           $typeOfSearch = "Slide Label Search for " .  $srchTrm;
+          $searchtype = "S";    
+          $tray = "";
           break;
         case (preg_match('/\b\d{5}[a-zA-Z]{1,}.{1,}\b/', $srchTrm) ? true : false) :  
           $sidePanelSQL .= "and replace(sg.bgs,'_','') = :bgs and sg.prepMethod = :prpmet and sg.segstatus <> :segstatus"; 
           $qryArr = array(':bgs' =>  str_replace('_','',strtoupper($srchTrm)), ':prpmet' => 'SLIDE', ':segstatus' => 'SHIPPED' );
           $bldSidePanel = 1;
           $typeOfSearch = "Slide Label Search for " . $srchTrm;
+          $searchtype = "S";          
+          $tray = "";
           break;
         case (preg_match('/\bHPRT\d{3}\b/i', $srchTrm) ? true : false) :  
           $sidePanelSQL .= "and sg.hprboxnbr = :hprboxnbr "; 
           $qryArr = array(':hprboxnbr' =>  $srchTrm);
           $bldSidePanel = 1;
           $typeOfSearch = "HPR Inventory Tray " . preg_replace('/HPRT/i','',$srchTrm);
+          $searchtype = "T";     
+          $tray = strtoupper($srchTrm);
           break;
         default:
          //DEFAULT 
@@ -659,7 +667,7 @@ SQLSTMT;
         } else { 
           $itemsfound = $listRS->rowCount();
           $item = 0;
-          while ($rs = $listRS->fetch(PDO::FETCH_ASSOC)) { 
+          while ($rs = $listRS->fetch(PDO::FETCH_ASSOC)) {   
             $dta[$item]['bgs']               = $rs['bgs'];
             $dta[$item]['hprslideread']      = $rs['hprslideread'];
             $dta[$item]['pbiosample']        = $rs['biosamplelabel'];
@@ -671,7 +679,13 @@ SQLSTMT;
             $dta[$item]['institution']       = $rs['procuredat'];
             $dta[$item]['institutionname']   = $rs['institutionname'];
             $dta[$item]['designation']       = $rs['designation'];
+            $dta[$item]['recentdecision']       = $rs['hprdecision'];
+            $dta[$item]['recentslideread']       = $rs['hprslidereviewed'];
+            $dta[$item]['recentreviewby']       = $rs['hprby'];
+            $dta[$item]['recentreviewon']       = $rs['hpron'];
             $dta[$item]['traysrch']              = $srchTrm;
+            $dta[$item]['srchtype']              = $searchtype;
+            $dta[$item]['tray'] = $tray;
             //CHECK FOR FRESH
             $frshSQL = "SELECT count(1) as cnt FROM masterrecord.ut_procure_segment where prepmethod = 'FRESH' and voidind <> 1 and (segstatus = 'SHIPPED' or segstatus = 'ASSIGNED' or segstatus = 'ONOFFFER') and biosamplelabel = :biosamplelabel";
             $frshRS = $conn->prepare($frshSQL); 
@@ -2467,6 +2481,11 @@ MBODY;
              $left = '35vw';
              $top = '12vh';
              break;    
+           case 'trayreturndialog': 
+             $primeFocus = "";  
+             $left = '35vw';
+             $top = '12vh';
+             break;
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);

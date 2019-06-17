@@ -3996,6 +3996,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
 }, false);
 
+function returnSlideTray( whichtray ) {
+  var dta = new Object();
+  dta['tray'] = whichtray; 
+  byId('standardModalBacker').style.display = 'block';    
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/preprocess-tray-return";
+  universalAJAX("POST",mlURL,passdta,answerPreProcessTrayReturn,2);      
+}
+
+function answerPreProcessTrayReturn( rtnData ) { 
+
+            console.log( rtnData ); 
+            byId('standardModalBacker').style.display = 'none';    
+   
+}
+            
 function sendSaveUnusable( dialogid ) {
   var dta = JSON.parse( byId('valSavedData').value );
   dta['unusabletxt'] = byId('ususableReasonTxt').value;

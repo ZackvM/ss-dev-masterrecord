@@ -15,6 +15,13 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'trayreturndialog': 
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Unusuable Biosample";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPRReturnTray ( $pdta['dialogid'], $passedData );
+        break;
       case 'hprUnusuableDialog': 
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Unusuable Biosample";
@@ -2224,41 +2231,61 @@ function buildHPRTrayDisplay( $rqst ) {
         $cellCntr = 0;
         $sidePanelTblInner = "<tr class=rowBacker>";
         foreach ($sidedta['DATA'] as $skey => $sval) {
+           $searchtype = $sval['srchtype'];
+           $tray = $sval['tray'];
            $freshDsp = ((int)$sval['freshcount'] > 0) ? "[CONTAINS DIRECT SHIPMENT]" : "";
            $cntr = ($skey + 1); 
            $slideidentifier = cryptservice(  "{$sval['segmentid']}::{$sval['pbiosample']}" );
            $clickAction = " onclick=\"navigateSite('hpr-review/{$rqst}/{$slideidentifier}');\" ";
            $readYet = ( $sval['hprslideread'] !== 'N' ) ? "<i class=\"material-icons readyes\">check_circle</i>" : "<i class=\"material-icons readno\">error</i>";
+           $pastHPRDsp = "<tr><td>&nbsp;</td></tr>";
+           if ( trim($sval['recentdecision']) !== "" ) { 
+               $pastHPRDsp = "<tr>"
+                   . "<td valign=top class=slidedate colspan=3><b>Recent Decision</b>: " . strtoupper(trim($sval['recentdecision'])) . " "
+                   . " / <b>Slide Read</b>: " . preg_replace('/_/','',strtoupper(trim($sval['recentslideread']))) . " "
+                   . " on " . strtoupper(trim($sval['recentreviewon'])) . "</td>"
+                   . "</tr>";
+           } 
            if ( $cellCntr === 2 ) {
              $sidePanelTblInner .= "</tr><tr class=rowBacker>";
              $cellCntr = 0;
-           }     
+           }
            $sidePanelTblInner .= <<<SLIDELINE
-<td {$clickAction} class=rowHolder valign=top>
+<td {$clickAction} class="rowHolder dspSlideTrayCell" valign=top>
     <table border=0 class=hprSlideDsp>
       <tr>
-        <td rowspan=3 class=slideicon>{$readYet}</td>
+        <td rowspan=4 class=slideicon>{$readYet}</td>
         <td colspan=3 class=bgsslidenbr>{$sval['bgs']}</td>
       </tr>
       <tr><td colspan=3 class=slidedesignation valign=top>{$sval['designation']}</td></tr>
       <tr><td valign=top class=slidedate><b>Procurement</b>: {$sval['procurementdate']}</td><td valign=top class=slidetech><b>Tech</b>: {$sval['procuringtech']}</td></tr>
-      <tr><td valign=top colspan=3 class=slidefreshdsp>{$freshDsp}</td></tr>
+      {$pastHPRDsp}
+      <tr><td valign=top colspan=4 class=slidefreshdsp>{$freshDsp}</td></tr>
     </table>
 </td>
 SLIDELINE;
+          
           $cellCntr++;   
         } 
         $sidePanelTblInner .= "</tr>";
-        $sidePanelTbl = "<center><table border=0 cellspacing=0 cellpadding=0 id=sidePanelSlideListTbl>"; 
+        
+        $rtnTrayBtn = "";
+        if ( $searchtype === 'T' ) { 
+          //RETURN TRAY BUTTON
+          $rtnTrayBtn = "<table class=tblBtn id=btnHPRRtnTray style=\"width: 6vw;\" onclick=\"generateDialog('trayreturndialog','{$tray}');\"><tr><td style=\"font-size: 1.3vh;\"><center>Return Tray</td></tr></table>";
+        }
+        
+        
+        $sidePanelTbl = "<center><table border=0 cellspacing=0 cellpadding=0 id=sidePanelSlideListTbl>";       
         $sidePanelTbl .= "<tr><th class=workbenchheader colspan=2>{$sidedta['MESSAGE'][0]}</th></tr>";
-        $sidePanelTbl .= "<tr><td class=slidesfound colspan=2><b>Slides Found</b>: {$cntr}</td></tr>";
+        $sidePanelTbl .= "<tr><td class=slidesfound colspan=2><b>Slides Found</b>: {$cntr}</td></tr>";  
+        $sidePanelTbl .= "<tr><td colspan=2 align=right>{$rtnTrayBtn}</td></tr>";
         $sidePanelTbl .= $sidePanelTblInner;
+        $sidePanelTbl .= "<tr><td colspan=2 align=right>{$rtnTrayBtn}</td></tr>";
         $sidePanelTbl .= "</table>";
-        //SIDE PANEL BUILD END
-               
+        //SIDE PANEL BUILD END               
         $pg = <<<PGCONTNT
     <div id=sidePanel>{$sidePanelTbl}</div>
-{$sval['traysrch']}
 PGCONTNT;
     } 
     
@@ -3150,6 +3177,40 @@ RTNTHIS;
 
 return $rtnThis;
 
+}
+
+function bldHPRReturnTray ( $dialogid, $passedData ) { 
+   
+    require(serverkeys . "/sspdo.zck");    
+    $dta = json_decode( $passedData, true);
+    $obj = $dta['objid'];
+    //TODO: TURN INTO WEBSERVICE
+    $chkSQL = "SELECT * FROM masterrecord.ut_procure_segment where HPRBoxNbr = :trayscancode and hprslideread = 0";
+    $chkRS = $conn->prepare($chkSQL);
+    $chkRS->execute(array(':trayscancode' => $obj));
+    if ( $chkRS->rowCount() < 1 ) { 
+    } else { 
+        $reasonNotFinished = "<tr><td>Not all the slides in this tray have been marked as 'Read'.</td></tr><tr><td>Reason Not Finished</td></tr><tr><td>REASON LIST</td></tr><tr><td>Additional Notes</td></tr><tr><td>REASON NOT FINISHED NOTE</td></tr>";
+    }
+
+    
+    $rtnThis = <<<PGCONTENT
+<style>
+    #rtntitleline { font-size: 1.7vh; font-weight: bold; padding: 10px; text-align: center; }
+    #rtninstructionline { font-size: 1.3vh; padding: 4px; }        
+</style>
+
+<table>
+    <tr><td id=rtntitleline>Thank You for the review!</td></tr>
+    <tr><td id=rtninstructionline>Slide tray for is located for pick-up</td></tr>
+    <tr><td>Location Menu</td></tr>
+    <tr><td>Location Note</td></tr>        
+    {$reasonNotFinished}
+    <tr><td>BTNS</td></tr>
+    </table>
+PGCONTENT;
+return $rtnThis;
+  
 }
 
 function bldHPRUsuableSave ( $dialogid , $passedData ) { 

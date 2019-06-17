@@ -1124,7 +1124,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 #sidePanelSlideListTbl .workbenchheader { font-size: 1.8vh; padding: 1vh 0 0 0; font-weight: bold; }   
 #sidePanelSlideListTbl .slidesfound { font-size: 1vh; text-align: right; padding: 0 .5vw 0 0; }
 
-#sidePanelSlideListTbl .hprSlideDsp { border: 1px solid rgba({$this->color_zackgrey},1); margin: 10px 10px; height: 10vh; width: 20vw; } 
+#sidePanelSlideListTbl .hprSlideDsp { border: 1px solid rgba({$this->color_zackgrey},1); margin: 10px 10px; height: 13vh; width: 20vw; } 
 #sidePanelSlideListTbl .readyes { font-size: 3vh; color: rgba({$this->color_darkgreen},1); }
 #sidePanelSlideListTbl .readno { font-size: 3vh; color: rgba(255, 182, 38, 1);  }
 #sidePanelSlideListTbl .bgsslidenbr { font-size: 1.8vh; font-weight: bold; height: 1vh;  }
