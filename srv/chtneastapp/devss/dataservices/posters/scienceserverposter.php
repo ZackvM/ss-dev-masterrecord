@@ -34,6 +34,116 @@ function __construct() {
 
 class datadoers {
 
+    function hprsaveinconreview ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id();
+      //DO DATA CHECKS
+
+      //{"onbehalf":"111","segid":"448485","inconreason":"This is the reason","inconfurtheractions":"[[\"ADDENDUMREQUESTED\",\"Addendum for Pathology Report Needed\",\"\"]]","dialogid":"DWFEVu3gxjCOSMP"}
+      ( !array_key_exists('onbehalf', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'onbehalf' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('segid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'segid' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('inconreason', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'inconreason' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('inconfurtheractions', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'inconfurtheractions' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('dialogid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'dialogid' is missing.  Fatal Error")) : "";
+
+      //CHECK USER IS AN HPR REVIEWER
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowHPR = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ($rs->rowCount() === 1) { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+        if ( (int)$u['allowhprreview'] === 0 ) {
+          if ( (int)$pdta['onbehalf'] === 0 ) {   
+            (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER IS NOT A LISTED REVIEWER FOR HPR/QMS SO THE 'PROXY FOR' FIELD IS REQUIRED."));
+          } else { 
+            $chkReviewerSQL = "SELECT displayname FROM four.sys_userbase where userid = :uid and allowhprreview = 1";
+            $chkReviewerRS = $conn->prepare($chkReviewerSQL);
+            $chkReviewerRS->execute(array(':uid' => (int)$pdta['onbehalf'] ));
+            
+            if ( $chkReviewerRS->rowCount() === 0 ) { 
+                (list( $errorInd, $msgArr[] ) = array(1 , "PROXIED REVIEWER IS NOT VALID.  TRY AGAIN"));
+            } else { 
+                $rvr = $chkReviewerRS->fetch(PDO::FETCH_ASSOC);
+                $reviewer = "{$rvr['displayname']}";
+            }
+          }
+        } else { 
+          $reviewer = $u['usr'];
+        } 
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+      }
+
+      $segChkSQL = "SELECT sg.biosamplelabel, sg.bgs, ifnull(sg.hprslideread,0) as hprslideread, replace(read_label,'_','') as readlabel FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where sg.segmentid = :segid";
+      $segChkRS = $conn->prepare($segChkSQL);
+      $segChkRS->execute(array(':segid' => (int)$pdta['segid'] ));
+      ( $segChkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SEGMENT SPECIFIED IS INVLAID.  FATAL ERROR!")) : $bg = $segChkRS->fetch(PDO::FETCH_ASSOC);
+
+      if ( trim($pdta['inconfurtheractions']) !== "" ) { 
+        $fa = json_decode( $pdta['inconfurtheractions'] , true);
+        foreach ( $fa as $fkey => $fval ) {
+          $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'HPRFURTHERACTION' and menuvalue = :suppliedvalue";
+          $chkRS = $conn->prepare($chkSQL);
+          $chkRS->execute(array(':suppliedvalue' => $fval[0] ));
+          ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'{$fval[0]}' DOES NOT APPEAR AS A VALUE ON THE HPR-FURTHER-ACTION MENU TREE. SEE CHTNEastern Informatics!")) : "";
+        }
+      }
+
+      if ( trim($pdta['inconreason']) === "" ) {
+        (list( $errorInd, $msgArr[] ) = array(1 , "'REASON INCONCLUSIVE' IS REQUIRED. STATE THE REASON THIS BIOSAMPLE CANNOT BE GIVEN A DIAGNOSIS DESIGNATION"));
+      }
+
+      if ( $errorInd === 0 ) {
+         $decision = 'INCONCLUSIVE';
+         //TODO:  IN THE FAR FUTURE MAKE THIS TRANSACTIONAL - THAT WOULD BE COOL 
+         //INSERT HEAD  
+         $insHPRHeadSQL = "insert into masterrecord.ut_hpr_biosample (bgs, biogroupid,  bgreference,  reviewer, reviewedon, inputby,  decision, inconclusivetxt) values (:bgs, :biogroupid, :bgreference, :reviewer, now(), :inputby, :decision, :inconclusivetxt )";
+         $insHPRHeadRS = $conn->prepare($insHPRHeadSQL); 
+         $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => $decision, ':inconclusivetxt' => trim($pdta['inconreason'])));
+         $hprheadid = $conn->lastInsertId();
+
+         ////INSERT FURTHER ACTIONS
+         $faInsSQL = "insert into masterrecord.ut_hpr_factions (biohpr, actiontypevalue, actiontype, actionnote, actionindicator, actionrequestedon) values (:biohpr, :actiontypevalue, :actiontype, :actionnote, 1, now())";
+         $faInsRS = $conn->prepare($faInsSQL);
+         if ( trim($pdta['inconfurtheractions']) !== "" ) { 
+          $fa = json_decode( $pdta['inconfurtheractions'] , true);
+          foreach ( $fa as $fkey => $fval ) {
+             $faInsRS->execute(array( ':biohpr' => $hprheadid, ':actiontypevalue' => $fval[0], ':actiontype' => $fval[1], ':actionnote' => trim($fval[2])));
+          } 
+         }
+
+         //BACKUP BIOGROUP
+         $buSQL = "insert into masterrecord.history_procure_biosample_qms (pbiosample, readlabel, qcvalv2, hprindicator, hprmarkbyon, qcindicator, qcmarkbyon, qcprocstatus, labaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresultid, slidereviewed, hpron, hprby, historyrecordon, historyrecordby)  SELECT pbiosample, read_label, qcvalv2, hprind, hprmarkbyon, qcind, qcmarkbyon, qcprocstatus, labactionaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresult, hprslidereviewed, hpron, hprby, now() as historyrecordon, 'HPR-REVIEW-MODULE' as  historyrecordby FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
+         $buRS = $conn->prepare($buSQL); 
+         $buRS->execute(array(':pbiosample' => $bg['biosamplelabel']));
+
+         //WRITE BIOGROUP
+         $updBSSQL = "update masterrecord.ut_procure_biosample set hprind = 1,hprmarkbyon = concat(:reviewerdsp,'::', now()),QCProcStatus = 'H',hprdecision = :decision, hprresult = :hprid, hprslidereviewed = :bgs, hprby = :reviewer, hpron = now() where pbiosample = :pbiosample";
+         $updBSRS = $conn->prepare($updBSSQL);
+         $updBSRS->execute(array(':reviewerdsp' => $reviewer, ':decision' => strtoupper($decision), ':hprid' => $hprheadid, ':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':reviewer' => $reviewer, ':pbiosample' => $bg['biosamplelabel']));
+
+         //UPDATE BIOSAMPLE SEGMENT SLIDE VIEWED
+         $updSReadSQL = "update masterrecord.ut_procure_segment set hprslideread = 1 where replace(bgs,'_','') = :slidenbr";
+         $updSReadRS = $conn->prepare($updSReadSQL);
+         $updSReadRS->execute(array(':slidenbr' => strtoupper(preg_replace('/_/','',$bg['bgs']))));
+
+         $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $rptlist);
+      return $rows;
+    }
+
     function hprsavereview ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 503;
@@ -47,7 +157,7 @@ class datadoers {
       $sessid = session_id();
       //DO DATA CHECKS
       //MAKE SURE ALL ARRAY KEYS EXIST
-      ( !array_key_exists('onbehalf', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'segid' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('onbehalf', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'onbehalf' is missing.  Fatal Error")) : "";
       ( !array_key_exists('segid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'segid' is missing.  Fatal Error")) : "";
       ( !array_key_exists('decision', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'decision' is missing.  Fatal Error")) : "";
       ( !array_key_exists('specimencategory', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'specimencategory' is missing.  Fatal Error")) : "";
@@ -85,7 +195,7 @@ class datadoers {
                 (list( $errorInd, $msgArr[] ) = array(1 , "PROXIED REVIEWER IS NOT VALID.  TRY AGAIN"));
             } else { 
                 $rvr = $chkReviewerRS->fetch(PDO::FETCH_ASSOC);
-                $reviewer = "{$rvr['displayname']} (proxied: {$u['usr']})";
+                $reviewer = "{$rvr['displayname']}";
             }
           }
         } else { 
@@ -162,15 +272,30 @@ class datadoers {
         }
       }
 
+      $unusableInd = 0;
+      if ( array_key_exists('unusabletxt', $pdta) ) { 
+          if ( trim($pdta['unusabletxt']) === "" ) {
+            (list( $errorInd, $msgArr[] ) = array(1 , "FOR UNUSABLE/NOT-FIT-FOR-PURPOSE BIOGROUPS, YOU MUST SUPPLY A REASON.")); 
+          } else { 
+             $unusableInd = 1;
+          }
+      }
+
       if ( $errorInd === 0 ) {
          //TODO:  IN THE FAR FUTURE MAKE THIS TRANSACTIONAL - THAT WOULD BE COOL 
 
          //INSERT HEAD  
-          $insHPRHeadSQL = "insert into masterrecord.ut_hpr_biosample (bgs,   biogroupid,  bgreference,  reviewer, reviewedon, inputby,  decision,  speccat,  site,  subsite,  dx,  subdiagnosis,  mets,  systemiccomobid,  tumorgrade,  tumorscale,  uninvolvedsample,  rarereason,  specialinstructions,  technicianaccuracy) values (:bgs, :biogroupid, :bgreference, :reviewer, now(),     :inputby, :decision, :speccat, :site, :subsite, :dx, :subdiagnosis, :mets, :systemiccomobid, :tumorgrade, :tumorscale, :uninvolvedsample, :rarereason, :specialinstructions, :technicianaccuracy)";
-         $insHPRHeadRS = $conn->prepare($insHPRHeadSQL); 
-         $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':technicianaccuracy' => trim($pdta['techaccuracy'])));
+          $insHPRHeadSQL = "insert into masterrecord.ut_hpr_biosample (bgs, biogroupid,  bgreference,  reviewer, reviewedon, inputby,  decision, vocabularydecision, speccat,  site,  subsite,  dx,  subdiagnosis,  mets,  systemiccomobid,  tumorgrade,  tumorscale,  uninvolvedsample,  rarereason,  specialinstructions,  technicianaccuracy, unusabletxt) values (:bgs, :biogroupid, :bgreference, :reviewer, now(), :inputby, :decision, :vocabularydecision, :speccat, :site, :subsite, :dx, :subdiagnosis, :mets, :systemiccomobid, :tumorgrade, :tumorscale, :uninvolvedsample, :rarereason, :specialinstructions, :technicianaccuracy, :unusabletxt )";
+          $insHPRHeadRS = $conn->prepare($insHPRHeadSQL); 
+
+         if ( $unusableInd === 0 ) {
+           $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => strtoupper($pdta['decision']), ':vocabularydecision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':technicianaccuracy' => trim($pdta['techaccuracy']),':unusabletxt' => '' ));
+         } else { 
+           $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => 'UNUSABLE', ':vocabularydecision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':technicianaccuracy' => trim($pdta['techaccuracy']), ':unusabletxt' => trim($pdta['unusabletxt'])  ));
+         }
          $hprheadid = $conn->lastInsertId();
-         //INSERT FURTHER ACTIONS
+
+         ////INSERT FURTHER ACTIONS
          $faInsSQL = "insert into masterrecord.ut_hpr_factions (biohpr, actiontypevalue, actiontype, actionnote, actionindicator, actionrequestedon) values (:biohpr, :actiontypevalue, :actiontype, :actionnote, 1, now())";
          $faInsRS = $conn->prepare($faInsSQL);
          if ( trim($pdta['hprfurtheraction']) !== "" ) { 
@@ -207,14 +332,12 @@ class datadoers {
            $mt = json_decode( $pdta['hprmoleculartests'], true); 
            foreach ( $mt as $mkey => $mval) { 
             $moleInsRS->execute(array(':pbiosample' => $bg['biosamplelabel'], ':bgprcnbr' => $bg['readlabel'], ':testid' => trim($mval[0]), ':testresultid' => trim($mval[2]), ':molenote' => trim($mval[4]), ':onby' => $reviewer ));
-          }
          }
-
+         }
          //WRITE BIOSAMPLE COMPOSITION (PERCENTAGES) 
          $updSQL = "update masterrecord.ut_procure_biosample_samplecomposition set dspind = 0, updateon = now(), updateby = 'HPR-REVIEW-SCREEN' where readlabel = :readlabel"; 
          $updRS = $conn->prepare($updSQL); 
          $updRS->execute(array(':readlabel' => $bg['readlabel']));
-
          $insPrcSQL = "insert into masterrecord.ut_procure_biosample_samplecomposition (readlabel, prctype, prcvalue, dspind, inputon, inputby) values (:readlabel, :prctype, :prcvalue, 1, now(), :inputby)";
          $insPrcRS = $conn->prepare($insPrcSQL);
          foreach ( $pdta['complexion'] as $ckey => $cval ) {
@@ -224,11 +347,26 @@ class datadoers {
            }
          }
          //UPDATE BIOSAMPLE WITH DECISION (AFTER BACKING UP TABLE) 
+         $buSQL = "insert into masterrecord.history_procure_biosample_qms (pbiosample, readlabel, qcvalv2, hprindicator, hprmarkbyon, qcindicator, qcmarkbyon, qcprocstatus, labaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresultid, slidereviewed, hpron, hprby, historyrecordon, historyrecordby)  SELECT pbiosample, read_label, qcvalv2, hprind, hprmarkbyon, qcind, qcmarkbyon, qcprocstatus, labactionaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresult, hprslidereviewed, hpron, hprby, now() as historyrecordon, 'HPR-REVIEW-MODULE' as  historyrecordby FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
+         $buRS = $conn->prepare($buSQL); 
+         $buRS->execute(array(':pbiosample' => $bg['biosamplelabel']));
 
 
+         $updBSSQL = "update masterrecord.ut_procure_biosample set hprind = 1,hprmarkbyon = concat(:reviewerdsp,'::', now()),QCProcStatus = 'H',hprdecision = :decision, hprresult = :hprid, hprslidereviewed = :bgs, hprby = :reviewer, hpron = now() where pbiosample = :pbiosample";
+         $updBSRS = $conn->prepare($updBSSQL);
+
+         if ( $unusableInd === 0 ) {
+           $updBSRS->execute(array(':reviewerdsp' => $reviewer, ':decision' => strtoupper($pdta['decision']), ':hprid' => $hprheadid, ':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':reviewer' => $reviewer, ':pbiosample' => $bg['biosamplelabel']));
+         } else { 
+           $updBSRS->execute(array(':reviewerdsp' => $reviewer, ':decision' => 'UNUSABLE' , ':hprid' => $hprheadid, ':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':reviewer' => $reviewer, ':pbiosample' => $bg['biosamplelabel']));
+         }
 
          //UPDATE BIOSAMPLE SEGMENT SLIDE VIEWED
-         (list( $errorInd, $msgArr[] ) = array(1 , "DATA CHECKS COMPLETE // " . strtoupper(preg_replace('/_/','',$bg['bgs'])) . " // " . $hprheadid    ));
+         $updSReadSQL = "update masterrecord.ut_procure_segment set hprslideread = 1 where replace(bgs,'_','') = :slidenbr";
+         $updSReadRS = $conn->prepare($updSReadSQL);
+         $updSReadRS->execute(array(':slidenbr' => strtoupper(preg_replace('/_/','',$bg['bgs']))));
+
+         $responseCode = 200;
       }
 
       $msg = $msgArr;
@@ -533,6 +671,7 @@ SQLSTMT;
             $dta[$item]['institution']       = $rs['procuredat'];
             $dta[$item]['institutionname']   = $rs['institutionname'];
             $dta[$item]['designation']       = $rs['designation'];
+            $dta[$item]['traysrch']              = $srchTrm;
             //CHECK FOR FRESH
             $frshSQL = "SELECT count(1) as cnt FROM masterrecord.ut_procure_segment where prepmethod = 'FRESH' and voidind <> 1 and (segstatus = 'SHIPPED' or segstatus = 'ASSIGNED' or segstatus = 'ONOFFFER') and biosamplelabel = :biosamplelabel";
             $frshRS = $conn->prepare($frshSQL); 
@@ -908,14 +1047,14 @@ MBODY;
           //UPDATE SHIPDOC AND ALL SEGMENTS WITH SHIPDOC SHIPDATE AND THEN CLOSED SHIPDOC
 
           //BACK-UP SCAN HISTORY
-          $inventoryHistSQL = "insert into masterrecord.history_procure_segment_inventory (segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) select segmentid, bgs, scannedlocation, scanloccode, scannedstatus, scannedby, scanneddate, now(), 'proczack' from masterrecord.ut_procure_segment where shipdocrefid = :sd";
+          $inventoryHistSQL = "insert into masterrecord.history_procure_segment_inventory (segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) select segmentid, bgs, scannedlocation, scanloccode, scannedstatus, scannedby, scanneddate, now(), :usr from masterrecord.ut_procure_segment where shipdocrefid = :sd";
           $inventoryHistRS = $conn->prepare($inventoryHistSQL); 
-          $inventoryHistRS->execute(array(':sd' => $sd));
+          $inventoryHistRS->execute(array(':usr' => $u['originalaccountname'],':sd' => $sd));
 
           //BACK-UP STATUS HISTORY
-          $segStatSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby, newstatus) SELECT segmentid, segstatus, statusby, statusdate, now(), 'proczack', 'SHIPPED'  FROM masterrecord.ut_procure_segment where shipdocrefid = :sd";
+          $segStatSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby, newstatus) SELECT segmentid, segstatus, statusby, statusdate, now(), :usr, 'SHIPPED'  FROM masterrecord.ut_procure_segment where shipdocrefid = :sd";
           $segStatRS = $conn->prepare($segStatSQL); 
-          $segStatRS->execute(array(':sd' => $sd));
+          $segStatRS->execute(array( ':usr' => $u['originalaccountname'],':sd' => $sd));
 
           //UPDATE SEGMENTS
           $updSegSQL = "update masterrecord.ut_procure_segment set shippeddate = :shipdate, segstatus = 'SHIPPED', statusdate = now(), statusby = :usr, scanloccode = 'SHIPPEDOUT', scannedlocation = 'SHIPPED TO INVESTIGATOR', scannedstatus = 'SHIPPED TO INVESTIGATOR', scanneddate = now() where shipdocrefid = :sd";
@@ -1370,9 +1509,9 @@ MBODY;
         //$oRS->execute(array(':sdrefid' => $sdnbr));
         //$osd = $oRS->fetch(PDO::FETCH_ASSOC);
         //DO DATA BACKUP
-        $backupSQL = "insert into masterrecord.history_shipdoc (shipdocrefid,sdstatus,statusdate,acceptedby,acceptedbyemail,ponbr,rqstshipdate,rqstpulldate,comments,investcode,investname,investemail,investinstitution,institutiontype,investdivision,oncreationinveststatus,tqcourierid,courier,couriernbr,shipmentTrackingNbr,shipAddy,shipphone,billAddy,billphone,setupon,setupby,salesorder,SAPified,SOBY,SOON,reconciledInd,reconciledshiplogon,reconciledBy,closedOn,closedBy,surveyEmailSent,lasteditby,lastediton,historyon,historyby) SELECT *, now(), 'proczack' FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
+        $backupSQL = "insert into masterrecord.history_shipdoc (shipdocrefid,sdstatus,statusdate,acceptedby,acceptedbyemail,ponbr,rqstshipdate,rqstpulldate,comments,investcode,investname,investemail,investinstitution,institutiontype,investdivision,oncreationinveststatus,tqcourierid,courier,couriernbr,shipmentTrackingNbr,shipAddy,shipphone,billAddy,billphone,setupon,setupby,salesorder,SAPified,SOBY,SOON,reconciledInd,reconciledshiplogon,reconciledBy,closedOn,closedBy,surveyEmailSent,lasteditby,lastediton,historyon,historyby) SELECT *, now(), :usr FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
         $backupRS = $conn->prepare($backupSQL); 
-        $backupRS->execute(array(':sdnbr' => (int)$sdnbr)); 
+        $backupRS->execute(array( ':usr' => $u['originalaccountname'], ':sdnbr' => (int)$sdnbr)); 
         //WRITE DATA 
         $updSQL = "update masterrecord.ut_shipdoc set acceptedby = :accptedby, acceptedbyemail = :acceptedbyemail, ponbr = :ponbr, rqstshipdate = :rqstshipdate, rqstpulldate = :rqstpulldate, comments = :comments, tqcourierid = :tqcourierid, courier = :courier, couriernbr = :couriernbr, shipAddy = :shipaddy, shipphone = :shipphone, billAddy = :billaddy, billphone = :billphone, lasteditby = :lasteditby, lastediton = now() where shipdocrefid = :sdnbr";
         $updRS = $conn->prepare($updSQL);
@@ -2159,15 +2298,15 @@ MBODY;
       if ( $errorInd === 0 ) { 
         //COMMIT CHANGES
         if ( $key['commenttype'] === 'BIOSAMPLE') {
-          $captureHistSQL = "insert into masterrecord.history_procure_biosample_comments (biosample, previouscomment, commenttype, commentupdatedon, commentupdatedby) SELECT pbiosample, biosamplecomment, 'BIOSAMPLECOMMENT', now(), 'proczack' FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample"; 
+          $captureHistSQL = "insert into masterrecord.history_procure_biosample_comments (biosample, previouscomment, commenttype, commentupdatedon, commentupdatedby) SELECT pbiosample, biosamplecomment, 'BIOSAMPLECOMMENT', now(), :usr FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample"; 
           $updateSQL = "update masterrecord.ut_procure_biosample set biosamplecomment = :newComment where pbiosample = :pbiosample";
         } 
         if ( $key['commenttype'] === 'HPRQ' ) { 
-          $captureHistSQL = "insert into masterrecord.history_procure_biosample_comments (biosample, previouscomment, commenttype, commentupdatedon, commentupdatedby) SELECT pbiosample, questionHPR, 'HPRQUESTION', now(), 'proczack' FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample"; 
+          $captureHistSQL = "insert into masterrecord.history_procure_biosample_comments (biosample, previouscomment, commenttype, commentupdatedon, commentupdatedby) SELECT pbiosample, questionHPR, 'HPRQUESTION', now(), :usr FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample"; 
           $updateSQL = "update masterrecord.ut_procure_biosample set questionHPR = :newComment where pbiosample = :pbiosample";
         }
         $capR = $conn->prepare($captureHistSQL); 
-        $capR->execute(array(':pbiosample' => $recordid));
+        $capR->execute(array( ':usr' => $u['originalaccountname'],  ':pbiosample' => $recordid));
         $updR = $conn->prepare($updateSQL);
         $updR->execute(array(':newComment' => $pdta['comment'], ':pbiosample' => $recordid));
         $delSrvSQL = "delete FROM serverControls.ss_srvIdents where timestampdiff( minute, onwhen, now()) > 60";
@@ -2319,10 +2458,15 @@ MBODY;
              $top = '15vh';
              break;
            case 'hprInconclusiveDialog':
-             //$primeFocus = "srchHPRVocab";  
-             $left = '30vw';
-             $top = '15vh';
-             break;         
+             $primeFocus = "reasonInconclusiveTxt";  
+             $left = '35vw';
+             $top = '12vh';
+             break;    
+           case 'hprUnusuableDialog':
+             $primeFocus = "ususableReasonTxt";  
+             $left = '35vw';
+             $top = '12vh';
+             break;    
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);

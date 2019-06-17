@@ -1120,6 +1120,22 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .tabBtn { font-size: 1.3vh; text-align: center; width: 5vw; border-right: 1px solid rgba({$this->color_cornflowerblue},1); background: rgba({$this->color_white},1); color: rgba({$this->color_zackgrey},1); }
 .tabBtn:hover { cursor: pointer; background: rgba({$this->color_lightgrey},1); }
 
+#sidePanelSlideListTbl { border: 1px solid rgba({$this->color_zackgrey},1); font-size: 1.3vh; }
+#sidePanelSlideListTbl .workbenchheader { font-size: 1.8vh; padding: 1vh 0 0 0; font-weight: bold; }   
+#sidePanelSlideListTbl .slidesfound { font-size: 1vh; text-align: right; padding: 0 .5vw 0 0; }
+
+#sidePanelSlideListTbl .hprSlideDsp { border: 1px solid rgba({$this->color_zackgrey},1); margin: 10px 10px; height: 10vh; width: 20vw; } 
+#sidePanelSlideListTbl .readyes { font-size: 3vh; color: rgba({$this->color_darkgreen},1); }
+#sidePanelSlideListTbl .readno { font-size: 3vh; color: rgba(255, 182, 38, 1);  }
+#sidePanelSlideListTbl .bgsslidenbr { font-size: 1.8vh; font-weight: bold; height: 1vh;  }
+#sidePanelSlideListTbl .slidedesignation { font-size: 1.4vh;  height: 3vh; }  
+#sidePanelSlideListTbl .slidedate { font-size: 1vh; } 
+#sidePanelSlideListTbl .slidetech { font-size: 1vh; }
+#sidePanelSlideListTbl .slidefreshdsp { font-size: 1.2vh; text-align: center; color: rgba({$this->color_bred},1);  }
+#sidePanelSlideListTbl .rowHolder { }
+#sidePanelSlideListTbl .rowHolder:hover { cursor: pointer; background: rgba({$this->color_lamber},1);  }
+
+
 #headAnnouncement { font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; padding: 4vh 0 0 0; }
 #dspScanType { font-size: 5vh; text-align: center; } 
 
@@ -1166,8 +1182,6 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 #decisionSqr[data-hprdecision='CONFIRM-ADD'] { background: rgba({$this->color_lamber},.8); color: rgba({$this->color_dblue},1); }
 #decisionSqr[data-hprdecision='DENIED'] { background: rgba({$this->color_bred},.8); color: rgba({$this->color_white},1); }
 #decisionSqr .hprdecisionicon { font-size: 5vh; }
-
-
 
 .primaryInfo { } 
 .constitInfoHolder { position: relative; }

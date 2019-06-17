@@ -15,6 +15,14 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'hprUnusuableDialog': 
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Unusuable Biosample";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPRUsuableSave ( $pdta['dialogid'], $passedData );
+        //$innerDialog = $passedData;
+        break;         
       case 'hprInconclusiveDialog':
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Inconclusive Biosample";
@@ -1740,7 +1748,7 @@ PAGECONTENT;
     } else { 
       if ( trim($rqststr[3]) === "" ) {
         //GET TRAY LIST 
-        $topBtnBar = generatePageTopBtnBar('hprreviewactionstray',$whichusr ); 
+        $topBtnBar = generatePageTopBtnBar('hprreviewactionstray',$whichusr, $rqststr[2] ); 
         $pgContent = buildHPRTrayDisplay( $rqststr[2] );
       } else { 
         //GET WORKBENCH WITH BACK BUTTON TO TRAY
@@ -2022,7 +2030,7 @@ MOLETBL;
 //MOLETBL END
 //onchange="readFilesChosen(this);" ///THIS IS FROM bonanzaboys.com
     $workBench = <<<WORKBENCH
-<div class=dspWBDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td><center>Work Bench</td></tr></table></div>
+<div class=dspWBDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td><center>Work Bench <input type=hidden id=backToTrayURL value='{$rurl[2]}'></td></tr></table></div>
 <table border=0>
   <tr>
     <td valign=top>{$desig}</td>
@@ -2213,38 +2221,44 @@ function buildHPRTrayDisplay( $rqst ) {
         $pg = "<div id=hprwbHeadErrorHolder><H1>{$sidedta['MESSAGE'][0]} - See a CHTNEastern Staff if you feel this is incorrect.</div>";
     } else {
         //SIDE PANEL BUILD
+        $cellCntr = 0;
+        $sidePanelTblInner = "<tr class=rowBacker>";
         foreach ($sidedta['DATA'] as $skey => $sval) {
            $freshDsp = ((int)$sval['freshcount'] > 0) ? "[CONTAINS DIRECT SHIPMENT]" : "";
            $cntr = ($skey + 1); 
            $slideidentifier = cryptservice(  "{$sval['segmentid']}::{$sval['pbiosample']}" );
            $clickAction = " onclick=\"navigateSite('hpr-review/{$rqst}/{$slideidentifier}');\" ";
-           $readYet = ( $sval['hprslideread'] !== 'N' ) ? "<i class=\"material-icons\">check_circle</i>" : "<i class=\"material-icons\">error</i>";
+           $readYet = ( $sval['hprslideread'] !== 'N' ) ? "<i class=\"material-icons readyes\">check_circle</i>" : "<i class=\"material-icons readno\">error</i>";
+           if ( $cellCntr === 2 ) {
+             $sidePanelTblInner .= "</tr><tr class=rowBacker>";
+             $cellCntr = 0;
+           }     
            $sidePanelTblInner .= <<<SLIDELINE
-<tr class=rowBacker><td {$clickAction} class=rowHolder>
-    <table border=1 class=slide>
+<td {$clickAction} class=rowHolder valign=top>
+    <table border=0 class=hprSlideDsp>
       <tr>
-        <td rowspan=3 class=slidecountr>{$readYet}</td>
-        <td colspan=3 class=slidenbr valign=top>{$sval['bgs']}</td>
+        <td rowspan=3 class=slideicon>{$readYet}</td>
+        <td colspan=3 class=bgsslidenbr>{$sval['bgs']}</td>
       </tr>
       <tr><td colspan=3 class=slidedesignation valign=top>{$sval['designation']}</td></tr>
       <tr><td valign=top class=slidedate><b>Procurement</b>: {$sval['procurementdate']}</td><td valign=top class=slidetech><b>Tech</b>: {$sval['procuringtech']}</td></tr>
       <tr><td valign=top colspan=3 class=slidefreshdsp>{$freshDsp}</td></tr>
     </table>
-</td></tr>
+</td>
 SLIDELINE;
+          $cellCntr++;   
         } 
-        $sidePanelTbl = "<table border=0 cellspacing=0 cellpadding=0 id=sidePanelSlideListTbl>"; 
-        $sidePanelTbl .= "<tr><th class=workbenchheader>{$sidedta['MESSAGE'][0]}</th></tr>";
-        $sidePanelTbl .= "<tr><td class=slidesfound><b>Slides Found</b>: {$cntr}</td></tr>";
+        $sidePanelTblInner .= "</tr>";
+        $sidePanelTbl = "<center><table border=0 cellspacing=0 cellpadding=0 id=sidePanelSlideListTbl>"; 
+        $sidePanelTbl .= "<tr><th class=workbenchheader colspan=2>{$sidedta['MESSAGE'][0]}</th></tr>";
+        $sidePanelTbl .= "<tr><td class=slidesfound colspan=2><b>Slides Found</b>: {$cntr}</td></tr>";
         $sidePanelTbl .= $sidePanelTblInner;
         $sidePanelTbl .= "</table>";
         //SIDE PANEL BUILD END
                
         $pg = <<<PGCONTNT
-<table border=1 id=HPRTrayTable>
-  <tr>
-    <td valign=top id=sidePanelTD rowspan=2 valign=top><div id=sidePanel>{$sidePanelTbl}</div></td></tr>
-</table>
+    <div id=sidePanel>{$sidePanelTbl}</div>
+{$sval['traysrch']}
 PGCONTNT;
     } 
     
@@ -2535,21 +2549,28 @@ $innerBar = <<<BTNTBL
 </tr>
 BTNTBL;
 break;   
-case 'hprreviewactionstray': 
+
+case 'hprreviewactionstray':
+
+
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell onclick="navigateSite('hpr-review');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">layers_clear</i></td><td>New Review</td></tr></table></td>
   <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">textsms</i></td><td>Assistance</td></tr></table></td>
+ <!--TODO: THIS BUTTON WILL RETURN THE TRAY FOR PROCESSING ...  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">textsms</i></td><td>{$additionalinfo}</td></tr></table></td> //-->
 </tr>
 BTNTBL;
+
+
 break; 
+
 case 'hprreviewactions': 
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell onclick="navigateSite('hpr-review/{$additionalinfo}');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">arrow_back_ios</i></td><td>Back To Tray</td></tr></table></td>
   <td class=topBtnHolderCell onclick="navigateSite('hpr-review');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">layers_clear</i></td><td>New Review</td></tr></table></td>
   <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">textsms</i></td><td>Assistance</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">change_history</i></td><td>Request Vocabulary Change</td></tr></table></td>
+  <!-- TODO: ADD BACK IN TO A LATER RELEASE :  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnNewHPRReview><tr><td><i class="material-icons">change_history</i></td><td>Request Vocabulary Change</td></tr></table></td> //-->
 </tr>
 BTNTBL;
 break; 
@@ -3131,6 +3152,41 @@ return $rtnThis;
 
 }
 
+function bldHPRUsuableSave ( $dialogid , $passedData ) { 
+   
+    $dta = json_decode( $passedData, true);
+    $obj = $dta['objid'];
+
+    $rtnThis = <<<PGCONTENT
+<style>
+
+.iTitleLine { font-size: 1.8vh; color: rgba(48,57,71,1); padding: .5vh .3vw; }
+.iFieldLbl { font-size: 1.3vh; color: rgba(48,57,71,1); font-weight: bold; white-space: nowrap; width: 2vw; padding: 4px;  }
+.iFieldData { font-size: 1.3vh; color: rgba(48,57,71,1); white-space: nowrap; padding: 4px;}
+.iTxtDsp { font-size: 1.4vh; border: 1px solid rgba(48,57,71,1); width: 27vw; height: 12vh;   }
+
+</style>
+<input type=hidden value={$obj} id=valSavedData>
+<table border=0>
+<tr><td class=iFieldLbl>Reason Unusable/Not-Fit-For-Purpose</td></tr>
+<tr><td><textarea class=iTxtDsp id=ususableReasonTxt></textarea></td></tr>
+<tr><td align=right> 
+
+                <table>
+                  <tr>
+                    <td> <table class=tblBtn id=btnIHPRReviewSave style="width: 6vw;" onclick="sendSaveUnusable('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table>  </td>
+                    <td> <table class=tblBtn id=btnIHPRReviewSave style="width: 6vw;" onclick="closeThisDialog('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table> </td>
+                  </tr>
+                </table>   
+
+ </td></tr>
+</table>
+
+PGCONTENT;
+return $rtnThis;
+    
+}
+
 function bldHPRInconclusiveDesignation ( $dialogid, $objectid ) { 
     
     $faList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-further-actions",serverIdent,serverpw), true);
@@ -3158,15 +3214,32 @@ FATBL;
     $seg = $segRS->fetch(PDO::FETCH_ASSOC); 
     
 $pg = <<<PAGECONTENT
-        <table border=1><tr><td colspan=2>INCONCLUSIVE BIOSAMPLE ({$seg['readlabel']})</td></tr>
-        <tr><td>Slide Read: </td><td>{$seg['bgs']}</td></tr>
-        <tr><td>Sample From: </td><td>{$seg['procureinstitution']} ({$seg['createdby']})</td></tr>
-        <tr><td>Designation: </td><td>{$seg['desig']}</td></tr>
-        <tr><td>A/R/S: </td><td>{$seg['ars']}</td></tr>
-        <tr><td colspan=2>Reason Inconclusive</td></tr>
-        <tr><td colspan=2><textarea width=100%></textarea></td></tr>
+
+<style>
+
+.iTitleLine { font-size: 1.8vh; color: rgba(48,57,71,1); padding: .5vh .3vw; }
+.iFieldLbl { font-size: 1.3vh; color: rgba(48,57,71,1); font-weight: bold; white-space: nowrap; width: 2vw; padding: 4px;  }
+.iFieldData { font-size: 1.3vh; color: rgba(48,57,71,1); white-space: nowrap; padding: 4px;}
+.iTxtDsp { font-size: 1.4vh; border: 1px solid rgba(48,57,71,1); width: 27vw; height: 8vh;  }
+
+</style>
+<input type=hidden id=inconSegId value={$obj[0]}>
+        <table border=0><tr><td colspan=2 class=iTitleLine>INCONCLUSIVE BIOSAMPLE ({$seg['readlabel']})</td></tr>
+        <tr><td class=iFieldLbl>Slide Read: </td><td class=iFieldData>{$seg['bgs']}</td></tr>
+        <tr><td class=iFieldLbl>Sample From: </td><td class=iFieldData>{$seg['procureinstitution']} ({$seg['createdby']})</td></tr>
+        <tr><td class=iFieldLbl>Designation: </td><td class=iFieldData>{$seg['desig']}</td></tr>
+        <tr><td class=iFieldLbl>A/R/S: </td><td class=iFieldData>{$seg['ars']}</td></tr>
+        <tr><td class=iFieldLbl colspan=2>Reason Inconclusive</td></tr>
+        <tr><td colspan=2><textarea width=100% class=iTxtDsp id=reasonInconclusiveTxt></textarea></td></tr>
         <tr><td colspan=2>{$faTbl}</td></tr>
-        <tr><td colspan=2 align=right>Mark | <span onclick="closeThisDialog('{$dialogid}');">Cancel</span></td></tr>
+        <tr><td colspan=2 align=right> 
+                <table>
+                  <tr>
+                    <td> <table class=tblBtn id=btnIHPRReviewSave style="width: 6vw;" onclick="gatherAndInconReview('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table>  </td>
+                    <td> <table class=tblBtn id=btnIHPRReviewSave style="width: 6vw;" onclick="closeThisDialog('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table> </td>
+                  </tr>
+                </table>   
+            </td></tr>
         </table>        
 PAGECONTENT;
 return $pg;       

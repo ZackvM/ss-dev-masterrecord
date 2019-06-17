@@ -3996,51 +3996,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
 }, false);
 
-function gatherAndUnuseReview() { 
-  var dta = new Object();
-
-  if (byId('fldOnBehalfValue')) { 
-    dta['onbehalf'] = ( byId('fldOnBehalfValue').value.trim() === "" ) ? 0 : byId('fldOnBehalfValue').value;  
-  } else {
-    dta['onbehalf'] = 0;  
-  } 
-
-  dta['segid'] =  byId('HPRWBTbl').dataset.segid;
-  dta['decision'] = byId('decisionSqr').dataset.hprdecision;
-  dta['specimencategory'] = byId('HPRWBTbl').dataset.specimencategory;
-  dta['site'] = byId('HPRWBTbl').dataset.site;
-  dta['ssite'] = byId('HPRWBTbl').dataset.ssite;
-  dta['diagnosis'] = byId('HPRWBTbl').dataset.dx;
-  dta['diagnosismodifier'] = byId('HPRWBTbl').dataset.dxm;
-  dta['metsfrom'] = byId('HPRWBTbl').dataset.mets;
-  dta['systemic'] = byId('HPRWBTbl').dataset.sysm;
-  dta['uninvolved'] = byId('fldPRCUnInvolvedValue').value;
-  dta['tumorgrade'] = byId('fldTumorGrade').value;
-  dta['tumorgradescale'] = byId('fldTumorGradeScaleValue').value;
-  dta['techaccuracy'] = byId('fldTechAccValue').value;
-  var prcflds = document.getElementsByClassName("prcFld");
-  for ( var i = 0; i < prcflds.length; i++ ) {
-   dta['prc_'+prcflds[i].id.toLowerCase()] = prcflds[i].value; 
-  }
-  dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
-  dta['hprmoleculartests'] = byId('hprMolecularTestJsonHolderConfirm').value;
-  dta['rarereason'] = byId('fldRareReasonTxt').value;
-  dta['specialinstructions'] = byId('fldSpecialInstructions').value;
-  console.log( JSON.stringify( dta ));
-
-alert('Pop unusable dialog');
-
+function sendSaveUnusable( dialogid ) {
+  var dta = JSON.parse( byId('valSavedData').value );
+  dta['unusabletxt'] = byId('ususableReasonTxt').value;
+  var passdta = JSON.stringify(dta);
+  //console.log ( passdta );
+  closeThisDialog( dialogid ); 
+  byId('standardModalBacker').style.display = 'block';    
+  var mlURL = "/data-doers/hpr-save-review";
+  universalAJAX("POST",mlURL,passdta,answerHPRSaveReview,2);
 }
 
-function gatherAndSaveReview() { 
+function gatherAndInconReview( dialogid ) {
   var dta = new Object();
-
   if (byId('fldOnBehalfValue')) { 
     dta['onbehalf'] = ( byId('fldOnBehalfValue').value.trim() === "" ) ? 0 : byId('fldOnBehalfValue').value;  
   } else {
     dta['onbehalf'] = 0;  
   } 
+  dta['segid'] =  byId('inconSegId').value;
+  dta['inconreason'] = byId('reasonInconclusiveTxt').value;
+  dta['inconfurtheractions'] = byId('hprDGFAJsonHolder').value;
+  dta['dialogid'] = dialogid; 
+  //console.log(JSON.stringify(dta));
+  closeThisDialog( dialogid ); 
+  byId('standardModalBacker').style.display = 'block';    
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/hpr-save-incon-review";
+  universalAJAX("POST",mlURL,passdta,answerHPRSaveReview,2);
+}
 
+
+function gatherAndUnuseReview() { 
+  var dta = new Object();
+  if (byId('fldOnBehalfValue')) { 
+    dta['onbehalf'] = ( byId('fldOnBehalfValue').value.trim() === "" ) ? 0 : byId('fldOnBehalfValue').value;  
+  } else {
+    dta['onbehalf'] = 0;  
+  } 
   dta['segid'] =  byId('HPRWBTbl').dataset.segid;
   dta['decision'] = byId('decisionSqr').dataset.hprdecision;
   dta['specimencategory'] = byId('HPRWBTbl').dataset.specimencategory;
@@ -4054,19 +4047,52 @@ function gatherAndSaveReview() {
   dta['tumorgrade'] = byId('fldTumorGrade').value;
   dta['tumorgradescale'] = byId('fldTumorGradeScaleValue').value;
   dta['techaccuracy'] = byId('fldTechAccValue').value;
-
   var prcflds = document.getElementsByClassName("prcFld");
   var prcdta = new Object();
   for ( var i = 0; i < prcflds.length; i++ ) {
    prcdta['prc_'+prcflds[i].id.toLowerCase()] = prcflds[i].value; 
   }
   dta['complexion'] = prcdta;
-  
   dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
   dta['hprmoleculartests'] = byId('hprMolecularTestJsonHolderConfirm').value;
   dta['rarereason'] = byId('fldRareReasonTxt').value;
   dta['specialinstructions'] = byId('fldSpecialInstructions').value;
-  console.log( JSON.stringify( dta ));
+  var passdta = JSON.stringify(dta);
+  generateDialog('hprUnusuableDialog', passdta );
+}
+
+function gatherAndSaveReview() { 
+  var dta = new Object();
+  if (byId('fldOnBehalfValue')) { 
+    dta['onbehalf'] = ( byId('fldOnBehalfValue').value.trim() === "" ) ? 0 : byId('fldOnBehalfValue').value;  
+  } else {
+    dta['onbehalf'] = 0;  
+  } 
+  dta['segid'] =  byId('HPRWBTbl').dataset.segid;
+  dta['decision'] = byId('decisionSqr').dataset.hprdecision;
+  dta['specimencategory'] = byId('HPRWBTbl').dataset.specimencategory;
+  dta['site'] = byId('HPRWBTbl').dataset.site;
+  dta['ssite'] = byId('HPRWBTbl').dataset.ssite;
+  dta['diagnosis'] = byId('HPRWBTbl').dataset.dx;
+  dta['diagnosismodifier'] = byId('HPRWBTbl').dataset.dxm;
+  dta['metsfrom'] = byId('HPRWBTbl').dataset.mets;
+  dta['systemic'] = byId('HPRWBTbl').dataset.sysm;
+  dta['uninvolved'] = byId('fldPRCUnInvolvedValue').value;
+  dta['tumorgrade'] = byId('fldTumorGrade').value;
+  dta['tumorgradescale'] = byId('fldTumorGradeScaleValue').value;
+  dta['techaccuracy'] = byId('fldTechAccValue').value;
+  var prcflds = document.getElementsByClassName("prcFld");
+  var prcdta = new Object();
+  for ( var i = 0; i < prcflds.length; i++ ) {
+   prcdta['prc_'+prcflds[i].id.toLowerCase()] = prcflds[i].value; 
+  }
+  dta['complexion'] = prcdta;
+  dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
+  dta['hprmoleculartests'] = byId('hprMolecularTestJsonHolderConfirm').value;
+  dta['rarereason'] = byId('fldRareReasonTxt').value;
+  dta['specialinstructions'] = byId('fldSpecialInstructions').value;
+
+  byId('standardModalBacker').style.display = 'block';    
   var passdta = JSON.stringify(dta);
   var mlURL = "/data-doers/hpr-save-review";
   universalAJAX("POST",mlURL,passdta,answerHPRSaveReview,2);
@@ -4082,7 +4108,7 @@ function answerHPRSaveReview( rtnData ) {
     alert("ERROR:\\n"+dspMsg);
     byId('standardModalBacker').style.display = 'none';    
    } else {
-
+    navigateSite('hpr-review/'+byId('backToTrayURL').value);
    }
 }
 
