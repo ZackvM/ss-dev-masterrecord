@@ -35,6 +35,31 @@ class objgetter {
 
 class objlisting { 
 
+
+  function inventorysimplehprtraylist() { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "Zack was here";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW'];
+     if ( $authuser === serverIdent) {
+          $prnSQL = "SELECT ifnull(loc.scancode,'') as scancode, concat(ifnull(loc.locationdsp,''), if(ifnull(sts.longvalue,'')='','', concat(' (',ifnull(sts.longvalue,''),')'))) as hprstatus FROM four.sys_inventoryLocations loc left join (SELECT dspvalue, longValue FROM four.sys_master_menus where menu = 'HPRTrayStatus') sts on loc.hprtraystatus = sts.dspvalue where parentid = 293 order by hprstatus";     
+          $prnRS = $conn->prepare($prnSQL);
+          $prnRS->execute();
+          while ($r = $prnRS->fetch(PDO::FETCH_ASSOC)) { 
+              $dta[] = $r;
+          }
+     }                
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;     
+  }  
+
+
   function hprreviewerlist() {
      $responseCode = 400;
      $rows = array();
@@ -1127,6 +1152,14 @@ function hprrequestcode($whichobj, $rqst) {
 }
 
 class globalMenus {
+
+    function hprreturnnonfinishedreasons() { 
+        return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'HPRRTNINCOMPLETEREASON' and dspind = 1 order by dsporder";
+    }
+
+    function hprreturnlocations() { 
+      return "SELECT ifnull(scancode,'') as codevalue, ifnull(locationdsp,'') as menuvalue, 0 as useasdefault, ifnull(scancode,'') as lookupvalue FROM four.sys_inventoryLocations where typeOLocation = 'HPRRTNPROCESS' and activelocation = 1 order by locationdsp";
+    }
 
     function hprfurtheractions() { 
         return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'HPRFURTHERACTION' and dspind = 1 order by dsporder";

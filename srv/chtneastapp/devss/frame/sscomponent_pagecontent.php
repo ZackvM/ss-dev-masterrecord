@@ -222,7 +222,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $innerDialog = bldQuickPREdit( $passedData );
         break;
       case 'dialogInventoryOverride':
-        $titleBar = "Inventor Check-in Over-Ride Deviation Screen";
+        $titleBar = "Inventory Check-in Over-Ride Deviation Screen";
         $innerDialog = bldQuickInventoryOverride( $passedData );
         break;
       case 'dialogPrintThermalLabels':
@@ -388,7 +388,7 @@ BGTBL;
           $hprtTbl = "<table border=0>";
           foreach($hprtlist['DATA'] as $hprk => $hprv) { 
               //TODO: MAKE THIS CHECK DYNAMIC
-              if ($hprv['hprtraystatus'] === 'SENT' || $hprv['hprtraystatus'] === 'LOADED') { 
+              if ( trim( $hprv['hprtraystatus'] ) !== '' && strtoupper( $hprv['hprtraystatus'] )  !== 'NOTUSED'  ) { 
                 $hprtTbl .= "<tr><td style=\"text-decoration: line-through;\">{$hprv['locationdsp']}</td></tr>";                
               } else { 
               $hprtTbl .= "<tr><td onclick=\"fillField('fldHPRTray','{$hprv['scancode']}','{$hprv['locationdsp']}');\">{$hprv['locationdsp']}</td></tr>";
@@ -1756,7 +1756,7 @@ PAGECONTENT;
       if ( trim($rqststr[3]) === "" ) {
         //GET TRAY LIST 
         $topBtnBar = generatePageTopBtnBar('hprreviewactionstray',$whichusr, $rqststr[2] ); 
-        $pgContent = buildHPRTrayDisplay( $rqststr[2] );
+        $pgContent = buildHPRTrayDisplay( $rqststr[2], $whichusr );
       } else { 
         //GET WORKBENCH WITH BACK BUTTON TO TRAY
         $topBtnBar = generatePageTopBtnBar('hprreviewactions',$whichusr, $rqststr[2] ); 
@@ -2215,7 +2215,7 @@ PROCMETRICS;
     return array( "techMetrics" => $procMetrics, "topLineAnnouncement" => "{$dspSlide}", "documentMetrics" => $docSide );
 }
 
-function buildHPRTrayDisplay( $rqst ) { 
+function buildHPRTrayDisplay( $rqst, $usr ) { 
   $si = serverIdent;
   $sp = serverpw;
   $dta = json_decode(callrestapi("GET", dataTree . "/hpr-request-code/{$rqst}", $si, $sp), true);
@@ -2270,12 +2270,26 @@ SLIDELINE;
         $sidePanelTblInner .= "</tr>";
         
         $rtnTrayBtn = "";
-        if ( $searchtype === 'T' ) { 
+        if ( $searchtype === 'T' ) {      
+            //MARK TRAY 'WITHREVIEWER'
+            //TODO:  MAKE THIS A WEBSERVICE
+            require(serverkeys . "/sspdo.zck");
+            $chkSQL = "SELECT hprtraystatus FROM four.sys_inventoryLocations where scancode = :trayscancode";
+            $chkRS = $conn->prepare($chkSQL); 
+            $chkRS->execute(array(':trayscancode' => $tray));
+            $chk = $chkRS->fetch(PDO::FETCH_ASSOC); 
+            if ( $chk['hprtraystatus'] !== 'WITHREVIEWER' ) { 
+              $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = 'WITHREVIEWER', hprtraystatusby = :usr, hprtraystatuson = now() where scancode = :scncode";
+              $traySTSRS = $conn->prepare($traySTSSQL);
+              $traySTSRS->execute(array(':usr' => $usr->userid, ':scncode' => $tray)); 
+              $tryHisSQL = "insert into masterrecord.history_hpr_tray_status (trayscancode, tray, traystatus, historyon, historyby) values(:trayscancode, :tray, :traystatus, now(), :historyby)";
+              $tryHisRS = $conn->prepare($tryHisSQL);
+              $tryHisRS->execute(array(':trayscancode' => $tray, ':tray' => $tray, ':traystatus' => 'WITHREVIEWER', ':historyby' => $usr->userid));
+            }
           //RETURN TRAY BUTTON
           $rtnTrayBtn = "<table class=tblBtn id=btnHPRRtnTray style=\"width: 6vw;\" onclick=\"generateDialog('trayreturndialog','{$tray}');\"><tr><td style=\"font-size: 1.3vh;\"><center>Return Tray</td></tr></table>";
         }
-        
-        
+         
         $sidePanelTbl = "<center><table border=0 cellspacing=0 cellpadding=0 id=sidePanelSlideListTbl>";       
         $sidePanelTbl .= "<tr><th class=workbenchheader colspan=2>{$sidedta['MESSAGE'][0]}</th></tr>";
         $sidePanelTbl .= "<tr><td class=slidesfound colspan=2><b>Slides Found</b>: {$cntr}</td></tr>";  
@@ -2376,6 +2390,14 @@ foreach ($shpstatusarr['DATA'] as $shpval) {
 $shps .= "</table>";
 $shpsts = "<div class=menuHolderDiv><input type=hidden id=qryShpStatusValue><input type=text id=qryShpStatus class=\"inputFld\" style=\"width: 15vw;\" READONLY><div class=valueDropDown style=\"width: 15vw;\">{$shps}</div></div>";
 
+$hprtraysdta = json_decode(callrestapi("GET", dataTree . "/inventory-simple-hpr-tray-list",$si,$sp),true);
+$hprtrays = "<table border=0 class=menuDropTbl><tr><td align=right onclick=\"fillField('qryHPRInvLoc','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+foreach ($hprtraysdta['DATA'] as $hprtval) {
+  $hprtrays .= "<tr><td onclick=\"fillField('qryHPRInvLoc','{$hprtval['scancode']}','{$hprtval['hprstatus']}');\" class=ddMenuItem>{$hprtval['hprstatus']}</td></tr>";
+}
+$hprtrays .= "</table>";
+
+
 $fsCalendar = buildcalendar('shipBSQFrom'); 
 $shpFromCalendar = <<<CALENDAR
 <div class=menuHolderDiv>
@@ -2415,12 +2437,13 @@ $grid = <<<BSGRID
 <tr><td>
 
 <table border=0>
-<tr><td class=fldLabel>Biogroup Number</td><td class=fldLabel>Procuring Institution</td><td class=fldLabel>Segment Status</td><td class=fldLabel>HPR Status</td></tr>
+<tr><td class=fldLabel>Biogroup Number</td><td class=fldLabel>Procuring Institution</td><td class=fldLabel>Segment Status</td><td class=fldLabel>HPR Status</td><td class=fldLabel>HPR Location</td></tr>
 <tr>
   <td><input type=text id=qryBG class="inputFld" style="width: 20vw;"></td>
   <td><div class=menuHolderDiv><input type=hidden id=qryProcInstValue><input type=text id=qryProcInst READONLY class="inputFld" style="width: 20vw;"><div class=valueDropDown style="min-width: 20vw;">{$proc}</div></div></td>
 <td><div class=menuHolderDiv><input type=hidden id=qrySegStatusValue><input type=text id=qrySegStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 15vw;">{$seg}</div></div></td>
 <td><div class=menuHolderDiv><input type=hidden id=qryHPRStatusValue><input type=text id=qryHPRStatus READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 15vw;">{$hpr}</div></div></td>
+<td><div class=menuHolderDiv><input type=hidden id=qryHPRInvLocValue><input type=text id=qryHPRInvLoc READONLY class="inputFld" style="width: 15vw;"><div class=valueDropDown style="min-width: 15vw;">{$hprtrays}</div></div></td>
 </tr>
 <tr><td>(Single, range or series)</td></tr>
 </table>
@@ -3185,28 +3208,61 @@ function bldHPRReturnTray ( $dialogid, $passedData ) {
     $dta = json_decode( $passedData, true);
     $obj = $dta['objid'];
     //TODO: TURN INTO WEBSERVICE
-    $chkSQL = "SELECT * FROM masterrecord.ut_procure_segment where HPRBoxNbr = :trayscancode and hprslideread = 0";
+    $chkSQL = "SELECT * FROM masterrecord.ut_procure_segment where HPRBoxNbr = :trayscancode and ifnull(hprslideread,0) = 0";
     $chkRS = $conn->prepare($chkSQL);
     $chkRS->execute(array(':trayscancode' => $obj));
     if ( $chkRS->rowCount() < 1 ) { 
     } else { 
-        $reasonNotFinished = "<tr><td>Not all the slides in this tray have been marked as 'Read'.</td></tr><tr><td>Reason Not Finished</td></tr><tr><td>REASON LIST</td></tr><tr><td>Additional Notes</td></tr><tr><td>REASON NOT FINISHED NOTE</td></tr>";
+
+        $nonReasonDta = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-return-non-finished-reasons",serverIdent,serverpw),true);
+        $rsnlist = "<table border=0  class=\"menuDropTbl hprNewDropDownFont\">";
+        foreach ($nonReasonDta['DATA'] as $rval) { 
+          $rsnlist .= "<tr><td onclick=\"fillField('fldRtnNonFinishReason','{$rval['lookupvalue']}','{$rval['menuvalue']}');\" class=ddMenuItem>{$rval['menuvalue']}</td></tr>";
+        }
+        $rsnlist .= "</table>";
+        $rsnTbl = <<<FATBL
+<div class=menuHolderDiv><input type=hidden id=fldRtnNonFinishReasonValue value=""><input type=text id=fldRtnNonFinishReason READONLY class="inputFld hprDataField" style="width: 20vw;" value=""><div class=valueDropDown style="min-width: 20vw;">{$rsnlist}</div></div>
+FATBL;
+        $reasonNotFinished = "<tr><td class=rtninstructionline style=\"padding-top: 15px; color: rgba(237, 35, 0, 1);\">Not all the slides in this tray have been marked as 'Read'.</td></tr><tr><td class=rtninstructionline>Reason Not Finished</td></tr><tr><td>{$rsnTbl}</td></tr><tr><td class=rtninstructionline>Additional 'Non-Finished' Comments</td></tr><tr><td><textarea id=rtnnonfinishednote></textarea></td></tr>";
+
     }
 
-    
+    $locListDta = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-return-locations",serverIdent,serverpw),true);
+    $loclist = "<table border=0  class=\"menuDropTbl hprNewDropDownFont\">";
+    foreach ($locListDta['DATA'] as $lval) { 
+      $loclist .= "<tr><td onclick=\"fillField('fldRtnLocation','{$lval['lookupvalue']}','{$lval['menuvalue']}');\" class=ddMenuItem>{$lval['menuvalue']}</td></tr>";
+    }
+    $loclist .= "<tr><td onclick=\"fillField('fldRtnLocation','TMPLOCOTHRNONLOC','OTHER LOCATION - SEE NOTE');\" class=ddMenuItem>OTHER LOCATION - SEE NOTE</td></tr>";
+    $loclist .= "</table>";
+$locTbl = <<<FATBL
+<div class=menuHolderDiv><input type=hidden id=fldRtnLocationValue value=""><input type=text id=fldRtnLocation READONLY class="inputFld hprDataField" style="width: 20vw;" value=""><div class=valueDropDown style="min-width: 20vw;">{$loclist}</div></div>
+FATBL;
+ 
     $rtnThis = <<<PGCONTENT
 <style>
-    #rtntitleline { font-size: 1.7vh; font-weight: bold; padding: 10px; text-align: center; }
-    #rtninstructionline { font-size: 1.3vh; padding: 4px; }        
+    #rtntitleline { font-size: 1.9vh; font-weight: bold; padding: 10px; text-align: center; }
+    .rtninstructionline { font-size: 1.5vh; padding: 4px; }       
+    #rtnlocationnote { width: 20vw; height: 10vh; box-sizing: border-box; padding: 5px; font-size: 1.5vh; border: 1px solid #000;   } 
+    #rtnnonfinishednote { width: 20vw; height: 10vh; box-sizing: border-box; padding: 5px; font-size: 1.5vh; border: 1px solid #000;   } 
 </style>
 
-<table>
-    <tr><td id=rtntitleline>Thank You for the review!</td></tr>
-    <tr><td id=rtninstructionline>Slide tray for is located for pick-up</td></tr>
-    <tr><td>Location Menu</td></tr>
-    <tr><td>Location Note</td></tr>        
+<table border=0>
+    <tr><td id=rtntitleline>Thank You for the review! <input type=hidden id=rtnTryId value="{$obj}"></td></tr>
+    <tr><td class=rtninstructionline>Slide Tray Pick-up Location </td></tr>
+    <tr><td>{$locTbl}</td></tr>       
+    <tr><td class=rtninstructionline>Location Note</td></tr>
+    <tr><td><textarea id=rtnlocationnote></textarea></td></tr> 
     {$reasonNotFinished}
-    <tr><td>BTNS</td></tr>
+    <tr><td align=right> 
+
+                <table>
+                  <tr>
+                    <td> <table class=tblBtn id=btnIHPRReviewSave style="width: 6vw;" onclick="returnTrayAction('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Return</td></tr></table>  </td>
+                    <td> <table class=tblBtn id=btnIHPRReviewSave style="width: 6vw;" onclick="closeThisDialog('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table> </td>
+                  </tr>
+                </table>   
+
+        </td></tr>
     </table>
 PGCONTENT;
 return $rtnThis;

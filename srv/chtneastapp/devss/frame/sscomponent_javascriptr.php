@@ -3996,22 +3996,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
 }, false);
 
-function returnSlideTray( whichtray ) {
+function returnTrayAction ( dialogid ) { 
+
+if ( byId('fldRtnLocationValue') ) { 
   var dta = new Object();
-  dta['tray'] = whichtray; 
-  byId('standardModalBacker').style.display = 'block';    
+  dta['rtnTrayId'] = byId('rtnTryId').value;
+  dta['dialogid'] = dialogid;
+  dta['locationscancode'] = byId('fldRtnLocationValue').value;
+  dta['returnlocationnote'] = byId('rtnlocationnote').value;
+ 
+  if ( byId('fldRtnNonFinishReasonValue') ) { 
+    dta['notfinishedreason'] = byId('fldRtnNonFinishReasonValue').value; 
+    dta['notfinishednote'] = byId('rtnnonfinishednote').value;
+  }
+
   var passdta = JSON.stringify(dta);
-  var mlURL = "/data-doers/preprocess-tray-return";
-  universalAJAX("POST",mlURL,passdta,answerPreProcessTrayReturn,2);      
+  closeThisDialog( dialogid ); 
+  byId('standardModalBacker').style.display = 'block';    
+  var mlURL = "/data-doers/hpr-return-slide-tray";
+  universalAJAX("POST",mlURL,passdta,answerHPRReturnTray,2);
 }
 
-function answerPreProcessTrayReturn( rtnData ) { 
-
-            console.log( rtnData ); 
-            byId('standardModalBacker').style.display = 'none';    
-   
 }
-            
+
+function answerHPRReturnTray( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+    navigateSite('hpr-review');
+   }
+}
+           
 function sendSaveUnusable( dialogid ) {
   var dta = JSON.parse( byId('valSavedData').value );
   dta['unusabletxt'] = byId('ususableReasonTxt').value;
@@ -4489,30 +4510,30 @@ function answerHPRVocabBrowser ( rtnData ) {
 
 function makeHPRDXOverride ( dialogid, diagnosis, dmodifier ) { 
   var decision = 'CONFIRM';
-  decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() === "" && byId('HPRWBTbl').dataset.specimencategory.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+  decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() === "" && byId('HPRWBTbl').dataset.specimencategory.trim() !== "" ) ? "ADDITIONAL" : decision; 
   decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && byId('HPRWBTbl').dataset.specimencategory.trim() === "" ) ? "DENIED" : decision; 
   decision = ( (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && byId('HPRWBTbl').dataset.specimencategory.trim() !== "") && (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== byId('HPRWBTbl').dataset.specimencategory.trim())) ? "DENIED" : decision;
   if ( decision !== "DENIED") { 
     //CHECK SITE  
-    decision = ( byId('HPRWBTbl').dataset.osite.trim() === "" && byId('HPRWBTbl').dataset.site.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.osite.trim() === "" && byId('HPRWBTbl').dataset.site.trim() !== "" ) ? "ADDITIONAL" : decision; 
     decision = ( byId('HPRWBTbl').dataset.osite.trim() !== "" && byId('HPRWBTbl').dataset.site.trim() === "" ) ? "DENIED" : decision; 
     decision = ((byId('HPRWBTbl').dataset.osite.trim() !== "" && byId('HPRWBTbl').dataset.site.trim() !== "") && (byId('HPRWBTbl').dataset.osite.trim() !== byId('HPRWBTbl').dataset.site.trim())) ? "DENIED" : decision; 
   }
   if ( decision !== "DENIED") { 
     //CHECK SUB-SITE  
-    decision = ( byId('HPRWBTbl').dataset.ossite.trim() === "" && byId('HPRWBTbl').dataset.ssite.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.ossite.trim() === "" && byId('HPRWBTbl').dataset.ssite.trim() !== "" ) ? "ADDITIONAL" : decision; 
     decision = ( byId('HPRWBTbl').dataset.ossite.trim() !== "" && byId('HPRWBTbl').dataset.ssite.trim() === "" ) ? "DENIED" : decision; 
     decision = ((byId('HPRWBTbl').dataset.ossite.trim() !== "" && byId('HPRWBTbl').dataset.ssite.trim() !== "") && (byId('HPRWBTbl').dataset.ossite.trim() !== byId('HPRWBTbl').dataset.ssite.trim())) ? "DENIED" : decision; 
   }
   if ( decision !== "DENIED") { 
     //CHECK DX 
-    decision = ( byId('HPRWBTbl').dataset.odx.trim() === "" && diagnosis.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.odx.trim() === "" && diagnosis.trim() !== "" ) ? "ADDITIONAL" : decision; 
     decision = ( byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() === "" ) ? "DENIED" : decision; 
     decision = ((byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() !== "") && (byId('HPRWBTbl').dataset.odx.trim() !== diagnosis.trim())) ? "DENIED" : decision; 
   }
   if ( decision !== "DENIED") { 
     //CHECK DXM 
-    decision = ( byId('HPRWBTbl').dataset.odxm.trim() === "" && dmodifier.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.odxm.trim() === "" && dmodifier.trim() !== "" ) ? "ADDITIONAL" : decision; 
     decision = ( byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() === "" ) ? "DENIED" : decision; 
     decision = ((byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() !== "") && (byId('HPRWBTbl').dataset.odxm.trim() !== dmodifier.trim())) ? "DENIED" : decision; 
   }
@@ -4522,7 +4543,7 @@ function makeHPRDXOverride ( dialogid, diagnosis, dmodifier ) {
     case 'CONFIRM':
        byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionconfirm\">thumb_up</i>";
      break;
-     case 'CONFIRM-ADD':
+     case 'ADDITIONAL':
        byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionadd\">note_add</i>";
      break;
      case 'DENIED':
@@ -4543,7 +4564,7 @@ function makeHPRDXOverride ( dialogid, diagnosis, dmodifier ) {
 
 function makeHPRDesignation( dialogid, spcat, site, subsite, diagnosis, dmodifier ) { 
   var decision = 'CONFIRM';
-  decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() === "" && spcat.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+  decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() === "" && spcat.trim() !== "" ) ? "ADDITIONAL" : decision; 
   decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && spcat.trim() === "" ) ? "DENIED" : decision; 
   decision = ( (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && spcat.trim() !== "") && (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== spcat.trim())) ? "DENIED" : decision; 
   if ( spcat.toUpperCase().trim() !== "MALIGNANT" ) {
@@ -4559,25 +4580,25 @@ function makeHPRDesignation( dialogid, spcat, site, subsite, diagnosis, dmodifie
   }
   if ( decision !== "DENIED") { 
     //CHECK SITE  
-    decision = ( byId('HPRWBTbl').dataset.osite.trim() === "" && site.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.osite.trim() === "" && site.trim() !== "" ) ? "ADDITIONAL" : decision; 
     decision = ( byId('HPRWBTbl').dataset.osite.trim() !== "" && site.trim() === "" ) ? "DENIED" : decision; 
     decision = ((byId('HPRWBTbl').dataset.osite.trim() !== "" && site.trim() !== "") && (byId('HPRWBTbl').dataset.osite.trim() !== site.trim())) ? "DENIED" : decision; 
   }
   if ( decision !== "DENIED") { 
     //CHECK SUB-SITE  
-    decision = ( byId('HPRWBTbl').dataset.ossite.trim() === "" && subsite.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.ossite.trim() === "" && subsite.trim() !== "" ) ? "ADDITIONAL" : decision; 
     decision = ( byId('HPRWBTbl').dataset.ossite.trim() !== "" && subsite.trim() === "" ) ? "DENIED" : decision; 
     decision = ((byId('HPRWBTbl').dataset.ossite.trim() !== "" && subsite.trim() !== "") && (byId('HPRWBTbl').dataset.ossite.trim() !== subsite.trim())) ? "DENIED" : decision; 
   }
   if ( decision !== "DENIED") { 
     //CHECK DX 
-    decision = ( byId('HPRWBTbl').dataset.odx.trim() === "" && diagnosis.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.odx.trim() === "" && diagnosis.trim() !== "" ) ? "ADDITIONAL" : decision; 
     decision = ( byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() === "" ) ? "DENIED" : decision; 
     decision = ((byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() !== "") && (byId('HPRWBTbl').dataset.odx.trim() !== diagnosis.trim())) ? "DENIED" : decision; 
   }
   if ( decision !== "DENIED") { 
     //CHECK DXM 
-    decision = ( byId('HPRWBTbl').dataset.odxm.trim() === "" && dmodifier.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.odxm.trim() === "" && dmodifier.trim() !== "" ) ? "ADDITIONAL" : decision; 
     decision = ( byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() === "" ) ? "DENIED" : decision; 
     decision = ((byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() !== "") && (byId('HPRWBTbl').dataset.odxm.trim() !== dmodifier.trim())) ? "DENIED" : decision; 
   }
@@ -4587,7 +4608,7 @@ function makeHPRDesignation( dialogid, spcat, site, subsite, diagnosis, dmodifie
     case 'CONFIRM':
        byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionconfirm\">thumb_up</i>";
      break;
-     case 'CONFIRM-ADD':
+     case 'ADDITIONAL':
        byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionadd\">note_add</i>";
      break;
      case 'DENIED':
@@ -4613,7 +4634,7 @@ function makeHPRMetsFrom( dialogid, metssite, metsssite ) {
   var decision = byId('decisionSqr').dataset.hprdecision;
   if ( byId('decisionSqr').dataset.hprdecision === 'DENIED' ) {
   } else { 
-    decision = ( byId('HPRWBTbl').dataset.omets.trim() === "" && metssite.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+    decision = ( byId('HPRWBTbl').dataset.omets.trim() === "" && metssite.trim() !== "" ) ? "ADDITIONAL" : decision; 
     decision = ( byId('HPRWBTbl').dataset.omets.trim() !== "" && metssite.trim() === "" ) ? "DENIED" : decision; 
     decision = ((byId('HPRWBTbl').dataset.omets.trim() !== "" && metssite.trim() !== "") && (byId('HPRWBTbl').dataset.omets.trim() !== metssite.trim())) ? "DENIED" : decision;  
   }
@@ -4623,7 +4644,7 @@ function makeHPRMetsFrom( dialogid, metssite, metsssite ) {
     case 'CONFIRM':
        byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionconfirm\">thumb_up</i>";
      break;
-     case 'CONFIRM-ADD':
+     case 'ADDITIONAL':
        byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionadd\">note_add</i>";
      break;
      case 'DENIED':
@@ -4667,30 +4688,30 @@ function blankDesig( whichdesig ) {
       byId('HPRWBTbl').dataset.mets = "";
       byId('dspHPRMetsFrom').innerHTML = byId('HPRWBTbl').dataset.mets;
       var decision = 'CONFIRM';
-      decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() === "" && byId('HPRWBTbl').dataset.specimencategory.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+      decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() === "" && byId('HPRWBTbl').dataset.specimencategory.trim() !== "" ) ? "ADDITIONAL" : decision; 
       decision = ( byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && byId('HPRWBTbl').dataset.specimencategory.trim() === "" ) ? "DENIED" : decision; 
       decision = ( (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== "" && byId('HPRWBTbl').dataset.specimencategory.trim() !== "") && (byId('HPRWBTbl').dataset.ospecimencategory.trim() !== byId('HPRWBTbl').dataset.specimencategory.trim())) ? "DENIED" : decision;
       if ( decision !== "DENIED") { 
         //CHECK SITE  
-        decision = ( byId('HPRWBTbl').dataset.osite.trim() === "" && byId('HPRWBTbl').dataset.site.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+        decision = ( byId('HPRWBTbl').dataset.osite.trim() === "" && byId('HPRWBTbl').dataset.site.trim() !== "" ) ? "ADDITIONAL" : decision; 
         decision = ( byId('HPRWBTbl').dataset.osite.trim() !== "" && byId('HPRWBTbl').dataset.site.trim() === "" ) ? "DENIED" : decision; 
         decision = ((byId('HPRWBTbl').dataset.osite.trim() !== "" && byId('HPRWBTbl').dataset.site.trim() !== "") && (byId('HPRWBTbl').dataset.osite.trim() !== byId('HPRWBTbl').dataset.site.trim())) ? "DENIED" : decision; 
       }
       if ( decision !== "DENIED") { 
         //CHECK SUB-SITE  
-        decision = ( byId('HPRWBTbl').dataset.ossite.trim() === "" && byId('HPRWBTbl').dataset.ssite.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+        decision = ( byId('HPRWBTbl').dataset.ossite.trim() === "" && byId('HPRWBTbl').dataset.ssite.trim() !== "" ) ? "ADDITIONAL" : decision; 
         decision = ( byId('HPRWBTbl').dataset.ossite.trim() !== "" && byId('HPRWBTbl').dataset.ssite.trim() === "" ) ? "DENIED" : decision; 
         decision = ((byId('HPRWBTbl').dataset.ossite.trim() !== "" && byId('HPRWBTbl').dataset.ssite.trim() !== "") && (byId('HPRWBTbl').dataset.ossite.trim() !== byId('HPRWBTbl').dataset.ssite.trim())) ? "DENIED" : decision; 
       }
       if ( decision !== "DENIED") { 
         //CHECK DX 
-        decision = ( byId('HPRWBTbl').dataset.odx.trim() === "" && diagnosis.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+        decision = ( byId('HPRWBTbl').dataset.odx.trim() === "" && diagnosis.trim() !== "" ) ? "ADDITIONAL" : decision; 
         decision = ( byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() === "" ) ? "DENIED" : decision; 
         decision = ((byId('HPRWBTbl').dataset.odx.trim() !== "" && diagnosis.trim() !== "") && (byId('HPRWBTbl').dataset.odx.trim() !== diagnosis.trim())) ? "DENIED" : decision; 
       }
       if ( decision !== "DENIED") { 
         //CHECK DXM 
-        decision = ( byId('HPRWBTbl').dataset.odxm.trim() === "" && dmodifier.trim() !== "" ) ? "CONFIRM-ADD" : decision; 
+        decision = ( byId('HPRWBTbl').dataset.odxm.trim() === "" && dmodifier.trim() !== "" ) ? "ADDITIONAL" : decision; 
         decision = ( byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() === "" ) ? "DENIED" : decision; 
         decision = ((byId('HPRWBTbl').dataset.odxm.trim() !== "" && dmodifier.trim() !== "") && (byId('HPRWBTbl').dataset.odxm.trim() !== dmodifier.trim())) ? "DENIED" : decision; 
       }
@@ -4699,7 +4720,7 @@ function blankDesig( whichdesig ) {
         case 'CONFIRM':
           byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionconfirm\">thumb_up</i>";
           break;
-        case 'CONFIRM-ADD':
+        case 'ADDITIONAL':
           byId('decisionSqr').innerHTML = "<i class=\"material-icons hprdecisionicon hprdecisionadd\">note_add</i>";
           break;
         case 'DENIED':

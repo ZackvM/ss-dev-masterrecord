@@ -1179,7 +1179,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 
 #decisionSqr { width: 5vw; border: 1px solid rgba({$this->color_dblue},1); text-align: center; }
 #decisionSqr[data-hprdecision='CONFIRM'] { background: rgba({$this->color_darkgreen},.8); color: rgba({$this->color_white},1); }
-#decisionSqr[data-hprdecision='CONFIRM-ADD'] { background: rgba({$this->color_lamber},.8); color: rgba({$this->color_dblue},1); }
+#decisionSqr[data-hprdecision='ADDITIONAL'] { background: rgba({$this->color_lamber},.8); color: rgba({$this->color_dblue},1); }
 #decisionSqr[data-hprdecision='DENIED'] { background: rgba({$this->color_bred},.8); color: rgba({$this->color_white},1); }
 #decisionSqr .hprdecisionicon { font-size: 5vh; }
 

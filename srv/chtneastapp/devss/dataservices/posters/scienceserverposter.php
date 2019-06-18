@@ -33,7 +33,82 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+    function hprreturnslidetray ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id();
+      //DO DATA CHECKS
+      //{"rtnTrayId":"HPRT002","dialogid":"QxQm1ZoO39CFtTq","locationscancode":"RTN003","returnlocationnote":"Location Note goes here","notfinishedreason":"SLIDESNOTRIGHT","notfinishednote":"Not Finished Note "}
+      ( !array_key_exists('rtnTrayId', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'rtnTrayId' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('locationscancode', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'returnlocationnote' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('returnlocationnote', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'returnlocationnote' is missing.  Fatal Error")) : "";
+      ( trim($pdta['rtnTrayId']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The Slide Tray Id is blank")) : "";
+      ( trim($pdta['locationscancode']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The Slide Tray Pick-up Location cannot be blank.")) : "";
+      ( array_key_exists('notfinishedreason',$pdta) && trim($pdta['notfinishedreason']) === "") ? (list( $errorInd, $msgArr[] ) = array(1 , "The Reason the tray was not complete must be specified.")) : "";
+ 
+      //CHECK USER IS AN HPR REVIEWER
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowHPR = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+          (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO HPR.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+          $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }
+
+      if ( $errorInd === 0 ) { 
+
+        $chkSQL = "SELECT * FROM masterrecord.ut_procure_segment where HPRBoxNbr = :trayscancode and ifnull(hprslideread,0) = 0";
+        $chkRS = $conn->prepare($chkSQL);
+        $chkRS->execute(array(':trayscancode' => $pdta['rtnTrayId']));
+        if ( $chkRS->rowCount() < 1 ) { 
+          //COMPLETED TRAY
+          $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = 'REVIEWCOMPLETE', hprtraystatusby = :usr, hprtrayheldwithin = :heldwith, hprtrayheldwithinnote = :heldwithinnote, hprtraystatuson = now() where scancode = :scncode";
+          $traySTSRS = $conn->prepare($traySTSSQL);
+          $traySTSRS->execute(array(':usr' => $u['usr'], ':scncode' => $pdta['rtnTrayId'], ':heldwith' => $pdta['locationscancode'], ':heldwithinnote' => trim($pdta['returnlocationnote'])   )); 
+          $tryHisSQL = "insert into masterrecord.history_hpr_tray_status (trayscancode, tray, traystatus, historyon, historyby, trayheldwithin, trayheldwithinnote) values(:trayscancode, :tray, :traystatus, now(), :historyby, :trayheldwithin, :trayheldwithinnote)";
+          $tryHisRS = $conn->prepare($tryHisSQL);
+          $tryHisRS->execute(array(':trayscancode' => $pdta['rtnTrayId'], ':tray' => $pdta['rtnTrayId'], ':traystatus' => 'REVIEWCOMPLETE', ':historyby' => $u['usr'], ':trayheldwithin' =>  $pdta['locationscancode'], ':trayheldwithinnote' => trim($pdta['returnlocationnote'])));
+        } else { 
+            //PARTIAL TRAY
+          $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = 'PARTIALCOMPLETE', hprtraystatusby = :usr, hprtrayheldwithin = :heldwith, hprtrayheldwithinnote = :heldwithinnote, hprtrayreasonnotcomplete = :reasonnotcomplete, hprtrayreasonnotcompletenote = :reasonnotcompletenote  where scancode = :scncode";
+          $traySTSRS = $conn->prepare($traySTSSQL);
+          $traySTSRS->execute(array(':usr' => $u['usr']
+                                  , ':scncode' => $pdta['rtnTrayId'] 
+                                  , ':heldwith' => $pdta['locationscancode']
+                                  , ':heldwithinnote' => trim($pdta['returnlocationnote'])
+                                  , ':reasonnotcomplete' => $pdta['notfinishedreason']
+                                  , ':reasonnotcompletenote' => trim($pdta['notfinishednote']))); 
+
+          $tryHisSQL = "insert into masterrecord.history_hpr_tray_status (trayscancode, tray, traystatus, historyon, historyby, trayheldwithin, trayheldwithinnote, reasonnotfinished, reasonnotfinishednote) values(:trayscancode, :tray, :traystatus, now(), :historyby, :trayheldwithin, :trayheldwithinnote , :reasonnotfinished, :reasonnotfinishednote  )";
+          $tryHisRS = $conn->prepare($tryHisSQL);
+          $tryHisRS->execute(array(':trayscancode' => $pdta['rtnTrayId']
+                                 , ':tray' => $pdta['rtnTrayId']
+                                 , ':traystatus' => 'PARTIALCOMPLETE'
+                                 , ':historyby' => $u['usr']
+                                 , ':trayheldwithin' =>  $pdta['locationscancode']
+                                 , ':trayheldwithinnote' => trim($pdta['returnlocationnote'])
+                                 , ':reasonnotfinished' => $pdta['notfinishedreason']
+                                 , ':reasonnotfinishednote' => trim($pdta['notfinishednote'])
+                             ));
+          $responseCode = 200;
+        }
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $rptlist);
+      return $rows;
+    }
+
     function hprsaveinconreview ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 503;
@@ -5865,17 +5940,17 @@ SQLSTMT;
              $updR->execute(array(':newQ' => $sld['qmscondition'], ':bywho' =>$usr['originalaccountname'], ':pbiosample' => $sld['bg'] ));
              $hisRS->execute(array(':pbiosample' => $sld['bg'], ':readlabel' => $sld['readlabel'], ':qmsstatus' => $sld['qmscondition'],':qmsstatusby' => $usr['originalaccountname'] , ':historyrecordby' => 'HPR OVERRIDE TRAY LOAD' ));
              $segLocRS->execute(array(':dsplocation' => $traydsp, ':invscancode' => $invscancode, ':usr' =>$usr['originalaccountname'], ':invscancodea' => $invscancode, ':usra' =>$usr['originalaccountname'], ':segmentid' => $sld['slideid']));
-             $invHisRS->execute(array(':segmentid' => $sld['slideid'],':bgs' => $sld['bg'],':scannedlocation' => $traydsp,':scannedinventorycode' => $invscancode,':inventoryscanstatus' => 'HPR-SUBMIT-OVERRIDE',':scannedby' => $usr['originalaccountname'],':historyby' => 'COORDINATOR SCREEN HPR INVENTORY OVERRIDE'));
+             $invHisRS->execute(array(':segmentid' => $sld['slideid'],':bgs' => $sld['slidenbr'],':scannedlocation' => $traydsp,':scannedinventorycode' => $invscancode,':inventoryscanstatus' => 'HPR-SUBMIT-OVERRIDE',':scannedby' => $usr['originalaccountname'],':historyby' => 'COORDINATOR SCREEN HPR INVENTORY OVERRIDE'));
              $hprHisRS->execute(array(':segmentid' => $sld['slideid'],':tohprby' => $usr['originalaccountname']));
           }
           
           // MARK INVENTORY SLIDE TRAY AS LOCKED OUT
-          $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = 'SENT', hprtraystatusby = :usr, hprtraystatuson = now() where scancode = :scncode";
+          $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = 'SUBMITTED', hprtraystatusby = :usr, hprtraystatuson = now() where scancode = :scncode";
           $traySTSRS = $conn->prepare($traySTSSQL);
           $traySTSRS->execute(array(':usr' => $usr['originalaccountname'], ':scncode' => $invscancode)); 
           $tryHisSQL = "insert into masterrecord.history_hpr_tray_status (trayscancode, tray, traystatus, historyon, historyby) values(:trayscancode, :tray, :traystatus, now(), :historyby)";
           $tryHisRS = $conn->prepare($tryHisSQL);
-          $tryHisRS->execute(array(':trayscancode' => $invscancode, ':tray' => $traydsp, ':traystatus' => 'SENT', ':historyby' => $usr['originalaccountname']));
+          $tryHisRS->execute(array(':trayscancode' => $invscancode, ':tray' => $traydsp, ':traystatus' => 'SUBMITTED', ':historyby' => $usr['originalaccountname']));
           $devSQL = "insert into masterrecord.tbl_operating_deviations(module, whodeviated, whendeviated, operationsarea, functiondeviated, reasonfordeviation, payload) value('data-coordination', :whodeviated, now(), 'inventory', 'inventory-hpr-tray-override' , :reasonfordeviation, :payload)";
           $devRS = $conn->prepare($devSQL); 
           $devRS->execute(array(':whodeviated' => $usr['originalaccountname'], ':reasonfordeviation' => $devreason, ':payload' => $passdata));
