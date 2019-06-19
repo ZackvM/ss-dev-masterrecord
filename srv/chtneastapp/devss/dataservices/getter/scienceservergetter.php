@@ -1697,6 +1697,11 @@ function runbiogroupsearchquery($srchrqstjson) {
             $qryArr += [':prep' => "{$fldvalue}"];
             $fieldsQueried++;
             break;
+        case 'hprTrayInvLoc':
+            $sqlCritAdd .= " and ( sg.HPRBoxNbr = :hprslidetrayloc ) ";
+            $qryArr += [':hprslidetrayloc' => "{$fldvalue}"];
+            $fieldsQueried++;
+            break;
       }
     }
   }
@@ -1705,7 +1710,12 @@ function runbiogroupsearchquery($srchrqstjson) {
   if ($fieldsQueried > 0) { 
     if ($errors === 0) { 
         //BEGINNINGS OF SQL
-      require(serverkeys . "/sspdo.zck");  
+        require(serverkeys . "/sspdo.zck"); 
+/*SELECT iloc.scancode, iloc.locationdsp, ifnull(tsts.longvalue,'')  as hprtraystatusdsp,    iloc.hprtrayheldwithin, iloc.hprtrayheldwithinnote, iloc.hprtrayreasonnotcompletenote , ifnull(date_format(iloc.hprtraystatuson,'%m/%d/%Y'),'') as hprtraystatuson 
+FROM four.sys_inventoryLocations iloc
+left join (SELECT dspvalue, longvalue FROM four.sys_master_menus where menu = 'HPRTrayStatus') as tsts on iloc.hprtraystatus = tsts.dspvalue
+where parentId = 293 */
+
       $masterSQL = <<<SQLSTMT
 select bs.pbiosample
       , sg.segmentid
@@ -1753,6 +1763,7 @@ select bs.pbiosample
       , ifnull(mnumet.dspvalue,'') as metricuom
       , ifnull(sg.qty,'') as qty
       , ifnull(sg.scannedlocation,'') as scannedlocation
+      , ifnull(sg.HPRBoxNbr,'') as hprboxnbr
       , substr(ifnull(mnucx.dspvalue,''),1,1) as cxind
       , substr(ifnull(mnurx.dspvalue,''),1,1) as rxind
       , substr(ifnull(mnupr.dspvalue,''),1,1) as pathologyrptind

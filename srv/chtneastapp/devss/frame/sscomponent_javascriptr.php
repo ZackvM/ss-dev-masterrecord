@@ -4859,6 +4859,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
+  if (byId('btnBarRsltCheckInTray')) { 
+    byId('btnBarRsltCheckInTray').addEventListener('click', function() { 
+
+      var error = 0;  
+      if (byId('coordinatorResultTbl')) { 
+
+
+
+      } else { 
+        error = 1;
+        msg = 'The \'Result\' table doesn\'t have any listed samples.  Run a valid query before performing actions.';    
+      }
+
+      if ( error === 1 ) {
+        alert(msg);
+      } else { 
+        alert('GENERATE CHECKIN SCREEN');
+      }
+
+    }, false);
+  }
+
   if (byId('coordinatorResultTbl')) {   
    document.addEventListener('contextmenu', function(e) { 
       e.preventDefault();
@@ -4888,6 +4910,7 @@ document.addEventListener('DOMContentLoaded', function() {
       dta['procInst'] = byId('qryProcInstValue').value.trim(); 
       dta['segmentStatus'] = byId('qrySegStatusValue').value.trim(); 
       dta['qmsStatus'] = byId('qryHPRStatusValue').value.trim(); 
+      dta['hprTrayInvLoc'] = byId('qryHPRInvLocValue').value.trim();
       dta['procDateFrom'] = byId('bsqueryFromDateValue').value.trim();
       dta['procDateTo'] = byId('bsqueryToDateValue').value.trim();
       dta['shipDateFrom'] = byId('shpQryFromDateValue').value.trim();  
@@ -5237,9 +5260,6 @@ function gatherSelection() {
       if (byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.selected === 'true') { 
         sglist[cntr] = {biogroup : byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup , bgslabel : byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.bgslabel , segmentid:byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.segmentid };     
         cntr++;
-        //if (!inArray(byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup, bg)) { 
-        //bg[bg.length] = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.biogroup;    
-        //}
       }
     }
     itemsSelected = cntr;

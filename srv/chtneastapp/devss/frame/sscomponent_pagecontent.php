@@ -1416,9 +1416,6 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $bgencry = cryptservice($val['pbiosample']);
     $moreInfo = ( trim($cmtDsp) !== "" ) ? "<div class=ttholder><div class=infoIconDiv><i class=\"material-icons informationalicon\">error_outline</i></div><div class=infoTxtDspDiv>{$cmtDsp}</div></div>" : "";
 
-
-
-
     $prDocId = "";
     switch (trim($val['pathologyrptind'])) { 
       case 'Y':
@@ -1457,9 +1454,6 @@ PRPTNOTATION;
         $pRptDsp = "{$val['pathologyrptind']}";
     }
 
-
-
-
 //TODO: ADD ABILITY TO PULL ASSOCIATIVE RECORD    
     
 $dataTbl .=  <<<LINEITEM
@@ -1476,6 +1470,7 @@ $dataTbl .=  <<<LINEITEM
      data-associd="{$val['associd']}" 
      data-printprid = "{$prDocId}"
      data-printsdid = "{$sdencry}"
+     data-hprboxnbr = "{$val['hprboxnbr']}"
      onclick="rowselector('sg{$val['segmentid']}');" 
      ondblclick="navigateSite('biogroup-definition/{$bgencry}');"
   >
@@ -1533,6 +1528,7 @@ $parameterGrid = <<<TBLPARAGRID
 <tr><td class=columnQParamName>Procuring Institution: </td> <td class=ColumnDataObj>{$srchtrm['procInst']}</td></tr>
 <tr><td class=columnQParamName>Segment Status: </td>        <td class=ColumnDataObj>{$srchtrm['segmentStatus']}</td></tr>
 <tr><td class=columnQParamName>QMS Status: </td>            <td class=ColumnDataObj>{$srchtrm['qmsStatus']}</td></tr>
+<tr><td class=columnQParamName>HPR Slide Tray: </td>        <td class=ColumnDataObj>{$srchtrm['hprTrayInvLoc']}</td></tr>
 <tr><td class=columnQParamName>Procurement Date Range: </td><td class=ColumnDataObj>{$srchtrm['procDateFrom']} - {$srchtrm['procDateTo']}</td></tr>
 <tr><td class=columnQParamName>Shipment Date Range: </td>   <td class=ColumnDataObj>{$srchtrm['shipDateFrom']} - {$srchtrm['shipDateTo']}</td></tr>
 <tr><td class=columnQParamName>Investigator Code: </td>     <td class=ColumnDataObj>{$srchtrm['investigatorCode']}</td></tr>
@@ -2437,7 +2433,7 @@ $grid = <<<BSGRID
 <tr><td>
 
 <table border=0>
-<tr><td class=fldLabel>Biogroup Number</td><td class=fldLabel>Procuring Institution</td><td class=fldLabel>Segment Status</td><td class=fldLabel>HPR Status</td><td class=fldLabel>HPR Location</td></tr>
+<tr><td class=fldLabel>Biogroup Number</td><td class=fldLabel>Procuring Institution</td><td class=fldLabel>Segment Status</td><td class=fldLabel>QMS Status</td><td class=fldLabel>HPR Location</td></tr>
 <tr>
   <td><input type=text id=qryBG class="inputFld" style="width: 20vw;"></td>
   <td><div class=menuHolderDiv><input type=hidden id=qryProcInstValue><input type=text id=qryProcInst READONLY class="inputFld" style="width: 20vw;"><div class=valueDropDown style="min-width: 20vw;">{$proc}</div></div></td>
@@ -2628,23 +2624,38 @@ case 'coordinatorResultGrid':
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltNew><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
+
   <td class=topBtnHolderCell>
     <div class=ttholder><table class=topBtnDisplayer id=btnBarRsltPrintAction><tr><td><i class="material-icons">print</i></td><td>Print</td></tr></table>
     <div class=tt>
       <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
-        <tr class=btnBarDropMenuItem id=btnPrintAllPathologyRpts><td><i class="material-icons">arrow_right</i></td><td>Print Selected Pathology Reports</td></tr>     
-        <tr class=btnBarDropMenuItem id=btnPrintAllShipDocs><td><i class="material-icons">arrow_right</i></td><td>Print Selected Ship-Docs</td></tr>     
-        <tr class=btnBarDropMenuItem id=btnPrintAllLabels><td><i class="material-icons">arrow_right</i></td><td>Print Selected Labels</td></tr>     
+        <tr class=btnBarDropMenuItem id=btnPrintAllPathologyRpts><td><i class="material-icons">arrow_right</i></td><td>Print Selected Pathology Reports&nbsp;&nbsp;&nbsp</td></tr>     
+        <tr class=btnBarDropMenuItem id=btnPrintAllShipDocs><td><i class="material-icons">arrow_right</i></td><td>Print Selected Ship-Docs&nbsp;&nbsp;&nbsp</td></tr>     
+        <tr class=btnBarDropMenuItem id=btnPrintAllLabels><td><i class="material-icons">arrow_right</i></td><td>Print Selected Labels&nbsp;&nbsp;&nbsp</td></tr>     
       </table>
     </div>
     </div>
   </td>
+
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltExport><tr><td><i class="material-icons">import_export</i></td><td>Export Results</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltToggle><tr><td><i class="material-icons">get_app</i></td><td>Toggle Select</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltParams><tr><td><i class="material-icons">settings</i></td><td>View Parameters</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltMakeSD><tr><td><i class="material-icons">local_shipping</i></td><td>Create Shipdoc</td></tr></table></td>  
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltSubmitHPR><tr><td><i class="material-icons">assignment</i></td><td>Submit HPR Override</td></tr></table></td>           
+
+
+  <td class=topBtnHolderCell>
+    <div class=ttholder>
+      <table class=topBtnDisplayer id=btnHPRProcess><tr><td><i class="material-icons">assignment</i></td><td>HPR Process Override</td></tr></table>
+      <div class=tt>
+        <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
+          <tr class=btnBarDropMenuItem id=btnBarRsltSubmitHPR><td><i class="material-icons">arrow_right</i></td><td>Submit Slide Tray to HPR (Override)&nbsp;&nbsp;&nbsp</td></tr>     
+          <tr class=btnBarDropMenuItem id=btnBarRsltCheckInTray><td><i class="material-icons">arrow_right</i></td><td>Check-In Slide Tray (Override)&nbsp;&nbsp;&nbsp</td></tr>     
+        </table>
+      </div>  
+    </div>
+  </td>           
+
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltInventoryOverride><tr><td><i class="material-icons">blur_linear</i></td><td>Check-In Override</td></tr></table></td>           
 </tr>
 BTNTBL;

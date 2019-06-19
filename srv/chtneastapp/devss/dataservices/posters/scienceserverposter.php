@@ -7057,7 +7057,7 @@ function qryCriteriaCheckBio($rqst) {
     $msg = "";  
   //  {"qryType":"BIO","BG":"","procInst":"","segmentStatus":"","qmsStatus":"","procDateFrom":"2018-11-01","procDateTo":"2018-11-04","shipDateFrom":"2018-11-01","shipDateTo":"2018-11-04","investigatorCode":"","site":"","diagnosis":"","PrepMethod":"","preparation
     //Check Keys in Array 
-    $needkeys = array("qryType","BG","procInst","segmentStatus","qmsStatus","procDateFrom","procDateTo","shipDateFrom","shipDateTo","investigatorCode","shipdocnbr","shipdocstatus","site","specimencategory","phiage","phirace","phisex","procType","PrepMethod","preparation");
+    $needkeys = array("qryType","BG","procInst","segmentStatus","qmsStatus","hprTrayInvLoc","procDateFrom","procDateTo","shipDateFrom","shipDateTo","investigatorCode","shipdocnbr","shipdocstatus","site","specimencategory","phiage","phirace","phisex","procType","PrepMethod","preparation");
     $keysExist = 1;
     foreach ($needkeys as $keyval) { 
         if (!array_key_exists($keyval, $rqst)) {
@@ -7102,6 +7102,22 @@ function qryCriteriaCheckBio($rqst) {
         $allowerror = 1; 
         $msg .= "\r\n- Only a Series or a Range search is allowed at any one time (Biogroup Number)";
       }
+    }
+
+    //CHECK HPR Tray Location 
+
+    if ( trim($rqst['hprTrayInvLoc']) !== "" ) {
+        if ( !preg_match('/\bHPRT\d{3}\b/', trim($rqst['hprTrayInvLoc']) )) {
+          //NOT A PROPER TRAY ID  
+          $allowerror = 1; 
+          $msg .= "\r\n- Invalid HPR Slide Tray Inventory Location";
+        } else { 
+            //PROPER TRAY ID
+          if ( (int)$fieldsFilledIn > 1 ) {
+            $allowerror = 1; 
+            $msg .= "\r\n- When querying for an HPR Slide Tray Inventory Location, you may not query for any other locations. ";
+          }
+        }
     }
 
     //CHECK Ship Doc Nbr
