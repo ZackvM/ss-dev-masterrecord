@@ -35,7 +35,6 @@ class objgetter {
 
 class objlisting { 
 
-
   function inventorysimplehprtraylist() { 
      $responseCode = 400;
      $rows = array();
@@ -663,6 +662,69 @@ OBJECTSQL;
          $msg = "INDIVIDUAL DATA OBJECT NOT FOUND";
       }
     }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;    
+ }
+
+ function getpasthprreviewsbybiogroupsingleline ( $request, $urirqst ) { 
+    $rows = array(); 
+    $dta = array(); 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $itemsfound = 0;
+    if ( trim($request) === "" ) { 
+    } else {
+      $objectid = $request;  
+      $defineSQL = <<<OBJECTSQL
+SELECT biohpr,  ifnull(hpr.bgs,'') as slideread, ifnull(hpr.reviewer,'') as reviewer, date_format(hpr.reviewedOn,'%m/%d/%Y') as reviewedon, ifnull(hpr.decision,'') as decision, ifnull(hpr.vocabularydecision,'') as vocabularydecision, ifnull(hpr.speccat,'') as speccat, trim(concat(ifnull(hpr.site,''), if (ifnull(subsite,'')='','', concat(' (' , ifnull(hpr.subsite,'') , ')')))) as site, trim(concat(ifnull(hpr.dx,''), if( ifnull(hpr.subdiagnosis,'') = '','', concat(' [',ifnull(hpr.subdiagnosis,''),']')))) as dx FROM masterrecord.ut_hpr_biosample hpr where hpr.bioGroupId  = :objectid order by biohpr desc
+OBJECTSQL;
+     $obj = runObjectSQL($defineSQL, $objectid);       
+     $itemsfound = count($obj);  
+     if (count($obj) > 0) { 
+         $dta = $obj;
+         $responseCode = 200;
+         $msg = ""; 
+     }  else { 
+         $responseCode = 404; 
+         $msg = "INDIVIDUAL DATA OBJECT NOT FOUND";
+     }
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;    
+ }
+
+
+ function getassgroupfromseg ( $request, $urirqst ) { 
+    $rows = array(); 
+    $dta = array(); 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $itemsfound = 0;
+ 
+    if ( trim($request) === "" ) { 
+    } else {
+        $segid = $request;
+        //, ifnull(uni.dspvalue,'')  as uninvolvedind
+        //left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'UNINVOLVEDIND') uni on bs.uninvolvedInd = uni.menuvalue 
+        //,  ifnull(uni.dspvalue,'')
+      $defineSQL = <<<OBJECTSQL
+select bs.associd, bs.read_label as bsreadlabel, concat( ifnull(bs.pxiage,''),'/',ifnull(bs.pxirace,''),'/', ifnull(bs.pxigender,'')) as ars, trim(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat(' (',ifnull(bs.subsite,''),')')))) as site, trim(concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'') = '','',concat(' [,',ifnull(bs.subdiagnos,''),']')))) as dx, trim(ifnull(bs.metsSite,'')) as metssite, ifnull(bs.tissType,'') as specimencategory, bs.hprdecision, date_format(bs.hpron,'%m/%d/%Y') as hpron, count(1) nbrOfSegments from (SELECT bs.associd FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample  where segmentid = :objectid) as ass left join masterrecord.ut_procure_biosample bs on ass.associd = bs.associd left join masterrecord.ut_procure_segment sg on bs.pBioSample = sg.biosampleLabel where bs.voidind <> 1 and sg.voidInd <> 1 group by bs.read_Label, bs.associd, bs.pxirace, bs.pxigender, bs.pxiage, bs.anatomicSite, bs.subSite, bs.diagnosis, bs.subdiagnos, bs.metsSite, bs.tissType, bs.hprdecision, date_format(bs.hpron,'%m/%d/%Y')
+OBJECTSQL;
+
+     $obj = runObjectSQL($defineSQL, $segid);       
+     $itemsfound = count($obj);  
+     if (count($obj) > 0) { 
+         $dta = $obj;
+         $responseCode = 200;
+         $msg = ""; 
+     }  else { 
+         $responseCode = 404; 
+         $msg = "INDIVIDUAL DATA OBJECT NOT FOUND";
+     }
+    }
+ 
     $rows['statusCode'] = $responseCode; 
     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
     return $rows;    
@@ -1764,6 +1826,11 @@ select bs.pbiosample
       , ifnull(sg.qty,'') as qty
       , ifnull(sg.scannedlocation,'') as scannedlocation
       , ifnull(sg.HPRBoxNbr,'') as hprboxnbr
+      , ifnull(htry.locationdsp,'') as htrydsp
+      , ifnull(htry.hprtraystatusdsp,'') as htrystatus
+      , ifnull(htry.hprtraystatuson,'') as hprtraystatuson
+      , ifnull(htry.heldwithin,'') as heldwithin
+      , ifnull(htry.hprtrayheldwithinnote,'') as heldwithinnote
       , substr(ifnull(mnucx.dspvalue,''),1,1) as cxind
       , substr(ifnull(mnurx.dspvalue,''),1,1) as rxind
       , substr(ifnull(mnupr.dspvalue,''),1,1) as pathologyrptind
@@ -1785,7 +1852,8 @@ left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'r
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') as mnupr on bs.pathreport = mnupr.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INFC') as mnuinfc on bs.informedconsent = mnuinfc.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PROCTYPE') as mnuprctype on bs.proctype = mnuprctype.menuvalue
-left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus mnu where mnu.menu = 'SEGMENTSTATUS') as mnuseg on sg.segstatus = mnuseg.menuvalue              
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus mnu where mnu.menu = 'SEGMENTSTATUS') as mnuseg on sg.segstatus = mnuseg.menuvalue
+left join (SELECT iloc.scancode, iloc.locationdsp, ifnull(tsts.longvalue,'')  as hprtraystatusdsp, ifnull(rtn.locationdsp,'')  as heldwithin, ifnull(iloc.hprtrayheldwithinnote,'') as hprtrayheldwithinnote, ifnull(iloc.hprtrayreasonnotcompletenote,'') as hprtrayreasonnotcompletenote, ifnull(date_format(iloc.hprtraystatuson,'%m/%d/%Y'),'') as hprtraystatuson FROM four.sys_inventoryLocations iloc left join (SELECT dspvalue, longvalue FROM four.sys_master_menus where menu = 'HPRTrayStatus') as tsts on iloc.hprtraystatus = tsts.dspvalue left join four.sys_inventoryLocations rtn on iloc.hprtrayheldwithin = rtn.scancode where iloc.parentId = 293) as htry on sg.hprboxnbr = htry.scancode              
 where 1=1 and sg.voidind <> 1 and bs.voidind <> 1   {$sqlCritAdd} 
 order by sg.bgs
 limit 0, 5000

@@ -379,6 +379,16 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #mainHolderTbl { }
 .lineTbl { border-collapse: collapse; }
 #lineBiogroupAnnounce { border-bottom: 1px solid rgba({$this->color_dblue},1); width: 100%; font-size: 1.9vh; font-weight: bold; color: rgba({$this->color_dblue},1); }
+#assLineBiogroupAnnounce { border-bottom: 1px solid rgba({$this->color_dblue},1); width: 100%; font-size: 1.9vh; font-weight: bold; color: rgba({$this->color_dblue},1); }
+.smlInfoLine { font-size: 1vh; color: rgba({$this->color_dblue},1); font-weight: bold; text-align: right; }
+#innerAssDspTbl { width: 100%; font-size: 1.3vh; border: 1px solid rgba({$this->color_darkgrey},1);   }
+#innerAssDspTbl thead tr th { font-size: 1.1vh; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); border-right: 1px solid rgba({$this->color_white},1); padding: 5px 0 5px 0; }  
+#innerAssDspTbl tbody tr td { border-right: 1px solid rgba({$this->color_zackgrey},1); padding: 8px 3px 8px 3px; } 
+#innerAssDspTbl tbody tr:nth-child(even) { background: rgba({$this->color_lightgrey},1); }
+#innerAssDspTbl tbody tr:hover { background: rgba({$this->color_lamber},1); }
+.hpricon { color: rgba({$this->color_darkgreen},1); }
+.hpricon:hover { cursor: pointer; color: rgba({$this->color_cornflowerblue},1);  } 
+
 
 .dataElementTbl { border-collapse: collapse; border: 1px solid rgba({$this->color_dblue},1); }
 .elementLabel { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: .5vh .3vw; font-size: 1.1vh; font-weight: bold; } 
@@ -541,6 +551,8 @@ textarea { font-size: 1.3vh; }
 .smlTxt { font-size: .9vh; text-align: right;  }
 
 .compDspTbl { width: 10vw; }
+
+.hprindication { color: rgba({$this->color_darkgreen},1); text-decoration: underline;  }
 
 STYLESHEET;
 return $rtnThis;
@@ -1135,6 +1147,10 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 #sidePanelSlideListTbl .rowHolder { }
 #sidePanelSlideListTbl .rowHolder:hover { cursor: pointer; background: rgba({$this->color_lamber},1);  }
 
+#progressBarHolder { border-bottom: 1px solid rgba({$this->color_cornflowerblue},1); height: .7vh; width: 42vw; box-sizing: border-box; overflow: hidden; position: relative; }
+#progressBarDsp { background: rgba({$this->color_darkgreen},1); position: absolute; top: 0; left: 0; height: 1vh; }
+
+
 
 #headAnnouncement { font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; padding: 4vh 0 0 0; }
 #dspScanType { font-size: 5vh; text-align: center; } 
@@ -1155,18 +1171,44 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .smlrTxt { font-size: 1.2vh; font-style: italic; }
 #submitTbl { font-size: 1vh; color: rgba({$this->color_mgrey},1); }
 
-#masterHPRSlideReviewTbl { width: 98vw; height: 88vh; box-sizing: border-box; }
+#masterHPRSlideReviewTbl { width: 98vw; box-sizing: border-box; }
 #masterHPRSlideAnnounceLine { height: 3vh; font-size: 2vh; font-weight: bold; color: rgba({$this->color_dblue},1); box-sizing: border-box; padding: 8px 0 0 2px; border-bottom: 2px solid rgba({$this->color_dblue}, 1); }
 #masterHPRTechnicianSide { width: 39vw; height: 40vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); }
 #masterHPRControlBtns { width:  2vw; }
-#masterHPRDocumentSide {position: relative; width: 40vw; border: 1px solid rgba({$this->color_cornflowerblue},1); } 
+#masterHPRDocumentSide { border: 1px solid rgba({$this->color_cornflowerblue},1);} 
 #masterHPRDivBtns { height: 4vh; border: 1px solid rgba({$this->color_cornflowerblue},1); }
 #masterHPRWorkbenchSide { box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1);}
 
-.HPRReviewDocument { position: absolute; top: 0; left: 0; display: none;  }
-#dspPathologyRptTxt { font-size: 1.5vh;  height: 28vh; overflow: auto; box-sizing: border-box; padding: 8px; line-height: 1.5em; text-align: justify; }
+.HPRReviewDocument { display: none; height: 35vh;  }
+
+.dspDocTitle { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; width: 40vw; box-sizing: border-box; padding: 4px; height: 4vh; }
+
+#dspPathologyRptTxt { font-size: 1.5vh;  height: 31vh; overflow: auto; box-sizing: border-box; padding: 8px 15px 8px 12px; line-height: 1.7em; text-align: justify; }
+
+#dspConstituentst { height: 31vh; overflow: auto; box-sizing: border-box;  }
+#constitTbl {width: 40vw; box-sizing: border-box; font-size: 1.4vh; }
+#constitTbl tbody tr:nth-child(even) {background: rgba({$this->color_lgrey},1); }
+#constitTbl tbody tr:hover { background: rgba({$this->color_lamber},1); }
+#constitTbl tr td { padding: 5px 0 5px 3px; border-bottom: 1px solid rgba({$this->color_dblue},1); border-right: 1px solid rgba({$this->color_dblue},1);  } 
+.constiticon { font-size: 1.9vh; color: rgba({$this->color_darkgreen},1);  }
+
+#dspAssGroups { height: 31vh; overflow: auto; box-sizing: border-box; }
+#wholeAssTbl { width: 100%; box-sizing: border-box; font-size: 1.2vh; } 
+#wholeAssTbl tbody tr:nth-child(even) {background: rgba({$this->color_lgrey},1); }
+#wholeAssTbl tbody tr:hover { background: rgba({$this->color_lamber},1); }
+#wholeAssTbl tr td { padding: 5px 0 5px 3px; border-bottom: 1px solid rgba({$this->color_dblue},1); border-right: 1px solid rgba({$this->color_dblue},1);  }
+#wholeAssTbl tr th { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1);   }  
+.smlFont { font-size: 1vh; }
+
+#dspPastHPR { height: 31vh; overflow: auto; box-sizing: border-box; }
+#pastHPRTbl { width: 100%; box-sizing: border-box; font-size: 1.2vh; } 
+#pastHPRTbl tbody tr:nth-child(even) {background: rgba({$this->color_lgrey},1); }
+#pastHPRTbl tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
+#pastHPRTbl tr td { padding: 5px 0 5px 3px; border-bottom: 1px solid rgba({$this->color_dblue},1); border-right: 1px solid rgba({$this->color_dblue},1);  }
+#pastHPRTbl tr th { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1);   }  
+
+
 #dspPRTxt { display: block; }
-.dspDocTitle { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; width: 40vw; box-sizing: border-box; padding: 4px; height: 3.5vh; }
 
 .prntIcon .material-icons { font-size: 2vh;  }
 .prntIcon .material-icons:hover { cursor: pointer; color: rgba({$this->color_dblue},1); }
@@ -1186,7 +1228,11 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .primaryInfo { } 
 .constitInfoHolder { position: relative; }
 .constitInfoHolder:hover .popUpInfo { cursor: pointer; display: block; }
+.constitInfoHolder:hover .popUpShipInfo { cursor: pointer; display: block; }
 .popUpInfo { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; }
+.popUpInfo table tr td { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_dblue},1); }
+.popUpShipInfo { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; right: 0; }
+.popUpShipInfo table tr td { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_dblue},1); }
 
 .prcFld { width: 3vw; font-size: 1.5vh; color: rgba({$this->color_dblue},1); padding: .8vh .5vw; text-align: right;}
 .dspDefinedMoleTests { border: 1px solid rgba(160,160,160,1); height: 10vh; overflow: auto;   padding: 4px; box-sizing: border-box; }
@@ -1234,6 +1280,8 @@ function datacoordinator($mobileind) {
       $rtnThis = <<<STYLESHEET
 
 body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
+
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
 
 #mainQGridHoldTbl {width: 96%;  box-sizing: border-box; margin-left: 2vw; margin-right: 2vw; }
 #gridholdingdiv {width: 100%; height: 80vh; position: relative;}

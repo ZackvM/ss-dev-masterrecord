@@ -4019,7 +4019,7 @@ if ( byId('fldRtnLocationValue') ) {
 
 }
 
-function answerHPRReturnTray( rtnData ) { 
+function answerHPRReturnTray( rtnData ) {
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
     var dspMsg = ""; 
@@ -4093,6 +4093,7 @@ function gatherAndUnuseReview() {
   dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
   dta['hprmoleculartests'] = byId('hprMolecularTestJsonHolderConfirm').value;
   dta['rarereason'] = byId('fldRareReasonTxt').value;
+  dta['generalcomments'] = byId('fldGeneralCmtsTxt').value;
   dta['specialinstructions'] = byId('fldSpecialInstructions').value;
   var passdta = JSON.stringify(dta);
   generateDialog('hprUnusuableDialog', passdta );
@@ -4127,6 +4128,7 @@ function gatherAndSaveReview() {
   dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
   dta['hprmoleculartests'] = byId('hprMolecularTestJsonHolderConfirm').value;
   dta['rarereason'] = byId('fldRareReasonTxt').value;
+  dta['generalcomments'] = byId('fldGeneralCmtsTxt').value;
   dta['specialinstructions'] = byId('fldSpecialInstructions').value;
 
   byId('standardModalBacker').style.display = 'block';    
@@ -4234,7 +4236,8 @@ function answerHPRSendEmail( rtnData ) {
 }
 
 function changeSupportingTab(whichtab) { 
-  for ( var i = 0; i < 5; i++ ) { 
+  var divs = document.getElementsByClassName('HPRReviewDocument'); 
+  for ( var i = 0; i < divs.length; i++ ) { 
     byId('dspTabContent'+i).style.display = 'none';
   }
   byId('dspTabContent'+whichtab).style.display = 'block';
@@ -4861,11 +4864,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (byId('btnBarRsltCheckInTray')) { 
     byId('btnBarRsltCheckInTray').addEventListener('click', function() { 
-
       var error = 0;  
       if (byId('coordinatorResultTbl')) { 
 
-
+        var boxid = "";
+        for (var c = 0; c < byId('coordinatorResultTbl').tBodies[0].rows.length; c++) { 
+          if ( boxid === "" ) { 
+            boxid = byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.hprboxnbr;
+          } else { 
+            if ( boxid === byId('coordinatorResultTbl').tBodies[0].rows[c].dataset.hprboxnbr ) { 
+            } else { 
+              error = 1; 
+              msg = 'All Segments must be HPR Segments and must be assigned to the same HPR Slide Tray';
+            }
+          }   
+        }
 
       } else { 
         error = 1;
@@ -4874,8 +4887,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if ( error === 1 ) {
         alert(msg);
-      } else { 
-        alert('GENERATE CHECKIN SCREEN');
+      } else {
+        var obj = new Object();
+        obj['boxid'] = boxid;
+        var passdata = JSON.stringify(obj);
+        generateDialog( 'hprreturnslidetray', passdata );
       }
 
     }, false);
@@ -5718,7 +5734,49 @@ function checkBoxIndicators(whichbox) {
        byId('nbrQMSSubmittal').innerHTML = submittingCnt;
    }
 }
-  
+
+function updateRtnLocations() { 
+
+  var thisRegex = new RegExp('sRTNInvLoc[0-9]+Value');
+  if ( byId('frmRtnTraySpecifics') ) { 
+    var dta = new Object();
+    var sld = new Object();
+    var e = byId('frmRtnTraySpecifics').elements;
+    var cntr = 0;
+    for ( var i = 0; i < e.length; i++ ) {
+      if ( thisRegex.test ( e[i].id ) ) {
+        sld[e[i].dataset.bgs] = e[i].value;   
+      }
+    }
+  }
+  dta['slides'] = sld;
+  dta['hprboxid'] = byId('rtnHPRTrayScanCode').value;
+  dta['userid'] = window.btoa( encryptedString(key, byId('fldTRtnUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );
+  dta['devreason'] = byId('fldTRtnDeviationReason').value;
+  byId('waiterIndicator').style.display = 'block';
+  byId('rtnBtnDsp').style.display = 'none';
+  console.log(JSON.stringify(dta));
+  var passdata = JSON.stringify(dta);
+  var mlURL = "/data-doers/return-hpr-tray-inventory";
+  universalAJAX("POST",mlURL,passdata,answerReturnHPRTrayInventory,2);
+}
+
+function answerReturnHPRTrayInventory( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     byId('waiterIndicator').style.display = 'none';
+     byId('rtnBtnDsp').style.display = 'block';
+     alert("RETURN HPR TRAY INVENTORY ERROR:\\n"+dspMsg);
+  } else { 
+    //Good results
+    location.reload(); 
+  }   
+}
+
 function updateStatuses() { 
 
   if ( byId('frmCheckInOverride')) { 
@@ -5758,7 +5816,50 @@ function answerUpdateStatuses(rtnData) {
     location.reload(); 
   }   
 }
+
+function generateDialog( whichdialog, whatobject ) { 
+  var dta = new Object(); 
+  dta['whichdialog'] = whichdialog;
+  dta['objid'] = whatobject;   
+  var passdta = JSON.stringify(dta);
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/preprocess-generate-dialog";
+  universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
+}
+            
+function answerPreprocessGenerateDialog( rtnData ) {
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+        var dta = JSON.parse(rtnData['responseText']);         
+        //TODO: MAKE SURE ALL ELEMENTS EXIST BEFORE CREATION
+        var d = document.createElement('div');
+        d.setAttribute("id", dta['DATA']['dialogID']); 
+        d.setAttribute("class","floatingDiv");
+        d.style.left = dta['DATA']['left'];
+        d.style.top = dta['DATA']['top'];
+        d.innerHTML = dta['DATA']['pageElement']; 
+        document.body.appendChild(d);
+        byId(dta['DATA']['dialogID']).style.display = 'block';
+        if ( dta['DATA']['primeFocus'].trim() !== "" ) { 
+          byId(dta['DATA']['primeFocus'].trim()).focus();
+        }
+        byId('standardModalBacker').style.display = 'block';
+  }
+}
         
+function closeThisDialog(dlog) { 
+   byId(dlog).parentNode.removeChild(byId(dlog));
+   byId('standardModalBacker').style.display = 'none';        
+}
+
+
 JAVASCR;
     
 return $rtnthis;

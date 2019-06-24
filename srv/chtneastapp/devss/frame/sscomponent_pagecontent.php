@@ -15,7 +15,21 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
-      case 'trayreturndialog': 
+    case 'hprreturnslidetray':
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Slide Tray Return (Override)";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPRSlideTrayReturnOverride ( $pdta['dialogid'], $passedData );
+        break;
+    case 'datacoordhprdisplay': 
+        $pdta = json_decode($passedData, true);          
+        $titleBar = "HPR Review";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";              
+        $innerDialog = bldHPRReviewDisplay ( $pdta['dialogid'], $passedData );
+        break;
+    case 'trayreturndialog': 
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Unusuable Biosample";
         $standardSysDialog = 0;
@@ -1365,10 +1379,17 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
         $qcstatustxt = "QMS Process: NOT STATUSED!";
     }
 
-    $qcstatustxt .= ( trim($val['hprdecision']) !== "" && (int)$val['hprresultid'] !== 0 ) ? "<br>HPR Decision: <a href=\"javascript:void(0);\" class=hprindication onclick=\"alert('Not functional yet ... {$val['hprresultid']}');\">{$val['hprdecision']}</a>" : ""; 
+    $qcstatustxt .= ( trim($val['hprdecision']) !== "" && (int)$val['hprresultid'] !== 0 ) ? "<br>HPR Decision: <a href=\"javascript:void(0);\" class=hprindication onclick=\"generateDialog('datacoordhprdisplay',{$val['hprresultid']});\">{$val['hprdecision']}</a>" : ""; 
     $qcstatustxt .= ( trim($val['hprdecision']) !== "" && (int)$val['hprresultid'] === 0 ) ? "<br>HPR Decision: {$val['hprdecision']}" : ""; 
     $qcstatustxt .= ( trim($val['reviewedon']) !== "" ) ? "<br>HPR Review: {$val['reviewedon']}" : ""; 
-    $qcstatustxt .= ( trim($val['hprreviewer']) !== "" ) ? " ({$val['hprreviewer']})" : ""; 
+    $qcstatustxt .= ( trim($val['hprreviewer']) !== "" ) ? " ({$val['hprreviewer']})" : "";
+
+    $qcstatustxt .= ( trim($val['htrydsp']) !== "" ) ? "<br>In Slide {$val['htrydsp']}" : ""; 
+    $qcstatustxt .= ( trim($val['htrystatus']) !== "" ) ? "<br>Slide Tray Status: {$val['htrystatus']}" : "";
+    $qcstatustxt .= ( trim($val['hprtraystatuson']) !== "" ) ? " ({$val['hprtraystatuson']})" : "";
+
+    $qcstatustxt .= ( trim($val['heldwithin']) !== "" ) ? "<br>Tray Location: {$val['heldwithin']}" : "";
+    $qcstatustxt .= ( trim($val['heldwithinnote']) !== "" ) ? "<br> :: {$val['heldwithinnote']}" : "";
 
     $sglabel = preg_replace( '/[Tt]_/','',$val['bgs']);
     $stsDte = (trim($val['statusdate']) === "") ? "&nbsp;" : "Status Date: {$val['statusdate']}";
@@ -1405,12 +1426,14 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $hrcmt = preg_replace( '/-{2,}/','',preg_replace('/SS[Vv]\d/','',$val['hprquestion']));
     $sgcmt = preg_replace('SS[Vv]\dSEGMENT COMMENTS','',$val['sgcomments']);
     $invloc = $val['scannedlocation'];
+
     
     $cmtDsp = "";    
     $cmtDsp .= ( trim($bscmt)  !== "" ) ? "<b>Biosample Comments</b>: {$bscmt}" : "";
     $cmtDsp .= ( trim($hrcmt) !== "") ?  "<br><b>HPR Question</b>:  {$hrcmt}" : "";
     $cmtDsp .= ( trim($sgcmt) !== "" ) ? "<br><b>Segment Comments</b>: {$sgcmt}" : "";
     $cmtDsp .= ( trim($invloc) !== "" ) ?  (trim($cmtDsp) !== "") ?  "<br><b>Inventory Location</b>: {$invloc}" : "<b>Inventory Location</b>: {$invloc}" : "";
+
     
     $sgencry = cryptservice($val['segmentid']);
     $bgencry = cryptservice($val['pbiosample']);
@@ -1767,16 +1790,18 @@ PAGECONTENT;
                 <tr>
                   <td class=tabBtn onclick="changeSupportingTab(0);">Pathology<br>Report</td>
                   <td class=tabBtn onclick="changeSupportingTab(1);">Constituent<br>Segments</td>
-                  <!-- <td class=tabBtn onclick="changeSupportingTab(2);">Previous<br>Reviews</td> //-->
+                  <td class=tabBtn onclick="changeSupportingTab(2);">Previous<br>Reviews</td>
+                  <td class=tabBtn onclick="changeSupportingTab(5);">Associative<br>Groups</td>
                   <td class=tabBtn onclick="changeSupportingTab(3);">Images &amp;<br>Other Files</td>
                   <td class=tabBtn onclick="changeSupportingTab(4);">Virtual<br>Slide</td>
                 </tr>
               </table>
              </td></tr>
-            <tr><td id=masterHPRDocumentSide valign=top>{$technicianSide['documentMetrics']}</td></tr>
+            <tr><td  id=masterHPRDocumentSide valign=top>{$technicianSide['documentMetrics']}</td></tr>
             </table>
 REVIEWTBL;
       }
+      //{$technicianSide['documentMetrics']}
     //$u = json_encode($whichusr);  
     $pg = <<<PAGECONTENT
     {$topBtnBar} 
@@ -2069,7 +2094,11 @@ MOLETBL;
     </td>
   </tr>
   <tr>
-    <td style="padding: 1vh 0 0 0;"><table width=100% border=0><tr><td class=hprPreLimFldLbl>Rare Reason</td><td class=hprPreLimFldLbl>Special Instructions to Staff</td></tr><tr><td><textarea id=fldRareReasonTxt style="width: 28vw; height: 8vh;"></textarea></td><td><textarea id=fldSpecialInstructions style="width: 28vw; height: 8vh;"></textarea></td></tr></table></td>
+    <td style="padding: 1vh 0 0 0;"><table width=100% border=0>
+                                      <tr><td class=hprPreLimFldLbl>General Comments</td><td class=hprPreLimFldLbl>Rare Reason</td><td class=hprPreLimFldLbl>Special Instructions to Staff</td></tr>
+                                      <tr><td><textarea id=fldGeneralCmtsTxt style="width: 19vw; height: 8vh;"></textarea></td></td><td><textarea id=fldRareReasonTxt style="width: 19vw; height: 8vh;"></textarea></td><td><textarea id=fldSpecialInstructions style="width: 18vw; height: 8vh;"></textarea></td></tr>
+                                    </table>
+    </td>
   </tr>
   <!-- //TODO ADD LATER TO TOOL BAR <tr><td style="padding: 3vh 0 0 0;"><center><div class="upload-btn-wrapper"><button class="btn">Upload Supporting Files</button><input type="file" name="myfile" name="photos[]" id=zckPicSelector accept="image/jpeg, image/png" multiple  /></div></td></tr> //-->
   <tr>
@@ -2088,7 +2117,11 @@ function buildHPRTechnicianSide ( $rqsturi ) {
     $segbg = explode("::",cryptservice( $rurl[3], 'd', false));
     $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $segbg[0],serverIdent, serverpw), true);    
     $sg = $segData['DATA'][0];
+
+//$sg['biosamplelabel']
     $segConstitList = json_decode( callrestapi("GET", dataTree. "/hpr-get-constit-list/" . $segbg[0],serverIdent, serverpw), true );
+    $segAssGroup = json_decode( callrestapi("GET", dataTree . "/get-ass-group-from-seg/{$segbg[0]}",serverIdent, serverpw), true) ;
+    $segHPRLines = json_decode( callrestapi("GET", dataTree . "/get-past-hpr-reviews-by-biogroup-singleline/{$sg['biosamplelabel']}",serverIdent, serverpw), true) ;
 
     $dtaAge = strtolower(trim("{$sg['phiage']} {$sg['phiageuom']}"));
     $dtaRace = ucwords(trim($sg['phirace']));
@@ -2137,7 +2170,7 @@ function buildHPRTechnicianSide ( $rqsturi ) {
 
     //CONSTITUENT TABLE
     $constitAmt = $segConstitList['ITEMSFOUND'];
-    $constitTbl = "<table border=1><tr><td colspan=25>Constituent Segments Found: {$constitAmt}</td></tr>";
+    $constitTbl = "<table border=0 cellpadding=0 cellspacing=0 id=constitTbl><thead><tr><td colspan=25>Constituent Segments Found: {$constitAmt}</td></tr></thead><tbody>";
     foreach ( $segConstitList['DATA'] as $ckey => $cval ) {
       $bgs = trim(strtoupper( preg_replace( '/_/','',  $cval['bgs'])   ));   
       $segdate = ( trim( $cval['segstatusdate'] ) !== "" ) ? "({$cval['segstatusdate']})" : "";
@@ -2152,38 +2185,109 @@ function buildHPRTechnicianSide ( $rqsturi ) {
       }
       $shipdoc = "";
       $shipPop = "";
+      $shipicon = "";
       if ( trim($cval['shipdocrefid']) !== "" ) {
         $shipdoc = substr('000000' . $cval['shipdocrefid'],-6);
-        $shipPop = "<div class=popUpInfo><table><tr><td>Ship Date: {$cval['shippeddate']} </td></tr></table>";
+        $shipicon = "<i class=\"material-icons constiticon\">local_shipping</i>";
+        $shipPop = "<div class=popUpShipInfo><table><tr><td>Ship Date: {$cval['shippeddate']} </td></tr><tr><td>Shipment Doc: {$shipdoc}  </td></tr></table>";
       }     
-      $hprs = ( (int)$cval['tohpr'] === 1 ) ? "H" : ""; 
-      $hprcomp = ( (int)$cval['hprslideread'] === 1 ) ? "H" : "";
+      $hprs = ( (int)$cval['tohpr'] === 1 ) ? "<i class=\"material-icons constiticon\">brightness_high</i>" : ""; 
+      $hprcomp = ( (int)$cval['hprslideread'] === 1 ) ? "<i class=\"material-icons constiticon\">check_circle</i>" : "";
  
       $constitTbl .= <<<TBLROW
 <tr>
-  <td>{$hprs}</td>
-  <td>{$hprcomp}</td>
+  <td style="width: 1vw;">{$hprs}</td>
+  <td style="width: 1vw;">{$hprcomp}</td>
   <td>{$bgs}</td>
   <td><div class=constitInfoHolder> <div class=primaryInfo>{$cval['segstatus']}</div> <div class=popUpInfo>Status Date: {$segdate}</div> </div></td>
   <td><div class=constitInfoHolder> <div class=primaryInfo>{$cval['prepmethod']}</div> <div class=popUpInfo>{$cval['preparation']}</div> </div> </td>
   <td>{$cval['metricdsp']}</td>
   <td><div class=constitInfoHolder> <div class=primaryInfo>{$assigned} </div>{$invstPop} </div></td>
-  <td><div class=constitInfoHolder> <div class=primaryInfo>{$shipdoc} </div>{$shipPop} </div></td>
+  <td style="width: 1vw;"><div class=constitInfoHolder> <div class=primaryInfo>{$shipicon} </div>{$shipPop} </div></td>
 </tr>
 TBLROW;
     } 
-    $constitTbl .= "</table>";
+    $constitTbl .= "<tbody></table>";
     //END CONSTITUENT TABLE
+    //START ASSOCIATIVE GROUP TABLE
+    $assAmt = $segAssGroup['ITEMSFOUND'];
+    //<th>Uninvolved</th>
+    //<td valign=top>{$aval['uninvolvedind']}</td>
+    $wholeAssTbl = "<table border=0 cellpadding=0 cellspacing=0 id=wholeAssTbl><thead><tr><td colspan=25>Biogroups Found in Associative Group: {$assAmt}</td></tr><tr><th>Biogroup</th><th>Designation</th><th>A/R/S</th><th>HPR<br>Decision</th><th>Constituent<br>Segments</th></tr></thead><tbody>";
+    foreach ( $segAssGroup['DATA'] as $akey => $aval ) {
+    $wholeAssTbl .= <<<ASSROW
+<tr>
+  <td valign=top>{$aval['bsreadlabel']}</td>
+  <td valign=top>{$aval['specimencategory']}<br>
+                 {$aval['site']}<br>
+                 {$aval['dx']}<br>
+                 {$aval['metssite']}</td>
+  <td valign=top>{$aval['ars']}</td>
+  <td valign=top>{$aval['hprdecision']}<br><span class=smlFont>({$aval['hpron']})</span></td>
+  <td valign=top><center>{$aval['nbrOfSegments']}</td>
+</tr>
+ASSROW;
+    }    
+    $wholeAssTbl .= "</tbody></table>";
+    //END ASSOCIATIVE GROUP TABLE
+    //START PAST REVIEW TABLE
+    //$segHPRLines 
+    if ( (int)$segHPRLines['ITEMSFOUND'] > 0 ) {
+      $pastAmt = $segHPRLines['ITEMSFOUND'];
+      $pastHPRTbl = "<table border=0 cellpadding=0 cellspacing=0 id=pastHPRTbl><thead><tr><td colspan=25>Past Reviews: {$pastAmt} (Click the line to view details)</td></tr><tr> <th>Decision</th> <th>Reviewer<br>Date Performed</th> <th>Slide<br>Read</th> <th>Review Designation</th> </tr></thead><tbody>";
+      foreach ( $segHPRLines['DATA'] as $hkey => $hval ) {
+       $decision = ( strtoupper(trim($hval['decision'])) === strtoupper(trim($hval['vocabularydecision'])) ) ? strtoupper(trim($hval['decision'])) : strtoupper(trim($hval['decision'])) . "<br><span class=smlFont>(Vocabulary: " . strtoupper(trim($hval['vocabularydecision'])) . ")</span>";
 
+    $pastHPRTbl .= <<<ASSROW
+<tr onclick="generateDialog('datacoordhprdisplay','{$hval['biohpr']}');">
+  <td valign=top>{$decision}</td>
+  <td valign=top>{$hval['reviewer']}<br><span class=smlFont>({$hval['reviewedon']})</td>
+  <td valign=top>{$hval['slideread']}</td>
+  <td valign=top>{$hval['speccat']}<br>{$hval['site']}<br>{$hval['dx']}</td>
+</tr>
+ASSROW;
+      }
+      $pastHPRTbl .= "</tbody></table>";
+    } else {
+      $pastHPRTbl = "<h2>No Past Reviews for {$sg['biosamplelabel']} Exist</h2>";
+    }
+    //END PAST REVIEW TABLE
 
     $docSide = <<<DOCSIDE
-<div id=dspTabContent0 class=HPRReviewDocument style="display: block;" >
-  <div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Pathology Report for {$sg['biosamplelabel']}</td><td align=right>{$pBtnTbl}</td></tr></table></div><div id=dspPathologyRptTxt>{$sg['pathologyreporttext']}<p></div></div>
+<div id=dspTabContent0 class=HPRReviewDocument style="display: block;">
+<div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Pathology Report for {$sg['biosamplelabel']}</td><td align=right>{$pBtnTbl}</td></tr></table></div>
+<div id=dspPathologyRptTxt>{$sg['pathologyreporttext']}<p></div>
+</div>
+
 <div id=dspTabContent1 class=HPRReviewDocument>
-  <div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Constituent Segments of {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspConstituentst> {$constitTbl} </div></div></div>
-  <div id=dspTabContent2 class=HPRReviewDocument><div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Previous Reviews of {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspprevrvw> </div></div></div>
-<div id=dspTabContent3 class=HPRReviewDocument><div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Images &amp; Other File for {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div><div id=dspFilesImg>THERE ARE NO FILES OR IMAGES PERTAINING TO THIS BIOGROUP AT THIS TIME. </div></div> </div>            
-<div id=dspTabContent4 class=HPRReviewDocument>THERE ARE NO VIRTUAL SLIDES AT THIS TIME <!-- VIRTUAL SLIDE //-->   </div>
+<div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Constituent Segments of {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div>
+<div id=dspConstituentst> {$constitTbl} </div>
+</div>
+
+
+<div id=dspTabContent2 class=HPRReviewDocument>
+<div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Past HPReviews for Biogroup {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div>
+<div id=dspPastHPR> {$pastHPRTbl} </div>
+</div>
+
+
+<div id=dspTabContent3 class=HPRReviewDocument>
+<div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Images &amp; Files</td><td align=right>{$thisBtn}</td></tr></table></div>
+IMAGES &amp; FILES ARE NOT OPERATIONAL IN THIS RELEASE OF SCIENCESERVER.
+</div>
+
+
+<div id=dspTabContent4 class=HPRReviewDocument>
+<div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Virtual Slide</td><td align=right>{$thisBtn}</td></tr></table></div>
+THE VIRTUAL SLIDE IS NON-OPERATIONAL IN THIS RELEASE OF SCIENCESERVER.
+</div>
+
+
+<div id=dspTabContent5 class=HPRReviewDocument>  
+<div class=dspDocTitle><table border=0 cellpadding=0 cellspacing=0 width=100%><tr><td>Associative Biogroups to Biogroup {$sg['biosamplelabel']}</td><td align=right>{$thisBtn}</td></tr></table></div>
+<div id=dspAssGroups>{$wholeAssTbl}</div>
+</div>
+
 DOCSIDE;
 
 $procMetrics = <<<PROCMETRICS
@@ -2226,6 +2330,8 @@ function buildHPRTrayDisplay( $rqst, $usr ) {
         //SIDE PANEL BUILD
         $cellCntr = 0;
         $sidePanelTblInner = "<tr class=rowBacker>";
+        $slideCntr = 0;
+        $slideDone = 0;
         foreach ($sidedta['DATA'] as $skey => $sval) {
            $searchtype = $sval['srchtype'];
            $tray = $sval['tray'];
@@ -2234,6 +2340,7 @@ function buildHPRTrayDisplay( $rqst, $usr ) {
            $slideidentifier = cryptservice(  "{$sval['segmentid']}::{$sval['pbiosample']}" );
            $clickAction = " onclick=\"navigateSite('hpr-review/{$rqst}/{$slideidentifier}');\" ";
            $readYet = ( $sval['hprslideread'] !== 'N' ) ? "<i class=\"material-icons readyes\">check_circle</i>" : "<i class=\"material-icons readno\">error</i>";
+           if ( $sval['hprslideread'] !== 'N' ) { $slideDone++; }
            $pastHPRDsp = "<tr><td>&nbsp;</td></tr>";
            if ( trim($sval['recentdecision']) !== "" ) { 
                $pastHPRDsp = "<tr>"
@@ -2261,7 +2368,8 @@ function buildHPRTrayDisplay( $rqst, $usr ) {
 </td>
 SLIDELINE;
           
-          $cellCntr++;   
+           $cellCntr++;   
+           $slideCntr++;
         } 
         $sidePanelTblInner .= "</tr>";
         
@@ -2285,10 +2393,14 @@ SLIDELINE;
           //RETURN TRAY BUTTON
           $rtnTrayBtn = "<table class=tblBtn id=btnHPRRtnTray style=\"width: 6vw;\" onclick=\"generateDialog('trayreturndialog','{$tray}');\"><tr><td style=\"font-size: 1.3vh;\"><center>Return Tray</td></tr></table>";
         }
-         
-        $sidePanelTbl = "<center><table border=0 cellspacing=0 cellpadding=0 id=sidePanelSlideListTbl>";       
+        
+        $pbarPrc = (( (int)$slideDone / (int)$slideCntr ) * 42) ;
+        $pbarDsp = round((((int)$slideDone / (int)$slideCntr) * 100));
+
+        $sidePanelTbl = "<center><table border=0 cellspacing=0 cellpadding=0 id=sidePanelSlideListTbl>";      
+        $sidePanelTbl .= "<tr><td colspan=2><div id=progressBarHolder><div id=progressBarDsp style=\"width: {$pbarPrc}vw;\"></div></div></td></tr>"; 
+        $sidePanelTbl .= "<tr><td class=slidesfound colspan=2><b>Tray Progress</b>: {$slideDone} of {$slideCntr} ({$pbarDsp}%)   </td></tr>";  
         $sidePanelTbl .= "<tr><th class=workbenchheader colspan=2>{$sidedta['MESSAGE'][0]}</th></tr>";
-        $sidePanelTbl .= "<tr><td class=slidesfound colspan=2><b>Slides Found</b>: {$cntr}</td></tr>";  
         $sidePanelTbl .= "<tr><td colspan=2 align=right>{$rtnTrayBtn}</td></tr>";
         $sidePanelTbl .= $sidePanelTblInner;
         $sidePanelTbl .= "<tr><td colspan=2 align=right>{$rtnTrayBtn}</td></tr>";
@@ -2561,14 +2673,14 @@ case 'biogroupdefinition':
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSeg><tr><td><i class="material-icons">cancel</i></td><td>Void Segment</td></tr></table></td>
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnEditDX><tr><td><i class="material-icons">edit</i></td><td>Edit DX</td></tr></table></td>
     //  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnEditSeg><tr><td><i class="material-icons">edit</i></td><td>Edit Segment</td></tr></table></td>
+    // <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnQMSActions><tr><td><i class="material-icons">thumbs_up_down</i></td><td>QMS Actions</td></tr></table></td>
+    //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPHIRecord><tr><td><i class="material-icons">group</i></td><td>Encounter</td></tr></table></td>
+    //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnHPRRecord><tr><td><i class="material-icons">gavel</i></td><td>View HPR</td></tr></table></td>
+  //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAssocGrp><tr><td><i class="material-icons">group_work</i></td><td>Associative</td></tr></table></td>
+  //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPristine><tr><td><i class="material-icons">change_history</i></td><td>Pristine</td></tr></table></td>
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSegment><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td> 
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnQMSActions><tr><td><i class="material-icons">thumbs_up_down</i></td><td>QMS Actions</td></tr></table></td>        
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAssocGrp><tr><td><i class="material-icons">group_work</i></td><td>Associative</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPHIRecord><tr><td><i class="material-icons">group</i></td><td>Encounter</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPristine><tr><td><i class="material-icons">change_history</i></td><td>Pristine</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnHPRRecord><tr><td><i class="material-icons">gavel</i></td><td>View HPR</td></tr></table></td>
 </tr>
 BTNTBL;
     break;
@@ -2597,7 +2709,6 @@ BTNTBL;
 break;   
 
 case 'hprreviewactionstray':
-
 
 $innerBar = <<<BTNTBL
 <tr>
@@ -3213,6 +3324,295 @@ return $rtnThis;
 
 }
 
+
+
+
+function bldHPRSlideTrayReturnOverride ( $dialogid, $passedData ) { 
+  $at = genAppFiles;
+  $waitpic = base64file("{$at}/publicobj/graphics/zwait2.gif", "waitgifADD", "gif", true);         
+  require(serverkeys . "/sspdo.zck");    
+  $dta = json_decode( $passedData, true);
+  $obj = json_decode($dta['objid'],true);
+  $invListWS = json_decode(callrestapi("GET", dataTree . "/global-menu/inventory-location-storagecontainers",serverIdent, serverpw), true);
+
+  //TODO: MAKE THIS A WEBSERVICE
+  //TRAY METRICS
+  $traySQL = "SELECT ifnull(iloc.scanCode,'') as hprtrayscancode, ifnull(iloc.typeOLocation,'') as hprtraytypeoflocation, ifnull(iloc.locationdsp,'') as hprtrayname, ifnull(iloc.hprtraystatus,'') as hprtraystatuscode, ifnull(ists.longvalue,'') as hprtraystatusdsp, ifnull(iloc.hprtrayheldwithin,'') as hprtrayheldwithincode, ifnull(rloc.typeolocation,'') as rtnheldwithintypeoflocation, ifnull(rloc.locationdsp,'') as rtnheldwithinlocationdsp, ifnull(iloc.hprtrayheldwithinnote,'') as rtnheldwithinnote, ifnull(iloc.hprtrayreasonnotcomplete,'') as reasontraynotcomplete, ifnull(notcom.dspvalue,'') as reasontraynotcompletedsp, ifnull(iloc.hprtrayreasonnotcompletenote,'') reasonnotcompletenote, ifnull(iloc.hprtraystatusby,'') as hprtraystatusby, ifnull(date_format(iloc.hprtraystatuson,'%m/%d/%Y'),'') as hprtraystatuson FROM four.sys_inventoryLocations iloc left join (select * from four.sys_inventoryLocations) rloc on iloc.hprtrayheldwithin = rloc.scancode left join (SELECT dspvalue as menuvalue, longvalue FROM four.sys_master_menus where menu = 'HPRTrayStatus') as ists on iloc.hprtraystatus = ists.menuvalue left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu ='HPRRTNINCOMPLETEREASON') as notcom on iloc.hprtrayreasonnotcomplete = notcom.menuvalue where iloc.scancode = :boxid";
+  $trayRS = $conn->prepare($traySQL); 
+  $trayRS->execute(array(':boxid' => $obj['boxid']));
+  $tray = $trayRS->fetch(PDO::FETCH_ASSOC);
+
+  $tlocNote = ( trim($tray['rtnheldwithinnote']) !== "" ) ? "<br><span class=smlrFont>{$tray['rtnheldwithinnote']}</span>" : "";
+
+  $partialNote = ( trim($tray['reasonnotcompletenote']) !== "" ) ? "<br><span class=smlrFont>{$tray['reasonnotcompletenote']}</span>" : "";
+  $partialLine = ( trim($tray['reasontraynotcompletedsp']) !== "" ) ? "<tr><td valign=top>Review Not Complete</td><td valign=top>{$tray['reasontraynotcompletedsp']}{$partialNote}</td></tr>" : "";
+
+  $whoDte = ( trim($tray['hprtraystatuson']) !== "" ) ? " :: {$tray['hprtraystatuson']}" : "";
+  $bywho = ( trim($tray['hprtraystatusby']) !== "" ) ? " ({$tray['hprtraystatusby']}{$whoDte})" : ""; 
+
+  $trayTbl = <<<TRAYTBL
+<table border=1>
+<tr><td valign=top>HPR Tray: </td><td valign=top>{$tray['hprtrayname']} ({$tray['hprtraytypeoflocation']}) </td></tr>
+<tr><td valign=top>Present Status: </td><td valign=top>{$tray['hprtraystatusdsp']}{$bywho}</td></tr>
+<tr><td valign=top>Present Location: </td><td valign=top>{$tray['rtnheldwithinlocationdsp']}{$tlocNote}</td></tr>
+{$partialLine}
+</table>
+TRAYTBL;
+
+  //TODO: MAKE AS A WEBSERVICE
+  //SLIDE LISTING
+  $slideSQL = <<<SLIDESQL
+SELECT replace(sg.bgs,'_','') as bgs, sg.segstatus, ifnull(sts.dspvalue,'') as segstatusdsp, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, ifnull(sg.assignedto,'') as assignedto, ifnull(sg.scannedlocation,'') as scannedlocation, ifnull(sg.scanloccode,'') as scanloccode
+, ifnull(sg.hprslideread,'') as hprslideread, ifnull(sg.HPRBoxNbr,'') as hprboxnbr, ifnull(bs.HPRDecision,'') as hprdecision, date_format(bs.HPROn,'%m/%d/%Y') as hpron, ifnull(bs.HPRBy,'') as hprby 
+from masterrecord.ut_procure_segment sg left join (SELECT menuvalue, dspvalue, longvalue FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') as sts on sg.segStatus = sts.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample where HPRBoxNbr = :boxid
+SLIDESQL;
+  $slideRS = $conn->prepare($slideSQL); 
+  $slideRS->execute(array(':boxid' => $obj['boxid']));
+
+  $slideList = "<table border=0><thead><tr><td colspan=25>{$slideRS->rowCount()} slides found</td></tr><tr><th>Slide #</th><th>Present Location</th><th>HPR Decision</th><th>HPR By</th><th>File Location</th></tr></thead><tbody>";
+  $sldcntr = 0;
+  while ($s = $slideRS->fetch(PDO::FETCH_ASSOC)) {
+
+        $invmenu = "<table border=0 class=menuDropTbl>";
+        foreach ($invListWS['DATA'] as $pky => $pval) { 
+           $invmenu .= "<tr><td onclick=\"fillField('sRTNInvLoc{$sldcntr}','{$pval['codevalue']}','{$pval['menuvalue']}');\" class=ddMenuItem>{$pval['menuvalue']}</td></tr>";  
+        }
+        $invmenu .= "</table>";  
+        $dspInvMenu = "<div class=menuHolderDiv><input type=hidden id=\"sRTNInvLoc{$sldcntr}Value\" data-bgs=\"{$s['bgs']}\"><input type=text id=\"sRTNInvLoc{$sldcntr}\" READONLY class=inventoryLocDsp><div class=valueDropDown>{$invmenu}</div></div>";
+
+        $rvwDate = ( trim($s['hpron']) !== "" ) ? " ({$s['hpron']})" : "";
+
+      $slideList .= <<<SINNER
+<tr>
+  <td>{$s['bgs']}</td><td>{$s['scannedlocation']}</td><td>{$s['hprdecision']}</td><td>{$s['hprby']}{$rvwDate}</td><td>{$dspInvMenu}</td>
+</tr>
+SINNER;
+    $sldcntr++;      
+  }
+  $slideList .= "</tbody></table>";
+
+
+  $devarr = json_decode(callrestapi("GET", dataTree . "/global-menu/dev-menu-hpr-inventory-override",serverIdent, serverpw), true);
+  $devm = "<table border=0 class=menuDropTbl>";
+  foreach ($devarr['DATA'] as $devval) { 
+    $devm .= "<tr><td onclick=\"fillField('fldTRtnDeviationReason','','{$devval['menuvalue']}');\" class=ddMenuItem>{$devval['menuvalue']}</td></tr>";
+  }
+  $devm .= "</table>";
+
+  $devTbl = <<<DEVTBL
+<table border=1>
+  <tr><td>Inventory User Pin</td><td>Deviation Reason</td><td rowspan=2 valign=top style="width: 20vw; text-align: justify;"><b>CHTNEASTERN SOP DEVIATION NOTIFICATION</b>: This is NOT a standard inventory screen and should only be used in extenuating operating circumstances.  The use of this screen will be tracked as a deviation from standard operating procedures. Please enter a reason for the deviation below.   </td></tr>
+  <tr><td><input type=password id=fldTRtnUsrPIN style="width: 8vw;"></td><td><div class=menuHolderDiv><input type=text id=fldTRtnDeviationReason style="width: 15vw;"><div class=valueDropDown>{$devm}</div></div></td></tr>
+</table>
+DEVTBL;
+
+
+$rtnThis = <<<PGCONTENT
+<style>
+ .inventoryLocDsp {font-size: 1.1vh; padding: .5vh .3vw;  } 
+ .ddMenuItem {font-size: 1.1vh; }
+ .valueDropDown { width: 30vw; }  
+</style>
+<form id=frmRtnTraySpecifics>
+<input type=hidden id=rtnHPRTrayScanCode value={$obj['boxid']}>
+<table border=0 width=100%>
+<tr><td>{$trayTbl}</td></tr>
+<tr><td>{$slideList}</td></tr>
+<tr><td><center>{$devTbl}</td></tr>
+<tr><td align=right>
+<div id=waiterIndicator style="font-size: 1.5vh;"><center>{$waitpic}<br>Please wait ...</div>
+<div id=rtnBtnDsp><table><tr><td><table class=tblBtn id=btnRtnSave style="width: 6vw;" onclick="updateRtnLocations();"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table></td><td><table class=tblBtn id=btnRtnClose style="width: 6vw;" onclick="closeThisDialog('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Close</td></tr></table></td></tr></table></div>
+
+</td></tr> 
+</table>
+</form>
+PGCONTENT;
+return $rtnThis;
+}
+
+
+
+
+
+function bldHPRReviewDisplay ( $dialogid, $passedData ) { 
+    require(serverkeys . "/sspdo.zck");    
+    $dta = json_decode( $passedData, true);
+    $obj = $dta['objid'];
+
+//TODO: TURN INTO WEBSERVICE
+    $headSQL = <<<HPRSQL
+SELECT 
+hpr.biohpr
+, replace(ifnull(hpr.bgs,''),'_','') as slideread
+, ifnull(hpr.bgreference,'') as bgreference
+, ifnull(hpr.reviewer,'') as reviewer
+, ifnull(date_format(hpr.reviewedOn,'%m/%d/%Y'),'') as reviewdate
+, ifnull(hpr.inputby,'') as inputby
+, ucase(ifnull(hpr.decision,'')) as decision
+, ucase(ifnull(hpr.vocabularydecision,'')) as vocdecision
+, ucase(ifnull(hpr.speccat,'')) as specimencategory
+, ucase(ifnull(hpr.site,'')) as site
+, ucase(ifnull(hpr.subsite,'')) as subsite 
+, ucase(ifnull(hpr.dx,'')) as diagnosis
+, ucase(ifnull(hpr.subdiagnosis,'')) as diagnosismodifier
+, ucase(ifnull(hpr.mets,'')) as mets
+, ucase(ifnull(hpr.systemiccomobid,'')) as systemicdx
+, ucase(ifnull(hpr.tumorgrade,'')) as tumorgrade
+, ifnull(tscale.dspvalue,'') as tumorscale
+, ifnull(uni.longvalue,'') as uninvolvedsample
+, ifnull(hpr.rareReason,'') as rarereason
+, ifnull(hpr.generalcomments,'') as generalcomments
+, ucase(ifnull(hpr.specialInstructions,'')) as specialinstructions
+, ucase(ifnull(hpr.inconclusivetxt,'')) as inconclusivetxt
+, ucase(ifnull(hpr.unusabletxt,'')) as unusabletxt 
+FROM masterrecord.ut_hpr_biosample hpr 
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRTUMORSCALE') tscale on hpr.tumorScale = tscale.menuvalue
+left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'UNINVOLVEDIND') uni on hpr.uninvolvedSample = uni.menuvalue
+where biohpr = :hprid 
+HPRSQL;
+    $headRS = $conn->prepare($headSQL); 
+    $headRS->execute(array(':hprid' => $obj));
+    $headD = $headRS->fetch(PDO::FETCH_ASSOC); 
+    $reviewNbr = substr('000000' . $headD['biohpr'],-6);
+    $decision = ( $headD['decision'] === $headD['vocdecision'] ) ? $headD['decision'] : ( trim($headD['vocdecision']) !== "" ) ? "{$headD['decision']}<br><span class=topUnderFont>(DESIGNATION: {$headD['vocdecision']})</span>" : "{$headD['decision']}" ;
+    $decisiondenote = substr($headD['decision'],0,1);
+    $designationdsp = trim($headD['specimencategory']);
+    $ssite = ( $headD['subsite'] !== "" ) ? " ({$headD['subsite']})" : "";
+    $designationdsp .= ( $headD['site'] !== "" ) ? ( $designationdsp === "" ) ? "{$headD['site']}{$ssite}" : "<br>{$headD['site']}{$ssite}" : "";
+    $modd = ( $headD['diagnosismodifier'] !== "" ) ? " [{$headD['diagnosismodifier']}]" : "";
+    $designationdsp .= ( $headD['diagnosis'] !== "" ) ?  ( $designationdsp === "" ) ? "{$headD['diagnosis']}{$modd}" : "<br>{$headD['diagnosis']}{$modd}" : "";
+    $designationdsp .= ( $headD['mets'] !== "" ) ?  ( $designationdsp === "" ) ? "(<b>METS From</b>: {$headD['mets']})" : "<br>(<b>METS From</b>: {$headD['mets']})" : "";
+    $designationdsp .= ( $headD['systemicdx'] !== "" ) ?  ( $designationdsp === "" ) ? "(<b>Systemic/Co-Mobid</b>: {$headD['systemicdx']})" : "<br>(<b>Systemic/Co-Mobid</b>: {$headD['systemicdx']})" : "";
+    $tgrade = ( $headD['tumorgrade'] !== "" ) ? $headD['tumorgrade'] : "";
+    $tgrade .= ( $headD['tumorscale'] !== "" ) ? ( $tgrade === "" ) ? "{$headD['tumorscale']}" : " ({$headD['tumorscale']})" : "";
+    $cinner = ( trim($headD['generalcomments']) !== "" ) ? "<tr><td class=clabel>General Comments: </td><td class=ccmts>{$headD['generalcomments']}</td></tr>" : "";
+    $cinner .= ( trim($headD['rarereason']) !== "" ) ? "<tr><td class=clabel>Rare Reason: </td><td class=ccmts>{$headD['rarereason']}</td></tr>" : "";
+    $cinner .= ( trim($headD['specialinstructions']) !== "" ) ? "<tr><td class=clabel>Special Instructions: </td><td class=ccmts>{$headD['specialinstructions']}</td></tr>" : "";
+    $cinner .= ( trim($headD['inconclusivetxt']) !== "" ) ? "<tr><td class=clabel>Inconclusive Text: </td><td class=ccmts>{$headD['inconclusivetxt']}</td></tr>" : "";
+    $cinner .= ( trim($headD['unusabletxt']) !== "" ) ? "<tr><td class=clabel>Unusable Text: </td><td class=ccmts>{$headD['unusable']}</td></tr>" : "";
+    $cmttbl = ( $cinner === "" ) ? "&nbsp;" : "<table border=0 cellspacing=0 cellpadding=0 id=commenttable>{$cinner}</table>";
+        
+//TODO: TURN INTO WEBSERVICE
+$prcSQL = <<<PRCSQL
+SELECT biohpr, if ( ifnull(prc.longvalue,'') = '',hprp.prcType,ifnull(prc.longvalue,'')) as prctype, hprp.prcvalue
+FROM masterrecord.ut_hpr_percentages hprp
+left join ( SELECT menuvalue, longValue FROM four.sys_master_menus where menu = 'HPRPERCENTAGE' ) prc on hprp.prctypevalue = prc.menuvalue 
+where (biohpr = :biohpr) and ifnull(prcvalue,0) <> 0
+PRCSQL;
+
+$prcRS = $conn->prepare($prcSQL); 
+$prcRS->execute(array(':biohpr' => $headD['biohpr']));
+
+if ($prcRS->rowCount() > 0 ) {
+    $percentageTbl = "<table width=100%>";
+    while ($r = $prcRS->fetch(PDO::FETCH_ASSOC)) {
+      $ptype =  ucwords( strtolower( $r['prctype'])); 
+      $percentageTbl .= "<tr><td>{$ptype}</td><td style=\"width: 2vw; white-space: nowrap; text-align: right;\">{$r['prcvalue']}%</td></tr>";
+    }
+    $percentageTbl .= "</table>";
+} else { 
+    $percentageTbl = "No Compositional Definition Defined";
+}
+//TODO: TURN INTO WEBSERVICE
+$tstSQL = <<<PRCSQL
+SELECT ifnull(moletest,'') as testname, ifnull(resultindex,'') as resultindex, ifnull(resultdegree,'') as resultdegree FROM masterrecord.ut_hpr_moleculartests where biohpr = :biohpr
+PRCSQL;
+$tstRS = $conn->prepare($tstSQL); 
+$tstRS->execute(array(':biohpr' => $headD['biohpr']));
+
+if ($tstRS->rowCount() > 0 ) {
+    $tstTbl = "<table width=100%>";
+    while ($t = $tstRS->fetch(PDO::FETCH_ASSOC)) {
+      $ttype =  $t['testname']; 
+      $tstTbl .= "<tr><td>{$ttype}</td><td>{$t['resultindex']} {$t['resultdegree']}</td></tr>";
+    }
+    $tstTbl .= "</table>";
+} else { 
+    $tstTbl = "No Molecular/Immuno-Histogy Test Results Defined";
+}
+
+//TODO: TURN INTO WEBSERVICE
+$faSQL = <<<PRCSQL
+SELECT ifnull(actiontype,'') as actiontype, ifnull(actionnote,'') as actionnote, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as actionrequestedon, ifnull(actioncomplete,0) as actioncomplete, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') actioncompletedon, ifnull(actioncompletedby,'') as actioncompletedby FROM masterrecord.ut_hpr_factions where biohpr = :biohpr
+PRCSQL;
+$faRS = $conn->prepare($faSQL); 
+$faRS->execute(array(':biohpr' => $headD['biohpr']));
+
+if ($faRS->rowCount() > 0 ) {
+    $faTbl = "<table width=100%>";
+    while ($f = $faRS->fetch(PDO::FETCH_ASSOC)) {
+      $ftype =  $f['actiontype'];
+      $ftype .= ( trim($f['actionnote']) !== "" ) ? "<br><span class=smlFont>[{$f['actionnote']}]</span>" : "";
+      $comp = ( (int)$f['actioncomplete'] === 1 ) ? "COMPLETE" : "NOT COMPLETE";
+      $faTbl .= "<tr><td>{$ftype}</td><td>{$f['actionrequestedon']}</td><td>{$comp}</td></tr>";
+    }
+    $faTbl .= "</table>";
+} else { 
+    $faTbl = "No Further Actions Required from this Review";
+}
+
+$rtnThis = <<<PGCONTENT
+<style>
+
+.topUnderFont { font-size: 1.2vh; }
+#hprAnncLine { width: 70vw; box-sizing: border-box; font-size: 1vh; }
+#hprAnncLine tr td { padding: .3vh .3vw 0 0; }
+
+#decisiontbl { width: 70vw; box-sizing: border-box; font-size: 1.6vh;   }
+#decisiontbl tr td { text-align: center; border: 1px solid rgba(100,149,237,1); padding: 10px; height: 4vh; font-weight: bold; }
+#decisiontbl .hprdecD { background: rgba(84,113,210, 1); color: rgba(48,57,71,1);     }
+#decisiontbl .hprdecU { background: rgba(237, 35, 0, 1); color: rgba(255,255,255,1);     }
+#decisiontbl .hprdecC { background: rgba(0, 112, 13, 1); color: rgba(255,255,255,1);     }
+#decisiontbl .hprdecA { background: rgba(226,226,125, 1); color: rgba(48,57,71,1);     }
+#decisiontbl .hprdecI { background: rgba(107, 18, 102, 1); color: rgba(255,255,255,1);     }
+
+#hprdatatblone { width: 100%; box-sizing: border-box; font-size: 1.2vh; }
+#hprdatatblone tbody tr:nth-child(even) {background: rgba(239, 239, 239,1); }
+#hprdatatblone tbody tr:hover { cursor: pointer; background: rgba(255,248,225,1); }
+#hprdatatblone tr td { padding: 5px 0 5px 3px; border-bottom: 1px solid rgba(0,32,113,1); border-right: 1px solid rgba(0,32,113,1);  }
+#hprdatatblone tr th { background: rgba(0,32,113,1); color: rgba(255,255,255,1);   }  
+
+#commenttable {  width: 100%; }
+#commenttable tr {   }
+#commenttable .clabel { font-size: 1vh; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,1); padding: 0 3px 0 0; width: 1vw; white-space: nowrap; } 
+#commenttable .ccmts { border-bottom: 1px solid rgba(255, 255, 255,1); border-right: 1px solid rgba(255, 255, 255,1);}
+
+#multipleThingsTbl {width: 70vw; box-sizing: border-box; font-size: 1.2vh; }
+#multipleThingsTbl tr th { background: rgba(0,32,113,1); color: rgba(255,255,255,1);   }  
+#multipleThingsTbl tr td { padding: 5px 0 5px 3px; border-bottom: 1px solid rgba(0,32,113,1); border-right: 1px solid rgba(0,32,113,1);  }
+
+</style>
+
+<table id=decisiontbl><tr><td class="hprdec{$decisiondenote}">{$decision} </td></tr></table>
+<table id=hprAnncLine><tr><td align=right><b>Review Number</b>: {$reviewNbr} </td></tr></table>
+
+<table id=hprdatatblone>
+  <thead>
+    <tr><th>Slide<br>Read</th><th>Review<br>Performed</th><th>Entered By</th><th>Designation</th><th>Tumor Grade/Scale</th><th>Uninvolved</th><th>Comments</th></tr></thead>
+  <tbody>
+    <tr>
+      <td valign=top>{$headD['slideread']}&nbsp;</td>
+      <td valign=top>{$headD['reviewer']}<br>({$headD['reviewdate']})&nbsp;</td>
+      <td valign=top>{$headD['inputby']}&nbsp;</td>
+      <td valign=top>{$designationdsp}&nbsp;</td>
+      <td valign=top>{$tgrade}&nbsp;</td>
+      <td valign=top>{$headD['uninvolvedsample']}&nbsp;</td>
+      <td valign=top>{$cmttbl}</td>
+    </tr>
+  </tbody>
+</table>
+<table border=0 id=multipleThingsTbl>
+<thead><tr><th width=33% valign=top>Compositional<br>Definition</td><th width=33% valign=top>Further-Actions<br>Necessary</td><th width=33% valign=top>Molecular/Immuno<br>Test Results</td></tr></thead><tbody>
+<tr><td valign=top>{$percentageTbl}</td><td valign=top>{$faTbl}</td><td valign=top>{$tstTbl}</td></tr>
+</tbody>
+</table>
+<table width=100%><tr><td align=right>
+<table class=tblBtn id=btnIHPRReviewSave style="width: 6vw;" onclick="closeThisDialog('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Close</td></tr></table>
+</td></tr></table>
+PGCONTENT;
+return $rtnThis;
+}
+
 function bldHPRReturnTray ( $dialogid, $passedData ) { 
    
     require(serverkeys . "/sspdo.zck");    
@@ -3294,7 +3694,7 @@ function bldHPRUsuableSave ( $dialogid , $passedData ) {
 .iTxtDsp { font-size: 1.4vh; border: 1px solid rgba(48,57,71,1); width: 27vw; height: 12vh;   }
 
 </style>
-<input type=hidden value={$obj} id=valSavedData>
+<textarea id=valSavedData width=100% style="display: none;">{$obj}</textarea>
 <table border=0>
 <tr><td class=iFieldLbl>Reason Unusable/Not-Fit-For-Purpose</td></tr>
 <tr><td><textarea class=iTxtDsp id=ususableReasonTxt></textarea></td></tr>
@@ -6800,22 +7200,26 @@ function bldBiogroupDefitionDisplay($biogroup, $bgency) {
       case 'L': //LAB ACTION  
         $qmsicon = "<i class=\"material-icons\">schedule</i>";  
         $clssuffix = " 107, 18, 102, 1";
-        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>In Lab Action</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+        $hprnavi = ((int)$bg['hprresult'] !== 0) ? "<a href=\"javascript:void(0);\" class=hprindication onclick=\"generateDialog('datacoordhprdisplay',{$bg['hprresult']});\">View HPR</a>" : ""; 
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>In Lab Action</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}{$hprnavi} </td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
       break;
       case 'R': //RESUBMITTED 
         $qmsicon = "<i class=\"material-icons\">history</i>";
         $clssuffix = "226,226,125,1";
-        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>Re-Submitted</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+        $hprnavi = ((int)$bg['hprresult'] !== 0) ? "<a href=\"javascript:void(0);\" class=hprindication onclick=\"generateDialog('datacoordhprdisplay',{$bg['hprresult']});\">View HPR</a>" : ""; 
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>Re-Submitted</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}{$hprnavi}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
       break;
       case 'H':
         $qmsicon = "<i class=\"material-icons\">offline_pin</i>";
         $clssuffix = "84,113,210,1";
-        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>HPR Review Complete</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+        $hprnavi = ((int)$bg['hprresult'] !== 0) ? "<a href=\"javascript:void(0);\" class=hprindication onclick=\"generateDialog('datacoordhprdisplay',{$bg['hprresult']});\">View HPR</a>" : ""; 
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>HPR Review Complete</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']} {$hprnavi}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
       break;
       case 'Q':
         $qmsicon = "<i class=\"material-icons\">stars</i>";
         $clssuffix = "0, 112, 13, 1";
-        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>QMS PROCESS Complete</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
+        $hprnavi = ((int)$bg['hprresult'] !== 0) ? "<a href=\"javascript:void(0);\" class=hprindication onclick=\"generateDialog('datacoordhprdisplay',{$bg['hprresult']});\">View HPR</a>" : ""; 
+        $qcstatustxt = "<table><tr><td>QMS Process: </td><td>QMS PROCESS Complete</td></tr><tr><td>Statused By: </td><td>{$bg['qmsstatusby']}</td></tr><tr><td>Statused On: </td><td>{$bg['qmsstatuson']}</td></tr><tr><td>HPR Decision: </td><td>{$bg['hprstatus']} {$hprnavi}</td></tr><tr><td>Slide Seen: </td><td>{$bg['hprslidereviewed']}</td></tr></table>";
       break;
       case 'N':
         $qmsicon = "<i class=\"material-icons\">play_circle_outline</i>";
@@ -7109,14 +7513,48 @@ if ( strtoupper($bg['qcprocstatus']) === 'Q' ) {
 SEGMENTLINES;
       }
       $segTbl .= "</tbody></table>";
-      
+
+      $assCount = count($bg['associativegroup']);
+      $outerAss = "";
+      if ( (int)$assCount > 0 ) { 
+          //BUILD THE ASS TABLE
+         if ( (int)$assCount < 2 ) { 
+            $headline = $assCount . " Other biogroup in Associative Group";
+         } else { 
+            $headline = $assCount . " Other biogroups in Associative Group";
+         }
+         $innerAss = "<table border=0 cellpadding=0 cellspacing=0 id=innerAssDspTbl><thead><tr><th colspan=2></th><th>Biosample<br>Label</th><th>Specimen<br>Category</th><th>Site</th><th>Diagnosis</th><th>Mets<br>From Site</th><th>Systemic</th><th>QMS<br>Status</th><th>HPR<br>Decision</th></thead><tbody>";
+         foreach ( $bg['associativegroup'] as $aky => $avl ) { 
+           $hprcompicon = ( (int)$avl['hprind'] === 1 ) ? "<i class=\"material-icons hpricon\" onclick=\"generateDialog('datacoordhprdisplay',{$avl['hprresult']});\">offline_pin</i>" : "&nbsp;";
+           $qmscompicon = ( (int)$avl['qcind'] === 1 ) ? "<i class=\"material-icons hpricon\" onclick=\"alert('datacoordQCdisplay');\">stars</i>" : "&nbsp;";
+   
+           $newBGEncy = cryptservice( $avl['pbiosample'], 'e') ;
+  
+             $innerAss .= <<<ASSROW
+<tr ondblclick="navigateSite('biogroup-definition/{$newBGEncy}');">
+  <td style="width: 1vw; text-align:center;">{$hprcompicon}</td>
+  <td style="width: 1vw; text-align:center;">{$qmscompicon}</td>
+  <td>{$avl['readlabel']}&nbsp;</td>
+  <td>{$avl['specimencategory']}&nbsp;</td>
+  <td>{$avl['site']}&nbsp;</td>
+  <td>{$avl['diagnosis']}&nbsp;</td>
+  <td>{$avl['metssite']}&nbsp;</td>
+  <td>{$avl['systemic']}&nbsp;</td>
+  <td>{$avl['qmsstatus']}&nbsp;</td>
+  <td>{$avl['hprdecision']}&nbsp;</td>
+</tr>
+ASSROW;
+
+         }
+         $innerAss .= "</tbody></table>";
+
+         $outerAss = "<table width=100%><tr><td id=assLineBiogroupAnnounce>ASSOCIATIVE GROUP</td></tr><tr><td class=smlInfoLine>{$headline} </td></tr><tr><td>{$innerAss}</td></tr></table>";
+      }
+
+      $rtnThis .= "<tr><td>{$outerAss}</td></tr>";
       $rtnThis .= "<tr><td>{$segTbl}</td></tr>";                   
                          
       $rtnThis .= "</table>";
-
-
-
-
   } else { 
       $rtnThis = "<h3>NO BIOGROUP FOUND.  ERROR - SEE A CHTNEASTERN INFORMATICS STAFF MEMBER";
   }

@@ -276,10 +276,7 @@ class sysreportprintables {
     function dailypristinebarcoderun($rptdef) { 
       $at = genAppFiles;
       $tt = treeTop;
-      $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
-     
-      //{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"bywho":"proczack","onwhen":"03\/14\/2019","reportmodule":"system-reports","reportname":"dailypristinebarcoderun","requestjson":"{\"rptRequested\":\"dailypristinebarcoderun\",\"user\":[{\"originalaccountname\":\"proczack\",\"emailaddress\":\"zacheryv@mail.med.upenn.edu\",\"allowind\":1,\"allowproc\":1,\"allowcoord\":1,\"allowhpr\":1,\"allowinvtry\":1,\"allowfinancials\":1,\"presentinstitution\":\"HUP\",\"daystilexpire\":182,\"accesslevel\":\"ADMINISTRATOR\",\"accessnbr\":\"43\"}],\"request\":{\"rptsql\":{\"selectclause\":\"sg.bgs, sg.prp, sg.prpmet, bs.speccat, bs.primarysite\",\"fromclause\":\"four.ut_procure_segment sg left join four.ref_procureBiosample_designation bs on sg.pbiosample = bs.pbiosample\",\"whereclause\":\"sg.voidind <> 1 and sg.activeind = 1 and sg.procuredAt = :thisInstitution and date_format(inputon,'%Y-%m-%d') = :thisDate\",\"summaryfield\":\"\",\"groupbyclause\":\"\",\"orderby\":\"sg.bgs\",\"accesslevel\":3,\"allowpdf\":1}}}","typeofreportrequested":"PDF","dspreportname":"Daily Pristine Barcode Run","dspreportdescription":"A sheet of printable barcodes for the institution at which you are currently","rptcreator":"Zack","rptcreatedon":"March 08, 2019","rqaccesslvl":3,"groupingname":"SYSTEM REPORTS"}} 
-      
+      $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" "); 
       $rqst = json_decode($rptdef['DATA']['requestjson'], true);            
       $presInst = $rqst['user'][0]['presentinstitution'];
       $r = "Run By: {$rqst['user'][0]['emailaddress']} at " . date('H:i');
@@ -291,13 +288,13 @@ class sysreportprintables {
       $dta['requesteddate'] = $tday;
       $dta['usrsession'] = session_id();
       $pdta = json_encode($dta);
-      $rslts = json_decode(callrestapi("POST", dataTree . "/data-doers/pristine-barcode-run",serverIdent, serverpw, $pdta),true);  
+      $rslts = callrestapi("POST", dataTree . "/data-doers/pristine-barcode-run", serverIdent, serverpw, $pdta);  
 
 
 
 
 
-      $resultTbl .= "<table border=1 style=\"width: 8in;\"><tr><td>{$r} {$presInst}</td></tr></table>"; 
+      $resultTbl .= "<table border=1 style=\"width: 8in;\"><tr><td>{$r} {$presInst} " . json_encode($dta) . " ... " . $rslts . "  </td></tr></table>"; 
       return $resultTbl;    
     } 
 

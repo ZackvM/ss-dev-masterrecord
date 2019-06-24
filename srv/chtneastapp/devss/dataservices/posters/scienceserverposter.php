@@ -64,6 +64,7 @@ class datadoers {
           $u = $rs->fetch(PDO::FETCH_ASSOC);
       }
 
+
       if ( $errorInd === 0 ) { 
 
         $chkSQL = "SELECT * FROM masterrecord.ut_procure_segment where HPRBoxNbr = :trayscancode and ifnull(hprslideread,0) = 0";
@@ -77,6 +78,7 @@ class datadoers {
           $tryHisSQL = "insert into masterrecord.history_hpr_tray_status (trayscancode, tray, traystatus, historyon, historyby, trayheldwithin, trayheldwithinnote) values(:trayscancode, :tray, :traystatus, now(), :historyby, :trayheldwithin, :trayheldwithinnote)";
           $tryHisRS = $conn->prepare($tryHisSQL);
           $tryHisRS->execute(array(':trayscancode' => $pdta['rtnTrayId'], ':tray' => $pdta['rtnTrayId'], ':traystatus' => 'REVIEWCOMPLETE', ':historyby' => $u['usr'], ':trayheldwithin' =>  $pdta['locationscancode'], ':trayheldwithinnote' => trim($pdta['returnlocationnote'])));
+          $responseCode = 200;
         } else { 
             //PARTIAL TRAY
           $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = 'PARTIALCOMPLETE', hprtraystatusby = :usr, hprtrayheldwithin = :heldwith, hprtrayheldwithinnote = :heldwithinnote, hprtrayreasonnotcomplete = :reasonnotcomplete, hprtrayreasonnotcompletenote = :reasonnotcompletenote  where scancode = :scncode";
@@ -251,6 +253,7 @@ class datadoers {
       ( !array_key_exists('hprmoleculartests', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'hprmoleculartests' is missing.  Fatal Error")) : "";
       ( !array_key_exists('rarereason', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'rarereason' is missing.  Fatal Error")) : "";
       ( !array_key_exists('specialinstructions', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'specialinstructions' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('generalcomments', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'generalcomments' is missing.  Fatal Error")) : "";
 
       //CHECK USER IS AN HPR REVIEWER
       $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowHPR = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
@@ -360,13 +363,13 @@ class datadoers {
          //TODO:  IN THE FAR FUTURE MAKE THIS TRANSACTIONAL - THAT WOULD BE COOL 
 
          //INSERT HEAD  
-          $insHPRHeadSQL = "insert into masterrecord.ut_hpr_biosample (bgs, biogroupid,  bgreference,  reviewer, reviewedon, inputby,  decision, vocabularydecision, speccat,  site,  subsite,  dx,  subdiagnosis,  mets,  systemiccomobid,  tumorgrade,  tumorscale,  uninvolvedsample,  rarereason,  specialinstructions,  technicianaccuracy, unusabletxt) values (:bgs, :biogroupid, :bgreference, :reviewer, now(), :inputby, :decision, :vocabularydecision, :speccat, :site, :subsite, :dx, :subdiagnosis, :mets, :systemiccomobid, :tumorgrade, :tumorscale, :uninvolvedsample, :rarereason, :specialinstructions, :technicianaccuracy, :unusabletxt )";
+          $insHPRHeadSQL = "insert into masterrecord.ut_hpr_biosample (bgs, biogroupid,  bgreference,  reviewer, reviewedon, inputby,  decision, vocabularydecision, speccat,  site,  subsite,  dx,  subdiagnosis,  mets,  systemiccomobid,  tumorgrade,  tumorscale,  uninvolvedsample,  rarereason,  specialinstructions, generalComments,  technicianaccuracy, unusabletxt) values (:bgs, :biogroupid, :bgreference, :reviewer, now(), :inputby, :decision, :vocabularydecision, :speccat, :site, :subsite, :dx, :subdiagnosis, :mets, :systemiccomobid, :tumorgrade, :tumorscale, :uninvolvedsample, :rarereason, :specialinstructions, :generalcomments, :technicianaccuracy, :unusabletxt )";
           $insHPRHeadRS = $conn->prepare($insHPRHeadSQL); 
 
          if ( $unusableInd === 0 ) {
-           $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => strtoupper($pdta['decision']), ':vocabularydecision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':technicianaccuracy' => trim($pdta['techaccuracy']),':unusabletxt' => '' ));
+           $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => strtoupper($pdta['decision']), ':vocabularydecision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':generalcomments' => trim($pdta['generalcomments']), ':technicianaccuracy' => trim($pdta['techaccuracy']),':unusabletxt' => '' ));
          } else { 
-           $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => 'UNUSABLE', ':vocabularydecision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':technicianaccuracy' => trim($pdta['techaccuracy']), ':unusabletxt' => trim($pdta['unusabletxt'])  ));
+           $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => 'UNUSABLE', ':vocabularydecision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':generalcomments' => trim($pdta['generalcomments']), ':technicianaccuracy' => trim($pdta['techaccuracy']), ':unusabletxt' => trim($pdta['unusabletxt'])  ));
          }
          $hprheadid = $conn->lastInsertId();
 
@@ -1807,7 +1810,7 @@ MBODY;
     
     function pristinebarcoderun ( $request, $passdata ) { 
       $rows = array(); 
-      //$dta = array(); 
+      $dta = array(); 
       $responseCode = 400;
       $msgArr = array(); 
       $errorInd = 0;
@@ -1817,14 +1820,13 @@ MBODY;
       $pdta = json_decode($passdata, true);
       $authuser = $_SERVER['PHP_AUTH_USER']; 
       $authpw = $_SERVER['PHP_AUTH_PW'];      
-      $authchk = cryptservice($authpw,'d', true, $authuser);
-      //TODO: CHECK USER FOR PRISTINE BARCODE FUNCTION
+      ////TODO: CHECK USER FOR PRISTINE BARCODE FUNCTION
 
 
 
       if ($errorInd === 0 ) {
 
-
+        $dta = $passdata;
       
         $responseCode = 200;
       }      
@@ -2561,6 +2563,16 @@ MBODY;
              $left = '35vw';
              $top = '12vh';
              break;
+           case 'datacoordhprdisplay':
+             $primeFocus = "";  
+             $left = '15vw';
+             $top = '12vh';
+             break;
+           case 'hprreturnslidetray':
+             $primeFocus = "";  
+             $left = '15vw';
+             $top = '12vh';
+             break; 
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);
@@ -2683,8 +2695,7 @@ MBODY;
          $bgrs->execute(array(':biog' => $bgn));
          if ( $bgrs->rowCount() === 1 ) {
              $itemsfound = 1;
-             $bg = $bgrs->fetch(PDO::FETCH_ASSOC);
-             
+             $bg = $bgrs->fetch(PDO::FETCH_ASSOC); 
              $dta['bgnbr']                          = $bgn;
              $dta['readlabel']                     = $bg['readlabel'];
              $dta['pristineselector']           = $bg['pristineselector'];
@@ -2738,11 +2749,21 @@ MBODY;
                while ($sgr = $sgRS->fetch(PDO::FETCH_ASSOC)) { 
                    $sg[] = $sgr;
                }
-           }
-           
+           }           
            $dta['segments'] = $sg;
-             
-             
+
+           $assSQL = "SELECT pbiosample, ucase(replace(bs.read_label,'_','')) as readlabel, ucase(ifnull(bs.tissType,'')) as specimencategory, ucase(trim(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'') ='','',concat(' (',ifnull(bs.subSite,''), ')'))))) as site, ucase(trim(concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' [',ifnull(bs.subdiagnos,''),']'))))) as diagnosis, ucase(trim(ifnull(bs.metsSite,''))) as metssite, ucase(trim(ifnull(bs.pdxSystemic,''))) as systemic, ifnull(bs.HPRInd,0) as hprind, ifnull(bs.QCInd,0) as qcind, ucase(ifnull(qmsval.dspvalue,'')) as qmsstatus , ucase(ifnull(hprval.dspvalue,'')) as hprdecision, ifnull(bs.HPRResult,0) as hprresult FROM masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hprval on bs.hprdecision = hprval.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as qmsval on bs.QCProcStatus = qmsval.menuvalue where assocID = :associd and pbiosample <>  :bgn and bs.voidind <> 1 order by pbiosample asc";
+           $assRS = $conn->prepare($assSQL);
+           $assRS->execute(array(':associd' => $bg['associd'], ':bgn' => $bgn)); 
+           $ass = array(); 
+           if ( $assRS->rowCount() < 1) { 
+           } else { 
+             while ( $asses = $assRS->fetch(PDO::FETCH_ASSOC)) { 
+               $ass[] = $asses;
+             }
+           }
+           $dta['associativegroup'] = $ass; 
+           
          }     
          $responseCode = 200;
         }      
@@ -2754,6 +2775,140 @@ MBODY;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;   
+    }
+
+    function returnhprtrayinventory ( $request, $passdata ) { 
+       $rows = array(); 
+       //$dta = array(); 
+       $responseCode = 400;
+       $msgArr = array(); 
+       $errorInd = 0;
+       $msg = "BAD REQUEST";
+       $itemsfound = 0;
+       session_start();
+       require(serverkeys . "/sspdo.zck");
+       $pdta = json_decode($passdata, true);
+       //CHECK USER IS CORRECT AND COORD AND ALLOWED 
+       $usr = chtndecrypt($pdta['userid']);
+       $sess = session_id();      
+       $authuser = $_SERVER['PHP_AUTH_USER']; 
+       $authpw = $_SERVER['PHP_AUTH_PW'];      
+       $authchk = cryptservice($authpw,'d', true, $authuser);
+       if ( $authuser !== $authchk || $authuser !== $sess ) {
+          (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+       } 
+       $chkUsrSQL = "SELECT originalaccountname, emailaddress FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and allowInvtry = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0 and inventorypinkey = :pinkey";
+       $chkUsrR = $conn->prepare($chkUsrSQL); 
+       $chkUsrR->execute(array(':sess' => $sess, ':pinkey' => $usr));
+       if ($chkUsrR->rowCount() <> 1) { 
+         (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your inventory pin key is incorrect or you are not allowed to perform this action."));
+       } else { 
+         $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
+       }
+       ( trim($pdta['devreason']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE REASON FOR DEVIATING FROM CHTNEASTERN SOPs MUST BE SPECIFIED." )) : "";       
+       $chkSQL = "SELECT * FROM four.sys_master_menus where menu like 'DEVIATIONREASON_HPROVERRIDE' and dspind = 1 and dspValue = :value";
+       $chkR = $conn->prepare($chkSQL);
+       $chkR->execute(array(':value' => $pdta['devreason']));
+       if ($chkR->rowCount() <> 1) { 
+         (list( $errorInd, $msgArr[] ) = array(1 , "Deviation Reason is not allowable"));    
+       }
+       ( trim($pdta['hprboxid']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "HPR TRAY/BOX SCANCODE CANNOT BE BLANK.  SEE A CHTNEastern INFORMATICS STAFF PERSON.")) : "";
+       //TODO: CHECK TO SEE IF THIS IS AN HPR TRAY
+       ( (int)count( $pdta['slides'] ) < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "NO SLIDES LISTED FOR THIS ACTION")) : "";
+
+       $segSQL = "SELECT segmentid FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :bgs"; 
+       $segRS = $conn->prepare($segSQL);
+       //TODO: MAKE THIS ITS OWN FUNCTION - THIS IS IMPORTANT FOR INVENTORY 
+       $invSQL = "SELECT ilc.scancode, trim(concat(ifnull(ilc.locationnote,''),  if ( ifnull(ilc.locationdsp,'') = '','',  if(ifnull(ilc.locationdsp,'') = ifnull(ilc.locationnote,''),'',concat(' (',ifnull(ilc.locationdsp,''),')'))), if(ifnull(ilc.typeolocation,'') = '','',concat(' [',ifnull(ilc.typeolocation,''),']')))) thisloc, trim(concat(ifnull(lvl1.locationnote,'') , if(ifnull(lvl1.locationdsp,'') = '','',concat(' (',ifnull(lvl1.locationdsp,''),')')))) as parent, if ( trim(concat(ifnull(lvl2.locationnote,'') , if(ifnull(lvl2.locationdsp,'') = '','',concat(' (',ifnull(lvl2.locationdsp,''),')')))) = trim(concat(ifnull(lvl1.locationnote,'') , if(ifnull(lvl1.locationdsp,'') = '','',concat(' (',ifnull(lvl1.locationdsp,''),')')))),'',trim(concat(ifnull(lvl2.locationnote,'') , if(ifnull(lvl2.locationdsp,'') = '','',concat(' (',ifnull(lvl2.locationdsp,''),')'))))) as loc2, if ( trim(concat(ifnull(lvl3.locationnote,'') , if(ifnull(lvl3.locationdsp,'') = '','',concat(' (',ifnull(lvl3.locationdsp,''),')')))) = trim(concat(ifnull(lvl2.locationnote,'') , if(ifnull(lvl2.locationdsp,'') = '','',concat(' (',ifnull(lvl2.locationdsp,''),')')))),'',trim(concat(ifnull(lvl3.locationnote,'') , if(ifnull(lvl3.locationdsp,'') = '','',concat(' (',ifnull(lvl3.locationdsp,''),')'))))) as loc3, if ( trim(concat(ifnull(lvl4.locationnote,'') , if(ifnull(lvl4.locationdsp,'') = '','',concat(' (',ifnull(lvl4.locationdsp,''),')')))) = trim(concat(ifnull(lvl3.locationnote,'') , if(ifnull(lvl3.locationdsp,'') = '','',concat(' (',ifnull(lvl3.locationdsp,''),')')))),'',trim(concat(ifnull(lvl4.locationnote,'') , if(ifnull(lvl4.locationdsp,'') = '','',concat(' (',ifnull(lvl4.locationdsp,''),')'))))) as loc4 FROM four.sys_inventoryLocations ilc left join four.sys_inventoryLocations lvl1 on ilc.parentid = lvl1.locationid left join four.sys_inventoryLocations lvl2 on lvl1.parentid = lvl2.locationid left join four.sys_inventoryLocations lvl3 on lvl2.parentid = lvl3.locationid left join four.sys_inventoryLocations lvl4 on lvl3.parentid = lvl4.locationid where ilc.scancode = :scancode";
+       $invRS = $conn->prepare($invSQL); 
+
+       $invRS->execute(array(':scancode' => $pdta['hprboxid']));
+       $presenttray = $invRS->fetch(PDO::FETCH_ASSOC);
+       $ptrayloc = $presenttray['thisloc'];
+
+
+       $segdetaillist = array();
+       foreach ( $pdta['slides'] as $skey => $sval ) { 
+         $segid = "";
+         $itorytree = "";  
+         ( trim($skey) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ALL SLIDES MUST HAVE LABEL NUMBERS")) : "";
+         ( trim($sval) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ALL SLIDES MUST LIST AN INVENTORY LOCATION, SLIDE {$skey} DOES NOT LIST AN INVENTORY LOCATION.")) : "";
+
+         $segRS->execute(array(':bgs' => $skey));
+         $segid = "";
+         if ( $segRS->rowCount() <> 1 ) { 
+            (list( $errorInd, $msgArr[] ) = array(1 , "BAD BGS ({$skey}). SEE A CHTNEastern INFORMATICS PERSON.")); 
+         } else { 
+             $seg = $segRS->fetch(PDO::FETCH_ASSOC);
+             $segid = $seg['segmentid'];
+         }
+
+         $invRS->execute(array(':scancode' => $sval));
+         $invLoc = "";
+         if ( $invRS->rowCount() <> 1 ) {
+            (list( $errorInd, $msgArr[] ) = array(1 , "BAD SCANCODE ({$sval}). SEE A CHTNEastern INFORMATICS PERSON.")); 
+         } else {
+            $itory = $invRS->fetch(PDO::FETCH_ASSOC);
+            $itorytree = $itory['thisloc'] . " :: " . $itory['parent']; 
+         }
+
+         $segdetaillist[$skey] = array('segid' => $segid, 'itorytree' => $itorytree, 'newscancode' => $sval, 'bgs' => $skey, 'presentlocdesc' => $ptrayloc );
+       }
+
+       //CHECK TRAY IF ALL SLIDES ARE INCLUDED
+       $segChkSQL = "SELECT replace(bgs,'_','') as bgs FROM masterrecord.ut_procure_segment where HPRBoxNbr = :boxid"; 
+       $segChkRS = $conn->prepare($segChkSQL); 
+       $segChkRS->execute(array(':boxid' => $pdta['hprboxid'])); 
+
+       $foundind = 1;
+       while ( $s = $segChkRS->fetch(PDO::FETCH_ASSOC)) {
+           if ( array_key_exists($s['bgs'],$pdta['slides']) ) {
+           } else {
+               $foundind = 0;
+           }
+       }
+       ( $foundind === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ALL SLIDES IN THE DATABASE HAVE NOT BEEN ACCOUNTED FOR. SEE A CHTNEastern INFORMATICS PERSON.")) : "";
+
+
+       if ( $errorInd === 0 ) {
+  
+           //1) write each segment to history_procure_segment_hprsubmission showing that its been returned
+           $hprsubSQL = "insert into masterrecord.history_procure_segment_hprsubmission (segmentid, tohprby, historyon, historyby ) values ( :segid, :usr ,now(), 'HPR-INV-TRAY-RTN-OVERRIDE' )";
+           $hprsubrs = $conn->prepare($hprsubSQL); 
+
+           //2) write each segment to history_procure_segment_inventory for new location 
+           $seghistSQL = "insert into masterrecord.history_procure_segment_inventory ( segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) value ( :segid, :bgs , :locinvtydesc, :scancode, 'HPR TRAY RETURNED',:usr ,now(),now(),'HPR-RTN-OVERRIDE')";
+           $seghistrs = $conn->prepare($seghistSQL);
+
+           //3) update each segment ut_procure_segment with new location
+           //, scanloccode = :scancode, scannedstatus = 'INVENTORY-HPR-TRAY-RETURN-OVERRIDE', scannedby = :usr, scanneddate = now(), tohpr = 0, hprslideread = 0, HPRBoxNbr = ''
+           $segSQL = "update masterrecord.ut_procure_segment set scannedLocation = :invtrylocdesc where segmentid = :segid";
+           $segrs = $conn->prepare($segSQL);
+
+           //4) finally make a record in history_hpr_tray_status
+           //$hprHistSQL = "update masterrecord.history_hpr_tray_status set trayscancode = :hprtrayscancode, tray = :hprtrayname, hprtraystatus = null, hprtrayheldwithin = null, hprtrayheldwithinnote = null, hprtrayreasonnotcomplete = null, hprtrayreasonnotcompletenote = null, historyby = :usr, historyon = now()";
+           //$hprhistrs = $conn->prepare($hprHistSQL);
+
+         //5) update sys_inventoryLocations
+           //$invUpdSQL= "update four.sys_inventoryLocations set hprtraystatus = 'NOTUSED', hprtrayheldwithin = '', hprtrayheldwithinnote = '',hprtrayreasonnotcomplete = '',hprtrayreasonnotcompletenote = '', hprtraystatusby = :usr, hprtraystatuson = now() where scancode = :scancode";
+           //$invupdrs = $conn->prepare($invUpdSQL);
+
+         //{"segid":448485,"itorytree":"SLIDE STORAGE [STORAGE CONTAINER] :: Room 566 (AMB.ENV.566)","newscancode":"SSC001","bgs":"87106T002","presentlocdesc":"SlideTray: 002 (Tray: 002) [HPR TRAY]"} // proczack // HPRT002
+         foreach ( $segdetaillist as $dtlkey => $dtldtl ) {
+           (list( $errorInd, $msgArr[] ) = array(1 , "{$dtlkey} = " . json_encode($dtldtl) . " // " . $pdta['hprboxid'] ));
+           //$hprsubrs->execute(array(':segid' => $dtldtl['segid'] ,':usr' => $u['originalaccountname']   ));
+           //$seghistrs->execute(array(':segid' => $dtldtl['segid'], ':bgs' => $dtlkey, ':locinvtydesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':usr' => $u['originalaccountname'] ));
+           $segrs->execute(array(':invtrylocdesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':usr' => $u['originalaccountname'], ':segid' => $dtldtl['segid'])); 
+           (list( $errorInd, $msgArr[] ) = array(1 , json_encode(array(':invtylocdesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':usr' => $u['originalaccountname'], ':segid' => $dtldtl['segid']))));
+
+         }
+         (list( $errorInd, $msgArr[] ) = array(1 , "PRESENT TRAY: {$pdta['hprboxid']}" )); 
+         //$responseCode = 200;
+       }
+       $msg = $msgArr;
+       $rows['statusCode'] = $responseCode; 
+       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+       return $rows;
     }
 
     function quicksegmentstatusupdate ( $request, $passdata ) { 
