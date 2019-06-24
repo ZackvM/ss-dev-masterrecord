@@ -1823,7 +1823,7 @@ if(!isset($_COOKIE['ssv7auth'])) {
     $authCodeAsset = json_decode( $_COOKIE['ssv7auth'] , true );
     //{"dualcode":"dDhJVDB6S0EvdFRwaDBQYUZ5Q253dz09","expiry":1560793836}
     $authCode = cryptservice( $authCodeAsset['dualcode'] , 'd');
-    $authExpire = " will expire on " .date( 'm/d/Y', strtotime($authCodeAsset['expirydate']));
+    $authExpire = " will expire on " .date( 'h:iA', strtotime($authCodeAsset['expirydate']));
 }
 
 $addLine = "<tr><td class=label>Dual-Authentication Code <span id=dspAuthExpiry>{$authExpire}</span>&nbsp;<span class=pseudoLink id=btnSndAuthCode>(Send Authentication Code)</span></td></tr><tr><td><input type=text id=ssDualCode value=\"{$authCode}\"></td></tr>";

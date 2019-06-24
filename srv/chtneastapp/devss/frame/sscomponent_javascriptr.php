@@ -2200,7 +2200,7 @@ function rqstDualCode() {
   httpage.onreadystatechange = function () { 
     if (httpage.readyState === 4) {
       if (httpage.status === 200) { 
-          alert('If you are a registered ScienceServer user, you will receive a dual-authentication access code in your email or by text message.  This code is valid for 30 days');
+          alert('If you are a registered ScienceServer user, you will receive a dual-authentication access code in your email or by text message.  This code is valid for 12 hours');
       } else { 
         var rcd = JSON.parse(httpage.responseText);
         alert(rcd['MESSAGE']);

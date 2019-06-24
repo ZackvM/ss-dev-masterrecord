@@ -276,6 +276,8 @@ class sysreportprintables {
     function dailypristinebarcoderun($rptdef) { 
       $at = genAppFiles;
       $tt = treeTop;
+      require("{$at}/extlibs/bcodeLib/qrlib.php");
+      $tempDir = "{$at}/tmp/";
       $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" "); 
       $rqst = json_decode($rptdef['DATA']['requestjson'], true);            
       $presInst = $rqst['user'][0]['presentinstitution'];
@@ -288,13 +290,61 @@ class sysreportprintables {
       $dta['requesteddate'] = $tday;
       $dta['usrsession'] = session_id();
       $pdta = json_encode($dta);
-      $rslts = callrestapi("POST", dataTree . "/data-doers/pristine-barcode-run", serverIdent, serverpw, $pdta);  
+      $rslts = json_decode(callrestapi("POST", dataTree . "/data-doers/pristine-barcode-run", serverIdent, serverpw, $pdta), true); 
+      
+    foreach ( $rslts['DATA'] as $records) { 
+       if ($cellCntr === 2) { 
+         $rowTbl .= "</tr><tr>";
+         $cellCntr = 0;
+       }
+       
+       //****************CREATE BARCODE
+        $codeContents = "{$records['bgs']}";
+        $fileName = 'bc' . generateRandomString() . '.png';
+        $pngAbsoluteFilePath = $tempDir.$fileName;
+        if (!file_exists($pngAbsoluteFilePath)) {
+          QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+        } 
+        $qrcode = base64file("{$pngAbsoluteFilePath}", "", "png", true," style=\"height: 1in;\" ");
+        //********************END BARCODE CREATION
+       
+    $lblTbl = <<<LBLLBL
+<table border=0 cellpadding=0 cellspacing=0 style="width: 4in; height: 5.21in; border: 1px solid #000000; box-sizing: border-box;">
+<tr><td style="padding: 0 0 0 4px;">{$favi}</td><td align=right valign=bottom> 
+
+   <table>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 14pt; color: #000084; font-weight: bold; text-align: right;">CHTNEastern Biosample</td></tr>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 10pt; color: #000084; font-weight: bold; text-align: right;">3400 Spruce Street, DULLES 565<br>Philadelphia, PA 19104</td></tr>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 9pt; color: #000084; font-weight: bold; text-align: right;">(215) 662-4570</td></tr>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 9pt; color: #000084; font-weight: bold; text-align: right;">https://www.chtneast.org</td>
+     </tr></table>
+
+</td></tr>
+<tr><td colspan=2><center>{$qrcode}</td></tr>
+<tr><td colspan=2 style="font-size: 9pt; border-bottom: 1px solid #d3d3d3; font-weight: bold; padding: 4px 0 0 4px;">Biosample Number</td></tr>
+<tr><td colspan=2 style="font-size: 11pt; text-align: center;">{$records['bgs']}</td></tr>
+<tr><td colspan=2 style="font-size: 9pt; border-bottom: 1px solid #d3d3d3; font-weight: bold; padding: 4px 0 0 4px;">Diagnosis Designation</td></tr>
+<tr><td colspan=2 style="font-size: 11pt; text-align: center;">{$records['speccat']} :: {$records['primarysite']} :: {$records['primarysubsite']} :: {$records['diagnosis']} :: {$records['diagnosismodifier']}</td></tr>
+<tr><td colspan=2 style="font-size: 9pt; border-bottom: 1px solid #d3d3d3; font-weight: bold; padding: 4px 0 0 4px;">Preparation</td></tr>
+<tr><td colspan=2 style="font-size: 11pt; text-align: center;">{$records['prpmet']} ({$records['prp']} / {$records['metric']} {$records['longvalue']})<br>{$records['pxiage']} {$records['pxiAgeUOM']} / {$records['pxirace']} / {$records['pxigender']}</td></tr>
+<tr><td colspan=2 style="max-height: 3in;">&nbsp;</td></tr>
+</table>
+LBLLBL;
+    $rowTbl .= "<td>{$lblTbl}</td>";
+    $cellCntr++;
+    }
+    
+    
+    
+    
+ $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$rowTbl}</tr></table>"; 
 
 
 
-
-
-      $resultTbl .= "<table border=1 style=\"width: 8in;\"><tr><td>{$r} {$presInst} " . json_encode($dta) . " ... " . $rslts . "  </td></tr></table>"; 
       return $resultTbl;    
     } 
 

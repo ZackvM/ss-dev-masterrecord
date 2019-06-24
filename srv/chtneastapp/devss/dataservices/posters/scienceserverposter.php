@@ -1817,17 +1817,27 @@ MBODY;
       $msg = "BAD REQUEST";
       $itemsfound = 0;
       require(serverkeys . "/sspdo.zck");
+      //,"DATA":"{\"presentinstitution\":\"HUP\",\"requesteddate\":\"2019-06-24\",\"usrsession\":\"caid05p3oaurs9fmvdnpnfuu46\"
       $pdta = json_decode($passdata, true);
       $authuser = $_SERVER['PHP_AUTH_USER']; 
       $authpw = $_SERVER['PHP_AUTH_PW'];      
       ////TODO: CHECK USER FOR PRISTINE BARCODE FUNCTION
-
-
-
-      if ($errorInd === 0 ) {
-
-        $dta = $passdata;
+      ( $authuser !== 'chtneast') ?   ( list ($errorInd, $msgArr[]) = array(1,'THE SERVER DID NOT IDENTIFY ITSELF CORRECTLY')) : "";
       
+      $chkSQL = "SELECT emailaddress, friendlyname, originalaccountname FROM four.sys_userbase where sessionid = :sessid and allowind = 1 and allowproc = 1 and presentinstitution = :presentinst";    
+      $chkRS = $conn->prepare($chkSQL);
+      $chkRS->execute(array(':sessid' => $pdta['usrsession'], ':presentinst' => $pdta['presentinstitution'] ));
+      ( $chkRS->rowCount() < 1) ?  ( list ($errorInd, $msgArr[]) = array(1,'USER NOT FOUND OR NOT ALLOWED ACCESS TO PROCUREMENT')) : "";
+      
+      if ($errorInd === 0 ) {
+          $u = $chkRS->fetch(PDO::FETCH_ASSOC);
+          $dataSQL = "SELECT sg.pbiosample, sg.bgs, sg.prp, sg.prpmet, sg.metric, uom.longvalue, bs.*, px.*  FROM four.ut_procure_segment sg  left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') as uom on sg.metricuom = uom.menuvalue left join (SELECT pbiosample, speccat, primarysite, classification, primarysubsite, diagnosis, diagnosismodifier, metssite, systemdiagnosis FROM four.ref_procureBiosample_designation where activeind = 1) as bs on sg.pbiosample = bs.pbiosample left join (SELECT pbiosample, pxirace, pxigender, pxiage, pxiAgeUOM FROM four.ref_procureBiosample_PXI px where activeind = 1) px on sg.pbiosample = px.pbiosample where sg.procuredat = :presinst and date_format(inputon, '%Y-%m-%d') = :procdte and (prp <> 'SLIDE' and prp <> 'PB') and activeind = 1 and voidind <> 1 ";
+          $dataRS = $conn->prepare($dataSQL); 
+          $dataRS->execute(array(':presinst' => $pdta['presentinstitution'], ':procdte' => $pdta['requesteddate'] ));
+          $itemsfound = $dataRS->rowCount(); 
+          while ( $r = $dataRS->fetch(PDO::FETCH_ASSOC)) { 
+              $dta[] = $r;
+          }
         $responseCode = 200;
       }      
       $msg = $msgArr;
@@ -2826,7 +2836,6 @@ MBODY;
        $presenttray = $invRS->fetch(PDO::FETCH_ASSOC);
        $ptrayloc = $presenttray['thisloc'];
 
-
        $segdetaillist = array();
        foreach ( $pdta['slides'] as $skey => $sval ) { 
          $segid = "";
@@ -2851,7 +2860,7 @@ MBODY;
             $itory = $invRS->fetch(PDO::FETCH_ASSOC);
             $itorytree = $itory['thisloc'] . " :: " . $itory['parent']; 
          }
-
+         
          $segdetaillist[$skey] = array('segid' => $segid, 'itorytree' => $itorytree, 'newscancode' => $sval, 'bgs' => $skey, 'presentlocdesc' => $ptrayloc );
        }
 
@@ -2880,29 +2889,33 @@ MBODY;
            $seghistSQL = "insert into masterrecord.history_procure_segment_inventory ( segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) value ( :segid, :bgs , :locinvtydesc, :scancode, 'HPR TRAY RETURNED',:usr ,now(),now(),'HPR-RTN-OVERRIDE')";
            $seghistrs = $conn->prepare($seghistSQL);
 
-           //3) update each segment ut_procure_segment with new location
-           //, scanloccode = :scancode, scannedstatus = 'INVENTORY-HPR-TRAY-RETURN-OVERRIDE', scannedby = :usr, scanneddate = now(), tohpr = 0, hprslideread = 0, HPRBoxNbr = ''
-           $segSQL = "update masterrecord.ut_procure_segment set scannedLocation = :invtrylocdesc where segmentid = :segid";
+           //3) update each segment ut_procure_segment with new location          
+           $segSQL = "update masterrecord.ut_procure_segment set scannedLocation = :invtrylocdesc, scanloccode = :scancode, scannedstatus = :scannedstatus, scannedby = :usr, scanneddate = now(), tohpr = 0, hprslideread = 0, HPRBoxNbr = '' where segmentid = :segid";
            $segrs = $conn->prepare($segSQL);
-
+           
            //4) finally make a record in history_hpr_tray_status
-           //$hprHistSQL = "update masterrecord.history_hpr_tray_status set trayscancode = :hprtrayscancode, tray = :hprtrayname, hprtraystatus = null, hprtrayheldwithin = null, hprtrayheldwithinnote = null, hprtrayreasonnotcomplete = null, hprtrayreasonnotcompletenote = null, historyby = :usr, historyon = now()";
-           //$hprhistrs = $conn->prepare($hprHistSQL);
+           $hprHistSQL = "insert into masterrecord.history_hpr_tray_status (trayscancode, historyby, historyon) values (:trayscancode, 'HPR-TRAY-EMPTIED-RETURNED', now())";
+           $hprhistrs = $conn->prepare($hprHistSQL);
 
          //5) update sys_inventoryLocations
-           //$invUpdSQL= "update four.sys_inventoryLocations set hprtraystatus = 'NOTUSED', hprtrayheldwithin = '', hprtrayheldwithinnote = '',hprtrayreasonnotcomplete = '',hprtrayreasonnotcompletenote = '', hprtraystatusby = :usr, hprtraystatuson = now() where scancode = :scancode";
-           //$invupdrs = $conn->prepare($invUpdSQL);
+           $invUpdSQL= "update four.sys_inventoryLocations set hprtraystatus = 'NOTUSED', hprtrayheldwithin = '', hprtrayheldwithinnote = '',hprtrayreasonnotcomplete = '',hprtrayreasonnotcompletenote = '', hprtraystatusby = :usr, hprtraystatuson = now() where scancode = :scancode";
+           $invupdrs = $conn->prepare($invUpdSQL);
 
          //{"segid":448485,"itorytree":"SLIDE STORAGE [STORAGE CONTAINER] :: Room 566 (AMB.ENV.566)","newscancode":"SSC001","bgs":"87106T002","presentlocdesc":"SlideTray: 002 (Tray: 002) [HPR TRAY]"} // proczack // HPRT002
          foreach ( $segdetaillist as $dtlkey => $dtldtl ) {
            (list( $errorInd, $msgArr[] ) = array(1 , "{$dtlkey} = " . json_encode($dtldtl) . " // " . $pdta['hprboxid'] ));
            //$hprsubrs->execute(array(':segid' => $dtldtl['segid'] ,':usr' => $u['originalaccountname']   ));
            //$seghistrs->execute(array(':segid' => $dtldtl['segid'], ':bgs' => $dtlkey, ':locinvtydesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':usr' => $u['originalaccountname'] ));
-           $segrs->execute(array(':invtrylocdesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':usr' => $u['originalaccountname'], ':segid' => $dtldtl['segid'])); 
+           //$segrs->execute(array(':invtrylocdesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':scannedstatus' =>'INVENTORY-HPR-TRAY-RETURN-OVERRIDE' , ':usr' => $u['originalaccountname'], ':segid' => $dtldtl['segid']));           
            (list( $errorInd, $msgArr[] ) = array(1 , json_encode(array(':invtylocdesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':usr' => $u['originalaccountname'], ':segid' => $dtldtl['segid']))));
 
          }
-         (list( $errorInd, $msgArr[] ) = array(1 , "PRESENT TRAY: {$pdta['hprboxid']}" )); 
+         //$hprhistrs->execute(array(':trayscancode' => $pdta['hprboxid'] ));
+         $invupdrs->execute(array(':usr' => $u['originalaccountname'], ':scancode' => $pdta['hprboxid'] ));
+        
+         
+         
+         //TODO:  Write Deviation
          //$responseCode = 200;
        }
        $msg = $msgArr;
@@ -6856,26 +6869,25 @@ class systemposts {
       $usrid = $r['userid'];
       if (password_verify($p,  $dbPword)) { 
         //USER NAME AND PASSWORD CORRECT - CHECK AUTH          
-           $auSQL = "select ifnull(useremail,'') as useridemail, ifnull(phpsessid,'NOTSET') as phpsessid, datediff(now(), inputon) dayssince FROM serverControls.sys_ssv7_authcodes where authcode = :acode and useremail = :uemail and datediff(now(), inputon) < 5"; 
+           $auSQL = "select ifnull(useremail,'') as useridemail, ifnull(phpsessid,'NOTSET') as phpsessid, datediff(now(), inputon) dayssince,  TIMESTAMPDIFF(HOUR,inputon,now()) as timesince FROM serverControls.sys_ssv7_authcodes where authcode = :acode and useremail = :uemail and TIMESTAMPDIFF(HOUR,inputon,now()) < 12 and registerUserIP = :ruip"; 
            $auR = $conn->prepare($auSQL);
-           $auR->execute(array(':acode' => $au, ':uemail' =>$u));
+           $auR->execute(array(':acode' => $au, ':uemail' =>$u, ':ruip' => clientipserver()));
            if ($auR->rowCount() === 1) {                
                //CHECK DAYS SINCE
                $authenR = $auR->fetch(PDO::FETCH_ASSOC);
-               //if ((int)$authenR['dayssince'] < 6) { 
 
                    //GOOD - SESSION CREATE LOGGEDON - CAPTURE SYSTEM ACTIVITY - REDIRECT IN JAVASCRIPT WITH STATUSCODE = 200
                    session_regenerate_id(true);
                    $newsess = session_id();
-                   $updAuthSQL = "update serverControls.sys_ssv7_authcodes set phpsessid = :newsess, timesused = (timesused + 1)  where authcode = :acode and useremail = :uemail";
+                   $updAuthSQL = "update serverControls.sys_ssv7_authcodes set phpsessid = :newsess, timesused = (timesused + 1) where authcode = :acode and useremail = :uemail";
                    $updAR = $conn->prepare($updAuthSQL);
-                   $updAR->execute(array(':newsess' => $newsess, ':acode' => $au, ':uemail' => $u)); 
+                   $updAR->execute(array(':newsess' => $newsess, ':acode' => $au, ':uemail' => $u, ':ruip' => clientipserver()    )); 
+                 
                    if (!isset($_COOKIE['ssv7auth'])) {
                        $date = date();
-                       $dte = date('Y-m-d', strtotime($date. ' + 4 days'));
-                       $cookieArr = json_encode(array("dualcode" =>  cryptservice(  $au , 'e'), "expiry" =>  time() + 432000, 'expirydate' => $dte ));
-                       setcookie('ssv7auth', "{$cookieArr}", time() + 432000, '/','',true,true); // 2592000 = 30 days 3600 - is one hour
-                       //2592000 = 30 days
+                       $dte = date('Y-m-d H:i:s', strtotime($date. ' +12 hours'));
+                       $cookieArr = json_encode(array("dualcode" =>  cryptservice(  $au , 'e'), "expiry" =>  time() + 43200, 'expirydate' => $dte ));
+                       setcookie('ssv7auth', "{$cookieArr}", time() + 43200, '/','',true,true); // 2592000 = 30 days 3600 - is one hour
                    }
 
                    $updUSRSQL = "update four.sys_userbase set sessionid = :sess, sessionExpire = date_add(now(), INTERVAL 7 HOUR) where emailaddress = :emluser"; 
@@ -7044,9 +7056,9 @@ class systemposts {
            $randomString .= $characters[rand(0, $charactersLength - 1)];
          }
          session_start();
-         $capAuthSQL = "insert into serverControls.sys_ssv7_authcodes (authcode, phpsessid, useremail, inputon) values(:authcode, :sess, :uemail,  now())";
+         $capAuthSQL = "insert into serverControls.sys_ssv7_authcodes (authcode, phpsessid, useremail, inputon, registerUserIP) values(:authcode, :sess, :uemail,  now(), :ruip)";
          $capAuthR = $conn->prepare($capAuthSQL);
-         $capAuthR->execute(array(':authcode' => $randomString, ':sess' => session_id(), ':uemail' => $rquester));
+         $capAuthR->execute(array(':authcode' => $randomString, ':sess' => session_id(), ':uemail' => $rquester, ':ruip' => clientipserver()));
          $capID = $conn->lastInsertId();
          $authCode = "{$capID}-{$randomString}"; 
          $rqstr = $chkR->fetch(PDO::FETCH_ASSOC);
