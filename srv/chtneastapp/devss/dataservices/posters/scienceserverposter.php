@@ -2580,8 +2580,8 @@ MBODY;
              break;
            case 'hprreturnslidetray':
              $primeFocus = "";  
-             $left = '15vw';
-             $top = '12vh';
+             $left = '11vw';
+             $top = '11vh';
              break; 
          }
 
@@ -2901,22 +2901,19 @@ MBODY;
            $invUpdSQL= "update four.sys_inventoryLocations set hprtraystatus = 'NOTUSED', hprtrayheldwithin = '', hprtrayheldwithinnote = '',hprtrayreasonnotcomplete = '',hprtrayreasonnotcompletenote = '', hprtraystatusby = :usr, hprtraystatuson = now() where scancode = :scancode";
            $invupdrs = $conn->prepare($invUpdSQL);
 
-         //{"segid":448485,"itorytree":"SLIDE STORAGE [STORAGE CONTAINER] :: Room 566 (AMB.ENV.566)","newscancode":"SSC001","bgs":"87106T002","presentlocdesc":"SlideTray: 002 (Tray: 002) [HPR TRAY]"} // proczack // HPRT002
-         foreach ( $segdetaillist as $dtlkey => $dtldtl ) {
-           (list( $errorInd, $msgArr[] ) = array(1 , "{$dtlkey} = " . json_encode($dtldtl) . " // " . $pdta['hprboxid'] ));
-           //$hprsubrs->execute(array(':segid' => $dtldtl['segid'] ,':usr' => $u['originalaccountname']   ));
-           //$seghistrs->execute(array(':segid' => $dtldtl['segid'], ':bgs' => $dtlkey, ':locinvtydesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':usr' => $u['originalaccountname'] ));
-           //$segrs->execute(array(':invtrylocdesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':scannedstatus' =>'INVENTORY-HPR-TRAY-RETURN-OVERRIDE' , ':usr' => $u['originalaccountname'], ':segid' => $dtldtl['segid']));           
-           (list( $errorInd, $msgArr[] ) = array(1 , json_encode(array(':invtylocdesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':usr' => $u['originalaccountname'], ':segid' => $dtldtl['segid']))));
+        //6) write to the deviation table
+          $devSQL = "insert into masterrecord.tbl_operating_deviations(module, whodeviated, whendeviated, operationsarea, functiondeviated, reasonfordeviation, payload) value('data-coordination', :whodeviated, now(), 'inventory', 'inventory-hpr-tray-return-override' , :reasonfordeviation, :payload)";
+          $devRS = $conn->prepare($devSQL); 
 
+         foreach ( $segdetaillist as $dtlkey => $dtldtl ) {
+           $hprsubrs->execute(array(':segid' => $dtldtl['segid'] ,':usr' => $u['originalaccountname']   ));
+           $seghistrs->execute(array(':segid' => $dtldtl['segid'], ':bgs' => $dtlkey, ':locinvtydesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':usr' => $u['originalaccountname'] ));
+           $segrs->execute(array(':invtrylocdesc' => $dtldtl['itorytree'], ':scancode' => $dtldtl['newscancode'], ':scannedstatus' =>'INVENTORY-HPR-TRAY-RETURN-OVERRIDE' , ':usr' => $u['originalaccountname'], ':segid' => $dtldtl['segid']));           
          }
-         //$hprhistrs->execute(array(':trayscancode' => $pdta['hprboxid'] ));
+         $hprhistrs->execute(array(':trayscancode' => $pdta['hprboxid'] ));
          $invupdrs->execute(array(':usr' => $u['originalaccountname'], ':scancode' => $pdta['hprboxid'] ));
-        
-         
-         
-         //TODO:  Write Deviation
-         //$responseCode = 200;
+         $devRS->execute(array(':whodeviated' => $u['originalaccountname'], ':reasonfordeviation' => $pdta['devreason'], ':payload' => $passdata));         
+         $responseCode = 200;
        }
        $msg = $msgArr;
        $rows['statusCode'] = $responseCode; 
@@ -5491,7 +5488,6 @@ UPDSQL;
      }  
 
      if ( $errorInd === 0 ) { 
-       //IF ERROR IS STILL ZERO - THEN WRITE PR
        $htmlized = preg_replace('/\n\n/','<p>',$pdta['prtxt']);
        $htmlized = preg_replace('/\r\n/','<p>', $htmlized);
        $htmlized = preg_replace('/\n/','<br>',$htmlized);

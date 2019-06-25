@@ -3342,19 +3342,19 @@ function bldHPRSlideTrayReturnOverride ( $dialogid, $passedData ) {
   $trayRS->execute(array(':boxid' => $obj['boxid']));
   $tray = $trayRS->fetch(PDO::FETCH_ASSOC);
 
-  $tlocNote = ( trim($tray['rtnheldwithinnote']) !== "" ) ? "<br><span class=smlrFont>{$tray['rtnheldwithinnote']}</span>" : "";
+  $tlocNote = ( trim($tray['rtnheldwithinnote']) !== "" ) ? "<br><span class=smlrFont>({$tray['rtnheldwithinnote']})</span>" : "";
 
-  $partialNote = ( trim($tray['reasonnotcompletenote']) !== "" ) ? "<br><span class=smlrFont>{$tray['reasonnotcompletenote']}</span>" : "";
-  $partialLine = ( trim($tray['reasontraynotcompletedsp']) !== "" ) ? "<tr><td valign=top>Review Not Complete</td><td valign=top>{$tray['reasontraynotcompletedsp']}{$partialNote}</td></tr>" : "";
+  $partialNote = ( trim($tray['reasonnotcompletenote']) !== "" ) ? "<br><span class=smlrFont>({$tray['reasonnotcompletenote']})</span>" : "";
+  $partialLine = ( trim($tray['reasontraynotcompletedsp']) !== "" ) ? "<tr><td valign=top class=datalabel >Review Not Complete</td><td valign=top class=datadisplay>{$tray['reasontraynotcompletedsp']}{$partialNote}</td></tr>" : "";
 
   $whoDte = ( trim($tray['hprtraystatuson']) !== "" ) ? " :: {$tray['hprtraystatuson']}" : "";
   $bywho = ( trim($tray['hprtraystatusby']) !== "" ) ? " ({$tray['hprtraystatusby']}{$whoDte})" : ""; 
 
   $trayTbl = <<<TRAYTBL
-<table border=1>
-<tr><td valign=top>HPR Tray: </td><td valign=top>{$tray['hprtrayname']} ({$tray['hprtraytypeoflocation']}) </td></tr>
-<tr><td valign=top>Present Status: </td><td valign=top>{$tray['hprtraystatusdsp']}{$bywho}</td></tr>
-<tr><td valign=top>Present Location: </td><td valign=top>{$tray['rtnheldwithinlocationdsp']}{$tlocNote}</td></tr>
+<table border=0 >
+<tr><td valign=top class=datalabel>HPR Tray: </td><td valign=top class=datadisplay>{$tray['hprtrayname']} ({$tray['hprtraytypeoflocation']}) </td></tr>
+<tr><td valign=top class=datalabel>Present Status: </td><td valign=top class=datadisplay>{$tray['hprtraystatusdsp']}{$bywho}</td></tr>
+<tr><td valign=top class=datalabel>Present Location: </td><td valign=top class=datadisplay>{$tray['rtnheldwithinlocationdsp']}{$tlocNote}</td></tr>
 {$partialLine}
 </table>
 TRAYTBL;
@@ -3369,7 +3369,7 @@ SLIDESQL;
   $slideRS = $conn->prepare($slideSQL); 
   $slideRS->execute(array(':boxid' => $obj['boxid']));
 
-  $slideList = "<table border=0><thead><tr><td colspan=25>{$slideRS->rowCount()} slides found</td></tr><tr><th>Slide #</th><th>Present Location</th><th>HPR Decision</th><th>HPR By</th><th>File Location</th></tr></thead><tbody>";
+  $slideList = "<table border=0 id=choosyTbl><thead><tr><td colspan=25>{$slideRS->rowCount()} slides found</td></tr><tr><th>Slide #</th><th>Present Location</th><th>HPR Decision</th><th>HPR By</th><th>File Location</th></tr></thead><tbody>";
   $sldcntr = 0;
   while ($s = $slideRS->fetch(PDO::FETCH_ASSOC)) {
 
@@ -3383,8 +3383,8 @@ SLIDESQL;
         $rvwDate = ( trim($s['hpron']) !== "" ) ? " ({$s['hpron']})" : "";
 
       $slideList .= <<<SINNER
-<tr>
-  <td>{$s['bgs']}</td><td>{$s['scannedlocation']}</td><td>{$s['hprdecision']}</td><td>{$s['hprby']}{$rvwDate}</td><td>{$dspInvMenu}</td>
+<tr class=displayrow>
+  <td class="displaythis">{$s['bgs']}</td><td class="displaythis">{$s['scannedlocation']}</td><td class="displaythis">{$s['hprdecision']}</td><td class="displaythis">{$s['hprby']}{$rvwDate}</td><td>{$dspInvMenu}</td>
 </tr>
 SINNER;
     $sldcntr++;      
@@ -3400,25 +3400,40 @@ SINNER;
   $devm .= "</table>";
 
   $devTbl = <<<DEVTBL
-<table border=1>
-  <tr><td>Inventory User Pin</td><td>Deviation Reason</td><td rowspan=2 valign=top style="width: 20vw; text-align: justify;"><b>CHTNEASTERN SOP DEVIATION NOTIFICATION</b>: This is NOT a standard inventory screen and should only be used in extenuating operating circumstances.  The use of this screen will be tracked as a deviation from standard operating procedures. Please enter a reason for the deviation below.   </td></tr>
-  <tr><td><input type=password id=fldTRtnUsrPIN style="width: 8vw;"></td><td><div class=menuHolderDiv><input type=text id=fldTRtnDeviationReason style="width: 15vw;"><div class=valueDropDown>{$devm}</div></div></td></tr>
+<table border=0>
+  <tr><td rowspan=2 valign=top style="font-size: 1.1vh; width: 15vw; text-align: justify; padding: 0 .5vw;"><b>CHTNEASTERN SOP DEVIATION NOTIFICATION</b>: This is NOT a standard inventory screen and should only be used in extenuating operating circumstances.  The use of this screen will be tracked as a deviation from standard operating procedures. Please enter a reason for the deviation below.</td><td class=datalabel>Inventory User Pin</td><td class=datalabel>Deviation Reason</td></tr>
+  <tr><td><input type=password id=fldTRtnUsrPIN style="width: 9vw;"></td><td><div class=menuHolderDiv><input type=text id=fldTRtnDeviationReason style="width: 25vw;"><div class=valueDropDown>{$devm}</div></div></td></tr>
 </table>
 DEVTBL;
 
-
 $rtnThis = <<<PGCONTENT
 <style>
- .inventoryLocDsp {font-size: 1.1vh; padding: .5vh .3vw;  } 
+ .inventoryLocDsp {font-size: 1.4vh; padding: .5vh .3vw;  } 
  .ddMenuItem {font-size: 1.1vh; }
- .valueDropDown { width: 30vw; }  
+ .valueDropDown { width: 30vw; }
+
+ .menuDropTbl {  }
+ .ddMenuItem { font-size: 1.5vh; }
+
+
+ .datalabel { font-size: 1.5vh; font-weight: bold; color: rgba(48,57,71,1); } 
+ .datadisplay { font-size: 1.5vh; color: rgba(48,57,71,1); } 
+ .squarethis { border: 1px solid rgba(48,57,71,1); }
+ .smlrFont { font-size: 1.1vh; } 
+
+ #choosyTbl { font-size: 1.4vh; border-collapse: collapse; width: 100%; }
+ #choosyTbl thead th { background: rgba(48,57,71,1); color: rgba(255,255,255,1); padding: 8px 5px; border-right: 1px solid rgba(255,255,255,1);   } 
+ #choosyTbl tbody .displaythis { font-size: 1.5vh; color: rgba(48,57,71,1); padding: 8px 4px; border-right: 1px solid rgba(48,57,71,1); }
+ #choosyTbl tbody .displayrow:nth-child(even) { background: rgba(160,160,160, .3); }  
 </style>
+
 <form id=frmRtnTraySpecifics>
+
 <input type=hidden id=rtnHPRTrayScanCode value={$obj['boxid']}>
+
 <table border=0 width=100%>
-<tr><td>{$trayTbl}</td></tr>
-<tr><td>{$slideList}</td></tr>
-<tr><td><center>{$devTbl}</td></tr>
+<tr><td>  <table><tr><td valign=top class=squarethis>{$trayTbl}</td><td valign=top class=squarethis>{$devTbl}</td></tr></table> </td></tr>
+<tr><td> <table width=100%><tr><td valign=top class=squarethis>{$slideList}</td></tr></table> </td></tr>
 <tr><td align=right>
 <div id=waiterIndicator style="font-size: 1.5vh;"><center>{$waitpic}<br>Please wait ...</div>
 <div id=rtnBtnDsp><table><tr><td><table class=tblBtn id=btnRtnSave style="width: 6vw;" onclick="updateRtnLocations();"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table></td><td><table class=tblBtn id=btnRtnClose style="width: 6vw;" onclick="closeThisDialog('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Close</td></tr></table></td></tr></table></div>
