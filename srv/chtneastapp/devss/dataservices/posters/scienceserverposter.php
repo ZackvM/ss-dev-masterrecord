@@ -1482,17 +1482,17 @@ MBODY;
           //TODO: MAKE THE STATUSES DYNAMIC
           switch ( strtoupper(trim($pdta['segstatus'])) ) { 
             case 'ASSIGNED':
-                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = 0 where segmentId = :sid";
+                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = null where segmentId = :sid";
                 break;
             case 'BANKED':
-                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = 0, assignedto = '', assignedReq = '', assignmentdate = now(), assignedby = '' where segmentId = :sid";
+                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = null, assignedto = '', assignedReq = '', assignmentdate = now(), assignedby = '' where segmentId = :sid";
                 break;
             case 'PENDDEST':
-                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = 0, assignedto = '', assignedReq = '', assignmentdate = now(), assignedby = '' where segmentId = :sid";
+                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = null, assignedto = '', assignedReq = '', assignmentdate = now(), assignedby = '' where segmentId = :sid";
                 break;
-            case 'XNFIPI':
-                $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = 0, assignedto = '', assignedReq = '', assignmentdate = now(), assignedby = '' where segmentId = :sid";
-                break;
+            //case 'XNFIPI':
+            //    $updSQL = "update masterrecord.ut_procure_segment set segstatus = :sts, statusdate = now(), statusby = :usr, shipDocRefID = null, assignedto = '', assignedReq = '', assignmentdate = now(), assignedby = '' where segmentId = :sid";
+            //    break;
           }
           $updRS = $conn->prepare($updSQL);
           $updRS->execute(array(':usr' => $u['originalaccountname'], ':sid' => $sid, ':sts' => strtoupper(trim($pdta['segstatus']))));
@@ -1503,6 +1503,17 @@ MBODY;
           $delRS = $conn->prepare($delSQL); 
           $delRS->execute(array(':shpdoc' => $sd, ':segid' => $sid));
           //TODO: IF ALL SEGMENTS DELETED FROM SHIPDOC - VOID SHIPDOC!!
+          $finalChkRS = $conn->prepare("Select * from masterrecord.ut_shipdocdetails where shipdocrefid = :shipdocrefid");
+          $finalChkRS->execute(array(':shipdocrefid' => $sd)); 
+          if ( $finalChkRS->rowCount() < 1 ) { 
+            //MARK AS VOID 
+            $voidSQL = "update masterrecord.ut_shipdoc set sdstatus = 'VOID', statusdate = now(), statusby = :usr where shipdocrefid = :sd";
+            $voidRS = $conn->prepare($voidSQL); 
+            $voidRS->execute(array(':usr' => $u['originalaccountname'], ':sd' => $sd));
+            $logSQL = "insert into masterrecord.history_shipdoc_actions ( shipdocrefid, status, statusdate, bywhom, ondate) values(:sd,'VOID',now(),:usr,now())";
+            $logRS = $conn->prepare($logSQL); 
+            $logRS->execute(array(':sd' => $sd, ':usr' => $u['originalaccountname'])); 
+          }
           $responseCode = 200; 
       }
       $msg = $msgArr;
@@ -7048,7 +7059,7 @@ class systemposts {
          $characters = '0123456789';
          $charactersLength = strlen($characters);
          $randomString = '';
-         for ($i = 0; $i < 5; $i++) {
+         for ($i = 0; $i < 6; $i++) {
            $randomString .= $characters[rand(0, $charactersLength - 1)];
          }
          session_start();
@@ -7056,7 +7067,7 @@ class systemposts {
          $capAuthR = $conn->prepare($capAuthSQL);
          $capAuthR->execute(array(':authcode' => $randomString, ':sess' => session_id(), ':uemail' => $rquester, ':ruip' => clientipserver()));
          $capID = $conn->lastInsertId();
-         $authCode = "{$capID}-{$randomString}"; 
+         $authCode = "{$randomString}"; 
          $rqstr = $chkR->fetch(PDO::FETCH_ASSOC);
          if (trim($rqstr['altphonecellcarrier']) !== "") { 
              $emlTo = $rqstr['altphonecellcarrier'];

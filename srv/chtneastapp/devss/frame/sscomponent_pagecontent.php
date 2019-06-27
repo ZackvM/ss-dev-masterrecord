@@ -1122,6 +1122,11 @@ PAGEHERE;
 return $rtnthis;    
 }
 
+function qmsactions ( $rqststr, $whichusr ) { 
+
+
+}
+
 function scienceserverhelp($rqststr, $whichusr) { 
 
 $tt = treeTop; 

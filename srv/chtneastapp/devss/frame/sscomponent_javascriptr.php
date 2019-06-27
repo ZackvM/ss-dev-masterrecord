@@ -2214,6 +2214,16 @@ JAVASCR;
 return $rtnThis;
 }
 
+function qmsactions ( $rqststr ) { 
+
+$tt = treeTop; 
+$rtnThis = <<<RTNTHIS
+
+
+RTNTHIS;
+return $rtnThis;
+}
+
 function collectiongrid($rqststr) { 
 session_start(); 
     

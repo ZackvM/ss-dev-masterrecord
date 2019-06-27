@@ -284,6 +284,18 @@ STYLESHEET;
  return $rtnThis;
   }
 
+function qmsactions ( $mobileind ) { 
+$rtnThis = <<<STYLESHEET
+
+body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box; }
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
+
+STYLESHEET;
+return $rtnThis;
+}
+
+
+
 function shipmentdocument($mobileind) { 
 $rtnThis = <<<STYLESHEET
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.4vh; } 
