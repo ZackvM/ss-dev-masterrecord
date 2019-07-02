@@ -188,13 +188,19 @@ class datadoers {
          $hprheadid = $conn->lastInsertId();
 
          ////INSERT FURTHER ACTIONS
-         $faInsSQL = "insert into masterrecord.ut_hpr_factions (biohpr, actiontypevalue, actiontype, actionnote, actionindicator, actionrequestedon) values (:biohpr, :actiontypevalue, :actiontype, :actionnote, 1, now())";
-         $faInsRS = $conn->prepare($faInsSQL);
+
          if ( trim($pdta['inconfurtheractions']) !== "" ) { 
-          $fa = json_decode( $pdta['inconfurtheractions'] , true);
-          foreach ( $fa as $fkey => $fval ) {
+           $faInsSQL = "insert into masterrecord.ut_hpr_factions (biohpr, actiontypevalue, actiontype, actionnote, actionindicator, actionrequestedon) values (:biohpr, :actiontypevalue, :actiontype, :actionnote, 1, now())";
+           $faInsRS = $conn->prepare($faInsSQL);
+           
+           $masterfaSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule,objhprid,objpbiosample,objbgs,actioncode,actiondesc,actionnote,actionrequestedby,actionrequestedon) VALUES ('HPR',:hprid,:biosampleref,:bgs,:actioncode,:actiondesc,:actionnote,:rqstby,now())";
+           $masterfaRS = $conn->prepare($masterfaSQL);
+
+           $fa = json_decode( $pdta['inconfurtheractions'] , true);
+           foreach ( $fa as $fkey => $fval ) {
              $faInsRS->execute(array( ':biohpr' => $hprheadid, ':actiontypevalue' => $fval[0], ':actiontype' => $fval[1], ':actionnote' => trim($fval[2])));
-          } 
+             $masterfaRS->execute(array(':hprid' => $hprheadid, ':biosampleref' => $bg['biosamplelabel'], ':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':actioncode' => $fval[0], ':actiondesc' => $fval[1], ':actionnote' => trim($fval[2]), ':rqstby' => $reviewer));
+           } 
          }
 
          //BACKUP BIOGROUP
@@ -374,12 +380,16 @@ class datadoers {
          $hprheadid = $conn->lastInsertId();
 
          ////INSERT FURTHER ACTIONS
-         $faInsSQL = "insert into masterrecord.ut_hpr_factions (biohpr, actiontypevalue, actiontype, actionnote, actionindicator, actionrequestedon) values (:biohpr, :actiontypevalue, :actiontype, :actionnote, 1, now())";
-         $faInsRS = $conn->prepare($faInsSQL);
          if ( trim($pdta['hprfurtheraction']) !== "" ) { 
+           $faInsSQL = "insert into masterrecord.ut_hpr_factions (biohpr, actiontypevalue, actiontype, actionnote, actionindicator, actionrequestedon) values (:biohpr, :actiontypevalue, :actiontype, :actionnote, 1, now())";
+           $faInsRS = $conn->prepare($faInsSQL);
+           $masterfaSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule,objhprid,objpbiosample,objbgs,actioncode,actiondesc,actionnote,actionrequestedby,actionrequestedon) VALUES ('HPR',:hprid,:biosampleref,:bgs,:actioncode,:actiondesc,:actionnote,:rqstby,now())";
+           $masterfaRS = $conn->prepare($masterfaSQL);
+
           $fa = json_decode( $pdta['hprfurtheraction'] , true);
           foreach ( $fa as $fkey => $fval ) {
-             $faInsRS->execute(array( ':biohpr' => $hprheadid, ':actiontypevalue' => $fval[0], ':actiontype' => $fval[1], ':actionnote' => trim($fval[2])));
+            $faInsRS->execute(array( ':biohpr' => $hprheadid, ':actiontypevalue' => $fval[0], ':actiontype' => $fval[1], ':actionnote' => trim($fval[2])));
+            $masterfaRS->execute(array(':hprid' => $hprheadid, ':biosampleref' => $bg['biosamplelabel'], ':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':actioncode' => $fval[0], ':actiondesc' => $fval[1], ':actionnote' => trim($fval[2]), ':rqstby' => $reviewer));
           } 
          }
          //INSERT PERCENTAGES
@@ -3148,6 +3158,7 @@ MBODY;
       } else {
   
         //GET USER ALLOWANCE  
+        //TODO:  MAKE SURE THAT THE USER HAS THE RIGHT TO RUN THIS REPORT
         $usrSQL = "SELECT originalaccountname, emailaddress, allowind, allowproc, allowcoord, allowhpr, allowinvtry, allowfinancials, presentinstitution, timestampdiff(day,now(),passwordexpiredate) as daystilexpire, accesslevel, accessnbr FROM four.sys_userbase where sessionid = :sess and allowind = 1 and timestampdiff(day,now(),passwordexpiredate) > 0 ";
         $usrR = $conn->prepare($usrSQL); 
         $usrR->execute(array(':sess' => $authuser)); 
@@ -6727,18 +6738,17 @@ SQLSTMT;
          $sdR = $conn->prepare($sdInsSQL); 
          $sdR->execute(array(':acceptedby' => trim($pdta['sdcAcceptedBy']) ,':acceptedbyemail' => trim($pdta['sdcAcceptorsEmail']),':ponbr' => trim($pdta['sdcPurchaseOrder']) ,':rqstshipdate' => trim($pdta['sdcRqstShipDateValue']),':rqstpulldate' => trim($pdta['sdcRqstToLabDateValue']),':comments' => trim($pdta['sdcPublicComments']),':investcode' => strtoupper(trim($pdta['sdcInvestCode'])),':investname' => trim($pdta['sdcInvestName']),':investemail' => trim($pdta['sdcInvestEmail']),':investinstitution' => strtoupper(trim($pdta['sdcInvestInstitution'])),':institutiontype' => trim($pdta['sdcInvestTQInstType']),':investdivision' => trim($pdta['sdcInvestPrimeDiv']),':oncreationinveststatus' => trim($pdta['sdcInvestTQStatus']),':shipaddy' => trim($pdta['sdcInvestShippingAddress']),':shipphone' => trim($pdta['sdcShippingPhone']),':billaddy' => trim($pdta['sdcInvestBillingAddress']),':billphone' => trim($pdta['sdcBillPhone']),':setupby'  => $usr, ':courier' => $crName, ':couriernbr' => $crNbr, ':tqcourierid' => $crID  )); 
 
-
          $shipdocnbr = $conn->lastInsertId();         
          $dta['shipdocrefid'] = $shipdocnbr; 
-
-         
-         
          
          $sdStsInsSQL = "insert into masterrecord.history_shipdoc_actions(shipdocrefid, status, statusdate, bywhom, ondate, segmentreference) values( :shipdocrefid, :status, now(), :bywhom, now(), :sid)";
          $sdStsInsR = $conn->prepare($sdStsInsSQL); 
          $sdStsInsR->execute(array(':shipdocrefid' => $shipdocnbr, ':status' => 'SHIPDOCCREATED', ':bywhom' => $usr, ':sid' => 0)); 
 
          //ADD SEGMENTS TO SHIPDOCDETAIL / UPDATE MASTERRECORD SEGMENT
+
+
+
          $segstsSQL = "SELECT menuvalue, additionalinformation FROM four.sys_master_menus where menu = :menu and additionalinformation = :addinformation and dspind = 1";
          $segstsR = $conn->prepare($segstsSQL); 
          $segstsR->execute( array ( ':menu' => 'SEGMENTSTATUS', ':addinformation' => 'SHIPDOCSEGSTATUS' )); 

@@ -106,11 +106,10 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $dt = "SHIPMENT MANIFEST";
             $docIdElem = explode("-", $unencry);
             $docid = $docIdElem[0];
-            //TODO: TURN INTO WEBSERVICE
-            $prSQL = "select shipdocrefid FROM masterrecord.ut_shipdoc sd where shipdocrefid = :prid"; 
-            $prR = $conn->prepare($prSQL);
-            $prR->execute(array(':prid' => $docid));
-            $pr = $prR->fetch(PDO::FETCH_ASSOC);
+            //$prSQL = "select shipdocrefid FROM masterrecord.ut_shipdoc sd where shipdocrefid = :prid"; 
+            //$prR = $conn->prepare($prSQL);
+            //$prR->execute(array(':prid' => $docid));
+            //$pr = $prR->fetch(PDO::FETCH_ASSOC);
             $bgnbr = '';                  
             break;
         case 'reports': 
@@ -192,14 +191,17 @@ function pagetabs($docobject) {
       $thisTab = "ScienceServer System Reports";
       break;  
     case 'CHART REVIEW':
-        $dspdoc = 'CR-' . substr(('000000' . $docobject['documentid']),-6);
-        $thisTab = "Chart Review {$dspdoc}";
-    break;
+      $dspdoc = 'CR-' . substr(('000000' . $docobject['documentid']),-6);
+      $thisTab = "Chart Review {$dspdoc}";
+      break;
     case 'SCIENCESERVER HELP DOCUMENT':
-    $thisTab = "ScienceServer Help Document";
-    break;
+      $thisTab = "ScienceServer Help Document";
+      break;
+    case 'SHIPMENT MANIFEST':
+      $thisTab = substr(('000000' . $docobject['documentid']),-6) . " Shipment Document"; 
+      break;
     default: 
-      $thisTab =  substr(('000000' . $docobject['documentid']),-6) . " Shipment Document"; 
+      $thisTab =  "SCIENCESERVER PRINTABLE DOCUMENTS"; 
     break; 
   }
   return $thisTab;
@@ -336,25 +338,103 @@ class sysreportprintables {
 LBLLBL;
     $rowTbl .= "<td>{$lblTbl}</td>";
     $cellCntr++;
-    }
-    
-    
-    
-    
+    } 
  $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$rowTbl}</tr></table>"; 
-
-
-
       return $resultTbl;    
     } 
 
     function histologysheet($rptdef) { 
       $at = genAppFiles;
       $tt = treeTop;
-      $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
-      $r = json_encode($rptdef);
+      $favi = base64file("{$at}/publicobj/graphics/psom_logo_blue.png", "upennicon", "png", true, " style=\"height: .3in;  \" ");
+      $r = $rptdef;
+      $rptspec = json_decode($r['DATA']['requestjson'],true);
 
-      $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$r}</tr></table>"; 
+      $usr = $rptspec['user'][0]['originalaccountname'];
+      $usremail = $rptspec['user'][0]['emailaddress'];
+      $timestamp = strtotime( $r['DATA']['onwhen'] );
+      $dspdate = date('Ymd',$timestamp);
+      $presentinstitution = $rptspec['user'][0]['presentinstitution'];
+
+    //****************CREATE BARCODE 
+      $vbcode = "{$at}/tmp/hist" . generateRandomString() . ".png";
+      ////code128/code128a/code128b/code39/code25/
+      prntbarcode("{$vbcode}", "CHTN" . $dspdate, "30", "horizontal", "code39", false, 1); 
+      $sidebcode = base64file("{$vbcode}", "sidebarcode", "png", true, "  ");
+    //********************END BARCODE CREATION
+
+      
+    require(genAppFiles . "/dataconn/sspdo.zck"); 
+    $dspdata = array(); 
+    //TURN THIS INTO A WEBSERVICE 
+    $dataSQL = "SELECT pb.pbiosample, pb.seglabel, des.speccat, des.primarysite, pb.prp, pb.prpmet, qty as nbrofblock, nbrOSlides, sld.prpmet as sldprpmet FROM four.ut_procure_segment pb left join ( select count(1) as nbrOSlides, prpMet, cutfromblockid from four.ut_procure_segment where procuredat = :instone and date_format(inputon,'%Y%m%d') = :dteone and prp = 'SLIDE' group by prpmet, cutfromblockid) as sld on pb.bgs = sld.cutfromblockid left join (select * from four.ref_procureBiosample_designation where activeind = 1) des on pb.pbiosample = des.pbiosample where pb.procuredat = :insttwo and date_format(pb.inputon,'%Y%m%d') = :dtetwo and pb.prp = 'PB' and nbrOSlides is not null order by pb.pbiosample asc";
+    $dataRS = $conn->prepare($dataSQL); 
+    $dataRS->execute(array( ':instone' => $presentinstitution, ':insttwo' => $presentinstitution, ':dteone' => $dspdate, ':dtetwo' => $dspdate)); 
+    while ( $rd = $dataRS->fetch(PDO::FETCH_ASSOC)) { 
+      $dspdata[] = $rd;
+    }
+
+    //[{"pbiosample":87905,"seglabel":"001","specCat":"NORMAL","primarySite":"KIDNEY","prp":"PB","prpmet":"H&ESLIDE","nbrofblock":1,"nbrOSlides":1},
+    $dsptbl = "<table border=0 cellspacing=0 cellpadding=0 width=100% id=rqstTbl><thead><th rowspan=2>#</th><th rowspan=2>Case<br>Number</th><th rowspan=2>Container<br>Number</th><th rowspan=2>Label</th><th rowspan=2>Tissue</th><th rowspan=2>Prep</th><th rowspan=2>Added</th><th rowspan=2># of<br>Block</th><th colspan=2 style=\"border-bottom: none; border-right: 2px solid rgba(48,57,71,1);\">Slide Requests</th><th rowspan=2>Cass.<br>Sent</th><th rowspan=2>Cass.<br>Recvd</th><th rowspan=2>SLIDE<br>Sent</th><th rowspan=2>SLIDE<br>Rcvd</th></tr><tr><th style=\"border-right: none;\">#</th><th style=\"border-right: 2px solid rgba(48,57,71,1);\">Type</th></thead><tbody>";
+
+    $cntr = 1;
+    $items = 0;
+    $slidesrq = 0;
+    foreach ( $dspdata as $k => $v ) {
+      $nob = (int)$v['nbrofblock'];  
+      $dsptbl .= "<tr><td class=linecounter>{$cntr}</td><td class=casedsp>{$v['pbiosample']}</td><td>{$v['seglabel']}</td><td>{$v['primarySite']}</td><td>{$v['specCat']}</td><td>{$v['prp']}/{$v['prpmet']}</td><td>&nbsp;</td><td valign=right>{$nob}</td><td>{$v['nbrOSlides']}</td><td style=\"border-right: 2px solid rgba(48,57,71,1);\">{$v['sldprpmet']}</td><td class=writables>&nbsp;</td><td class=writables>&nbsp;</td><td class=writables>&nbsp;</td><td class=writables>&nbsp;</td></tr>";
+      $slidesrq += (int)$v['nbrOSlides'];
+      $cntr++;
+      $items++;
+    }
+
+    $dttmdsp = date('M dS, Y H:i'); 
+    $footTbl = "<table border=0><tr><td align=right>Total Requests: {$items}</td></tr>   <tr><td align=right><b>Slides Requested</b>: <b>{$slidesrq}</b></td></tr>  <tr><td align=right><b>Requesting Technician</b>: {$usr}</td></tr>   <tr><td align=right><b>Printed</b>: {$dttmdsp}</td></tr>      </table>";
+
+    $dsptbl .= "</tbody><tfoot><tr><td colspan=10 align=right>{$footTbl}</td><td colspan=4 valign=bottom align=right style=\"padding: 0 2px 4px 0;\">{$sidebcode}</td></tr><tr><td colspan=14 style=\"font-size: 9pt; fotn-weight: bold; text-align: center; padding: 8px 4px 4px 4px;\">FOR QUESTIONS CALL (215) 662-4570 OR EMAIL CHTNMAIL@UPHS.UPENN.EDU</td></tr></tfoot></table>";
+
+//<tr><td> {$usr} {$usremail} {$presentinstitution} </td></tr>
+    $resultTbl = <<<RTNTHIS
+
+<style> 
+@import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
+html {margin: 0; height: 100%; width: 100%; box-sizing: border-box;}
+body { margin: 0;  height: 100%; width: 100%; box-sizing: border-box; font-family: Roboto; color: rgba(48,57,71,1); }
+#rqstTbl { font-size: 10pt; margin-top: 10px; border: 2px solid rgba(48,57,71,1); }
+#rqstTbl thead th { background: #eee; border-bottom: 2px solid rgba(48,57,71,1); border-right: 1px solid rgba(48,57,71,1); font-size: 8pt; font-weight: bold; padding: 4px 0 4px 0;  } 
+#rqstTbl thead th:nth-last-child(1) { border-right: none; } 
+
+#rqstTbl tbody td { font-size: 9pt; padding: 3px; border-bottom: 1px solid rgba(48,57,71,1); border-right: 1px solid rgba(48,57,71,1); }
+#rqstTbl tbody td:nth-last-child(1) { border-right: none; }
+
+.linecounter { width: 20px; text-align: center; }
+.casedsp { 30px; }  
+.writables { width: 30px; }  
+
+#rqstTbl tfoot tr td table tr td { border-right: none; border-bottom: none; padding: 0; } 
+
+</style>
+
+<table border=0 style="width: 8in;">
+<tr><td>
+  <table width=100% cellspacing=0 cellpadding=0 border=0><tr><td width=25%>{$favi}</td>
+                                                             <td style="font-size: 8pt;text-align:center;" width=50%><b>Hospital of the University of Pennsylvania</b><br>Department of Pathology and Laboratory Medicine<br>Histology Tissue Section Log</td>
+                                                             <td align=right>{$sidebcode}</td></tr>
+  </table>
+  </td></tr>
+<tr><td> <table width=100% cellspacing=0 cellpadding=0 border=0>
+                   <tr><td valign=top width=25% style="font-size: 9pt;"><b>PA</b>: {$presentinstitution} <br>CHTN/VAL</td>
+                       <td width=50% style="text-align: center;"><span style="font-size: 22pt; font-weight: bold;">NO EOSIN</span><br><span style="font-size: 16pt;font-style: italic;">HISTOLOGY</span></td>
+                       <td valign=top align=right style="font-size: 9pt;">Date: [{$r['DATA']['onwhen']}] <br>Tops Written: {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>Slides Written: {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} </td></tr></table>              </td></tr>
+
+<tr><td> {$dsptbl} </td></tr>
+
+</table>
+RTNTHIS;
+
+
+
+
       return $resultTbl;    
     }
 
@@ -465,8 +545,6 @@ BIOGROUPLINE;
                 foreach ($val['segmentlist'] as $sky => $sval) {
                   $hpri = ( (int)$sval['hprind'] === 1 ) ? "Y" : "";  
                   $ass = ( strtoupper(substr($sval['assigninvestid'],0,3)) === 'INV' ) ? "{$sval['assigndspname']} ({$sval['assigninvestid']}) [{$sval['assignrequestid']}]" : "{$sval['assigninvestid']}";
-
-
                   $rsltDsp .= <<<SEGLINE
 <tr>
 <td style="padding: 4px; border: 1px solid #f5f5f5; border-left: none; border-top: none;" valign=top>{$sval['pbiosample']}T{$sval['segdsplbl']}</td>
@@ -656,7 +734,26 @@ function getShipmentDocument($sdid, $originalURL) {
     require(serverkeys . "/sspdo.zck");  
     $dspsd = substr("000000{$sdid}",-6);
     session_start();
-    
+    $sess = session_id(); 
+
+    $usrChkSQL = "SELECT originalaccountname FROM four.sys_userbase where sessionid = :sessionid and allowind = 1 and sessionexpire > now() and passwordExpireDate > now()";
+    $usrChkRS = $conn->prepare($usrChkSQL); 
+    $usrChkRS->execute(array(':sessionid' => $sess));
+    if ( $usrChkRS->rowCount() < 1 ) {
+      $docText = "USER NOT ALLOWED";  
+      $filehandle = generateRandomString();                
+      $sdDocFile = genAppFiles . "/tmp/sdz{$filehandle}.html";
+      $sdDhandle = fopen($sdDocFile, 'w');
+      fwrite($sdDhandle, $docText);
+      fclose;
+      $sdPDF = genAppFiles . "/publicobj/documents/shipdoc/shipdoc{$filehandle}.pdf";
+      $linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED Shipment Doc {$dspsd}\"     {$sdDocFile} {$sdPDF}";
+      $output = shell_exec($linuxCmd);
+    } else {
+
+        $usr = $usrChkRS->fetch(PDO::FETCH_ASSOC); 
+
+
     //****************CREATE BARCODE
         require ("{$at}/extlibs/bcodeLib/qrlib.php");
         $tempDir = "{$at}/tmp/";
@@ -722,14 +819,16 @@ function getShipmentDocument($sdid, $originalURL) {
               $iname = "[{$sd['investname']}]";
             }
             
-            //TODO: Turn this into a webservice 
-            $dtlSQL = "SELECT ifnull(sg.qty,0) as qty, ifnull(sg.bgs,'') as bgs, ifnull(bs.pxiage,'') as pxiage, ifnull(bs.pxirace,'') as pxirace, ifnull(bs.pxigender,'') as pxigender, ifnull(bs.anatomicsite,'') as site, ifnull(bs.subsite,'') as subsite, ifnull(bs.diagnosis,'') as dx, ifnull(bs.subdiagnos,'') as subdx, ifnull(bs.tisstype,'') as specimencategory, ifnull(sg.hourspost,0) as hrpst, ifnull(sg.prepmethod,'') as prepmet , ifnull(sg.preparation,'') as preparation, ifnull(sg.metric,0) as metric, ifnull(mt.longvalue,'') as metricuom, ifnull(cx.dspvalue,'') as chemo, ifnull(rx.dspvalue,'') as rad FROM masterrecord.ut_shipdocdetails sdd left join masterrecord.ut_procure_segment sg on sdd.segid = sg.segmentid left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample left join (SELECT  menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') mt on sg.metricUOM = mt.menuvalue left join (SELECT  menuvalue, dspvalue FROM four.sys_master_menus where menu = 'CX') cx on bs.chemoind = cx.menuvalue  left join (SELECT  menuvalue, dspvalue FROM four.sys_master_menus where menu = 'RX') rx on bs.radind = rx.menuvalue  where sdd.shipdocrefid = :sdnbr order by sg.bgs";
+            //TODO: Turn this into a webservice
+            $dtlSQL = "SELECT ifnull(sg.qty,0) as qty, ifnull(sg.bgs,'') as bgs, ifnull(bs.pbiosample,'') as pbiosample, ucase(ifnull(bs.proctype,'')) as proctype, ucase(substr(ifnull(prpt.dspvalue,''),1,1)) as prptdsp, ifnull(hprind,0) as hprind, ifnull(qcind,0) as qcind, ifnull(bs.pxiage,'') as pxiage, ifnull(bs.pxirace,'') as pxirace, ifnull(bs.pxigender,'') as pxigender, ifnull(bs.anatomicsite,'') as site, ifnull(bs.subsite,'') as subsite, ifnull(bs.diagnosis,'') as dx, ifnull(bs.subdiagnos,'') as subdx, ifnull(bs.tisstype,'') as specimencategory, ifnull(sg.hourspost,0) as hrpst, ifnull(sg.prepmethod,'') as prepmet , ifnull(sg.preparation,'') as preparation, ifnull(sg.metric,0) as metric, ifnull(mt.longvalue,'') as metricuom, ifnull(cx.dspvalue,'') as chemo, ifnull(rx.dspvalue,'') as rad, date_format(procurementdate,'%Y-%m-%d') as procurementdate FROM masterrecord.ut_shipdocdetails sdd left join masterrecord.ut_procure_segment sg on sdd.segid = sg.segmentid left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') mt on sg.metricUOM = mt.menuvalue left join (SELECT  menuvalue, dspvalue FROM four.sys_master_menus where menu = 'CX') cx on bs.chemoind = cx.menuvalue  left join (SELECT  menuvalue, dspvalue FROM four.sys_master_menus where menu = 'RX') rx on bs.radind = rx.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') prpt on bs.pathReport = prpt.menuvalue where sdd.shipdocrefid = :sdnbr order by sg.bgs"; 
             $dtlR = $conn->prepare($dtlSQL); 
             $dtlR->execute(array(':sdnbr' => $sdid)); 
 
             $nLines = 0;
             $tQty = 0;
             $rower = 0;
+            $mias = 0;
+            $miaa = 0; 
             while ($dtl = $dtlR->fetch(PDO::FETCH_ASSOC)) { 
                 
                 $bd = (trim($dtl['site']) !== "") ? trim($dtl['site']) : "";
@@ -797,10 +896,38 @@ function getShipmentDocument($sdid, $originalURL) {
                     $rower = 0;                    
                 }
                 
-                
+                //CHECK FOR DIRECT SHIPMENT MIA
+                if ( strtoupper($dtl['prptdsp']) === 'P' && (int)$dtl['hprind'] === 0 ) { 
+                   //TODO: MAKE THIS A WEBSERVICE 
+                   $chkSQL = "SELECT * FROM masterrecord.ut_master_furtherlabactions where frommodule = :module and objpbiosample = :pbio and actioncode = :actioncode and objshipdoc = :objshipdoc"; 
+                   $chkRS = $conn->prepare($chkSQL);
+                   $chkRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-' . $dtl['proctype'], ':objshipdoc' => $sdid));
+                   if ( $chkRS->rowCount() === 0 ) {
+                     //ADD MIA
+                     $insSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule,objshipdoc,objpbiosample,actioncode,actiondesc,actionrequestedby,actionrequestedon) VALUES ('SHIPPING',:objshipdoc,:biosampleref,:miatype,'PRE-QMS DIRECT SHIPMENT',:rqstby,now())";
+                     $insRS = $conn->prepare($insSQL); 
+                     $insRS->execute(array(':objshipdoc' => $sdid,':biosampleref' => (int)$dtl['pbiosample'], ':rqstby' => $usr['originalaccountname'], ':miatype' => "MIA-{$dtl['proctype']}"));
+                   }
+                }
+                //CHECK MASTER FURTHER ACTIONS FOR MIA REFERENCE
+                $miaSQL = "SELECT actioncode, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompletedon, ifnull(actioncompletedby,'') as actioncompletedby FROM masterrecord.ut_master_furtherlabactions where frommodule = :module and objpbiosample = :pbio and actioncode = :actioncode and objshipdoc = :objshipdoc"; 
+                $miaRS = $conn->prepare($chkSQL);
+                $miaRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-' . $dtl['proctype'], ':objshipdoc' => $sdid));
+                if ( $miaRS->rowCount() < 1) { 
+                } else { 
+                  $mia = $miaRS->fetch(PDO::FETCH_ASSOC); 
+                  $footnoteind = "";
+                  if ( trim($mia['actioncompleteon']) === "" ) { 
+                      //DISPLAY MIA
+                      $footnoteind = "*";
+                      if ( $dtl['proctype'] === 'S' ) { $mias = 1; }
+                      if ( $dtl['proctype'] === 'A' ) { $miaa = 1; }
+                  }
+                }
+
                 $innerTblLine .=  "<tr style=\"{$bgc} height: 20pt;\">"
                                              . "<td style=\"text-align: right; padding: 1px 3px 1px 1px; border: 1px solid rgba(203,203,203,1); border-left: none;border-top: none;  \">{$dtl['qty']}</td>"
-                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$dtl['bgs']}</td>"
+                                             . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$dtl['bgs']} {$footnoteind}</td>"
                                              . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$bd}</td>"
                                              . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$prp}</td>"
                                              . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none; white-space: nonwrap; \">{$weightMet}</td>"                                             
@@ -809,8 +936,26 @@ function getShipmentDocument($sdid, $originalURL) {
                $nLines += 1;
                $tQty += (int)$dtl['qty'];
             }
-            
-            
+
+
+
+            $miaText = "";
+            if ( $miaa === 1 && $mias === 1) { 
+              //DISPLAY MIA BOTH TEXT
+                  $miaText = "<tr><td class=MIAText>* We strive to provide you with all required specimen data available at the time of tissue shipment, but there are some exceptions.  Same-day direct tissue shipments (Fresh) are provided with a provisional diagnosis only, as pathology reports are not immediately available.  Tissue samples that are not accessioned by surgical pathology will never produce a report (e.g., normal placenta, normal foreskin, etc.).  Autopsy reports may not be available for one to two months.  The missing reports will be emailed to you as soon as they become available. Please feel free to contact our coordinators at (215) 662-4570 if you have any questions.  Thank you. </td></tr>";
+            } else { 
+              if ( $miaa === 1 ) { 
+                  //DISPLAY MIA AUTOPSY
+                  $miaText = "<tr><td class=MIAText>* We strive to provide you with all required specimen data available at the time of tissue shipment, but there are some exceptions.  Same-day direct tissue shipments (Fresh) are provided with a provisional diagnosis only, as pathology reports are not immediately available.  Autopsy reports may not be available for one to two months.  The missing reports will be emailed to you as soon as they become available. Please feel free to contact our coordinators at (215) 662-4570 if you have any questions.  Thank you. </td></tr>";
+              } 
+              if ( $mias === 1 ) {
+                  //DISPLAY MIA SURGERY
+                  $miaText = "<tr><td class=MIAText>* We strive to provide you with all required specimen data available at the time of tissue shipment, but there are some exceptions.  Same-day direct tissue shipments (Fresh) are provided with a provisional diagnosis only, as pathology reports are not immediately available.  Tissue samples that are not accessioned by surgical pathology will never produce a report (e.g., normal placenta, normal foreskin, etc).  The missing reports will be emailed to you as soon as they become available. Please feel free to contact our coordinators at (215) 662-4570 if you have any questions.  Thank you.</td></tr>";
+              }
+            }
+
+
+
     $docText = <<<RTNTHIS
 <html>
 <head>
@@ -818,6 +963,7 @@ function getShipmentDocument($sdid, $originalURL) {
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
 html {margin: 0;}
 body { margin: 0; font-family: Roboto; font-size: 9pt; color: rgba(48,57,71,1); }
+.MIAText { font-size: 7pt; padding: 25px 30px; text-align: justify;   }
 </style>
 </head>
 <body>
@@ -908,7 +1054,10 @@ body { margin: 0; font-family: Roboto; font-size: 9pt; color: rgba(48,57,71,1); 
     </table>
     
  </td></tr>
-     
+
+{$miaText}
+
+
 <tr><td style="background: rgba(0,0,0,1);"> <!--ROW 6 //-->
 
     <table style="font-size: 7pt; color: rgba(255,255,255,1);">       
@@ -929,10 +1078,11 @@ $sdDhandle = fopen($sdDocFile, 'w');
 fwrite($sdDhandle, $docText);
 fclose;
 $sdPDF = genAppFiles . "/publicobj/documents/shipdoc/shipdoc{$filehandle}.pdf";
-$linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED Shipment Doc {$dspsd}\"     {$sdDocFile} {$sdPDF}";
+$linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED Shipment Doc {$dspsd} ({$usr['originalaccountname']})\"     {$sdDocFile} {$sdPDF}";
 $output = shell_exec($linuxCmd);
         
         }
+    }
     return array('status' => 200, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => 'pdf');
 }
 
@@ -1351,7 +1501,7 @@ class whtmltopdfcommands {
     }
 
     function histologysheet() { 
-        $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8 ";
+        $linuxcmd = " --page-size Letter  --margin-bottom 15 --margin-left 4  --margin-right 4  --margin-top 4 ";
         return $linuxcmd;
     }
 

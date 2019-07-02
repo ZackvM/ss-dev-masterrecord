@@ -2737,6 +2737,7 @@ $innerBar = <<<BTNTBL
 BTNTBL;
 break; 
 case 'coordinatorResultGrid':
+  //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltNew><tr><td><i class="material-icons">fiber_new</i></td><td>New Search</td></tr></table></td>
@@ -2756,7 +2757,21 @@ $innerBar = <<<BTNTBL
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltExport><tr><td><i class="material-icons">import_export</i></td><td>Export Results</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltToggle><tr><td><i class="material-icons">get_app</i></td><td>Toggle Select</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltParams><tr><td><i class="material-icons">settings</i></td><td>View Parameters</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
+
+
+  <td class=topBtnHolderCell>
+    <div class=ttholder>
+      <table class=topBtnDisplayer id=btnAssignGrouping><tr><td><i class="material-icons">insert_link</i></td><td>Assignment &amp; Linkage</td></tr></table>
+      <div class=tt>
+        <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
+          <tr class=btnBarDropMenuItem id=btnBarRsltAssignSample><td><i class="material-icons">arrow_right</i></td><td>Assign Segments to Requests &nbsp;&nbsp;&nbsp</td></tr>     
+          <tr class=btnBarDropMenuItem id=btnBarRsltRequestLink><td><i class="material-icons">arrow_right</i></td><td>Create Request Linkage &nbsp;&nbsp;&nbsp</td></tr>     
+        </table>
+      </div>  
+    </div>
+  </td>           
+
+
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltMakeSD><tr><td><i class="material-icons">local_shipping</i></td><td>Create Shipdoc</td></tr></table></td>  
 
 

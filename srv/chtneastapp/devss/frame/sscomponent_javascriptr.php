@@ -4872,6 +4872,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
+  if (byId('btnBarRsltRequestLink')) { 
+    byId('btnBarRsltRequestLink').addEventListener('click',function() { 
+      alert('Create Linkage Here');
+
+    },false );
+  }
+
   if (byId('btnBarRsltCheckInTray')) { 
     byId('btnBarRsltCheckInTray').addEventListener('click', function() { 
       var error = 0;  
@@ -4888,6 +4895,11 @@ document.addEventListener('DOMContentLoaded', function() {
               msg = 'All Segments must be HPR Segments and must be assigned to the same HPR Slide Tray';
             }
           }   
+        }
+      
+        if ( boxid.trim() === "" ) { 
+              error = 1; 
+              msg = 'No Segments are marked with an HPR Tray';
         }
 
       } else { 
