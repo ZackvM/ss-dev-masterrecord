@@ -1042,89 +1042,27 @@ PAGEHERE;
 return $rtnthis;    
 }
 
+function qmsactions ( $rqststr, $whichusr ) { 
 
-
-function reportsbu ( $rqststr, $whichusr ) { 
-
-//  if ((int)$whichusr->allowcoord !== 1     ) { 
-//    $pg = "<h1>USER IS NOT ALLOWED TO USE THE REPORT SCREEN";        
-//  } else {    
-   
-   $accesslvl = $whichusr->accessnbr;
-   if (trim($rqststr[2]) === "") { 
-       $dta = json_decode(callrestapi("GET", dataTree . "/report-group-listing", serverIdent, serverpw),true);
-       $itemsfound = $dta['ITEMSFOUND'];      
-       $dspTbl = "<table border=0><tr>";
-       $cellCntr = 0;
-       foreach ($dta['DATA'] as $grpKey => $grpVal) { 
-         if ($cellCntr === 8) { 
-             $dspTbl .= "</tr><tr>";
-             $cellCntr = 0;
-         }  
-         $dspTbl .= "<td class=rptGroupBtn onclick=\"navigateSite('reports/{$grpVal['groupingurl']}');\"><table class=rptGrpTitleBox><tr><td class=rptGrpTitle>{$grpVal['groupingname']}</td></tr><tr><td class=rptGrpDesc>{$grpVal['groupingdescriptions']}</td></tr></table></td>";
-         $cellCntr++;
-       }
-       $dspTbl .= "</tr></table>";
-     $pg = <<<CONTENT
-{$dspTbl}
-CONTENT;
-   }
-
-   if ( (trim($rqststr[2]) !== "" && trim($rqststr[2]) !== 'reportresults' ) && trim($rqststr[3]) === "") {
-       //GET REPORTS IN MODULE ($rqststr[2]) 
-       $dta = json_decode(callrestapi("GET", dataTree . "/group-report-listing/{$rqststr[2]}", serverIdent, serverpw),true);
-       $rptsFound = count($dta['DATA'][0]['rptlist']);
-       $dspTbl = "<table border=0 id=reportListBox><tr><td id=bigTitle>{$dta['DATA'][0]['groupname']}</td></tr><tr><td id=bigDesc>{$dta['DATA'][0]['groupdesc']}</td></tr><tr><td id=bigFound>Reports Found: {$rptsFound}</td></tr><tr><td>";
-       if ((int)$rptsFound > 0) { 
-                 $innerTbl = "<table border=0><tr>";
-                 $innerCellCntr = 0;
-                 foreach ($dta['DATA'][0]['rptlist'] as $k => $v) { 
-                     if ($innerCellCntr === 10) { 
-                         $innerTbl .= "</tr><tr>"; 
-                         $innerCellCntr = 0;
-                     }
-                     $innerTbl .= "<td onclick=\"navigateSite('reports/{$v['groupingurl']}/{$v['urlpath']}');\" class=reportListBtn><table class=reportDefInnerTbl><tr><td class=rptTitle>{$v['reportname']}</td></tr><tr><td class=rptDescription>{$v['reportdescription']}</td></tr></table></td>";
-                 }                 
-                 $innerTbl .= "</tr></table>";
-                 $dspTbl .= $innerTbl;
-                 $innerCellCntr++;
-       }
-       $dspTbl .= "</td></tr></table>";       
-       $pg = <<<CONTENT
-{$dspTbl}
-CONTENT;
-     }  
-
-   if ( trim($rqststr[2]) === 'reportresults' &&  trim($rqststr[3]) !== "") {
-     //TABULAR REPORT RESULTS   
-     $topBtnBar = generatePageTopBtnBar('reportresultsscreen');
-     $pgContent = bldReportResultsScreen(trim($rqststr[3]), $whichusr);
-     $pg = <<<CONTENT
-{$pgContent}
-CONTENT;
-   }
-     
-     if ( trim($rqststr[2]) !== 'reportresults' && trim($rqststr[3]) !== "") {
-       //GET REPORT PARAMETERS
-       $topBtnBar = generatePageTopBtnBar('reportscreen');
-       $reportParameters = bldReportParameterScreen($rqststr[3], $whichusr);        
-       $pg = <<<CONTENT
-{$reportParameters}
-CONTENT;
-     }
-//   }
+    if ( (int)$whichusr->allowqms <> 1 ) { 
+        $pg = "<h1>USER ({$whichusr->userid}) NOT ALLOWED ACCESS TO QMS MODULE";
+    } else { 
+        if ( trim($rqststr[2]) === "" ) { 
+            //GENERATE QUE LIST
+            $topBtnBar = generatePageTopBtnBar('qmsaction');
+            $pg = bldQMSQueList();
+        } else {             
+            $r = explode("/",$_SERVER['REQUEST_URI']);
+            $pg = cryptservice($r[2], 'd');
+            $topBtnBar = generatePageTopBtnBar('qmsactionwork');
+        }
+    }
     
-  $rtnthis = <<<PAGEHERE
+    $rtnthis = <<<PAGEHERE
 {$topBtnBar} 
 {$pg}
 PAGEHERE;
-
-return $rtnthis;    
-}
-
-function qmsactions ( $rqststr, $whichusr ) { 
-
-
+    return $rtnthis;
 }
 
 function scienceserverhelp($rqststr, $whichusr) { 
@@ -1731,7 +1669,7 @@ $fsCalendar = buildcalendar('mainroot', date('m'), date('Y'), $whichUsr->friendl
 //      $weekGoal = "";
 //  }
 
-$graphListArr = ["grphfreezer" => "root_freezers.png", "grphrollshipgrid" => "root_yearrollship.png" , "grphinvestigatorinf" => "root_invnbrs.png", "grphsegshiptotal" => "root_totlshipped.png"];
+$graphListArr = ["grphfreezer" => "root_freezers.png", "grphrollshipgrid" => "root_yearrollship.png" , "grphinvestigatorinf" => "root_invnbrs.png", "grphsegshiptotal" => "root_totlshipped.png", "grphslidessubmitted" => "root_hprslidessubmitted.png"];
 $graphics = array();
 $at = genAppFiles;
 
@@ -1746,7 +1684,7 @@ $grphTbl = <<<METRICGRPHS
 <table border=0>
 <tr><td rowspan=3 valign=top class=dashBoardGraphic>{$graphics['grphrollshipgrid']}</td><td valign=top class=dashBoardGraphic style="height: 10vh;">{$graphics['grphinvestigatorinf']}</td><td class=dashBoardGraphic rowspan=3 valign=top>{$graphics['grphfreezer']}</td></tr>
 <tr><td valign=top class=dashBoardGraphic style="height: 10vh;"> {$graphics['grphsegshiptotal']} </td></tr>
-<tr><td valign=top> &nbsp; </td></tr>
+<tr><td valign=top class=dashBoardGraphic style="height: 10vh;"> {$graphics['grphslidessubmitted']} </td></tr>
 
 </table>
 
@@ -2697,6 +2635,22 @@ $innerBar = <<<BTNTBL
 BTNTBL;
 break;    
 
+case 'qmsactionwork':
+    $innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGrid><tr><td><i class="material-icons">layers_clear</i></td><td>Queue List</td></tr></table></td>
+</tr>
+BTNTBL;
+    break;
+
+
+case 'qmsaction':
+    $innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGrid><tr><td><i class="material-icons">layers_clear</i></td><td>Refresh</td></tr></table></td>
+</tr>
+BTNTBL;
+    break;
 
 case 'reportscreen':
 $innerBar = <<<BTNTBL
@@ -3807,6 +3761,50 @@ $pg = <<<PAGECONTENT
 PAGECONTENT;
 return $pg;       
 }
+
+function bldQMSQueList() {     
+$qmsquedta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-qms-que-list",serverIdent, serverpw, ""), true);    
+$queTbl = "<table border=0><thead><tr><td colspan=5>Que : {$qmsquedta['ITEMSFOUND']}</td></tr></thead><tbody><tr>"; 
+$cellCntr = 0; 
+foreach ($qmsquedta['DATA'] as $qkey => $qval ) { 
+    if ( $cellCntr === 3) { 
+        $queTbl .= "</tr><tr>";
+        $cellCntr = 0;
+    }
+    
+    $procdesig =  ( trim($qval['procspeccat']) !== "" ) ? "[{$qval['procspeccat']}]" : "";
+    $procdesig .= ( trim($qval['procsite']) !== "") ? " " . strtoupper($qval['procsite']) : "";
+    $procdesig .= ( trim($qval['procsubsite']) !== "" ) ?  (trim($procdesig) !== "") ? " (" . strtoupper($qval['procsubsite']) . ")" :  " " . strtoupper($qval['procsubsite']) : "";
+    $procdesig .= ( trim($qval['procdiagnosis']) !== "" ) ?  (trim($procdesig) !== "") ? " / " . strtoupper($qval['procdiagnosis']) :  " " . $qval['procdiagnosis'] : "";
+    $procdesig .= ( trim($qval['procsubdiagnosis']) !== "" ) ?  " (" . strtoupper($qval['procsubdiagnosis']) . ")" :  "";
+    $procdesig = trim($procdesig);
+    
+    $hprdesig = ( trim($qval['hprspeccat']) !== "" ) ? "[{$qval['hprspeccat']}]" : "";
+    $hprdesig .= ( trim($qval['hprsite']) !== "") ? " " . strtoupper($qval['hprsite']) : "";
+    $hprdesig .= ( trim($qval['hprsubsite']) !== "" ) ?  (trim($hprdesig) !== "") ? " (" . strtoupper($qval['hprsubsite']) . ")" :  " " .  strtoupper($qval['hprsubsite']) : "";
+    $hprdesig .= ( trim($qval['hprdiagnosis']) !== "" ) ?  (trim($hprdesig) !== "") ? " / " . strtoupper($qval['hprdiagnosis']) :  " " . $qval['hprdiagnosis'] : "";
+    $hprdesig .= ( trim($qval['hprsubdiagnosis']) !== "" ) ?  " (" . strtoupper($qval['hprsubdiagnosis']) . ")" :  "";
+    $hprdesig = trim($hprdesig);
+    
+    $reviewid = cryptservice($qval['hprresultid'], 'e');
+    
+    $dataTbl = "<table><tr><td class=queDataLabel valign=top>Biogroup/Slide: </td><td class=queDataDsp valign=top>{$qval['readlabel']} / {$qval['hprslidereviewed']} </td></tr>"
+                                   . "<tr><td class=queDataLabel valign=top>HPR Decision: </td><td class=queDataDsp valign=top>{$qval['hprdecisiondsp']}</td></tr>"
+                                   . "<tr><td class=queDataLabel valign=top>Reviewer: </td><td class=queDataDsp valign=top>{$qval['hprby']} :: {$qval['hpron']}</td></tr>"
+                                   . "<tr><td class=queDataLabel valign=top>Process Status: </td><td class=queDataDsp valign=top>{$qval['qmsstatusdsp']}</td></tr>"
+                                   . "<tr><td class=queDataLabel valign=top>Proc-Designation: </td><td class=\"queDataDsp tallDataDsp\" valign=top>{$procdesig}</td></tr>"                              
+                                   . "<tr><td class=queDataLabel valign=top>HPR-Designation: </td><td class=\"queDataDsp tallDataDsp\" valign=top>{$hprdesig}</td></tr>"
+                      . "</table>";
+    $queTbl .= "<td valign=top class=queCellHolder onclick=\"navigateSite('qms-actions/" . $reviewid . "');\">{$dataTbl}</td>";
+    $cellCntr++;
+} 
+$queTbl .= "</tr></table>";
+$pg = <<<PGCONTENT
+        {$queTbl}
+PGCONTENT;
+return $pg;
+}
+
 
 function bldHPRVocabSystemic ( $dialogid, $objectid ) { 
 //TODO: Turn into a webservice    

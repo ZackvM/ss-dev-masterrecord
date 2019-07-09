@@ -290,6 +290,14 @@ $rtnThis = <<<STYLESHEET
 body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box; }
 .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
 
+
+.queDataLabel { color: rgba({$this->color_zackgrey},1); font-weight: bold; font-size: 1.5vh;  width: 7vw; border-bottom: 1px solid rgba({$this->color_darkgrey},.3);  box-sizing: border-box; padding-right: 4px; border-right: 1px solid rgba({$this->color_darkgrey},.3); }
+.queDataDsp  { color: rgba({$this->color_zackgrey},1); font-size: 1.5vh;  width: 20vw; border-bottom: 1px solid rgba({$this->color_darkgrey},.3);  }
+.tallDataDsp { height: 7vh; }
+
+.queCellHolder { border: 1px solid rgba({$this->color_zackgrey},.3); }
+.queCellHolder:hover { cursor: pointer; background: rgba({$this->color_lamber},.8); }
+
 STYLESHEET;
 return $rtnThis;
 }
@@ -1117,6 +1125,7 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #grphinvestigatorinf { width: 13vw; }
 #grphrollshipgrid { height: 37vh;}
 #grphsegshiptotal { width: 13vw; }
+#grphslidessubmitted { width: 13vw; }
 
 
 

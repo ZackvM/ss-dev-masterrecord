@@ -15,6 +15,7 @@ class bldssuser {
     public $allowprocure = 0; 
     public $allowcoord = 0; 
     public $allowhpr = 0;
+    public $allowqms = 0;
     public $allowhprreview = 0; 
     public $allowinventory = 0;
     public $presentinstitution = "";
@@ -52,6 +53,7 @@ class bldssuser {
           $this->allowprocure = $userelements['allowprocurement'];
           $this->allowcoord = $userelements['allowcoordination'];
           $this->allowhpr = $userelements['allowhpr'];
+          $this->allowqms = $userelements['allowqms'];
           $this->allowhprreview = $userelements['allowhprreview'];
           $this->allowinventory = $userelements['allowinventory'];
           $this->presentinstitution = $userelements['presentinstitution'] ;
@@ -90,6 +92,7 @@ class bldssuser {
                 . ", ifnull(ub.allowproc,0) as allowprocurement"
                 . ", ifnull(ub.allowcoord,0) as allowcoordination"
                 . ", ifnull(ub.allowhpr,0) as allowhpr"
+                . ", ifnull(ub.allowqms,0) as allowqms"
                 . ", ifnull(ub.allowhprreview,0) as allowhprreview"
                 . ", ifnull(ub.allowinvtry,0) as allowinventory"
                 . ", ifnull(ub.presentinstitution,'') as presentinstitution"
@@ -133,6 +136,7 @@ class bldssuser {
            $elArr['allowprocurement'] = $ur['allowprocurement'];
            $elArr['allowcoordination'] = $ur['allowcoordination'];
            $elArr['allowhpr'] = $ur['allowhpr'];
+           $elArr['allowqms'] = $ur['allowqms'];
            $elArr['allowhprreview'] = $ur['allowhprreview'];
            $elArr['allowinventory'] = $ur['allowinventory'];
            $elArr['presentinstitution'] = $ur['presentinstitution'];
@@ -220,6 +224,7 @@ class bldssuser {
            $elArr['allowprocurement'] = 0;
            $elArr['allowcoordination'] = 0;
            $elArr['allowhpr'] = 0;
+           $elArr['allowqms'] = 0;
            $elArr['allowhprreview'] = 0;
            $elArr['allowinventory'] = 0;
            $elArr['presentinstitution'] = "";

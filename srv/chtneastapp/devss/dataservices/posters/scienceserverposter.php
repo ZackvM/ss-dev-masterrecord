@@ -33,6 +33,36 @@ function __construct() {
 }
 
 class datadoers {
+    
+    function getqmsquelist ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id();
+
+      //TODO:  DO DATA CHECKS
+      if ( $errorInd === 0 ) {
+
+          $queSQL = "SELECT replace(ifnull(bs.read_label,''),'_','') as readlabel, ifnull(bs.tisstype,'') as procspeccat, ifnull(bs.anatomicsite,'') as procsite, ifnull(bs.subsite,'') as procsubsite, ifnull(bs.diagnosis,'') as procdiagnosis, ifnull(bs.subdiagnos,'') as procsubdiagnosis, ifnull(bs.QCProcStatus,'') as qmsprocstatusvalue, ifnull(hsts.dspvalue,'') as qmsstatusdsp, ifnull(bs.HPRDecision,'') as hprdecisionvalue, ifnull(hdc.dspvalue,'') as hprdecisiondsp, ifnull(hpr.speccat,'') as hprspeccat, ifnull(hpr.site,'') as hprsite, ifnull(hpr.subsite,'') as hprsubsite, ifnull(hpr.dx,'') as hprdiagnosis, ifnull(hpr.subdiagnosis,'') as hprsubdiagnosis, ifnull(bs.HPRResult,0) as hprresultid, replace(ifnull(bs.HPRSlideReviewed,''),'_','') as hprslidereviewed, ifnull(bs.HPRBy,'') as hprby , ifnull(date_format(bs.HPROn, '%m/%d/%Y'),'') as hpron FROM masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as hsts on bs.qcprocstatus = hsts.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hdc on bs.hprdecision = hdc.menuvalue left join (SELECT biohpr, speccat, site, subsite, dx, subdiagnosis FROM masterrecord.ut_hpr_biosample) as hpr on bs.hprresult = hpr.biohpr where hprind = 1 and qcind = 0 and bs.qcprocstatus = 'H' order by pbiosample asc";
+          $queRS = $conn->prepare($queSQL);
+          $queRS->execute(); 
+          $itemsfound = $queRS->rowCount(); 
+          while ( $r = $queRS->fetch(PDO::FETCH_ASSOC)) { 
+              $dta[] = $r;
+          }
+      } 
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
 
     function hprreturnslidetray ( $request, $passdata ) { 
       $rows = array(); 

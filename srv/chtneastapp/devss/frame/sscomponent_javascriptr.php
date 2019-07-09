@@ -2219,6 +2219,18 @@ function qmsactions ( $rqststr ) {
 $tt = treeTop; 
 $rtnThis = <<<RTNTHIS
 
+document.addEventListener('DOMContentLoaded', function() {  
+  
+   if (byId('btnReloadGrid')) { 
+    byId('btnReloadGrid').addEventListener('click', function() { 
+        navigateSite('qms-actions');
+     }, false);        
+   }
+      
+        
+        
+  }, false);  
+        
 
 RTNTHIS;
 return $rtnThis;
@@ -2233,8 +2245,6 @@ session_start();
 $rtnThis = <<<JAVASCR
 
 //TODO: WRITE TIMER FUNCTION TO REFRESH GRID
-
-//   
         
 document.addEventListener('DOMContentLoaded', function() {  
   if (byId('btnRefresh')) { 
