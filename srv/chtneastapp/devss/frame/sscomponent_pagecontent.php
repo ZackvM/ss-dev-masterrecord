@@ -1053,7 +1053,7 @@ function qmsactions ( $rqststr, $whichusr ) {
             $pg = bldQMSQueList();
         } else {             
             $r = explode("/",$_SERVER['REQUEST_URI']);
-            $pg = cryptservice($r[2], 'd');
+            $pg = bldQAWorkbench (  $r[2] );
             $topBtnBar = generatePageTopBtnBar('qmsactionwork');
         }
     }
@@ -1829,7 +1829,7 @@ function buildHPRWorkBenchSide ( $rqsturi, $allowhprreview ) {
     $segbg = explode("::",cryptservice( $rurl[3], 'd', false));
     $segData = json_decode(callrestapi("GET", dataTree. "/do-single-segment/" . $segbg[0],serverIdent, serverpw), true);    
     $sg = $segData['DATA'][0];
-    $prcList = json_decode(callrestapi("GET", dataTree . "/global-menu/hprpercentages",serverIdent,serverpw), true);
+    $prcList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-percentages",serverIdent,serverpw), true);
     $reviewList = json_decode( callrestapi("GET", dataTree . "/hpr-reviewer-list",serverIdent,serverpw), true);
     $techAccList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-technician-accuracy",serverIdent,serverpw), true);
     $tmrGradeScaleList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-tumor-grade-scale",serverIdent,serverpw), true);
@@ -1945,21 +1945,26 @@ $techAccDefaultCode = "";
   }
 $techAcc .= "</table>";
 //END TECH ACC BUILDER
-//FA LISTING
-$fa = "<table border=0  class=\"menuDropTbl hprNewDropDownFont\"><tr><td align=right onclick=\"fillField('fldFurtherAction','','');\" class=ddMenuClearOption>[clear]</td></tr>";
-  foreach ($faList['DATA'] as $procval) { 
-      $fa .= "<tr><td onclick=\"fillField('fldFurtherAction','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
-  }
-$fa .= "</table>";
 
-$faTbl = <<<FATBL
-<table border=0>
-<tr><td class=hprPreLimFldLbl>Further Action</td><td class=hprPreLimFldLbl>Note</td><td rowspan=2 valign=top><table class=tblBtn style="width: 2.3vw;" onclick="manageFurtherActions(1,);"><tr><td><center><i class="material-icons" style="font-size: 1.8vh;">playlist_add</i></td></tr></table> </td></tr>
-<tr><td> <div class=menuHolderDiv><input type=hidden id=hprFAJsonHolder><input type=hidden id=fldFurtherActionValue value=""><input type=text id=fldFurtherAction READONLY class="inputFld hprDataField " style="width: 17vw;" value=""><div class=valueDropDown style="min-width: 20vw;">{$fa}</div></div></td><td><input type=text id=fldFANote class="hprDataField" style="width: 8vw;" ></td></tr>
-<tr><td colspan=3><div id=furtheractiondsplisting style="border: 1px solid rgba(160,160,160,.8); height: 16vh; overflow: auto;"></div></td></tr>
-</table>
-FATBL;
+
+//FA LISTING
+//$fa = "<table border=0  class=\"menuDropTbl hprNewDropDownFont\"><tr><td align=right onclick=\"fillField('fldFurtherAction','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+//  foreach ($faList['DATA'] as $procval) { 
+//      $fa .= "<tr><td onclick=\"fillField('fldFurtherAction','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+//  }
+//$fa .= "</table>";
+//
+//$faTbl = <<<FATBL
+//<table border=1>
+//<tr><td class=hprPreLimFldLbl>Further Action</td><td class=hprPreLimFldLbl>Note</td><td rowspan=2 valign=top><table class=tblBtn style="width: 2.3vw;" onclick="manageFurtherActions(1,);"><tr><td><center><i class="material-icons" style="font-size: 1.8vh;">playlist_add</i></td></tr></table> </td></tr>
+//<tr><td> <div class=menuHolderDiv><input type=hidden id=hprFAJsonHolder><input type=hidden id=fldFurtherActionValue value=""><input type=text id=fldFurtherAction READONLY class="inputFld hprDataField " style="width: 17vw;" value=""><div class=valueDropDown style="min-width: 20vw;">{$fa}</div></div></td><td><input type=text id=fldFANote class="hprDataField" style="width: 8vw;" ></td></tr>
+//<tr><td colspan=3><div id=furtheractiondsplisting style="border: 1px solid rgba(160,160,160,.8); height: 16vh; overflow: auto;"></div></td></tr>
+//</table>
+//FATBL;
 //END FA LISTING
+
+
+
 //MOLE TBL 
     //molecular test
     $molemnu = "<table border=0 width=100% class=\"menuDropTbl hprNewDropDownFont\"><tr><td align=right onclick=\"triggerMolecularFill(0,'','','{$idsuffix}');\" class=ddMenuClearOption>[clear]</td></tr>";
@@ -1969,7 +1974,10 @@ FATBL;
     $molemnu .= "</table>";
 $moleTbl = <<<MOLETBL
       <table border=0>
-       <tr><td colspan=2 class=hprPreLimFldLbl>Indicated Immuno/Molecular Test Results</td><td rowspan=2 valign=top><table class=tblBtn style="width: 2.3vw;" onclick="manageMoleTest(1,'','{$idsuffix}');"><tr><td><i class="material-icons" style="font-size: 1.8vh;">playlist_add</i></td></tr></table></td></tr>
+       <tr><td colspan=2 class=hprPreLimFldLbl>Indicated Immuno/Molecular Test Results</td><td class=hprPreLimFldLbl>Result Index</td><td class=hprPreLimFldLbl colspan=2>Scale Degree</td>
+           <td rowspan=2 valign=top>
+                     <table class=tblBtn style="width: 2.3vw;" onclick="manageMoleTest(1,'','{$idsuffix}');">
+                     <tr><td><i class="material-icons" style="font-size: 2vh;">playlist_add</i></td></tr></table></td></tr>
        <tr><td class=fieldHolder valign=top colspan=2>
                     <div class=menuHolderDiv>
                       <input type=hidden id=hprFldMoleTest{$idsuffix}Value>
@@ -1977,9 +1985,7 @@ $moleTbl = <<<MOLETBL
                       <div class=valueDropDown style="min-width: 25vw;">{$molemnu}</div>
                     </div>
             </td>
-       </tr>
-       <tr><td class=hprPreLimFldLbl>Result Index</td><td class=hprPreLimFldLbl colspan=2>Scale Degree</td></tr>
-       <tr><td class=fieldHolder valign=top>
+            <td class=fieldHolder valign=top>
              <div class=menuHolderDiv>
                <input type=hidden id='hprFldMoleResult{$idsuffix}Value'>
                <input type=text id='hprFldMoleResult{$idsuffix}' READONLY class=hprDataField style="width: 12.5vw;">
@@ -1990,7 +1996,7 @@ $moleTbl = <<<MOLETBL
               <input type=text id=hprFldMoleScale{$idsuffix} class=hprDataField style="width: 12.5vw;">
             </td>
        </tr>
-       <tr><td colspan=3 valign=top>
+       <tr><td colspan=6 valign=top>
            <input type=hidden id=hprMolecularTestJsonHolderConfirm>
            <div id=dspDefinedMolecularTestsConfirm{$idsuffix} class=dspDefinedMoleTests>
            </div>
@@ -2024,22 +2030,24 @@ MOLETBL;
   </tr>
 
 
+  <tr><td style="padding: 1vh 0 0 0; text-align: center; padding: 8px; font-size: 1.5vh; color: rgba(255,255,255,1);background:rgba(100,149,237,1); font-weight: bold;">TUMOR COMPLEXION (PERCENTAGES)</td></tr>
   <tr>
-    <td style="padding: 1vh 0 0 0;"> {$prcTbl} </td>
+    <td> {$prcTbl} </td>
   </tr>
+  <tr><td style="padding: 1vh 0 0 0; text-align: center; padding: 8px; font-size: 1.5vh; color: rgba(255,255,255,1);background:rgba(100,149,237,1); font-weight: bold;">MOLECULAR TESTS</td></tr>
   <tr>
-    <td style="padding: 1vh 0 0 0;"> <table border=0 cellspacing=0 cellpadding=0 width=100%>
-           <tr>
-             <td valign=top width=50%> {$faTbl} </td>
-             <td valign=top> {$moleTbl} </td>
-           </tr>
-         </table>  
+    <td><center> <table border=0 cellspacing=0 cellpadding=0 width=100%>
+                                     <tr>
+                                       <!-- <td valign=top width=50%> {$faTbl} </td> //-->
+                                       <td valign=top> {$moleTbl} </td>
+                                     </tr>
+                                     </table>  
     </td>
   </tr>
   <tr>
     <td style="padding: 1vh 0 0 0;"><table width=100% border=0>
                                       <tr><td class=hprPreLimFldLbl>General Comments</td><td class=hprPreLimFldLbl>Rare Reason</td><td class=hprPreLimFldLbl>Special Instructions to Staff</td></tr>
-                                      <tr><td><textarea id=fldGeneralCmtsTxt style="width: 19vw; height: 8vh;"></textarea></td></td><td><textarea id=fldRareReasonTxt style="width: 19vw; height: 8vh;"></textarea></td><td><textarea id=fldSpecialInstructions style="width: 18vw; height: 8vh;"></textarea></td></tr>
+                                      <tr><td><textarea id=fldGeneralCmtsTxt style="width: 19vw; height: 10vh;"></textarea></td></td><td><textarea id=fldRareReasonTxt style="width: 19vw; height: 10vh;"></textarea></td><td><textarea id=fldSpecialInstructions style="width: 18vw; height: 10vh;"></textarea></td></tr>
                                     </table>
     </td>
   </tr>
@@ -2648,6 +2656,7 @@ case 'qmsaction':
     $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGrid><tr><td><i class="material-icons">layers_clear</i></td><td>Refresh</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnSendEmail><tr><td><i class="material-icons">textsms</i></td><td>Email</td></tr></table></td>
 </tr>
 BTNTBL;
     break;
@@ -3762,46 +3771,166 @@ PAGECONTENT;
 return $pg;       
 }
 
+function bldQAWorkbench ( $encryreviewid ) { 
+
+    $pdta = array();
+    $pdta['reviewid'] = $encryreviewid;
+    $payload = json_encode($pdta);
+    $reviewdta = json_decode(callrestapi("POST", dataTree . "/data-doers/qa-review-workbench-data",serverIdent, serverpw, $payload), true);
+    //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"hprhead":{"hprdecisionvalue":"DENIED","hprrarereason":"","hprgeneralcomments":"","hprspecialinstructions":"","hprinconclusivetext":"","hprunusabletext":"","bsspeccat":"MALIGNANT","bsanatomicsite":"THYROID","bssubsite":"","bsdx":"CARCINOMA","bsdxmod":"MEDULLARY CARCINOMA","bsmets":"","associd":"iVeiYukTZPQczTfahx8y","bschemoindvalue":"2","bschemoinddsp":"Unknown","bsradindvalue":"2","bsradinddsp":"Unknown","bsproctypevalue":"S","bsproctypedsp":"Surgery","bsprocureinstitution":"HUP","bsprocureinstitutiondsp":"Hospital of The University of Pennsylvania","procurementdate":"06\/11\/2019","pathreportid":42593,"pathreport":"Clinical Information:","pruploadedby":"Gina","uploadedon":"07\/01\/2019"}}}
+
+$headdta = $reviewdta['DATA']['hprhead'];
+$reviewer = $headdta['reviewer'];
+$reviewer .= ( trim($headdta['inputby']) !== "" && trim($headdta['reviewer']) !== trim($headdta['inputby']) ) ? " ({$headdta['inputby']})" : ""; 
+
+
+$hprspc = ( trim($headdta['hprspeccat']) !== "" ) ? "<tr><td>Specimen Category</td><tr><tr><td>{$headdta['hprspeccat']}</td></tr>" : "";
+$ss = ( trim($headdta['hprsubsite']) !== "" ) ? " ({$headdta['hprsubsite']})" : "";
+$hprsite = ( trim($headdta['hprsite']) !== "" || trim($ss) !== "" ) ? "<tr><td>Site (Sub-Site)</td><tr><tr><td>{$headdta['hprsite']}{$ss}</td></tr>" : "";
+$hprmod = ( trim($headdta['hprdxmod']) !== "" ) ? " ({$headdta['hprdxmod']})" : "";
+$hprdx = ( trim($headdta['hprdx']) !== "" || trim($hprmod) !== "" ) ? "<tr><td>Diagnosis (Modifier)</td></tr><tr><td>{$headdta['hprdx']}{$hprmod}</td></tr>" : "" ;
+$hprmet = ( trim($headdta['hprmets']) !== "" ) ? "<tr><td>Metastatic FROM</td></tr><tr><td>{$headdta['hprmets']}</td></tr>" : "";
+$involv = ( trim($headdta['hpruninvolveddsp']) !== "" ) ? "<tr><td>Uninvolved Sample</td></tr><tr><td>{$headdta['hpruninvolveddsp']}</td></tr>" : "";
+
+$pxTbl = "<table border=1><tr><td>A/R/S</td></tr>";
+$pxTbl .= "<tr><td>{$headdta['bspxiage']} {$headdta['bspxiageuom']} / {$headdta['bspxirace']} / {$headdta['bspxisexdsp']} </td></tr>";
+$pxTbl .= "</table>";
+
+$procTbl = "<table border=1><tr><td>Procedure</td><td>Institution</td><td>Date</td></tr>";
+
+$procTbl .= "</table>";
+
+
+$tscale = ( trim($headdta['hprtumorscaledsp']) !== "" ) ? " ({$headdta['hprtumorscaledsp']})" : "";
+$tumordsp = ( trim($headdta['hprtumorgrade']) !== "" ) ? "<table border=1><tr><td>TUMOR</td></tr><tr><td>{$headdta['hprtumorgrade']}{$tscale}</td></tr></table>" : "";
+
+$hprdatatbl = <<<DATASTUFF
+<table border=1>
+<tr><td>Review #: </td><td>{$headdta['biohpr']}</td><td>Reviewed: </td><td>{$headdta['reviewedon']}</td><td>Reviewer: </td><td>{$reviewer}</td>  </tr>
+</table>
+<table border=1>
+<tr><td style="text-align: center;">Review Designation</td></tr>
+{$hprspc}
+{$hprsite}
+{$hprdx}
+{$hprmet}
+{$involv}
+</table>
+{$tumordsp}
+{$pxTbl}
+{$procTbl}
+DATASTUFF;
+
+
+
+
+    $hprside = <<<HPRTBL
+<table border=0 cellspacing=0 cellpadding=0 style="width: 30vw; height: 88vh;">
+<tr><td class=headerTitleCell>HPR FOR {$headdta['slidebgs']} / {$headdta['hprdecision']}</td></tr>
+<tr><td valign=top style="height: 3vh;"><table border=1><tr><td onclick="changeSupportingTab(0);">Review</td><td onclick="changeSupportingTab(1);">Pathology<br>Report</td><td onclick="changeSupportingTab(2);">All<br>Segments</td>    </tr></table>        </td></tr>
+<tr><td valign=top>
+
+<div id=masterHold>    
+<div id=dspTabContent0 class=HPRReviewDocument style="display: block;">{$hprdatatbl}</div>
+<div id=dspTabContent1 class=HPRReviewDocument style="display: none;">{$headdta['pathreport']}</div>
+<div id=dspTabContent2 class=HPRReviewDocument style="display: none;">ALL SEGMENTS FOR ALL ASSOCIATIVE GROUPS GO HERE ...</div>
+
+
+</div>
+
+</td></tr>
+</table>
+HPRTBL;
+
+    $pg = <<<PGCONTENT
+<table border=1 style="width: 99vw;">
+<tr><td valign=top style="width: 30vw;">{$hprside}</td><td valign=top>WORK BENCH SIDE</td></tr>
+</table>
+PGCONTENT;
+return $pg;
+}
+
 function bldQMSQueList() {     
 $qmsquedta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-qms-que-list",serverIdent, serverpw, ""), true);    
-$queTbl = "<table border=0><thead><tr><td colspan=5>Que : {$qmsquedta['ITEMSFOUND']}</td></tr></thead><tbody><tr>"; 
-$cellCntr = 0; 
-foreach ($qmsquedta['DATA'] as $qkey => $qval ) { 
-    if ( $cellCntr === 3) { 
-        $queTbl .= "</tr><tr>";
-        $cellCntr = 0;
-    }
-    
+
+$cellCntr = 1;
+$cntConfirm = 0;
+$cntAdd = 0;
+$cntDenied = 0;
+$cntUnuse = 0;
+$cntIncon = 0;
+foreach ($qmsquedta['DATA'] as $qkey => $qval ) {  
     $procdesig =  ( trim($qval['procspeccat']) !== "" ) ? "[{$qval['procspeccat']}]" : "";
     $procdesig .= ( trim($qval['procsite']) !== "") ? " " . strtoupper($qval['procsite']) : "";
     $procdesig .= ( trim($qval['procsubsite']) !== "" ) ?  (trim($procdesig) !== "") ? " (" . strtoupper($qval['procsubsite']) . ")" :  " " . strtoupper($qval['procsubsite']) : "";
     $procdesig .= ( trim($qval['procdiagnosis']) !== "" ) ?  (trim($procdesig) !== "") ? " / " . strtoupper($qval['procdiagnosis']) :  " " . $qval['procdiagnosis'] : "";
     $procdesig .= ( trim($qval['procsubdiagnosis']) !== "" ) ?  " (" . strtoupper($qval['procsubdiagnosis']) . ")" :  "";
     $procdesig = trim($procdesig);
-    
     $hprdesig = ( trim($qval['hprspeccat']) !== "" ) ? "[{$qval['hprspeccat']}]" : "";
     $hprdesig .= ( trim($qval['hprsite']) !== "") ? " " . strtoupper($qval['hprsite']) : "";
     $hprdesig .= ( trim($qval['hprsubsite']) !== "" ) ?  (trim($hprdesig) !== "") ? " (" . strtoupper($qval['hprsubsite']) . ")" :  " " .  strtoupper($qval['hprsubsite']) : "";
     $hprdesig .= ( trim($qval['hprdiagnosis']) !== "" ) ?  (trim($hprdesig) !== "") ? " / " . strtoupper($qval['hprdiagnosis']) :  " " . $qval['hprdiagnosis'] : "";
     $hprdesig .= ( trim($qval['hprsubdiagnosis']) !== "" ) ?  " (" . strtoupper($qval['hprsubdiagnosis']) . ")" :  "";
     $hprdesig = trim($hprdesig);
-    
     $reviewid = cryptservice($qval['hprresultid'], 'e');
-    
-    $dataTbl = "<table><tr><td class=queDataLabel valign=top>Biogroup/Slide: </td><td class=queDataDsp valign=top>{$qval['readlabel']} / {$qval['hprslidereviewed']} </td></tr>"
-                                   . "<tr><td class=queDataLabel valign=top>HPR Decision: </td><td class=queDataDsp valign=top>{$qval['hprdecisiondsp']}</td></tr>"
-                                   . "<tr><td class=queDataLabel valign=top>Reviewer: </td><td class=queDataDsp valign=top>{$qval['hprby']} :: {$qval['hpron']}</td></tr>"
-                                   . "<tr><td class=queDataLabel valign=top>Process Status: </td><td class=queDataDsp valign=top>{$qval['qmsstatusdsp']}</td></tr>"
-                                   . "<tr><td class=queDataLabel valign=top>Proc-Designation: </td><td class=\"queDataDsp tallDataDsp\" valign=top>{$procdesig}</td></tr>"                              
-                                   . "<tr><td class=queDataLabel valign=top>HPR-Designation: </td><td class=\"queDataDsp tallDataDsp\" valign=top>{$hprdesig}</td></tr>"
-                      . "</table>";
-    $queTbl .= "<td valign=top class=queCellHolder onclick=\"navigateSite('qms-actions/" . $reviewid . "');\">{$dataTbl}</td>";
+
+    //TODO:  Figure out a way not to hard code this 
+    switch ( $qval['hprdecisionvalue'] ) { 
+      case 'DENIED':
+        $decIcon = "cancel";
+        $cntDenied++;
+        break;
+      case 'CONFIRM':
+        $decIcon = "check_circle";
+        $cntConfirm++; 
+        break;
+      case 'ADDITIONAL':
+        $decIcon = "add_circle";
+        $cntAdd++;
+        break;
+      case 'INCONCLUSIVE':
+        $decIcon = "help";
+        $cntIncon++;
+        break;
+      case 'UNUSABLE':
+        $decIcon = "block";
+        $cntUnuse++;
+        break;
+    }
+    $dataTbl = "<div class=qmsQueItemTbl><div class=tblDspRow><div class=queDataLabel valign=top>Review: </div><div class=queDataDsp valign=top>{$qval['hprslidereviewed']} ({$qval['hprby']} :: {$qval['hpron']})</div></div>"
+                                   . "<div class=tblDspRow><div class=queDataLabel valign=top>HPR Decision: </div><div class=queDataDsp valign=top>{$qval['hprdecisiondsp']}</div></div>"
+                                   . "<div class=tblDspRow><div class=queDataLabel valign=top>Proc-Designation: </div><div class=\"queDataDsp\" valign=top>{$procdesig}</div></div>"                              
+                                   . "<div class=tblDspRow><div class=queDataLabel valign=top>HPR-Designation: </div><div class=\"queDataDsp\" valign=top>{$hprdesig}</div></div>"
+                      . "</div>";
+    $iQueTbl .= "<tr onclick=\"navigateSite('qms-actions/" . $reviewid . "');\"><td class=\"queCellHolder sideiconholder\"><i class=\"material-icons hprdecisionicon decision_{$qval['hprdecisionvalue']} \">{$decIcon}</i></td><td valign=top class=queCellHolder>{$dataTbl}</td></tr>";
     $cellCntr++;
-} 
-$queTbl .= "</tr></table>";
-$pg = <<<PGCONTENT
-        {$queTbl}
-PGCONTENT;
+}
+
+
+$pg = <<<BLDTBL
+<div id=legendDsp>
+
+       <table border=0 id=legendTbl>
+            <tr><td colspan=3 class=legendTitle>Legend &amp; Count</td></tr>
+            <tr><td><i class="material-icons dspgreen">check_circle</i></td><td>Confirmed Cases </td><td class=nbrDsp>{$cntConfirm} </td></tr>
+            <tr><td><i class="material-icons dspblue">add_circle</i></td><td>With Additions </td><td class=nbrDsp>{$cntAdd} </td></tr>                       
+            <tr><td><i class="material-icons dspred">cancel</i></td><td>Denied Cases</td><td class=nbrDsp>{$cntDenied}</td></tr>
+            <tr><td><i class="material-icons dspbrown">block</i></td><td>Unusable Cases</td><td class=nbrDsp>{$cntUnuse}</td></tr> 
+            <tr><td><i class="material-icons dsppurple">help</i></td><td>Inconclusive</td><td class=nbrDsp>{$cntIncon}</td></tr>                       
+            <tr><td></td><td><b>Total Queued </td><td class=nbrDsp><b>{$qmsquedta['ITEMSFOUND']}</td></tr>
+       </table>
+
+</div>
+
+<table border=0 id=mainDspTbl><tr><td class=tblTitle >QA Case Review Queue</td></tr>
+<tr><td>
+<table border=0 id=dspQueTbl>
+<tbody> 
+{$iQueTbl}
+</table>
+</td></tr>
+</table>
+BLDTBL;
 return $pg;
 }
 

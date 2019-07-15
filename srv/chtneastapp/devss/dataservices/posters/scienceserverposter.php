@@ -33,7 +33,107 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+    function qareviewworkbenchdata ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id();
+
+      $reviewid =  cryptservice($pdta['reviewid'],'d');
+
+      //TODO:  DO DATA CHECKS
+      if ( $errorInd === 0 ) { 
+
+        $headSQL = <<<HEADHPRSQL
+SELECT 
+substr(concat('000000',hpr.biohpr),-6) biohpr
+, replace(hpr.bgs,'_','') as slidebgs
+, ifnull(date_format(hpr.reviewedon,'%m/%d/%Y'),'') as reviewedon 
+, ifnull(hpr.reviewer,'') as reviewer
+, ifnull(hpr.inputby,'') as inputby
+, ifnull(hpr.decision,'') as hprdecisionvalue
+, ifnull(dcs.dspvalue,'') as hprdecision
+, ifnull(hpr.speccat,'') as hprspeccat
+, ifnull(hpr.site,'') as hprsite
+, ifnull(hpr.subsite,'') as hprsubsite
+, ifnull(hpr.dx,'') as hprdx
+, ifnull(hpr.subdiagnosis,'') as hprdxmod
+, ifnull(hpr.mets,'') as hprmets
+, ifnull(hpr.systemiccomobid,'') as hprcomobid
+, ifnull(hpr.tumorgrade,'') as hprtumorgrade
+, ifnull(hpr.tumorscale,'') as hprtumorscalevalue
+, ifnull(tsc.dspvalue,'') as hprtumorscaledsp
+, ifnull(hpr.uninvolvedsample,'') as hpruninvolvedvalue
+, ifnull(uni.dspvalue,'') as hpruninvolveddsp
+, ifnull(hpr.rarereason,'') as hprrarereason
+, ifnull(hpr.generalcomments,'') as hprgeneralcomments
+, ifnull(hpr.specialinstructions,'') as hprspecialinstructions
+, ifnull(hpr.inconclusivetxt,'') as hprinconclusivetext
+, ifnull(hpr.unusabletxt,'') as hprunusabletext
+, ifnull(bs.tisstype,'') as bsspeccat
+, ifnull(bs.anatomicsite,'') as bsanatomicsite
+, ifnull(bs.subsite,'') as bssubsite
+, ifnull(bs.diagnosis,'') as bsdx
+, ifnull(bs.subdiagnos,'') as bsdxmod
+, ifnull(bs.metssite,'') as bsmets
+, ifnull(bs.associd,'') as associd
+, ifnull(bs.chemoind,'') as bschemoindvalue 
+, ifnull(cxv.dspvalue,'') as bschemoinddsp
+, ifnull(bs.radind,'') as bsradindvalue
+, ifnull(rxv.dspvalue,'') as bsradinddsp
+, ifnull(bs.proctype,'') as bsproctypevalue
+, ifnull(prc.dspvalue,'') as bsproctypedsp
+, ifnull(bs.procureinstitution,'') as bsprocureinstitution
+, ifnull(inst.dspvalue,'') as bsprocureinstitutiondsp
+, ifnull(date_format(bs.createdOn,'%m/%d/%Y'),'') as procurementdate
+, ifnull(bs.pxiage,'') as bspxiage
+, ifnull(auom.dspvalue,'') as bspxiageuom
+, ifnull(bs.pxiageuom,'') as bspxiageuomvalue
+, ifnull(bs.pxiGender,'') as  bspxisex
+, ifnull(sx.dspvalue,'') as bspxisexdsp
+, ifnull(bs.pxirace,'') as bspxirace
+, ifnull(bs.pathreportid,0) as pathreportid
+, ifnull(prt.pathreport,'') as pathreport
+, ifnull(prt.uploadedBy,'') as pruploadedby
+, ifnull(date_format(prt.uploadedon,'%m/%d/%Y'),'') as uploadedon 
+FROM masterrecord.ut_hpr_biosample hpr
+left join masterrecord.ut_procure_biosample bs on hpr.biogroupid = bs.pbiosample
+left join (SELECT menuValue, dspValue FROM four.sys_master_menus where menu = 'HPRDECISION') as dcs on hpr.decision = dcs.menuvalue
+left join (SELECT menuValue, dspValue FROM four.sys_master_menus where menu = 'HPRTUMORSCALE') as tsc on hpr.tumorscale = tsc.menuvalue
+left join (SELECT menuValue, dspValue FROM four.sys_master_menus where menu = 'UNINVOLVEDIND') as uni on hpr.uninvolvedSample = uni.menuvalue
+left join masterrecord.qcpathreports prt on bs.pathreportid = prt.prid
+left join (SELECT menu, menuValue, dspValue FROM four.sys_master_menus where menu = 'cx') as cxv on bs.chemoInd = cxv.menuvalue
+left join (SELECT menu, menuValue, dspValue FROM four.sys_master_menus where menu = 'rx') as rxv on bs.radInd = rxv.menuvalue
+left join (SELECT menu, menuValue, dspValue FROM four.sys_master_menus where menu = 'proctype') as prc on bs.procType = prc.menuvalue
+left join (SELECT menu, menuValue, dspValue FROM four.sys_master_menus where menu = 'INSTITUTION') as inst on bs.procureInstitution = inst.menuvalue
+left join (SELECT menu, menuValue, dspValue FROM four.sys_master_menus where menu = 'AGEUOM') as auom on bs.pxiAgeUOM = auom.menuvalue
+left join (SELECT menu, menuValue, dspValue FROM four.sys_master_menus where menu = 'PXSEX') as sx on bs.pxiGender = sx.menuvalue
+where biohpr = :reviewid
+HEADHPRSQL;
+        $headRS = $conn->prepare($headSQL);
+        $headRS->execute(array(':reviewid' => $reviewid));
+        while ($h = $headRS->fetch(PDO::FETCH_ASSOC)) { 
+          $dta['hprhead'] = $h;
+        }
+
+
+        $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+
     function getqmsquelist ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -50,7 +150,7 @@ class datadoers {
       //TODO:  DO DATA CHECKS
       if ( $errorInd === 0 ) {
 
-          $queSQL = "SELECT replace(ifnull(bs.read_label,''),'_','') as readlabel, ifnull(bs.tisstype,'') as procspeccat, ifnull(bs.anatomicsite,'') as procsite, ifnull(bs.subsite,'') as procsubsite, ifnull(bs.diagnosis,'') as procdiagnosis, ifnull(bs.subdiagnos,'') as procsubdiagnosis, ifnull(bs.QCProcStatus,'') as qmsprocstatusvalue, ifnull(hsts.dspvalue,'') as qmsstatusdsp, ifnull(bs.HPRDecision,'') as hprdecisionvalue, ifnull(hdc.dspvalue,'') as hprdecisiondsp, ifnull(hpr.speccat,'') as hprspeccat, ifnull(hpr.site,'') as hprsite, ifnull(hpr.subsite,'') as hprsubsite, ifnull(hpr.dx,'') as hprdiagnosis, ifnull(hpr.subdiagnosis,'') as hprsubdiagnosis, ifnull(bs.HPRResult,0) as hprresultid, replace(ifnull(bs.HPRSlideReviewed,''),'_','') as hprslidereviewed, ifnull(bs.HPRBy,'') as hprby , ifnull(date_format(bs.HPROn, '%m/%d/%Y'),'') as hpron FROM masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as hsts on bs.qcprocstatus = hsts.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hdc on bs.hprdecision = hdc.menuvalue left join (SELECT biohpr, speccat, site, subsite, dx, subdiagnosis FROM masterrecord.ut_hpr_biosample) as hpr on bs.hprresult = hpr.biohpr where hprind = 1 and qcind = 0 and bs.qcprocstatus = 'H' order by pbiosample asc";
+         $queSQL = "SELECT replace(ifnull(bs.read_label,''),'_','') as readlabel, ifnull(bs.tisstype,'') as procspeccat, ifnull(bs.anatomicsite,'') as procsite, ifnull(bs.subsite,'') as procsubsite, ifnull(bs.diagnosis,'') as procdiagnosis, ifnull(bs.subdiagnos,'') as procsubdiagnosis, ifnull(bs.QCProcStatus,'') as qmsprocstatusvalue, ifnull(hsts.dspvalue,'') as qmsstatusdsp, ifnull(bs.HPRDecision,'') as hprdecisionvalue, ifnull(hdc.dspvalue,'') as hprdecisiondsp, ifnull(hpr.speccat,'') as hprspeccat, ifnull(hpr.site,'') as hprsite, ifnull(hpr.subsite,'') as hprsubsite, ifnull(hpr.dx,'') as hprdiagnosis, ifnull(hpr.subdiagnosis,'') as hprsubdiagnosis, ifnull(bs.HPRResult,0) as hprresultid, replace(ifnull(bs.HPRSlideReviewed,''),'_','') as hprslidereviewed, ifnull(bs.HPRBy,'') as hprby , ifnull(date_format(bs.HPROn, '%m/%d/%Y'),'') as hpron FROM masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as hsts on bs.qcprocstatus = hsts.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hdc on bs.hprdecision = hdc.menuvalue left join (SELECT biohpr, speccat, site, subsite, dx, subdiagnosis FROM masterrecord.ut_hpr_biosample) as hpr on bs.hprresult = hpr.biohpr where hprind = 1 and qcind = 0 and bs.qcprocstatus = 'H' order by pbiosample asc";
           $queRS = $conn->prepare($queSQL);
           $queRS->execute(); 
           $itemsfound = $queRS->rowCount(); 
@@ -285,7 +385,7 @@ class datadoers {
       ( !array_key_exists('tumorgradescale', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'tumorgradescale' is missing.  Fatal Error")) : "";
       ( !array_key_exists('techaccuracy', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'techaccuracy' is missing.  Fatal Error")) : "";
       ( !array_key_exists('complexion', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'complexion' is missing.  Fatal Error")) : "";
-      ( !array_key_exists('hprfurtheraction', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'hprfurtheraction' is missing.  Fatal Error")) : "";
+//      ( !array_key_exists('hprfurtheraction', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'hprfurtheraction' is missing.  Fatal Error")) : "";
       ( !array_key_exists('hprmoleculartests', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'hprmoleculartests' is missing.  Fatal Error")) : "";
       ( !array_key_exists('rarereason', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'rarereason' is missing.  Fatal Error")) : "";
       ( !array_key_exists('specialinstructions', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'specialinstructions' is missing.  Fatal Error")) : "";
@@ -359,16 +459,16 @@ class datadoers {
         }
       }
 
-      if ( trim($pdta['hprfurtheraction']) !== "" ) { 
-        $fa = json_decode( $pdta['hprfurtheraction'] , true);
-        //(list( $errorInd, $msgArr[] ) = array(1 , $fa[0][0] ));
-        foreach ( $fa as $fkey => $fval ) {
-          $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'HPRFURTHERACTION' and menuvalue = :suppliedvalue";
-          $chkRS = $conn->prepare($chkSQL);
-          $chkRS->execute(array(':suppliedvalue' => $fval[0]  ));
-          ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'{$fval[0]}' DOES NOT APPEAR AS A VALUE ON THE HPR-FURTHER-ACTION MENU TREE. SEE CHTNEastern Informatics!")) : "";
-        }
-      }
+  //    if ( trim($pdta['hprfurtheraction']) !== "" ) { 
+  //      $fa = json_decode( $pdta['hprfurtheraction'] , true);
+  //      //(list( $errorInd, $msgArr[] ) = array(1 , $fa[0][0] ));
+  //      foreach ( $fa as $fkey => $fval ) {
+  //        $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'HPRFURTHERACTION' and menuvalue = :suppliedvalue";
+  //        $chkRS = $conn->prepare($chkSQL);
+  //        $chkRS->execute(array(':suppliedvalue' => $fval[0]  ));
+  //        ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'{$fval[0]}' DOES NOT APPEAR AS A VALUE ON THE HPR-FURTHER-ACTION MENU TREE. SEE CHTNEastern Informatics!")) : "";
+  //      }
+  //    }
 
       if ( trim($pdta['hprmoleculartests']) !== "" ) { 
         $mt = json_decode( $pdta['hprmoleculartests'], true); 
@@ -410,18 +510,18 @@ class datadoers {
          $hprheadid = $conn->lastInsertId();
 
          ////INSERT FURTHER ACTIONS
-         if ( trim($pdta['hprfurtheraction']) !== "" ) { 
-           $faInsSQL = "insert into masterrecord.ut_hpr_factions (biohpr, actiontypevalue, actiontype, actionnote, actionindicator, actionrequestedon) values (:biohpr, :actiontypevalue, :actiontype, :actionnote, 1, now())";
-           $faInsRS = $conn->prepare($faInsSQL);
-           $masterfaSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule,objhprid,objpbiosample,objbgs,actioncode,actiondesc,actionnote,actionrequestedby,actionrequestedon) VALUES ('HPR',:hprid,:biosampleref,:bgs,:actioncode,:actiondesc,:actionnote,:rqstby,now())";
-           $masterfaRS = $conn->prepare($masterfaSQL);
-
-          $fa = json_decode( $pdta['hprfurtheraction'] , true);
-          foreach ( $fa as $fkey => $fval ) {
-            $faInsRS->execute(array( ':biohpr' => $hprheadid, ':actiontypevalue' => $fval[0], ':actiontype' => $fval[1], ':actionnote' => trim($fval[2])));
-            $masterfaRS->execute(array(':hprid' => $hprheadid, ':biosampleref' => $bg['biosamplelabel'], ':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':actioncode' => $fval[0], ':actiondesc' => $fval[1], ':actionnote' => trim($fval[2]), ':rqstby' => $reviewer));
-          } 
-         }
+//         if ( trim($pdta['hprfurtheraction']) !== "" ) { 
+//           $faInsSQL = "insert into masterrecord.ut_hpr_factions (biohpr, actiontypevalue, actiontype, actionnote, actionindicator, actionrequestedon) values (:biohpr, :actiontypevalue, :actiontype, :actionnote, 1, now())";
+//           $faInsRS = $conn->prepare($faInsSQL);
+//           $masterfaSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule,objhprid,objpbiosample,objbgs,actioncode,actiondesc,actionnote,actionrequestedby,actionrequestedon) VALUES ('HPR',:hprid,:biosampleref,:bgs,:actioncode,:actiondesc,:actionnote,:rqstby,now())";
+//           $masterfaRS = $conn->prepare($masterfaSQL);
+//
+//          $fa = json_decode( $pdta['hprfurtheraction'] , true);
+//          foreach ( $fa as $fkey => $fval ) {
+//            $faInsRS->execute(array( ':biohpr' => $hprheadid, ':actiontypevalue' => $fval[0], ':actiontype' => $fval[1], ':actionnote' => trim($fval[2])));
+//            $masterfaRS->execute(array(':hprid' => $hprheadid, ':biosampleref' => $bg['biosamplelabel'], ':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':actioncode' => $fval[0], ':actiondesc' => $fval[1], ':actionnote' => trim($fval[2]), ':rqstby' => $reviewer));
+//          } 
+//         }
          //INSERT PERCENTAGES
          $insPrcSQL = "insert into masterrecord.ut_hpr_percentages ( biohpr, prcTypeValue, prcType, prcValue, inputon) values(:biohpr, :prcTypeValue, :prcType, :prcValue, now())";
          $insPrcRS = $conn->prepare($insPrcSQL);

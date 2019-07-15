@@ -2226,11 +2226,106 @@ document.addEventListener('DOMContentLoaded', function() {
         navigateSite('qms-actions');
      }, false);        
    }
-      
+       
+}, false);  
         
+
+function changeSupportingTab(whichtab) { 
+  var divs = document.getElementsByClassName('HPRReviewDocument'); 
+  for ( var i = 0; i < divs.length; i++ ) {
+    byId('dspTabContent'+i).style.display = 'none';
+  }
+  byId('dspTabContent'+whichtab).style.display = 'block';
+} 
+
+
+
+
+
+function generateDialog( whichdialog, whatobject ) { 
+  var dta = new Object(); 
+  dta['whichdialog'] = whichdialog;
+  dta['objid'] = whatobject;   
+  var passdta = JSON.stringify(dta);
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/preprocess-generate-dialog";
+  universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
+}
+            
+function answerPreprocessGenerateDialog( rtnData ) {
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+        var dta = JSON.parse(rtnData['responseText']);         
+        //TODO: MAKE SURE ALL ELEMENTS EXIST BEFORE CREATION
+        var d = document.createElement('div');
+        d.setAttribute("id", dta['DATA']['dialogID']); 
+        d.setAttribute("class","floatingDiv");
+        d.style.left = dta['DATA']['left'];
+        d.style.top = dta['DATA']['top'];
+        d.innerHTML = dta['DATA']['pageElement']; 
+        document.body.appendChild(d);
+        byId(dta['DATA']['dialogID']).style.display = 'block';
+        if ( dta['DATA']['primeFocus'].trim() !== "" ) { 
+          byId(dta['DATA']['primeFocus'].trim()).focus();
+        }
+        byId('standardModalBacker').style.display = 'block';
+  }
+}
         
-  }, false);  
-        
+function closeThisDialog(dlog) { 
+   byId(dlog).parentNode.removeChild(byId(dlog));
+   byId('standardModalBacker').style.display = 'none';        
+}
+
+
+function recipSelector(whichrecip) {
+  if ( byId(whichrecip).dataset.selected === 'false' ) { 
+    byId(whichrecip).dataset.selected = 'true';
+  } else { 
+    byId(whichrecip).dataset.selected = 'false';
+  }
+}  
+
+function sendHPREmail() {
+  var reciplist = new Array();
+  var cntr = 0; 
+  var dta = new Object(); 
+  var x = document.getElementsByClassName("recipitemlisting");
+   for ( var i = 0; i < x.length; i++ ) {
+     if ( x[i].dataset.selected === 'true' ) {
+       reciplist[cntr] = x[i].id;
+       cntr++;
+     }
+   }
+   dta['recipientlist'] = JSON.stringify ( reciplist );
+   dta['messagetext'] = byId('hprEmlMsg').value.trim();
+   dta['dialogid'] = byId('identDialogid').value;
+   var passdta = JSON.stringify(dta);
+   var mlURL = "/data-doers/hpr-send-email";
+   universalAJAX("POST",mlURL,passdta,answerHPRSendEmail,2);
+}
+
+function answerHPRSendEmail( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     alert('Message Sent'); 
+     var diddta = JSON.parse( rtnData['responseText'] ); 
+     closeThisDialog( diddta['DATA'] );
+   }
+}
 
 RTNTHIS;
 return $rtnThis;
@@ -4110,7 +4205,7 @@ function gatherAndUnuseReview() {
    prcdta['prc_'+prcflds[i].id.toLowerCase()] = prcflds[i].value; 
   }
   dta['complexion'] = prcdta;
-  dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
+  //dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
   dta['hprmoleculartests'] = byId('hprMolecularTestJsonHolderConfirm').value;
   dta['rarereason'] = byId('fldRareReasonTxt').value;
   dta['generalcomments'] = byId('fldGeneralCmtsTxt').value;
@@ -4145,7 +4240,7 @@ function gatherAndSaveReview() {
    prcdta['prc_'+prcflds[i].id.toLowerCase()] = prcflds[i].value; 
   }
   dta['complexion'] = prcdta;
-  dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
+  //dta['hprfurtheraction'] = byId('hprFAJsonHolder').value;
   dta['hprmoleculartests'] = byId('hprMolecularTestJsonHolderConfirm').value;
   dta['rarereason'] = byId('fldRareReasonTxt').value;
   dta['generalcomments'] = byId('fldGeneralCmtsTxt').value;
@@ -4407,18 +4502,31 @@ if ( byId('hprFAJsonHolder') ) {
 }
             
 function manageMoleTest(addIndicator, referencenumber, fldsuffix) { 
-  if (byId('hprMolecularTestJsonHolderConfirm')) {  
+  if (byId('hprMolecularTestJsonHolderConfirm')) { 
    if (byId('hprMolecularTestJsonHolderConfirm').value === "") { 
      if (addIndicator === 1) { 
+
+        if ( byId('hprFldMoleTest'+fldsuffix+'Value').value.trim() === "" ) { 
+          alert('YOU HAVE NOT SELECTED A MOLECULAR TEST.');
+          return null;
+        }
+
         var hldVal = [];
         hldVal.push(  [ byId('hprFldMoleTest'+fldsuffix+'Value').value,  byId('hprFldMoleTest'+fldsuffix).value, byId('hprFldMoleResult'+fldsuffix+'Value').value, byId('hprFldMoleResult'+fldsuffix).value, byId('hprFldMoleScale'+fldsuffix).value.trim()      ] );    
         byId('hprMolecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);
       }
     } else { 
-      if (addIndicator === 1) { 
+      if (addIndicator === 1) {
+
+        if ( byId('hprFldMoleTest'+fldsuffix+'Value').value.trim() === "" ) { 
+          alert('YOU HAVE NOT SELECTED A MOLECULAR TEST.');
+          return null;
+        }
+
         var hldVal = JSON.parse(byId('hprMolecularTestJsonHolderConfirm').value);
         hldVal.push(  [ byId('hprFldMoleTest'+fldsuffix+'Value').value,  byId('hprFldMoleTest'+fldsuffix).value, byId('hprFldMoleResult'+fldsuffix+'Value').value, byId('hprFldMoleResult'+fldsuffix).value, byId('hprFldMoleScale'+fldsuffix).value.trim()      ] );    
         byId('hprMolecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);
+
       }
       if (addIndicator === 0) { 
          var hldVal = JSON.parse(byId('hprMolecularTestJsonHolderConfirm').value);             
@@ -4442,7 +4550,7 @@ function manageMoleTest(addIndicator, referencenumber, fldsuffix) {
     var moleTestTbl = "<table cellspacing=0 cellpadding=0 border=0 width=100%>";
     var cntr = 0;         
     hldVal.forEach(function(element) {         
-      moleTestTbl += "<tr onclick=\"manageMoleTest(0,"+cntr+",'"+fldsuffix+"');\" class=ddMenuItem><td style=\"border-bottom: 1px solid rgba(160,160,160,1);\"><i class=\"material-icons\" style=\"font-size: 1.8vh; color:rgba(237, 35, 0,1); width: .3vw; padding: 8px 0 8px 0;\">cancel</i><td style=\"width: 15vw; padding: 8px 0 8px 8px;border-bottom: 1px solid rgba(160,160,160,1);\">"+element[1]+"</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1);\">"+element[3]+"</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1);\">"+element[4]+"</td></tr>";
+      moleTestTbl += "<tr onclick=\"manageMoleTest(0,"+cntr+",'"+fldsuffix+"');\" class=ddMenuItem><td style=\"border-bottom: 1px solid rgba(160,160,160,1); width: 1vw;\"><i class=\"material-icons\" style=\"font-size: 1.8vh; color:rgba(237, 35, 0,1); width: .3vw; padding: 8px 0 8px 0;\">cancel</i><td style=\" padding: 8px 0 8px 8px;border-bottom: 1px solid rgba(160,160,160,1); font-size: 1.5vh;\">"+element[1]+"</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1); font-size: 1.5vh;\">"+element[3]+"</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1); font-size: 1.5vh;\">"+element[4]+"</td></tr>";
       cntr++;
      });
      moleTestTbl += "</table>";

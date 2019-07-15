@@ -291,12 +291,43 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
 
 
-.queDataLabel { color: rgba({$this->color_zackgrey},1); font-weight: bold; font-size: 1.5vh;  width: 7vw; border-bottom: 1px solid rgba({$this->color_darkgrey},.3);  box-sizing: border-box; padding-right: 4px; border-right: 1px solid rgba({$this->color_darkgrey},.3); }
-.queDataDsp  { color: rgba({$this->color_zackgrey},1); font-size: 1.5vh;  width: 20vw; border-bottom: 1px solid rgba({$this->color_darkgrey},.3);  }
-.tallDataDsp { height: 7vh; }
+#dspQueTbl tbody tr td  { padding: 10px 0;  }
+#dspQueTbl tbody tr:nth-child(even) { background: rgba({$this->color_darkgrey},.2); }
+#dspQueTbl tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},.8); }
 
-.queCellHolder { border: 1px solid rgba({$this->color_zackgrey},.3); }
-.queCellHolder:hover { cursor: pointer; background: rgba({$this->color_lamber},.8); }
+.qmsQueItemTbl  { display: table;  }
+.tblDspRow { display: table-row; }
+.queDataLabel {display: table-cell; color: rgba({$this->color_zackgrey},1); font-weight: bold; font-size: 1.2vh;  width: 6vw; box-sizing: border-box; padding-right: 4px; }
+.queDataDsp  { display: table-cell; color: rgba({$this->color_zackgrey},1); font-size: 1.5vh;  width: 70vw;  }
+
+.queCellHolder { border: 1px solid rgba({$this->color_zackgrey},.3); padding: 0; }
+
+.sideiconholder { width: 5vw; text-align: center; }
+.hprdecisionicon { font-size: 4vh; }
+.decision_DENIED { color: rgba({$this->color_bred},1); }
+.decision_CONFIRM { color: rgba({$this->color_darkgreen},1); }
+.decision_INCONCLUSIVE { color: rgba({$this->color_deeppurple},1); }
+.decision_UNUSABLE { color: rgba({$this->color_ddrwgrey},1); }
+.decision_ADDITIONAL { color: rgba({$this->color_cornflowerblue},1); }
+
+#legendDsp { position: fixed; right: 1.5vw; width: 10vw; }
+#legendTbl { width: 10vw; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); border: 1px solid rgba({$this->color_zackgrey},1); }
+.nbrDsp { text-align: right; padding: 0 3px 0 0;  }
+.legendTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 8px 0; text-align: center;   } 
+.dspgreen { color: rgba({$this->color_darkgreen},1); }  
+.dspblue { color: rgba({$this->color_cornflowerblue},1); }  
+.dspred { color: rgba({$this->color_bred},1); }  
+.dspbrown { color: rgba({$this->color_ddrwgrey},1); }  
+.dsppurple { color: rgba({$this->color_deeppurple},1); }  
+
+#mainDspTbl { border: 1px solid rgba({$this->color_zackgrey},1); margin-left: 4vw;  } 
+.tblTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 8px 0; text-align: center; font-size: 2vh;  }
+
+/* WORKBENCH */
+.headerTitleCell {background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); text-align: center; height: 1vh; font-size: 1.6vh; padding: .5vh 0; box-sizing: border-box; }
+
+
+
 
 STYLESHEET;
 return $rtnThis;
