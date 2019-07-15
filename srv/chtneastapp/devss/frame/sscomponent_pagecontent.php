@@ -3777,62 +3777,69 @@ function bldQAWorkbench ( $encryreviewid ) {
     $pdta['reviewid'] = $encryreviewid;
     $payload = json_encode($pdta);
     $reviewdta = json_decode(callrestapi("POST", dataTree . "/data-doers/qa-review-workbench-data",serverIdent, serverpw, $payload), true);
-    //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"hprhead":{"hprdecisionvalue":"DENIED","hprrarereason":"","hprgeneralcomments":"","hprspecialinstructions":"","hprinconclusivetext":"","hprunusabletext":"","bsspeccat":"MALIGNANT","bsanatomicsite":"THYROID","bssubsite":"","bsdx":"CARCINOMA","bsdxmod":"MEDULLARY CARCINOMA","bsmets":"","associd":"iVeiYukTZPQczTfahx8y","bschemoindvalue":"2","bschemoinddsp":"Unknown","bsradindvalue":"2","bsradinddsp":"Unknown","bsproctypevalue":"S","bsproctypedsp":"Surgery","bsprocureinstitution":"HUP","bsprocureinstitutiondsp":"Hospital of The University of Pennsylvania","procurementdate":"06\/11\/2019","pathreportid":42593,"pathreport":"Clinical Information:","pruploadedby":"Gina","uploadedon":"07\/01\/2019"}}}
+    //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"hprhead":{"bsspeccat":"MALIGNANT","bsanatomicsite":"THYROID"
+    //,"bssubsite":"","bsdx":"CARCINOMA","bsdxmod":"MEDULLARY CARCINOMA","bsmets":"","associd":"iVeiYukTZPQczTfahx8y"}}}
 
 $headdta = $reviewdta['DATA']['hprhead'];
 $reviewer = $headdta['reviewer'];
 $reviewer .= ( trim($headdta['inputby']) !== "" && trim($headdta['reviewer']) !== trim($headdta['inputby']) ) ? " ({$headdta['inputby']})" : ""; 
 
-
-$hprspc = ( trim($headdta['hprspeccat']) !== "" ) ? "<tr><td>Specimen Category</td><tr><tr><td>{$headdta['hprspeccat']}</td></tr>" : "";
 $ss = ( trim($headdta['hprsubsite']) !== "" ) ? " ({$headdta['hprsubsite']})" : "";
-$hprsite = ( trim($headdta['hprsite']) !== "" || trim($ss) !== "" ) ? "<tr><td>Site (Sub-Site)</td><tr><tr><td>{$headdta['hprsite']}{$ss}</td></tr>" : "";
+$hprspc = ( trim($headdta['hprspeccat']) !== "" ) ? " [{$headdta['hprspeccat']}]" : "";
+$hprsite = ( trim($headdta['hprsite']) !== "" || trim($ss) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Site [Specimen Category]</td><td class=qmsDataDsp valign=top>{$headdta['hprsite']}{$ss}{$hprspc}</td></tr>" : "";
 $hprmod = ( trim($headdta['hprdxmod']) !== "" ) ? " ({$headdta['hprdxmod']})" : "";
-$hprdx = ( trim($headdta['hprdx']) !== "" || trim($hprmod) !== "" ) ? "<tr><td>Diagnosis (Modifier)</td></tr><tr><td>{$headdta['hprdx']}{$hprmod}</td></tr>" : "" ;
-$hprmet = ( trim($headdta['hprmets']) !== "" ) ? "<tr><td>Metastatic FROM</td></tr><tr><td>{$headdta['hprmets']}</td></tr>" : "";
-$involv = ( trim($headdta['hpruninvolveddsp']) !== "" ) ? "<tr><td>Uninvolved Sample</td></tr><tr><td>{$headdta['hpruninvolveddsp']}</td></tr>" : "";
+$hprdx = ( trim($headdta['hprdx']) !== "" || trim($hprmod) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Diagnosis (Modifier)</td><td  class=qmsDataDsp valign=top>{$headdta['hprdx']}{$hprmod}</td></tr>" : "" ;
+$hprmet = ( trim($headdta['hprmets']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Metastatic FROM</td><td  class=qmsDataDsp valign=top>{$headdta['hprmets']}</td></tr>" : "";
+$involv = ( trim($headdta['hpruninvolveddsp']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Uninvolved Sample</td><td class=qmsDataDsp valign=top>{$headdta['hpruninvolveddsp']}</td></tr>" : "";
 
-$pxTbl = "<table border=1><tr><td>A/R/S</td></tr>";
-$pxTbl .= "<tr><td>{$headdta['bspxiage']} {$headdta['bspxiageuom']} / {$headdta['bspxirace']} / {$headdta['bspxisexdsp']} </td></tr>";
-$pxTbl .= "</table>";
+$hprgencmt = ( trim( $headdta['hprgeneralcomments']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Comment:</td><td class=qmsDataDsp valign=top>{$headdta['hprgeneralcomments']}</td></tr>" : "";
+$hprrarecmt = ( trim( $headdta['hprrarereason']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Rare Reason:</td><td class=qmsDataDsp valign=top>{$headdta['hprrarereason']}</td></tr>" : "";
+$hprspecicmt = ( trim( $headdta['hprspecialinstructions']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Special Instructions to Staff:</td><td class=qmsDataDsp valign=top>{$headdta['hprspecialinstructions']}</td></tr>" : "";
+$hprunusecmt = ( trim( $headdta['hprunusabletext']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Reason Unusable:</td><td class=qmsDataDsp valign=top>{$headdta['hprunusabletext']}</td></tr>" : "";
+$hprinconcmt = ( trim( $headdta['hprinconclusivetext']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Inconclusive:</td><td class=qmsDataDsp valign=top>{$headdta['hprinconclusivetext']}</td></tr>" : "";
 
-$procTbl = "<table border=1><tr><td>Procedure</td><td>Institution</td><td>Date</td></tr>";
+$pxTbl = "<tr><td valign=top class=qmsDataLabel>A/R/S</td><td class=qmsDataDsp valign=top>{$headdta['bspxiage']} {$headdta['bspxiageuom']} / {$headdta['bspxirace']} / {$headdta['bspxisexdsp']} </td></tr><tr><td class=qmsDataLabel>Chemo/Radiation</td><td class=qmsDataDsp valign=top>{$headdta['bschemoinddsp']} / {$headdta['bsradinddsp']}</td></tr>";
 
-$procTbl .= "</table>";
+$procTbl = "<tr><td class=qmsDataLabel valign=top>Procedure:</td><td class=qmsDataDsp valign=top>{$headdta['bsproctypedsp']}<br>({$headdta['procurementdate']})</td><td class=qmsDataLabel valign=top>Institution:</td><td class=qmsDataDsp valign=top colspan=3>{$headdta['bsprocureinstitutiondsp']}</td></tr>";
 
 
 $tscale = ( trim($headdta['hprtumorscaledsp']) !== "" ) ? " ({$headdta['hprtumorscaledsp']})" : "";
-$tumordsp = ( trim($headdta['hprtumorgrade']) !== "" ) ? "<table border=1><tr><td>TUMOR</td></tr><tr><td>{$headdta['hprtumorgrade']}{$tscale}</td></tr></table>" : "";
+$tumordsp = ( trim($headdta['hprtumorgrade']) !== "" ) ? "<tr><td>TUMOR</td><td>{$headdta['hprtumorgrade']}{$tscale}</td></tr>" : "";
 
 $hprdatatbl = <<<DATASTUFF
-<table border=1>
-<tr><td>Review #: </td><td>{$headdta['biohpr']}</td><td>Reviewed: </td><td>{$headdta['reviewedon']}</td><td>Reviewer: </td><td>{$reviewer}</td>  </tr>
+<table border=0 cellspacing=0 cellpadding=0>
+<tr><td class=qmsDataLabel>Review #: </td><td class=qmsDataDsp>{$headdta['biohpr']}</td><td class=qmsDataLabel>Reviewed: </td><td class=qmsDataDsp>{$headdta['reviewedon']}</td><td class=qmsDataLabel>Reviewer: </td><td class=qmsDataDsp>{$reviewer}</td>  </tr>
+{$procTbl}
 </table>
-<table border=1>
-<tr><td style="text-align: center;">Review Designation</td></tr>
-{$hprspc}
+
+<table border=0 cellspacing=0 cellpadding=0 width=100%>
+<tr><td style="text-align: center;" colspan=2 class=headerTitleCell>Review Designation</td></tr>
 {$hprsite}
 {$hprdx}
 {$hprmet}
 {$involv}
-</table>
 {$tumordsp}
 {$pxTbl}
-{$procTbl}
+{$hprgencmt}
+{$hprrarecmt}
+{$hprspecicmt}
+{$hprunusecmt}
+{$hprinconcmt}
+</table>
 DATASTUFF;
 
-
-
+$prnbr = substr(("000000" . $headdta['pathreportid']),-6);
+$uploadline = ( trim($headdta['pruploadedby']) !== "" ) ? "<b>Uploaded</b>: {$headdta['pruploadedby']} :: {$headdta['uploadedon']} (<b>Pathology Report</b>: {$prnbr})" : "";
 
     $hprside = <<<HPRTBL
 <table border=0 cellspacing=0 cellpadding=0 style="width: 30vw; height: 88vh;">
 <tr><td class=headerTitleCell>HPR FOR {$headdta['slidebgs']} / {$headdta['hprdecision']}</td></tr>
-<tr><td valign=top style="height: 3vh;"><table border=1><tr><td onclick="changeSupportingTab(0);">Review</td><td onclick="changeSupportingTab(1);">Pathology<br>Report</td><td onclick="changeSupportingTab(2);">All<br>Segments</td>    </tr></table>        </td></tr>
+<tr><td valign=top style="height: 3vh; "><table border=0 style="background: rgba(160,160,160,.5);"><tr><td class=hprSideTopBtns onclick="changeSupportingTab(0);">Review<br>Metrics</td><td class=hprSideTopBtns onclick="changeSupportingTab(2);">All Assoc<br>Segments</td></tr></table></td></tr>
 <tr><td valign=top>
 
 <div id=masterHold>    
-<div id=dspTabContent0 class=HPRReviewDocument style="display: block;">{$hprdatatbl}</div>
-<div id=dspTabContent1 class=HPRReviewDocument style="display: none;">{$headdta['pathreport']}</div>
+<div id=dspTabContent0 class=HPRReviewDocument style="display: block;"> <table border=0  cellspacing=0 cellpadding=0><tr><td valign=top> {$hprdatatbl} </td></tr><tr><td class=headerTitleCell>Pathology Report</td></tr><tr><td valign=top><div id=qmsPRSideDsp><table><tr><td>{$headdta['pathreport']}</td></tr><tr><td align=right>{$uploadline}</td></tr></table></div></td></tr></table></div>
+<div id=dspTabContent1 class=HPRReviewDocument style="display: none;"></div>
 <div id=dspTabContent2 class=HPRReviewDocument style="display: none;">ALL SEGMENTS FOR ALL ASSOCIATIVE GROUPS GO HERE ...</div>
 
 
@@ -3842,9 +3849,11 @@ DATASTUFF;
 </table>
 HPRTBL;
 
+$dspthis = json_encode($reviewdta);
+
     $pg = <<<PGCONTENT
-<table border=1 style="width: 99vw;">
-<tr><td valign=top style="width: 30vw;">{$hprside}</td><td valign=top>WORK BENCH SIDE</td></tr>
+<table border=0 style="width: 99vw;">
+<tr><td valign=top style="width: 30vw; border: 1px solid rgba(160,160,160,1);">{$hprside}</td><td valign=top>WORK BENCH SIDE <p><div style="width: 40vw;">{$dspthis} </div></td></tr>
 </table>
 PGCONTENT;
 return $pg;

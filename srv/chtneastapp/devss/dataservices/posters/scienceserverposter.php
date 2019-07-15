@@ -123,7 +123,66 @@ HEADHPRSQL;
         while ($h = $headRS->fetch(PDO::FETCH_ASSOC)) { 
           $dta['hprhead'] = $h;
         }
-
+                
+        $assSQL = <<<ASSSQL
+select  
+dta.readlabel, concat(dta.bgsbg
+, if (dta.minseg = dta.maxseg, dta.minseg, concat(dta.minseg,'-',dta.maxseg))) as bgs
+,  dta.prepmethod, dta.preparation, dta.shippeddate, dta.shipdocrefid
+, dta.slidegroupid, dta.assignedto, dta.investlname, dta.investfname
+, dta.investinstitution, dta.assignedreq, dta.procurementdate, dta.specimencategory
+, dta.site, dta.subsite, dta.dx, dta.subdx, dta.metsite, dta.hprind, dta.qcind, dta.createdby
+, dta.bsprocurementdate
+, dta.qcprocstatus, dta.hprresult, dta.hprdecision, dta.hpron
+from 
+(Select 
+conglom.readlabel, conglom.bgsbg
+, min(conglom.segmentlabel) minseg
+, max(conglom.segmentlabel) maxseg
+,  conglom.prepmethod, conglom.preparation, conglom.shippeddate, conglom.shipdocrefid
+, conglom.slidegroupid, conglom.assignedto, conglom.investlname, conglom.investfname
+, conglom.investinstitution, conglom.assignedreq, conglom.procurementdate, conglom.specimencategory
+, conglom.site, conglom.subsite, conglom.dx, conglom.subdx, conglom.metsite, conglom.hprind, conglom.qcind, conglom.createdby
+, conglom. bsprocurementdate
+, conglom.qcprocstatus, conglom.hprresult, conglom.hprdecision, conglom.hpron 
+from 
+(SELECT 
+replace(bs.read_label,'_','') as readlabel, substr(replace(sg.bgs,'_',''),1,6) as bgsbg, ifnull(sg.segmentlabel,'') as segmentlabel, ifnull(sg.prepmethod,'') as prepmethod
+, ifnull(sg.preparation,'') as preparation, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shippeddate  , ifnull(sg.shipdocrefid,'') as shipdocrefid
+, ifnull(sg.SlideGroupID,'') as slidegroupid, ifnull(sg.assignedTo,'') as assignedto, ifnull(i.invest_lname,'') as investlname, ifnull(i.invest_fname,'') as investfname
+, ifnull(i.invest_homeinstitute,'') as investinstitution, ifnull(sg.assignedReq,'') as assignedreq 
+, ifnull(date_format(sg.procurementDate,'%m/%d/%Y'),'') as procurementdate
+, ifnull(bs.tisstype,'') as specimencategory, ifnull(bs.anatomicsite,'') as site, ifnull(bs.subsite,'') as subsite, ifnull(bs.diagnosis,'') as dx
+, ifnull(bs.subdiagnos,'') as subdx, ifnull(bs.metssite,'') as metsite, ifnull(bs.hprind,0) as hprind, ifnull(bs.qcind,0) as qcind
+, ifnull(bs.createdby,'') as createdby
+, ifnull(date_format(bs.createdon,'%m/%d/%Y'),'') as bsprocurementdate
+, ifnull(bs.qcprocstatus,'') as qcprocstatus
+, ifnull(bs.hprresult,0) as hprresult
+, ifnull(bs.hprdecision,'') as hprdecision
+, ifnull(date_format(bs.hpron,'%m/%d/%Y'),'') as hpron  
+FROM masterrecord.ut_procure_biosample bs
+left join masterrecord.ut_procure_segment sg on bs.pbiosample = sg.biosamplelabel
+left join vandyinvest.invest i on sg.assignedto = i.investid
+where bs.associd = :associd and bs.voidind <> 1 and sg.voidind <> 1 
+) conglom
+group by conglom.readlabel, conglom.bgsbg, conglom.prepmethod, conglom.preparation, conglom.shippeddate, conglom.shipdocrefid
+, conglom.slidegroupid, conglom.assignedto, conglom.investlname, conglom.investfname
+, conglom.investinstitution, conglom.assignedreq, conglom.procurementdate, conglom.specimencategory
+, conglom.site, conglom.subsite, conglom.dx, conglom.subdx, conglom.metsite, conglom.hprind, conglom.qcind, conglom.createdby
+, conglom.bsprocurementdate
+, conglom.procurementdate, conglom.qcprocstatus, conglom.hprresult, conglom.hprdecision, conglom.hpron
+order by conglom.readlabel, min(conglom.segmentlabel)) dta                 
+ASSSQL;
+        $assRS = $conn->prepare($assSQL);
+        $assRS->execute(array(':associd' => $dta['hprhead']['associd'] ));
+        $assgroup = array();
+        while ($a = $assRS->fetch(PDO::FETCH_ASSOC)) { 
+          $assgroup[] = $a;
+        }
+        $dta['associativelisting'] = $assgroup;
+        
+        $msgArr['assoc'] = $dta['hprhead']['associd'];
+        
 
         $responseCode = 200;
       }

@@ -326,8 +326,13 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 /* WORKBENCH */
 .headerTitleCell {background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); text-align: center; height: 1vh; font-size: 1.6vh; padding: .5vh 0; box-sizing: border-box; }
 
+#qmsPRSideDsp { min-height: 30vh;  max-height: 36vh;   overflow: auto; font-size: 1.6vh; line-height: 1.8em; text-align: justify; box-sizing: border-box; padding: 8px; }
 
+.hprSideTopBtns { border-right: 1px solid rgba({$this->color_white},1);  text-align: center; font-size: 1.4vh; padding: 4px 8px;  width: 7vw;}
+.hprSideTopBtns:hover { background: rgba({$this->color_lamber},.8); cursor: pointer; } 
 
+ .qmsDataLabel { font-size: 1.5vh; font-weight: bold; padding: 8px 2px 2px 2px; border-bottom:  1px solid rgba({$this->color_grey},1); white-space: nowrap; }
+ .qmsDataDsp { font-size: 1.5vh; padding: 8px 3px 2px 4px; border-bottom:  1px solid rgba({$this->color_grey},1); border-right:  1px solid rgba({$this->color_grey},1); min-width: 5vw; max-width: 22vw; }
 
 STYLESHEET;
 return $rtnThis;
