@@ -323,6 +323,14 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 #mainDspTbl { border: 1px solid rgba({$this->color_zackgrey},1); margin-left: 4vw;  } 
 .tblTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 8px 0; text-align: center; font-size: 2vh;  }
 
+
+.ttholder { position: relative; }
+.ttholder .tt { position: absolute; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; z-index: 40; }
+.ttholder:hover .tt { display: block; }
+.displaytypetext { font-size: 1.8vh; white-space: nowrap; } 
+.btnBarDropMenuItem:hover { color: rgba({$this->color_neongreen},1); cursor: pointer; } 
+
+
 /* WORKBENCH */
 .headerTitleCell {background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); text-align: center; height: 1vh; font-size: 1.6vh; padding: .5vh 0; box-sizing: border-box; }
 
@@ -333,6 +341,24 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 
  .qmsDataLabel { font-size: 1.5vh; font-weight: bold; padding: 8px 2px 2px 2px; border-bottom:  1px solid rgba({$this->color_grey},1); white-space: nowrap; }
  .qmsDataDsp { font-size: 1.5vh; padding: 8px 3px 2px 4px; border-bottom:  1px solid rgba({$this->color_grey},1); border-right:  1px solid rgba({$this->color_grey},1); min-width: 5vw; max-width: 22vw; }
+
+ .constiticon { font-size: 1.9vh; color: rgba({$this->color_darkgreen},1);  }
+ .mintbck { background: rgba({$this->color_darkgreen},.2); }
+ .standardbck { background: rgba({$this->color_white},1); }
+
+
+.quickLink { margin-top: .6vh; margin-bottom: .6vh; }
+.quickLink:hover { color: rgba({$this->color_neongreen},1); cursor: pointer; }
+.quickLink .qlSmallIcon {font-size: 1.2vh; }
+
+
+.sdttholder { position: relative; }
+.sdttholder .tt { position: absolute; background: rgba({$this->color_zackgrey},1); width: 8vw;  color: rgba({$this->color_white},1); padding: 7px 5px; display: none;  }
+.sdttholder:hover .tt { display: block;  }
+
+.assttholder { position: relative; }
+.assttholder .tt { top: 0; position: absolute; background: rgba({$this->color_zackgrey},1);  color: rgba({$this->color_white},1); padding: 7px 5px; display: none;  }
+.assttholder:hover .tt { display: block;  }
 
 STYLESHEET;
 return $rtnThis;

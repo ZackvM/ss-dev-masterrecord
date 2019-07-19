@@ -133,7 +133,11 @@ dta.readlabel, concat(dta.bgsbg
 , dta.investinstitution, dta.assignedreq, dta.procurementdate, dta.specimencategory
 , dta.site, dta.subsite, dta.dx, dta.subdx, dta.metsite, dta.hprind, dta.qcind, dta.createdby
 , dta.bsprocurementdate
-, dta.qcprocstatus, dta.hprresult, dta.hprdecision, dta.hpron
+, dta.qcprocstatus
+, qmsstat.dspvalue as qmsstatus 
+, dta.hprresult, dta.hprdecision
+, qmsdec.dspvalue as hprdecdsp 
+, dta.hpron
 from 
 (Select 
 conglom.readlabel, conglom.bgsbg
@@ -165,13 +169,16 @@ left join masterrecord.ut_procure_segment sg on bs.pbiosample = sg.biosamplelabe
 left join vandyinvest.invest i on sg.assignedto = i.investid
 where bs.associd = :associd and bs.voidind <> 1 and sg.voidind <> 1 
 ) conglom
+
 group by conglom.readlabel, conglom.bgsbg, conglom.prepmethod, conglom.preparation, conglom.shippeddate, conglom.shipdocrefid
 , conglom.slidegroupid, conglom.assignedto, conglom.investlname, conglom.investfname
 , conglom.investinstitution, conglom.assignedreq, conglom.procurementdate, conglom.specimencategory
 , conglom.site, conglom.subsite, conglom.dx, conglom.subdx, conglom.metsite, conglom.hprind, conglom.qcind, conglom.createdby
 , conglom.bsprocurementdate
 , conglom.procurementdate, conglom.qcprocstatus, conglom.hprresult, conglom.hprdecision, conglom.hpron
-order by conglom.readlabel, min(conglom.segmentlabel)) dta                 
+order by conglom.readlabel, min(conglom.segmentlabel)) dta 
+left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus' ) qmsstat on dta.qcprocstatus = qmsstat.menuvalue
+left join ( SELECT menu, menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION' ) qmsdec on dta.hprdecision = qmsdec.menuvalue
 ASSSQL;
         $assRS = $conn->prepare($assSQL);
         $assRS->execute(array(':associd' => $dta['hprhead']['associd'] ));
@@ -193,7 +200,7 @@ ASSSQL;
       return $rows;
     }
 
-    function getqmsquelist ( $request, $passdata ) { 
+    function qmsquelist ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
       $responseCode = 503;
@@ -209,13 +216,47 @@ ASSSQL;
       //TODO:  DO DATA CHECKS
       if ( $errorInd === 0 ) {
 
-         $queSQL = "SELECT replace(ifnull(bs.read_label,''),'_','') as readlabel, ifnull(bs.tisstype,'') as procspeccat, ifnull(bs.anatomicsite,'') as procsite, ifnull(bs.subsite,'') as procsubsite, ifnull(bs.diagnosis,'') as procdiagnosis, ifnull(bs.subdiagnos,'') as procsubdiagnosis, ifnull(bs.QCProcStatus,'') as qmsprocstatusvalue, ifnull(hsts.dspvalue,'') as qmsstatusdsp, ifnull(bs.HPRDecision,'') as hprdecisionvalue, ifnull(hdc.dspvalue,'') as hprdecisiondsp, ifnull(hpr.speccat,'') as hprspeccat, ifnull(hpr.site,'') as hprsite, ifnull(hpr.subsite,'') as hprsubsite, ifnull(hpr.dx,'') as hprdiagnosis, ifnull(hpr.subdiagnosis,'') as hprsubdiagnosis, ifnull(bs.HPRResult,0) as hprresultid, replace(ifnull(bs.HPRSlideReviewed,''),'_','') as hprslidereviewed, ifnull(bs.HPRBy,'') as hprby , ifnull(date_format(bs.HPROn, '%m/%d/%Y'),'') as hpron FROM masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as hsts on bs.qcprocstatus = hsts.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hdc on bs.hprdecision = hdc.menuvalue left join (SELECT biohpr, speccat, site, subsite, dx, subdiagnosis FROM masterrecord.ut_hpr_biosample) as hpr on bs.hprresult = hpr.biohpr where hprind = 1 and qcind = 0 and bs.qcprocstatus = 'H' order by pbiosample asc";
+        $addhprdecision = "";  
+        switch ( $pdta['decisiondisplay'] ) { 
+          case 'confirm':
+            $addhprdecision = " and bs.hprdecision = :decisioncode ";
+            $hprdecisioncode = $pdta['decisiondisplay'];
+            break;
+          case 'additional':
+            $addhprdecision = " and bs.hprdecision = :decisioncode ";
+            $hprdecisioncode = $pdta['decisiondisplay'];
+            break;
+          case 'denied':
+            $addhprdecision = " and bs.hprdecision = :decisioncode ";
+            $hprdecisioncode = $pdta['decisiondisplay'];
+            break;
+          case 'unusable':
+            $addhprdecision = " and bs.hprdecision = :decisioncode ";
+            $hprdecisioncode = $pdta['decisiondisplay'];
+            break;
+          case 'inconclusive':
+            $addhprdecision = " and bs.hprdecision = :decisioncode ";
+            $hprdecisioncode = $pdta['decisiondisplay'];
+            break;
+
+
+        }
+
+        $queSQL = "SELECT replace(ifnull(bs.read_label,''),'_','') as readlabel, ifnull(bs.tisstype,'') as procspeccat, ifnull(bs.anatomicsite,'') as procsite, ifnull(bs.subsite,'') as procsubsite, ifnull(bs.diagnosis,'') as procdiagnosis, ifnull(bs.subdiagnos,'') as procsubdiagnosis, ifnull(bs.QCProcStatus,'') as qmsprocstatusvalue, ifnull(hsts.dspvalue,'') as qmsstatusdsp, ifnull(bs.HPRDecision,'') as hprdecisionvalue, ifnull(hdc.dspvalue,'') as hprdecisiondsp, ifnull(hpr.speccat,'') as hprspeccat, ifnull(hpr.site,'') as hprsite, ifnull(hpr.subsite,'') as hprsubsite, ifnull(hpr.dx,'') as hprdiagnosis, ifnull(hpr.subdiagnosis,'') as hprsubdiagnosis, ifnull(bs.HPRResult,0) as hprresultid, replace(ifnull(bs.HPRSlideReviewed,''),'_','') as hprslidereviewed, ifnull(bs.HPRBy,'') as hprby , ifnull(date_format(bs.HPROn, '%m/%d/%Y'),'') as hpron FROM masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as hsts on bs.qcprocstatus = hsts.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hdc on bs.hprdecision = hdc.menuvalue left join (SELECT biohpr, speccat, site, subsite, dx, subdiagnosis FROM masterrecord.ut_hpr_biosample) as hpr on bs.hprresult = hpr.biohpr where hprind = 1 and qcind = 0 and bs.qcprocstatus = 'H' {$addhprdecision} order by pbiosample asc";
           $queRS = $conn->prepare($queSQL);
-          $queRS->execute(); 
+          if ( $addhprdecision !== "" ) { 
+              $queRS->execute(array(':decisioncode' => $hprdecisioncode )); 
+          } else {
+              $queRS->execute(); 
+          }
+          
           $itemsfound = $queRS->rowCount(); 
           while ( $r = $queRS->fetch(PDO::FETCH_ASSOC)) { 
               $dta[] = $r;
           }
+
+          $msgArr[] = $passdata;
+          $responseCode = 200;
       } 
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
@@ -2792,6 +2833,11 @@ MBODY;
              $primeFocus = "";  
              $left = '11vw';
              $top = '11vh';
+             break; 
+           case 'irequestdisplay':
+             $primeFocus = "";  
+             $left = '5vw';
+             $top = '5vh';
              break; 
          }
 

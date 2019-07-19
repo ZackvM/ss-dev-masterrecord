@@ -15,6 +15,14 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+    case 'irequestdisplay':
+        $pdta = json_decode($passedData, true);         
+        $rqstnbr =  cryptservice( $pdta['objid'], 'd');
+        $titleBar = "Investigator Request Information ({$rqstnbr})";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        $innerDialog = bldInvestigatorRequestDialog ( $pdta['dialogid'] , $passedData );     
+    break;
     case 'hprreturnslidetray':
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Slide Tray Return (Override)";
@@ -1047,14 +1055,16 @@ function qmsactions ( $rqststr, $whichusr ) {
     if ( (int)$whichusr->allowqms <> 1 ) { 
         $pg = "<h1>USER ({$whichusr->userid}) NOT ALLOWED ACCESS TO QMS MODULE";
     } else { 
-        if ( trim($rqststr[2]) === "" ) { 
+        if ( trim($rqststr[2]) === "" || trim($rqststr[2]) === "display" ) { 
             //GENERATE QUE LIST
             $topBtnBar = generatePageTopBtnBar('qmsaction');
-            $pg = bldQMSQueList();
+            $pg = bldQMSQueList( $rqststr[3] );
         } else {             
-            $r = explode("/",$_SERVER['REQUEST_URI']);
-            $pg = bldQAWorkbench (  $r[2] );
-            $topBtnBar = generatePageTopBtnBar('qmsactionwork');
+            if ( trim($rqststr[2]) === 'workbench' ) { 
+              $r = explode("/",$_SERVER['REQUEST_URI']);
+              $pg = bldQAWorkbench ( $r[3] );
+              $topBtnBar = generatePageTopBtnBar('qmsactionwork', "", $_SERVER['HTTP_REFERER'] );
+            } 
         }
     }
     
@@ -2646,17 +2656,38 @@ break;
 case 'qmsactionwork':
     $innerBar = <<<BTNTBL
 <tr>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGrid><tr><td><i class="material-icons">layers_clear</i></td><td>Queue List</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGridWork onclick="window.location.href= '{$additionalinfo}'" ><tr><td><i class="material-icons">layers_clear</i></td><td>Queue List</td></tr></table></td>
 </tr>
 BTNTBL;
     break;
 
 
 case 'qmsaction':
+
+
+
+
+//TODO:  Come up with dynamic way of doing this
     $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGrid><tr><td><i class="material-icons">layers_clear</i></td><td>Refresh</td></tr></table></td>
   <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnSendEmail><tr><td><i class="material-icons">textsms</i></td><td>Email</td></tr></table></td>
+  <td class=topBtnHolderCell>
+    <div class=ttholder>
+      <table class=topBtnDisplayer id=btnDisplayByStatus><tr><td><i class="material-icons">view_list</i></td><td>Display By Status</td></tr></table>
+      <div class=tt>
+        <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
+          <tr class=btnBarDropMenuItem id=btnDisplay_ALL onclick="navigateSite('qms-actions');"><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Display: ALL&nbsp;&nbsp;&nbsp</td></tr>     
+          <tr class=btnBarDropMenuItem id=btnDisplay_CONFIRM onclick="navigateSite('qms-actions/display/confirm');"><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Display: Confirms &nbsp;&nbsp;&nbsp</td></tr>     
+          <tr class=btnBarDropMenuItem id=btnDisplay_ADD onclick="navigateSite('qms-actions/display/additional');"><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Display: Confirm Additionals &nbsp;&nbsp;&nbsp</td></tr>     
+          <tr class=btnBarDropMenuItem id=btnDisplay_denied onclick="navigateSite('qms-actions/display/denied');"><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Display: Denied Cases &nbsp;&nbsp;&nbsp</td></tr>     
+          <tr class=btnBarDropMenuItem id=btnDisplay_denied onclick="navigateSite('qms-actions/display/unusable');"><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Display: Cases marked Unusable &nbsp;&nbsp;&nbsp</td></tr>     
+          <tr class=btnBarDropMenuItem id=btnDisplay_denied onclick="navigateSite('qms-actions/display/inconclusive');"><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Display: Inconclusive &nbsp;&nbsp;&nbsp</td></tr>     
+        </table>
+      </div>  
+    </div>
+  </td>           
+
 </tr>
 BTNTBL;
     break;
@@ -3307,8 +3338,359 @@ return $rtnThis;
 
 }
 
+function bldInvestigatorRequestDialog( $dialogid, $passedData ) { 
+
+  require(serverkeys . "/sspdo.zck");    
+  //{"whichdialog":"irequestdisplay","objid":"WENLK0VpZlZtSjhON3RnU2NVV3NNUT09","dialogid":"8luIRRyc5qU4QHp"} 
+  $pdta = json_decode($passedData,true); 
+  $rqstnbr = cryptservice( $pdta['objid'] , 'd' );
+
+  //TODO: Turn ALL THIS INTO Webservice
+  $reqSQL = <<<REQSQL
+SELECT 
+i.investid, ifnull(i.invest_fname,'') as investfname, ifnull(i.invest_lname,'') as investlname, ifnull(i.invest_salutation,'') as investsaluation, ifnull(i.invest_title,'') as investtitle, ifnull(i.invest_degree,'') as investdegree
+, ifnull(i.invest_homeinstitute,'') as investinstitution, ifnull(i.invest_institutiontype,'') as investinstitutiontype, ifnull(i.invest_division,'') as investdivision, ifnull(i.invest_chtn,'') as investchtn
+, ifnull(i.invest_subgroup,'') as investsubgroup, ifnull(i.invest_status,'') as investstatus, ifnull(date_format(i.invest_statusdate,'%m/%d/%Y'),'') as investstatusdate, ifnull(i.invest_vip,'') as investvip
+, ifnull(i.invest_subgroupcomm,'') as investsubgroupcomm, ifnull(date_format(i.invest_lastshipdate,'%m/%d/%Y'),'') as investlastshipdate, ifnull(date_format(i.invest_appreceivedate,'%m/%d/%Y'),'') as investappreceivedate
+, ifnull(date_format(i.invest_appapprovedate,'%m/%d/%Y'),'') as investappapprovedate, ifnull(date_format(i.invest_appcompletedate,'%m/%d/%Y'),'') as investappcompletedate
+, ifnull(date_format(i.invest_guidelinedate,'%m/%d/%Y'),'') as investguidelinedate, ifnull(date_format(i.invest_duareceivedate,'%m/%d/%Y'),'') as investduareceivedate, ifnull(i.invest_firstenterby,'') as investfirstenterby
+, ifnull(date_format(i.invest_firstenterdate,'%m/%d/%Y'),'') as investfirstenterdate, ifnull(i.invest_networked,'') as investnetworked, ifnull(i.invest_nonnetworkreason,'') as investnonnetworkreason
+, ifnull(date_format(i.invest_networkbydate,'%m/%d/%Y'),'') as investnetworkbydate, ifnull(i.invest_lastupdateby,'') as investlastupdateby
+, pr.projid, ifnull(pr.proj_number,'') as projnumber, ifnull(pr.proj_title,'') as projtitle, ifnull(pr.proj_priority,'') as projpriority, ifnull(pr.proj_status,'') as projstatus
+, ifnull(date_format(pr.proj_statusdate,'%m/%d/%Y'),'') as projstatusdate, ifnull(date_format(pr.proj_lastshipdate,'%m/%d/%Y'),'') as projlastshipdate, ifnull(pr.proj_firstenterby,'') as projfirstenterby
+, ifnull(date_format(pr.proj_firstenterdate,'%m/%d/%Y'),'') as projfirstenterdate, ifnull(pr.proj_lastupdateby,'') as projlastupdateby, ifnull(date_format(pr.proj_lastupdatedate,'%m/%d/%Y'),'') as projlastupdatedate
+, ifnull(pr.proj_irbtype,'') as projirbtype, ifnull(pr.proj_irbnumber,'') as projirbnumber, ifnull(date_format(pr.proj_irbreceivedate,'%m/%d/%Y'),'') as projirbreceivedate
+, ifnull(date_format(pr.proj_irbexpiredate,'%m/%d/%Y'),'') as projirbexpiredate, ifnull(pr.proj_studynum,'') as projstudynum, ifnull(pr.proj_networked,'') as projnetworked
+, ifnull(date_format(pr.proj_networkdate,'%m/%d/%Y'),'') as projnetworkdate, ifnull(pr.proj_comment,'') as projcomment
+, rq.requestid, ifnull(rq.req_number,0) reqnumber, ifnull(rq.req_networked,'No') as reqnetworked, ifnull(date_format(rq.req_networkdate,'%m/%d/%Y'),'') as reqnetworkdate, ifnull(rq.req_networkcomment,'') as reqnetworkcomments
+, ifnull(rq.req_status,'') as reqstatus, ifnull(date_format(rq.req_statusdate,'%m/%d/%Y'),'') as reqstatusdate, ifnull(rq.req_statuscomment,'') as reqstatuscomment, ifnull(rq.req_firstenterby,'') as reqfirstenteredby
+, ifnull(date_format(rq.req_firstenterdate,'%m/%d/%Y'),'') as reqfirstenterdate, ifnull(date_format(rq.req_lastupdatedate,'%m/%d/%Y'), '') as reqlastupdatedate, ifnull(rq.req_lastupdateby,'') as reqlastupdateby
+, ifnull(date_format(rq.req_lastshipdate,'%m/%d/%Y'),'') as reqlastshipdate, ifnull(rq.req_surgery,'No') as reqsurgery, ifnull(rq.req_surgeryunit,'') as reqsurgeryunit, ifnull(rq.req_postexcisiontime,'') as reqpostexcisiontime
+, ifnull(rq.req_transplant,'No') as reqtransplant, ifnull(rq.req_transplantunit,'') as reqtransplantunit, ifnull(rq.req_autopsy,'No') as reqautopsy, ifnull(rq.req_autopsyunit,'') as reqautopsyunit
+, ifnull(rq.req_postmortemtime,'') as reqpostmortemtime, ifnull(rq.req_trauma,'') as reqtrauma, ifnull(rq.req_posttraumatime,'') as reqposttraumatime, ifnull(rq.req_phlebotomy,'') as reqphlebotomy
+, ifnull(rq.req_phlebotomyunit,'') as reqphlebotomyunit, ifnull(rq.req_postphltime,'') as reqpostphltime, ifnull(rq.req_agemin1,'') as reqagemin1, ifnull(rq.req_agemax1,'') as reqagemax1, ifnull(rq.req_ageunit1,'') as reqageunit1
+, ifnull(rq.req_agemin2,'') as reqagemin2, ifnull(rq.req_agemax2,'') as reqagemax2, ifnull(rq.req_ageunit2,'') as reqageunit2, ifnull(rq.req_agemin3,'') as reqagemin3, ifnull(rq.req_agemax3,'') as reqagemax3
+, ifnull(rq.req_ageunit3,'') as reqageunit3, ifnull(rq.req_race,'') as reqrace, ifnull(rq.req_gender,'') as reqsex
+
+, ifnull(rq.req_diseasequalifier,'') as reqdiseasequalifier, ifnull(rq.req_diseaseclass,'') as diseaseclass
+, ifnull(rq.req_histologictype,'') as reqhistologictype, ifnull(rq.req_subtype,'') as reqsubstype, ifnull(rq.req_subsite,'') as reqsubsite, ifnull(rq.req_anasitetype,'') as reqanasitetype
+, ifnull(rq.req_tissuetype,'') as reqtissuetype, ifnull(rq.req_diseasename,'') as reqdiseasename
+
+, ifnull(rq.req_anything,'') as reqanything
+, ifnull(rq.req_normalfromcapt,'') as reqnormalfromcapt, ifnull(rq.req_hasmet,'No') as reqhasmets, ifnull(rq.req_patienthx,'') as reqpatienthx, ifnull(rq.req_chemodiffdz,'') as reqchemodiffdx
+, ifnull(rq.req_chemocurrdz,'') as reqchemocurrdz, ifnull(rq.req_raddiffdz,'') as reqraddiffdz, ifnull(rq.req_radcurrdz,'') as reqradcurrdz, ifnull(rq.req_moletherapy,'') as reqmoletherapy
+, ifnull(rq.req_biotherapy,'') as reqbiotherapy, ifnull(rq.req_radpriordz,'') as reqradpriordz, ifnull(rq.req_hasbf,'') as reqhasbf, ifnull(rq.req_hassolid,'') as reqhassolid, ifnull(rq.req_hasnat,'') as reqhasnat
+, ifnull(rq.req_chartreview,'') as reqchartreview, ifnull(rq.req_vacctherapy,'') as reqvacctherapy, ifnull(rq.req_chemoyn,'') as reqchemoyn, ifnull(rq.req_radyn,'') as reqradyn, ifnull(rq.req_normalfromhtpt,'') as reqnormalfromhtpt
+, ifnull(rq.req_hasother,'') as reqhasother, ifnull(rq.req_normalfromdzpt,'') as reqnormalfromdzpt, ifnull(rq.req_glscoreanyall,'') as reqglscoreanyall, ifnull(rq.req_glscore4,'') as reqglscore4
+, ifnull(rq.req_glscore5,'') as reqglscore5, ifnull(rq.req_glscore6,'') as reqglscore6, ifnull(rq.req_glscore7,'') as reqglscore7, ifnull(rq.req_glscore8,'') as reqglscore8, ifnull(rq.req_glscore9,'') as reqglscore9
+, ifnull(rq.req_ajccstageanyall,'') as reqajccstageanyall, ifnull(rq.req_ajccgrade1,'') as reqajccgrade1, ifnull(rq.req_ajccgrade2,'') as reqajccgrade2, ifnull(rq.req_ajccgrade3,'') as reqajccgrade3
+, ifnull(rq.req_ajccgrade4,'') as reqajccgrade4, ifnull(rq.req_tissuecomment,'') as reqtissuecomment
+FROM vandyinvest.investtissreq rq 
+left join vandyinvest.investproj pr on rq.projid = pr.projid
+left join vandyinvest.invest i on pr.investid = i.investid
+where requestid = :requestnbr
+REQSQL;
+
+  $tissSQL = <<<TISSSQL
+SELECT 
+ifnull(tis_subtype,'') as tissubsite
+, ifnull(tis_anasitetype,'') as tisanasitetype
+, ifnull(tis_required,'') as tisrequired
+, ifnull(tis_subsite,'') as tissubsite
+, ifnull(tis_subtype,'') as tissubtype
+, ifnull(tis_anyall,'') as tisanyall
+, ifnull(tis_subsitequalifier,'') as tissubsitequalifier
+, ifnull(tis_tissuetype,'') as tistissuetype
+, ifnull(tis_dztissueid,'') as tisdztissueid
+, ifnull(tis_hasuninvolved,'') as tishasuninvolved
+, ifnull(tis_histotype,'') as tishistotype
+, tissueid
+FROM vandyinvest.eastern_tissuedetail where requestid = :requestid
+TISSSQL;
+
+  //TODO: DO DATA CHECKS TO MAKE SURE PROPER QUERY OBJECT
+  //TODO: MAKE THIS A WEBSERVICE 
+  $reqRS = $conn->prepare($reqSQL); 
+  $reqRS->execute(array(':requestnbr' => $rqstnbr));
+  //{"investchtn":"CHTN","investsubgroup":"""investvip":"","investsubgroupcomm":"""investnonnetworkreason":"","investnetworkbydate":"","investlastupdateby":"cellinin"
+  //"projfirstenterby":"cellinin","projfirstenterdate":"11\/16\/2017","projlastupdateby":"cellinin","projlastupdatedate":"07\/02\/2019"
+  //"reqnetworkcomments":"","reqstatuscomment":"","reqfirstenteredby":"cellinin","reqfirstenterdate":"11\/16\/2017","reqlastupdatedate":"07\/02\/2019","reqlastupdateby":"cellinin" 
+  $req = $reqRS->fetch(PDO::FETCH_ASSOC);
+
+  $tisRS = $conn->prepare($tissSQL); 
+  $tisRS->execute(array('requestid' => $rqstnbr));
+  $tis = array();
+
+  $tisReqSQL = <<<PREPSQL
+SELECT  
+prepid
+, ifnull(prp.prep_required,'') as prequired
+, ifnull(prp.prep_frequency,'') as pfreq
+, ifnull(prp.prep_frequencyunit,'') as pfrequnit
+
+, ifnull(prp.prep_sizeh,'') as psizeh
+, ifnull(prp.prep_sizew,'') as psizew
+, ifnull(prp.prep_sizel,'') as psizel
+, ifnull(prp.prep_sizeunit,'') as psizeunit
+, ifnull(prp.prep_amount,'') as pamt
+, ifnull(prp.prep_amountunit,'') as pamtunit
+, ifnull(prp.prep_prepconc,'') as pconc
+
+, ifnull(prp.prep_grouptype,'') as pgrptype
+, ifnull(prp.prep_preptype,'') as ppretype
+
+, ifnull(prp.prep_minshipcount,'') as pminship 
+, ifnull(prp.prep_mincount,'') as pmincnt
+, ifnull(prp.prep_maxamount,'') as pmaxcnt
+, ifnull(prp.prep_prefercount,'') as pprefercnt
+, ifnull(prp.prep_satdelivery,'') as psatdel
+
+, ifnull(prp.prep_comment,'') as ppcmt
+, ifnull(prp.prep_freshcomment,'') as pfrshcmt
+, ifnull(prp.prep_shipinstr,'') as pshpinst
+, ifnull(prp.prep_shipsameday,'') as pshipsameday
+
+FROM vandyinvest.eastern_tissueprep prp where tissueid = :tissueid
+PREPSQL;
+  $tisReqRS = $conn->prepare($tisReqSQL);
+  while ( $t = $tisRS->fetch(PDO::FETCH_ASSOC)) {
+    $tisReqRS->execute(array(':tissueid' => $t['tissueid']));
+    $tisPrep = array(); 
+      while ( $p = $tisReqRS->fetch(PDO::FETCH_ASSOC)) { 
+        $tisPrep[] = $p;
+      }  
+      $tis[] = array_merge($t,array('prep' => $tisPrep));  
+  }
+///END WEBSERVICE DATA
+  
 
 
+  $tprepTbl = "<table border=0 cellpadding=0 cellspacing=0 class=RQHolderTbl><tr><td class=RQHeaders>PREPARATION REQUIREMENTS (Scroll)</td></tr><tr><td> <div id=preprequirementdiv><table border=0 width=100%><tr><td class=headerInfoCell width=10px>#</td><td class=headerInfoCell>Required</td><td class=headerInfoCell>Any-All</td><td class=headerInfoCell>Tissue Type</td><td class=headerInfoCell>Site::Sub-Site</td><td class=headerInfoCell>Site Qualifier</td><td class=headerInfoCell>Histotype::Modifier</td><td class=headerInfoCell>Has<br>Uninvolved</td>   </tr>"; 
+  $prepCntr = 1; 
+  foreach ( $tis as $tkey => $tval ) { 
+
+      $tss = ( trim($tval['tissubsite']) !== "" ) ? " :: {$tval['tissubsite']}" : "";
+      $tmod = ( trim($tval['tissubtype']) !== "" ) ? " :: {$tval['tissubtype']}" : "";
+
+      $innerprep = "";
+      foreach ( $tval['prep'] as $pkey => $pval ) {
+              $freq = ( trim($pval['pfreq']) !== "" ) ? "{$pval['pfreq']}" : "";
+              $freq .= ( trim($pval['pfrequnit']) !== "" ) ? " {$pval['pfrequnit']}" : "";
+
+              $amt = ( trim($pval['psizeh']) !== "" ) ? "{$pval['psizeh']}" : "";
+              $amt .= ( trim($pval['psizew']) !== "" ) ? ( trim($amt) !== "" ) ? "x{$pval['psizew']}" : "{$pval['psizew']}" : ""; 
+              $amt .= ( trim($pval['psizel']) !== "" ) ? ( trim($amt) !== "" ) ? "x{$pval['psizel']}" : "{$pval['psizel']}" : ""; 
+              $amt .= ( trim($pval['psizeunit']) !== "" ) ? ( trim($amt) !== "" ) ? " {$pval['psizeunit']}" : "{$pval['psizeunit']}" : ""; 
+   
+              $amta = ( trim($pval['pamt']) !== "" ) ? "{$pval['pamt']}" : "";
+              $amta .= ( trim($pval['pamtunit']) !== "" ) ? ( trim($amta) !== "" ) ? " {$pval['pamtunit']}" : "{$pval['pamtunit']}" : "";
+              $amta = ( trim($amta) !== "" && trim($amt) !== "" ) ? " :: " . $amta : $amta;
+
+              $minmax = ( trim($pval['pmincnt']) !== "" ) ? "{$pval['pmincnt']}" : "";
+              $minmax .= ( trim($pval['pmaxcnt']) !== "" ) ? "::{$pval['pmaxcnt']}" : "";
+ 
+              $ship = ( trim($pval['pminship']) !== "" ) ? "{$pval['pminship']}" : "";
+              $ship .= ( trim($pval['pprefercnt']) !== "" ) ? "::{$pval['pprefercnt']}" : "";
+
+              $innerprep .= "<tr><td class=dataDisplay>{$pval['prequired']}</td><td class=dataDisplay>{$pval['pgrptype']}</td><td class=dataDisplay>{$pval['ppretype']}</td><td class=dataDisplay>{$freq}</td><td class=dataDisplay>{$amt}{$amta}</td><td class=dataDisplay>{$pval['pconc']}</td><td class=dataDisplay>{$minmax}</td><td class=dataDisplay>{$ship}</td><td class=dataDisplay>{$pval['psatdel']}</td><td class=dataDisplay>{$pval['ppcmt']}</td><td class=dataDisplay>{$pval['pfrshcmt']}</td><td class=dataDisplay>{$pval['pshipinst']}</td><td class=dataDisplay>{$pval['pshipsameday']}</td></tr>";
+      } 
+      $prepTbl = ( trim($innerprep) !== "" ) ? "<table border=0 width=100%><tr><td class=smlHeadCell>Required</td><td class=smlHeadCell>Group</td><td class=smlHeadCell>Type</td><td class=smlHeadCell>Freq</td><td class=smlHeadCell>Amount</td><td class=smlHeadCell>Conc.</td><td class=smlHeadCell>Min-Max</td><td class=smlHeadCell>Ship</td><td class=smlHeadCell>Saturday?</td><td class=smlHeadCell>Prep Comments</td><td class=smlHeadCell>Fresh Comments</td><td class=smlHeadCell>Ship Instructions</td><td class=smlHeadCell>Same Day Instructions</td></tr>{$innerprep}</table>" : "";
+
+      
+      $tprepTbl .= "<tr><td class=dataDisplay>{$prepCntr}</td><td class=dataDisplay>{$tval['tisrequired']}</td><td class=dataDisplay>{$tval['tisanyall']}</td><td class=dataDisplay>{$tval['tistissuetype']}</td><td class=dataDisplay>{$tval['tisanasitetype']}{$tss}</td><td class=dataDisplay>{$tval['tissubsitequalifier']}</td><td class=dataDisplay>{$tval['tishistotype']}{$tmod}</td><td class=dataDisplay>{$tval['tishasuninvolved']}</td></tr><tr><td colspan=8 style=\"padding: 0 0 0 1vw;\">{$prepTbl}</td></tr>";
+      $prepCntr++;
+  }
+  $tprepTbl .= "</table></div></td></tr></table>"; 
+  $tisdsp = $tprepTbl;
+
+  $investname = ( trim($req['investsaluation']) !== "" ) ? "{$req['investsaluation']} " : "";
+  $investname .= ( trim($req['investfname']) !== "" ) ? "{$req['investfname']}" : "";
+  $investname .= ( trim($req['investlname']) !== "" ) ? " {$req['investlname']}" : "";
+  $investname .= ( trim($req['investdegree']) !== "" ) ? " , {$req['investdegree']}" : "";
+ // $investname .= ( trim($req['investtitle']) !== "" ) ? " ({$req['investtitle']})" : "";
+
+  $istatDate = ( trim($req['investstatusdate']) !== "" ) ? "<br>({$req['investstatusdate']})" : "";
+  $projnbr = ( trim($req['projnumber']) !== "" ) ? substr(("000" . $req['projnumber']),-3) : "";
+  $projStsDate = ( trim($req['projstatusdate']) !== "" ) ? "<br>({$req['projstatusdate']})" : "";
+  $projNetDate = ( trim($req['projnetworkdate']) !== "" ) ? "<br>({$req['projnetworkdate']})" : "";
+  $irbstuff = ( trim($req['projirbreceivedate']) !== "" ) ? "{$req['projirbreceivedate']}" : "";
+  $irbstuff .= ( trim($req['projirbexpiredate']) !== "" ) ? "&nbsp::&nbsp;{$req['projirbexpiredate']}" : "";
+ 
+  $reqnbr = substr(('000' . $req['reqnumber']),-3);
+  $reqstsDate = ( trim($req['reqstatusdate']) !== "" ) ? "<br>{$req['reqstatusdate']}" : "";
+  $reqNetDate = ( trim($req['reqnetworkdate']) !== "" ) ? "<br>{$req['reqnetworkdate']}" : "";
+
+  $agedsp = ( trim($req['reqagemin1']) !== "" ) ? "{$req['reqagemin1']}" : "";
+  $agedsp .= ( trim($req['reqagemax1']) !== "" ) ? "-{$req['reqagemax1']}" : "";
+  $agedsp .= ( trim($req['reqageunit1']) !== "" ) ? " {$req['reqageunit1']}" : ""; 
+
+  $age2dsp = ( trim($req['reqagemin2']) !== "" ) ? "{$req['reqagemin2']}" : "";
+  $age2dsp .= ( trim($req['reqagemax2']) !== "" ) ? "-{$req['reqagemax2']}" : "";
+  $age2dsp .= ( trim($req['reqageunit2']) !== "" ) ? " {$req['reqageunit2']}" : ""; 
+
+  $age3dsp = ( trim($req['reqagemin3']) !== "" ) ? "{$req['reqagemin3']}" : "";
+  $age3dsp .= ( trim($req['reqagemax3']) !== "" ) ? "-{$req['reqagemax3']}" : "";
+  $age3dsp .= ( trim($req['reqageunit3']) !== "" ) ? " {$req['reqageunit3']}" : ""; 
+
+  $gls = ( trim($req['reqglscore4']) !== "" ) ? "{$req['reqglscore4']}" : "";
+  $gls .= ( trim($req['reqglscore5']) !== "" ) ? ( trim($gls) !== "" ) ? ", {$req['reqglscore5']}" :  "{$req['reqglscore5']}" : "";
+  $gls .= ( trim($req['reqglscore6']) !== "" ) ? ( trim($gls) !== "" ) ? ", {$req['reqglscore6']}" :  "{$req['reqglscore6']}" : "";
+  $gls .= ( trim($req['reqglscore7']) !== "" ) ? ( trim($gls) !== "" ) ? ", {$req['reqglscore7']}" :  "{$req['reqglscore7']}" : "";
+  $gls .= ( trim($req['reqglscore8']) !== "" ) ? ( trim($gls) !== "" ) ? ", {$req['reqglscore8']}" :  "{$req['reqglscore8']}" : "";
+  $gls .= ( trim($req['reqglscore9']) !== "" ) ? ( trim($gls) !== "" ) ? ", {$req['reqglscore9']}" :  "{$req['reqglscore9']}" : "";
+
+  $ajcc = ( trim($req['reqajccgrade1']) !== "" ) ? "{$req['reqajccgrade1']}" : "";
+  $ajcc .= ( trim($req['reqajccgrade2']) !== "" ) ? ( trim($ajcc) !== "" ) ? ", {$req['reqajccgrade2']}" :  "{$req['reqajccgrade2']}" : "";
+  $ajcc .= ( trim($req['reqajccgrade3']) !== "" ) ? ( trim($ajcc) !== "" ) ? ", {$req['reqajccgrade3']}" :  "{$req['reqajccgrade3']}" : "";
+  $ajcc .= ( trim($req['reqajccgrade4']) !== "" ) ? ( trim($ajcc) !== "" ) ? ", {$req['reqajccgrade4']}" :  "{$req['reqajccgrade4']}" : "";
+
+
+$investtbl = <<<INVESTTBL
+<table border=0 cellpadding=0 cellspacing=0><tr><td class=RQHeaders>INVESTIGATOR INFORMATION</td></tr></table>
+
+<table border=0 width=100%>
+<tr><td class=headerInfoCell>Invest #</td><td class=headerInfoCell>Investigator Status<br>Status Date</td><td class=headerInfoCell>Networked</td><td class=headerInfoCell>Investigator Name<br>Title</td><td class=headerInfoCell>Institution<br>Type</td><td class=headerInfoCell>CHTN Division</td><td class=headerInfoCell>App. Received</td><td class=headerInfoCell>App. Complete</td><td class=headerInfoCell>App. Approved</td><td class=headerInfoCell>Guidelines Sent</td><td class=headerInfoCell>DUA Sent</td><td class=headerInfoCell>Entered By<br>Entered Date</td>  </tr>
+<tr>
+  <td valign=top class=dataDisplay>{$req['investid']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['investstatus']}{$istatDate}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['investnetworked']}&nbsp;</td> 
+  <td valign=top class=dataDisplay style="white-space: nowrap;">{$investname}<br>{$req['investtitle']}&nbsp;</td>
+  <td valign=top class=dataDisplay style="white-space: nowrap;">{$req['investinstitution']}<br>{$req['investinstitutiontype']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['investdivision']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['investappreceivedate']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['investappcompletedate']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['investappapproveddate']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['investguidelinedate']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['investduareceivedate']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['investfirstenterby']}<br>{$req['investfirstenterdate']}&nbsp;</td>
+</tr>
+</table>
+
+<table border=0 cellspacing=0 cellpadding=0><tr><td class=RQHeaders>PROJECT INFORMATION</td></tr><tr><td>
+
+<table border=0 width=100%>
+<tr><td class=headerInfoCell>Project Id</td><td class=headerInfoCell>Proj #</td><td class=headerInfoCell>Status</td><td class=headerInfoCell>Networked</td><td class=headerInfoCell>Project title</td><td class=headerInfoCell>IRB Type</td><td class=headerInfoCell>IRB #<br>Received::Expiration</td><td class=headerInfoCell>Priority</td><td class=headerInfoCell>Study #</td><td class=headerInfoCell>Project<br>Comments</td></tr>
+<tr> 
+  <td valign=top class=dataDisplay>{$req['projid']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$projnbr}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['projstatus']}{$projStsDate}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['projnetworked']}{$projNetDate}&nbsp;</td>
+  <td valign=top class=dataDisplay style="white-space: nowrap;">{$req['projtitle']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['projirbtype']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['projirbnumber']}&nbsp;<br>{$irbstuff}</td>
+  <td valign=top class=dataDisplay>{$req['projpriority']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['projstudynum']}&nbsp;</td>
+  <td class=dataDisplay>{$req['projcomment']}&nbsp;</td>
+</tr>
+</table>
+</td></tr></table>
+
+
+<table border=0 cellspacing=0 cellpadding=0><tr><td class=RQHeaders>REQUEST {$req['requestid']} INFORMATION</td></tr><tr><td>
+
+<table border=0 width=100%>
+<tr>
+<td class=headerInfoCell># in<br>Project</td><td class=headerInfoCell>Status</td><td class=headerInfoCell>Networked</td>
+<td class=headerInfoCell>Specimen Category</td><td class=headerInfoCell>Site</td><td class=headerInfoCell>Sub-Site</td><td class=headerInfoCell>Histologic Type</td><td class=headerInfoCell>Sub Type</td><td class=headerInfoCell>Disease Class</td><td class=headerInfoCell>Disease Qualifier</td>
+<td class=headerInfoCell>Last Shipped</td><td class=headerInfoCell>Tissue Comments</td>
+</tr>
+<tr>
+<td valign=top class=dataDisplay>{$reqnbr} </td>
+<td valign=top class=dataDisplay>{$req['reqstatus']}{$reqstsDate}</td>
+<td valign=top class=dataDisplay>{$req['reqnetworked']}{$reqNetDate}</td>
+  <td valign=top class=dataDisplay>{$req['reqtissuetype']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['reqanasitetype']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['reqsubsite']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['reqhistologictype']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['reqsubstype']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['diseaseclass']}&nbsp;</td>
+  <td valign=top class=dataDisplay>{$req['reqdiseasequalifier']}&nbsp;</td>
+<td valign=top class=dataDisplay>{$req['reqlastshipdate']}</td>
+<td valign=top class=dataDisplay>{$req['reqtissuecomments']}</td>
+</tr>
+</table>
+</td></tr></table>
+
+
+<table border=0 cellspacing=0 cellpadding=0><tr><td class=RQHeaders>BIOSAMPLE REQUEST PARAMETERS</td></tr></table>
+
+<table border=0>
+<tr><td valign=top>
+  <table border=0>
+    <tr><td colspan=2 class=headerInfoCellVert>Surgery</td><td colspan=2 class=headerInfoCellVert>Autopsy</td><td colspan=2 class=headerInfoCellVert>Trauma</td></tr>
+    <tr>
+      <td class=dataCellLft>{$req['reqsurgery']}&nbsp;</td><td class=dataCellRgt>{$req['reqsurgeryunit']} {$req['reqpostexcisiontime']}&nbsp;</td>
+      <td class=dataCellLft> {$req['reqautopsy']} </td><td class=dataCellRgt> {$req['reqautospyunit']} {$req['reqpostmortemtime']}</td><td class=dataCellLft>{$req['reqtrauma']}&nbsp;</td><td class=dataCellRgt>{$req['reqposttraumatime']}&nbsp;</td>
+    </tr>
+    <tr><td colspan=2 class=headerInfoCellVert>Transplant</td><td colspan=2 class=headerInfoCellVert>Phlebotomy</td></tr>
+    <tr>
+      <td class=dataCellLft>{$req['reqtransplant']}&nbsp;</td><td class=dataCellRgt>{$req['reqtransplantunit']}&nbsp;</td>
+      <td class=dataCellLft>{$req['reqphlebotomy']}&nbsp;</td><td class=dataCellRgt>{$req['reqpostphltime']}&nbsp;</td>
+    </tr>
+  </table>
+</td><td valign=top>
+
+<table border=0>
+<tr><td valign=top class=headerInfoCellVert>Age</td><td valign=top style="white-space: nowrap;" class=dataDisplayVert>{$agedsp} {$age2dsp} {$age3dsp}&nbsp;</td></tr>
+<tr><td valign=top class=headerInfoCellVert>Race</td><td valign=top class=dataDisplayVert>{$req['reqrace']}&nbsp;</td></tr>
+<tr><td valign=top class=headerInfoCellVert>Sex</td><td valign=top class=dataDisplayVert>{$req['reqsex']}&nbsp;</td></tr>
+</table>
+
+</td>
+<td valign=top>
+
+<table border=0>
+  <tr><td class=headerInfoCellVert>Anything</td><td class=dataDisplayVert>{$req['reqanything']}</td><td class=headerInfoCellVert>Normal From CA-PT</td><td class=dataDisplayVert>{$req['reqnormalfromcapt']}</td><td class=headerInfoCellVert>Has METS</td><td class=dataDisplayVert>{$req['reqhasmets']}</td><td class=headerInfoCellVert>PT HX</td><td class=dataDisplayVert>{$req['reqpatienthx']}</td></tr>
+  <tr><td class=headerInfoCellVert>Chemo Diff DX</td><td class=dataDisplayVert>{$req['reqchemodiffdx']}</td><td class=headerInfoCellVert>Chemo Curr DX</td><td class=dataDisplayVert>{$req['reqchemocurrdz']}</td><td class=headerInfoCellVert>Rad Diff DX</td><td class=dataDisplayVert>{$req['reqraddiffdz']}</td><td class=headerInfoCellVert>Rad Curr DX</td><td class=dataDisplayVert>{$req['reqradcurrdz']}</td></tr>
+  <tr><td class=headerInfoCellVert>Mole Therapy</td><td class=dataDisplayVert>{$req['reqmoletherapy']}</td><td class=headerInfoCellVert>Bio Therapy</td><td class=dataDisplayVert>{$req['reqbiotherapy']}</td><td class=headerInfoCellVert>Rad Prior DX</td><td class=dataDisplayVert>{$req['reqradpriordz']}</td><td class=headerInfoCellVert>Has BF</td><td class=dataDisplayVert>{$req['reqhasbf']}</td></tr>
+  <tr><td class=headerInfoCellVert>Has Solid</td><td class=dataDisplayVert>{$req['reqhassolid']}</td><td class=headerInfoCellVert>Has NAT</td><td class=dataDisplayVert>{$req['reqhasnat']}</td><td class=headerInfoCellVert>Chart review</td><td class=dataDisplayVert>{$req['reqchartreview']}</td><td class=headerInfoCellVert>Vacc Therapy</td><td class=dataDisplayVert>{$req['reqvacctherapy']}</td></tr>
+</table>
+
+</td>
+<td valign=top>
+
+<table border=0>
+<tr><td class=headerInfoCellVert>Chemo</td><td class=dataDisplayVert>{$req['reqchemoyn']}</td><td class=headerInfoCellVert>Radiation</td><td class=dataDisplayVert>{$req['reqradyn']}</td></tr>
+<tr><td class=headerInfoCellVert>Norm from HT-PT</td><td class=dataDisplayVert>{$req['reqnormalfromhtpt']}</td><td class=headerInfoCellVert>Has Other</td><td class=dataDisplayVert>{$req['reqhasother']}</td></tr>
+<tr><td class=headerInfoCellVert>GL Score Any</td><td class=dataDisplayVert>{$req['reqglscoreanyall']}</td><td class=headerInfoCellVert>GL Score</td><td class=dataDisplayVert>{$gls}</td></tr>
+<tr><td class=headerInfoCellVert>AJCC Stage Any</td><td class=dataDisplayVert>{$req['reqajccstageanyall']}</td><td class=headerInfoCellVert>AJCC Stage</td><td class=dataDisplayVert>{$ajcc}</td></tr>
+</table>
+
+</td>
+</tr>
+</table>
+
+
+{$tisdsp}
+
+INVESTTBL;
+
+
+$rtnThis = <<<PGCONTENT
+<style>
+
+.RQHolderTbl { } 
+.RQHeaders { width: 90vw; background: rgba(100,149,237,1); color: rgba(255,255,255,1); font-size: 1.5vh; font-weight: bold; padding: 8px; box-sizing: border-box; }
+
+.headerInfoCell { font-size: 1.1vh; background: rgba(145,145,145,.2); color: rgba(48,57,71,1); font-weight: bold; padding: 3px 5px; }
+.dataDisplay { color: rgba(48,57,71,1); font-size: 1.3vh; padding: 8px 6px; border-bottom: 1px solid rgba(145,145,145,.5);border-right: 1px solid rgba(145,145,145,.5); min-width: 5vw; } 
+
+.headerInfoCellVert { font-size: 1.1vh; background: rgba(145,145,145,.2); color: rgba(48,57,71,1); font-weight: bold; padding: 8px 6px; }
+.dataDisplayVert { color: rgba(48,57,71,1); font-size: 1.1vh; padding: 8px 6px; border-bottom: 1px solid rgba(145,145,145,.5);border-right: 1px solid rgba(145,145,145,.5); min-width: 4vw; max-width: 6vw; } 
+.dataCellLft { border-left: 1px solid rgba(145,145,145,.5); border-bottom: 1px solid rgba(145,145,145,.5); color: rgba(48,57,71,1); font-size: 1.1vh; padding: 8px 6px; }
+.dataCellRgt { border-right: 1px solid rgba(145,145,145,.5); border-bottom: 1px solid rgba(145,145,145,.5); color: rgba(48,57,71,1); font-size: 1.1vh; padding: 8px 6px; }
+
+.smlHeadCell { font-size: 1vh; color: rgba(48,57,71,1); border-bottom: 1px solid rgba(145,145,145,1); font-weight: bold; } 
+
+#preprequirementdiv { height: 25vh; overflow: auto; }
+
+</style>
+
+{$investtbl}
+
+PGCONTENT;
+return $rtnThis;
+} 
 
 function bldHPRSlideTrayReturnOverride ( $dialogid, $passedData ) { 
   $at = genAppFiles;
@@ -3776,14 +4158,16 @@ function bldQAWorkbench ( $encryreviewid ) {
     $pdta = array();
     $pdta['reviewid'] = $encryreviewid;
     $payload = json_encode($pdta);
+
     $reviewdta = json_decode(callrestapi("POST", dataTree . "/data-doers/qa-review-workbench-data",serverIdent, serverpw, $payload), true);
+
     //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"hprhead":{"bsspeccat":"MALIGNANT","bsanatomicsite":"THYROID"
     //,"bssubsite":"","bsdx":"CARCINOMA","bsdxmod":"MEDULLARY CARCINOMA","bsmets":"","associd":"iVeiYukTZPQczTfahx8y"}}}
 
-$headdta = $reviewdta['DATA']['hprhead'];
+    $headdta = $reviewdta['DATA']['hprhead'];
+    $ass = $reviewdta['DATA']['associativelisting'];
 $reviewer = $headdta['reviewer'];
 $reviewer .= ( trim($headdta['inputby']) !== "" && trim($headdta['reviewer']) !== trim($headdta['inputby']) ) ? " ({$headdta['inputby']})" : ""; 
-
 $ss = ( trim($headdta['hprsubsite']) !== "" ) ? " ({$headdta['hprsubsite']})" : "";
 $hprspc = ( trim($headdta['hprspeccat']) !== "" ) ? " [{$headdta['hprspeccat']}]" : "";
 $hprsite = ( trim($headdta['hprsite']) !== "" || trim($ss) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Site [Specimen Category]</td><td class=qmsDataDsp valign=top>{$headdta['hprsite']}{$ss}{$hprspc}</td></tr>" : "";
@@ -3791,20 +4175,16 @@ $hprmod = ( trim($headdta['hprdxmod']) !== "" ) ? " ({$headdta['hprdxmod']})" : 
 $hprdx = ( trim($headdta['hprdx']) !== "" || trim($hprmod) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Diagnosis (Modifier)</td><td  class=qmsDataDsp valign=top>{$headdta['hprdx']}{$hprmod}</td></tr>" : "" ;
 $hprmet = ( trim($headdta['hprmets']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Metastatic FROM</td><td  class=qmsDataDsp valign=top>{$headdta['hprmets']}</td></tr>" : "";
 $involv = ( trim($headdta['hpruninvolveddsp']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Uninvolved Sample</td><td class=qmsDataDsp valign=top>{$headdta['hpruninvolveddsp']}</td></tr>" : "";
-
 $hprgencmt = ( trim( $headdta['hprgeneralcomments']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Comment:</td><td class=qmsDataDsp valign=top>{$headdta['hprgeneralcomments']}</td></tr>" : "";
 $hprrarecmt = ( trim( $headdta['hprrarereason']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Rare Reason:</td><td class=qmsDataDsp valign=top>{$headdta['hprrarereason']}</td></tr>" : "";
 $hprspecicmt = ( trim( $headdta['hprspecialinstructions']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Special Instructions to Staff:</td><td class=qmsDataDsp valign=top>{$headdta['hprspecialinstructions']}</td></tr>" : "";
 $hprunusecmt = ( trim( $headdta['hprunusabletext']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Reason Unusable:</td><td class=qmsDataDsp valign=top>{$headdta['hprunusabletext']}</td></tr>" : "";
 $hprinconcmt = ( trim( $headdta['hprinconclusivetext']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Inconclusive:</td><td class=qmsDataDsp valign=top>{$headdta['hprinconclusivetext']}</td></tr>" : "";
-
 $pxTbl = "<tr><td valign=top class=qmsDataLabel>A/R/S</td><td class=qmsDataDsp valign=top>{$headdta['bspxiage']} {$headdta['bspxiageuom']} / {$headdta['bspxirace']} / {$headdta['bspxisexdsp']} </td></tr><tr><td class=qmsDataLabel>Chemo/Radiation</td><td class=qmsDataDsp valign=top>{$headdta['bschemoinddsp']} / {$headdta['bsradinddsp']}</td></tr>";
-
 $procTbl = "<tr><td class=qmsDataLabel valign=top>Procedure:</td><td class=qmsDataDsp valign=top>{$headdta['bsproctypedsp']}<br>({$headdta['procurementdate']})</td><td class=qmsDataLabel valign=top>Institution:</td><td class=qmsDataDsp valign=top colspan=3>{$headdta['bsprocureinstitutiondsp']}</td></tr>";
 
-
 $tscale = ( trim($headdta['hprtumorscaledsp']) !== "" ) ? " ({$headdta['hprtumorscaledsp']})" : "";
-$tumordsp = ( trim($headdta['hprtumorgrade']) !== "" ) ? "<tr><td>TUMOR</td><td>{$headdta['hprtumorgrade']}{$tscale}</td></tr>" : "";
+$tumordsp = ( trim($headdta['hprtumorgrade']) !== "" ) ? "<tr><td class=qmsDataLabel>Tumor Grade/Scale</td><td class=qmsDataDsp>{$headdta['hprtumorgrade']}{$tscale}</td></tr>" : "";
 
 $hprdatatbl = <<<DATASTUFF
 <table border=0 cellspacing=0 cellpadding=0>
@@ -3831,16 +4211,89 @@ DATASTUFF;
 $prnbr = substr(("000000" . $headdta['pathreportid']),-6);
 $uploadline = ( trim($headdta['pruploadedby']) !== "" ) ? "<b>Uploaded</b>: {$headdta['pruploadedby']} :: {$headdta['uploadedon']} (<b>Pathology Report</b>: {$prnbr})" : "";
 
+//{"shippeddate":"","shipdocrefid":"""assignedto":"BANK","investlname":"","investfname":"","investinstitution":"","assignedreq":"""hprresult":18705 }
+
+$assbg = "";
+$assTbl = "<table border=1>";
+$bggroups = 0;
+$segrowcnt = 0;
+$innerAss = "<table>";
+foreach ( $ass as $asskey => $assval ) { 
+    if ( $assbg !== $assval['readlabel'] ) { 
+        //add TBLROW FOR BG
+        $innerAss .= "</table>";
+        $assTbl .= "<tr><td colspan=6 valign=top>{$innerAss}</td></tr>";
+        $innerAss = "<table>";
+        $mintgreen = ( substr( $assval['readlabel'] ,0, 6) === substr( $headdta['slidebgs'],0,6) ) ? "mintbck" : "standardbck"; 
+        $ss = ( trim($assval['subsite']) !== "" ) ? " ({$assval['subsite']})" : "";
+        $dx = ( trim($assval['dx']) !== "" ) ? " / {$assval['dx']}" : "";
+        $mdx = ( trim($assval['subdx']) !== "" ) ? " ({$assval['subdx']})" : "";
+        $met = ( trim($assval['metsite']) !== "") ? " [{$assval['metsite']}]" : "";
+
+        $hprcomp = ( (int)$assval['hprind'] === 1 ) ? "<i class=\"material-icons constiticon\">check_circle</i>" : "";
+        $qacomp = ( (int)$assval['qcind'] === 1 ) ? "<i class=\"material-icons constiticon\">check_circle</i>" : "";
+
+        $assTbl .= <<<ROWLINE
+<tr class="{$mintgreen}">
+  <td valign=top>{$hprcomp}</td>
+  <td valign=top>{$qacomp}</td>
+  <td valign=top>{$assval['readlabel']}</td>
+  <td valign=top>{$assval['specimencategory']} {$assval['site']}{$ss}{$dx}{$mdx}{$met}</td>
+  <td valign=top>{$assval['hprdecdsp']}<br>[{$assval['hpron']}]</td>
+  <td valign=top>{$assval['qmsstatus']}</td>
+</tr>
+ROWLINE;
+        $assbg = $assval['readlabel']; 
+        $bggroups++;
+    }  
+
+    $prep = ( trim($assval['preparation']) !== "" ) ? " / {$assval['preparation']}" : "";
+    $ifname = ( trim($assval['investfname']) !== "" ) ? ", {$assval['investfname']} " : "";
+    $iname = (trim($assval['investlname']) !== "" ) ? "{$assval['investlname']}{$ifname}" : "";
+    
+    
+    $reqNbr = ( trim($assval['assignedreq']) !== "" ) ? "/{$assval['assignedreq']}" : "";
+    $reqency = ( trim($assval['assignedreq']) !== "" ) ? " onclick=\"generateDialog('irequestdisplay','" . cryptservice($assval['assignedreq']) . "');\" " : ""; 
+    $reqPopStrt = ( trim($assval['assignedreq']) !== "" ) ? "<div class=assttholder>" : "";
+    $reqPopEnd = ( trim($assval['assignedreq']) !== "" ) ? "<div class=\"tt quickLink\" {$reqency}>View Request {$assval['assignedreq']}</div></div>" : "";
+
+    $assign = ( trim($assval['assignedto']) !== "" ) ? "{$reqPopStrt}{$iname}({$assval['assignedto']}{$reqNbr}){$reqPopEnd}" : "";
+
+    $sdencry = ( trim($assval['shipdocrefid']) !== "" ) ? cryptservice($assval['shipdocrefid']) : "";
+    $ship = ( trim($assval['shipdocrefid']) !== "" ) ? "<div class=sdttholder>" . substr(('000000' . $assval['shipdocrefid']),-6) . "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]<p><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">print</i> Print Ship-Doc (" . substr(('000000' . $assval['shipdocrefid']),-6) . ")</div><div onclick=\"navigateSite('shipment-document/{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">edit</i> Edit Ship-Doc (" . substr(('000000' . $assval['shipdocrefid']),-6) . ")</div></div>" : "";
+    $ship .= ( trim($assval['shippeddate']) !== "" ) ? "<br>[{$assval['shippeddate']}]" : "";
+
+    $innerAss .= <<<INASSTBL
+  <tr>
+    <td valign=top>{$assval['bgs']}</td>
+    <td valign=top>{$assval['prepmethod']}{$prep}</td>
+    <td valign=top>{$assign}</td>
+    <td valign=top>{$ship}</td>
+  </tr>
+INASSTBL;
+    $segrowcnt++; 
+}
+$innerAss .= "</table>";
+$assTbl .= "<tr><td colspan=6 valign=top>{$innerAss}</td></tr>";
+$assTbl .= "</table>";
+
     $hprside = <<<HPRTBL
-<table border=0 cellspacing=0 cellpadding=0 style="width: 30vw; height: 88vh;">
+<table border=1 cellspacing=0 cellpadding=0 style="width: 30vw; height: 88vh;">
 <tr><td class=headerTitleCell>HPR FOR {$headdta['slidebgs']} / {$headdta['hprdecision']}</td></tr>
-<tr><td valign=top style="height: 3vh; "><table border=0 style="background: rgba(160,160,160,.5);"><tr><td class=hprSideTopBtns onclick="changeSupportingTab(0);">Review<br>Metrics</td><td class=hprSideTopBtns onclick="changeSupportingTab(2);">All Assoc<br>Segments</td></tr></table></td></tr>
+<tr><td valign=top style="height: 3vh; ">
+  <table border=0 style="background: rgba(160,160,160,.5);">
+    <tr>
+        <td class=hprSideTopBtns onclick="changeSupportingTab(0);">Review<br>Metrics</td>
+        <td class=hprSideTopBtns onclick="changeSupportingTab(1);">Pathology<br>Report</td>
+        <td class=hprSideTopBtns onclick="changeSupportingTab(2);">Associate &amp; Constitutent<br>Segments</td>
+    </tr>
+  </table></td></tr>
 <tr><td valign=top>
 
 <div id=masterHold>    
-<div id=dspTabContent0 class=HPRReviewDocument style="display: block;"> <table border=0  cellspacing=0 cellpadding=0><tr><td valign=top> {$hprdatatbl} </td></tr><tr><td class=headerTitleCell>Pathology Report</td></tr><tr><td valign=top><div id=qmsPRSideDsp><table><tr><td>{$headdta['pathreport']}</td></tr><tr><td align=right>{$uploadline}</td></tr></table></div></td></tr></table></div>
-<div id=dspTabContent1 class=HPRReviewDocument style="display: none;"></div>
-<div id=dspTabContent2 class=HPRReviewDocument style="display: none;">ALL SEGMENTS FOR ALL ASSOCIATIVE GROUPS GO HERE ...</div>
+<div id=dspTabContent0 class=HPRReviewDocument style="display: block;"> <table border=0  cellspacing=0 cellpadding=0><tr><td valign=top> {$hprdatatbl} </td></tr></table></div>
+<div id=dspTabContent1 class=HPRReviewDocument style="display: none;"><table border=1 cellspacing=0 cellpadding=0><tr><td class=headerTitleCell>Pathology Report</td></tr><tr><td valign=top><div id=qmsPRSideDsp><table><tr><td>{$headdta['pathreport']}</td></tr><tr><td align=right>{$uploadline}</td></tr></table></div></td></tr></table> </div>
+<div id=dspTabContent2 class=HPRReviewDocument style="display: none;"><table border=1><tr><td>Biogroups: {$bggroups} / Segment Records: {$segrowcnt}</td></tr><tr><td> {$assTbl} </td></tr></table>  </div>
 
 
 </div>
@@ -3849,18 +4302,20 @@ $uploadline = ( trim($headdta['pruploadedby']) !== "" ) ? "<b>Uploaded</b>: {$he
 </table>
 HPRTBL;
 
-$dspthis = json_encode($reviewdta);
-
     $pg = <<<PGCONTENT
 <table border=0 style="width: 99vw;">
-<tr><td valign=top style="width: 30vw; border: 1px solid rgba(160,160,160,1);">{$hprside}</td><td valign=top>WORK BENCH SIDE <p><div style="width: 40vw;">{$dspthis} </div></td></tr>
+<tr><td valign=top style="width: 30vw; border: 1px solid rgba(160,160,160,1);">{$hprside}</td><td valign=top>WORK BENCH SIDE</td></tr>
 </table>
 PGCONTENT;
 return $pg;
 }
 
-function bldQMSQueList() {     
-$qmsquedta = json_decode(callrestapi("POST", dataTree . "/data-doers/get-qms-que-list",serverIdent, serverpw, ""), true);    
+function bldQMSQueList ( $decisiondisplay ) {     
+    
+    
+$pdta['decisiondisplay'] = (trim($decisiondisplay) === "") ? "all" : $decisiondisplay ;
+$payload = json_encode($pdta);
+$qmsquedta = json_decode(callrestapi("POST", dataTree . "/data-doers/qms-que-list",serverIdent, serverpw, $payload), true);    
 
 $cellCntr = 1;
 $cntConfirm = 0;
@@ -3911,21 +4366,27 @@ foreach ($qmsquedta['DATA'] as $qkey => $qval ) {
                                    . "<div class=tblDspRow><div class=queDataLabel valign=top>Proc-Designation: </div><div class=\"queDataDsp\" valign=top>{$procdesig}</div></div>"                              
                                    . "<div class=tblDspRow><div class=queDataLabel valign=top>HPR-Designation: </div><div class=\"queDataDsp\" valign=top>{$hprdesig}</div></div>"
                       . "</div>";
-    $iQueTbl .= "<tr onclick=\"navigateSite('qms-actions/" . $reviewid . "');\"><td class=\"queCellHolder sideiconholder\"><i class=\"material-icons hprdecisionicon decision_{$qval['hprdecisionvalue']} \">{$decIcon}</i></td><td valign=top class=queCellHolder>{$dataTbl}</td></tr>";
+    $iQueTbl .= "<tr onclick=\"navigateSite('qms-actions/work-bench/" . $reviewid . "');\"><td class=\"queCellHolder sideiconholder\"><i class=\"material-icons hprdecisionicon decision_{$qval['hprdecisionvalue']} \">{$decIcon}</i></td><td valign=top class=queCellHolder>{$dataTbl}</td></tr>";
     $cellCntr++;
 }
 
+//TODO:  MAke This Dynamic!
+$legendConfirm = ( ( $pdta['decisiondisplay'] == 'all' || $pdta['decisiondisplay'] == 'confirm') || (int)$cntConfirm > 0 ) ? "<tr><td><i class=\"material-icons dspgreen\">check_circle</i></td><td>Confirmed Cases </td><td class=nbrDsp>{$cntConfirm}</td></tr>" : ""; 
+$legendConfirmAdd = ( ( $pdta['decisiondisplay'] == 'all' || $pdta['decisiondisplay'] == 'add') || (int)$cntAdd > 0 ) ? "<tr><td><i class=\"material-icons dspblue\">add_circle</i></td><td>With Additions </td><td class=nbrDsp>{$cntAdd} </td></tr>" : ""; 
+$legendDenied = ( ( $pdta['decisiondisplay'] == 'all' || $pdta['decisiondisplay'] == 'denied') || (int)$cntDenied > 0 ) ? "<tr><td><i class=\"material-icons dspred\">cancel</i></td><td>Denied Cases</td><td class=nbrDsp>{$cntDenied}</td></tr>" : ""; 
+$legendUnusable = ( ( $pdta['decisiondisplay'] == 'all' || $pdta['decisiondisplay'] == 'unusable') || (int)$cntUnuse > 0 ) ? "<tr><td><i class=\"material-icons dspbrown\">block</i></td><td>Unusable Cases</td><td class=nbrDsp>{$cntUnuse}</td></tr>" : ""; 
+$legendInconclusive = ( ( $pdta['decisiondisplay'] == 'all' || $pdta['decisiondisplay'] == 'inconclusive') || (int)$cntIncon > 0 ) ? "<tr><td><i class=\"material-icons dsppurple\">help</i></td><td>Inconclusive</td><td class=nbrDsp>{$cntIncon}</td></tr>" : ""; 
 
 $pg = <<<BLDTBL
 <div id=legendDsp>
 
        <table border=0 id=legendTbl>
             <tr><td colspan=3 class=legendTitle>Legend &amp; Count</td></tr>
-            <tr><td><i class="material-icons dspgreen">check_circle</i></td><td>Confirmed Cases </td><td class=nbrDsp>{$cntConfirm} </td></tr>
-            <tr><td><i class="material-icons dspblue">add_circle</i></td><td>With Additions </td><td class=nbrDsp>{$cntAdd} </td></tr>                       
-            <tr><td><i class="material-icons dspred">cancel</i></td><td>Denied Cases</td><td class=nbrDsp>{$cntDenied}</td></tr>
-            <tr><td><i class="material-icons dspbrown">block</i></td><td>Unusable Cases</td><td class=nbrDsp>{$cntUnuse}</td></tr> 
-            <tr><td><i class="material-icons dsppurple">help</i></td><td>Inconclusive</td><td class=nbrDsp>{$cntIncon}</td></tr>                       
+            {$legendConfirm} 
+            {$legendConfirmAdd}                       
+            {$legendDenied} 
+            {$legendUnusable} 
+            {$legendInconclusive}                       
             <tr><td></td><td><b>Total Queued </td><td class=nbrDsp><b>{$qmsquedta['ITEMSFOUND']}</td></tr>
        </table>
 

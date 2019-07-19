@@ -2223,7 +2223,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
    if (byId('btnReloadGrid')) { 
     byId('btnReloadGrid').addEventListener('click', function() { 
-        navigateSite('qms-actions');
+        location.reload(true);
      }, false);        
    }
        
@@ -2237,10 +2237,6 @@ function changeSupportingTab(whichtab) {
   }
   byId('dspTabContent'+whichtab).style.display = 'block';
 } 
-
-
-
-
 
 function generateDialog( whichdialog, whatobject ) { 
   var dta = new Object(); 
@@ -2325,6 +2321,11 @@ function answerHPRSendEmail( rtnData ) {
      var diddta = JSON.parse( rtnData['responseText'] ); 
      closeThisDialog( diddta['DATA'] );
    }
+}
+
+function displayShipDoc(e, shipdocencryption) {
+  e.stopPropagation(); 
+  openOutSidePage("{$tt}/print-obj/shipment-manifest/"+shipdocencryption);  
 }
 
 RTNTHIS;
