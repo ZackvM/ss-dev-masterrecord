@@ -84,6 +84,7 @@ substr(concat('000000',hpr.biohpr),-6) biohpr
 , ifnull(bs.diagnosis,'') as bsdx
 , ifnull(bs.subdiagnos,'') as bsdxmod
 , ifnull(bs.metssite,'') as bsmets
+, ifnull(bs.pdxsystemic,'') as bscomo                
 , ifnull(bs.associd,'') as associd
 , ifnull(bs.chemoind,'') as bschemoindvalue 
 , ifnull(cxv.dspvalue,'') as bschemoinddsp
@@ -123,7 +124,24 @@ HEADHPRSQL;
         while ($h = $headRS->fetch(PDO::FETCH_ASSOC)) { 
           $dta['hprhead'] = $h;
         }
-                
+
+        $prcSQL = <<<PRCSQL
+select  
+ifnull(prcval.menuvalue,'') as ptypeval
+, ifnull(prcval.dspvalue,'') ptypedsp
+, ifnull(hprprc.prcvalue,'') as prcvalue 
+from 
+(SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRPERCENTAGE' and dspind = 1 order by dsporder) as prcval
+left join (SELECT * FROM masterrecord.ut_hpr_percentages where biohpr = :reviewid) hprprc on prcval.menuvalue = hprprc.prctypevalue
+PRCSQL;
+
+        $prcRS = $conn->prepare($prcSQL); 
+        $prcRS->execute(array(':reviewid' => $reviewid));
+        $prcgroup = array();        
+        while ( $prc = $prcRS->fetch(PDO::FETCH_ASSOC)) { 
+            $prcgroup[] = $prc;            
+        }
+        $dta['percentvalues'] = $prcgroup;
         $assSQL = <<<ASSSQL
 select  
 dta.readlabel, concat(dta.bgsbg
@@ -187,10 +205,11 @@ ASSSQL;
           $assgroup[] = $a;
         }
         $dta['associativelisting'] = $assgroup;
-        
-        $msgArr['assoc'] = $dta['hprhead']['associd'];
-        
 
+          
+
+
+        
         $responseCode = 200;
       }
 
@@ -640,30 +659,31 @@ ASSSQL;
             $insMoleRS->execute(array(':biohpr' => $hprheadid, ':moletestvalue' => trim($mval[0]), ':moletest' => trim($mval[1]), ':resultindexvalue' => trim($mval[2]), ':resultindex' => trim($mval[3]), ':resultdegree' => trim($mval[4])));
           }
          }
-         //WRITE BIOSAMPLE MOLECULAR 
-         $updSQL = "update masterrecord.ut_procure_biosample_molecular set dspind = 0, updatedby = 'HPR-REVIEW-MODULE', updatedon = now() where bgprcnbr = :readlabel"; 
-         $updRS = $conn->prepare($updSQL); 
-         $updRS->execute(array(':readlabel' => $bg['readlabel']));
-         $moleInsSQL = "insert into masterrecord.ut_procure_biosample_molecular (pbiosample, bgprcnbr, testid, testresultid, molenote, onwhen, onby, dspind) values(:pbiosample, :bgprcnbr, :testid, :testresultid, :molenote, now(), :onby, 1)";
-         $moleInsRS = $conn->prepare($moleInsSQL); 
-         if ( trim($pdta['hprmoleculartests']) !== "" ) { 
-           $mt = json_decode( $pdta['hprmoleculartests'], true); 
-           foreach ( $mt as $mkey => $mval) { 
-            $moleInsRS->execute(array(':pbiosample' => $bg['biosamplelabel'], ':bgprcnbr' => $bg['readlabel'], ':testid' => trim($mval[0]), ':testresultid' => trim($mval[2]), ':molenote' => trim($mval[4]), ':onby' => $reviewer ));
-         }
-         }
-         //WRITE BIOSAMPLE COMPOSITION (PERCENTAGES) 
-         $updSQL = "update masterrecord.ut_procure_biosample_samplecomposition set dspind = 0, updateon = now(), updateby = 'HPR-REVIEW-SCREEN' where readlabel = :readlabel"; 
-         $updRS = $conn->prepare($updSQL); 
-         $updRS->execute(array(':readlabel' => $bg['readlabel']));
-         $insPrcSQL = "insert into masterrecord.ut_procure_biosample_samplecomposition (readlabel, prctype, prcvalue, dspind, inputon, inputby) values (:readlabel, :prctype, :prcvalue, 1, now(), :inputby)";
-         $insPrcRS = $conn->prepare($insPrcSQL);
-         foreach ( $pdta['complexion'] as $ckey => $cval ) {
-           $mvalue = preg_replace('/^prc_/','',$ckey);
-           if ( trim($cval) !== "" ) {
-             $insPrcRS->execute(array(':readlabel' => $bg['readlabel'], ':prctype' => strtoupper($mvalue), ':prcvalue' => $cval, ':inputby' => $reviewer));
-           }
-         }
+         //WRITE BIOSAMPLE MOLECULAR - LET QA DO THIS !!!!! COMMENTED 7/22/2019 ZACK
+         //$updSQL = "update masterrecord.ut_procure_biosample_molecular set dspind = 0, updatedby = 'HPR-REVIEW-MODULE', updatedon = now() where bgprcnbr = :readlabel"; 
+         //$updRS = $conn->prepare($updSQL); 
+         //$updRS->execute(array(':readlabel' => $bg['readlabel']));
+         //$moleInsSQL = "insert into masterrecord.ut_procure_biosample_molecular (pbiosample, bgprcnbr, testid, testresultid, molenote, onwhen, onby, dspind) values(:pbiosample, :bgprcnbr, :testid, :testresultid, :molenote, now(), :onby, 1)";
+         //$moleInsRS = $conn->prepare($moleInsSQL); 
+         //if ( trim($pdta['hprmoleculartests']) !== "" ) { 
+         //  $mt = json_decode( $pdta['hprmoleculartests'], true); 
+         //  foreach ( $mt as $mkey => $mval) { 
+         //   $moleInsRS->execute(array(':pbiosample' => $bg['biosamplelabel'], ':bgprcnbr' => $bg['readlabel'], ':testid' => trim($mval[0]), ':testresultid' => trim($mval[2]), ':molenote' => trim($mval[4]), ':onby' => $reviewer ));
+         //}
+         //}
+         
+         //WRITE BIOSAMPLE COMPOSITION (PERCENTAGES) - LET QA DO THIS!!!!! COMMENTED 7/22/2019 ZACK
+         //$updSQL = "update masterrecord.ut_procure_biosample_samplecomposition set dspind = 0, updateon = now(), updateby = 'HPR-REVIEW-SCREEN' where readlabel = :readlabel"; 
+         //$updRS = $conn->prepare($updSQL); 
+         //$updRS->execute(array(':readlabel' => $bg['readlabel']));
+         //$insPrcSQL = "insert into masterrecord.ut_procure_biosample_samplecomposition (readlabel, prctype, prcvalue, dspind, inputon, inputby) values (:readlabel, :prctype, :prcvalue, 1, now(), :inputby)";
+         //$insPrcRS = $conn->prepare($insPrcSQL);
+         //foreach ( $pdta['complexion'] as $ckey => $cval ) {
+         //  $mvalue = preg_replace('/^prc_/','',$ckey);
+         //  if ( trim($cval) !== "" ) {
+         //    $insPrcRS->execute(array(':readlabel' => $bg['readlabel'], ':prctype' => strtoupper($mvalue), ':prcvalue' => $cval, ':inputby' => $reviewer));
+         //  }
+         //}
          //UPDATE BIOSAMPLE WITH DECISION (AFTER BACKING UP TABLE) 
          $buSQL = "insert into masterrecord.history_procure_biosample_qms (pbiosample, readlabel, qcvalv2, hprindicator, hprmarkbyon, qcindicator, qcmarkbyon, qcprocstatus, labaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresultid, slidereviewed, hpron, hprby, historyrecordon, historyrecordby)  SELECT pbiosample, read_label, qcvalv2, hprind, hprmarkbyon, qcind, qcmarkbyon, qcprocstatus, labactionaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresult, hprslidereviewed, hpron, hprby, now() as historyrecordon, 'HPR-REVIEW-MODULE' as  historyrecordby FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
          $buRS = $conn->prepare($buSQL); 
@@ -1349,7 +1369,7 @@ MBODY;
       ( array_key_exists('couriertrck', $pdta) && trim($pdta['couriertrck']) === "" ) ? (list( $errorind, $msgArr[] ) = array(1 , "Ship-Doc Courier Tracking Number cannot be blank.  Please supply a value.")) : "";
       ( array_key_exists('deviationreason', $pdta) && trim($pdta['deviationreason']) === "" ) ? (list( $errorind, $msgArr[] ) = array(1 , "Ship-Doc Shipping Deviation Reason is blank.  Please supply a value.")) : "";
 
-      $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and inventorypinkey = :pinkey and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowCoord = 1) and inventorypinkey = :pinkey and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
       $rs = $conn->prepare($chkUsrSQL); 
       $rs->execute(array(':sessid' => $sessid, ':pinkey' => $usrpin));
       if ($rs->rowCount() === 1) { 
@@ -2837,7 +2857,7 @@ MBODY;
            case 'irequestdisplay':
              $primeFocus = "";  
              $left = '5vw';
-             $top = '5vh';
+             $top = '2vh';
              break; 
          }
 

@@ -325,7 +325,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 
 
 .ttholder { position: relative; }
-.ttholder .tt { position: absolute; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; z-index: 40; }
+.ttholder .tt { position: absolute; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; z-index: 40; font-weight: normal; }
 .ttholder:hover .tt { display: block; }
 .displaytypetext { font-size: 1.8vh; white-space: nowrap; } 
 .btnBarDropMenuItem:hover { color: rgba({$this->color_neongreen},1); cursor: pointer; } 
@@ -334,7 +334,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 /* WORKBENCH */
 .headerTitleCell {background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); text-align: center; height: 1vh; font-size: 1.6vh; padding: .5vh 0; box-sizing: border-box; }
 
-#qmsPRSideDsp { min-height: 30vh;  max-height: 36vh;   overflow: auto; font-size: 1.6vh; line-height: 1.8em; text-align: justify; box-sizing: border-box; padding: 8px; }
+#qmsPRSideDsp { height: 70vh;   overflow: auto; font-size: 1.6vh; line-height: 1.8em; text-align: justify; box-sizing: border-box; padding: 8px; }
 
 .hprSideTopBtns { border-right: 1px solid rgba({$this->color_white},1);  text-align: center; font-size: 1.4vh; padding: 4px 8px;  width: 7vw;}
 .hprSideTopBtns:hover { background: rgba({$this->color_lamber},.8); cursor: pointer; } 
@@ -359,6 +359,16 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .assttholder { position: relative; }
 .assttholder .tt { top: 0; position: absolute; background: rgba({$this->color_zackgrey},1);  color: rgba({$this->color_white},1); padding: 7px 5px; display: none;  }
 .assttholder:hover .tt { display: block;  }
+
+.dxdelimiter { font-size: 1vh; }
+
+.maindxdstbl {font-family: Roboto;  font-size: 1.5vh; width: 100%; color: rgba({$this->color_zackgrey},1); }
+.maindxdstbl .btnBar { width: 7vw; }
+.maindxdstbl button { font-size: 1.5vh; font-family: Roboto; border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px 5px; background: rgba({$this->color_white},1); -webkit-transition-duration: 0.4s; transition-duration: 0.4s; width: 7vw; }
+.maindxdstbl button:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1);  } 
+.maindxdstbl .bshprmatch { color: rgba({$this->color_darkgreen},1); }
+.maindxdstbl .bshprnonmatch { font-weight: bold; color: rgba({$this->color_bred},1); }
+
 
 STYLESHEET;
 return $rtnThis;
@@ -1312,8 +1322,14 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 .constitInfoHolder { position: relative; }
 .constitInfoHolder:hover .popUpInfo { cursor: pointer; display: block; }
 .constitInfoHolder:hover .popUpShipInfo { cursor: pointer; display: block; }
-.popUpInfo { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; }
-.popUpInfo table tr td { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_dblue},1); }
+
+.popUpInfo { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; grid-template-columns: 1fr; grid-template-rows: repeat( 4, 1fr );  }
+
+
+/* .popUpInfo { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; } */
+/* .popUpInfo table tr td { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_dblue},1); } */
+
+   
 .popUpShipInfo { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; right: 0; }
 .popUpShipInfo table tr td { background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_dblue},1); }
 
@@ -1418,6 +1434,8 @@ body { margin: 0; margin-top: 12vh; box-sizing: border-box;  }
 #coordinatorResultTbl tbody .ttholder .infoTxtDspDiv:after{content:'';position:absolute;border:15px solid transparent;border-top:15px solid rgba({$this->color_aqua},1); top:0px;left:-10px;}
 #coordinatorResultTbl tbody .ttholder:hover .infoTxtDspDiv { display: block; }
 #coordinatorResultTbl tbody .tt { position: absolute; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); padding: 7px 5px; display: none; white-space: nowrap; z-index: 40; }
+#coordinatorResultTbl tbody .righttt { right: 0; }
+#coordinatorResultTbl tbody .righttt:hover { color: rgba({$this->color_neongreen},1); }
 #coordinatorResultTbl tbody .cntr { text-align: center; }
 #coordinatorResultTbl tbody .groupingstart {border-left: 3px solid rgba({$this->color_zackgrey},1); }
 #coordinatorResultTbl thead .groupingstart {border-left: 3px solid rgba({$this->color_white},1); }
