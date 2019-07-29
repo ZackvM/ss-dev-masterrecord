@@ -731,7 +731,6 @@ PAGEHERE;
   return $rtnthis;
 }
 
-
 function paymenttracker( $rqststr, $usr ) {
     session_start();
     $dta['sessionid']   = session_id();
@@ -4241,14 +4240,14 @@ $prnbr = substr(("000000" . $headdta['pathreportid']),-6);
 $uploadline = ( trim($headdta['pruploadedby']) !== "" ) ? "<b>Uploaded</b>: {$headdta['pruploadedby']} :: {$headdta['uploadedon']} (<b>Pathology Report</b>: {$prnbr})" : "";
 
 $hprDecDataDisplay = bldQAWorkbench_hprData( $headdta );
-
+$bioBSDataDisplay = bldQAWorkbench_bsData( $headdta );
 
 
       $workbench = <<<WORKBENCHPARTS
 <div id=workbenchwrapper>
 <div id=wbrowtwo>
   <div id=wbrevieweddata>{$hprDecDataDisplay}</div>
-  <div id=wbpristine>Master-Record Data</div>
+  <div id=wbpristine>{$bioBSDataDisplay}</div>
   <div id=wbsupprtdata>Tumor Comp &amp; Tests</div>
 </div>
 <div id=wbrowthree>Assoc Segments</div>
@@ -4271,25 +4270,70 @@ PGCONTENT;
   return $pg;
 }
 
-function bldQAWorkbench_hprData ( $headdta ) { 
-//{"hprtumorgrade":"","hprtumorscalevalue":"","hprtumorscaledsp":"","hpruninvolvedvalue":"0","hpruninvolveddsp":"NA (Not Applicable)","hprrarereason":"","hprgeneralcomments":"","hprspecialinstructions":"","hprinconclusivetext":"","hprunusabletext":"","bsspeccat":"MALIGNANT","bsanatomicsite":"KIDNEY","bssubsite":"","bsdx":"CARCINOMA","bsdxmod":"RENAL CELL","bsmets":"","bscomo":"","associd":"YcWMAztqGtR3mNIfKFiw","bschemoindvalue":"2","bschemoinddsp":"Unknown","bsradindvalue":"2","bsradinddsp":"Unknown","bsproctypevalue":"S","bsproctypedsp":"Surgery","bsprocureinstitution":"HUP","bsprocureinstitutiondsp":"Hospital of The University of Pennsylvania","procurementdate":"06\/20\/2019","bspxiage":"61","bspxiageuom":"Years","bspxiageuomvalue":"1","bspxisex":"F","bspxisexdsp":"Female","bspxirace":"WHITE","pathreportid":42621,"pathreport":"Clinical Information:"
+function bldQAWorkbench_bsData ( $headdta ) { 
+//{"hprtumorgrade":"","hprtumorscalevalue":"","hprtumorscaledsp":"","hpruninvolvedvalue":"0","hpruninvolveddsp":"NA (Not Applicable)"
+//"associd":"YcWMAztqGtR3mNIfKFiw","bschemoindvalue":"2"
+//,"bschemoinddsp":"Unknown","bsradindvalue":"2","bsradinddsp":"Unknown"
+    
+$bsinst = ( trim($headdta['bsprocureinstitutiondsp']) !== "") ? " (" . trim($headdta['bsprocureinstitutiondsp']) . " - {$headdta['procurementdate']})" : "";     
+$asite = ( trim($headdta['bsanatomicsite']) !== "" ) ? trim($headdta['bsanatomicsite']) : "";
+$asite .= ( trim($headdta['bssubsite']) !== "" ) ? ( trim($asite) !== "" ) ? " :: {$headdta['bssubsite']}" : " -- :: {$headdta['bssubsite']}" : "";    
+$dx = ( trim($headdta['bsdx']) !== "" ) ? " // " . trim($headdta['bsdx']) : "";
+$dx .= ( trim($headdta['bsdxmod']) !== "" ) ? ( trim($dx) !== "" ) ? " :: {$headdta['bsdxmod']}" : " -- :: {$headdta['bsdxmod']}" : "";
+$mets = ( trim( $headdta['bsmets'] ) !== "" ) ? "<div class=dataHolderDiv id=hprDataMETS><div class=datalabel>Metastatic FROM</div><div class=datadisplay>{$headdta['bsmets']}&nbsp;</div></div>"  : "";
+$como = ( trim( $headdta['bscomo']) !== "" ) ? "<div class=dataHolderDiv id=hprDataCoMo><div class=datalabel>Systemic Diagnosis and/or Co-Mobidity</div><div class=datadisplay>{$headdta['bscomo']}&nbsp;</div></div>"  : "";
 
+$age = ( trim($headdta['bspxiage']) !== "" ) ? "{$headdta['bspxiage']}" : "" ;
+$age .= ( trim($age) !== "" ) ?    ( trim($headdta['bspxiageuom']) !== "") ? " {$headdta['bspxiageuom']}" : "" : "";
+
+$age .= ( trim($headdta['bspxirace']) !== "" ) ? ( trim($age) !== "") ? " / {$headdta['bspxirace']}"    :  "{$headdta['bspxirace']}" : "";
+$age .= ( trim($headdta['bspxisexdsp']) !== "" ) ? ( trim($age) !== "") ? " / {$headdta['bspxisexdsp']}"    :  "{$headdta['bspxisexdsp']}" : "";
+
+$cxrx = ( trim($headdta['bschemoinddsp']) !== "" ) ?   "{$headdta['bschemoinddsp']}"  : "";
+$cxrx .= ( trim($headdta['bsradinddsp']) !== "" ) ?   ( trim($cxrx) !== "" ) ? " / {$headdta['bsradinddsp']}" : "{$headdta['bsradinddsp']}"  : "";
+
+$rtnThis = <<<RTNTHIS
+<div id=dataRowTwo>Master Biosample Data</div>
+<div class=dataHolderDiv id=bsDataProcurement><div class=datalabel>Procedure (Institution - Procurement Date)</div><div class=datadisplay>{$headdta['bsproctypedsp']}{$bsinst}&nbsp;</div></div>
+<div class=dataHolderDiv id=bsDataSpecCat><div class=datalabel>[Specimen Category] Site :: Sub-Site // Diagnosis :: Modifier</div><div class="datadisplay cmtdsp">[{$headdta['hprspeccat']}] {$asite} {$dx} &nbsp;</div></div>
+{$mets}
+{$como}
+<div class=dataHolderDiv id=bsDataSpecCat><div class=datalabel>Age/Race/Sex</div><div class="datadisplay cmtdsp">{$age}  &nbsp;</div></div>
+<div class=dataHolderDiv id=bsDataSpecCat><div class=datalabel>Chemo-Radiation</div><div class="datadisplay cmtdsp">{$cxrx}  &nbsp;</div></div>
+
+RTNTHIS;
+return $rtnThis;
+}
+
+function bldQAWorkbench_hprData ( $headdta ) { 
+//{"hprtumorgrade":"","hprtumorscalevalue":"","hprtumorscaledsp":"","hpruninvolvedvalue":"0","hpruninvolveddsp":"NA (Not Applicable)","hprrarereason":"","hprgeneralcomments":"","hprspecialinstructions":"","hprinconclusivetext":"","hprunusabletext":"","bsspeccat":"MALIGNANT","bsanatomicsite":"KIDNEY","bssubsite":"","bsdx":"CARCINOMA","bsdxmod":"RENAL CELL","bsmets":"","bscomo":"","associd":"YcWMAztqGtR3mNIfKFiw","bschemoindvalue":"2","bschemoinddsp":"Unknown","bsradindvalue":"2","bsradinddsp":"Unknown","bsproctypevalue":"S","bsproctypedsp":"Surgery","bsprocureinstitution":"HUP","bsprocureinstitutiondsp":"Hospital of The University of Pennsylvania","procurementdate":"06\/20\/2019","bspxiage":"61","bspxiageuom":"Years","bspxiageuomvalue":"1","bspxisex":"F","bspxisexdsp":"Female","bspxirace":"WHITE","pathreportid":42621,"pathreport":"Clinical Informatio
 $rbyon = $headdta['reviewer'];
 $rbyon .= ( trim($headdta['reviewer']) !== trim($headdta['inputby']) ) ?  ( trim($headdta['inputby']) !== "" ) ? " ({$headdta['inputby']})" : "" : "";
 $rbyon .= ( trim($headdta['reviewedon']) !== "" ) ? " :: {$headdta['reviewedon']}" : "";
 $asite = ( trim($headdta['hprsite']) !== "" ) ? trim($headdta['hprsite']) : "";
 $asite .= ( trim($headdta['hprsubsite']) !== "" ) ? ( trim($asite) !== "" ) ? " :: {$headdta['hprsubsite']}" : " -- :: {$headdta['hprsubsite']}" : "";
-$dx = ( trim($headdta['hprdx']) !== "" ) ? trim($headdta['hprdx']) : "";
+$dx = ( trim($headdta['hprdx']) !== "" ) ? " // " . trim($headdta['hprdx']) : "";
 $dx .= ( trim($headdta['hprdxmod']) !== "" ) ? ( trim($dx) !== "" ) ? " :: {$headdta['hprdxmod']}" : " -- :: {$headdta['hprdxmod']}" : "";
+$mets = ( trim( $headdta['hprmets'] ) !== "" ) ? "<div class=dataHolderDiv id=hprDataMETS><div class=datalabel>Metastatic FROM</div><div class=datadisplay>{$headdta['hprmets']}&nbsp;</div></div>"  : "";
+$como = ( trim( $headdta['hprcomobid']) !== "" ) ? "<div class=dataHolderDiv id=hprDataCoMo><div class=datalabel>Systemic Diagnosis and/or Co-Mobidity</div><div class=datadisplay>{$headdta['hprcomobid']}&nbsp;</div></div>"  : "";
+
+$cmtRR = ( trim($headdta['hprrarereason']) !== "" ) ? "<div class=dataHolderDiv id=hprDataRareReason><div class=datalabel>Comments : Rare Reason</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprrarereason']}&nbsp;</div></div>"  : "";
+$cmtGC = ( trim($headdta['hprgeneralcomments']) !== "" ) ? "<div class=dataHolderDiv id=hprDataGeneralComments><div class=datalabel>Comments : General Comments</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprgeneralcomments']}&nbsp;</div></div>"  : "";
+$cmtSI = ( trim($headdta['hprspecialinstructions']) !== "" ) ? "<div class=dataHolderDiv id=hprDataSpecialInstructions><div class=datalabel>Comments : Special Instructions</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprspecialinstructions']}&nbsp;</div></div>"  : "";
+$cmtINC = ( trim($headdta['hprinconclusivetext']) !== "" ) ? "<div class=dataHolderDiv id=hprDataInconclusiveText><div class=datalabel>Comments : Inconclusive Text</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprinconclusivetext']}&nbsp;</div></div>"  : "";
+$cmtUU =  ( trim($headdta['hprunusabletext']) !== "" ) ? "<div class=dataHolderDiv id=hprDataInconclusiveText><div class=datalabel>Comments : Unusable Text</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprunusabletext']}&nbsp;</div></div>"  : "";
+
 $rtnThis = <<<RTNTHIS
 <div id=dataRowOne data-hprdecision="{$headdta['hprdecisionvalue']}"  data-hprreviewid="{$headdta['biohpr']}">HPR Decision</div>
-<div class=dataHolderDiv id=hprDataReview><div class=datalabel>Review</div><div class=datadisplay>{$headdta['biohpr']}&nbsp;</div></div>
-<div class=dataHolderDiv id=hprDataDecision><div class=datalabel>Decision</div><div class=datadisplay>{$headdta['hprdecision']}&nbsp;</div></div>
-<div class=dataHolderDiv id=hprDataSpecCat><div class=datalabel>Specimen Category</div><div class=datadisplay>{$headdta['hprspeccat']}&nbsp;</div></div>
-<div class=dataHolderDiv id=hprDataSite><div class=datalabel>Site :: Sub-Site</div><div class=datadisplay>{$asite}&nbsp;</div></div>
-<div class=dataHolderDiv id=hprDataDX><div class=datalabel>Diagnosis :: Modifier</div><div class=datadisplay>{$dx}&nbsp;</div></div>
-<div class=dataHolderDiv id=hprDataMETS><div class=datalabel>Metastatic FROM</div><div class=datadisplay>{$headdta['hprmets']}&nbsp;</div></div>
-<div class=dataHolderDiv id=hprDataCoMo><div class=datalabel>Systemic Diagnosis and/or Co-Mobidity</div><div class=datadisplay>{$headdta['hprcomobid']}&nbsp;</div></div>
+<div class=dataHolderDiv id=hprDataDecision><div class=datalabel>Decision</div><div class=datadisplay>{$headdta['hprdecision']} (Review #: {$headdta['biohpr']})&nbsp;</div></div>
+<div class=dataHolderDiv id=hprDataSpecCat><div class=datalabel>[Specimen Category] Site :: Sub-Site // Diagnosis :: Modifier</div><div class="datadisplay cmtdsp">[{$headdta['hprspeccat']}] {$asite} {$dx} &nbsp;</div></div>
+{$mets}
+{$como}
+{$cmtGC}
+{$cmtSI}
+{$cmtUU}
+{$cmtRR}
+{$cmtINC}
 <div class=dataHolderDiv id=hprDataReviewedOnBy><div class=datalabel>Reviewed By :: On</div><div class=datadisplay>{$rbyon}&nbsp;</div></div>
 RTNTHIS;
 return $rtnThis;

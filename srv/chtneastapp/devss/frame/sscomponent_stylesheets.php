@@ -333,23 +333,25 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 
 /* WORKBENCH */
 
-#workbenchwrapper { display: grid; grid-gap: 5px; grid-template-rows: 40vh 45vh; }
+#workbenchwrapper { display: grid; grid-gap: 5px; grid-template-rows: 42vh 42vh; }
 
-#wbrowtwo { height: 40vh; box-sizing: border-box; display: grid; grid-template-columns: 30vw 30vw 39vw; grid-gap: 5px;  }
-  #wbrowtwo #wbpristine { height: 40vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; } 
-  #wbrowtwo .dataHolderDiv:last-child { border-bottom: none; } 
+#wbrowtwo { height: 42vh; box-sizing: border-box; display: grid; grid-template-columns: 30vw 30vw 39vw; grid-gap: 5px;  }
+#wbrowtwo .dataHolderDiv:last-child { border-bottom: none; } 
+   #wbrowtwo #wbpristine { height: 42vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; } 
+   #wbrowtwo #wbpristine #dataRowTwo { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; text-align: center; padding: 3px 0; }
 
-  #wbrowtwo #wbrevieweddata { height: 40vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; }
-    #wbrowtwo #wbrevieweddata #dataRowOne { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.4vh; font-weight: bold; text-align: center; padding: 3px 0; }
 
-  #wbrowtwo #wbsupprtdata { height: 40vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; }
+  #wbrowtwo #wbrevieweddata { height: 42vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; overflow: auto;  }
+    #wbrowtwo #wbrevieweddata #dataRowOne { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; text-align: center; padding: 3px 0; }
+
+  #wbrowtwo #wbsupprtdata { height: 42vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; }
 
 #wbrowthree { box-sizing: border-box; height: 45vh; border: 1px solid #000; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none;  }
-
 
 .blueheader { box-sizing: border-box; background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.5vh; font-weight: bold; }
 .iconind { } 
 .iconind:hover { cursor: pointer; color: rgba({$this->color_neongreen},1); } 
+.cmtdsp { text-align: justify; padding-right: 4px; } 
 
 #pathologyrptdisplay { z-index: 48; position: fixed; top: 10vh; left: -50vw; background: rgba({$this->color_white},1); border: 4px solid rgba({$this->color_zackgrey},1); width: 45vw; height: 80vh; padding: 0; display: grid; grid-template-rows: 3vh 74vh 3vh; transition: 1s; }  
   #pathologyrptdisplay #pathologyreporttextdisplay {  height: 74vh; box-sizing: border-box; padding: 8px 16px; overflow: auto; font-size: 1.8vh; line-height: 1.8em; text-align: justify;     } 
@@ -358,7 +360,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 
 
 .dataHolderDiv { box-sizing: border-box; padding: 0 0 0 4px; border-bottom: 1px solid rgba({$this->color_cornflowerblue},.5); } 
-.dataHolderDiv .datalabel { font-size: 1.1vh; font-weight: bold; padding: 8px 0 0 0; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); }
+.dataHolderDiv .datalabel { font-size: 1.4vh; font-weight: bold; padding: 8px 0 0 0; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); }
 .dataHolderDiv .datadisplay { font-size: 1.6vh; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); padding: 2px 0 4px 4px; } 
 
 STYLESHEET;
