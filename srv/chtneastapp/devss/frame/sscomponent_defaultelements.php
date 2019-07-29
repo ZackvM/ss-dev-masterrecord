@@ -165,6 +165,9 @@ function pagetabs($whichpage) {
     case 'paymenttracker':
         $thisTab = "Payments for Processing @ CHTNEastern";
         break;
+    case 'qmsactions':
+        $thisTab = "QA Review @ CHTNEastern";
+        break;
     default: 
       $thisTab = "CHTN Eastern Division"; 
     break; 

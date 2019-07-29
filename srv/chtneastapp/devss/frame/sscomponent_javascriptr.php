@@ -811,6 +811,11 @@ function printPRpt(e, pathrptencyption) {
   }
 }
 
+function displayShipDoc(e, shipdocencryption) {
+  e.stopPropagation(); 
+  openOutSidePage("{$tt}/print-obj/shipment-manifest/"+shipdocencryption);  
+}
+
 function generateDialog( whichdialog, whatobject ) { 
   var dta = new Object(); 
   dta['whichdialog'] = whichdialog;
@@ -2327,6 +2332,122 @@ function displayShipDoc(e, shipdocencryption) {
   e.stopPropagation(); 
   openOutSidePage("{$tt}/print-obj/shipment-manifest/"+shipdocencryption);  
 }
+
+function fillField(whichfield, whichvalue, whichdisplay) {
+  if (byId(whichfield)) { 
+     byId(whichfield).value = whichdisplay; 
+     if (byId(whichfield+'Value')) { 
+        byId(whichfield+'Value').value = whichvalue;    
+     }
+  } 
+  switch (whichfield) { 
+     case 'qryDXDSite':
+     //alert('HERE');
+     break;
+  }   
+}
+
+var masteridsuffix = "";
+function triggerMolecularFill(menuid, menuval, valuedsp, idsuffix) { 
+   byId('hprFldMoleResult'+idsuffix).value = "";
+   byId('hprFldMoleResult'+idsuffix+'Value').value = "";    
+   byId('hprFldMoleScale'+idsuffix).value = "";
+   masteridsuffix = idsuffix;
+   if (menuid === 0) { 
+     //CLEAR FIELD
+       byId('hprFldMoleTest'+idsuffix+'Value').value = "";
+       byId('hprFldMoleTest'+idsuffix).value = "";     
+       byId('hprFldMoleResult'+idsuffix).value = "";
+       byId('hprFldMoleResult'+idsuffix+'Value').value = "";    
+   } else { 
+       byId('hprFldMoleTest'+idsuffix+'Value').value = menuval;
+       byId('hprFldMoleTest'+idsuffix).value = valuedsp;    
+       var mlURL = "/immuno-mole-result-list/" + menuid;
+       universalAJAX("GET",mlURL,'',answerHPRTriggerMolecularFill,2);            
+   }
+}
+            
+function answerHPRTriggerMolecularFill(rtnData) {
+   var resultTbl = "";         
+   if (parseInt(rtnData['responseCode']) !== 200) {             
+   } else {    
+     var dta = JSON.parse(rtnData['responseText']);
+     var resultTbl = "<table border=0 style=\"min-width: 12.5vw;\">";
+     resultTbl += "<tr><td onclick=\"fillField('hprFldMoleResult','','');\" align=right class=ddMenuClearOption>[clear]</td></tr>";            
+     dta['DATA'].forEach(function(element) { 
+       //element['menuvalue']      
+       resultTbl += "<tr><td class=ddMenuItem onclick=\"fillField('hprFldMoleResult"+masteridsuffix+"','"+element['menuvalue']+"','"+element['dspvalue']+"');\">"+element['dspvalue']+"</td></tr>";
+     });  
+     resultTbl += "</table>";    
+     masteridsuffix = "";
+   }
+   if (byId('moleResultDropDown')) { 
+     byId('moleResultDropDown').innerHTML = resultTbl;         
+   }
+}
+
+function manageMoleTest(addIndicator, referencenumber, fldsuffix) { 
+  if (byId('hprMolecularTestJsonHolderConfirm')) { 
+   if (byId('hprMolecularTestJsonHolderConfirm').value === "") { 
+     if (addIndicator === 1) { 
+        if ( byId('hprFldMoleTest'+fldsuffix+'Value').value.trim() === "" ) { 
+          alert('YOU HAVE NOT SELECTED A MOLECULAR TEST.');
+          return null;
+        }
+        var hldVal = [];
+        hldVal.push(  [ byId('hprFldMoleTest'+fldsuffix+'Value').value,  byId('hprFldMoleTest'+fldsuffix).value, byId('hprFldMoleResult'+fldsuffix+'Value').value, byId('hprFldMoleResult'+fldsuffix).value, byId('hprFldMoleScale'+fldsuffix).value.trim()      ] );    
+        byId('hprMolecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);
+      }
+    } else { 
+      if (addIndicator === 1) {
+        if ( byId('hprFldMoleTest'+fldsuffix+'Value').value.trim() === "" ) { 
+          alert('YOU HAVE NOT SELECTED A MOLECULAR TEST.');
+          return null;
+        }
+        var hldVal = JSON.parse(byId('hprMolecularTestJsonHolderConfirm').value);
+        hldVal.push(  [ byId('hprFldMoleTest'+fldsuffix+'Value').value,  byId('hprFldMoleTest'+fldsuffix).value, byId('hprFldMoleResult'+fldsuffix+'Value').value, byId('hprFldMoleResult'+fldsuffix).value, byId('hprFldMoleScale'+fldsuffix).value.trim()      ] );    
+        byId('hprMolecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);
+      }
+      if (addIndicator === 0) { 
+         var hldVal = JSON.parse(byId('hprMolecularTestJsonHolderConfirm').value);             
+         var newVal = [];
+         var key = 0;   
+         hldVal.forEach(function(ele) { 
+            if (key !== referencenumber) {
+              newVal.push(ele);    
+            }
+            key++;
+         });
+         hldVal = newVal;
+         byId('hprMolecularTestJsonHolderConfirm').value = JSON.stringify(hldVal);   
+      }      
+    }
+    byId('hprFldMoleTest'+fldsuffix+'Value').value = "";
+    byId('hprFldMoleTest'+fldsuffix).value = "";
+    byId('hprFldMoleResult'+fldsuffix+'Value').value = "";
+    byId('hprFldMoleResult'+fldsuffix).value = "";
+    byId('hprFldMoleScale'+fldsuffix).value = "";            
+    var moleTestTbl = "<table cellspacing=0 cellpadding=0 border=0 width=100%>";
+    var cntr = 0;         
+    hldVal.forEach(function(element) {         
+      moleTestTbl += "<tr onclick=\"manageMoleTest(0,"+cntr+",'"+fldsuffix+"');\" class=ddMenuItem><td style=\"border-bottom: 1px solid rgba(160,160,160,1); width: 1vw;\"><i class=\"material-icons\" style=\"font-size: 1.8vh; color:rgba(237, 35, 0,1); width: .3vw; padding: 8px 0 8px 0;\">cancel</i><td style=\" padding: 8px 0 8px 8px;border-bottom: 1px solid rgba(160,160,160,1); font-size: 1.5vh;\">"+element[1]+"</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1); font-size: 1.5vh;\">"+element[3]+"</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1); font-size: 1.5vh;\">"+element[4]+"</td></tr>";
+      cntr++;
+     });
+     moleTestTbl += "</table>";
+     byId('dspDefinedMolecularTestsConfirm'+fldsuffix).innerHTML = moleTestTbl;               
+  }
+}
+
+function revealPR() { 
+  if (byId('pathologyrptdisplay')) { 
+    if (parseInt(byId('pathologyrptdisplay').style.left) < 0 || byId('pathologyrptdisplay').style.left == "" ) {
+      byId('pathologyrptdisplay').style.left = "5vw";
+    } else { 
+      byId('pathologyrptdisplay').style.left = "-50vw";
+    }
+  }
+}
+
 
 RTNTHIS;
 return $rtnThis;

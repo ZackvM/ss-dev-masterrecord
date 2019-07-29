@@ -956,7 +956,6 @@ return $rtnthis;
 
 }
 
-
 function inventory ( $rqststr, $whichusr ) { 
 
   
@@ -977,7 +976,6 @@ function inventory ( $rqststr, $whichusr ) {
   }
   return $rtnthis; 
 }
-
 
 function reports ( $rqststr, $whichusr ) {
 
@@ -1063,7 +1061,6 @@ function qmsactions ( $rqststr, $whichusr ) {
             if ( trim($rqststr[2]) === 'workbench' ) { 
               $r = explode("/",$_SERVER['REQUEST_URI']);
               $pg = bldQAWorkbench ( $r[3] );
-              $topBtnBar = generatePageTopBtnBar('qmsactionwork', "", $_SERVER['HTTP_REFERER'] );
             } 
         }
     }
@@ -2673,12 +2670,42 @@ case 'qmsactionwork':
     $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGridWork onclick="window.location.href= '{$additionalinfo}'" ><tr><td><i class="material-icons">layers_clear</i></td><td>Queue List</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnSendEmail><tr><td><i class="material-icons">textsms</i></td><td>Email</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="revealPR();"><table class=topBtnDisplayer id=btnRevealPR><tr><td><i class="material-icons">arrow_right_alt</i></td><td>Pathology Report</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGridWork><tr><td><i class="material-icons">done_all</i></td><td>Mark QA Complete</td></tr></table></td>
 </tr>
 BTNTBL;
+
+  //<td class=topBtnHolderCell>
+  //  <div class=ttholder>
+  //    <table class=topBtnDisplayer id=btnDisplayByStatus><tr><td><i class="material-icons">view_list</i></td><td>QA Actions</td></tr></table>
+  //    <div class=tt>
+  //      <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
+  //        <tr class=btnBarDropMenuItem><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>View HPR Record&nbsp;&nbsp;&nbsp</td></tr>     
+  //        <tr class=btnBarDropMenuItem><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>View Pristine Procurement Record&nbsp;&nbsp;&nbsp</td></tr>     
+  //        <tr class=btnBarDropMenuItem onclick="revealPR();"><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>View Pathology Report&nbsp;&nbsp;&nbsp</td></tr>     
+  //        <tr class=btnBarDropMenuItem><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>View Donor Record&nbsp;&nbsp;&nbsp</td></tr>     
+  //        <tr class=btnBarDropMenuItem><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Change Vocabulary&nbsp;&nbsp;&nbsp</td></tr>     
+  //        <tr class=btnBarDropMenuItem><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Reset Vocabulary&nbsp;&nbsp;&nbsp</td></tr>     
+  //        <tr class=btnBarDropMenuItem><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Change METS From&nbsp;&nbsp;&nbsp</td></tr>     
+  //        <tr class=btnBarDropMenuItem><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Change Systemic/Co-Mobid&nbsp;&nbsp;&nbsp</td></tr>     
+  //      </table>
+  //    </div>  
+  //  </div>
+  //</td>           
+
     break;
 
 
+case 'qmsactionworkincon':
+    $innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGridWork onclick="window.location.href= '{$additionalinfo}'" ><tr><td><i class="material-icons">layers_clear</i></td><td>Queue List</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnSendEmail><tr><td><i class="material-icons">textsms</i></td><td>Email</td></tr></table></td>
+
+</tr>
+BTNTBL;
+    break;
 case 'qmsaction':
 
 
@@ -3825,10 +3852,6 @@ PGCONTENT;
 return $rtnThis;
 }
 
-
-
-
-
 function bldHPRReviewDisplay ( $dialogid, $passedData ) { 
     require(serverkeys . "/sspdo.zck");    
     $dta = json_decode( $passedData, true);
@@ -4169,133 +4192,237 @@ return $pg;
 }
 
 function bldQAWorkbench ( $encryreviewid ) { 
+  $pdta = array();
+  $pdta['reviewid'] = $encryreviewid;
+  $payload = json_encode($pdta);
 
-    $pdta = array();
-    $pdta['reviewid'] = $encryreviewid;
-    $payload = json_encode($pdta);
+  $reviewdta = json_decode(callrestapi("POST", dataTree . "/data-doers/qa-review-workbench-data",serverIdent, serverpw, $payload), true);
+  $moletest = json_decode(callrestapi("GET", dataTree . "/immuno-mole-testlist",serverIdent,serverpw),true);
+  $tmrGradeScaleList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-tumor-grade-scale",serverIdent,serverpw), true);
 
-$reviewdta = json_decode(callrestapi("POST", dataTree . "/data-doers/qa-review-workbench-data",serverIdent, serverpw, $payload), true);
+  $headdta = $reviewdta['DATA']['hprhead'];
+  $ass = $reviewdta['DATA']['associativelisting'];
+  $prc = $reviewdta['DATA']['percentvalues'];
+  $mol = $reviewdta['DATA']['moleculartests'];
 
-$headdta = $reviewdta['DATA']['hprhead'];
-$ass = $reviewdta['DATA']['associativelisting'];
-$prc = $reviewdta['DATA']['percentvalues'];
+  //TODO:  Figure out a way not to hard code this 
+    switch ( $headdta['hprdecisionvalue'] ) { 
+      case 'DENIED':
+        $decIcon = "cancel";        
+        break;
+      case 'CONFIRM':
+        $decIcon = "check_circle";
+        break;
+      case 'ADDITIONAL':
+        $decIcon = "add_circle";
+        break;
+      case 'INCONCLUSIVE':
+        $decIcon = "help";
+        break;
+      case 'UNUSABLE':
+        $decIcon = "block";
+        break;
+    }
 
-$reviewer = $headdta['reviewer'];
-$reviewer .= ( trim($headdta['inputby']) !== "" && trim($headdta['reviewer']) !== trim($headdta['inputby']) ) ? " ({$headdta['inputby']})" : ""; 
+  if ( $headdta['hprdecisionvalue'] === 'INCONCLUSIVE' ) {
+  
 
-$ss = ( trim($headdta['hprsubsite']) !== "" ) ? " ({$headdta['hprsubsite']})" : "";
-$hprspc = ( trim($headdta['hprspeccat']) !== "" ) ? " [{$headdta['hprspeccat']}]" : "";
-$hprsite = ( trim($headdta['hprsite']) !== "" || trim($ss) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Site [Specimen Category]</td><td class=qmsDataDsp valign=top>{$headdta['hprsite']}{$ss}{$hprspc}</td></tr>" : "";
-$hprmod = ( trim($headdta['hprdxmod']) !== "" ) ? " ({$headdta['hprdxmod']})" : "";
-$hprdx = ( trim($headdta['hprdx']) !== "" || trim($hprmod) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Diagnosis (Modifier)</td><td  class=qmsDataDsp valign=top>{$headdta['hprdx']}{$hprmod}</td></tr>" : "" ;
-$hprmet = ( trim($headdta['hprmets']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Metastatic FROM</td><td  class=qmsDataDsp valign=top>{$headdta['hprmets']}</td></tr>" : "";
-$hprcomo = ( trim($headdta['hprcomobid']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>System or Co-Mobid</td><td  class=qmsDataDsp valign=top>{$headdta['hprcomobid']}</td></tr>" : "";
-
-$involv = ( trim($headdta['hpruninvolveddsp']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Uninvolved Sample</td><td class=qmsDataDsp valign=top>{$headdta['hpruninvolveddsp']}</td></tr>" : "";
-
-$hprgencmt = ( trim( $headdta['hprgeneralcomments']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Comment:</td><td class=qmsDataDsp valign=top>{$headdta['hprgeneralcomments']}</td></tr>" : "";
-$hprrarecmt = ( trim( $headdta['hprrarereason']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Rare Reason:</td><td class=qmsDataDsp valign=top>{$headdta['hprrarereason']}</td></tr>" : "";
-$hprspecicmt = ( trim( $headdta['hprspecialinstructions']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Special Instructions to Staff:</td><td class=qmsDataDsp valign=top>{$headdta['hprspecialinstructions']}</td></tr>" : "";
-$hprunusecmt = ( trim( $headdta['hprunusabletext']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Reason Unusable:</td><td class=qmsDataDsp valign=top>{$headdta['hprunusabletext']}</td></tr>" : "";
-$hprinconcmt = ( trim( $headdta['hprinconclusivetext']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Inconclusive:</td><td class=qmsDataDsp valign=top>{$headdta['hprinconclusivetext']}</td></tr>" : "";
-
-$pxTbl = "<tr><td valign=top class=qmsDataLabel>A/R/S</td><td class=qmsDataDsp valign=top>{$headdta['bspxiage']} {$headdta['bspxiageuom']} / {$headdta['bspxirace']} / {$headdta['bspxisexdsp']} </td></tr><tr><td class=qmsDataLabel>Chemo/Radiation</td><td class=qmsDataDsp valign=top>{$headdta['bschemoinddsp']} / {$headdta['bsradinddsp']}</td></tr><tr><td class=qmsDataLabel valign=top>Procedure:</td><td class=qmsDataDsp valign=top>{$headdta['bsproctypedsp']} ({$headdta['procurementdate']})</td> </tr><tr><td class=qmsDataLabel valign=top>Institution:</td><td class=qmsDataDsp valign=top colspan=4>{$headdta['bsprocureinstitutiondsp']}</td></tr>  ";
+    //INCONCLUSIVE WORKBENCH GOES HERE    
+    $workbench = <<<WORKBENCH
+INCONCLUSIVE DISPLAY GOES HERE     
+WORKBENCH;
+    $topBtnBar = generatePageTopBtnBar('qmsactionworkincon', "", $_SERVER['HTTP_REFERER'] );
 
 
-$tscale = ( trim($headdta['hprtumorscaledsp']) !== "" ) ? " ({$headdta['hprtumorscaledsp']})" : "";
-$tumordsp = ( trim($headdta['hprtumorgrade']) !== "" ) ? "<tr><td class=qmsDataLabel>Tumor Grade/Scale</td><td class=qmsDataDsp>{$headdta['hprtumorgrade']}{$tscale}</td></tr>" : "";
+  } else { 
 
-$hprdatatbl = <<<DATASTUFF
-<table border=0 cellspacing=0 cellpadding=0 width=100%>
-<tr><td class=qmsDataLabel>Review #: </td><td class=qmsDataDsp>{$headdta['biohpr']}</td></tr><tr><td class=qmsDataLabel>Reviewed: </td><td class=qmsDataDsp>{$headdta['reviewedon']}</td></tr><tr><td class=qmsDataLabel>Reviewer: </td><td class=qmsDataDsp>{$reviewer}</td></tr>
-
-</table>
-
-<table border=0 cellspacing=0 cellpadding=0 width=100% style="margin-top: 1vh;">
-<tr><td style="text-align: center;" colspan=2 class=headerTitleCell>Review Metrics</td></tr>
-{$hprsite}
-{$hprdx}
-{$hprmet}
-{$hprcomo}
-{$involv}
-{$tumordsp}
-{$pxTbl}
-{$hprgencmt}
-{$hprrarecmt}
-{$hprspecicmt}
-{$hprunusecmt}
-{$hprinconcmt}
-</table>
-DATASTUFF;
 
 $prnbr = substr(("000000" . $headdta['pathreportid']),-6);
 $uploadline = ( trim($headdta['pruploadedby']) !== "" ) ? "<b>Uploaded</b>: {$headdta['pruploadedby']} :: {$headdta['uploadedon']} (<b>Pathology Report</b>: {$prnbr})" : "";
 
+$hprDecDataDisplay = bldQAWorkbench_hprData( $headdta );
+
+
+
+      $workbench = <<<WORKBENCHPARTS
+<div id=workbenchwrapper>
+<div id=wbrowtwo>
+  <div id=wbrevieweddata>{$hprDecDataDisplay}</div>
+  <div id=wbpristine>Master-Record Data</div>
+  <div id=wbsupprtdata>Tumor Comp &amp; Tests</div>
+</div>
+<div id=wbrowthree>Assoc Segments</div>
+</div>
+
+<div id=pathologyrptdisplay>
+<div class=blueheader><table width=100% border=0 cellpadding=0 cellspacing=0><tr><td style="padding: 2px 0 0 8px;">Pathology Report </td><td align=right style="padding: 2px 8px 0 0;"><i class="material-icons iconind" onclick="revealPR();">arrow_back</i></td></tr></table></div>
+<div id=pathologyreporttextdisplay>{$headdta['pathreport']}</div>
+<div id=uploadline>{$uploadline}</div>
+</div>
+
+WORKBENCHPARTS;
+
+    $topBtnBar = generatePageTopBtnBar('qmsactionwork', "", $_SERVER['HTTP_REFERER'] );
+  }
+  $pg = <<<PGCONTENT
+{$topBtnBar}
+{$workbench}
+PGCONTENT;
+  return $pg;
+}
+
+function bldQAWorkbench_hprData ( $headdta ) { 
+//{"hprtumorgrade":"","hprtumorscalevalue":"","hprtumorscaledsp":"","hpruninvolvedvalue":"0","hpruninvolveddsp":"NA (Not Applicable)","hprrarereason":"","hprgeneralcomments":"","hprspecialinstructions":"","hprinconclusivetext":"","hprunusabletext":"","bsspeccat":"MALIGNANT","bsanatomicsite":"KIDNEY","bssubsite":"","bsdx":"CARCINOMA","bsdxmod":"RENAL CELL","bsmets":"","bscomo":"","associd":"YcWMAztqGtR3mNIfKFiw","bschemoindvalue":"2","bschemoinddsp":"Unknown","bsradindvalue":"2","bsradinddsp":"Unknown","bsproctypevalue":"S","bsproctypedsp":"Surgery","bsprocureinstitution":"HUP","bsprocureinstitutiondsp":"Hospital of The University of Pennsylvania","procurementdate":"06\/20\/2019","bspxiage":"61","bspxiageuom":"Years","bspxiageuomvalue":"1","bspxisex":"F","bspxisexdsp":"Female","bspxirace":"WHITE","pathreportid":42621,"pathreport":"Clinical Information:"
+
+$rbyon = $headdta['reviewer'];
+$rbyon .= ( trim($headdta['reviewer']) !== trim($headdta['inputby']) ) ?  ( trim($headdta['inputby']) !== "" ) ? " ({$headdta['inputby']})" : "" : "";
+$rbyon .= ( trim($headdta['reviewedon']) !== "" ) ? " :: {$headdta['reviewedon']}" : "";
+$asite = ( trim($headdta['hprsite']) !== "" ) ? trim($headdta['hprsite']) : "";
+$asite .= ( trim($headdta['hprsubsite']) !== "" ) ? ( trim($asite) !== "" ) ? " :: {$headdta['hprsubsite']}" : " -- :: {$headdta['hprsubsite']}" : "";
+$dx = ( trim($headdta['hprdx']) !== "" ) ? trim($headdta['hprdx']) : "";
+$dx .= ( trim($headdta['hprdxmod']) !== "" ) ? ( trim($dx) !== "" ) ? " :: {$headdta['hprdxmod']}" : " -- :: {$headdta['hprdxmod']}" : "";
+$rtnThis = <<<RTNTHIS
+<div id=dataRowOne data-hprdecision="{$headdta['hprdecisionvalue']}"  data-hprreviewid="{$headdta['biohpr']}">HPR Decision</div>
+<div class=dataHolderDiv id=hprDataReview><div class=datalabel>Review</div><div class=datadisplay>{$headdta['biohpr']}&nbsp;</div></div>
+<div class=dataHolderDiv id=hprDataDecision><div class=datalabel>Decision</div><div class=datadisplay>{$headdta['hprdecision']}&nbsp;</div></div>
+<div class=dataHolderDiv id=hprDataSpecCat><div class=datalabel>Specimen Category</div><div class=datadisplay>{$headdta['hprspeccat']}&nbsp;</div></div>
+<div class=dataHolderDiv id=hprDataSite><div class=datalabel>Site :: Sub-Site</div><div class=datadisplay>{$asite}&nbsp;</div></div>
+<div class=dataHolderDiv id=hprDataDX><div class=datalabel>Diagnosis :: Modifier</div><div class=datadisplay>{$dx}&nbsp;</div></div>
+<div class=dataHolderDiv id=hprDataMETS><div class=datalabel>Metastatic FROM</div><div class=datadisplay>{$headdta['hprmets']}&nbsp;</div></div>
+<div class=dataHolderDiv id=hprDataCoMo><div class=datalabel>Systemic Diagnosis and/or Co-Mobidity</div><div class=datadisplay>{$headdta['hprcomobid']}&nbsp;</div></div>
+<div class=dataHolderDiv id=hprDataReviewedOnBy><div class=datalabel>Reviewed By :: On</div><div class=datadisplay>{$rbyon}&nbsp;</div></div>
+RTNTHIS;
+return $rtnThis;
+}
+
+function bldQAWorkbenchbu ( $encryreviewid ) { 
+
+$pdta = array();
+$pdta['reviewid'] = $encryreviewid;
+$payload = json_encode($pdta);
+
+$reviewdta = json_decode(callrestapi("POST", dataTree . "/data-doers/qa-review-workbench-data",serverIdent, serverpw, $payload), true);
+$moletest = json_decode(callrestapi("GET", dataTree . "/immuno-mole-testlist",serverIdent,serverpw),true);
+$tmrGradeScaleList = json_decode(callrestapi("GET", dataTree . "/global-menu/hpr-tumor-grade-scale",serverIdent,serverpw), true);
+
+$headdta = $reviewdta['DATA']['hprhead'];
+$ass = $reviewdta['DATA']['associativelisting'];
+$prc = $reviewdta['DATA']['percentvalues'];
+$mol = $reviewdta['DATA']['moleculartests'];
+
+$reviewer = $headdta['reviewer'];
+$reviewer .= ( trim($headdta['inputby']) !== "" && trim($headdta['reviewer']) !== trim($headdta['inputby']) ) ? " ({$headdta['inputby']})" : ""; 
+
+//$ss = ( trim($headdta['hprsubsite']) !== "" ) ? " ({$headdta['hprsubsite']})" : "";
+//$hprspc = ( trim($headdta['hprspeccat']) !== "" ) ? " [{$headdta['hprspeccat']}]" : "";
+//$hprsite = ( trim($headdta['hprsite']) !== "" || trim($ss) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Site [Specimen Category]</td><td class=qmsDataDsp valign=top>{$headdta['hprsite']}{$ss}{$hprspc}</td></tr>" : "";
+//$hprmod = ( trim($headdta['hprdxmod']) !== "" ) ? " ({$headdta['hprdxmod']})" : "";
+//$hprdx = ( trim($headdta['hprdx']) !== "" || trim($hprmod) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Diagnosis (Modifier)</td><td  class=qmsDataDsp valign=top>{$headdta['hprdx']}{$hprmod}</td></tr>" : "" ;
+//$hprmet = ( trim($headdta['hprmets']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Metastatic FROM</td><td  class=qmsDataDsp valign=top>{$headdta['hprmets']}</td></tr>" : "";
+//$hprcomo = ( trim($headdta['hprcomobid']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>System or Co-Mobid</td><td  class=qmsDataDsp valign=top>{$headdta['hprcomobid']}</td></tr>" : "";
+//$involv = ( trim($headdta['hpruninvolveddsp']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Uninvolved Sample</td><td class=qmsDataDsp valign=top>{$headdta['hpruninvolveddsp']}</td></tr>" : "";
+
+//THESE ARE THE HPR COMMENTS
+//$hprgencmt = ( trim( $headdta['hprgeneralcomments']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Comment:</td><td class=qmsDataDsp valign=top>{$headdta['hprgeneralcomments']}</td></tr>" : "";
+//$hprrarecmt = ( trim( $headdta['hprrarereason']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Rare Reason:</td><td class=qmsDataDsp valign=top>{$headdta['hprrarereason']}</td></tr>" : "";
+//$hprspecicmt = ( trim( $headdta['hprspecialinstructions']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Special Instructions to Staff:</td><td class=qmsDataDsp valign=top>{$headdta['hprspecialinstructions']}</td></tr>" : "";
+//$hprunusecmt = ( trim( $headdta['hprunusabletext']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Reason Unusable:</td><td class=qmsDataDsp valign=top>{$headdta['hprunusabletext']}</td></tr>" : "";
+//$hprinconcmt = ( trim( $headdta['hprinconclusivetext']) !== "" ) ? "<tr><td valign=top class=qmsDataLabel>Inconclusive:</td><td class=qmsDataDsp valign=top>{$headdta['hprinconclusivetext']}</td></tr>" : "";
+
+//$pxTbl = "<tr><td valign=top class=qmsDataLabel>A/R/S</td><td class=qmsDataDsp valign=top>{$headdta['bspxiage']} {$headdta['bspxiageuom']} / {$headdta['bspxirace']} / {$headdta['bspxisexdsp']} </td></tr><tr><td class=qmsDataLabel>Chemo/Radiation</td><td class=qmsDataDsp valign=top>{$headdta['bschemoinddsp']} / {$headdta['bsradinddsp']}</td></tr><tr><td class=qmsDataLabel valign=top>Procedure:</td><td class=qmsDataDsp valign=top>{$headdta['bsproctypedsp']} ({$headdta['procurementdate']})</td> </tr><tr><td class=qmsDataLabel valign=top>Institution:</td><td class=qmsDataDsp valign=top colspan=4>{$headdta['bsprocureinstitutiondsp']}</td></tr>  ";
+
+//$tscale = ( trim($headdta['hprtumorscaledsp']) !== "" ) ? " ({$headdta['hprtumorscaledsp']})" : "";
+//$tumordsp = ( trim($headdta['hprtumorgrade']) !== "" ) ? "<tr><td class=qmsDataLabel>Tumor Grade/Scale</td><td class=qmsDataDsp>{$headdta['hprtumorgrade']}{$tscale}</td></tr>" : "";
+
+//<table border=0 cellspacing=0 cellpadding=0 width=100% style="margin-top: 1vh;">
+//<tr><td style="text-align: center;" colspan=2 class=headerTitleCell>Review Metrics</td></tr>
+//{$hprsite}
+//{$hprdx}
+//{$hprmet}
+//{$hprcomo}
+//{$involv}
+//{$tumordsp}
+//{$pxTbl}
+//{$hprgencmt}
+//{$hprrarecmt}
+//{$hprspecicmt}
+//{$hprunusecmt}
+//{$hprinconcmt}
+//</table>
+
+//$hprdatatbl = <<<DATASTUFF
+//<table border=0 cellspacing=0 cellpadding=0 width=100%>
+//<tr><td class=qmsDataLabel width=15%>Review #: </td><td class=qmsDataDsp>{$headdta['biohpr']}</td></tr><tr><td class=qmsDataLabel>Reviewed: </td><td class=qmsDataDsp>{$headdta['reviewedon']}</td></tr><tr><td class=qmsDataLabel>Reviewer: </td><td class=qmsDataDsp>{$reviewer}</td></tr>
+//</table>
+//
+//DATASTUFF;
+
+//$prnbr = substr(("000000" . $headdta['pathreportid']),-6);
+//$uploadline = ( trim($headdta['pruploadedby']) !== "" ) ? "<b>Uploaded</b>: {$headdta['pruploadedby']} :: {$headdta['uploadedon']} (<b>Pathology Report</b>: {$prnbr})" : "";
+
 //{"shippeddate":"","shipdocrefid":"""assignedto":"BANK","investlname":"","investfname":"","investinstitution":"","assignedreq":"""hprresult":18705 }
 
-$assbg = "";
-$assTbl = "<table border=1>";
-$bggroups = 0;
-$segrowcnt = 0;
-$innerAss = "<table>";
-foreach ( $ass as $asskey => $assval ) { 
-    if ( $assbg !== $assval['readlabel'] ) { 
-        //add TBLROW FOR BG
-        $innerAss .= "</table>";
-        $assTbl .= "<tr><td colspan=6 valign=top>{$innerAss}</td></tr>";
-        $innerAss = "<table>";
-        $mintgreen = ( substr( $assval['readlabel'] ,0, 6) === substr( $headdta['slidebgs'],0,6) ) ? "mintbck" : "standardbck"; 
-        $ss = ( trim($assval['subsite']) !== "" ) ? " ({$assval['subsite']})" : "";
-        $dx = ( trim($assval['dx']) !== "" ) ? " / {$assval['dx']}" : "";
-        $mdx = ( trim($assval['subdx']) !== "" ) ? " ({$assval['subdx']})" : "";
-        $met = ( trim($assval['metsite']) !== "") ? " [{$assval['metsite']}]" : "";
 
-        $hprcomp = ( (int)$assval['hprind'] === 1 ) ? "<i class=\"material-icons constiticon\">check_circle</i>" : "";
-        $qacomp = ( (int)$assval['qcind'] === 1 ) ? "<i class=\"material-icons constiticon\">check_circle</i>" : "";
-
-        $assTbl .= <<<ROWLINE
-<tr class="{$mintgreen}">
-  <td valign=top>{$hprcomp}</td>
-  <td valign=top>{$qacomp}</td>
-  <td valign=top>{$assval['readlabel']}</td>
-  <td valign=top>{$assval['specimencategory']} {$assval['site']}{$ss}{$dx}{$mdx}{$met}</td>
-  <td valign=top>{$assval['hprdecdsp']}<br>[{$assval['hpron']}]</td>
-  <td valign=top>{$assval['qmsstatus']}</td>
-</tr>
-ROWLINE;
-        $assbg = $assval['readlabel']; 
-        $bggroups++;
-    }  
-
-    $prep = ( trim($assval['preparation']) !== "" ) ? " / {$assval['preparation']}" : "";
-    $ifname = ( trim($assval['investfname']) !== "" ) ? ", {$assval['investfname']} " : "";
-    $iname = (trim($assval['investlname']) !== "" ) ? "{$assval['investlname']}{$ifname}" : "";
-    
-    
-    $reqNbr = ( trim($assval['assignedreq']) !== "" ) ? "/{$assval['assignedreq']}" : "";
-    $reqency = ( trim($assval['assignedreq']) !== "" ) ? " onclick=\"generateDialog('irequestdisplay','" . cryptservice($assval['assignedreq']) . "');\" " : ""; 
-    $reqPopStrt = ( trim($assval['assignedreq']) !== "" ) ? "<div class=assttholder>" : "";
-    $reqPopEnd = ( trim($assval['assignedreq']) !== "" ) ? "<div class=\"tt quickLink\" {$reqency}>View Request {$assval['assignedreq']}</div></div>" : "";
-
-    $assign = ( trim($assval['assignedto']) !== "" ) ? "{$reqPopStrt}{$iname}({$assval['assignedto']}{$reqNbr}){$reqPopEnd}" : "";
-
-    $sdencry = ( trim($assval['shipdocrefid']) !== "" ) ? cryptservice($assval['shipdocrefid']) : "";
-    $ship = ( trim($assval['shipdocrefid']) !== "" ) ? "<div class=sdttholder>" . substr(('000000' . $assval['shipdocrefid']),-6) . "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]<p><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">print</i> Print Ship-Doc (" . substr(('000000' . $assval['shipdocrefid']),-6) . ")</div><div onclick=\"navigateSite('shipment-document/{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">edit</i> Edit Ship-Doc (" . substr(('000000' . $assval['shipdocrefid']),-6) . ")</div></div>" : "";
-    $ship .= ( trim($assval['shippeddate']) !== "" ) ? "<br>[{$assval['shippeddate']}]" : "";
-
-    $innerAss .= <<<INASSTBL
-  <tr>
-    <td valign=top>{$assval['bgs']}</td>
-    <td valign=top>{$assval['prepmethod']}{$prep}</td>
-    <td valign=top>{$assign}</td>
-    <td valign=top>{$ship}</td>
-  </tr>
-INASSTBL;
-    $segrowcnt++; 
-}
-$innerAss .= "</table>";
-$assTbl .= "<tr><td colspan=6 valign=top>{$innerAss}</td></tr>";
-$assTbl .= "</table>";
+//ALL ASSOCIATIVE SEGMENTS
+//$assbg = "";
+//$assTbl = "<table border=0 width=100% id=assBGDspTbl>";
+//$bggroups = 0;
+//$segrowcnt = 0;
+//$innerAss = "<table width=100% border=0 class=iAssTbl>";
+//foreach ( $ass as $asskey => $assval ) { 
+//    if ( $assbg !== $assval['readlabel'] ) { 
+//        //add TBLROW FOR BG
+//        $innerAss .= "</table>";
+//        $assTbl .= "<tr><td colspan=6 valign=top class=inassdsp>{$innerAss}</td></tr>";
+//        $innerAss = "<table border=0 width=100% class=iAssTbl>";
+//        $mintgreen = ( substr( $assval['readlabel'] ,0, 6) === substr( $headdta['slidebgs'],0,6) ) ? "mintbck" : "standardbck"; 
+//
+//        $ss = ( trim($assval['subsite']) !== "" ) ? " ({$assval['subsite']})" : "";
+//        $dx = ( trim($assval['dx']) !== "" ) ? " / {$assval['dx']}" : "";
+//        $mdx = ( trim($assval['subdx']) !== "" ) ? " ({$assval['subdx']})" : "";
+//        $met = ( trim($assval['metsite']) !== "") ? " [{$assval['metsite']}]" : "";
+//        $hprcomp = ( (int)$assval['hprind'] === 1 ) ? "<i class=\"material-icons constiticon\">check_circle</i>" : "";
+//        $qacomp = ( (int)$assval['qcind'] === 1 ) ? "<i class=\"material-icons constiticon\">check_circle</i>" : "";
+//
+//        $assTbl .= <<<ROWLINE
+//<tr class="{$mintgreen} bgrowline" >
+//  <td valign=top>{$assval['readlabel']}</td>
+//  <td valign=top>{$assval['specimencategory']} {$assval['site']}{$ss}{$dx}{$mdx}{$met}</td>
+//  <td valign=top>{$assval['hprdecdsp']}<br><span class=smlFont>[{$assval['hpron']}]</span></td>
+//  <td valign=top>{$assval['qmsstatus']}</td>
+//</tr>
+//ROWLINE;
+//        $assbg = $assval['readlabel']; 
+//        $bggroups++;
+//    }  
+//
+//    $prep = ( trim($assval['preparation']) !== "" ) ? " / {$assval['preparation']}" : "";
+//    $ifname = ( trim($assval['investfname']) !== "" ) ? ", {$assval['investfname']} " : "";
+//    $iname = (trim($assval['investlname']) !== "" ) ? "{$assval['investlname']}{$ifname}" : ""; 
+//    $reqNbr = ( trim($assval['assignedreq']) !== "" ) ? "/{$assval['assignedreq']}" : "";
+//    $reqency = ( trim($assval['assignedreq']) !== "" ) ? " onclick=\"generateDialog('irequestdisplay','" . cryptservice($assval['assignedreq']) . "');\" " : ""; 
+//    $reqPopStrt = ( trim($assval['assignedreq']) !== "" ) ? "<div class=assttholder>" : "";
+//    $reqPopEnd = ( trim($assval['assignedreq']) !== "" ) ? "<div class=\"tt quickLink\" {$reqency}>Click to view Request {$assval['assignedreq']}</div></div>" : "";
+//
+//    $assign = ( trim($assval['assignedto']) !== "" && ( trim($assval['assignedto']) !== "BANK" && trim($assval['assignedto']) !== "QC") ) ? "{$reqPopStrt}{$iname}<br><span class=smlFont>({$assval['assignedto']}{$reqNbr})</span>{$reqPopEnd}" : "-{$assval['assignedto']}-";
+//
+//    $sdencry = ( trim($assval['shipdocrefid']) !== "" ) ? cryptservice($assval['shipdocrefid']) : "";
+//    $ship = ( trim($assval['shipdocrefid']) !== "" ) ? "<div class=sdttholder>" . substr(('000000' . $assval['shipdocrefid']),-6) . "<div class=tt>Shipdoc Status: {$val['sdstatus']}<br>Status by: [INFO NOT AVAILABLE]<p><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">print</i> Print Ship-Doc (" . substr(('000000' . $assval['shipdocrefid']),-6) . ")</div><div onclick=\"navigateSite('shipment-document/{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">edit</i> Edit Ship-Doc (" . substr(('000000' . $assval['shipdocrefid']),-6) . ")</div></div>" : "";
+//    $ship .= ( trim($assval['shippeddate']) !== "" ) ? "<br><span class=smlFont>[{$assval['shippeddate']}]</font>" : "";
+//
+//    $innerAss .= <<<INASSTBL
+//  <tr>
+//    <td valign=top>{$assval['bgs']}</td>
+//    <td valign=top>{$assval['prepmethod']}{$prep}</td>
+//    <td valign=top>{$assign}</td>
+//    <td valign=top>{$ship}</td>
+//  </tr>
+//INASSTBL;
+//    $segrowcnt++; 
+//}
+//$innerAss .= "</table>";
+//$assTbl .= "<tr><td colspan=6 valign=top class=inassdsp>{$innerAss}</td></tr>";
+//$assTbl .= "</table>";
 
 //TODO:  Figure out a way not to hard code this 
     switch ( $headdta['hprdecisionvalue'] ) { 
@@ -4316,186 +4443,296 @@ $assTbl .= "</table>";
         break;
     }
 
+//<table border=0 cellspacing=0 cellpadding=0><tr><td class=headerTitleCell>Pathology Report</td></tr><tr><td valign=top><div id=qmsPRSideDsp><table><tr><td>{$headdta['pathreport']}</td></tr><tr><td align=right>{$uploadline}</td></tr></table></div></td></tr></table> 
 
-    $hprside = <<<HPRTBL
-<table border=0 cellspacing=0 cellpadding=0 style="width: 30vw; height: 88vh;">
-<tr><td class=headerTitleCell><table><tr><td><i class=material-icons>{$decIcon}</i></td><td>REVIEW {$headdta['slidebgs']} / {$headdta['hprdecision']} </td></tr></table></td></tr>
-<tr><td valign=top style="height: 3vh; ">
-  <table border=0 style="background: rgba(160,160,160,.5);">
-    <tr>
-        <td class=hprSideTopBtns onclick="changeSupportingTab(0);">Review<br>Metrics</td>
-        <td class=hprSideTopBtns onclick="changeSupportingTab(1);">Pathology<br>Report</td>
-        <td class=hprSideTopBtns onclick="changeSupportingTab(2);">Associate &amp; Constitutent<br>Segments</td>
-    </tr>
-  </table></td></tr>
-<tr><td valign=top>
+//THIS IS THE SEGMENT TABLE ALL ASSOCIATIVE GROUPS
+//<table border=0 width=100%><tr><td id=assDspMetrics>Biogroups: {$bggroups} / Segment Records: {$segrowcnt}</td></tr><tr><td> {$assTbl} </td></tr></table> 
 
-<div id=masterHold>    
-<div id=dspTabContent0 class=HPRReviewDocument style="display: block; padding: 2vh 0;"> 
-      <table border=0  cellspacing=0 cellpadding=0 width=100%><tr><td valign=top> {$hprdatatbl} </td></tr></table></div>
-<div id=dspTabContent1 class=HPRReviewDocument style="display: none; margin-top: 1vh;">
-    <table border=0 cellspacing=0 cellpadding=0><tr><td class=headerTitleCell>Pathology Report</td></tr><tr><td valign=top><div id=qmsPRSideDsp><table><tr><td>{$headdta['pathreport']}</td></tr><tr><td align=right>{$uploadline}</td></tr></table></div></td></tr></table> </div>
-<div id=dspTabContent2 class=HPRReviewDocument style="display: none;"><table border=1><tr><td>Biogroups: {$bggroups} / Segment Records: {$segrowcnt}</td></tr><tr><td> {$assTbl} </td></tr></table>  </div>
-
-</div>
-
-</td></tr>
-</table>
-HPRTBL;
+//$hprside = <<<HPRTBL
+//<table border=0 cellspacing=0 cellpadding=0>
+//<tr><td class=headerTitleCell><table><tr><td><i class=material-icons>{$decIcon}</i></td><td>REVIEW {$headdta['slidebgs']} / {$headdta['hprdecision']} </td></tr></table></td></tr>
+//<tr><td valign=top style="height: 3vh; ">
+//  <table border=0 style="background: rgba(160,160,160,.5);">
+//    <tr>
+//        <td class=hprSideTopBtns onclick="changeSupportingTab(0);">Review<br>Metrics</td>
+//        <td class=hprSideTopBtns onclick="changeSupportingTab(1);">Pathology<br>Report</td>
+//        <td class=hprSideTopBtns onclick="changeSupportingTab(2);">Associate &amp; Constitutent<br>Segments</td>
+//    </tr>
+//  </table></td></tr>
+//<tr><td valign=top>
+//
+//<div id=masterHold>    
+//<div id=dspTabContent0 class=HPRReviewDocument style="display: block; padding: 2vh 0;"> 
+//      <table border=0  cellspacing=0 cellpadding=0 width=100%><tr><td valign=top> {$hprdatatbl} </td></tr></table></div>
+//
+//<div id=dspTabContent1 class=HPRReviewDocument style="display: none; margin-top: 1vh;">
+//</div>
+//
+//<div id=dspTabContent2 class=HPRReviewDocument style="display: none;">
+//</div>
+//
+//</div>
+//</td></tr>
+//</table>
+//HPRTBL;
 
 if ( $headdta['hprdecisionvalue'] === 'INCONCLUSIVE' ) {
 
+//INCONCLUSIVE WORKBENCH GOES HERE    
 $workbench = <<<WORKBENCH
 INCONCLUSIVE DISPLAY GOES HERE     
-        
-        
 WORKBENCH;
+
+  $topBtnBar = generatePageTopBtnBar('qmsactionworkincon', "", $_SERVER['HTTP_REFERER'] );
+
 } else { 
-    
-if ( trim($headdta['hprspeccat']) == trim($headdta['bsspeccat'])) {
-    if ( trim($headdta['hprspeccat']) !== "") { 
-        $dxdsspc = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprspeccat'])) . "</span>";
-    } else { 
-      //BOTH HPR AND BS BLANK
-    }
-} else { 
-    if ( trim($headdta['hprspeccat']) !== "") {
-        $dxdsspc = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprspeccat'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsspeccat']))  . "]</div></div></span>"; 
-    } else { 
-        $dxdsspc = "<span class=bshprnonmatch><div class=ttholder>[HPR SPECIMEN CATEGORY REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsspeccat']))  . "]</div></div></span>"; 
-    }
-}
- 
-if ( trim($headdta['hprsite']) == trim($headdta['bsanatomicsite'])) {
-    if ( trim($headdta['hprsite']) !== "") { 
-        $dxdsst = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprsite'])) . "</span>";
-    } else { 
-      //BOTH HPR AND BS BLANK
-    }
-} else { 
-    if ( trim($headdta['hprsite']) !== "") {
-        $dxdsst = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprsite'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsanatomicsite']))  . "]</div></div></span>"; 
-    } else { 
-        $dxdsst = "<span class=bshprnonmatch><div class=ttholder>[HPR SITE REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsanatomicsite']))  . "]</div></div></span>"; 
-    }
-}
-if ( trim($headdta['hprsubsite']) == trim($headdta['bssubsite'])) {
-    if ( trim($headdta['hprsubsite']) !== "") { 
-        $dxdsst = "<span class=bshprmatch>(" . strtoupper(trim($headdta['hprsubsite'])) . ")</span>";
-    } else { 
-      //BOTH HPR AND BS BLANK
-    }
-} else { 
-    if ( trim($headdta['hprsubsite']) !== "") {
-        $dxdssst = "<span class=bshprnonmatch><div class=ttholder>(" . strtoupper(trim($headdta['hprsubsite'])) . ")<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bssubsite']))  . "]</div></div></span>"; 
-    } else { 
-        $dxdssst = "<span class=bshprnonmatch><div class=ttholder>[HPR SUB-SITE REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bssubsite']))  . "]</div></div></span>"; 
-    }
-}
-if ( trim($headdta['hprdx']) == trim($headdta['bsdx'])) {
-    if ( trim($headdta['hprdx']) !== "") { 
-        $dxdsdx = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprdx'])) . "</span>";
-    } else { 
-      //BOTH HPR AND BS BLANK
-    }
-} else { 
-    if ( trim($headdta['hprdx']) !== "") {
-        $dxdsdx = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprdx'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsdx']))  . "]</div></div></span>"; 
-    } else { 
-        $dxdsdx = "<span class=bshprnonmatch><div class=ttholder>[HPR DIAGNOSIS REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsdx']))  . "]</div></div></span>"; 
-    }
-}
-if ( trim($headdta['hprdxmod']) == trim($headdta['bsdxmod'])) {
-    if ( trim($headdta['hprdxmod']) !== "") { 
-        $dxdsdxm = "<span class=bshprmatch>(" . strtoupper(trim($headdta['hprdxmod'])) . ")</span>";
-    } else { 
-      //BOTH HPR AND BS BLANK
-    }
-} else { 
-    if ( trim($headdta['hprdxmod']) !== "") {
-        $dxdsdxm = "<span class=bshprnonmatch><div class=ttholder>(" . strtoupper(trim($headdta['hprdxmod'])) . ")<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsdxmod']))  . "]</div></div></span>"; 
-    } else { 
-        $dxdsdxm = "<span class=bshprnonmatch><div class=ttholder>[HPR DIAGNOSIS MODIFIER REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsdxmod']))  . "]</div></div></span>"; 
-    }
-}
-if ( trim($headdta['hprmets']) == trim($headdta['bsmets'])) {
-    if ( trim($headdta['hprmets']) !== "") { 
-        $dxdsmets = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprmets'])) . "</span>";
-    } else { 
-      //BOTH HPR AND BS BLANK
-    }
-} else { 
-    if ( trim($headdta['hprmets']) !== "") {
-        $dxdsmets = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprmets'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsmets']))  . "]</div></div></span>"; 
-    } else { 
-        $dxdsmets = "<span class=bshprnonmatch><div class=ttholder>[HPR DIAGNOSIS MODIFIER REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsmets']))  . "]</div></div></span>"; 
-    }
-}
-if ( trim($headdta['hprmets']) == trim($headdta['bsmets'])) {
-    if ( trim($headdta['hprmets']) !== "") { 
-        $dxdsmets = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprmets'])) . "</span>";
-    } else { 
-      //BOTH HPR AND BS BLANK
-    }
-} else { 
-    if ( trim($headdta['hprmets']) !== "") {
-        $dxdsmets = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprmets'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsmets']))  . "]</div></div></span>"; 
-    } else { 
-        $dxdsmets = "<span class=bshprnonmatch><div class=ttholder>[HPR DIAGNOSIS MODIFIER REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsmets']))  . "]</div></div></span>"; 
-    }
-}
-if ( trim($headdta['hprcomobid']) == trim($headdta['bscomo'])) {
-    if ( trim($headdta['hprcomobid']) !== "") { 
-        $dxdscomo = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprcomobid'])) . "</span>";
-    } else { 
-      //BOTH HPR AND BS BLANK
-    }
-} else { 
-    if ( trim($headdta['hprcomobid']) !== "") {
-        $dxdscomo = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprcomobid'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bscomo']))  . "]</div></div></span>"; 
-    } else { 
-        $dxdscomo = "<span class=bshprnonmatch><div class=ttholder>[HPR DIAGNOSIS MODIFIER REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bscomo']))  . "]</div></div></span>"; 
-    }
+
+//REGULAR WORK BENCH STARTS HERE 
+//if ( trim($headdta['hprspeccat']) == trim($headdta['bsspeccat'])) {
+//    if ( trim($headdta['hprspeccat']) !== "") { 
+//        $dxdsspc = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprspeccat'])) . "</span>";
+//    } else { 
+//      //BOTH HPR AND BS BLANK
+//    }
+//} else { 
+//    if ( trim($headdta['hprspeccat']) !== "") {
+//        $dxdsspc = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprspeccat'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsspeccat']))  . "]</div></div></span>"; 
+//    } else { 
+//        $dxdsspc = "<span class=bshprnonmatch><div class=ttholder>[HPR SPECIMEN CATEGORY REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsspeccat']))  . "]</div></div></span>"; 
+//    }
+//}
+// 
+//if ( trim($headdta['hprsite']) == trim($headdta['bsanatomicsite'])) {
+//    if ( trim($headdta['hprsite']) !== "") { 
+//        $dxdsst = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprsite'])) . "</span>";
+//    } else { 
+//      //BOTH HPR AND BS BLANK
+//    }
+//} else { 
+//    if ( trim($headdta['hprsite']) !== "") {
+//        $dxdsst = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprsite'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsanatomicsite']))  . "]</div></div></span>"; 
+//    } else { 
+//        $dxdsst = "<span class=bshprnonmatch><div class=ttholder>[HPR SITE REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsanatomicsite']))  . "]</div></div></span>"; 
+//    }
+//}
+//if ( trim($headdta['hprsubsite']) == trim($headdta['bssubsite'])) {
+//    if ( trim($headdta['hprsubsite']) !== "") { 
+//        $dxdsst = "<span class=bshprmatch>(" . strtoupper(trim($headdta['hprsubsite'])) . ")</span>";
+//    } else { 
+//      //BOTH HPR AND BS BLANK
+//    }
+//} else { 
+//    if ( trim($headdta['hprsubsite']) !== "") {
+//        $dxdssst = "<span class=bshprnonmatch><div class=ttholder>(" . strtoupper(trim($headdta['hprsubsite'])) . ")<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bssubsite']))  . "]</div></div></span>"; 
+//    } else { 
+//        $dxdssst = "<span class=bshprnonmatch><div class=ttholder>[HPR SUB-SITE REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bssubsite']))  . "]</div></div></span>"; 
+//    }
+//}
+//if ( trim($headdta['hprdx']) == trim($headdta['bsdx'])) {
+//    if ( trim($headdta['hprdx']) !== "") { 
+//        $dxdsdx = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprdx'])) . "</span>";
+//    } else { 
+//      //BOTH HPR AND BS BLANK
+//    }
+//} else { 
+//    if ( trim($headdta['hprdx']) !== "") {
+//        $dxdsdx = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprdx'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsdx']))  . "]</div></div></span>"; 
+//    } else { 
+//        $dxdsdx = "<span class=bshprnonmatch><div class=ttholder>[HPR DIAGNOSIS REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsdx']))  . "]</div></div></span>"; 
+//    }
+//}
+//if ( trim($headdta['hprdxmod']) == trim($headdta['bsdxmod'])) {
+//    if ( trim($headdta['hprdxmod']) !== "") { 
+//        $dxdsdxm = "<span class=bshprmatch>(" . strtoupper(trim($headdta['hprdxmod'])) . ")</span>";
+//    } else { 
+//      //BOTH HPR AND BS BLANK
+//    }
+//} else { 
+//    if ( trim($headdta['hprdxmod']) !== "") {
+//        $dxdsdxm = "<span class=bshprnonmatch><div class=ttholder>(" . strtoupper(trim($headdta['hprdxmod'])) . ")<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsdxmod']))  . "]</div></div></span>"; 
+//    } else { 
+//        $dxdsdxm = "<span class=bshprnonmatch><div class=ttholder>[HPR DIAGNOSIS MODIFIER REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsdxmod']))  . "]</div></div></span>"; 
+//    }
+//}
+//if ( trim($headdta['hprmets']) == trim($headdta['bsmets'])) {
+//    if ( trim($headdta['hprmets']) !== "") { 
+//        $dxdsmets = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprmets'])) . "</span>";
+//    } else { 
+//      //BOTH HPR AND BS BLANK
+//    }
+//} else { 
+//    if ( trim($headdta['hprmets']) !== "") {
+//        $dxdsmets = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprmets'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsmets']))  . "]</div></div></span>"; 
+//    } else { 
+//        $dxdsmets = "<span class=bshprnonmatch><div class=ttholder>[HPR DIAGNOSIS MODIFIER REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsmets']))  . "]</div></div></span>"; 
+//    }
+//}
+//if ( trim($headdta['hprmets']) == trim($headdta['bsmets'])) {
+//    if ( trim($headdta['hprmets']) !== "") { 
+//        $dxdsmets = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprmets'])) . "</span>";
+//    } else { 
+//      //BOTH HPR AND BS BLANK
+//    }
+//} else { 
+//    if ( trim($headdta['hprmets']) !== "") {
+//        $dxdsmets = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprmets'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsmets']))  . "]</div></div></span>"; 
+//    } else { 
+//        $dxdsmets = "<span class=bshprnonmatch><div class=ttholder>[HPR DIAGNOSIS MODIFIER REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bsmets']))  . "]</div></div></span>"; 
+//    }
+//}
+//if ( trim($headdta['hprcomobid']) == trim($headdta['bscomo'])) {
+//    if ( trim($headdta['hprcomobid']) !== "") { 
+//        $dxdscomo = "<span class=bshprmatch>" . strtoupper(trim($headdta['hprcomobid'])) . "</span>";
+//    } else { 
+//      //BOTH HPR AND BS BLANK
+//    }
+//} else { 
+//    if ( trim($headdta['hprcomobid']) !== "") {
+//        $dxdscomo = "<span class=bshprnonmatch><div class=ttholder>" . strtoupper(trim($headdta['hprcomobid'])) . "<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bscomo']))  . "]</div></div></span>"; 
+//    } else { 
+//        $dxdscomo = "<span class=bshprnonmatch><div class=ttholder>[HPR DIAGNOSIS MODIFIER REMOVED]<div class=tt style=\"white-space: nowrap;\">Procured as: [" .  strtoupper(trim($headdta['bscomo']))  . "]</div></div></span>"; 
+//    }
+//}
+
+//PERCENTAGE TABLE
+//$percentTbl = "<table border=0><tr><td colspan=4 class=qmsDataLabel>Biosample Composition Percentages</td></tr><tr>";
+//$cntr = 0;
+//foreach ( $prc as $pkey => $pvalue ) { 
+//   if ($cntr === 4) { 
+//     $percentTbl .= "</tr><tr>";
+//     $cntr = 0;
+//   }
+//   $percentTbl .= "<td><table><tr><td>{$pvalue['ptypedsp']}</td><td><input type=text id={$pvalue['ptypeval']} class=prcDisplayValue value={$pvalue['prcvalue']}></td></tr></table></td>";
+//   $cntr++;
+//}
+//$percentTbl .= "</tr></table>";
+
+//UNINVOLVED MENU
+//$univData = dropmenuUninvolvedIndicator( $headdta['hpruninvolvedvalue']   );
+//$uninvmenu = $univData['menuObj'];
+
+//BUILD TUMOR GRADE 
+//$tmrGrd = "<table border=0 class=\"menuDropTbl hprNewDropDownFont\"><tr><td align=right onclick=\"fillField('fldTumorGradeScale','','');\" class=ddMenuClearOption>[clear]</td></tr>";
+//$thistumorscalevalue = "";
+//$thistumorscaledsp = "";
+//  foreach ( $tmrGradeScaleList['DATA'] as $procval) { 
+//      if ( $procval['lookupvalue'] === $headdta['hprtumorscalevalue'] ) { 
+//         $thistumorscalevalue = $procval['lookupvalue'];
+//         $thistumorscaledsp = $procval['menuvalue'];
+//      }
+//      $tmrGrd .= "<tr><td onclick=\"fillField('fldTumorGradeScale','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+//  }
+//$tmrGrd .= "</table>";
+//END TUMOR GRADE
+
+//molecular test
+//$molemnu = "<table border=0 width=100% class=\"menuDropTbl hprNewDropDownFont\"><tr><td align=right onclick=\"triggerMolecularFill(0,'','','{$idsuffix}');\" class=ddMenuClearOption>[clear]</td></tr>";
+//foreach ($moletest['DATA'] as $moleval) { 
+//  $molemnu .= "<tr><td onclick=\"triggerMolecularFill({$moleval['menuid']},'{$moleval['menuvalue']}','{$moleval['dspvalue']}','{$idsuffix}');\" class=ddMenuItem>{$moleval['dspvalue']}</td></tr>";
+//}
+//$molemnu .= "</table>";
+
+//if ( count($mol) > 0 ) {
+//      $moleTestTbl = "<table cellspacing=0 cellpadding=0 border=0 width=100%>";
+//      $cntr = 0;         
+//      
+//      foreach ( $mol as $molkey => $molval ) {
+//        $fld1 = $molval['moletestvalue'];
+//        $fld2 = addslashes($molval['moletest']);
+//        $fld3 = $molval['resultindexvalue'];
+//        $fld4 = addslashes($molval['resultindex']);  
+//        $fld5 = addslashes($molval['resultdegree']);  
+//        $moleArrA[] = array( $fld1, $fld2, $fld3, $fld4, $fld5) ;    
+//
+//        $moleTestTbl .= "<tr onclick=\"manageMoleTest(0,{$cntr},'" . $fldsuffix . "');\" class=ddMenuItem><td style=\"border-bottom: 1px solid rgba(160,160,160,1); width: 1vw;\"><i class=\"material-icons\" style=\"font-size: 1.8vh; color:rgba(237, 35, 0,1); width: .3vw; padding: 8px 0 8px 3px;\">cancel</i><td style=\" padding: 8px 0 8px 8px;border-bottom: 1px solid rgba(160,160,160,1); font-size: 1.5vh;\">" . $fld2 . "</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1); font-size: 1.5vh;\">" . $fld4 . "</td><td style=\"border-bottom: 1px solid rgba(160,160,160,1); font-size: 1.5vh;\">" . $fld5 . "</td></tr>";
+//        $cntr++;
+//
+//      }
+//    }
+//    $moleTestTbl .= "</table>";
+//    $moleArr = json_encode($moleArrA);  
+//[["ALK","ALK (Anaplastic Lymphoma Kinase)","ALK-NEGATIVE","Negative (-)",""]]
+//$mol = [{"moletestvalue":"ER","moletest":"ER (Estrogen Receptor)","resultindexvalue":"ER-POSITIVE","resultindex":"Positive (+)","resultdegree":"95%"},{"moletestvalue":"PR","moletest":"PR (Progesterone Receptor)","resultindexvalue":"PR-POSITIVE","resultindex":"Positive (+)","resultdegree":"95%"},{"moletestvalue":"HER2","moletest":"HER2 (Human Epidermal Growth Factor Receptor 2)","resultindexvalue":"HER-POSITIVE","resultindex":"Positive (+)","resultdegree":"3+"}]
+//$moleTbl = <<<MOLETBL
+//      <table border=0 class=maindxdstbl>
+//       <tr><td colspan=2 class=hprPreLimFldLbl>Indicated Immuno/Molecular Test Results</td><td class=hprPreLimFldLbl>Result Index</td><td class=hprPreLimFldLbl colspan=2>Scale Degree</td>
+//           <td rowspan=2 valign=top class=btnBar style="padding-top: 2vh; "> <button onclick="manageMoleTest(1,'','{$idsuffix}');">Add Test</button> </td></tr>
+//       <tr><td class=fieldHolder valign=top colspan=2>
+//                    <div class=menuHolderDiv>
+//                      <input type=hidden id=hprFldMoleTest{$idsuffix}Value>
+//                      <input type=text id=hprFldMoleTest{$idsuffix} READONLY style="width: 10vw;" class=hprDataField>
+//                      <div class=valueDropDown style="min-width: 25vw;">{$molemnu}</div>
+//                    </div>
+//            </td>
+//            <td class=fieldHolder valign=top>
+//             <div class=menuHolderDiv>
+//               <input type=hidden id='hprFldMoleResult{$idsuffix}Value'>
+//               <input type=text id='hprFldMoleResult{$idsuffix}' READONLY class=hprDataField style="width: 10vw;">
+//               <div class=valueDropDown id=moleResultDropDown style="min-width: 12.5vw;"> </div>
+//             </div>
+//            </td>
+//            <td class=fieldHolder valign=top>
+//              <input type=text id=hprFldMoleScale{$idsuffix} class=hprDataField style="width: 10vw;">
+//            </td>
+//       </tr>
+//       <tr><td colspan=6 valign=top>
+//           <input type=hidden id=hprMolecularTestJsonHolderConfirm value='{$moleArr}'>
+//           <div id=dspDefinedMolecularTestsConfirm{$idsuffix} class=dspDefinedMoleTests>
+//           {$moleTestTbl}
+//           </div>
+//           </td>
+//       </tr>
+//      </table>
+//MOLETBL;
+//MOLETBL END
+
+//$workbench = <<<WORKBENCH
+//<div id=qaHeader>
+//<table><tr><td><i class=material-icons>{$decIcon}</i></td><td>Slide {$headdta['slidebgs']} / {$headdta['hprdecision']} </td></tr></table>
+//</div>
+//<div id=qaVocabChanger>
+//    <table border=1 
+//        id="wb{$headdta['biohpr']}"
+//        class=maindxdstbl
+//        data-speccat="{$headdta['hprspeccat']}"
+//        data-site="{$headdta['hprsite']}"
+//        data-ssite="{$headdta['hprsubsite']}"
+//        data-dx="{$headdta['hprdx']}"
+//        data-moddx="{$headdta['hprdxmod']}"
+//        data-mets="{$headdta['hprmets']}"
+//        data-como="{$headdta['hprcomobid']}"
+//        data-ohspeccat="{$headdta['hprspeccat']}"
+//        data-ohsite="{$headdta['hprsite']}"
+//        data-ohssite="{$headdta['hprsubsite']}"
+//        data-ohdx="{$headdta['hprdx']}"
+//        data-ohmoddx="{$headdta['hprdxmod']}"
+//        data-ohmets="{$headdta['hprmets']}"
+//        data-ohcomo="{$headdta['hprcomobid']}"        
+//        >
+//        <tr><td colspan=2 class=qmsDataLabel>Diagnosis Designation</td><td rowspan=5 valign=top class=btnBar><table><tr><td><button onclick="alert('{$headdta['biohpr']}');">Change Vocab</button></td></tr><tr><td><button onclick="alert('{$headdta['biohpr']}');">Reset Vocab</button></td></tr><tr><td><button onclick="alert('{$headdta['biohpr']}');">METS FROM</button></td></tr><tr><td><button onclick="alert('{$headdta['biohpr']}');">Sys/Co-Mo</button></td></tr>   </table></td></tr>
+//        <tr><td colspan=2><table><tr><td>{$dxdsspc}</td><td>{$dxdsst}</td><td>{$dxdssst}</td><td>{$dxdsdx}</td><td>{$dxdsdxm}</td></tr></table></td></tr>
+//        <tr><td class=qmsDataLabel>MET From</td><td class=qmsDataLabel>Systemic/CoMobid</td></tr>    
+//        <tr><td>{$dxdsmets}&nbsp;</td><td>{$dxdscomo}&nbsp;</td></tr>           
+//        <tr><td>Uninvolved Biosample</td><td>Tumor Grade/Scale</td></tr>
+//                <tr><td>{$uninvmenu}</td><td><table><tr><td><input type=text id=fldTumorGrade style="width: 5vw;" value="{$headdta['hprtumorgrade']}"></td><td> <div class=menuHolderDiv><input type=hidden id=fldTumorGradeScaleValue value="{$thistumorscalevalue}"><input type=text id=fldTumorGradeScale READONLY class="inputFld hprDataField" style="width: 10vw;" value="{$thistumorscaledsp}"><div class=valueDropDown style="min-width: 10vw;">{$tmrGrd}</div></div></td></tr></table></td></tr>      
+//    </table> 
+//</div>    
+//
+//<div id=qaPrcMole><table><tr><td valign=top>{$percentTbl}</td><td valign=top>{$moleTbl}</td></tr></table></div>
+//
+//<div id=qaBGComments><table><tr><td>Biogroup Comments</td><td>QMS Question</td></tr><tr><td><TEXTAREA id=qaBGComments>  </TEXTAREA></td><td><TEXTAREA id=qaBGQSTN></textarea></td></tr></table></div>
+//
+//<div id=qaControlLine><table id=qacontrollinetbl><tr><td><button onclick="alert('{$headdta['biohpr']}');">Accept Biogroup</button></td></tr></table></div>
+
+//WORKBENCH;
+  $workbench = (int)$headdta['biohpr'];
+  $topBtnBar = generatePageTopBtnBar('qmsactionwork', "", $_SERVER['HTTP_REFERER'] );
 }
 
-    $p = json_encode($prc);
-$workbench = <<<WORKBENCH
-<div id=qaVocabChanger>
-    <table border=0 
-        id="wb{$headdta['biohpr']}"
-        class=maindxdstbl
-        data-speccat="{$headdta['hprspeccat']}"
-        data-site="{$headdta['hprsite']}"
-        data-ssite="{$headdta['hprsubsite']}"
-        data-dx="{$headdta['hprdx']}"
-        data-moddx="{$headdta['hprdxmod']}"
-        data-mets="{$headdta['hprmets']}"
-        data-como="{$headdta['hprcomobid']}"
-        data-ohspeccat="{$headdta['hprspeccat']}"
-        data-ohsite="{$headdta['hprsite']}"
-        data-ohssite="{$headdta['hprsubsite']}"
-        data-ohdx="{$headdta['hprdx']}"
-        data-ohmoddx="{$headdta['hprdxmod']}"
-        data-ohmets="{$headdta['hprmets']}"
-        data-ohcomo="{$headdta['hprcomobid']}"        
-        >
-        <tr><td colspan=2 class=qmsDataLabel>Diagnosis Designation</td><td rowspan=5 valign=top class=btnBar><table><tr><td><button onclick="alert('{$headdta['biohpr']}');">Accept HPR</button></td></tr><tr><td><button onclick="alert('{$headdta['biohpr']}');">Change Vocab</button></td></tr><tr><td><button onclick="alert('{$headdta['biohpr']}');">Reset Vocab</button></td></tr><tr><td><button onclick="alert('{$headdta['biohpr']}');">METS FROM</button></td></tr><tr><td><button onclick="alert('{$headdta['biohpr']}');">Sys/Co-Mo</button></td></tr>   </table></td></tr>
-        <tr><td colspan=2><table><tr><td>{$dxdsspc}</td><td>{$dxdsst}</td><td>{$dxdssst}</td><td>{$dxdsdx}</td><td>{$dxdsdxm}</td></tr></table></td></tr>
-        <tr><td class=qmsDataLabel>MET From</td><td class=qmsDataLabel>Systemic/CoMobid</td></tr>    
-        <tr><td>{$dxdsmets}&nbsp;</td><td>{$dxdscomo}&nbsp;</td></tr>            
-    </table> 
-</div>    
-<div id=qaPercents>
-       {$p}
-        
-</div>
-        
-WORKBENCH;
-}
-    $pg = <<<PGCONTENT
-<table border=0 style="width: 99vw;">
-<tr><td valign=top style="width: 30vw; border: 1px solid rgba(160,160,160,1);">{$hprside}</td><td valign=top>{$workbench}</td></tr>
-</table>
+
+$pg = <<<PGCONTENT
+{$topBtnBar}
+{$workbench}
 PGCONTENT;
 return $pg;
 }
@@ -4594,7 +4831,6 @@ BLDTBL;
 return $pg;
 }
 
-
 function bldHPRVocabSystemic ( $dialogid, $objectid ) { 
 //TODO: Turn into a webservice    
 require(serverkeys . "/sspdo.zck");    
@@ -4620,7 +4856,6 @@ $pg = <<<PAGECONTENT
 PAGECONTENT;
 return $pg;
 }
-
 
 function bldHPRVocabMETSSite ( $dialogid, $objectid ) { 
 //TODO: Turn into a webservice    
@@ -4666,7 +4901,6 @@ $pg = <<<PAGECONTENT
 PAGECONTENT;
 return $pg;
 }
-
 
 function bldHPRVocabBrowser ( $dialogid, $objectid ) { 
 $pg = <<<PAGECONTENT
@@ -4728,7 +4962,6 @@ $pg = <<<PAGECONTENT
 PAGECONTENT;
  return $pg;
 }
-
 
 function bldHPREmailerDialog( $dialogid ) { 
 require(serverkeys . "/sspdo.zck");
@@ -4823,7 +5056,6 @@ function bldEnlargeDashboardGraphic ( $whichgraphic ) {
 ENLRGDGRPH;
 return $pgGraphics;
 }
-
 
 function bldDialogCalendarAddEvent ( $passeddata ) { 
   require(serverkeys . "/sspdo.zck");
@@ -4996,7 +5228,6 @@ RTNTHIS;
 return $rtnThis;    
 }
 
-
 function bldDialogShipDocAddSalesOrder ( $passeddata ) { 
   require(serverkeys . "/sspdo.zck");
   $pdta = json_decode ( $passeddata, true );
@@ -5103,7 +5334,6 @@ RTNTHIS;
 
 return $rtnThis;
 }
-
 
 function bldDialogShipDocAddSegment ( $passeddata ) { 
   require(serverkeys . "/sspdo.zck");
@@ -5394,8 +5624,6 @@ THISPAGE;
     return $thisPage;
 }
 
-
-
 function bldShipDocEditPage( $whichsdency ) { 
 
  $pdta = array(); 
@@ -5664,8 +5892,6 @@ SDPAGE;
 
     return $sdPage;
 }
-
-
 
 function bldDialogMasterQMSActionHPR ($biogroup, $readlabel) { 
     
@@ -7687,7 +7913,7 @@ function dropmenuMetsMalignant( $defaultVal ) {
   return array('menuObj' => $metssite,'defaultDspValue' => $metsDefaultDsp, 'defaultLookupValue' => $metsDefaultValue);
 }
 
-function dropmenuUninvolvedIndicator() { 
+function dropmenuUninvolvedIndicator( $defaultvalue = "") { 
 
    $si = serverIdent;
    $sp = serverpw;
@@ -7696,10 +7922,20 @@ function dropmenuUninvolvedIndicator() {
    $uninvDefaultValue = "";
    $uninvDefaultDsp = "";
    foreach ($unknmtarr['DATA'] as $uninvval) {
-      if ( (int)$uninvval['useasdefault'] === 1 ) {
-        $uninvDefaultValue = $uninvval['codevalue']; 
-        $uninvDefaultDsp = $uninvval['menuvalue'];
+
+      if ( $defaultvalue === "" ) {  
+        if ( (int)$uninvval['useasdefault'] === 1 ) {
+          $uninvDefaultValue = $uninvval['codevalue']; 
+          $uninvDefaultDsp = $uninvval['menuvalue'];
+        }
+      } else { 
+        if ( $defaultvalue === $uninvval['codevalue'] ) { 
+          $uninvDefaultValue = $uninvval['codevalue']; 
+          $uninvDefaultDsp = $uninvval['menuvalue'];
+        }
       }
+
+
     $uninv .= "<tr><td onclick=\"fillField('fldPRCUnInvolved','{$uninvval['codevalue']}','{$uninvval['menuvalue']}');\" class=ddMenuItem>{$uninvval['menuvalue']}</td></tr>";
    }
    $uninv .= "</table>";
@@ -8301,7 +8537,14 @@ if ( strtoupper($bg['qcprocstatus']) === 'Q' ) {
           $innerAss = ( trim($svl['assigneddate']) !== "" ) ? "<div class=segstatusinfo><div class=hovertbl><table><tr><td>Assigned Date: </td><td>{$svl['assigneddate']}</td></tr><tr><td>Assigned By: </td><td>{$svl['assignedby']}</td></tr></table></div></div>" : ""; 
           $assdiv = "<div class=segstatusdspinfo>{$assignment}{$innerAss}</div>";
 
-          $shipdoc = ( trim($svl['shipdocref']) !== "000000" ) ? trim($svl['shipdocref']) : "";
+
+          $sdencry = ( trim($svl['shipdocref']) !== "" ) ? cryptservice($svl['shipdocref']) : "";
+          $ship = ( trim($svl['shipdocref']) !== "000000" ) ? "<div class=sdttholder>" . substr(('000000' . $svl['shipdocref']),-6) . "<div class=tt><div onclick=\"displayShipDoc(event,'{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">print</i> Print Ship-Doc (" . substr(('000000' . $svl['shipdocref']),-6) . ")</div><div onclick=\"navigateSite('shipment-document/{$sdencry}');\" class=quickLink><i class=\"material-icons qlSmallIcon\">edit</i> Edit Ship-Doc (" . substr(('000000' . $svl['shipdocref']),-6) . ")</div></div>" : "";
+          $ship .= ( trim($svl['shippeddate']) !== "" ) ? "<br><span class=smlFont>[{$svl['shippeddate']}]</font>" : "";
+          //$shipdoc = ( trim($svl['shipdocref']) !== "000000" ) ? trim($svl['shipdocref']) : "";
+
+          $reqency = ( trim($svl['assignedrequest']) !== "" ) ? "<div class=assttholder>{$svl['assignedrequest']}<div class=tt><div onclick=\"generateDialog('irequestdisplay','" . cryptservice($svl['assignedrequest']) . "');\" class=quickLink>View Request {$svl['assignedrequest']}</div></div></div>" : ""; 
+
 
           $scnDsp = ( trim($svl['scannedlocation']) !== "" ) ? "<div class=scnstatusdspinfo>{$svl['scannedlocation']}<div class=scnstatusinfo><div class=hovertbl><table><tr><td>Scanned: </td><td>{$svl['scannedby']}</td></tr><tr><td>Status: </td><td>{$svl['scannedstatus']}</td></tr><tr><td>Date: </td><td>{$svl['scanneddate']}</td></tr></table></div></div></div>" : "&nbsp;";
 
@@ -8326,8 +8569,8 @@ if ( strtoupper($bg['qcprocstatus']) === 'Q' ) {
                       <td>{$svl['cuttech']}&nbsp;</td>                          
                       <td class=seg-qty>{$svl['qty']}&nbsp;</td>
                       <td>{$assdiv}</td>
-                      <td class=seg-rqst>{$svl['assignedrequest']}&nbsp;</td>
-                      <td class=seg-shpdoc>{$shipdoc}&nbsp;</td>
+                      <td class=seg-rqst>{$reqency}&nbsp;</td>
+                      <td class=seg-shpdoc>{$ship}&nbsp;</td>
                       <td class=seg-shpdte>{$svl['shippeddate']}&nbsp;</td>
                       <td>{$sgcmt}&nbsp;</td>
                       <td class="endCell ">{$scnDsp}</td>

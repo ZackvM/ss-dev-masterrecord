@@ -287,7 +287,7 @@ STYLESHEET;
 function qmsactions ( $mobileind ) { 
 $rtnThis = <<<STYLESHEET
 
-body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box; }
+body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   box-sizing: border-box; }
 .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
 
 
@@ -332,43 +332,34 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; box-sizing: border-box;
 
 
 /* WORKBENCH */
-.headerTitleCell {background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); text-align: center; height: 1vh; font-size: 1.6vh; padding: .5vh 0; box-sizing: border-box; }
 
-#qmsPRSideDsp { height: 70vh;   overflow: auto; font-size: 1.6vh; line-height: 1.8em; text-align: justify; box-sizing: border-box; padding: 8px; }
+#workbenchwrapper { display: grid; grid-gap: 5px; grid-template-rows: 40vh 45vh; }
 
-.hprSideTopBtns { border-right: 1px solid rgba({$this->color_white},1);  text-align: center; font-size: 1.4vh; padding: 4px 8px;  width: 7vw;}
-.hprSideTopBtns:hover { background: rgba({$this->color_lamber},.8); cursor: pointer; } 
+#wbrowtwo { height: 40vh; box-sizing: border-box; display: grid; grid-template-columns: 30vw 30vw 39vw; grid-gap: 5px;  }
+  #wbrowtwo #wbpristine { height: 40vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; } 
+  #wbrowtwo .dataHolderDiv:last-child { border-bottom: none; } 
 
- .qmsDataLabel { font-size: 1.5vh; font-weight: bold; padding: 8px 2px 2px 2px; border-bottom:  1px solid rgba({$this->color_grey},1); white-space: nowrap; }
- .qmsDataDsp { font-size: 1.5vh; padding: 8px 3px 2px 4px; border-bottom:  1px solid rgba({$this->color_grey},1); border-right:  1px solid rgba({$this->color_grey},1); min-width: 5vw; max-width: 22vw; }
+  #wbrowtwo #wbrevieweddata { height: 40vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; }
+    #wbrowtwo #wbrevieweddata #dataRowOne { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.4vh; font-weight: bold; text-align: center; padding: 3px 0; }
 
- .constiticon { font-size: 1.9vh; color: rgba({$this->color_darkgreen},1);  }
- .mintbck { background: rgba({$this->color_darkgreen},.2); }
- .standardbck { background: rgba({$this->color_white},1); }
+  #wbrowtwo #wbsupprtdata { height: 40vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; }
 
-
-.quickLink { margin-top: .6vh; margin-bottom: .6vh; }
-.quickLink:hover { color: rgba({$this->color_neongreen},1); cursor: pointer; }
-.quickLink .qlSmallIcon {font-size: 1.2vh; }
+#wbrowthree { box-sizing: border-box; height: 45vh; border: 1px solid #000; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none;  }
 
 
-.sdttholder { position: relative; }
-.sdttholder .tt { position: absolute; background: rgba({$this->color_zackgrey},1); width: 8vw;  color: rgba({$this->color_white},1); padding: 7px 5px; display: none;  }
-.sdttholder:hover .tt { display: block;  }
+.blueheader { box-sizing: border-box; background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.5vh; font-weight: bold; }
+.iconind { } 
+.iconind:hover { cursor: pointer; color: rgba({$this->color_neongreen},1); } 
 
-.assttholder { position: relative; }
-.assttholder .tt { top: 0; position: absolute; background: rgba({$this->color_zackgrey},1);  color: rgba({$this->color_white},1); padding: 7px 5px; display: none;  }
-.assttholder:hover .tt { display: block;  }
+#pathologyrptdisplay { z-index: 48; position: fixed; top: 10vh; left: -50vw; background: rgba({$this->color_white},1); border: 4px solid rgba({$this->color_zackgrey},1); width: 45vw; height: 80vh; padding: 0; display: grid; grid-template-rows: 3vh 74vh 3vh; transition: 1s; }  
+  #pathologyrptdisplay #pathologyreporttextdisplay {  height: 74vh; box-sizing: border-box; padding: 8px 16px; overflow: auto; font-size: 1.8vh; line-height: 1.8em; text-align: justify;     } 
+  #pathologyrptdisplay #uploadline { text-align: right; box-sizing: border-box; padding: 8px; background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.3vh;     }
 
-.dxdelimiter { font-size: 1vh; }
 
-.maindxdstbl {font-family: Roboto;  font-size: 1.5vh; width: 100%; color: rgba({$this->color_zackgrey},1); }
-.maindxdstbl .btnBar { width: 7vw; }
-.maindxdstbl button { font-size: 1.5vh; font-family: Roboto; border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px 5px; background: rgba({$this->color_white},1); -webkit-transition-duration: 0.4s; transition-duration: 0.4s; width: 7vw; }
-.maindxdstbl button:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1);  } 
-.maindxdstbl .bshprmatch { color: rgba({$this->color_darkgreen},1); }
-.maindxdstbl .bshprnonmatch { font-weight: bold; color: rgba({$this->color_bred},1); }
 
+.dataHolderDiv { box-sizing: border-box; padding: 0 0 0 4px; border-bottom: 1px solid rgba({$this->color_cornflowerblue},.5); } 
+.dataHolderDiv .datalabel { font-size: 1.1vh; font-weight: bold; padding: 8px 0 0 0; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); }
+.dataHolderDiv .datadisplay { font-size: 1.6vh; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); padding: 2px 0 4px 4px; } 
 
 STYLESHEET;
 return $rtnThis;
@@ -581,7 +572,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #segmentListTbl .seg-procdte { width: 5vw; }
 #segmentListTbl .seg-rqst { width: 4vw; }
 #segmentListTbl .seg-shpdte {width: 5vw; }
-#segmentListTbl .seg-shpdoc { width: 3vw; }
+#segmentListTbl .seg-shpdoc { width: 4vw; }
 
 #segmentListTbl tbody tr td .hovertbl table tr:hover { background: rgba({$this->color_zackgrey},1); } 
 #segmentListTbl tbody tr td .hovertbl table tr:nth-child(even) { background: rgba({$this->color_zackgrey},1); }
@@ -645,6 +636,24 @@ textarea { font-size: 1.3vh; }
 .compDspTbl { width: 10vw; }
 
 .hprindication { color: rgba({$this->color_darkgreen},1); text-decoration: underline;  }
+
+.sdttholder { position: relative; }
+.sdttholder .tt { position: absolute; background: rgba({$this->color_zackgrey},1); width: 10vw;  color: rgba({$this->color_white},1); padding: 7px 5px; display: none;  }
+.sdttholder:hover .tt { display: block; z-index: 49; }
+.sdttholder .qlSmallIcon {font-size: 1.2vh; }
+.sdttholder .smlFont { font-size: 1vh; }
+
+.quickLink { margin-top: .6vh; margin-bottom: .6vh; }
+.quickLink:hover { color: rgba({$this->color_neongreen},1); }
+
+.assttholder { position: relative; }
+.assttholder .tt { position: absolute; background: rgba({$this->color_zackgrey},1); width: 10vw;  color: rgba({$this->color_white},1); padding: 7px 5px; display: none;  }
+.assttholder:hover .tt { display: block; z-index: 49; }
+.assttholder .qlSmallIcon {font-size: 1.2vh; }
+.assttholder .smlFont { font-size: 1vh; }
+
+
+
 
 STYLESHEET;
 return $rtnThis;

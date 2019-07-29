@@ -142,6 +142,18 @@ PRCSQL;
             $prcgroup[] = $prc;            
         }
         $dta['percentvalues'] = $prcgroup;
+
+        $moleSQL = <<<MOLESQL
+SELECT moletestvalue, moletest, resultindexvalue, resultindex, resultdegree FROM masterrecord.ut_hpr_moleculartests where biohpr = :reviewid
+MOLESQL;
+        $moleRS = $conn->prepare($moleSQL); 
+        $moleRS->execute(array(':reviewid' => $reviewid));
+        $molegrp = array();
+        while ( $mole = $moleRS->fetch(PDO::FETCH_ASSOC)) { 
+          $molegrp[] = $mole;
+        }
+        $dta['moleculartests'] = $molegrp;
+
         $assSQL = <<<ASSSQL
 select  
 dta.readlabel, concat(dta.bgsbg
