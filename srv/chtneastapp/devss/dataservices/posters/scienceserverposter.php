@@ -33,6 +33,141 @@ function __construct() {
 }
 
 class datadoers {
+    
+    function qamoletestfinal ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id();
+ 
+      //{"uninvolvedvalue":"0"
+      //,"tumorgrade":"3","tumorscale":"FIGO"
+      //,"percentagetumor":"90","percentagecellularity":"90","percentagenecrosis":"1","percentageneoplasticstroma":"1"
+      //,"percentagenonneoplasticstroma":"10","percentageacellularmucin":"1"
+      //,"moleteststring":"[[\"ALK\",\"ALK (Anaplastic Lymphoma Kinase)\",\"ALK-NEGATIVE\",\"Negative (-)\",\"Z\"]]"}  
+
+      //TODO:  DATA CHECKS 
+      //TODO: Figure out how to NOT hard Code Percentage Values 
+      ( !array_key_exists('encyhpr', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'encyhpr' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('encybg', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'encybg' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('uninvolvedvalue', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'uninvolvedvalue' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('tumorgrade', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'tumorgrade' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('tumorscale', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'tumorscale' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('percentagetumor', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'percentagetumor' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('percentagecellularity', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'percentagecellularity' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('percentagenecrosis', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'percentagenecrosis' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('percentageneoplasticstroma', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'percentageneoplasticstroma' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('percentagenonneoplasticstroma', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'percentagenonneoplasticstroma' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('percentageacellularmucin', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'percentageacellularmucin' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('moleteststring', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'moleteststring' is missing.  Fatal Error")) : "";
+      
+      //CHECK USER IS AN HPR REVIEWER
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowQMS = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+          (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO QMS-QA.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+          $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }
+      //CHECK VALID BG
+      $bg = cryptservice($pdta['encybg'],'d');
+      $chkBGSQL = "SELECT * FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') = :bg and qcind = 0"; 
+      $chkBGRS = $conn->prepare($chkBGSQL);
+      $chkBGRS->execute(array(':bg' => preg_replace('/_/','', $bg)  ));
+      ( $chkBGRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "EITHER THE BIOGROUP WAS NOT FOUND OR IT HAS ALREADY BEEN MARKED QMS-QA COMPLETE.  IF YOU FEEL THIS IS IN ERROR, SEE A CHTNEAST INFORMATICS STAFF MEMBER")) : "";
+      
+      //TODO: CHECK THAT MENU VALUES ARE VALID OPTIONS
+          if ( trim($pdta['moleteststring']) !== "" ) { 
+            $mt = json_decode( $pdta['moleteststring'], true); 
+            foreach ( $mt as $mkey => $mval) {
+              if ( trim($mval[0]) === "" ) { 
+                (list( $errorInd, $msgArr[] ) = array(1 , "A Molecular Test Value must be specified for all entered molecular tests"));
+              } else {   
+                $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'MOLECULARTEST' and menuvalue = :suppliedvalue";
+                $chkRS = $conn->prepare($chkSQL);
+                $chkRS->execute(array(':suppliedvalue' => $mval[0] ));
+                ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'{$mval[0]}' DOES NOT APPEAR AS A VALUE ON THE HPR-MOLECULAR MENU TREE. SEE CHTNEastern Informatics!")) : "";
+              }
+            }
+          }      
+
+
+      if ( $errorInd === 0 ) { 
+
+          $bgdta = $chkBGRS->fetch(PDO::FETCH_ASSOC);
+          $pbiosample = $bgdta['pBioSample'];
+          ////BACKUP BG
+          $bckSQL = "insert into masterrecord.history_procure_biosample_vocab (pbiosample, uninvolvedind, tumorgrade, tumorscale, speccat, collectedsite, subsite, siteposition, diagnosis, modifier, metssite, systemicdx, bywho, onwhen) SELECT pBioSample, uninvolvedind, tumorgrade, tumorscale, ifnull(tissType,'') as tisstype, ifnull(anatomicSite,'') as site, ifnull(subSite,'') as subsite, ifnull(sitePosition,'') as siteposition, ifnull(diagnosis,'') as diagnosis, ifnull(subdiagnos,'') as modifier, ifnull(metsSite,'') as metssite, ifnull(pdxSystemic,'') as systemic, :user, now() FROM masterrecord.ut_procure_biosample where read_label = replace(:bg,'_','')"; 
+          $bckRS = $conn->prepare($bckSQL);
+          $bckRS->execute(array(':bg' => preg_replace('/_/','',$bg) , ':user' => $u['usr']));
+                
+          //UPDATE UNINVOLVED 
+          $uniSQL = "update masterrecord.ut_procure_biosample set uninvolvedInd = :uninvolvedvalue where replace(read_label,'_','') = :bg and qcind = 0";
+          $uniRS = $conn->prepare($uniSQL);
+          $uniRS->execute(array(':uninvolvedvalue' => $pdta['uninvolvedvalue'], ':bg' => preg_replace('/_/','',$bg)));
+                    
+          //UPDATE TUMOR PERCENTAGE
+          $tmrSQL = "update masterrecord.ut_procure_biosample set tumorgrade = :tumorgrade, tumorscale = :tumorscale where replace(read_label,'_','') = :bg and qcind = 0";
+          $tmrRS = $conn->prepare($tmrSQL);
+          $tmrRS->execute(array(':tumorgrade' => $pdta['tumorgrade'], ':tumorscale' => $pdta['tumorscale'], ':bg' => preg_replace('/_/','',$bg)));
+          
+          //UPDATE PERCENTAGES
+          $updPrcSQL = "update masterrecord.ut_procure_biosample_samplecomposition set dspind = 0, updateon = now(), updateby = :usr where replace(readlabel,'_','') = :bg and dspind = 1";         
+          $updPrcRS = $conn->prepare($updPrcSQL); 
+          $updPrcRS->execute(array(':bg' =>preg_replace('/_/','',$bg) , ':usr' => $u['usr'] . "/QMS-QA" ));
+
+          //TODO:  DO NOT HARD CODE THESE VALUES
+          $prcSQL = "insert into masterrecord.ut_procure_biosample_samplecomposition (readlabel, prctype, prcvalue, dspind, inputon, inputby) values (:readlabel,:prctypevalue,:prcvalue,1,now(),:usr)";                
+          $prcRS = $conn->prepare($prcSQL);
+
+          if ( trim($pdta['percentagetumor']) !== "") { 
+             $prcRS->execute(array(':readlabel' =>  preg_replace('/_/','',$bg), ':prctypevalue' => 'PERCENTAGETUMOR', ':prcvalue' => $pdta['percentagetumor'], ':usr' => $u['usr'] . "/QMS-QA")); 
+          }
+          
+          if ( trim($pdta['percentagecellularity']) !== "") { 
+             $prcRS->execute(array(':readlabel' =>  preg_replace('/_/','',$bg), ':prctypevalue' => 'PERCENTAGECELLULARITY', ':prcvalue' => $pdta['percentagecellularity'], ':usr' => $u['usr'] . "/QMS-QA")); 
+          }
+
+          if ( trim($pdta['percentagenecrosis']) !== "") { 
+             $prcRS->execute(array(':readlabel' =>  preg_replace('/_/','',$bg), ':prctypevalue' => 'TUMORNECROSIS', ':prcvalue' => $pdta['percentagenecrosis'], ':usr' => $u['usr'] . "/QMS-QA")); 
+          }          
+      
+          if ( trim($pdta['percentageneoplasticstroma']) !== "") { 
+             $prcRS->execute(array(':readlabel' =>  preg_replace('/_/','',$bg), ':prctypevalue' => 'NEOPLASTICSTROMA', ':prcvalue' => $pdta['percentageneoplasticstroma'], ':usr' => $u['usr'] . "/QMS-QA")); 
+          }       
+
+          if ( trim($pdta['percentagenonneoplasticstroma']) !== "") { 
+             $prcRS->execute(array(':readlabel' =>  preg_replace('/_/','',$bg), ':prctypevalue' => 'NONNEOPLASTICSTROMA', ':prcvalue' => $pdta['percentagenonneoplasticstroma'], ':usr' => $u['usr'] . "/QMS-QA")); 
+          }           
+
+          if ( trim($pdta['percentageacellularmucin']) !== "") { 
+             $prcRS->execute(array(':readlabel' =>  preg_replace('/_/','',$bg), ':prctypevalue' => 'ACELLULARMUCIN', ':prcvalue' => $pdta['percentageacellularmucin'], ':usr' => $u['usr'] . "/QMS-QA")); 
+          }            
+          
+          //UPDATE MOLECULAR TESTS
+          $updmolesql = "update masterrecord.ut_procure_biosample_molecular set dspind = 0, updatedby = :usr, updatedon = now() where pbiosample = :pbiosample and dspind = 1";
+          $updmoleRS = $conn->prepare($updmolesql);
+          $updmoleRS->execute(array(':pbiosample' => $pbiosample, ':usr' => "{$u['usr']}/QMS-QA"));          
+          $moleInsSQL = "insert into masterrecord.ut_procure_biosample_molecular (pbiosample, bgprcnbr, testid, testresultid, molenote, onwhen, onby, dspind) values(:pbiosample, :bgprcnbr, :testid, :testresultid, :molenote, now(), :onby, 1)";
+          $moleInsRS = $conn->prepare($moleInsSQL); 
+          foreach ( $mt as $mkey => $mval) {           
+            $moleInsRS->execute(array(':pbiosample' => $pbiosample, ':bgprcnbr' => preg_replace('/_/','',$bg), ':testid' => trim($mval[0]), ':testresultid' => trim($mval[2]), ':molenote' => trim($mval[4]), ':onby' => "{$u['usr']}/QMS-QA" ));
+         }
+          $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;              
+    }
 
     function copyhprtobs ( $request, $passdata ) { 
       $rows = array(); 
@@ -69,10 +204,17 @@ class datadoers {
           (list( $errorInd, $msgArr[] ) = array(1 , "HPR REVIEW NOT FOUND BY REFERENCE NUMBER.  NOTIFY A CHTNInformatics STAFF MEMBER"));
       }
       
+      //CHECK VALID BG
+      $bg = $hprBG['biogroupid'];
+      $chkBGSQL = "SELECT * FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') = :bg and qcind = 0"; 
+      $chkBGRS = $conn->prepare($chkBGSQL);
+      $chkBGRS->execute(array(':bg' => preg_replace('/_/','', $bg)  ));
+      ( $chkBGRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "EITHER THE BIOGROUP WAS NOT FOUND OR IT HAS ALREADY BEEN MARKED QMS-QA COMPLETE.  IF YOU FEEL THIS IS IN ERROR, SEE A CHTNEAST INFORMATICS STAFF MEMBER")) : "";
+      
       if ( $errorInd === 0 ) { 
-        $backupSQL = "insert into masterrecord.history_procure_biosample_vocab(pbiosample, speccat, collectedsite, subsite, siteposition, diagnosis, modifier, metssite, systemicdx, bywho, onwhen) SELECT pbiosample, tissType, anatomicSite, subSite, sitePosition, diagnosis, subdiagnos, metsSite, pdxSystemic, :usr, now()  FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
+        $backSQL = "insert into masterrecord.history_procure_biosample_vocab (pbiosample, uninvolvedind, tumorgrade, tumorscale, speccat, collectedsite, subsite, siteposition, diagnosis, modifier, metssite, systemicdx, bywho, onwhen) SELECT pBioSample, uninvolvedind, tumorgrade, tumorscale, ifnull(tissType,'') as tisstype, ifnull(anatomicSite,'') as site, ifnull(subSite,'') as subsite, ifnull(sitePosition,'') as siteposition, ifnull(diagnosis,'') as diagnosis, ifnull(subdiagnos,'') as modifier, ifnull(metsSite,'') as metssite, ifnull(pdxSystemic,'') as systemic, :user, now() FROM masterrecord.ut_procure_biosample where read_label = replace(:bg,'_','')"; 
         $backupRS = $conn->prepare($backupSQL);
-        $backupRS->execute(array(':pbiosample' => $hprBG['biogroupid'], ':usr' => "QA-HPR-COPY-OP-BACKUP/{$u['usr']}")); 
+        $backupRS->execute(array(':pbiosample' => $hprBG['biogroupid'], ':usr' => "QA-HPR-COPY-OP-BACKUP/{$u['usr']}" )); 
 
         $moveSQL = "update masterrecord.ut_procure_biosample bs, (SELECT specCat, site, subSite, siteposition, dx, subdiagnosis, Mets, systemiccomobid  FROM masterrecord.ut_hpr_biosample where biohpr = :hprid) hpr set bs.tissType = hpr.speccat, bs.anatomicSite = hpr.site, bs.subSite = hpr.subsite, bs.sitePosition = hpr.siteposition, bs.diagnosis = hpr.dx, bs.subdiagnos = hpr.subdiagnosis, bs.metsSite = hpr.mets, bs.pdxSystemic = hpr.systemiccomobid where bs.pbiosample = :pbiosample";
         $moveRS = $conn->prepare($moveSQL); 
@@ -133,6 +275,8 @@ substr(concat('000000',hpr.biohpr),-6) biohpr
 , ifnull(hpr.unusabletxt,'') as hprunusabletext
 , ifnull(bs.pbiosample,'') as pbiosample
 , replace(ifnull(bs.read_label,''),'_','') as bsreadlabel
+, ifnull(bs.hprind,0) as hprind
+, ifnull(bs.qcind,0) as qcind    
 , ifnull(bs.tisstype,'') as bsspeccat
 , ifnull(bs.anatomicsite,'') as bsanatomicsite
 , ifnull(bs.subsite,'') as bssubsite
@@ -2513,7 +2657,7 @@ MBODY;
 
       if ( $errorInd === 0 ) {
          //MAKE DATA BACKUP   
-        $bckSQL = "insert into masterrecord.history_procure_biosample_vocab (pbiosample, speccat, collectedsite, subsite, siteposition, diagnosis, modifier, metssite, systemicdx, bywho, onwhen) SELECT pBioSample, ifnull(tissType,'') as tisstype, ifnull(anatomicSite,'') as site, ifnull(subSite,'') as subsite, ifnull(sitePosition,'') as siteposition, ifnull(diagnosis,'') as diagnosis, ifnull(subdiagnos,'') as modifier, ifnull(metsSite,'') as metssite, ifnull(pdxSystemic,'') as systemic, :user, now() FROM masterrecord.ut_procure_biosample where pbiosample = :bg"; 
+         $bckSQL = "insert into masterrecord.history_procure_biosample_vocab (pbiosample, uninvolvedind, tumorgrade, tumorscale, speccat, collectedsite, subsite, siteposition, diagnosis, modifier, metssite, systemicdx, bywho, onwhen) SELECT pBioSample, uninvolvedind, tumorgrade, tumorscale, ifnull(tissType,'') as tisstype, ifnull(anatomicSite,'') as site, ifnull(subSite,'') as subsite, ifnull(sitePosition,'') as siteposition, ifnull(diagnosis,'') as diagnosis, ifnull(subdiagnos,'') as modifier, ifnull(metsSite,'') as metssite, ifnull(pdxSystemic,'') as systemic, :user, now() FROM masterrecord.ut_procure_biosample where read_label = replace(:bg,'_','')"; 
         $bckRS = $conn->prepare($bckSQL);
         $bckRS->execute(array(':bg' => $pdta['refbg'], ':user' => $u['originalaccountname']));
 

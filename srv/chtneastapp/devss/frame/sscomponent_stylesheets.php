@@ -413,6 +413,13 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 .dataHolderDiv .datadisplay { font-size: 1.5vh; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); padding: 5px 0 4px 10px; } 
 .dataHolderDiv .datadisplayA { font-size: 1.5vh; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); padding: 2px 0 0 0; } 
 
+
+
+#thisworkingtable { }
+#thisworkingtable tbody tr:nth-child(even) {background: rgba({$this->color_lgrey},1); }
+#thisworkingtable tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
+#thisworkingtable tbody tr[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
+
 STYLESHEET;
 return $rtnThis;
 }

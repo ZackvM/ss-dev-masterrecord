@@ -736,8 +736,6 @@ JADDON;
   return $rtnThis;
 }
 
-
-
 function biogroupdefinition ( $rqststr ) { 
 
   session_start(); 
@@ -2243,7 +2241,7 @@ function changeSupportingTab(whichtab) {
   byId('dspTabContent'+whichtab).style.display = 'block';
 } 
 
-function generateDialog( whichdialog, whatobject ) { 
+function generateDialog( whichdialog, whatobject, e ) {   
   var dta = new Object(); 
   dta['whichdialog'] = whichdialog;
   dta['objid'] = whatobject;   
@@ -2760,17 +2758,65 @@ function answerCopyHPRToBS ( rtnData ) {
    }
 }
 
-
-//START HERE::2019-08-02
 function saveMolePrc() { 
   var dta = new Object();
+  dta['encyhpr'] = byId('dataRowOne').dataset.encyreviewid; 
+  dta['encybg'] = byId('dataRowOne').dataset.encybg;
   dta['uninvolvedvalue'] = byId('fldPRCUnInvolvedValue').value.trim();
   dta['tumorgrade'] = byId('fldTumorGrade').value.trim();
   dta['tumorscale'] = byId('fldTumorGradeScaleValue').value.trim();
-
-
+  
+  //TODO:  FIGURE OUT HOW TO NOT HARD CODE IN THIS PHP/JAVASCRIPT CREATION
+  dta['percentagetumor'] = byId('PERCENTAGETUMOR').value.trim();
+  dta['percentagecellularity'] = byId('PERCENTAGECELLULARITY').value.trim();
+  dta['percentagenecrosis'] = byId('TUMORNECROSIS').value.trim();
+  dta['percentageneoplasticstroma'] = byId('NEOPLASTICSTROMA').value.trim();
+  dta['percentagenonneoplasticstroma'] = byId('NONNEOPLASTICSTROMA').value.trim();
+  dta['percentageacellularmucin'] = byId('ACELLULARMUCIN').value.trim();
+  //END TODO
+  
+  dta['moleteststring'] = byId('hprMolecularTestJsonHolderConfirm').value.trim();
+  byId('standardModalBacker').style.display = 'block';
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/qa-mole-test-final";
+  universalAJAX("POST",mlURL,passdta,answerSaveMolePrc,2);
 }
+  
+function answerSaveMolePrc(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';
+   } else {
+     alert('Molecular/Percentage Square has been saved ... ');    
+     byId('standardModalBacker').style.display = 'none';
+   }
+}  
 
+function selectActiveSegmentRecord ( whichrecord ) { 
+ if ( byId(whichrecord).dataset.selected === 'false' ) { 
+     byId(whichrecord).dataset.selected = 'true';
+  } else { 
+     byId(whichrecord).dataset.selected = 'false';
+  }
+}
+  
+function toggleActiveSegmentRecords ( ) {
+  if (byId('thisworkingtable')) { 
+    for (var c = 0; c < byId('thisworkingtable').tBodies[0].rows.length; c++) {  
+      if (byId('thisworkingtable').tBodies[0].rows[c].dataset.selected === 'true') { 
+        byId('thisworkingtable').tBodies[0].rows[c].dataset.selected = 'false';
+      } else { 
+        byId('thisworkingtable').tBodies[0].rows[c].dataset.selected = 'true';
+      }
+    }
+  }    
+}
+  
 RTNTHIS;
 return $rtnThis;
 }

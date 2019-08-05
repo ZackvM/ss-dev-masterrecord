@@ -4200,6 +4200,8 @@ function bldQAWorkbench ( $encryreviewid ) {
   $ass = $reviewdta['DATA']['associativelisting'];
   $prc = $reviewdta['DATA']['percentvalues'];
   $mol = $reviewdta['DATA']['moleculartests'];
+  
+  if ( (int)$headdta['qcind'] === 0 ) {
   //TODO:  Figure out a way not to hard code this 
     switch ( $headdta['hprdecisionvalue'] ) { 
       case 'DENIED':
@@ -4256,6 +4258,12 @@ WORKBENCH;
 WORKBENCHPARTS;
     $topBtnBar = generatePageTopBtnBar('qmsactionwork', "", $_SERVER['HTTP_REFERER'] );
   }
+  } else { 
+      
+    $workbench = <<<WORKBENCH
+  <h3>QMS-QA has already been performed on this biogroup.  Please edit data using data coordinator functions.  Thanks
+WORKBENCH;
+  }
   $pg = <<<PGCONTENT
 {$topBtnBar}
 {$workbench}
@@ -4271,9 +4279,10 @@ $assTbl = "<table border=0 cellspacing=0 cellpadding=0 width=100%>";
 $assTbl .= "<tr><td class=\"headerCell cellTwo\">Biogroup</td><td class=\"headerCell cellThree\">Designation</td><td class=\"headerCell cellFour\">Review Decision<br>Date of Review</td><td class=\"headerCell cellFive\">QMS Status</td><td class=\"headerCell cellFive\">&nbsp;</td></tr>";
 $bggroups = 0;
 $segrowcnt = 0;
+
 foreach ( $ass as $asskey => $assval ) { 
     if ( $assbg !== $assval['readlabel'] ) { 
-        $innerAss .= ( $bggroups === 0 ) ? "" : "</table></div>";
+        $innerAss .= ( $bggroups === 0 ) ? "" : "</tbody></table></div>";
         $assTbl .= ( $bggroups === 0 ) ? "" : "<tr><td colspan=6 valign=top>{$innerAss}</td></tr>";
 
         $mintgreen = ( substr( $assval['readlabel'] ,0, 6) === substr( $headdta['slidebgs'],0,6) ) ? "mintbck" : "standardbck";
@@ -4281,7 +4290,7 @@ foreach ( $ass as $asskey => $assval ) {
         $thisGroupInd = ( substr( $assval['readlabel'] ,0, 6) === substr( $headdta['slidebgs'],0,6) ) ? 1 : 0; 
 
         if ( $thisGroupInd === 1 ) { 
-          $innerAss = "<div class=inassdspthisgroup id=\"segment{$bggroups}\" ><table border=0 width=100% cellspacing=0 cellpadding=0><tr><td colspan=6><table><tr><td title=\"Select All Segments\"><i class=\"material-icons actionbtnicon\">select_all</i></td><td title=\"Restatus Selected Segments\"><i class=\"material-icons actionbtnicon\">apps</i></td></tr></table></td></tr><tr><td class=\"headerCell cellSix\">Segment</td><td class=\"headerCell cellSeven\">Preparation</td><td class=\"headerCell cellSeven\">Segment Status</td><td class=\"headerCell cellEight\">Assignment</td><td class=\"headerCell cellNine\">Shipping Information</td></tr>";
+          $innerAss = "<div class=inassdspthisgroup id=\"segment{$bggroups}\" ><table border=0 width=100% cellspacing=0 cellpadding=0 id=thisworkingtable><thead><tr><td colspan=6><table><tr><td title=\"Select All Segments\" onclick=\"toggleActiveSegmentRecords();\"><i class=\"material-icons actionbtnicon\">select_all</i></td><td title=\"Restatus Selected Segments\"><i class=\"material-icons actionbtnicon\">apps</i></td></tr></table></td></tr><tr><td class=\"headerCell cellSix\">Segment</td><td class=\"headerCell cellSeven\">Preparation</td><td class=\"headerCell cellSeven\">Segment Status</td><td class=\"headerCell cellEight\">Assignment</td><td class=\"headerCell cellNine\">Shipping Information</td></tr></thead><tbody>";
         } else { 
           $innerAss = "<div class=inassdsp id=\"segment{$bggroups}\" ><table border=0 width=100% cellspacing=0 cellpadding=0><tr><td class=\"headerCell cellSix\">Segment</td><td class=\"headerCell cellSeven\">Preparation</td><td class=\"headerCell cellSeven\">Segment Status</td> <td class=\"headerCell cellEight\">Assignment</td><td class=\"headerCell cellNine\">Shipping Information</td></tr>";
 
@@ -4325,7 +4334,7 @@ ROWLINE;
     }
 
     $innerAss .= <<<INASSTBL
-  <tr data-selected=false>
+  <tr id="activetbl{$segrowcnt}" data-selected='false' onclick="selectActiveSegmentRecord('activetbl{$segrowcnt}');">
     <td valign=top class="dspDataCellA">{$assval['bgs']}</td>
     <td valign=top class="dspDataCellA">{$assval['prepmethod']}{$prep}</td>
     <td valign=top class="dspDataCellA">{$assval['segstatusdsp']}</td>
@@ -4335,7 +4344,7 @@ ROWLINE;
 INASSTBL;
     $segrowcnt++; 
 }
-$innerAss .= "</table></div>";
+$innerAss .= "</tbody></table></div>";
 $assTbl .= "<tr><td colspan=6 valign=top>{$innerAss}</td></tr>";
 $assTbl .= "</table>";
 return $assTbl;
@@ -4460,6 +4469,9 @@ return $rtnThis;
 }
 
 function bldQAWorkbench_hprData ( $headdta ) { 
+
+$encyhpr = cryptservice( $headdta['biohpr'], 'e');    
+$encybg = cryptservice( $headdta['bsreadlabel'], 'e' );
 $rbyon = $headdta['reviewer'];
 $rbyon .= ( trim($headdta['reviewer']) !== trim($headdta['inputby']) ) ?  ( trim($headdta['inputby']) !== "" ) ? " ({$headdta['inputby']})" : "" : "";
 $rbyon .= ( trim($headdta['reviewedon']) !== "" ) ? " :: {$headdta['reviewedon']}" : "";
@@ -4476,7 +4488,7 @@ $cmtINC = ( trim($headdta['hprinconclusivetext']) !== "" ) ? "<div class=dataHol
 $cmtUU =  ( trim($headdta['hprunusabletext']) !== "" ) ? "<div class=dataHolderDiv id=hprDataInconclusiveText><div class=datalabel>Comments : Unusable Text</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprunusabletext']}&nbsp;</div></div>"  : "";
 
 $rtnThis = <<<RTNTHIS
-<div id=dataRowOne data-hprdecision="{$headdta['hprdecisionvalue']}"  data-hprreviewid="{$headdta['biohpr']}">HPR Decision</div>
+<div id=dataRowOne data-hprdecision="{$headdta['hprdecisionvalue']}"  data-encyreviewid="{$encyhpr}" data-encybg="{$encybg}">HPR Decision</div>
 <div class=dataHolderDiv id=hprDataDecision><div class=datalabel>Decision</div><div class=datadisplay>{$headdta['hprdecision']} (Review #: {$headdta['biohpr']})&nbsp;</div></div>
 <div class=dataHolderDiv id=hprDataSpecCat><div class=datalabel><span class=smlFont>[HPR Decision Designation]</span><br>Specimen Category :: Site :: Sub-Site // Diagnosis :: Modifier</div><div class="datadisplay cmtdsp">{$headdta['hprspeccat']} :: {$asite} {$dx} &nbsp;</div></div>
 {$mets}
