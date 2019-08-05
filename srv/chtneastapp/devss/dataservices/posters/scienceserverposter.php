@@ -34,6 +34,59 @@ function __construct() {
 
 class datadoers {
 
+    function copyhprtobs ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id();
+
+      ( !array_key_exists('biohpr', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'biohpr' is missing.  Fatal Error")) : "";
+
+      //CHECK USER IS AN HPR REVIEWER
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowQMS = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+          (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO QMS-QA.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+          $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }
+
+      $biohpr =  cryptservice($pdta['biohpr'],'d');
+      $hprExSQL = "SELECT biogroupid FROM masterrecord.ut_hpr_biosample where biohpr = :biohpr";
+      $hprExRS = $conn->prepare($hprExSQL);
+      $hprExRS->execute(array(':biohpr' => (int)$biohpr));
+      if ( $hprExRS->rowCount() === 1 ) { 
+          $hprBG = $hprExRS->fetch(PDO::FETCH_ASSOC);
+      } else { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "HPR REVIEW NOT FOUND BY REFERENCE NUMBER.  NOTIFY A CHTNInformatics STAFF MEMBER"));
+      }
+      
+      if ( $errorInd === 0 ) { 
+        $backupSQL = "insert into masterrecord.history_procure_biosample_vocab(pbiosample, speccat, collectedsite, subsite, siteposition, diagnosis, modifier, metssite, systemicdx, bywho, onwhen) SELECT pbiosample, tissType, anatomicSite, subSite, sitePosition, diagnosis, subdiagnos, metsSite, pdxSystemic, :usr, now()  FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
+        $backupRS = $conn->prepare($backupSQL);
+        $backupRS->execute(array(':pbiosample' => $hprBG['biogroupid'], ':usr' => "QA-HPR-COPY-OP-BACKUP/{$u['usr']}")); 
+
+        $moveSQL = "update masterrecord.ut_procure_biosample bs, (SELECT specCat, site, subSite, siteposition, dx, subdiagnosis, Mets, systemiccomobid  FROM masterrecord.ut_hpr_biosample where biohpr = :hprid) hpr set bs.tissType = hpr.speccat, bs.anatomicSite = hpr.site, bs.subSite = hpr.subsite, bs.sitePosition = hpr.siteposition, bs.diagnosis = hpr.dx, bs.subdiagnos = hpr.subdiagnosis, bs.metsSite = hpr.mets, bs.pdxSystemic = hpr.systemiccomobid where bs.pbiosample = :pbiosample";
+        $moveRS = $conn->prepare($moveSQL); 
+        $moveRS->execute(array(':hprid' => $biohpr, ':pbiosample' => $hprBG['biogroupid'] ));
+
+        $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    } 
+
     function qareviewworkbenchdata ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -78,6 +131,8 @@ substr(concat('000000',hpr.biohpr),-6) biohpr
 , ifnull(hpr.specialinstructions,'') as hprspecialinstructions
 , ifnull(hpr.inconclusivetxt,'') as hprinconclusivetext
 , ifnull(hpr.unusabletxt,'') as hprunusabletext
+, ifnull(bs.pbiosample,'') as pbiosample
+, replace(ifnull(bs.read_label,''),'_','') as bsreadlabel
 , ifnull(bs.tisstype,'') as bsspeccat
 , ifnull(bs.anatomicsite,'') as bsanatomicsite
 , ifnull(bs.subsite,'') as bssubsite
@@ -101,6 +156,9 @@ substr(concat('000000',hpr.biohpr),-6) biohpr
 , ifnull(bs.pxiGender,'') as  bspxisex
 , ifnull(sx.dspvalue,'') as bspxisexdsp
 , ifnull(bs.pxirace,'') as bspxirace
+, ifnull(bs.pxiid,'') as bspxiid
+, ifnull(bs.biosamplecomment,'') as bscomments
+, ifnull(bs.questionhpr,'') as bshprqstn
 , ifnull(bs.pathreportid,0) as pathreportid
 , ifnull(prt.pathreport,'') as pathreport
 , ifnull(prt.uploadedBy,'') as pruploadedby
@@ -156,59 +214,62 @@ MOLESQL;
 
         $assSQL = <<<ASSSQL
 select  
-dta.readlabel, concat(dta.bgsbg
-, if (dta.minseg = dta.maxseg, dta.minseg, concat(dta.minseg,'-',dta.maxseg))) as bgs
-,  dta.prepmethod, dta.preparation, dta.shippeddate, dta.shipdocrefid
-, dta.slidegroupid, dta.assignedto, dta.investlname, dta.investfname
-, dta.investinstitution, dta.assignedreq, dta.procurementdate, dta.specimencategory
-, dta.site, dta.subsite, dta.dx, dta.subdx, dta.metsite, dta.hprind, dta.qcind, dta.createdby
-, dta.bsprocurementdate
-, dta.qcprocstatus
-, qmsstat.dspvalue as qmsstatus 
-, dta.hprresult, dta.hprdecision
-, qmsdec.dspvalue as hprdecdsp 
-, dta.hpron
-from 
-(Select 
-conglom.readlabel, conglom.bgsbg
-, min(conglom.segmentlabel) minseg
-, max(conglom.segmentlabel) maxseg
-,  conglom.prepmethod, conglom.preparation, conglom.shippeddate, conglom.shipdocrefid
-, conglom.slidegroupid, conglom.assignedto, conglom.investlname, conglom.investfname
-, conglom.investinstitution, conglom.assignedreq, conglom.procurementdate, conglom.specimencategory
-, conglom.site, conglom.subsite, conglom.dx, conglom.subdx, conglom.metsite, conglom.hprind, conglom.qcind, conglom.createdby
-, conglom. bsprocurementdate
-, conglom.qcprocstatus, conglom.hprresult, conglom.hprdecision, conglom.hpron 
-from 
-(SELECT 
-replace(bs.read_label,'_','') as readlabel, substr(replace(sg.bgs,'_',''),1,6) as bgsbg, ifnull(sg.segmentlabel,'') as segmentlabel, ifnull(sg.prepmethod,'') as prepmethod
-, ifnull(sg.preparation,'') as preparation, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shippeddate  , ifnull(sg.shipdocrefid,'') as shipdocrefid
-, ifnull(sg.SlideGroupID,'') as slidegroupid, ifnull(sg.assignedTo,'') as assignedto, ifnull(i.invest_lname,'') as investlname, ifnull(i.invest_fname,'') as investfname
-, ifnull(i.invest_homeinstitute,'') as investinstitution, ifnull(sg.assignedReq,'') as assignedreq 
-, ifnull(date_format(sg.procurementDate,'%m/%d/%Y'),'') as procurementdate
-, ifnull(bs.tisstype,'') as specimencategory, ifnull(bs.anatomicsite,'') as site, ifnull(bs.subsite,'') as subsite, ifnull(bs.diagnosis,'') as dx
-, ifnull(bs.subdiagnos,'') as subdx, ifnull(bs.metssite,'') as metsite, ifnull(bs.hprind,0) as hprind, ifnull(bs.qcind,0) as qcind
-, ifnull(bs.createdby,'') as createdby
-, ifnull(date_format(bs.createdon,'%m/%d/%Y'),'') as bsprocurementdate
-, ifnull(bs.qcprocstatus,'') as qcprocstatus
-, ifnull(bs.hprresult,0) as hprresult
-, ifnull(bs.hprdecision,'') as hprdecision
-, ifnull(date_format(bs.hpron,'%m/%d/%Y'),'') as hpron  
-FROM masterrecord.ut_procure_biosample bs
-left join masterrecord.ut_procure_segment sg on bs.pbiosample = sg.biosamplelabel
-left join vandyinvest.invest i on sg.assignedto = i.investid
-where bs.associd = :associd and bs.voidind <> 1 and sg.voidind <> 1 
-) conglom
-
-group by conglom.readlabel, conglom.bgsbg, conglom.prepmethod, conglom.preparation, conglom.shippeddate, conglom.shipdocrefid
-, conglom.slidegroupid, conglom.assignedto, conglom.investlname, conglom.investfname
-, conglom.investinstitution, conglom.assignedreq, conglom.procurementdate, conglom.specimencategory
-, conglom.site, conglom.subsite, conglom.dx, conglom.subdx, conglom.metsite, conglom.hprind, conglom.qcind, conglom.createdby
-, conglom.bsprocurementdate
-, conglom.procurementdate, conglom.qcprocstatus, conglom.hprresult, conglom.hprdecision, conglom.hpron
-order by conglom.readlabel, min(conglom.segmentlabel)) dta 
-left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus' ) qmsstat on dta.qcprocstatus = qmsstat.menuvalue
-left join ( SELECT menu, menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION' ) qmsdec on dta.hprdecision = qmsdec.menuvalue
+  dta.readlabel, concat(dta.bgsbg
+  , if (dta.minseg = dta.maxseg, dta.minseg, concat(dta.minseg,'-',dta.maxseg))) as bgs
+  ,  dta.prepmethod, dta.preparation, dta.segstatus, sgst.dspvalue as segstatusdsp   , dta.shippeddate, dta.shipdocrefid, ifnull(sd.sdstatus,'') as sdstatus, ifnull(sd.salesorder,'') as salesorder, ifnull(sd.salesorderamount,'') as salesorderamount
+  , dta.slidegroupid, dta.assignedto, dta.investlname, dta.investfname
+  , dta.investinstitution, dta.assignedreq, dta.procurementdate, dta.specimencategory
+  , dta.site, dta.subsite, dta.dx, dta.subdx, dta.metsite, dta.hprind, dta.qcind, dta.createdby
+  , dta.bsprocurementdate
+  , dta.qcprocstatus
+  , qmsstat.dspvalue as qmsstatus 
+  , dta.hprresult, dta.hprdecision
+  , qmsdec.dspvalue as hprdecdsp 
+  , dta.hpron
+  from 
+  (Select 
+  conglom.readlabel, conglom.bgsbg
+  , min(conglom.segmentlabel) minseg
+  , max(conglom.segmentlabel) maxseg
+  ,  conglom.prepmethod, conglom.preparation, conglom.segstatus  , conglom.shippeddate, conglom.shipdocrefid
+  , conglom.slidegroupid, conglom.assignedto, conglom.investlname, conglom.investfname
+  , conglom.investinstitution, conglom.assignedreq, conglom.procurementdate, conglom.specimencategory
+  , conglom.site, conglom.subsite, conglom.dx, conglom.subdx, conglom.metsite, conglom.hprind, conglom.qcind, conglom.createdby
+  , conglom. bsprocurementdate
+  , conglom.qcprocstatus, conglom.hprresult, conglom.hprdecision, conglom.hpron 
+  from 
+  (SELECT 
+  replace(bs.read_label,'_','') as readlabel, substr(replace(sg.bgs,'_',''),1,6) as bgsbg, ifnull(sg.segmentlabel,'') as segmentlabel, ifnull(sg.prepmethod,'') as prepmethod
+  , ifnull(sg.preparation,'') as preparation, ifnull(sg.segstatus,'') as segstatus, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shippeddate  , ifnull(sg.shipdocrefid,'') as shipdocrefid
+  , ifnull(sg.SlideGroupID,'') as slidegroupid, ifnull(sg.assignedTo,'') as assignedto, ifnull(i.invest_lname,'') as investlname, ifnull(i.invest_fname,'') as investfname
+  , ifnull(i.invest_homeinstitute,'') as investinstitution, ifnull(sg.assignedReq,'') as assignedreq 
+  , ifnull(date_format(sg.procurementDate,'%m/%d/%Y'),'') as procurementdate
+  , ifnull(bs.tisstype,'') as specimencategory, ifnull(bs.anatomicsite,'') as site, ifnull(bs.subsite,'') as subsite, ifnull(bs.diagnosis,'') as dx
+  , ifnull(bs.subdiagnos,'') as subdx, ifnull(bs.metssite,'') as metsite, ifnull(bs.hprind,0) as hprind, ifnull(bs.qcind,0) as qcind
+  , ifnull(bs.createdby,'') as createdby
+  , ifnull(date_format(bs.createdon,'%m/%d/%Y'),'') as bsprocurementdate
+  , ifnull(bs.qcprocstatus,'') as qcprocstatus
+  , ifnull(bs.hprresult,0) as hprresult
+  , ifnull(bs.hprdecision,'') as hprdecision
+  , ifnull(date_format(bs.hpron,'%m/%d/%Y'),'') as hpron  
+  FROM masterrecord.ut_procure_biosample bs
+  left join masterrecord.ut_procure_segment sg on bs.pbiosample = sg.biosamplelabel
+  left join vandyinvest.invest i on sg.assignedto = i.investid
+  where bs.associd = :associd and bs.voidind <> 1 and sg.voidind <> 1 
+  ) conglom
+  
+  group by conglom.readlabel, conglom.bgsbg, conglom.prepmethod, conglom.preparation, conglom.segstatus, conglom.shippeddate, conglom.shipdocrefid
+  , conglom.slidegroupid, conglom.assignedto, conglom.investlname, conglom.investfname
+  , conglom.investinstitution, conglom.assignedreq, conglom.procurementdate, conglom.specimencategory
+  , conglom.site, conglom.subsite, conglom.dx, conglom.subdx, conglom.metsite, conglom.hprind, conglom.qcind, conglom.createdby
+  , conglom.bsprocurementdate
+  , conglom.procurementdate, conglom.qcprocstatus, conglom.hprresult, conglom.hprdecision, conglom.hpron
+  order by conglom.readlabel, min(conglom.segmentlabel)) dta  
+  left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus' ) qmsstat on dta.qcprocstatus = qmsstat.menuvalue
+  left join ( SELECT menu, menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION' ) qmsdec on dta.hprdecision = qmsdec.menuvalue
+  left join masterrecord.ut_shipdoc sd on dta.shipdocrefid = sd.shipdocrefid
+  left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') as sgst on dta.segstatus = sgst.menuvalue
+  order by readlabel, bgs
 ASSSQL;
         $assRS = $conn->prepare($assSQL);
         $assRS->execute(array(':associd' => $dta['hprhead']['associd'] ));
@@ -218,10 +279,30 @@ ASSSQL;
         }
         $dta['associativelisting'] = $assgroup;
 
-          
-
-
-        
+        $pristineSQL = <<<PRISTINESQL
+SELECT ifnull(dxds.speccat,'') as speccat
+, ifnull(dxds.primarysite,'') as primarysite
+, ifnull(dxds.primarysubsite,'') as primarysubsite
+, ifnull(dxds.diagnosis,'') dx
+, ifnull(dxds.diagnosismodifier,'') as dxmod
+, ifnull(dxds.metssite,'') as metssite
+, ifnull(dxds.systemdiagnosis,'') as systemdiagnosis
+, ifnull(dxds.classification,'') as classification  
+, ifnull(dxds.refBy,'') as refby
+, ifnull(date_format(dxds.refon,'%m/%d/%Y'),'') as refon 
+, ifnull(uni.dspvalue,'') as uninvolved
+FROM four.ref_procureBiosample_designation dxds
+left join ( select menuvalue, dspvalue from four.sys_master_menus where menu = 'UNINVOLVEDIND') uni on dxds.unknownmet = uni.menuvalue
+where pbiosample = :pbiosample and activeind = 1
+PRISTINESQL;
+        $pristRS = $conn->prepare($pristineSQL); 
+        $pristRS->execute(array(':pbiosample' => $dta['hprhead']['pbiosample']));
+        $pristGroup = array();
+        while ($p = $pristRS->fetch(PDO::FETCH_ASSOC)) { 
+          $pristGroup[] = $p;
+        }
+        $dta['pristine'] = $pristGroup; 
+ 
         $responseCode = 200;
       }
 

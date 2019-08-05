@@ -335,9 +335,9 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 
 #workbenchwrapper { display: grid; grid-gap: 5px; grid-template-rows: 42vh 42vh; }
 
-#wbrowtwo { height: 42vh; box-sizing: border-box; display: grid; grid-template-columns: 30vw 30vw 39vw; grid-gap: 5px;  }
+#wbrowtwo { height: 42vh; box-sizing: border-box; display: grid; grid-template-columns: 28vw 28vw 43vw; grid-gap: 5px;  }
 #wbrowtwo .dataHolderDiv:last-child { border-bottom: none; } 
-   #wbrowtwo #wbpristine { height: 42vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; } 
+   #wbrowtwo #wbpristine { height: 42vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; overflow: auto; } 
    #wbrowtwo #wbpristine #dataRowTwo { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; text-align: center; padding: 3px 0; }
 
 
@@ -345,23 +345,73 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
     #wbrowtwo #wbrevieweddata #dataRowOne { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; text-align: center; padding: 3px 0; }
 
   #wbrowtwo #wbsupprtdata { height: 42vh; box-sizing: border-box; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none; }
+    #wbrowtwo #wbsupprtdata #dataRowThree {  background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; text-align: center; padding: 3px 0; }  
+    
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold { display: grid; grid-template-columns: 1fr 2fr; }
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold #tmrCompSide { grid-column: 1 / 2; } 
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold #tmrCompSide #dataPercentHold { display: grid; grid-template-columns: 1fr 1fr; } 
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold #tmrCompSide #dataPercentHold div { border: none; }
+
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold #moleTstSide { grid-column: 2 / 4; border-left: 1px solid rgba({$this->color_cornflowerblue},1); padding-left: 3px; margin-left: 2px; }
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold #moleTstSide div {  }
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold #moleTstSide #inputLine { display: grid; grid-template-columns: 1fr 1fr 1fr; border: none; }
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold #moleTstSide #inputbuttondiv { padding: 6px 0 0 0; }
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold #moleTstSide #inputbuttondiv button { border: 1px solid rgba({$this->color_cornflowerblue},1); background: rgba({$this->color_white},1); padding: .5vh 1vw; font-size: 1.5vh; margin-bottom: 1vh; color: rgba({$this->color_zackgrey},1);  }  
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold #moleTstSide #inputbuttondiv button:active { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1);   }  
+    #wbrowtwo #wbsupprtdata #tmrCompMoleHold #moleTstSide #inputbuttondiv button:hover  { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); cursor: pointer;   }  
+    
+    .dspDefinedMoleTests { border: 1px solid rgba({$this->color_zackgrey},.5); height: 20vh; overflow: auto; width: 25vw; } 
 
 #wbrowthree { box-sizing: border-box; height: 45vh; border: 1px solid #000; border: 1px solid rgba({$this->color_cornflowerblue},1); border-right: none; border-bottom: none;  }
+  #wbrowthree #dataRowFour { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; text-align: center; padding: 3px 0; }
+  #wbrowthree #associativeTblDsp { font-size: 1.6vh; height: 42vh; overflow: auto; }
+  #wbrowthree #associativeTblDsp .headerCell { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 5px; font-size: 1.3vh; }
+  #wbrowthree #associativeTblDsp .cellTwo { width: 4vw; } 
+  #wbrowthree #associativeTblDsp .cellThree { width: 60vw; } 
+  #wbrowthree #associativeTblDsp .cellFour { width: 18vw; } 
+  #wbrowthree #associativeTblDsp .cellFive { width: 18vw; } 
+  #wbrowthree #associativeTblDsp .cellSix { width: 5vw; } 
+  #wbrowthree #associativeTblDsp .cellSeven { width: 10vw; }
+  #wbrowthree #associativeTblDsp .cellEight { width: 20vw; }
+  #wbrowthree #associativeTblDsp .cellNine { width: 20vw; } 
+  #wbrowthree #associativeTblDsp .dspDataCell { border-top: 2px solid rgba({$this->color_zackgrey},1); padding: 8px 4px; border-bottom: 1px solid rgba({$this->color_darkgrey},.6); border-right: 1px solid rgba({$this->color_darkgrey},.6); font-size: 1.5vh; }
+  #wbrowthree #associativeTblDsp .dspDataCellA { padding: 8px 4px; border-bottom: 1px solid rgba({$this->color_darkgrey},.6); border-right: 1px solid rgba({$this->color_darkgrey},.6); font-size: 1.5vh; font-size: 1.3vh; }
+  #wbrowthree #associativeTblDsp .mintbck { background: rgba({$this->color_darkgreen},.2); color: rgba({$this->color_zackgrey},1); }
+  #wbrowthree #associativeTblDsp .standardbck { color: rgba({$this->color_zackgrey},1); }
+  #wbrowthree #associativeTblDsp .inassdsp { padding: .5vh 3vw 3vh 3vw; display: none;  }
+  #wbrowthree #associativeTblDsp .inassdspthisgroup { padding: .5vh 3vw 3vh 3vw; display: block;  }
+
+
+#fldPRCUnInvolved { font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw; width: 15vw; }
+#fldTumorGrade { font-size: 1.5vh;  color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw; width: 2.7vw; text-align: right; margin-right: .2vw; }
+#fldTumorGradeScale { font-size: 1.5vh;  color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw; width: 12vw; }
+#fldMoleTest { font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw; width: 11vw; }
+#hprFldMoleResult { font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw; width: 8vw; }
+#hprFldMoleScale { font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .3vw; width: 6vw; }
+
+.prcDisplayValue { font-size: 1.5vh;  color: rgba({$this->color_dblue},1); padding: .5vh .3vw; width: 7vw; text-align: right; }
+.smlFont { font-size: 1vh; color: rgba({$this->color_bred},1); }
 
 .blueheader { box-sizing: border-box; background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.5vh; font-weight: bold; }
 .iconind { } 
 .iconind:hover { cursor: pointer; color: rgba({$this->color_neongreen},1); } 
 .cmtdsp { text-align: justify; padding-right: 4px; } 
 
+.makeBtn { border: 1px solid rgba({$this->color_cornflowerblue},1); background: rgba({$this->color_white},1); color: rgba({$this->color_cornflowerblue},1); padding: .5vh .5vw; transition: .5s; }
+.makeBtn:hover { border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); cursor: pointer; }
+
+
 #pathologyrptdisplay { z-index: 48; position: fixed; top: 10vh; left: -50vw; background: rgba({$this->color_white},1); border: 4px solid rgba({$this->color_zackgrey},1); width: 45vw; height: 80vh; padding: 0; display: grid; grid-template-rows: 3vh 74vh 3vh; transition: 1s; }  
   #pathologyrptdisplay #pathologyreporttextdisplay {  height: 74vh; box-sizing: border-box; padding: 8px 16px; overflow: auto; font-size: 1.8vh; line-height: 1.8em; text-align: justify;     } 
   #pathologyrptdisplay #uploadline { text-align: right; box-sizing: border-box; padding: 8px; background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.3vh;     }
 
-
+.actionbtnicon { color: rgba({$this->color_zackgrey},1); font-size: 1.8vh; transition: .5s; }
+.actionbtnicon:hover { cursor: pointer; color: rgba({$this->color_cornflowerblue},1);  }
 
 .dataHolderDiv { box-sizing: border-box; padding: 0 0 0 4px; border-bottom: 1px solid rgba({$this->color_cornflowerblue},.5); } 
-.dataHolderDiv .datalabel { font-size: 1.4vh; font-weight: bold; padding: 8px 0 0 0; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); }
-.dataHolderDiv .datadisplay { font-size: 1.6vh; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); padding: 2px 0 4px 4px; } 
+.dataHolderDiv .datalabel { font-size: 1.2vh; font-weight: bold; padding: 8px 0 0 0; box-sizing: border-box; color: rgba({$this->color_darkgrey},.8);  }
+.dataHolderDiv .datadisplay { font-size: 1.5vh; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); padding: 5px 0 4px 10px; } 
+.dataHolderDiv .datadisplayA { font-size: 1.5vh; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); padding: 2px 0 0 0; } 
 
 STYLESHEET;
 return $rtnThis;
