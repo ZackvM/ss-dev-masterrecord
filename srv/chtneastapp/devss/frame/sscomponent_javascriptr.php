@@ -2816,7 +2816,122 @@ function toggleActiveSegmentRecords ( ) {
     }
   }    
 }
-  
+
+function restatusSelectedSegments() { 
+
+  if (byId('thisworkingtable')) {
+    var cntr = 0;
+    var bgslist = []; 
+    for (var c = 0; c < byId('thisworkingtable').tBodies[0].rows.length; c++) {  
+      if (byId('thisworkingtable').tBodies[0].rows[c].dataset.selected === 'true') { 
+        cntr++;  
+        bgslist.push(byId('thisworkingtable').tBodies[0].rows[c].dataset.bgs);
+
+      }
+    }
+    if ( cntr < 1 ) { 
+      alert('You have not selected any segments to work with'); 
+    } else {
+      byId('standardModalBacker').style.display = 'block';
+      var passdta = JSON.stringify(bgslist); 
+      generateDialog('qmsRestatusSegments', passdta );
+    }
+  }
+}
+
+
+function selectorInvestigator() { 
+  if (byId('qmsGlobalSelectorAssignInv').value.trim().length > 3) { 
+    getSuggestions('qmsGlobalSelectorAssignInv',byId('qmsGlobalSelectorAssignInv').value.trim()); 
+  } else { 
+    byId('assignInvestSuggestion').innerHTML = "&nbsp;";
+    byId('assignInvestSuggestion').style.display = 'none';
+  }
+}
+
+function getSuggestions(whichfield, passedValue) { 
+switch (whichfield) { 
+  case 'qmsGlobalSelectorAssignInv':
+    var given = new Object(); 
+    given['rqstsuggestion'] = 'vandyinvest-invest';  
+    given['given'] = byId(whichfield).value.trim();
+    var passeddata = JSON.stringify(given);
+    var mlURL = "/data-doers/suggest-something";
+    universalAJAX("POST",mlURL,passeddata,answerAssignInvestSuggestions,2);
+  break;
+}
+}
+
+function answerAssignInvestSuggestions(rtnData) { 
+var rsltTbl = "";
+if (parseInt(rtnData['responseCode']) === 200 ) { 
+  var dta = JSON.parse(rtnData['responseText']);
+  if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
+    var rsltTbl = "<table border=0 class=\"menuDropTbl\"><tr><td colspan=2 style=\"font-size: 1.2vh; padding: 8px;\">Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
+    dta['DATA'].forEach(function(element) { 
+       rsltTbl += "<tr class=ddMenuItem onclick=\"fillField('qmsGlobalSelectorAssignInv','"+element['investvalue']+"','"+element['investvalue']+"'); byId('assignInvestSuggestion').innerHTML = '&nbsp;'; byId('assignInvestSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
+    }); 
+    rsltTbl += "</table>";  
+    byId('assignInvestSuggestion').innerHTML = rsltTbl; 
+    byId('assignInvestSuggestion').style.display = 'block';
+  } else { 
+    byId('assignInvestSuggestion').innerHTML = "&nbsp;";
+    byId('assignInvestSuggestion').style.display = 'none';
+  }
+}
+}
+
+function setAssignsRequests() {
+  if (byId('qmsGlobalSelectorAssignInv').value.trim() !== "" ) {   
+    if (parseInt(byId('requestsasked').value) === 0) {        
+      var given = new Object(); 
+      given['rqstsuggestion'] = 'vandyinvest-requests'; 
+      given['given'] = byId('qmsGlobalSelectorAssignInv').value.trim();
+      var passeddata = JSON.stringify(given);
+      var mlURL = "/data-doers/suggest-something";
+      universalAJAX("POST",mlURL,passeddata,answerRequestDrop,2);
+    }
+  } 
+}
+
+function answerRequestDrop(rtnData) {
+  var rsltTbl = "";
+  if (parseInt(rtnData['responseCode']) === 200 ) { 
+    var dta = JSON.parse(rtnData['responseText']);
+    var menuTbl = "<table border=0 class=\"menuDropTbl\">";
+    dta['DATA'].forEach(function(element) { 
+      menuTbl += "<tr><td class=ddMenuItem onclick=\"fillField('qmsGlobalSelectorAssignReq','"+element['requestid']+"','"+element['requestid']+"'); \">"+element['requestid']+" ["+element['rqstatus']+"]</td></tr>";
+    });  
+    menuTbl += "</table>";
+    byId('requestDropDown').innerHTML = menuTbl; 
+    byId('requestsasked').value = 1;
+  }
+}
+
+function markQMSComplete() { 
+    var dta = new Object(); 
+    dta['encyreviewid'] =  byId('dataRowOne').dataset.encyreviewid;
+    dta['encybg'] = byId('dataRowOne').dataset.encybg;
+    var passeddata = JSON.stringify(dta);
+    var mlURL = "/data-doers/mark-qa-final-complete";
+    universalAJAX("POST",mlURL,passeddata,answerMarkQAFinalComplete,2);
+}
+
+function answerMarkQAFinalComplete ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';
+   } else {
+     alert('Biosample has been marked \'QA/QMS Complete\' ... Either go back to the Queue or continue work on the associated biogroups');    
+     byId('standardModalBacker').style.display = 'none'; 
+   }
+}
+
 RTNTHIS;
 return $rtnThis;
 }

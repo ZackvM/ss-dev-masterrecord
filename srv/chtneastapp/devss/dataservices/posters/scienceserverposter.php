@@ -33,7 +33,57 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+    function markqafinalcomplete ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id();
+
+      //CHECK USER IS AN HPR REVIEWER
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowQMS = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+          (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO QMS-QA.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+          $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }
+
+      $biohpr = (int)cryptservice( $pdta['encyreviewid'], 'd' );
+      $bg = cryptservice( $pdta['encybg'] , 'd' );
+      $chkBGSQL = "SELECT * FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') = :bg and hprresult = :biohpr and qcind = 0";
+      $chkBGRS = $conn->prepare($chkBGSQL);
+      $chkBGRS->execute(array(':bg' => $bg, ':biohpr' => $biohpr));
+      if ( $chkBGRS->rowCount() < 1 ) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP WAS NOT FOUND.  EITHER THERE IS NO HPR RECORD, IT DOESN'T EXIST OR IT IS ALREADY MARKED AS QA COMPLETE.  IF YOU FEEL THIS IS IN ERROR, SEE A CHTNEASTERN INFORMATICS PERSON."));
+      }
+
+      if ( $errorInd === 0 ) { 
+        $backupSQL = "insert into masterrecord.history_procure_biosample_qms (pbiosample, readlabel, qcvalv2, hprindicator, hprmarkbyon, qcindicator, qcmarkbyon, qcprocstatus, labaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresultid, slidereviewed, hpron, hprby, historyrecordon, historyrecordby) SELECT pbiosample, read_label, qcvalv2, HPRInd, hprmarkbyon, QCInd, qcmarkbyon, qcprocstatus, labactionaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresult, hprslidereviewed, hpron, hprby, now(), :usr FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') like :bg and hprresult = :hprresult and qcind = 0";
+        $backRS = $conn->prepare( $backupSQL ); 
+        $backRS->execute( array( ':bg' => "{$bg}%", ':hprresult' => $biohpr, ':usr' => "{$u['usr']}/QMS-QA-PROCESS"));
+
+        $qmsSQL = "update masterrecord.ut_procure_biosample set qcind = 1, QCMarkByOn = concat(:usr, now()), qcprocstatus = 'Q', qmsstatusby = :statby, qmsstatuson = now(), qmsnote = '' where replace(read_label,'_','') = :bg and hprresult = :biohpr and qcind = 0";
+        $qmsRS = $conn->prepare($qmsSQL); 
+        $qmsRS->execute( array( ':usr' => "{$u['usr']}", ':statby' => 'QMS-QA-PROCESS' . strtoupper($u['usr']), ':bg' => $bg, ':biohpr' => $biohpr));
+
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;              
+    }
+
+
     function qamoletestfinal ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -82,7 +132,7 @@ class datadoers {
       $chkBGSQL = "SELECT * FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') = :bg and qcind = 0"; 
       $chkBGRS = $conn->prepare($chkBGSQL);
       $chkBGRS->execute(array(':bg' => preg_replace('/_/','', $bg)  ));
-      ( $chkBGRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "EITHER THE BIOGROUP WAS NOT FOUND OR IT HAS ALREADY BEEN MARKED QMS-QA COMPLETE.  IF YOU FEEL THIS IS IN ERROR, SEE A CHTNEAST INFORMATICS STAFF MEMBER")) : "";
+      ( $chkBGRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "EITHER THE BIOGROUP WAS NOT FOUND OR IT HAS ALREADY BEEN MARKED QMS-QA COMPLETE ({$bg}).  IF YOU FEEL THIS IS IN ERROR, SEE A CHTNEAST INFORMATICS STAFF MEMBER")) : "";
       
       //TODO: CHECK THAT MENU VALUES ARE VALID OPTIONS
           if ( trim($pdta['moleteststring']) !== "" ) { 
@@ -206,19 +256,20 @@ class datadoers {
       
       //CHECK VALID BG
       $bg = $hprBG['biogroupid'];
-      $chkBGSQL = "SELECT * FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') = :bg and qcind = 0"; 
+      $chkBGSQL = "SELECT * FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') like :bg and hprresult = :hprid and qcind = 0"; 
       $chkBGRS = $conn->prepare($chkBGSQL);
-      $chkBGRS->execute(array(':bg' => preg_replace('/_/','', $bg)  ));
-      ( $chkBGRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "EITHER THE BIOGROUP WAS NOT FOUND OR IT HAS ALREADY BEEN MARKED QMS-QA COMPLETE.  IF YOU FEEL THIS IS IN ERROR, SEE A CHTNEAST INFORMATICS STAFF MEMBER")) : "";
+      $chkBGRS->execute(array(':bg' => preg_replace('/_/','', $bg) . "%", ':hprid' => $biohpr));
+      ( $chkBGRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "EITHER THE BIOGROUP WAS NOT FOUND OR IT HAS ALREADY BEEN MARKED QMS-QA COMPLETE ({$bg}).  IF YOU FEEL THIS IS IN ERROR, SEE A CHTNEAST INFORMATICS STAFF MEMBER")) : "";
       
       if ( $errorInd === 0 ) { 
-        $backSQL = "insert into masterrecord.history_procure_biosample_vocab (pbiosample, uninvolvedind, tumorgrade, tumorscale, speccat, collectedsite, subsite, siteposition, diagnosis, modifier, metssite, systemicdx, bywho, onwhen) SELECT pBioSample, uninvolvedind, tumorgrade, tumorscale, ifnull(tissType,'') as tisstype, ifnull(anatomicSite,'') as site, ifnull(subSite,'') as subsite, ifnull(sitePosition,'') as siteposition, ifnull(diagnosis,'') as diagnosis, ifnull(subdiagnos,'') as modifier, ifnull(metsSite,'') as metssite, ifnull(pdxSystemic,'') as systemic, :user, now() FROM masterrecord.ut_procure_biosample where read_label = replace(:bg,'_','')"; 
-        $backupRS = $conn->prepare($backupSQL);
-        $backupRS->execute(array(':pbiosample' => $hprBG['biogroupid'], ':usr' => "QA-HPR-COPY-OP-BACKUP/{$u['usr']}" )); 
+          $backSQL = "insert into masterrecord.history_procure_biosample_vocab (pbiosample, uninvolvedind, tumorgrade, tumorscale, speccat, collectedsite, subsite, siteposition, diagnosis, modifier, metssite, systemicdx, bywho, onwhen) SELECT pBioSample, uninvolvedind, tumorgrade, tumorscale, ifnull(tissType,'') as tisstype, ifnull(anatomicSite,'') as site, ifnull(subSite,'') as subsite, ifnull(sitePosition,'') as siteposition, ifnull(diagnosis,'') as diagnosis, ifnull(subdiagnos,'') as modifier, ifnull(metsSite,'') as metssite, ifnull(pdxSystemic,'') as systemic, :user, now() FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') like :bg and hprresult = :hprid and qcind = 0 "; 
 
-        $moveSQL = "update masterrecord.ut_procure_biosample bs, (SELECT specCat, site, subSite, siteposition, dx, subdiagnosis, Mets, systemiccomobid  FROM masterrecord.ut_hpr_biosample where biohpr = :hprid) hpr set bs.tissType = hpr.speccat, bs.anatomicSite = hpr.site, bs.subSite = hpr.subsite, bs.sitePosition = hpr.siteposition, bs.diagnosis = hpr.dx, bs.subdiagnos = hpr.subdiagnosis, bs.metsSite = hpr.mets, bs.pdxSystemic = hpr.systemiccomobid where bs.pbiosample = :pbiosample";
+        $backupRS = $conn->prepare($backSQL);
+        $backupRS->execute(array(':bg' => preg_replace( '/_/','', $bg ) . "%" , ':hprid' => (int)$biohpr, ':user' => "QA-HPR-COPY-OP-BACKUP/{$u['usr']}" )); 
+
+        $moveSQL = "update masterrecord.ut_procure_biosample bs, (SELECT specCat, site, subSite, siteposition, dx, subdiagnosis, Mets, systemiccomobid  FROM masterrecord.ut_hpr_biosample where biohpr = :hprid) hpr set bs.tissType = hpr.speccat, bs.anatomicSite = hpr.site, bs.subSite = hpr.subsite, bs.sitePosition = hpr.siteposition, bs.diagnosis = hpr.dx, bs.subdiagnos = hpr.subdiagnosis, bs.metsSite = hpr.mets, bs.pdxSystemic = hpr.systemiccomobid where replace(read_label,'_','') like :bg and hprresult = :bshprid and qcind = 0 ";
         $moveRS = $conn->prepare($moveSQL); 
-        $moveRS->execute(array(':hprid' => $biohpr, ':pbiosample' => $hprBG['biogroupid'] ));
+        $moveRS->execute(array(':hprid' => (int)$biohpr, ':bg' => preg_replace('/_/','', $bg) . "%" , ':bshprid' => (int)$biohpr ));
 
         $responseCode = 200;
       }
@@ -3095,6 +3146,11 @@ MBODY;
              $primeFocus = "";  
              $left = '5vw';
              $top = '2vh';
+             break; 
+           case 'qmsRestatusSegments':
+             $primeFocus = "qmsGlobalSelectorAssignInv";  
+             $left = '10vw';
+             $top = '10vh';
              break; 
          }
 

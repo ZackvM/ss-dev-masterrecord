@@ -413,12 +413,29 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 .dataHolderDiv .datadisplay { font-size: 1.5vh; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); padding: 5px 0 4px 10px; } 
 .dataHolderDiv .datadisplayA { font-size: 1.5vh; box-sizing: border-box; color: rgba({$this->color_zackgrey},1); padding: 2px 0 0 0; } 
 
+.divLineHolder { display: grid; grid-template-columns: repeat( 2, 1fr);  }
+.assignNamedsp { grid-column: 1 / 2; white-space: nowrap; }
+
+.alignerRight { display: flex;  }
+
+.divLineHolderSD { display: table; width: 100%; }
+.divLineHolderSD .divLineHolderSDRow { display: table-row; }
+.divLineHolderSD .divLineHolderSDRow div { display: table-cell;  }
+
+.bgheadsee { display: table; }
+.bgheadsee div { display: table-cell; }
 
 
 #thisworkingtable { }
 #thisworkingtable tbody tr:nth-child(even) {background: rgba({$this->color_lgrey},1); }
 #thisworkingtable tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
 #thisworkingtable tbody tr[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
+
+
+.suggestionHolder { position: relative; }
+.suggestionDisplay {min-width: 25vw; position: absolute; left: 0; max-height: 30vh; min-height: 15vh; overflow: auto; z-index: 25; box-sizing: border-box; display: none;background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); }
+.suggestionTable { max-width: 24vw; box-sizing: border-box; }
+
 
 STYLESHEET;
 return $rtnThis;
