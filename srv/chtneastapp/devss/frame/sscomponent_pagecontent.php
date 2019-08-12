@@ -3468,8 +3468,8 @@ function bldQMSGlobalSegmentUpdate( $dialog, $passedData ) {
 <tr><td colspan=2 align=center> 
 
   <table cellspacing=0 cellpadding=0 border=0><tr>
-    <td><table class=tblBtn id=btnMarkBank style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table></td>
-    <td><table class=tblBtn id=btnMarkPDestroy style="width: 6vw;""><tr><td style=" font-size: 1.1vh;"><center>Pending Destroy</td></tr></table></td>
+    <td><table class=tblBtn id=btnMarkBank style="width: 6vw;" onclick="setQASegStatus('Bank');"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table></td>
+    <td><table class=tblBtn id=btnMarkPDestroy style="width: 6vw;" onclick="setQASegStatus('Pending Destroy');"><tr><td style=" font-size: 1.1vh;"><center>Pending Destroy</td></tr></table></td>
   </tr></table>
 
 

@@ -2932,6 +2932,13 @@ function answerMarkQAFinalComplete ( rtnData ) {
    }
 }
 
+function setQASegStatus( whichsegstatus ) { 
+   byId('qmsGlobalSelectorAssignInv').value = '';
+   byId('qmsGlobalSelectorAssignReq').value = '';
+   byId('qmsGlobalSelectorAssignInv').value = whichsegstatus; 
+}
+
+
 RTNTHIS;
 return $rtnThis;
 }
@@ -3016,7 +3023,9 @@ function answerGetCalendar(rtnData) {
     alert("ERROR");  
   }
 }      
-        
+
+
+
 JAVASCR;
 return $rtnThis;
 }
