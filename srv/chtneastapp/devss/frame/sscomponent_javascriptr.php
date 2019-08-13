@@ -2933,12 +2933,39 @@ function answerMarkQAFinalComplete ( rtnData ) {
 }
 
 function setQASegStatus( whichsegstatus ) { 
+   byId('requestsasked').value = 0;
+   byId('requestDropDown').innerHTML = "";
    byId('qmsGlobalSelectorAssignInv').value = '';
    byId('qmsGlobalSelectorAssignReq').value = '';
    byId('qmsGlobalSelectorAssignInv').value = whichsegstatus; 
 }
 
-
+function saveQMSSegReassign( whichdialogid ) { 
+   var dta = new Object();
+   dta['seglist'] = byId('fldGlobalSegArrString').value.trim(); 
+   dta['dialogid'] = whichdialogid; 
+   dta['assignInvCode'] = byId('qmsGlobalSelectorAssignInv').value.trim();
+   dta['assignReqCode'] = byId('qmsGlobalSelectorAssignReq').value.trim();
+   dta['segComments'] = byId('qmsGloablSTSComments').value.trim(); 
+   var passeddata = JSON.stringify( dta );
+   var mlURL = "/data-doers/qms-mass-reassign-segments";
+   universalAJAX("POST",mlURL,passeddata,answerSaveQMSSegReassign,2);
+}
+  
+function answerSaveQMSSegReassign( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     alert('Segment(s) have been updated ... This screen will now refresh');
+     location.reload(true);           
+   }  
+}
+  
 RTNTHIS;
 return $rtnThis;
 }

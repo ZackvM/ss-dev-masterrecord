@@ -34,6 +34,181 @@ function __construct() {
 
 class datadoers {
 
+    function qainvestigatoremailerdata ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+      
+      //TODO:  WRITE DATA CHECKS
+      
+      if ( $errorInd === 0 ) {        
+        
+        $bgs =  cryptservice( $pdta['refBGS'] , true);
+        $headSQL = "SELECT replace(sg.bgs,'_','') as bgs,  substr(concat('000000', ifnull(sg.shipdocrefid,'')),-6) as shipdocrefid, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shippeddate, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation , ifnull(bs.tissType,'') as specimencategory, ifnull(bs.anatomicSite,'') as asite, ifnull(bs.subSite,'') as ssite, ifnull(bs.diagnosis,'') as diagnosis, ifnull(bs.subdiagnos,'') as modifier, ifnull(bs.metsSite,'') as metsfrom, ifnull(date_format(sd.actualshipdate,'%m/%d/%Y'),'') as actualshippeddate, ifnull(sd.investemail,'') as investemail , ifnull(sd.investname,'') as investname, ifnull(sd.investinstitution,'') as investinstitution, ifnull(sd.investdivision,'') as investdivision, ifnull(sd.courier,'') as courier, ifnull(sd.shipmentTrackingNbr,'') as trackingnbr, substr(if(ifnull(sd.salesorder,'') = '','', concat('000000',ifnull(sd.salesorder,''))),-6) as salesorder , ifnull(sd.setupby,'') as setupby, sdt.ttlsegments FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pbiosample left join masterrecord.ut_shipdoc sd on sg.shipDocRefID = sd.shipDocRefID left join (select shipdocrefid, sum(qty) as ttlsegments from masterrecord.ut_procure_segment where ifnull(shipdocrefid,'') <> '' group by shipdocrefid) as sdt on sd.shipdocrefid = sdt.shipdocrefid where replace(sg.bgs, '_','') = :bgs";
+        $headRS = $conn->prepare($headSQL);
+        $headRS->execute(array(':bgs' => preg_replace('/_/','',$bgs)));
+        if ( $headRS->rowCount() === 1) { 
+        $h = $headRS->fetch(PDO::FETCH_ASSOC);
+        $dta['head'] = $h;
+        
+        $iEmailSQL = "SELECT add_type, add_email, add_attn FROM vandyinvest.eastern_address where investid = :investid"; 
+        $iEmailRS = $conn->prepare($iEmailSQL);
+        $iEmailRS->execute(array(':investid' => $h['investcode']));
+        
+        $iEmail = array(); 
+        while ( $ie = $iEmailRS->fetch(PDO::FETCH_ASSOC)) { 
+            $iEmail[] = $ie;
+        }
+        $dta['investemails'] = $iEmail;  
+        
+        $conSQL = "SELECT con_email, concat(ifnull(con_fname,'') , ' ', ifnull(con_lname,'') ,', ', ifnull(con_title,'')) as condspname, ifnull(con_comment,'') as concomments FROM vandyinvest.eastern_contact where investid = :investid"; 
+        $conRS = $conn->prepare($conSQL); 
+        $conRS->execute(array(':investid' => $h['investcode']));
+        $conemail = array(); 
+        while ( $c = $conRS->fetch(PDO::FETCH_ASSOC)) { 
+            $conemail[] = $c;
+        }
+        $dta['contactemail'] = $conemail;
+        
+        $msgArr[] = $h['investcode'];  
+        $responseCode = 200;
+        } else { 
+            //TODO:  POP ERROR
+        }
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;             
+    }
+   
+    function qmsmassreassignsegments ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id();        
+       
+      ////{"seglist":"[{\"87906T001\":\"451197\"},{\"87906T002\":\"451198\"}]","assignInvCode":"Pending Destroy","assignReqCode":"","segComments":"These are segment comments", "dialogid": "DIALOGID"}
+      ( !array_key_exists('seglist', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'seglist' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('assignInvCode', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'assignInvCode' DOES NOT EXIST.")) : "";        
+      ( !array_key_exists('assignReqCode', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'assignReqCode' DOES NOT EXIST.")) : "";     
+      ( !array_key_exists('segComments', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'segComments' DOES NOT EXIST.")) : "";  
+      ( !array_key_exists('dialogid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'dialogid' DOES NOT EXIST.")) : "";         
+
+      //CHECK USER IS AN HPR REVIEWER
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowQMS = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO QMS-QA.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+       
+      if ( trim($pdta['assignInvCode']) === "" ) {
+          (list( $errorInd, $msgArr[] ) = array(1 , "The 'Investigator id' field must have a value"));    
+      } else { 
+          //TODO:  DON'T HARD CODE THIS
+          if ( strtoupper(trim($pdta['assignInvCode'])) !== 'BANK' && strtoupper(substr(trim($pdta['assignInvCode']), 0, 3)) !== 'INV' && strtoupper(trim($pdta['assignInvCode'])) !== 'PENDING DESTROY' && strtoupper(trim($pdta['assignInvCode'])) !== 'PERMANENT COLLECTION'  ) { 
+            (list( $errorInd, $msgArr[] ) = array(1 , "The 'Investigator id' field must contain either an investigator's INV code, the status of 'Bank', 'Permanent Collection' or 'Pending Destroy'."));                                
+          } else { 
+              $iv = "";
+              $pv = "";
+              $rv = "";
+              if ( strtoupper(substr(trim($pdta['assignInvCode']), 0, 3)) === 'INV' ) { 
+                  if ( trim($pdta['assignReqCode']) === "" ) { 
+                      (list( $errorInd, $msgArr[] ) = array(1 , "When specifying an investigator, a request number must also be specified."));                                
+                  } else {
+                      $chkI2RSQL = "SELECT i.investid, pr.projid, rq.requestid FROM vandyinvest.invest i  left join vandyinvest.investproj pr on i.investid = pr.investid left join vandyinvest.investtissreq rq on pr.projid = rq.projid  where i.investid = :inv  and requestid = :req";
+                      $chkI2RRS = $conn->prepare($chkI2RSQL); 
+                      $chkI2RRS->execute(array(':inv' => trim($pdta['assignInvCode']), ':req' => trim($pdta['assignReqCode']))); 
+                      if ($chkI2RRS->rowCount() <> 1 ) {
+                          (list( $errorInd, $msgArr[] ) = array(1 , "The Investigator - request combination was not found in the request database.  This is not a valid assignment."));
+                      } else { 
+                          $i = $chkI2RRS->fetch(PDO::FETCH_ASSOC); 
+                          $iv = $i['investid'];
+                          $pv = $i['projid'];
+                          $rv = $i['requestid'];
+                      }
+                  }                  
+              }
+          }          
+      }
+        
+      //CHECK SEGMENT ARRAY seglist
+      $segArr = json_decode($pdta['seglist'], true);
+      ( count($segArr) < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "No Segments have been specified to be re-assigned."  )) : "";
+      
+      $chkSegSQL =  "SELECT sg.segmentid, sg.bgs, ifnull(sg.segStatus,'') segstatus, ifnull(stschk.menuvalue,'') as restock, ifnull(sg.shipDocRefID,'') as shipdocrefid, ifnull(sg.shippedDate,'') as shippeddate FROM masterrecord.ut_procure_segment sg left join (SELECT menuvalue, assignablestatus, academValue, commercialValue FROM four.sys_master_menus where menu = 'SEGMENTSTATUS' and academValue = 'RESTOCK') as stschk on sg.segstatus = stschk.menuvalue where segmentid = :segid and ifnull(stschk.menuvalue,'') <> '' and ifnull(sg.shipDocRefID,'') = '' and ifnull(shippedDate,'') = '' ";
+      $chkSegRS = $conn->prepare($chkSegSQL);
+      foreach ( $segArr as $segKey => $segVal ) {
+        foreach ( $segVal as $ky => $vl ) { 
+                  $chkSegRS->execute(array(':segid' => (int)$vl ));
+                  if ( $chkSegRS->rowCount() <> 1 ) { 
+                    (list( $errorInd, $msgArr[] ) = array(1 , "The segment, {$ky}, is not in a re-assignable status."));
+                  }                 
+         }          
+      }
+      
+      
+      if ( $errorInd === 0 ) {        
+                   
+         $newStatus = 'BANKED';
+         switch ( strtoupper(substr(trim($pdta['assignInvCode']), 0, 3)) ) { 
+             case 'BAN':
+               $newStatus = 'BANKED';                 
+               break; 
+             case 'INV':
+               $newStatus = 'ASSIGNED';
+               break;
+             case 'PEN': 
+               $newStatus = 'PENDDEST';                 
+               break;
+             case 'PER': 
+               $newStatus = 'PERMCOLLECT';                                  
+               break;
+         } 
+         
+         $usrdsp = "{$u['usr']}/QMS-REASSIGN";
+         
+         $bckSegStsSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby, newstatus) select segmentid, segstatus, statusBy, statusDate, now(), :usr, :newstatus from  masterrecord.ut_procure_segment where segmentid = :sid";
+         $bckSegStsRS = $conn->prepare($bckSegStsSQL); 
+         $bckAssSQL = "insert into masterrecord.history_procure_segment_assignment(segmentid, previousassignment, previousproject, previousrequest, previousassignmentdate, previousassignmentby, enteredon, enteredby) select segmentid, ifnull(assignedTo,'NO-INV-ASSIGNMENT') as assignedto, ifnull(assignedProj,'NO-PROJ-ASSIGNMENT') as assignedproj, ifnull(assignedReq,'NO-REQ-ASSIGNMENT') as assignedreq, ifnull(assignmentdate, now()) as assignmentdate, ifnull(assignedby,'NO-BY-ASSIGNMENT'), now(), :usr from masterrecord.ut_procure_segment where segmentid = :sid";
+         $bckAssRS = $conn->prepare($bckAssSQL);
+         $segUpdate = "update masterrecord.ut_procure_segment set segstatus = :newstatus, statusdate = now(), statusby = :usrdspb, assignedto = :invid, assignedproj = :projid, assignedreq = :reqid, assignmentdate = now(), assignedby = :usrdspa, segmentcomments = trim(concat(ifnull(segmentComments,''), ' ' , :addcmts)), lastUpdatedBy = :usrdsp, lastUpdatedOn = now() where segmentid = :segid";
+         $segUpdateRS = $conn->prepare($segUpdate);
+         foreach ( $segArr as $segKey => $segVal ) {
+            foreach ( $segVal as $ky => $vl ) { 
+              //BACK UP SEGMENT TO HISTORY FILE 
+              $bckSegStsRS->execute(array(':usr' => $usrdsp, ':newstatus' => $newStatus, ':sid' => (int)$vl));
+              $bckAssRS->execute(array(':sid' => (int)$vl, ':usr' => $usrdsp  ));
+              //WRITE NEW DATA 
+              $segUpdateRS->execute(array(':newstatus' => $newStatus,':usrdspb' => $usrdsp,':invid' => $iv,':projid' => $pv,':reqid' => $rv,':usrdspa' => $usrdsp,':addcmts' => trim($pdta['segComments']) ,':usrdsp' => $usrdsp,':segid' => (int)$vl ));
+            }
+         }         
+        
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;
+    }
+    
     function markqafinalcomplete ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -2010,7 +2185,6 @@ MBODY;
 
       }
 
-
       if ( $errorInd === 0 && $goodUser === 1 ) { 
 
           //WRITE DELETION ACTION to masterrecord.history_shipdoc_actions
@@ -3152,6 +3326,16 @@ MBODY;
              $left = '10vw';
              $top = '10vh';
              break; 
+           case 'qmsManageMoleTst':
+             $primeFocus = "qmsGlobalSelectorAssignInv";  
+             $left = '10vw';
+             $top = '10vh';
+             break; 
+           case 'qmsInvestigatorEmailer':
+             $primeFocus = "";  
+             $left = '8vw';
+             $top = '8vh';
+             break;                
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);
@@ -3331,6 +3515,7 @@ MBODY;
            }           
            $dta['segments'] = $sg;
 
+           if ( trim($bg['associd']) !== "" ) {
            $assSQL = "SELECT pbiosample, ucase(replace(bs.read_label,'_','')) as readlabel, ucase(ifnull(bs.tissType,'')) as specimencategory, ucase(trim(concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'') ='','',concat(' (',ifnull(bs.subSite,''), ')'))))) as site, ucase(trim(concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' [',ifnull(bs.subdiagnos,''),']'))))) as diagnosis, ucase(trim(ifnull(bs.metsSite,''))) as metssite, ucase(trim(ifnull(bs.pdxSystemic,''))) as systemic, ifnull(bs.HPRInd,0) as hprind, ifnull(bs.QCInd,0) as qcind, ucase(ifnull(qmsval.dspvalue,'')) as qmsstatus , ucase(ifnull(hprval.dspvalue,'')) as hprdecision, ifnull(bs.HPRResult,0) as hprresult FROM masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hprval on bs.hprdecision = hprval.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as qmsval on bs.QCProcStatus = qmsval.menuvalue where assocID = :associd and pbiosample <>  :bgn and bs.voidind <> 1 order by pbiosample asc";
            $assRS = $conn->prepare($assSQL);
            $assRS->execute(array(':associd' => $bg['associd'], ':bgn' => $bgn)); 
@@ -3341,7 +3526,10 @@ MBODY;
                $ass[] = $asses;
              }
            }
-           $dta['associativegroup'] = $ass; 
+             $dta['associativegroup'] = $ass;
+           } else { 
+             $dta['associativegroup'] = "";
+           }
            
          }     
          $responseCode = 200;

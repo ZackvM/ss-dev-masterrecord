@@ -15,8 +15,25 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
-    case 'qmsRestatusSegments':
-        //{"whichdialog":"qmsRestatusSegments","objid":"[\"87895T001\",\"87895T002\",\"87895T003\"]","dialogid":"RqbCstwbobAUXtK"}
+      case 'qmsInvestigatorEmailer':  
+        $pdta = json_decode($passedData, true);         
+        $rqstnbr =  cryptservice( $pdta['objid'], 'd');
+        $titleBar = "QMS Investigator Emailer";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        $innerDialog = bldQMSInvestigatorEmailer ( $pdta['dialogid'] , $passedData );     
+        //$innerDialog = $passedData;
+      break;        
+      case 'qmsManageMoleTst':
+        $pdta = json_decode($passedData, true);         
+        $rqstnbr =  cryptservice( $pdta['objid'], 'd');
+        $titleBar = "Manage Immuno/Molecular Test Values";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        //$innerDialog = bldQMSGlobalSegmentUpdate ( $pdta['dialogid'] , $passedData );     
+        $innerDialog = $passedData;
+      break;
+     case 'qmsRestatusSegments':
         $pdta = json_decode($passedData, true);         
         $rqstnbr =  cryptservice( $pdta['objid'], 'd');
         $titleBar = "Status Segments (QMS Mass Update)";
@@ -2678,9 +2695,12 @@ case 'qmsactionwork':
     $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGridWork onclick="window.location.href= '{$additionalinfo}'" ><tr><td><i class="material-icons">layers_clear</i></td><td>Queue List</td></tr></table></td>
-  <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnSendEmail><tr><td><i class="material-icons">textsms</i></td><td>Email</td></tr></table></td>
   <td class=topBtnHolderCell onclick="revealPR();"><table class=topBtnDisplayer id=btnRevealPR><tr><td><i class="material-icons">arrow_right_alt</i></td><td>Pathology Report</td></tr></table></td>
   <td class=topBtnHolderCell onclick="markQMSComplete();"><table class=topBtnDisplayer id=btnReloadGridWork><tr><td><i class="material-icons">done_all</i></td><td>Mark QA Complete</td></tr></table></td>
+  
+  <td class=topBtnHolderCell style="border-left: 4px double rgba(255,255,255,1);" onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnSendEmail><tr><td><i class="material-icons">textsms</i></td><td>Email</td></tr></table></td>
+  <td class=topBtnHolderCell onclick="generateDialog('qmsManageMoleTst','xxxx-xxxx');"><table class=topBtnDisplayer id=btnReloadGridWork><tr><td><i class="material-icons">list</i></td><td>Manage Immuno/Molecular Values</td></tr></table></td>
+  
 </tr>
 BTNTBL;
 
@@ -3390,6 +3410,60 @@ return $rtnThis;
 
 }
 
+function bldQMSInvestigatorEmailer ( $dialog, $passedData ) { 
+    
+$pdta = json_decode ( $passedData, true);     
+ 
+$dta = array();
+$dta['refBGS'] = cryptservice ( $pdta['objid'] , 'e' );
+$payload = json_encode($dta);
+///{"MESSAGE":["INV4506"],"ITEMSFOUND":0,"DATA":{"head":{"bgs":"87906T003","shipdocrefid":"005536"
+//,"shippeddate":"06\/20\/2019","prepmethod":"FRESH"
+//,"preparation":"DMEM","specimencategory":"MALIGNANT","asite":"KIDNEY","ssite":"","diagnosis":"CARCINOMA"
+//,"modifier":"RENAL CELL - CLEAR CELL -CONVENTIONAL"
+//,"metsfrom":"","actualshippeddate":"06\/20\/2019","investcode":"INV4506","investemail":"tanya@verseautx.com"
+//,"investname":"Dr. Tanya Novobrantseva","investinstitution":"VERSEAU THERAPEUTICS, INC.","investdivision":"Eastern"
+//,"courier":"UPS","trackingnbr":"","salesorder":"006884","setupby":"fcortright","ttlsegments":2}
+//,"investemails":[{"add_type":"INVESTIGATOR","add_email":"tanya@verseautx.com","add_attn":"Tanya Novobrantseva"}
+//,{"add_type":"SHIPPING","add_email":"tanya@verseautx.com","add_attn":"Mohammad Zafari"}
+//,{"add_type":"BILLING","add_email":"tanya@verseautx.com","add_attn":"Tanya Novobrantseva"}]
+//,"contactemail":[{"con_email":"mohammad.zafari@verseautx.com","condspname":"Mohammad Zafari, Scientist","concomments":""}
+//,{"con_email":"ryan@verseautx.com","condspname":"Ryan Phennicle, Scientist","concomments":""}
+//,{"con_email":"edie.triano@verseautx.com","condspname":"Edie Triano, Controller"
+//,"concomments":"invoices sent to ap@verseautx.com"}
+//,{"con_email":"apo@verseautx.com","condspname":"Apo Rosario, Office Manager","concomments":""}]}} 
+$edta = json_decode(callrestapi("POST", dataTree . "/data-doers/qa-investigator-emailer-data",serverIdent, serverpw, $payload), true);
+
+$head = $edta['DATA']['head'];
+
+
+
+$dspPage = <<<DSPPAGE
+
+<div id=emailBuilderHold>
+<div id=headLine>Send a message to Investigator {$head['investname']} &amp; Team</div>
+<div id=availEmails>EMAIL LIST</div>
+</div>
+        
+DSPPAGE;
+
+
+$rtnPage = <<<RTNPAGE
+<style>
+#emailBuilderHold { display: grid; grid-template-columns: repeat( 4, 1fr);  width: 60vw; }  
+
+#headLine { grid-column: 1 / 7; grid-row: 1; font-family: Roboto; font-size: 1.8vh; color: rgba(48,57,71,1); padding: 8px 5px; } 
+#availEmails { grid-column: 1 / 2; grid-row: 2; border: 1px solid rgba(48,57,71,1); height: 60vh; overflow: auto;  }   
+        
+        
+        
+</style>
+   {$dspPage}
+RTNPAGE;
+  return $rtnPage;    
+    
+}
+
 function bldQMSGlobalSegmentUpdate( $dialog, $passedData ) { 
 
   require(serverkeys . "/sspdo.zck"); 
@@ -3440,19 +3514,16 @@ function bldQMSGlobalSegmentUpdate( $dialog, $passedData ) {
   } else { 
       //BUILD PAGE HERE
       $segArr = json_encode( $bgrtn );
-
-
-
+      
       $dspPage = <<<DSPPAGE
+              
 <input type=hidden id=fldGlobalSegArrString value={$segArr}>
-
-
 <table border=0> 
    <tr><td class=fldLabel>Investigator Id</td><td class=fldLabel>Request #</td></tr>
    <tr>
        <td style="width: 10vw;">
          <div class=suggestionHolder>
-          <input type=text id=qmsGlobalSelectorAssignInv class="inputFld" onkeyup="selectorInvestigator(); byId('qmsGlobalSelectorAssignReq').value = '';byId('requestDropDown').innerHTML = ''; ">
+          <input type=text id=qmsGlobalSelectorAssignInv class="inputFld" onkeyup="selectorInvestigator(); byId('qmsGlobalSelectorAssignReq').value = ''; byId('requestsasked').value = 0;  byId('requestDropDown').innerHTML = ''; ">
           <div id=assignInvestSuggestion class=suggestionDisplay>&nbsp;</div>
          </div>
        </td>
@@ -3464,47 +3535,36 @@ function bldQMSGlobalSegmentUpdate( $dialog, $passedData ) {
        </td>
    </tr>
    <tr><td style="font-size: 1vh">(Suggestions on name, institution, inv#)</td><td></td></tr>
-
 <tr><td colspan=2 align=center> 
-
   <table cellspacing=0 cellpadding=0 border=0><tr>
-    <td><table class=tblBtn id=btnMarkBank style="width: 6vw;" onclick="setQASegStatus('Bank');"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table></td>
-    <td><table class=tblBtn id=btnMarkPDestroy style="width: 6vw;" onclick="setQASegStatus('Pending Destroy');"><tr><td style=" font-size: 1.1vh;"><center>Pending Destroy</td></tr></table></td>
-  </tr></table>
+    <td><table class=tblBtn id=btnMarkBank style="width: 8vw;" onclick="setQASegStatus('Bank');"><tr><td style=" font-size: 1.1vh;"><center>Bank</td></tr></table></td>
 
+  <td><table class=tblBtn id=btnMarkPCollection  style="width: 8vw;" onclick="setQASegStatus('Permanent Collection');"><tr><td style=" font-size: 1.1vh;"><center>Permanent Collection</td></tr></table></td>
 
+   <td><table class=tblBtn id=btnMarkPDestroy style="width: 8vw;" onclick="setQASegStatus('Pending Destroy');"><tr><td style=" font-size: 1.1vh;"><center>Pending Destroy</td></tr></table></td>
+  
+   </tr></table>
 </td></tr>
 <tr><td colspan=2>
-
-<table border=0 width=80%>
-<tr><td class=prcFldLbl>Status Comments</td></tr>   
+<table border=0>
+<tr><td class=fldLabel>Status Comments</td></tr>   
 <tr><td><TEXTAREA id=qmsGloablSTSComments></TEXTAREA></td></tr>   
 </table>
-
 </td></tr>
-
-
 <tr><td colspan=2 align=right> 
-
-
   <table cellspacing=0 cellpadding=0 border=0><tr>
-    <td><table class=tblBtn id=btnMarkBank style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>Save</td></tr></table></td>
+    <td><table class=tblBtn id=btnMarkBank style="width: 6vw;" onclick="saveQMSSegReassign('{$dialogid}');"><tr><td style=" font-size: 1.1vh;"><center>Save</td></tr></table></td>
   </table>
-
 </td></tr>
 </table>
-
-
-
-
-
-
 DSPPAGE;
   }
 
   $rtnPage = <<<RTNPAGE
 <style>
 .errorMsgDsp { font-size: 1.4vh; padding: 0 1vw 0 1vw;   }
+.fldLabel { font-size: 1.4vh; font-weight: bold; border-bottom: 1px solid rgba(48,57,71,.6); }
+#qmsGloablSTSComments { width: 33vw; }          
 </style>
    {$dspPage}
 RTNPAGE;
@@ -4454,8 +4514,7 @@ ROWLINE;
 
       $reqency = ( trim($assval['assignedreq']) !== "" ) ? " onclick=\"generateDialog('irequestdisplay','" . cryptservice($assval['assignedreq']) . "');\" " : ""; 
       $reqPopEnd = ( trim($assval['assignedreq']) !== "" ) ? "<div {$reqency} title=\"View request {$assval['assignedreq']}\"><i class=\"material-icons actionbtnicon\">pageview</i></div>" : "";
-      $assign = ( trim($assval['assignedto']) !== "" && ( trim($assval['assignedto']) !== "BANK" && trim($assval['assignedto']) !== "QC") ) ? "<div class=divLineHolder><div class=assignNamedsp>{$iname} ({$assval['assignedto']}{$reqNbr})</div><div class=alignerRight align=right>{$reqPopEnd}<div title=\"Email investigator and team\"><i class=\"material-icons actionbtnicon\">email</i></div></div></div>" : "<div><div>-BANK-</div></div>";
-
+      $assign = ( trim($assval['assignedto']) !== "" && ( trim($assval['assignedto']) !== "BANK" && trim($assval['assignedto']) !== "QC") ) ? "<div class=divLineHolder><div class=assignNamedsp>{$iname} ({$assval['assignedto']}{$reqNbr})</div><div class=alignerRight align=right>{$reqPopEnd}<div title=\"Email investigator and team\" onclick=\"generateDialog('qmsInvestigatorEmailer','{$assval['bgs']}');\"><i class=\"material-icons actionbtnicon\">email</i></div></div></div>" : "<div><div>-BANK-</div></div>";
 
       $sdencry = ( trim($assval['shipdocrefid']) !== "" ) ? cryptservice($assval['shipdocrefid']) : "";
       $ship = ( trim($assval['shipdocrefid']) !== "" ) ? "<div class=divLineHolderSD>
@@ -4573,8 +4632,9 @@ function bldQAWorkbench_bsData ( $headdta, $pristine ) {
   $cxrx = ( trim($headdta['bschemoinddsp']) !== "" ) ?   "{$headdta['bschemoinddsp']}"  : "";
     $cxrx .= ( trim($headdta['bsradinddsp']) !== "" ) ?   ( trim($cxrx) !== "" ) ? " - {$headdta['bsradinddsp']}" : " - {$headdta['bsradinddsp']}"  : " / -";
   
-  $bsc = ( trim($headdta['bscomments']) !== "" ) ? "<div class=dataHolderDiv id=bsDataComments><div class=datalabel><table width=100% cellpadding=0 cellspacing=0><tr><td valign=top>Biosample Comments</td><td valign=top align=right><table cellpadding=0 cellspacing=0 onclick=\"generateDialog('dlgCMTEDIT','BGC:{$headdta['pbiosample']}');\" title=\"Edit Biosample Comment\"><tr><td valign=top><i class=\"material-icons actionbtnicon\">edit</i></td></tr></table></td></tr></table></div><div class=\"datadisplay cmtdsp\">{$headdta['bscomments']}&nbsp;</div></div>" : "";
+  //$bsc = ( trim($headdta['bscomments']) !== "" ) ? "<div class=dataHolderDiv id=bsDataComments><div class=datalabel><table width=100% cellpadding=0 cellspacing=0><tr><td valign=top>Biosample Comments</td><td valign=top align=right><table cellpadding=0 cellspacing=0 onclick=\"generateDialog('dlgCMTEDIT','BGC:{$headdta['pbiosample']}');\" title=\"Edit Biosample Comment\"><tr><td valign=top><i class=\"material-icons actionbtnicon\">edit</i></td></tr></table></td></tr></table></div><div class=\"datadisplay cmtdsp\">{$headdta['bscomments']}&nbsp;</div></div>" : "";
 
+    $bsc = "<div class=dataHolderDiv id=bsDataComments><div class=datalabel><table width=100% cellpadding=0 cellspacing=0><tr><td valign=top>Biosample Comments</td><td valign=top align=right><table cellpadding=0 cellspacing=0 onclick=\"generateDialog('dlgCMTEDIT','BGC:{$headdta['pbiosample']}');\" title=\"Edit Biosample Comment\"><tr><td valign=top><i class=\"material-icons actionbtnicon\">edit</i></td></tr></table></td></tr></table></div><div class=\"datadisplay cmtdsp\">{$headdta['bscomments']}&nbsp;</div></div>";
 
   $hprq = ( trim($headdta['bshprqstn']) !== "" ) ? "<div class=dataHolderDiv id=bsDataQuestion><div class=datalabel><table width=100% cellpadding=0 cellspacing=0><tr><td valign=top>Question for Reviewer</td><td valign=top align=right> </td></tr></table></div><div class=\"datadisplay cmtdsp\">{$headdta['bshprqstn']}&nbsp;</div></div>" : "";
   //$hprq = ( trim($headdta['bshprqstn']) !== "" ) ? "<div class=dataHolderDiv id=bsDataQuestion><div class=datalabel><table width=100% cellpadding=0 cellspacing=0><tr><td valign=top>Question for Reviewer</td><td valign=top align=right><table cellpadding=0 cellspacing=0 onclick=\"generateDialog('dlgCMTEDIT','HPQ:{$headdta['pbiosample']}');\"><tr><td valign=top><i class=\"material-icons actionbtnicon\">edit</i></td></tr></table></td></tr></table></div><div class=\"datadisplay cmtdsp\">{$headdta['bshprqstn']}&nbsp;</div></div>" : "";
@@ -8538,7 +8598,7 @@ SEGMENTLINES;
 
       $assCount = count($bg['associativegroup']);
       $outerAss = "";
-      if ( (int)$assCount > 0 ) { 
+      if ( (int)$assCount > 0 && trim($bg['associativegroup']) !== "" ) { 
           //BUILD THE ASS TABLE
          if ( (int)$assCount < 2 ) { 
             $headline = $assCount . " Other biogroup in Associative Group";
