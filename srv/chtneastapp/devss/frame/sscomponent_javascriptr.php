@@ -2965,7 +2965,125 @@ function answerSaveQMSSegReassign( rtnData ) {
      location.reload(true);           
    }  
 }
-  
+
+function emailer_emailselect(whichid) { 
+
+   if ( byId(whichid).dataset.selected === 'true' ) { 
+     byId(whichid).dataset.selected = 'false';
+   } else { 
+     byId(whichid).dataset.selected = 'true';
+   } 
+
+}
+
+function insertAtCursor(myField, myValue) {
+        //MOZILLA and others
+        if (myField.selectionStart || myField.selectionStart == '0') {
+            var startPos = myField.selectionStart;
+            var endPos = myField.selectionEnd;
+            myField.value = myField.value.substring(0, startPos)
+                + myValue
+                + myField.value.substring(endPos, myField.value.length);
+        } else {
+            myField.value += myValue;
+        }
+}
+
+function getQMSLetter( whichletter ) {
+
+   var dta = new Object();
+   dta['qmsletter'] = whichletter;
+   dta['bgs'] = byId('insertElementals').dataset.bgs;
+   dta['shipdocrefid'] = byId('insertElementals').dataset.shipdocrefid;
+   dta['shippeddate'] = byId('insertElementals').dataset.shippeddate;
+   dta['prepmethod'] = byId('insertElementals').dataset.prepmethod;
+   dta['preparation'] = byId('insertElementals').dataset.preparation;
+   dta['dxspecimencategory'] = byId('insertElementals').dataset.dxspecimencategory;
+   dta['dxsite'] = byId('insertElementals').dataset.dxsite;
+   dta['dxssite'] = byId('insertElementals').dataset.dxssite;
+   dta['dxdx'] = byId('insertElementals').dataset.dxdx;
+   dta['dxmod'] = byId('insertElementals').dataset.dxmod;
+   dta['dxmetsfrom'] = byId('insertElementals').dataset.dxsmetsfrom;
+   dta['designation'] = byId('insertElementals').dataset.designation;
+   dta['courier'] = byId('insertElementals').dataset.courier;
+   dta['tracknbr'] = byId('insertElementals').dataset.tracknbr;
+   dta['salesorder'] = byId('insertElementals').dataset.salesorder;
+   var passeddata = JSON.stringify( dta );
+   var mlURL = "/data-doers/qms-get-email-letter";
+   universalAJAX("POST",mlURL,passeddata,answerGetQMSLetter,2);
+}
+
+function answerGetQMSLetter ( rtnData ) {
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     //SUCCESS 
+     var dta = JSON.parse(rtnData['responseText']);
+     insertAtCursor( byId('emailTextGoeshere') , dta['DATA'] );
+   }  
+}
+
+function sendQMSEmail( whichdialog ) { 
+
+  var dta = new Object(); 
+  var emaillist = []; 
+  var x = document.getElementsByClassName("sideemaildspitem"); 
+  for ( var i = 0; i < x.length; i++ ) { 
+    if ( x[i].dataset.selected === 'true' ) {
+      if ( !emaillist.includes ( x[i].dataset.email ) ) {  
+        emaillist.push ( x[i].dataset.email );
+      }
+    }
+  }
+  dta['emaillist'] = emaillist;
+  dta['includeme'] =  byId('incME').checked;
+  dta['includechtn'] =  byId('incCHTN').checked;
+  dta['includepr'] = byId('incPR').checked;
+  dta['emailtext'] = byId('emailTextGoeshere').value.trim();
+  dta['bgs'] = byId('insertElementals').dataset.bgs;
+  dta['shipdocrefid'] = byId('insertElementals').dataset.shipdocrefid;
+  dta['shippeddate'] = byId('insertElementals').dataset.shippeddate;
+  dta['prepmethod'] = byId('insertElementals').dataset.prepmethod;
+  dta['preparation'] = byId('insertElementals').dataset.preparation;
+  dta['dxspecimencategory'] = byId('insertElementals').dataset.dxspecimencategory;
+  dta['dxsite'] = byId('insertElementals').dataset.dxsite;
+  dta['dxssite'] = byId('insertElementals').dataset.dxssite;
+  dta['dxdx'] = byId('insertElementals').dataset.dxdx;
+  dta['dxmod'] = byId('insertElementals').dataset.dxmod;
+  dta['dxmetsfrom'] = byId('insertElementals').dataset.dxsmetsfrom;
+  dta['designation'] = byId('insertElementals').dataset.designation;
+  dta['courier'] = byId('insertElementals').dataset.courier;
+  dta['tracknbr'] = byId('insertElementals').dataset.tracknbr;
+  dta['salesorder'] = byId('insertElementals').dataset.salesorder;
+  dta['dialogid'] = whichdialog;
+  var passeddata = JSON.stringify( dta );
+  var mlURL = "/data-doers/qms-send-email-letter";
+  universalAJAX("POST",mlURL,passeddata,answerSendQMSLetter,2);
+
+}
+
+function answerSendQMSLetter ( rtnData ) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     //SUCCESS 
+     var dta = JSON.parse(rtnData['responseText']);
+     alert('Email Sent');
+     closeThisDialog(dta['DATA']['dialogid']);
+   }  
+
+}
 RTNTHIS;
 return $rtnThis;
 }

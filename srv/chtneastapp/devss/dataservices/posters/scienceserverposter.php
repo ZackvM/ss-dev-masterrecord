@@ -34,6 +34,137 @@ function __construct() {
 
 class datadoers {
 
+    function qmssendemailletter ( $request, $passdata ) { 
+//{"emaillist":["mohammad.zafari@verseautx.com","tanya@verseautx.com"],"includeme":false,"includechtn":true,"includepr":true,"emailtext":"Dear Dr. Tanya Novobrantseva:\n\nYo!  Here's your Pathology Report for 87906T003 ...","bgs":"87906T003","shipdocrefid":"005536","shippeddate":"06/20/2019","prepmethod":"FRESH","preparation":"DMEM","dxspecimencategory":"MALIGNANT","dxsite":"KIDNEY","dxssite":"","dxdx":"CARCINOMA","dxmod":"RENAL CELL - CLEAR CELL -CONVENTIONAL","designation":"[MALIGNANT] KIDNEY :: CARCINOMA / RENAL CELL - CLEAR CELL -CONVENTIONAL ","courier":"UPS","tracknbr":"","salesorder":"006884","dialogid":"L6msAO690cor9x5"}
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+
+      //CHECK USER IS AN HPR REVIEWER
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowQMS = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO QMS-QA.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      //TODO:  DATA CHECKS - CHECK EMAIL ADDRESSES CORRECT / CHECK BOOLEAN FIELDS / CHECK BGS FORMAT
+      ( !array_key_exists('emaillist', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'emaillist' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('includeme', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'includeme' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('includepr', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'includepr' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('includechtn', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'includechtn' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('emailtext', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'emailtext' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('bgs', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'bgs' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('dialogid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'dialogid' DOES NOT EXIST.")) : ""; 
+      
+
+      ( !is_bool( $pdta['includeme'] ) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY ELEMENT 'includeme' IS NOT A BOOLEAN")) : "";
+      ( !is_bool( $pdta['includepr'] ) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY ELEMENT 'includepr' IS NOT A BOOLEAN")) : "";
+      ( !is_bool( $pdta['includechtn'] ) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY ELEMENT 'includechtn' IS NOT A BOOLEAN")) : "";
+      ( trim( $pdta['emailtext'] ) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY ELEMENT 'emailtext' CANNOT BE EMPTY")) : "";
+
+      foreach ( $pdta['emaillist'] as $k => $v ) {
+        ( !filter_var( $v, FILTER_VALIDATE_EMAIL) ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "{$v} IS AN INVALID EMAIL ADDRESS")) : "";
+      }
+
+
+      //TODO:  REMOVE THIS FOR PRODUCTION
+      $pdta['emaillist'] = array();
+
+
+      if ( $pdta['includeme'] ) { 
+        $pdta['emaillist'][] = $u['emailaddress'];
+      }
+      if ( $pdta['includechtn'] ) { 
+        $pdta['emaillist'][] = "chtnmail@uphs.upenn.edu";
+      }
+      $pdta['emaillist'][] = "zackvm.zv@gmail.com";
+
+
+      if ( $pdta['includepr'] ) {
+          $prSQL = "SELECT bs.pathreportid, pr.pathreport FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pbiosample left join masterrecord.qcpathreports pr on bs.pathreportid = pr.prId where replace(bgs,'_','') = :bgs";
+        $prRS = $conn->prepare($prSQL);
+        $prRS->execute(array(':bgs' => preg_replace('/_/','',$pdta['bgs']) ));
+        if ( $prRS->rowCount() === 1 ) { 
+           $prtxt = $prRS->fetch(PDO::FETCH_ASSOC);  
+           $pdta['emailtext'] = "{$pdta['emailtext']}\n\n<table border=1><tr><td>PATHOLOGY REPORT FOR BIOSAMPLE LABELLED {$pdta['bgs']}</td></tr><tr><td>" . $prtxt['pathreport'] . "</td></tr></table>"; 
+        } else { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  REQUESTED PATHOLOGY REPORT NOT FOUND."));
+        }
+      }
+
+
+      if ( $errorInd === 0 ) {        
+
+        $eText = preg_replace( '/\\n/','<br>', preg_replace( '/\\n\\n/','<p>',$pdta['emailtext'] ));
+
+        $msgArr[] = json_encode( $pdta['emaillist'] );
+        $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgBody, htmlind, wheninput, bywho) value(:towhoaddressarray, 'CHTN-EASTERN QMS FOLLOWUP EMAIL', :msgBody, 1, now(), 'QA-QMS EMAILER')";
+        $emlRS = $conn->prepare( $emlSQL );
+        $emlRS->execute(array ( ':towhoaddressarray' => json_encode( $pdta['emaillist'] ), ':msgBody' => "<table border=1><tr><td><CENTER>THE MESSAGE BELOW IS FROM THE QUALITY MANAGEMENT TEAM AT CHTNEASTERN.  PLEASE DO NOT RESPONSED TO THIS EMAIL.  CONTACT THE CHTNEASTERN OFFICE DIRECTLY EITHER BY EMAIL chtnmail@uphs.upenn.edu OR BY CALLING (215) 662-4570.</td></tr><tr><td>{$eText}</td></tr></table>" ));
+
+        $dta['dialogid'] = $pdta['dialogid'];
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;             
+
+    }
+
+
+    function qmsgetemailletter ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+      
+      //TODO:  WRITE DATA CHECKS
+      ( !array_key_exists('qmsletter', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'qmsletter' DOES NOT EXIST.")) : ""; 
+
+      if ( $errorInd === 0 ) {        
+
+        $letSQL = "SELECT qmsletters FROM four.sys_master_menus where menu = 'QMSLETTERS' and menuvalue = :thisletter and dspind = 1 order by dsporder";
+        $letRS = $conn->prepare($letSQL);
+        $letRS->execute(array(':thisletter' => $pdta['qmsletter'] ));
+
+        if ( $letRS->rowCount() === 1 ) { 
+          $letrec = $letRS->fetch(PDO::FETCH_ASSOC);
+          preg_match_all('/\^[A-Za-z0-9]+/',$letrec['qmsletters'], $matches, PREG_OFFSET_CAPTURE ) ; 
+          $ltr = $letrec['qmsletters'];
+          foreach ( $matches[0] as $key => $value ) { 
+            $strrplc = $value[0];  
+            $newstr = $pdta[  preg_replace('/^\^/','',$value[0]) ];
+            $ltr = str_replace( $strrplc, $newstr,  $ltr);
+          }
+          $dta = $ltr;
+          $responseCode = 200;
+        } else { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "NO QMS LETTER FOUND"));
+        }
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;             
+    } 
+
     function qainvestigatoremailerdata ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -51,7 +182,7 @@ class datadoers {
       if ( $errorInd === 0 ) {        
         
         $bgs =  cryptservice( $pdta['refBGS'] , true);
-        $headSQL = "SELECT replace(sg.bgs,'_','') as bgs,  substr(concat('000000', ifnull(sg.shipdocrefid,'')),-6) as shipdocrefid, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shippeddate, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation , ifnull(bs.tissType,'') as specimencategory, ifnull(bs.anatomicSite,'') as asite, ifnull(bs.subSite,'') as ssite, ifnull(bs.diagnosis,'') as diagnosis, ifnull(bs.subdiagnos,'') as modifier, ifnull(bs.metsSite,'') as metsfrom, ifnull(date_format(sd.actualshipdate,'%m/%d/%Y'),'') as actualshippeddate, ifnull(sd.investemail,'') as investemail , ifnull(sd.investname,'') as investname, ifnull(sd.investinstitution,'') as investinstitution, ifnull(sd.investdivision,'') as investdivision, ifnull(sd.courier,'') as courier, ifnull(sd.shipmentTrackingNbr,'') as trackingnbr, substr(if(ifnull(sd.salesorder,'') = '','', concat('000000',ifnull(sd.salesorder,''))),-6) as salesorder , ifnull(sd.setupby,'') as setupby, sdt.ttlsegments FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pbiosample left join masterrecord.ut_shipdoc sd on sg.shipDocRefID = sd.shipDocRefID left join (select shipdocrefid, sum(qty) as ttlsegments from masterrecord.ut_procure_segment where ifnull(shipdocrefid,'') <> '' group by shipdocrefid) as sdt on sd.shipdocrefid = sdt.shipdocrefid where replace(sg.bgs, '_','') = :bgs";
+        $headSQL = "SELECT replace(sg.bgs,'_','') as bgs,  substr(concat('000000', ifnull(sg.shipdocrefid,'')),-6) as shipdocrefid, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shippeddate, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation , ifnull(bs.tissType,'') as specimencategory, ifnull(bs.anatomicSite,'') as asite, ifnull(bs.subSite,'') as ssite, ifnull(bs.diagnosis,'') as diagnosis, ifnull(bs.subdiagnos,'') as modifier, ifnull(bs.metsSite,'') as metsfrom, ifnull(date_format(sd.actualshipdate,'%m/%d/%Y'),'') as actualshippeddate, ifnull(sd.acceptedbyemail,'') as acceptoremail, ifnull(sd.acceptedby,'') as acceptedby, ifnull(sd.investemail,'') as investemail, ifnull(sd.investcode,'') as investcode, ifnull(sd.investname,'') as investname, ifnull(sd.investinstitution,'') as investinstitution, ifnull(sd.investdivision,'') as investdivision, ifnull(sd.courier,'') as courier, ifnull(sd.shipmentTrackingNbr,'') as trackingnbr, substr(if(ifnull(sd.salesorder,'') = '','', concat('000000',ifnull(sd.salesorder,''))),-6) as salesorder , ifnull(sd.setupby,'') as setupby FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pbiosample left join masterrecord.ut_shipdoc sd on sg.shipDocRefID = sd.shipDocRefID where replace(sg.bgs, '_','') = :bgs";
         $headRS = $conn->prepare($headSQL);
         $headRS->execute(array(':bgs' => preg_replace('/_/','',$bgs)));
         if ( $headRS->rowCount() === 1) { 
@@ -76,7 +207,18 @@ class datadoers {
             $conemail[] = $c;
         }
         $dta['contactemail'] = $conemail;
+
+
+        $qmsLtrsSQL = "SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSLETTERS' and dspind = 1 order by dsporder"; 
+        $qmsLtrsRS = $conn->prepare($qmsLtrsSQL);
+        $qmsLtrsRS->execute();
         
+        $qmsLtrs = array(); 
+        while ( $lt = $qmsLtrsRS->fetch(PDO::FETCH_ASSOC)) { 
+            $qmsLtrs[] = $lt;
+        }
+        $dta['qmsletters'] = $qmsLtrs;  
+
         $msgArr[] = $h['investcode'];  
         $responseCode = 200;
         } else { 
@@ -3332,7 +3474,7 @@ MBODY;
              $top = '10vh';
              break; 
            case 'qmsInvestigatorEmailer':
-             $primeFocus = "";  
+             $primeFocus = "textWriterArea";  
              $left = '8vw';
              $top = '8vh';
              break;                

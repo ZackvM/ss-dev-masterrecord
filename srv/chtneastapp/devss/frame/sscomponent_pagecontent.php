@@ -3436,13 +3436,81 @@ $edta = json_decode(callrestapi("POST", dataTree . "/data-doers/qa-investigator-
 
 $head = $edta['DATA']['head'];
 
+$iemlst = $edta['DATA']['investemails'];
+$iemllstdsp = ( trim($head['acceptoremail']) !== "" ) ? "<div onclick=\"emailer_emailselect(this.id);\" id=\"email1\" class=sideemaildspitem data-email=\"{$head['acceptoremail']}\" data-selected='false'><div class=emailDspName>{$head['acceptedby']}</div><div class=emailDspEmail>({$head['acceptoremail']})</div><div class=emailDspType>SHIPMENT ACCEPTED BY</div></div>" : "";
+$iemllstdsp .= ( trim($head['investemail']) !== "" ) ? "<div onclick=\"emailer_emailselect(this.id);\" id=\"email2\" class=sideemaildspitem data-email=\"{$head['investemail']}\" data-selected='true'><div class=emailDspName>{$head['investname']}</div><div class=emailDspEmail>({$head['investemail']})</div><div class=emailDspType>SHIPMENT'S INVESTIGATOR</div></div>" : "";
+
+$cntr = 3;
+foreach ( $iemlst as $emlkey => $emlval ) { 
+    $iemllstdsp .= ( trim($emlval['add_email']) !== "" ) ? "<div onclick=\"emailer_emailselect(this.id);\" id=\"email{$cntr}\" class=sideemaildspitem data-email=\"{$emlval['add_email']}\" data-selected='false'><div class=emailDspName>{$emlval['add_attn']}</div><div class=emailDspEmail>({$emlval['add_email']})</div><div class=emailDspType>{$emlval['add_type']}</div></div>" : "";
+    $cntr++;
+}
+$cemlst = $edta['DATA']['contactemail'];
+foreach ( $cemlst as $emlkey => $emlval ) {
+    $iemllstdsp .= ( trim($emlval['con_email']) !== "" ) ? "<div onclick=\"emailer_emailselect(this.id);\" id=\"email{$cntr}\" class=sideemaildspitem data-email=\"{$emlval['con_email']}\" data-selected='false'><div class=emailDspName>{$emlval['condspname']}</div><div class=emailDspEmail>({$emlval['con_email']})</div><div class=emailDspType>{$emlval['concomments']}</div></div>" : "";
+    $cntr++;
+}
+
+$iname = $head['investname'];
+
+$desig = ( trim($head['specimencategory']) !== "" ) ? "[{$head['specimencategory']}]" : ""; 
+$desig .= ( trim($head['asite']) !== "" ) ? " " . trim( $head['asite'] )  : "";
+$desig .= ( trim($head['ssite']) !== "" ) ? " / {$head['ssite']}" : "";
+
+$desig .= ( trim($head['diagnosis']) !== "" || trim($head['modifier']) !== "" ) ? " :: " : "";
+$desig .= ( trim($head['diagnosis']) !== "" ) ? $head['diagnosis'] : "";
+$desig .= ( trim($head['modifier']) !== "" ) ? ( trim($head['diagnosis']) !== "" ) ? " / {$head['modifier']} " : "{$head['modifier']}" : "";
+
+$desig .= ( trim($head['metsfrom']) !== "" ) ? " ({$head['metsfrom']})" : "";
+
+
+$elementallist = " data-bgs='{$head['bgs']}' ";
+$elementallist .= " data-shippeddate='{$head['shippeddate']}' ";
+$elementallist .= " data-shipdocrefid='{$head['shipdocrefid']}' ";
+$elementallist .= " data-prepmethod='{$head['prepmethod']}' ";
+$elementallist .= " data-preparation='{$head['preparation']}' ";
+$elementallist .= " data-dxspecimencategory='{$head['specimencategory']}' ";
+$elementallist .= " data-dxsite='{$head['asite']}' ";
+$elementallist .= " data-dxssite='{$head['ssite']}' ";
+$elementallist .= " data-dxdx='{$head['diagnosis']}' ";
+$elementallist .= " data-dxmod='{$head['modifier']}' ";
+$elementallist .= " data-dxmetsfrom='{$head['metsfrom']}' ";
+$elementallist .= " data-courier='{$head['courier']}' ";
+$elementallist .= " data-tracknbr='{$head['trackingnbr']}' ";
+$elementallist .= " data-salesorder='{$head['salesorder']}' ";
+$elementallist .= " data-designation='{$desig}' ";
+
+
+foreach ( $edta['DATA']['qmsletters'] as $ltky => $ltvl ) { 
+  $elementals .= "<div class=elementalInsert onclick=\"getQMSLetter('{$ltvl['menuvalue']}');\">Letter:  {$ltvl['dspvalue']} </div>";
+}
+$elementals .= "<div class=elementalInsert onclick=\"insertAtCursor(byId('emailTextGoeshere'),'{$head['bgs']}');\">Biosample Label</div>";
+$elementals .= "<div class=elementalInsert onclick=\"insertAtCursor(byId('emailTextGoeshere'),'{$head['shipdocrefid']}');\">Ship-Doc</div>";
+$elementals .= "<div class=elementalInsert onclick=\"insertAtCursor(byId('emailTextGoeshere'),'{$head['salesorder']}');\">Sales Order</div>";
+$elementals .= "<div class=elementalInsert onclick=\"insertAtCursor(byId('emailTextGoeshere'),'{$head['courier']}');\">Courier</div>";
+$elementals .= "<div class=elementalInsert onclick=\"insertAtCursor(byId('emailTextGoeshere'),'{$head['tracknbr']}');\">Track #</div>";
+$elementals .= "<div class=elementalInsert onclick=\"insertAtCursor(byId('emailTextGoeshere'),'{$desig}');\">Designation</div>";
+
 
 
 $dspPage = <<<DSPPAGE
-
 <div id=emailBuilderHold>
-<div id=headLine>Send a message to Investigator {$head['investname']} &amp; Team</div>
-<div id=availEmails>EMAIL LIST</div>
+  <div id=headLine>Send a message to Investigator {$head['investname']} &amp; Team</div>
+  <div id=availEmails> {$iemllstdsp} </div>
+  <div id=textwriter><div id=textWriterArea><textarea id=emailTextGoeshere>Dear {$iname}:\n\n</textarea></div>
+  <div id=sendControls> 
+    <div id=includeCmds>
+      <div><input type=checkbox id=incME><label for=incME>Include a copy to me</label></div>   
+      <div><input type=checkbox id=incCHTN><label for=incCHTN>Include a copy to CHTNEast</label></div>   
+      <div><input type=checkbox id=incPR><label for=incPR>Include a copy of Pathology Report</label></div>   
+      <!-- <div><input type=checkbox id=incSD><label for=incSD>Include a copy of Ship-Doc</label></div> //-->  
+
+    </div>
+    <div id=sendBtn><button type=button onclick="sendQMSEmail('{$dialog}');">Send</button></div></div>
+  </div>
+  <div id=insertElementals {$elementallist}>{$elementals}   </div>
+  
+
 </div>
         
 DSPPAGE;
@@ -3450,12 +3518,37 @@ DSPPAGE;
 
 $rtnPage = <<<RTNPAGE
 <style>
-#emailBuilderHold { display: grid; grid-template-columns: repeat( 4, 1fr);  width: 60vw; }  
+#emailBuilderHold { display: grid; grid-template-columns: repeat( 7, 1fr);  width: 60vw; grid-gap: 5px; }  
 
-#headLine { grid-column: 1 / 7; grid-row: 1; font-family: Roboto; font-size: 1.8vh; color: rgba(48,57,71,1); padding: 8px 5px; } 
-#availEmails { grid-column: 1 / 2; grid-row: 2; border: 1px solid rgba(48,57,71,1); height: 60vh; overflow: auto;  }   
-        
-        
+#headLine { grid-column: 1 / 8; grid-row: 1; font-family: Roboto; font-size: 1.8vh; color: rgba(48,57,71,1); padding: 8px 5px; } 
+
+#availEmails { grid-column: 1 / 3; grid-row: 2; border: 1px solid rgba(48,57,71,1); height: 60vh; overflow: auto;  }   
+#textwriter { grid-column: 3 / 7; grid-row: 2; display: grid; grid-template-rows: repeat( 15, 4vh );  } 
+#insertElementals { grid-column: 7 / 8; grid-row: 2; border: 1px solid rgba(48,57,71,1); height: 60vh; overflow: auto;  }   
+
+.elementalInsert { border-bottom: 1px solid rgba(145,145,145,.5); text-align: center; font-size: 1.4vh; padding: 10px; min-height: 3vh; }
+.elementalInsert:hover { background: rgba(255,248,225,.5); cursor: pointer; } 
+
+#textwriter #textWriterArea { grid-row: 1 / 14; }
+#textwriter #textWriterArea textarea { width: 100%; height: 50vh; border: 1px solid rgba(48,57,71,1); font-family: Roboto; font-size: 1.3vh; color: rgba(48,57,71,1); line-height: 1.4em;  }
+
+#textwriter #sendControls {grid-row: 14 / 16;   display: grid; grid-template-columns: repeat( 5, 1fr );  }
+#textwriter #sendControls #includeCmds { grid-column: 1 / 5;  } 
+
+button {border: 1px solid rgba(100,149,237,1); background: rgba(255,255,255,1); padding: .5vh 1vw; font-size: 1.4vh;  color: rgba(48,57,71,1);}
+button:hover { background: rgba( 100,149,237,1); color: rgba(255,255,255,1); cursor: pointer; } 
+
+
+
+.sideemaildspitem {  padding: 8px 6px; background: rgba(255,255,255,1); border-top: 1px solid rgba(145,145,145,.6);  }
+.sideemaildspitem:nth-child(even)  {  background: rgba(145,145,145,.2);  }
+.sideemaildspitem:hover  {  background: rgba(255,248,225,.8); cursor: pointer; }
+.sideemaildspitem[data-selected='true'] { background: rgba(0, 112, 13,.2); }
+
+.emailDspName { font-family: Roboto; font-size: 1.6vh; } 
+.emailDspEmail { font-family: Roboto; font-size: 1.2vh; } 
+.emailDspType { text-align: right; color: rgba(189,185,183,1); font-size: 1vh; font-weight: bold; padding: 5px 0 0 0;  } 
+
         
 </style>
    {$dspPage}
@@ -4511,10 +4604,10 @@ ROWLINE;
       $ifname = ( trim($assval['investfname']) !== "" ) ? ", {$assval['investfname']} " : "";
       $iname = (trim($assval['investlname']) !== "" ) ? "{$assval['investlname']}{$ifname}" : ""; 
       $reqNbr = ( trim($assval['assignedreq']) !== "" ) ? "/{$assval['assignedreq']}" : "";
-
+//<div title=\"Email investigator and team\" onclick=\"generateDialog('qmsInvestigatorEmailer','{$assval['bgs']}');\"><i class=\"material-icons actionbtnicon\">email</i></div>
       $reqency = ( trim($assval['assignedreq']) !== "" ) ? " onclick=\"generateDialog('irequestdisplay','" . cryptservice($assval['assignedreq']) . "');\" " : ""; 
       $reqPopEnd = ( trim($assval['assignedreq']) !== "" ) ? "<div {$reqency} title=\"View request {$assval['assignedreq']}\"><i class=\"material-icons actionbtnicon\">pageview</i></div>" : "";
-      $assign = ( trim($assval['assignedto']) !== "" && ( trim($assval['assignedto']) !== "BANK" && trim($assval['assignedto']) !== "QC") ) ? "<div class=divLineHolder><div class=assignNamedsp>{$iname} ({$assval['assignedto']}{$reqNbr})</div><div class=alignerRight align=right>{$reqPopEnd}<div title=\"Email investigator and team\" onclick=\"generateDialog('qmsInvestigatorEmailer','{$assval['bgs']}');\"><i class=\"material-icons actionbtnicon\">email</i></div></div></div>" : "<div><div>-BANK-</div></div>";
+      $assign = ( trim($assval['assignedto']) !== "" && ( trim($assval['assignedto']) !== "BANK" && trim($assval['assignedto']) !== "QC") ) ? "<div class=divLineHolder><div class=assignNamedsp>{$iname} ({$assval['assignedto']}{$reqNbr})</div><div class=alignerRight align=right>{$reqPopEnd}</div></div>" : "<div><div>-BANK-</div></div>";
 
       $sdencry = ( trim($assval['shipdocrefid']) !== "" ) ? cryptservice($assval['shipdocrefid']) : "";
       $ship = ( trim($assval['shipdocrefid']) !== "" ) ? "<div class=divLineHolderSD>
@@ -4523,7 +4616,10 @@ ROWLINE;
                                                               <div>Status: {$assval['sdstatus']}</div>
                                                               <div>Shipped: [{$assval['shippeddate']}]</div>
                                                               <div>Sales Order: {$assval['salesorder']}</div> 
-                                                              <div onclick=\"navigateSite('shipment-document/{$sdencry}');\" title=\"View/Edit Shipment Document\"><i class=\"material-icons actionbtnicon\">pageview</i></div></div></div>" : "";
+                                                              <div onclick=\"navigateSite('shipment-document/{$sdencry}');\" title=\"View/Edit Shipment Document\"><i class=\"material-icons actionbtnicon\">pageview</i></div>
+                                                              <div title=\"Email investigator and team\" onclick=\"generateDialog('qmsInvestigatorEmailer','{$assval['bgs']}');\"><i class=\"material-icons actionbtnicon\">email</i></div>
+                                                            </div>
+                                                          </div>" : "";
     } else { 
       $prep = ( trim($assval['preparation']) !== "" ) ? " / {$assval['preparation']}" : "";
       $ifname = ( trim($assval['investfname']) !== "" ) ? ", {$assval['investfname']} " : "";
