@@ -22,7 +22,6 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";         
         $innerDialog = bldQMSInvestigatorEmailer ( $pdta['dialogid'] , $passedData );     
-        //$innerDialog = $passedData;
       break;        
       case 'qmsManageMoleTst':
         $pdta = json_decode($passedData, true);         
@@ -30,8 +29,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $titleBar = "Manage Immuno/Molecular Test Values";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";         
-        //$innerDialog = bldQMSGlobalSegmentUpdate ( $pdta['dialogid'] , $passedData );     
-        $innerDialog = $passedData;
+        $innerDialog =  bldImmunoMoleTestValues ( $pdta['dialogid'], $passedData );
       break;
      case 'qmsRestatusSegments':
         $pdta = json_decode($passedData, true);         
@@ -2699,10 +2697,12 @@ case 'qmsactionwork':
   <td class=topBtnHolderCell onclick="markQMSComplete();"><table class=topBtnDisplayer id=btnReloadGridWork><tr><td><i class="material-icons">done_all</i></td><td>Mark QA Complete</td></tr></table></td>
   
   <td class=topBtnHolderCell style="border-left: 4px double rgba(255,255,255,1);" onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnSendEmail><tr><td><i class="material-icons">textsms</i></td><td>Email</td></tr></table></td>
-  <td class=topBtnHolderCell onclick="generateDialog('qmsManageMoleTst','xxxx-xxxx');"><table class=topBtnDisplayer id=btnReloadGridWork><tr><td><i class="material-icons">list</i></td><td>Manage Immuno/Molecular Values</td></tr></table></td>
   
 </tr>
 BTNTBL;
+
+  //<td class=topBtnHolderCell onclick="generateDialog('qmsManageMoleTst','xxxx-xxxx');"><table class=topBtnDisplayer id=btnReloadGridWork><tr><td><i class="material-icons">list</i></td><td>Manage Immuno/Molecular Values</td></tr></table></td>
+
 
   //<td class=topBtnHolderCell>
   //  <div class=ttholder>
@@ -3409,6 +3409,42 @@ RTNTHIS;
 return $rtnThis;
 
 }
+
+function bldImmunoMoleTestValues ( $dialog, $passedData ) { 
+
+$moletest = json_decode(callrestapi("GET", dataTree . "/immuno-mole-testlist",serverIdent,serverpw),true);
+
+foreach ( $moletest['DATA'] as $k => $v ) {
+   $tstid = substr(("00000" . $v['menuid']),-5);
+   $tstlist .= "<div class=tstListItem><div class=menuidentifier>{$v['menuvalue']} [#{$tstid}]</div><div class=menudspitem>{$v['dspvalue']}</div></div>";
+}
+
+
+$rtnPage = <<<RTNPAGE
+<style>
+
+#dialogholder { display: grid; grid-template-columns: 1fr 2fr; grid-gap: 5px; }
+#testList { height: 30vh; border: 1px solid #000; overflow: auto; box-sizing: border-box; padding: 5px; }
+
+#headerDiv { font-family: Roboto; font-size: 1.8vh; font-weight: bold; padding-top: .5vh; padding-bottom: .5vh; text-align: center;  }  
+
+.tstListItem { margin-bottom: 10px; border-bottom: 1px solid rgba(145,145,145,.4); padding-bottom: 3px; padding-top: 3px; background: rgba(255,255,255,1);   }
+.tstListItem:hover { cursor: pointer; background: rgba(255,248,225,.4); }   
+.menuidentifier { font-size: 1vh; font-weight: bold; text-align: right; color: rgba(145,145,145,.3);  } 
+.menudspitem { font-family: Roboto; font-size: 1.4vh;   }  
+
+</style>
+
+<div id=headerDiv>Add Molecluar/Immuno Test Values</div>
+<div id=dialogholder> 
+  <div id=testList>{$tstlist}</div>
+  <div id=editor>&nbsp;</div>
+</div>
+RTNPAGE;
+  return $rtnPage;    
+}
+
+
 
 function bldQMSInvestigatorEmailer ( $dialog, $passedData ) { 
     
