@@ -388,9 +388,9 @@ class datadoers {
         $backRS = $conn->prepare( $backupSQL ); 
         $backRS->execute( array( ':bg' => "{$bg}%", ':hprresult' => $biohpr, ':usr' => "{$u['usr']}/QMS-QA-PROCESS"));
 
-        $qmsSQL = "update masterrecord.ut_procure_biosample set qcind = 1, QCMarkByOn = concat(:usr, now()), qcprocstatus = 'Q', qmsstatusby = :statby, qmsstatuson = now(), qmsnote = '' where replace(read_label,'_','') = :bg and hprresult = :biohpr and qcind = 0";
+        $qmsSQL = "update masterrecord.ut_procure_biosample set qcind = 1, QCMarkByOn = concat(:usr,' ', now()), qcprocstatus = 'Q', qmsstatusby = :statby, qmsstatuson = now(), qmsnote = '' where replace(read_label,'_','') = :bg and hprresult = :biohpr and qcind = 0";
         $qmsRS = $conn->prepare($qmsSQL); 
-        $qmsRS->execute( array( ':usr' => "{$u['usr']}", ':statby' => 'QMS-QA-PROCESS' . strtoupper($u['usr']), ':bg' => $bg, ':biohpr' => $biohpr));
+        $qmsRS->execute( array( ':usr' => "{$u['usr']}", ':statby' => 'QMS-QA-PROCESS-' . strtoupper($u['usr']), ':bg' => $bg, ':biohpr' => $biohpr));
 
         $responseCode = 200;
       }
@@ -622,6 +622,7 @@ substr(concat('000000',hpr.biohpr),-6) biohpr
 , ifnull(date_format(hpr.reviewedon,'%m/%d/%Y'),'') as reviewedon 
 , ifnull(hpr.reviewer,'') as reviewer
 , ifnull(hpr.inputby,'') as inputby
+,ifnull(hpr.reviewassignind,0) as reviewassignind                
 , ifnull(hpr.decision,'') as hprdecisionvalue
 , ifnull(dcs.dspvalue,'') as hprdecision
 , ifnull(hpr.speccat,'') as hprspeccat
@@ -978,7 +979,6 @@ PRISTINESQL;
       $sessid = session_id();
       //DO DATA CHECKS
 
-      //{"onbehalf":"111","segid":"448485","inconreason":"This is the reason","inconfurtheractions":"[[\"ADDENDUMREQUESTED\",\"Addendum for Pathology Report Needed\",\"\"]]","dialogid":"DWFEVu3gxjCOSMP"}
       ( !array_key_exists('onbehalf', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'onbehalf' is missing.  Fatal Error")) : "";
       ( !array_key_exists('segid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'segid' is missing.  Fatal Error")) : "";
       ( !array_key_exists('inconreason', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'inconreason' is missing.  Fatal Error")) : "";
@@ -1020,12 +1020,18 @@ PRISTINESQL;
 
       if ( trim($pdta['inconfurtheractions']) !== "" ) { 
         $fa = json_decode( $pdta['inconfurtheractions'] , true);
+        $reviewassignind = 0;
         foreach ( $fa as $fkey => $fval ) {
           $chkSQL = "SELECT * FROM four.sys_master_menus where menu = 'HPRFURTHERACTION' and menuvalue = :suppliedvalue";
           $chkRS = $conn->prepare($chkSQL);
           $chkRS->execute(array(':suppliedvalue' => $fval[0] ));
+          if ( $fval[0] === 'REVIEWREASSIGN') { 
+              $reviewassignind = 1;
+          }           
           ( $chkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'{$fval[0]}' DOES NOT APPEAR AS A VALUE ON THE HPR-FURTHER-ACTION MENU TREE. SEE CHTNEastern Informatics!")) : "";
         }
+      } else { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "'AT LEAST ONE FURTHER ACTION MUST BE STATED ON THE 'FURTHER ACTION' BOX."));
       }
 
       if ( trim($pdta['inconreason']) === "" ) {
@@ -1036,9 +1042,9 @@ PRISTINESQL;
          $decision = 'INCONCLUSIVE';
          //TODO:  IN THE FAR FUTURE MAKE THIS TRANSACTIONAL - THAT WOULD BE COOL 
          //INSERT HEAD  
-         $insHPRHeadSQL = "insert into masterrecord.ut_hpr_biosample (bgs, biogroupid,  bgreference,  reviewer, reviewedon, inputby,  decision, inconclusivetxt) values (:bgs, :biogroupid, :bgreference, :reviewer, now(), :inputby, :decision, :inconclusivetxt )";
+         $insHPRHeadSQL = "insert into masterrecord.ut_hpr_biosample (bgs, biogroupid,  bgreference,  reviewer, reviewedon, inputby,  decision, reviewassignind,  inconclusivetxt) values (:bgs, :biogroupid, :bgreference, :reviewer, now(), :inputby, :decision, :reviewassignind,  :inconclusivetxt )";
          $insHPRHeadRS = $conn->prepare($insHPRHeadSQL); 
-         $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => $decision, ':inconclusivetxt' => trim($pdta['inconreason'])));
+         $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => $decision, ':reviewassignind' => $reviewassignind, ':inconclusivetxt' => trim($pdta['inconreason'])));
          $hprheadid = $conn->lastInsertId();
 
          ////INSERT FURTHER ACTIONS
@@ -1047,13 +1053,13 @@ PRISTINESQL;
            $faInsSQL = "insert into masterrecord.ut_hpr_factions (biohpr, actiontypevalue, actiontype, actionnote, actionindicator, actionrequestedon) values (:biohpr, :actiontypevalue, :actiontype, :actionnote, 1, now())";
            $faInsRS = $conn->prepare($faInsSQL);
            
-           $masterfaSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule,objhprid,objpbiosample,objbgs,actioncode,actiondesc,actionnote,actionrequestedby,actionrequestedon) VALUES ('HPR',:hprid,:biosampleref,:bgs,:actioncode,:actiondesc,:actionnote,:rqstby,now())";
-           $masterfaRS = $conn->prepare($masterfaSQL);
+           //$masterfaSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule,objhprid,objpbiosample,objbgs,actioncode,actiondesc,actionnote,actionrequestedby,actionrequestedon) VALUES ('HPR',:hprid,:biosampleref,:bgs,:actioncode,:actiondesc,:actionnote,:rqstby,now())";
+           //$masterfaRS = $conn->prepare($masterfaSQL);
 
            $fa = json_decode( $pdta['inconfurtheractions'] , true);
            foreach ( $fa as $fkey => $fval ) {
              $faInsRS->execute(array( ':biohpr' => $hprheadid, ':actiontypevalue' => $fval[0], ':actiontype' => $fval[1], ':actionnote' => trim($fval[2])));
-             $masterfaRS->execute(array(':hprid' => $hprheadid, ':biosampleref' => $bg['biosamplelabel'], ':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':actioncode' => $fval[0], ':actiondesc' => $fval[1], ':actionnote' => trim($fval[2]), ':rqstby' => $reviewer));
+             //$masterfaRS->execute(array(':hprid' => $hprheadid, ':biosampleref' => $bg['biosamplelabel'], ':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':actioncode' => $fval[0], ':actiondesc' => $fval[1], ':actionnote' => trim($fval[2]), ':rqstby' => $reviewer));
            } 
          }
 
@@ -1114,6 +1120,7 @@ PRISTINESQL;
       ( !array_key_exists('rarereason', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'rarereason' is missing.  Fatal Error")) : "";
       ( !array_key_exists('specialinstructions', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'specialinstructions' is missing.  Fatal Error")) : "";
       ( !array_key_exists('generalcomments', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'generalcomments' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('reviewassignind' , $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'reviewassignind' is missing.  Fatal Error")) : "";
 
       //CHECK USER IS AN HPR REVIEWER
       $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowHPR = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
@@ -1223,13 +1230,15 @@ PRISTINESQL;
          //TODO:  IN THE FAR FUTURE MAKE THIS TRANSACTIONAL - THAT WOULD BE COOL 
 
          //INSERT HEAD  
-          $insHPRHeadSQL = "insert into masterrecord.ut_hpr_biosample (bgs, biogroupid,  bgreference,  reviewer, reviewedon, inputby,  decision, vocabularydecision, speccat,  site,  subsite,  dx,  subdiagnosis,  mets,  systemiccomobid,  tumorgrade,  tumorscale,  uninvolvedsample,  rarereason,  specialinstructions, generalComments,  technicianaccuracy, unusabletxt) values (:bgs, :biogroupid, :bgreference, :reviewer, now(), :inputby, :decision, :vocabularydecision, :speccat, :site, :subsite, :dx, :subdiagnosis, :mets, :systemiccomobid, :tumorgrade, :tumorscale, :uninvolvedsample, :rarereason, :specialinstructions, :generalcomments, :technicianaccuracy, :unusabletxt )";
+          $insHPRHeadSQL = "insert into masterrecord.ut_hpr_biosample (bgs, biogroupid,  bgreference,  reviewer, reviewedon, inputby,  reviewassignind, decision, vocabularydecision, speccat,  site,  subsite,  dx,  subdiagnosis,  mets,  systemiccomobid,  tumorgrade,  tumorscale,  uninvolvedsample,  rarereason,  specialinstructions, generalComments,  technicianaccuracy, unusabletxt) values (:bgs, :biogroupid, :bgreference, :reviewer, now(), :inputby, :reviewassignind, :decision, :vocabularydecision, :speccat, :site, :subsite, :dx, :subdiagnosis, :mets, :systemiccomobid, :tumorgrade, :tumorscale, :uninvolvedsample, :rarereason, :specialinstructions, :generalcomments, :technicianaccuracy, :unusabletxt )";
           $insHPRHeadRS = $conn->prepare($insHPRHeadSQL); 
+          
+          $rr = ( $pdta['reviewassignind'] === 'true' ) ? 1 : 0;
 
          if ( $unusableInd === 0 ) {
-           $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => strtoupper($pdta['decision']), ':vocabularydecision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':generalcomments' => trim($pdta['generalcomments']), ':technicianaccuracy' => trim($pdta['techaccuracy']),':unusabletxt' => '' ));
+           $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':reviewassignind' => $rr, ':decision' => strtoupper($pdta['decision']), ':vocabularydecision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':generalcomments' => trim($pdta['generalcomments']), ':technicianaccuracy' => trim($pdta['techaccuracy']),':unusabletxt' => '' ));
          } else { 
-           $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => 'UNUSABLE', ':vocabularydecision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':generalcomments' => trim($pdta['generalcomments']), ':technicianaccuracy' => trim($pdta['techaccuracy']), ':unusabletxt' => trim($pdta['unusabletxt'])  ));
+           $insHPRHeadRS->execute(array(':bgs' => strtoupper(preg_replace('/_/','',$bg['bgs'])), ':biogroupid' => $bg['biosamplelabel'], ':bgreference' => $bg['biosamplelabel'], ':reviewer' => $reviewer, ':inputby' => $u['usr'], ':decision' => 'UNUSABLE', ':reviewassignind' => $rr, ':vocabularydecision' => strtoupper($pdta['decision']), ':speccat' => strtoupper(trim($pdta['specimencategory'])), ':site' => strtoupper(trim($pdta['site'])), ':subsite' => strtoupper(trim($pdta['ssite'])), ':dx' => strtoupper(trim($pdta['diagnosis'])), ':subdiagnosis' => strtoupper(trim($pdta['diagnosismodifier'])), ':mets' => strtoupper(trim($pdta['metsfrom'])), ':systemiccomobid' => strtoupper(trim($pdta['systemic'])),':tumorgrade' => strtoupper(trim($pdta['tumorgrade'])), ':tumorscale' => strtoupper(trim($pdta['tumorgradescale'])), ':uninvolvedsample' => strtoupper(trim($pdta['uninvolved'])), ':rarereason' => trim($pdta['rarereason']), ':specialinstructions' => trim($pdta['specialinstructions']), ':generalcomments' => trim($pdta['generalcomments']), ':technicianaccuracy' => trim($pdta['techaccuracy']), ':unusabletxt' => trim($pdta['unusabletxt'])  ));
          }
          $hprheadid = $conn->lastInsertId();
 

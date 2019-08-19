@@ -4929,7 +4929,6 @@ function gatherAndInconReview( dialogid ) {
   dta['inconreason'] = byId('reasonInconclusiveTxt').value;
   dta['inconfurtheractions'] = byId('hprDGFAJsonHolder').value;
   dta['dialogid'] = dialogid; 
-  //console.log(JSON.stringify(dta));
   closeThisDialog( dialogid ); 
   byId('standardModalBacker').style.display = 'block';    
   var passdta = JSON.stringify(dta);
@@ -4969,6 +4968,7 @@ function gatherAndUnuseReview() {
   dta['rarereason'] = byId('fldRareReasonTxt').value;
   dta['generalcomments'] = byId('fldGeneralCmtsTxt').value;
   dta['specialinstructions'] = byId('fldSpecialInstructions').value;
+  dta['reviewassignind'] = byId('btnHPRReviewAssign').dataset.hselected;          
   var passdta = JSON.stringify(dta);
   generateDialog('hprUnusuableDialog', passdta );
 }
@@ -4992,7 +4992,7 @@ function gatherAndSaveReview() {
   dta['uninvolved'] = byId('fldPRCUnInvolvedValue').value;
   dta['tumorgrade'] = byId('fldTumorGrade').value;
   dta['tumorgradescale'] = byId('fldTumorGradeScaleValue').value;
-  dta['techaccuracy'] = byId('fldTechAccValue').value;
+  dta['techaccuracy'] = byId('fldTechAccValue').value;          
   var prcflds = document.getElementsByClassName("prcFld");
   var prcdta = new Object();
   for ( var i = 0; i < prcflds.length; i++ ) {
@@ -5004,7 +5004,8 @@ function gatherAndSaveReview() {
   dta['rarereason'] = byId('fldRareReasonTxt').value;
   dta['generalcomments'] = byId('fldGeneralCmtsTxt').value;
   dta['specialinstructions'] = byId('fldSpecialInstructions').value;
-
+  dta['reviewassignind'] = byId('btnHPRReviewAssign').dataset.hselected;          
+            
   byId('standardModalBacker').style.display = 'block';    
   var passdta = JSON.stringify(dta);
   var mlURL = "/data-doers/hpr-save-review";
@@ -5623,6 +5624,14 @@ function blankDesig( whichdesig ) {
       byId('dspHPRSystemic').innerHTML = byId('HPRWBTbl').dataset.sysm;
       break;
   }
+}
+            
+function selectRR() { 
+   if ( byId('btnHPRReviewAssign').dataset.hselected === 'false' ) {            
+      byId('btnHPRReviewAssign').dataset.hselected = 'true';     
+   } else { 
+      byId('btnHPRReviewAssign').dataset.hselected = 'false';                 
+   }
 }
            
 JAVASCR;

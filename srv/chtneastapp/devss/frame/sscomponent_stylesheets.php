@@ -227,8 +227,7 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 .tblBtn tr td:hover { background: rgba({$this->color_mblue},1); color: rgba({$this->color_white},1); cursor: pointer; }
 .tblBtn tr td.active { background: rgba({$this->color_darkgreen},1); }
 .tblBtn[data-aselected='1'] tr td { background: rgba({$this->color_darkgreen},1); color: rgba({$this->color_white},1); cursor: pointer; }
-
-
+.tblBtn[data-hselected='true'] tr td { background: rgba({$this->color_bred},1); color: rgba({$this->color_white},1); }
 
 /* DROP DOWN TABLES */
 .menuHolderDiv { position: relative; }
@@ -435,6 +434,33 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 .suggestionHolder { position: relative; }
 .suggestionDisplay {min-width: 25vw; position: absolute; left: 0; max-height: 30vh; min-height: 15vh; overflow: auto; z-index: 25; box-sizing: border-box; display: none;background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); }
 .suggestionTable { max-width: 24vw; box-sizing: border-box; }
+
+.attentionGetter {font-size: 1.6vh; text-align: center; padding-top: 10px; padding-bottom: 6px; background: rgba({$this->color_bred},1);  font-weight: bold; color: rgba({$this->color_white},1);  }
+
+
+/* INCONCLUSIVE WORKBENCH */ 
+#inconWorkbenchWrapper { display: grid; grid-template-columns: 1fr 3fr; grid-gap: 5px; }
+#inconWorkbenchWrapper #inconSideBar #dataRowOne { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; text-align: center; padding: 3px 0; }
+
+
+#associativemess { grid-row: 2; grid-column: 1 / 4; box-sizing: border-box;  border: 1px solid rgba({$this->color_zackgrey},1);   }
+  #associativemess #dataRowFour { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; text-align: center; padding: 3px 0; }
+  #associativemess #associativeTblDsp { font-size: 1.6vh; height: 42vh; overflow: auto; }
+  #associativemess #associativeTblDsp .headerCell { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 5px; font-size: 1.3vh; }
+  #associativemess #associativeTblDsp .cellTwo { width: 4vw; } 
+  #associativemess #associativeTblDsp .cellThree { width: 60vw; } 
+  #associativemess #associativeTblDsp .cellFour { width: 18vw; } 
+  #associativemess #associativeTblDsp .cellFive { width: 18vw; } 
+  #associativemess #associativeTblDsp .cellSix { width: 5vw; } 
+  #associativemess #associativeTblDsp .cellSeven { width: 10vw; }
+  #associativemess #associativeTblDsp .cellEight { width: 20vw; }
+  #associativemess #associativeTblDsp .cellNine { width: 20vw; } 
+  #associativemess #associativeTblDsp .dspDataCell { border-top: 2px solid rgba({$this->color_zackgrey},1); padding: 8px 4px; border-bottom: 1px solid rgba({$this->color_darkgrey},.6); border-right: 1px solid rgba({$this->color_darkgrey},.6); font-size: 1.5vh; }
+  #associativemess #associativeTblDsp .dspDataCellA { padding: 8px 4px; border-bottom: 1px solid rgba({$this->color_darkgrey},.6); border-right: 1px solid rgba({$this->color_darkgrey},.6); font-size: 1.5vh; font-size: 1.3vh; }
+  #associativemess #associativeTblDsp .mintbck { background: rgba({$this->color_darkgreen},.2); color: rgba({$this->color_zackgrey},1); }
+  #associativemess #associativeTblDsp .standardbck { color: rgba({$this->color_zackgrey},1); }
+  #associativemess #associativeTblDsp .inassdsp { padding: .5vh 3vw 3vh 3vw; display: none;  }
+  #associativemess #associativeTblDsp .inassdspthisgroup { padding: .5vh 3vw 3vh 3vw; display: block;  }
 
 
 STYLESHEET;

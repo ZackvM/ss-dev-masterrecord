@@ -2085,7 +2085,14 @@ MOLETBL;
   </tr>
   <!-- //TODO ADD LATER TO TOOL BAR <tr><td style="padding: 3vh 0 0 0;"><center><div class="upload-btn-wrapper"><button class="btn">Upload Supporting Files</button><input type="file" name="myfile" name="photos[]" id=zckPicSelector accept="image/jpeg, image/png" multiple  /></div></td></tr> //-->
   <tr>
-    <td align=right><table border=0><tr><td> <table class=tblBtn id=btnHPRReviewSave style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table> </td><td> <table class=tblBtn id=btnHPRReviewNotFit style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Save::Unusable</td></tr></table> </td><td> <table class=tblBtn id=btnCancel style="width: 6vw;" onclick="navigateSite('hpr-review/{$rurl[2]}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table> </td></tr></table>    </td>
+    <td align=right>
+        <table border=0 width=100%>
+            <tr><td> <table class=tblBtn id=btnHPRReviewAssign style="width: 6vw;" data-hselected="false" onclick="selectRR();"><tr><td style="font-size: 1.3vh;"><center>Review Assignment</td></tr></table> </td>
+                    <td width=90%>&nbsp;</td>
+                    <td> <table class=tblBtn id=btnHPRReviewSave style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table> </td>
+                    <td> <table class=tblBtn id=btnHPRReviewNotFit style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Save::Unusable</td></tr></table> </td>
+                    <td> <table class=tblBtn id=btnCancel style="width: 6vw;" onclick="navigateSite('hpr-review/{$rurl[2]}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table> </td>
+            </tr></table>    </td>
   </tr>
 </table>
 
@@ -4500,7 +4507,7 @@ $pg = <<<PAGECONTENT
                 <table>
                   <tr>
                     <td> <table class=tblBtn id=btnIHPRReviewSave style="width: 6vw;" onclick="gatherAndInconReview('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Save</td></tr></table>  </td>
-                    <td> <table class=tblBtn id=btnIHPRReviewSave style="width: 6vw;" onclick="closeThisDialog('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table> </td>
+                    <td> <table class=tblBtn id=btnIHPRReviewCancel style="width: 6vw;" onclick="closeThisDialog('{$dialogid}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table> </td>
                   </tr>
                 </table>   
             </td></tr>
@@ -4541,10 +4548,53 @@ function bldQAWorkbench ( $encryreviewid ) {
     }
   if ( $headdta['hprdecisionvalue'] === 'INCONCLUSIVE' ) {
      //INCONCLUSIVE WORKBENCH GOES HERE    
-    $workbench = <<<WORKBENCH
-INCONCLUSIVE DISPLAY GOES HERE     
+      
+     $hprDecDataDisplay = bldQAWorkbench_hprData( $headdta );
+     $assWork = bldQAWorkBench_assDsp ( $ass, $headdta, 1 ); 
+     
+     
+     //TODO:  TURN INTO A WEBSERVICE
+     
+     require(serverkeys . "/sspdo.zck");    
+     $faSQL = "SELECT actiontype, actionnote, date_format(actionrequestedon,'%m/%d/%Y') as actionrequestedon  FROM masterrecord.ut_hpr_factions where biohpr = :biohpr";
+     $faRS = $conn->prepare($faSQL);
+     $faRS->execute(array(':biohpr' => (int)$headdta['biohpr']));
+     
+     if ( $faRS->rowCount() > 0 ) { 
+         foreach ( $faRS as $faKey => $faVal ) {
+            $addnote = ( trim($faVal['actionnote']) !== "" ) ? "<br>[{$faVal['actionnote']}]" : ""; 
+            $faListInner .= "<div class=faListItem>{$faVal['actiontype']} ({$faVal['actionrequestedon']}) {$addnote}</div>";
+         }
+         $faList = "<div class=dataHolderDiv id=hprDataDecision><div class=datalabel>Further/Lab Action Requested List</div><div class=datadisplay>{$faListInner}</div></div>";                     
+     }
+    
+     
+     $biohpr =  $headdta['biohpr']; 
+     $workbench = <<<WORKBENCH
+<div id=inconWorkbenchWrapper>            
+     <div id=inconSideBar>       
+            {$hprDecDataDisplay} 
+            {$faList}
+     </div>
+     <div id=inconWorkBenchArea style="border: 1px solid #000;">
+         
+
+     </div>
+     <div id=associativemess>
+            <div id=dataRowFour>Associated Biogroups and All Segments</div>
+            <div id=associativeTblDsp>
+              {$assWork}
+            </div>
+     </div>
+</div>
+            
 WORKBENCH;
     $topBtnBar = generatePageTopBtnBar('qmsactionworkincon', "", $_SERVER['HTTP_REFERER'] );
+  
+    
+    
+    
+    
   } else { 
   
     $prnbr = substr(("000000" . $headdta['pathreportid']),-6);
@@ -4590,7 +4640,7 @@ PGCONTENT;
   return $pg;
 }
 
-function bldQAWorkBench_assDsp ( $ass, $headdta ) { 
+function bldQAWorkBench_assDsp ( $ass, $headdta, $inconind = 0 ) { 
 
 //ALL ASSOCIATIVE SEGMENTS
 $assbg = "";
@@ -4646,6 +4696,7 @@ ROWLINE;
       $assign = ( trim($assval['assignedto']) !== "" && ( trim($assval['assignedto']) !== "BANK" && trim($assval['assignedto']) !== "QC") ) ? "<div class=divLineHolder><div class=assignNamedsp>{$iname} ({$assval['assignedto']}{$reqNbr})</div><div class=alignerRight align=right>{$reqPopEnd}</div></div>" : "<div><div>-BANK-</div></div>";
 
       $sdencry = ( trim($assval['shipdocrefid']) !== "" ) ? cryptservice($assval['shipdocrefid']) : "";
+      $thisemailer = ( $inconind === 1 ) ? "" : "<div title=\"Email investigator and team\" onclick=\"generateDialog('qmsInvestigatorEmailer','{$assval['bgs']}');\"><i class=\"material-icons actionbtnicon\">email</i></div>";
       $ship = ( trim($assval['shipdocrefid']) !== "" ) ? "<div class=divLineHolderSD>
                                                             <div class=divLineHolderSDRow>
                                                               <div>" . substr(('000000' . $assval['shipdocrefid']),-6) . "</div>
@@ -4653,7 +4704,7 @@ ROWLINE;
                                                               <div>Shipped: [{$assval['shippeddate']}]</div>
                                                               <div>Sales Order: {$assval['salesorder']}</div> 
                                                               <div onclick=\"navigateSite('shipment-document/{$sdencry}');\" title=\"View/Edit Shipment Document\"><i class=\"material-icons actionbtnicon\">pageview</i></div>
-                                                              <div title=\"Email investigator and team\" onclick=\"generateDialog('qmsInvestigatorEmailer','{$assval['bgs']}');\"><i class=\"material-icons actionbtnicon\">email</i></div>
+                                                              {$thisemailer}
                                                             </div>
                                                           </div>" : "";
     } else { 
@@ -4812,14 +4863,20 @@ $dx .= ( trim($headdta['hprdxmod']) !== "" ) ? ( trim($dx) !== "" ) ? " :: {$hea
 $mets = ( trim( $headdta['hprmets'] ) !== "" ) ? "<div class=dataHolderDiv id=hprDataMETS><div class=datalabel>Metastatic FROM</div><div class=datadisplay>{$headdta['hprmets']}&nbsp;</div></div>"  : "";
 $como = ( trim( $headdta['hprcomobid']) !== "" ) ? "<div class=dataHolderDiv id=hprDataCoMo><div class=datalabel>Systemic Diagnosis and/or Co-Mobidity</div><div class=datadisplay>{$headdta['hprcomobid']}&nbsp;</div></div>"  : "";
 $cmtRR = ( trim($headdta['hprrarereason']) !== "" ) ? "<div class=dataHolderDiv id=hprDataRareReason><div class=datalabel>Comments : Rare Reason</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprrarereason']}&nbsp;</div></div>"  : "";
-$cmtGC = ( trim($headdta['hprgeneralcomments']) !== "" ) ? "<div class=dataHolderDiv id=hprDataGeneralComments><div class=datalabel>Comments : General Comments</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprgeneralcomments']}&nbsp;</div></div>"  : "";
+$cmtGC = ( trim($headdta['hprgeneralcomments']) !== "" ) ? "<div class=dataHolderDiv id=hprDataGeneralComments><div class=datalabel>Comments : HPR Comments</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprgeneralcomments']}&nbsp;</div></div>"  : "";
 $cmtSI = ( trim($headdta['hprspecialinstructions']) !== "" ) ? "<div class=dataHolderDiv id=hprDataSpecialInstructions><div class=datalabel>Comments : Special Instructions</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprspecialinstructions']}&nbsp;</div></div>"  : "";
 $cmtINC = ( trim($headdta['hprinconclusivetext']) !== "" ) ? "<div class=dataHolderDiv id=hprDataInconclusiveText><div class=datalabel>Comments : Inconclusive Text</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprinconclusivetext']}&nbsp;</div></div>"  : "";
 $cmtUU =  ( trim($headdta['hprunusabletext']) !== "" ) ? "<div class=dataHolderDiv id=hprDataInconclusiveText><div class=datalabel>Comments : Unusable Text</div><div class=\"datadisplay  cmtdsp\">{$headdta['hprunusabletext']}&nbsp;</div></div>"  : "";
 
+$reviewreassig = ( (int)$headdta['reviewassignind'] === 1 ) ? "<div class=dataHolderDiv><div class=\"attentionGetter\" >REVIEW ASSIGNMENT</div></div>" : "";
+
+
+
+
 $rtnThis = <<<RTNTHIS
 <div id=dataRowOne data-hprdecision="{$headdta['hprdecisionvalue']}"  data-encyreviewid="{$encyhpr}" data-encybg="{$encybg}">HPR Decision</div>
 <div class=dataHolderDiv id=hprDataDecision><div class=datalabel>Decision</div><div class=datadisplay>{$headdta['hprdecision']} (Review #: {$headdta['biohpr']})&nbsp;</div></div>
+{$reviewreassig}
 <div class=dataHolderDiv id=hprDataSpecCat><div class=datalabel><span class=smlFont>[HPR Decision Designation]</span><br>Specimen Category :: Site :: Sub-Site // Diagnosis :: Modifier</div><div class="datadisplay cmtdsp">{$headdta['hprspeccat']} :: {$asite} {$dx} &nbsp;</div></div>
 {$mets}
 {$como}
