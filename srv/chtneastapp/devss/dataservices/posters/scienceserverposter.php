@@ -34,6 +34,107 @@ function __construct() {
 
 class datadoers {
 
+    function savefurtheraction ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ($rs->rowCount() === 1) { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      } else { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+      }
+
+
+
+      if ( $errorInd === 0 ) {        
+
+      ( !array_key_exists('rqstPayload', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'rqstPayload' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('bioReference', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'bioReference' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('actionsValue', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'actionsValue' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('priority', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'priority' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('notifycomplete', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'notifycomplete' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('agent', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'agent' DOES NOT EXIST.")) : ""; 
+      
+
+      if ( $errorInd === 0 ) {
+  
+        ( trim( $pdta['rqstPayload'] ) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  'rqstPayload' CANNOT BE EMPTY")) : "";
+        ( trim( $pdta['bioReference'] ) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'Biosample Ref #' IS A REQUIRED FIELD - PLEASE SUPPLY A VALUE AND TRY AGAIN.")) : "";
+        ( trim( $pdta['actionsValue'] ) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'Action to Take' IS A REQUIRED FIELD - PLEASE SUPPLY A VALUE AND TRY AGAIN.")) : "";
+        ( trim( $pdta['priority'] ) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'Priority' IS A REQUIRED FIELD - PLEASE SUPPLY A VALUE AND TRY AGAIN.")) : "";
+
+        if ( $errorInd === 0 ) { 
+          $chkSQL = "SELECT dspvalue FROM four.sys_master_menus where menu = :menuval and menuvalue = :chkval";
+          $chkRS = $conn->prepare($chkSQL); 
+          $chkRS->execute(array(':menuval' => 'FAACTIONLIST', ':chkval' => trim($pdta['actionsValue']) )); 
+          if ( $chkRS->rowCount() <> 1 ) { 
+            (list( $errorInd, $msgArr[] ) = array(1 , "'Action to Take' MENU VALUE NOT FOUND - PLEASE SUPPLY A TRUE VALUE AND TRY AGAIN."));
+          } else { 
+            $chkAct = $chkRS->fetch(PDO::FETCH_ASSOC);
+            $actionDsp = $chkAct['dspvalue'];
+          }
+
+          $chkRS->execute(array(':menuval' => 'FAPRIORITYSCALE', ':chkval' => trim($pdta['priority']) ));
+          if ( $chkRS->rowCount() <> 1 ) { 
+            (list( $errorInd, $msgArr[] ) = array(1 , "'Priority' MENU VALUE NOT FOUND - PLEASE SUPPLY A TRUE VALUE AND TRY AGAIN."));
+          }
+          if ( trim( $pdta['duedate'] ) !== "" ) { 
+            if ( ssValidateDate( $pdta['duedate'], 'm/d/Y') <> 1 ) {
+              (list( $errorInd, $msgArr[] ) = array(1 , "THE SUPPLIED DUE DATE IS INVALID ({$pdta['duedate']})")); 
+            } else { 
+              $d = DateTime::createFromFormat('m/d/Y', $pdta['duedate']);
+              $dd = $d->format('Y-m-d');
+            }
+          } else { 
+             $dd = "1900-01-01";
+          }
+
+          if ( $errorInd === 0 ) { 
+            //"{\"rqstPayload\":\"{\\\"requestingmodule\\\":\\\"QMS-QA\\\",\\\"biohpr\\\":\\\"018623\\\",\\\"slidebgs\\\":\\\"83239T003\\\",\\\"bgreadlabel\\\":\\\"83239T\\\",\\\"pbiosample\\\":\\\"83239.00000000\\\"}\",\"bioReference\":\"83239T003\",\"actionsValue\":\"BIOSAMPLEPROC\",\"actionNote\":\"This is a note\",\"agent\":\"proczack\",\"priority\":\"FANORMAL\",\"duedate\":\"08\/30\/2019\"}"  
+
+              $rqstpayload = json_decode( $pdta['rqstPayload'], true );       
+              $notify = ( (int)$pdta['notifycomplete'] === 1 ) ? 1 : 0;
+
+              $faInsSQL = "insert into masterrecord.ut_master_furtherlabactions ( frommodule, objhprid, objpbiosample, bgreadlabel, objbgs, assignedagent, actioncode, actiondesc, actionnote, notifyOnComplete, duedate, prioritymarkcode, actionrequestedby, actionrequestedon) values ( :frommodule, :objhprid, :objpbiosample, :bgreadlabel, :objbgs, :assignedagent, :actioncode, :actiondesc, :actionnote, :notifyOnComplete, :duedate, :prioritymarkcode, :actionrequestedby, now())"; 
+              $faInsRS = $conn->prepare($faInsSQL); 
+              $faInsRS->execute(array(
+                ':frommodule' => $rqstpayload['requestingmodule']
+               ,':objhprid' => $rqstpayload['biohpr']
+               ,':objpbiosample' => $rqstpayload['pbiosample']
+               ,':bgreadlabel' => $rqstpayload['bgreadlabel']
+               ,':objbgs' => $rqstpayload['slidebgs'] 
+               ,':assignedagent' => $pdta['agent'] 
+               ,':actioncode' => $pdta['actionsValue'] 
+               ,':actiondesc' => $actionDsp
+               ,':actionnote' => $pdta['actionNote']
+               ,':notifyOnComplete' => $notify
+               ,':duedate' => $dd
+               ,':prioritymarkcode' => $pdta['priority']
+               ,':actionrequestedby' => $u['usr']
+              ));
+                         
+              $responseCode = 200;
+          }
+        } 
+      }
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;             
+    }
+
     function qmssendemailletter ( $request, $passdata ) { 
 //{"emaillist":["mohammad.zafari@verseautx.com","tanya@verseautx.com"],"includeme":false,"includechtn":true,"includepr":true,"emailtext":"Dear Dr. Tanya Novobrantseva:\n\nYo!  Here's your Pathology Report for 87906T003 ...","bgs":"87906T003","shipdocrefid":"005536","shippeddate":"06/20/2019","prepmethod":"FRESH","preparation":"DMEM","dxspecimencategory":"MALIGNANT","dxsite":"KIDNEY","dxssite":"","dxdx":"CARCINOMA","dxmod":"RENAL CELL - CLEAR CELL -CONVENTIONAL","designation":"[MALIGNANT] KIDNEY :: CARCINOMA / RENAL CELL - CLEAR CELL -CONVENTIONAL ","courier":"UPS","tracknbr":"","salesorder":"006884","dialogid":"L6msAO690cor9x5"}
       $rows = array(); 
@@ -77,9 +178,8 @@ class datadoers {
       }
 
 
-      //TODO:  REMOVE THIS FOR PRODUCTION
+      //TODO:  REMOVE THIS FOR PRODUCTION - THIS LINE BLANKS THE PASSED ARRAY OF EMAILS 
       $pdta['emaillist'] = array();
-
 
       if ( $pdta['includeme'] ) { 
         $pdta['emaillist'][] = $u['emailaddress'];

@@ -901,7 +901,8 @@ function getShipmentDocument($sdid, $originalURL) {
                    //TODO: MAKE THIS A WEBSERVICE 
                    $chkSQL = "SELECT * FROM masterrecord.ut_master_furtherlabactions where frommodule = :module and objpbiosample = :pbio and actioncode = :actioncode and objshipdoc = :objshipdoc"; 
                    $chkRS = $conn->prepare($chkSQL);
-                   $chkRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-' . $dtl['proctype'], ':objshipdoc' => $sdid));
+                   $chkRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-S', ':objshipdoc' => $sdid));
+                   //$chkRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-' . $dtl['proctype'], ':objshipdoc' => $sdid));
                    if ( $chkRS->rowCount() === 0 ) {
                      //ADD MIA
                      $insSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule,objshipdoc,objpbiosample,actioncode,actiondesc,actionrequestedby,actionrequestedon) VALUES ('SHIPPING',:objshipdoc,:biosampleref,:miatype,'PRE-QMS DIRECT SHIPMENT',:rqstby,now())";

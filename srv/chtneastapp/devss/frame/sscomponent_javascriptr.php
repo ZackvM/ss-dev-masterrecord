@@ -1725,6 +1725,47 @@ document.addEventListener('DOMContentLoaded', function() {
   
 }, false);
 
+function makeFurtherActionRequest () {
+  var obj = new Object(); 
+  obj['rqstPayload'] = byId('faFldRequestJSON').value.trim(); 
+  obj['bioReference'] = byId('faFldReference').value.trim();
+  obj['actionsValue'] = byId('faFldActionsValue').value.trim(); 
+  obj['actionNote'] = byId('faFldNotes').value.trim(); 
+  obj['agent'] = byId('faFldAssAgentValue').value.trim();
+  obj['priority'] = byId('faFldPriorityValue').value.trim(); 
+  obj['duedate'] = byId('faFldByDate').value.trim();
+  obj['notifycomplete'] = byId('faFldNotifyComplete').checked;
+  var passdta = JSON.stringify(obj); 
+  var mlURL = "/data-doers/save-further-action";
+  universalAJAX("POST",mlURL,passdta,answerFurtherActionRequests,1);
+}
+
+function answerFurtherActionRequests( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+      var msgs = JSON.parse(rtnData['responseText']);
+      var dspMsg = ""; 
+      msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+      });
+      alert("FURTHER ACTION ERROR:\\n"+dspMsg);
+   } else {
+     byId('faFldActionsValue').value = "";
+     byId('faFldActions').value = "";
+     byId('faFldNotes').value = ""; 
+     byId('faFldAssAgentValue').value = "";
+     byId('faFldAssAgent').value = "";
+     byId('faFldPriorityValue').value = "";
+     byId('faFldPriority').value = "";
+     byId('faFldByDate').value = "";
+     byId('faFldNotifyComplete').checked = false;
+     alert('Saved');
+     //BUILD GRID
+   }        
+}
+
+
+
+
 
 function answerSearchVocabulary(rtnData) { 
   if (byId('srchVocRsltDisplay')) {

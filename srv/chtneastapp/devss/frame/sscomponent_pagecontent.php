@@ -3451,6 +3451,151 @@ RTNPAGE;
   return $rtnPage;    
 }
 
+function bldFurtherActionDialog ( $dialog, $passedData ) { 
+
+//PASSEDDATA = {"biohpr":"019283","slidebgs":"79344T002","bgreadlabel":"79344T","pbiosample":"79344.00000000"} 
+$pdta = json_decode( $passedData, true );
+
+require(serverkeys . "/sspdo.zck");
+
+//$pastFASQL = "SELECT ifnull(fa.frommodule,'') as frommodule, ifnull(fa.objbgs,'') as objbgs, ifnull(fa.objpbiosample,'') as objpbiosample, ifnull(fam.dspvalue,'') as actiondescription, ifnull(fa.actionnote,'') as actionnote, ifnull(fa.actionrequestedby,'') as actionrequestedby, date_format(fa.actionrequestedon,'%m/%d/%Y') as actionrequestedon, if (ifnull(fa.actioncompletedby,'') = '','No','Yes') as actioncompleted FROM masterrecord.ut_master_furtherlabactions fa left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST') as fam on fa.actioncode = fam.menuvalue where 1 = 1  and objpbiosample = :pbiosample";
+//$pastFARS = $conn->prepare($pastFASQL); 
+//$pastFARS->execute(array(':pbiosample' => (float)$pdta['pbiosample']));
+//$pastFA = $pastFARS->fetch(PDO::FETCH_ASSOC);
+//$pf = $pdta['pbiosample'];
+
+$agentListSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and allowInd = 1 and primaryInstCode = 'HUP' order by friendlyname";
+$agentListRS = $conn->prepare($agentListSQL); 
+$agentListRS->execute();
+//$agentList = $agentListRS->fetch(PDO::FETCH_ASSOC);
+$agnt = "<table border=0 class=menuDropTbl>";
+  $agnt .= "<tr><td onclick=\"fillField('faFldAssAgent','','');\" class=ddMenuItem align=right style=\"font-size: 1.1vh;\">[clear]</td></tr>";
+while ( $al = $agentListRS->fetch(PDO::FETCH_ASSOC)) { 
+  $agnt .= "<tr><td onclick=\"fillField('faFldAssAgent','{$al['originalaccountname']}','{$al['dspagent']}');\" class=ddMenuItem>{$al['dspagent']}</td></tr>";
+}
+$agnt .= "</table>";
+$agntmnu = "<div class=menuHolderDiv><input type=hidden id=faFldAssAgentValue value=\"\"><input type=text id=faFldAssAgent READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddHTR>{$agnt}</div></div>";
+
+$faaarr = json_decode(callrestapi("GET", dataTree . "/global-menu/further-action-actions",serverIdent, serverpw), true);
+$faa = "<table border=0 class=menuDropTbl>";
+$givendspvalue = "";
+$givendspcode = "";
+foreach ($faaarr['DATA'] as $faaval) {
+  if ((int)$agval['useasdefault'] === 1 ) { 
+    $givendspcode = $agval['lookupvalue'];
+    $givendspvalue = $agval['menuvalue'];
+  }
+  $faa .= "<tr><td onclick=\"fillField('faFldActions','{$faaval['codevalue']}','{$faaval['menuvalue']}');\" class=ddMenuItem>{$faaval['menuvalue']}</td></tr>";
+}
+$faa .= "</table>";
+$faamnu = "<div class=menuHolderDiv><input type=hidden id=faFldActionsValue value=\"{$givendspcode}\"><input type=text id=faFldActions READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddHTR>{$faa}</div></div>";
+
+$htrarr = json_decode(callrestapi("GET", dataTree . "/global-menu/further-action-priorities",serverIdent, serverpw), true);
+$agm = "<table border=0 class=menuDropTbl>";
+$givendspvalue = "";
+$givendspcode = "";
+foreach ($htrarr['DATA'] as $agval) {
+  if ((int)$agval['useasdefault'] === 1 ) { 
+    $givendspcode = $agval['lookupvalue'];
+    $givendspvalue = $agval['menuvalue'];
+  }
+  $agm .= "<tr><td onclick=\"fillField('faFldPriority','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+}
+$agm .= "</table>";
+$htrmnu = "<div class=menuHolderDiv><input type=hidden id=faFldPriorityValue value=\"{$givendspcode}\"><input type=text id=faFldPriority READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddHTR>{$agm}</div></div>";
+
+$pastFASQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid , if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where objpbiosample = :pbiosample order by idlabactions asc";
+$pastFARS = $conn->prepare( $pastFASQL ); 
+$pastFARS->execute(array(':pbiosample' => $pdta['pbiosample']));
+
+if ( $pastFARS->rowCount() < 1 ) {
+    //TODO: SET PF Default
+} else {
+  $pfaTbl = "<table border=1>";   
+  while ( $f = $pastFARS->fetch(PDO::FETCH_ASSOC)) { 
+    $pfaTbl .= "<tr><td>{$f['faid']}</td><td>{$f['completedind']}</td><td>{$f['biosampleref']}</td></tr>";
+  }
+  $pfaTbl .= "</table>";
+}
+
+
+$dspPage = <<<DSPPAGE
+<div id=faWrapper>
+<table border=0>
+  <tr><td id=faHead>Further Actions <input type=hidden id=faFldRequestJSON value='{$passedData}'></td></tr>
+  <tr><td>
+<table border=0><tr>
+  <td><div class=faDivHolder><div class=dspLabel>Biosample Ref # *</div><div class=elemHolder><input type=text id=faFldReference class="inputFld" value="{$pdta['slidebgs']}"></div></div></td>
+  <td><div class=faDivHolder><div class=dspLabel>Action to Take *</div><div class=elemHolder>{$faamnu}</div></div></td>
+  <td><div class=faDivHolder><div class=dspLabel>Notes</div><div class=elemHolder><input type=text id=faFldNotes class="inputFld" value=""></div></div></td>
+  <td><div class=faDivHolder><div class=dspLabel>Assign Agent</div><div class=elemHolder>{$agntmnu}</div></div></td>
+  <td><div class=faDivHolder><div class=dspLabel>Priority *</div><div class=elemHolder>{$htrmnu}</div></div></td>
+  <td><div class=faDivHolder><div class=dspLabel>By Date (mm/dd/yyyy)</div><div class=elemHolder><input type=text id=faFldByDate class="inputFld" value=""></div></div></td>
+</tr>
+<tr><td colspan=6 align=right><input type=checkbox id=faFldNotifyComplete><label for=faFldNotifyComplete>Notify me when complete</label></td></tr>
+<tr><td colspan=6 align=right><button type=button onclick="makeFurtherActionRequest();">Save</button></td></tr>
+</table>
+</td>
+</tr>
+<tr><td>
+<div id=dspOtherFurtherActions>
+{$pfaTbl} 
+
+</div>
+</td></tr>
+
+</table>
+</div>
+DSPPAGE;
+
+$rtnPage = <<<RTNPAGE
+<style>
+
+#faWrapper { display: grid; margin: 0 5px ; } 
+#faHead { grid-row: 1; text-align: center; font-family: Roboto; font-weight: bold; font-size: 1.6vh; color: rgba( 255,255,255,1 ); border-bottom: 1px solid rgba(0,32,113,1); background: rgba(100,149,237,1);  } 
+#faRowOne {   }
+.dspLabel { font-family: Roboto; font-size: 1.2vh; font-weight: bold; color: rgba( 0,32,113,1 ); padding-top: 5px; padding-bottom: 5px; }
+
+input { font-size: 1.2vh; padding: 10px 5px; }
+
+button { background: rgba(255,255,255,1); border: 1px solid rgba(0,32,113,1); padding: 10px 7px; font-family: Roboto; font-size: 1.2vh; font-weight: bold; color: rgba( 0,32,113,1 );  } 
+button:hover { background: rgba(255,248,225,.6); cursor: pointer; } 
+
+.ddMenuItem {font-size: 1.4vh; }  
+
+#faFldReference { width: 6vw; }
+#faFldPriority { width: 9vw; }
+#faFldByDate { width: 8vw; } 
+#faFldActions { width: 14vw; } 
+#faFldNotes { width: 25vw; }
+#faFldAssAgent { width: 10vw; }
+
+
+#dspOtherFurtherActions {  border: 1px solid rgba( 0,32,113,1 );  height: 15vh; overflow: auto;  } 
+
+
+</style>
+{$dspPage}
+RTNPAGE;
+  return $rtnPage;    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 function bldQMSInvestigatorEmailer ( $dialog, $passedData ) { 
@@ -3534,8 +3679,6 @@ $elementals .= "<div class=elementalInsert onclick=\"insertAtCursor(byId('emailT
 $elementals .= "<div class=elementalInsert onclick=\"insertAtCursor(byId('emailTextGoeshere'),'{$head['tracknbr']}');\">Track #</div>";
 $elementals .= "<div class=elementalInsert onclick=\"insertAtCursor(byId('emailTextGoeshere'),'{$desig}');\">Designation</div>";
 
-
-
 $dspPage = <<<DSPPAGE
 <div id=emailBuilderHold>
   <div id=headLine>Send a message to Investigator {$head['investname']} &amp; Team</div>
@@ -3547,17 +3690,12 @@ $dspPage = <<<DSPPAGE
       <div><input type=checkbox id=incCHTN><label for=incCHTN>Include a copy to CHTNEast</label></div>   
       <div><input type=checkbox id=incPR><label for=incPR>Include a copy of Pathology Report</label></div>   
       <!-- <div><input type=checkbox id=incSD><label for=incSD>Include a copy of Ship-Doc</label></div> //-->  
-
     </div>
     <div id=sendBtn><button type=button onclick="sendQMSEmail('{$dialog}');">Send</button></div></div>
   </div>
   <div id=insertElementals {$elementallist}>{$elementals}   </div>
-  
-
-</div>
-        
+</div>        
 DSPPAGE;
-
 
 $rtnPage = <<<RTNPAGE
 <style>
@@ -4567,9 +4705,15 @@ function bldQAWorkbench ( $encryreviewid ) {
          }
          $faList = "<div class=dataHolderDiv id=hprDataDecision><div class=datalabel>Further/Lab Action Requested List</div><div class=datadisplay>{$faListInner}</div></div>";                     
      }
-    
-     
-     $biohpr =  $headdta['biohpr']; 
+         
+     $faArr['requestingmodule'] = "QMS-QA";
+     $faArr['biohpr'] = $headdta['biohpr'];
+     $faArr['slidebgs'] = $headdta['slidebgs'];
+     $faArr['bgreadlabel'] = $headdta['bsreadlabel'];
+     $faArr['pbiosample'] = $headdta['pbiosample'];
+
+     $actiondialog = bldFurtherActionDialog ('xxxx-xxxxx', json_encode( $faArr) );
+
      $workbench = <<<WORKBENCH
 <div id=inconWorkbenchWrapper>            
      <div id=inconSideBar>       
@@ -4577,7 +4721,10 @@ function bldQAWorkbench ( $encryreviewid ) {
             {$faList}
      </div>
      <div id=inconWorkBenchArea style="border: 1px solid #000;">
-         
+
+     {$actiondialog}
+
+     {$h} 
 
      </div>
      <div id=associativemess>

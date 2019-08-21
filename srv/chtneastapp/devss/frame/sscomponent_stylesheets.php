@@ -445,7 +445,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 
 #associativemess { grid-row: 2; grid-column: 1 / 4; box-sizing: border-box;  border: 1px solid rgba({$this->color_zackgrey},1);   }
   #associativemess #dataRowFour { background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); font-size: 1.8vh; font-weight: bold; text-align: center; padding: 3px 0; }
-  #associativemess #associativeTblDsp { font-size: 1.6vh; height: 42vh; overflow: auto; }
+  #associativemess #associativeTblDsp { font-size: 1.6vh;  }
   #associativemess #associativeTblDsp .headerCell { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 5px; font-size: 1.3vh; }
   #associativemess #associativeTblDsp .cellTwo { width: 4vw; } 
   #associativemess #associativeTblDsp .cellThree { width: 60vw; } 

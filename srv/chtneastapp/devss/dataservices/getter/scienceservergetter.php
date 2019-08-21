@@ -1215,6 +1215,15 @@ function hprrequestcode($whichobj, $rqst) {
 
 class globalMenus {
 
+
+    function furtheractionactions() { 
+        return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' and dspind = 1 order by dsporder";
+    }
+
+    function furtheractionpriorities() { 
+        return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE' and dspind = 1 order by dsporder";
+    }
+
     function hprreturnnonfinishedreasons() { 
         return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'HPRRTNINCOMPLETEREASON' and dspind = 1 order by dsporder";
     }

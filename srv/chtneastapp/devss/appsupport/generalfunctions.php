@@ -3,7 +3,12 @@
 function testerfunction() { 
 return "RETURN THIS VALUE";
 }
- 
+
+function ssValidateDate($date, $format = 'Y-m-d') {
+  $d = DateTime::createFromFormat($format, $date);
+  return $d && $d->format($format) === $date;
+}
+
 function getBrowserZack($u_agent) {
 
     $bname = 'Unknown';
