@@ -3504,18 +3504,19 @@ foreach ($htrarr['DATA'] as $agval) {
 $agm .= "</table>";
 $htrmnu = "<div class=menuHolderDiv><input type=hidden id=faFldPriorityValue value=\"{$givendspcode}\"><input type=text id=faFldPriority READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddHTR>{$agm}</div></div>";
 
-$pastFASQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid , if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where objpbiosample = :pbiosample order by idlabactions asc";
+$pastFASQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid , if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'-') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where objpbiosample = :pbiosample order by idlabactions desc";
 $pastFARS = $conn->prepare( $pastFASQL ); 
 $pastFARS->execute(array(':pbiosample' => $pdta['pbiosample']));
 
 if ( $pastFARS->rowCount() < 1 ) {
     //TODO: SET PF Default
+  $pfaTbl = " - No Further Actions Listed for this Biogroup - ";  
 } else {
-  $pfaTbl = "<table border=1>";   
+  $pfaTbl = "<table border=0 id=faActionDspTbl><thead><tr><td>Ticket #</td><td>Completed</td><td>Biosample</td><td>Module</td><td>Action</td><td>Assigned Agent</td><td>Priority<br>Due Date</td><td>Requested By</td></tr></thead><tbody>";   
   while ( $f = $pastFARS->fetch(PDO::FETCH_ASSOC)) { 
-    $pfaTbl .= "<tr><td>{$f['faid']}</td><td>{$f['completedind']}</td><td>{$f['biosampleref']}</td></tr>";
+    $pfaTbl .= "<tr><td>{$f['faid']}</td><td>{$f['completedind']}</td><td>{$f['biosampleref']}</td><td>{$f['requestingModule']}</td><td>{$f['actiondescription']}<br>{$f['actionnote']}</td><td>{$f['assignedagent']}</td><td>{$f['dspPriority']}<br>{$f['duedate']}</td><td>{$f['requestedby']}<br>{$f['requestedon']}</td></tr>";
   }
-  $pfaTbl .= "</table>";
+  $pfaTbl .= "</tbody></table>";
 }
 
 
@@ -3572,6 +3573,12 @@ button:hover { background: rgba(255,248,225,.6); cursor: pointer; }
 
 
 #dspOtherFurtherActions {  border: 1px solid rgba( 0,32,113,1 );  height: 15vh; overflow: auto;  } 
+#dspOtherFurtherActions #faActionDspTbl { width: 100%; font-size: 1.3vh; color: rgba( 0,32,113,1); }
+#dspOtherFurtherActions #faActionDspTbl thead {   }
+#dspOtherFurtherActions #faActionDspTbl thead tr td { background: rgba( 0,32, 113, 1); color: rgba( 255,255,255,1); font-weight: bold; } 
+#dspOtherFurtherActions #faActionDspTbl tbody tr:nth-child( even ) { background: rgba( 145,145,145,.2 ); }
+#dspOtherFurtherActions #faActionDspTbl tbody td { border-bottom: 1px solid rgba( 145,145,145,1); border-right: 1px solid rgba( 145,145,145,1); }  
+
 
 
 </style>

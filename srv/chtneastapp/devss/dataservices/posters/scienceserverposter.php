@@ -113,7 +113,7 @@ class datadoers {
                ,':objhprid' => $rqstpayload['biohpr']
                ,':objpbiosample' => $rqstpayload['pbiosample']
                ,':bgreadlabel' => $rqstpayload['bgreadlabel']
-               ,':objbgs' => $rqstpayload['slidebgs'] 
+               ,':objbgs' => $pdta['bioReference'] 
                ,':assignedagent' => $pdta['agent'] 
                ,':actioncode' => $pdta['actionsValue'] 
                ,':actiondesc' => $actionDsp
@@ -123,7 +123,8 @@ class datadoers {
                ,':prioritymarkcode' => $pdta['priority']
                ,':actionrequestedby' => $u['usr']
               ));
-                         
+
+              $dta['pbiosample'] = $rqstpayload['pbiosample'];
               $responseCode = 200;
           }
         } 

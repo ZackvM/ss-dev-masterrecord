@@ -1758,14 +1758,19 @@ function answerFurtherActionRequests( rtnData ) {
      byId('faFldPriority').value = "";
      byId('faFldByDate').value = "";
      byId('faFldNotifyComplete').checked = false;
-     alert('Saved');
+     alert('Saved'); 
      //BUILD GRID
+
+     var dta = JSON.parse(rtnData['responseText']);
+     bldFurtherActionGrid( dta['DATA']['pbiosample'] );
    }        
 }
 
+function bldFurtherActionGrid( pbiosample ) { 
 
+alert( pbiosample );
 
-
+}
 
 function answerSearchVocabulary(rtnData) { 
   if (byId('srchVocRsltDisplay')) {
