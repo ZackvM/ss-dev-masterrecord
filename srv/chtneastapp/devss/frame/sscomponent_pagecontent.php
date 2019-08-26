@@ -1071,6 +1071,28 @@ PAGEHERE;
 return $rtnthis;    
 }
 
+function furtheractionrequests ( $rqststr, $whichusr ) { 
+if ( (int)$whichusr->allowcoord <> 1 ) { 
+      $pg = "<h1>USER ({$whichusr->userid}) NOT ALLOWED ACCESS TO COORDINATOR MODULE";    
+} else { 
+      
+    if ( trim( $rqststr[2] ) === ""  ) { 
+      
+        $pg = bldFurtherActionQueue ( $whichusr );
+        
+    } else { 
+        $pg = "GET NUMBER";
+    }
+}
+    
+    
+$rtnthis = <<<PAGEHERE
+{$topBtnBar} 
+{$pg}
+PAGEHERE;
+return $rtnthis;    
+}
+
 function qmsactions ( $rqststr, $whichusr ) { 
 
     if ( (int)$whichusr->allowqms <> 1 ) { 
@@ -2737,6 +2759,8 @@ case 'qmsactionworkincon':
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGridWork onclick="window.location.href= '{$additionalinfo}'" ><tr><td><i class="material-icons">layers_clear</i></td><td>Queue List</td></tr></table></td>
   <td class=topBtnHolderCell onclick="generateDialog('hprAssistEmailer','xxx-xxx');"><table class=topBtnDisplayer id=btnSendEmail><tr><td><i class="material-icons">textsms</i></td><td>Email</td></tr></table></td>
+  
+  <td class=topBtnHolderCell  style="border-left: 4px double rgba(255,255,255,1);" onclick="markIQMSComplete();"><table class=topBtnDisplayer id=btnReloadGridWork><tr><td><i class="material-icons">done_all</i></td><td>Mark QA Complete</td></tr></table></td>
 
 </tr>
 BTNTBL;
@@ -3453,21 +3477,12 @@ RTNPAGE;
 
 function bldFurtherActionDialog ( $dialog, $passedData ) { 
 
-//PASSEDDATA = {"biohpr":"019283","slidebgs":"79344T002","bgreadlabel":"79344T","pbiosample":"79344.00000000"} 
 $pdta = json_decode( $passedData, true );
 
 require(serverkeys . "/sspdo.zck");
-
-//$pastFASQL = "SELECT ifnull(fa.frommodule,'') as frommodule, ifnull(fa.objbgs,'') as objbgs, ifnull(fa.objpbiosample,'') as objpbiosample, ifnull(fam.dspvalue,'') as actiondescription, ifnull(fa.actionnote,'') as actionnote, ifnull(fa.actionrequestedby,'') as actionrequestedby, date_format(fa.actionrequestedon,'%m/%d/%Y') as actionrequestedon, if (ifnull(fa.actioncompletedby,'') = '','No','Yes') as actioncompleted FROM masterrecord.ut_master_furtherlabactions fa left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST') as fam on fa.actioncode = fam.menuvalue where 1 = 1  and objpbiosample = :pbiosample";
-//$pastFARS = $conn->prepare($pastFASQL); 
-//$pastFARS->execute(array(':pbiosample' => (float)$pdta['pbiosample']));
-//$pastFA = $pastFARS->fetch(PDO::FETCH_ASSOC);
-//$pf = $pdta['pbiosample'];
-
 $agentListSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and allowInd = 1 and primaryInstCode = 'HUP' order by friendlyname";
 $agentListRS = $conn->prepare($agentListSQL); 
 $agentListRS->execute();
-//$agentList = $agentListRS->fetch(PDO::FETCH_ASSOC);
 $agnt = "<table border=0 class=menuDropTbl>";
   $agnt .= "<tr><td onclick=\"fillField('faFldAssAgent','','');\" class=ddMenuItem align=right style=\"font-size: 1.1vh;\">[clear]</td></tr>";
 while ( $al = $agentListRS->fetch(PDO::FETCH_ASSOC)) { 
@@ -3504,21 +3519,27 @@ foreach ($htrarr['DATA'] as $agval) {
 $agm .= "</table>";
 $htrmnu = "<div class=menuHolderDiv><input type=hidden id=faFldPriorityValue value=\"{$givendspcode}\"><input type=text id=faFldPriority READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddHTR>{$agm}</div></div>";
 
-$pastFASQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid , if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'-') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where objpbiosample = :pbiosample order by idlabactions desc";
+
+
+$pastFASQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid , if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(actionstartedind,0) as actionstartedind, ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'-') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where objpbiosample = :pbiosample and activeind = 1 order by idlabactions desc";
+
 $pastFARS = $conn->prepare( $pastFASQL ); 
 $pastFARS->execute(array(':pbiosample' => $pdta['pbiosample']));
-
 if ( $pastFARS->rowCount() < 1 ) {
     //TODO: SET PF Default
   $pfaTbl = " - No Further Actions Listed for this Biogroup - ";  
 } else {
-  $pfaTbl = "<table border=0 id=faActionDspTbl><thead><tr><td>Ticket #</td><td>Completed</td><td>Biosample</td><td>Module</td><td>Action</td><td>Assigned Agent</td><td>Priority<br>Due Date</td><td>Requested By</td></tr></thead><tbody>";   
+  $pfaTbl = "<table border=0 id=faActionDspTbl><thead><tr><td></td><td>Ticket #</td><td>Completed</td><td>Biosample</td><td>Module</td><td>Action</td><td>Assigned Agent</td><td>Priority<br>Due Date</td><td>Requested By</td></tr></thead><tbody>";   
   while ( $f = $pastFARS->fetch(PDO::FETCH_ASSOC)) { 
-    $pfaTbl .= "<tr><td>{$f['faid']}</td><td>{$f['completedind']}</td><td>{$f['biosampleref']}</td><td>{$f['requestingModule']}</td><td>{$f['actiondescription']}<br>{$f['actionnote']}</td><td>{$f['assignedagent']}</td><td>{$f['dspPriority']}<br>{$f['duedate']}</td><td>{$f['requestedby']}<br>{$f['requestedon']}</td></tr>";
+     if ( $f['actionstartedind'] === 0) { 
+       $rmBtn = "<td onclick=\"deactivateFA('{$f['faid']}');\"><center><i class=\"material-icons rmbtn\">delete_forever</i></td>"; 
+     } else {  
+       $rmBtn = "<td>&nbsp;</td>";                   
+    }      
+    $pfaTbl .= "<tr>{$rmBtn}<td>{$f['faid']}</td><td>{$f['completedind']}</td><td>{$f['biosampleref']}</td><td>{$f['requestingModule']}</td><td>{$f['actiondescription']}<br>{$f['actionnote']}</td><td>{$f['assignedagent']}</td><td>{$f['dspPriority']}<br>{$f['duedate']}</td><td>{$f['requestedby']}<br>{$f['requestedon']}</td></tr>";
   }
   $pfaTbl .= "</tbody></table>";
 }
-
 
 $dspPage = <<<DSPPAGE
 <div id=faWrapper>
@@ -3526,7 +3547,7 @@ $dspPage = <<<DSPPAGE
   <tr><td id=faHead>Further Actions <input type=hidden id=faFldRequestJSON value='{$passedData}'></td></tr>
   <tr><td>
 <table border=0><tr>
-  <td><div class=faDivHolder><div class=dspLabel>Biosample Ref # *</div><div class=elemHolder><input type=text id=faFldReference class="inputFld" value="{$pdta['slidebgs']}"></div></div></td>
+  <td><div class=faDivHolder><div class=dspLabel>Biosample # *</div><div class=elemHolder><input type=text id=faFldReference class="inputFld" value="{$pdta['slidebgs']}"></div></div></td>
   <td><div class=faDivHolder><div class=dspLabel>Action to Take *</div><div class=elemHolder>{$faamnu}</div></div></td>
   <td><div class=faDivHolder><div class=dspLabel>Notes</div><div class=elemHolder><input type=text id=faFldNotes class="inputFld" value=""></div></div></td>
   <td><div class=faDivHolder><div class=dspLabel>Assign Agent</div><div class=elemHolder>{$agntmnu}</div></div></td>
@@ -3579,7 +3600,7 @@ button:hover { background: rgba(255,248,225,.6); cursor: pointer; }
 #dspOtherFurtherActions #faActionDspTbl tbody tr:nth-child( even ) { background: rgba( 145,145,145,.2 ); }
 #dspOtherFurtherActions #faActionDspTbl tbody td { border-bottom: 1px solid rgba( 145,145,145,1); border-right: 1px solid rgba( 145,145,145,1); }  
 
-
+.rmbtn:hover { color: rgba(237, 35, 0,1); cursor: pointer; }
 
 </style>
 {$dspPage}
@@ -5042,6 +5063,19 @@ $rtnThis = <<<RTNTHIS
 <div class=dataHolderDiv id=hprDataReviewedOnBy><div class=datalabel>Reviewed By :: On</div><div class=datadisplay>{$rbyon}&nbsp;</div></div>
 RTNTHIS;
 return $rtnThis;
+}
+
+function bldFurtherActionQueue ( $whichuser ) { 
+
+//{"statusCode":200,"loggedsession":"faf5244b4ua16fm53d4tnobpb1","dbuserid":1,"userid":"proczack","friendlyname":"Zack","username":"Zack vonMenchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowweeklyupdate":1,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowqms":1,"allowhprreview":0,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":17,"accesslevel":"ADMINISTRATOR","profilepicturefile":"DJRUSbxf.png","officephone":"215-662-4570 x10","displayalternate":1,"alternateindirectory":1,"alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","cellcarrierco":"Verizon","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"menuvalue":"Collection Grid","pagesource":"collection-grid","additionalcode":"","dspsystemicon":"favorite","dspinmenu":1},{"menuvalue":"Procure Biosample","pagesource":"procure-biosample","additionalcode":"","dspsystemicon":"play_for_work","dspinmenu":1},{"menuvalue":"","pagesource":"GSR","additionalcode":"SEPARATOR","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Barcode Run","pagesource":"GSR","additionalcode":"genSystemReport('dailypristinebarcoderun')","dspsystemicon":"receipt","dspinmenu":1},{"menuvalue":"Histology Sheet","pagesource":"GSR","additionalcode":"genSystemReport('histologysheet')","dspsystemicon":"receipt","dspinmenu":1},{"menuvalue":"Daily Procurement Record","pagesource":"GSR","additionalcode":"genSystemReport('dailypristineprocurementsheet')","dspsystemicon":"receipt","dspinmenu":1}]],["433","DATA COORDINATOR","",[{"menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":"","dspsystemicon":"search","dspinmenu":1},{"menuvalue":"Shipment Documents","pagesource":"shipment-document","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":"HOLD-BIOGROUPDEFINITION","pagesource":"biogroup-definition","additionalcode":"CHANGED additionalinformation from 43 to 3 (access Levels)","dspsystemicon":"","dspinmenu":0},{"menuvalue":"Document Library","pagesource":"document-library","additionalcode":"","dspsystemicon":"account_balance","dspinmenu":1},{"menuvalue":null,"pagesource":"GSR","additionalcode":"SEPARATOR","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Further Action Requests","pagesource":"further-action-requests","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Investigator In-Take","pagesource":"inv-in-take","additionalcode":"","dspsystemicon":"","dspinmenu":1}]],["434","QUALITY MANAGEMENT","",[{"menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":"","dspsystemicon":"account_balance","dspinmenu":1},{"menuvalue":"Quality Assurance Actions","pagesource":"qms-actions","additionalcode":"","dspsystemicon":"","dspinmenu":1}]],["471","INVENTORY","",[{"menuvalue":"HOLD-INVENTORY","pagesource":"inventory","additionalcode":"","dspsystemicon":"","dspinmenu":0},{"menuvalue":"Inventory Biosamples","pagesource":"inventory\/inventory-biosamples","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Process Shipment (Pull\/Ship)","pagesource":"inventory\/shipment","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Inventory Count Function","pagesource":"inventory\/count","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Inventory Destroy","pagesource":"inventory\/destroy","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":null,"pagesource":"GSR","additionalcode":"SEPARATOR","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Investigator Media","pagesource":"inventory\/inv-media","additionalcode":"","dspsystemicon":"","dspinmenu":1}]],["472","REPORTS","",[{"menuvalue":"All Reports","pagesource":"reports","additionalcode":"","dspsystemicon":"account_balance","dspinmenu":1},{"menuvalue":null,"pagesource":"GSR","additionalcode":"SEPARATOR","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Shipdocs - Not Closed...","pagesource":"x","additionalcode":"navigateSite('reports\/nonclosedshipdocs')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"Shipments Queued To Investigat...","pagesource":"x","additionalcode":"navigateSite('reports\/iplusshiploglist')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"Shipments sent to Investigator...","pagesource":"x","additionalcode":"navigateSite('reports\/iplusuploaded')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"Masterrecord Procurement Listi...","pagesource":"x","additionalcode":"navigateSite('reports\/masterrecordprocurementlisting')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"HPR Reviews Performed in Last ...","pagesource":"x","additionalcode":"navigateSite('reports\/hprperformedinlastweek')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"HPR Inconclusive Further Actio...","pagesource":"x","additionalcode":"navigateSite('reports\/hprinconclusivefurtheractions')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"List of All HPR Slide Trays...","pagesource":"x","additionalcode":"navigateSite('reports\/allhprslidetrayslisting')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"BIOGROUPS Submitted to HPR ...","pagesource":"x","additionalcode":"navigateSite('reports\/hprsubmittals')","dspsystemicon":"x","dspinmenu":1}]],["473","UTILITIES","",[{"menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":"","dspsystemicon":"account_balance","dspinmenu":1},{"menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":"","dspsystemicon":"lock_open","dspinmenu":1}]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]],"lastlogin":{"lastlogdate":"Mon Aug 26th, 2019 at 08:16","fromip":"174.201.23.199"},"accessnbr":"43"}       
+    
+if ( $whichuser->accessnbr ) 
+    
+ $pg = <<<BLDTBL
+
+   GET THIS USER'S LISTING:      {$whichuser->accessnbr}
+BLDTBL;
+return $pg;   
 }
 
 function bldQMSQueList ( $decisiondisplay ) {     

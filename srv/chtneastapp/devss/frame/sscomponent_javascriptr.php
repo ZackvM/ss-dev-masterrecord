@@ -1767,9 +1767,50 @@ function answerFurtherActionRequests( rtnData ) {
 }
 
 function bldFurtherActionGrid( pbiosample ) { 
-
-alert( pbiosample );
-
+   var obj = new Object(); 
+   obj['bgref'] = pbiosample;  
+   var passdta = JSON.stringify(obj); 
+   var mlURL = "/data-doers/display-pbfatbl";
+   universalAJAX("POST",mlURL,passdta,answerBldFurtherActionGrid,1);
+}
+   
+function answerBldFurtherActionGrid ( rtnData ) { 
+ if (parseInt(rtnData['responseCode']) !== 200) { 
+      var msgs = JSON.parse(rtnData['responseText']);
+      var dspMsg = ""; 
+      msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+      });
+      alert("FURTHER ACTION ERROR:\\n"+dspMsg);
+   } else {
+      if ( byId('dspOtherFurtherActions') ) { 
+        var dta = JSON.parse(rtnData['responseText']);
+        byId('dspOtherFurtherActions').innerHTML = "";
+        byId('dspOtherFurtherActions').innerHTML = dta['DATA'];
+      }
+   }        
+}
+   
+ function deactivateFA( whichfaid ) { 
+   var obj = new Object(); 
+   obj['faid'] = parseInt(whichfaid);  
+   var passdta = JSON.stringify(obj); 
+   var mlURL = "/data-doers/deactivate-pbfa";
+   universalAJAX("POST",mlURL,passdta,answerDeactivateFA,1);
+ }
+   
+ function answerDeactivateFA ( rtnData ) { 
+ if (parseInt(rtnData['responseCode']) !== 200) { 
+      var msgs = JSON.parse(rtnData['responseText']);
+      var dspMsg = ""; 
+      msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+      });
+      alert("FURTHER ACTION ERROR:\\n"+dspMsg);
+   } else {
+       var pb = JSON.parse(rtnData['responseText']);
+       bldFurtherActionGrid( pb['DATA'] );
+   }    
 }
 
 function answerSearchVocabulary(rtnData) { 
@@ -2262,6 +2303,18 @@ function rqstDualCode() {
 JAVASCR;
 return $rtnThis;
 }
+
+function furtheractionrequests ( $rqststr ) { 
+    
+$tt = treeTop; 
+$rtnThis = <<<RTNTHIS
+
+   
+        
+RTNTHIS;
+return $rtnThis;    
+}
+
 
 function qmsactions ( $rqststr ) { 
 
@@ -2954,6 +3007,15 @@ function answerRequestDrop(rtnData) {
   }
 }
 
+function markIQMSComplete() { 
+    var dta = new Object(); 
+    dta['encyreviewid'] =  byId('dataRowOne').dataset.encyreviewid;
+    dta['encybg'] = byId('dataRowOne').dataset.encybg;
+    var passeddata = JSON.stringify(dta);
+    var mlURL = "/data-doers/mark-qa-incon-complete";
+    universalAJAX("POST",mlURL,passeddata,answerMarkQAFinalComplete,2);
+}  
+  
 function markQMSComplete() { 
     var dta = new Object(); 
     dta['encyreviewid'] =  byId('dataRowOne').dataset.encyreviewid;
@@ -3114,7 +3176,6 @@ function sendQMSEmail( whichdialog ) {
 }
 
 function answerSendQMSLetter ( rtnData ) { 
-
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
     var dspMsg = ""; 

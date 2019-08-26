@@ -899,19 +899,19 @@ function getShipmentDocument($sdid, $originalURL) {
                 //CHECK FOR DIRECT SHIPMENT MIA
                 if ( strtoupper($dtl['prptdsp']) === 'P' && (int)$dtl['hprind'] === 0 ) { 
                    //TODO: MAKE THIS A WEBSERVICE 
-                   $chkSQL = "SELECT * FROM masterrecord.ut_master_furtherlabactions where frommodule = :module and objpbiosample = :pbio and actioncode = :actioncode and objshipdoc = :objshipdoc"; 
+                   $chkSQL = "SELECT * FROM masterrecord.ut_master_furtherlabactions where frommodule = :module and objpbiosample = :pbio and actioncode = :actioncode and objshipdoc = :objshipdoc and activeind = 1"; 
                    $chkRS = $conn->prepare($chkSQL);
                    $chkRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-S', ':objshipdoc' => $sdid));
                    //$chkRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-' . $dtl['proctype'], ':objshipdoc' => $sdid));
                    if ( $chkRS->rowCount() === 0 ) {
                      //ADD MIA
-                     $insSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule,objshipdoc,objpbiosample,actioncode,actiondesc,actionrequestedby,actionrequestedon) VALUES ('SHIPPING',:objshipdoc,:biosampleref,:miatype,'PRE-QMS DIRECT SHIPMENT',:rqstby,now())";
+                     $insSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule, activeind,objshipdoc,objpbiosample,actioncode,actiondesc,actionrequestedby,actionrequestedon) VALUES ('SHIPPING', :activeind,:objshipdoc,:biosampleref,:miatype,'PRE-QMS DIRECT SHIPMENT',:rqstby,now())";
                      $insRS = $conn->prepare($insSQL); 
-                     $insRS->execute(array(':objshipdoc' => $sdid,':biosampleref' => (int)$dtl['pbiosample'], ':rqstby' => $usr['originalaccountname'], ':miatype' => "MIA-{$dtl['proctype']}"));
+                     $insRS->execute(array(':objshipdoc' => $sdid, ':activeind' => 1,   ':biosampleref' => (int)$dtl['pbiosample'], ':rqstby' => $usr['originalaccountname'], ':miatype' => "MIA-{$dtl['proctype']}"));
                    }
                 }
                 //CHECK MASTER FURTHER ACTIONS FOR MIA REFERENCE
-                $miaSQL = "SELECT actioncode, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompletedon, ifnull(actioncompletedby,'') as actioncompletedby FROM masterrecord.ut_master_furtherlabactions where frommodule = :module and objpbiosample = :pbio and actioncode = :actioncode and objshipdoc = :objshipdoc"; 
+                $miaSQL = "SELECT actioncode, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompletedon, ifnull(actioncompletedby,'') as actioncompletedby FROM masterrecord.ut_master_furtherlabactions where frommodule = :module and objpbiosample = :pbio and actioncode = :actioncode and objshipdoc = :objshipdoc and activeind = 1"; 
                 $miaRS = $conn->prepare($chkSQL);
                 $miaRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-' . $dtl['proctype'], ':objshipdoc' => $sdid));
                 if ( $miaRS->rowCount() < 1) { 

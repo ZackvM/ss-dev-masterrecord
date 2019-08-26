@@ -33,6 +33,86 @@ function __construct() {
 }
 
 class datadoers {
+    
+    function deactivatepbfa ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+            
+      $faid = $pdta['faid'];
+      $chkSQL = "select objpbiosample, actionstartedind FROM masterrecord.ut_master_furtherlabactions where idlabactions = :faid and actionstartedind = 0"; 
+      $chkRS = $conn->prepare($chkSQL); 
+      $chkRS->execute( array(':faid' => $faid ) );
+      
+      if ( $chkRS->rowCount() < 1 ) { 
+          $msgArr[] = "THIS FURTHER ACTION DOES NOT EXIST OR IS ALREADY MARKED AS STARTED SO CANNOT BE 'DELETED'";
+          $errorInd = 1;
+      } else { 
+          $pb = $chkRS->fetch(PDO::FETCH_ASSOC);
+          $errorInd = 0;
+      }
+      
+      if ( $errorInd === 0 ) {
+          $updSQL = "update masterrecord.ut_master_furtherlabactions set activeind = 0 where idlabactions = :faid"; 
+          $updRS = $conn->prepare($updSQL);
+          $updRS->execute( array(':faid' => $faid ) );
+
+          $dta = $pb['objpbiosample'];           
+          $responseCode = 200; 
+      }              
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;                 
+    }
+    
+    function displaypbfatbl ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+            
+      if ( $errorInd === 0 ) {
+         $pastFASQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid , if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(actionstartedind,0) as actionstartedind, ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'-') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where objpbiosample = :pbiosample and activeind = 1 order by idlabactions desc";
+         $pastFARS = $conn->prepare( $pastFASQL ); 
+         $pastFARS->execute(array(':pbiosample' => $pdta['bgref']));
+         if ( $pastFARS->rowCount() < 1 ) {
+           //TODO: SET PF Default
+           $pfaTbl = " - No Further Actions Listed for this Biogroup - ";  
+         } else {
+           $pfaTbl = "<table border=0 id=faActionDspTbl><thead><tr><td></td><td>Ticket #</td><td>Completed</td><td>Biosample</td><td>Module</td><td>Action</td><td>Assigned Agent</td><td>Priority<br>Due Date</td><td>Requested By</td></tr></thead><tbody>";   
+           while ( $f = $pastFARS->fetch(PDO::FETCH_ASSOC)) { 
+              if ( $f['actionstartedind'] === 0) { 
+                  $rmBtn = "<td onclick=\"deactivateFA('{$f['faid']}');\"><center><i class=\"material-icons rmbtn\">delete_forever</i></td>"; 
+              } else { 
+                  $rmBtn = "<td>-</td>";                   
+              }
+               
+              $pfaTbl .= "<tr>{$rmBtn}<td>{$f['faid']}</td><td>{$f['completedind']}</td><td>{$f['biosampleref']}</td><td>{$f['requestingModule']}</td><td>{$f['actiondescription']}<br>{$f['actionnote']}</td><td>{$f['assignedagent']}</td><td>{$f['dspPriority']}<br>{$f['duedate']}</td><td>{$f['requestedby']}<br>{$f['requestedon']}</td></tr>";
+           }
+           $pfaTbl .= "</tbody></table>";
+         }
+         $dta = $pfaTbl;
+         $responseCode = 200; 
+      }              
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;        
+    }
 
     function savefurtheraction ( $request, $passdata ) { 
       $rows = array(); 
@@ -102,14 +182,14 @@ class datadoers {
 
           if ( $errorInd === 0 ) { 
             //"{\"rqstPayload\":\"{\\\"requestingmodule\\\":\\\"QMS-QA\\\",\\\"biohpr\\\":\\\"018623\\\",\\\"slidebgs\\\":\\\"83239T003\\\",\\\"bgreadlabel\\\":\\\"83239T\\\",\\\"pbiosample\\\":\\\"83239.00000000\\\"}\",\"bioReference\":\"83239T003\",\"actionsValue\":\"BIOSAMPLEPROC\",\"actionNote\":\"This is a note\",\"agent\":\"proczack\",\"priority\":\"FANORMAL\",\"duedate\":\"08\/30\/2019\"}"  
-
               $rqstpayload = json_decode( $pdta['rqstPayload'], true );       
               $notify = ( (int)$pdta['notifycomplete'] === 1 ) ? 1 : 0;
 
-              $faInsSQL = "insert into masterrecord.ut_master_furtherlabactions ( frommodule, objhprid, objpbiosample, bgreadlabel, objbgs, assignedagent, actioncode, actiondesc, actionnote, notifyOnComplete, duedate, prioritymarkcode, actionrequestedby, actionrequestedon) values ( :frommodule, :objhprid, :objpbiosample, :bgreadlabel, :objbgs, :assignedagent, :actioncode, :actiondesc, :actionnote, :notifyOnComplete, :duedate, :prioritymarkcode, :actionrequestedby, now())"; 
+              $faInsSQL = "insert into masterrecord.ut_master_furtherlabactions ( frommodule, activeind, objhprid, objpbiosample, bgreadlabel, objbgs, assignedagent, actioncode, actiondesc, actionnote, notifyOnComplete, duedate, prioritymarkcode, actionrequestedby, actionrequestedon) values ( :frommodule, :activeind, :objhprid, :objpbiosample, :bgreadlabel, :objbgs, :assignedagent, :actioncode, :actiondesc, :actionnote, :notifyOnComplete, :duedate, :prioritymarkcode, :actionrequestedby, now())"; 
               $faInsRS = $conn->prepare($faInsSQL); 
               $faInsRS->execute(array(
                 ':frommodule' => $rqstpayload['requestingmodule']
+               ,':activeind' => 1
                ,':objhprid' => $rqstpayload['biohpr']
                ,':objpbiosample' => $rqstpayload['pbiosample']
                ,':bgreadlabel' => $rqstpayload['bgreadlabel']
@@ -452,6 +532,55 @@ class datadoers {
       return $rows;
     }
     
+    function markqainconcomplete ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id();
+
+      //CHECK USER IS AN HPR REVIEWER
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowQMS = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+          (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO QMS-QA.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+          $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }
+        
+      $biohpr = (int)cryptservice( $pdta['encyreviewid'], 'd' );
+      $bg = cryptservice( $pdta['encybg'] , 'd' );
+      $chkBGSQL = "SELECT * FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') = :bg and hprresult = :biohpr and qcind = 0";
+      $chkBGRS = $conn->prepare($chkBGSQL);
+      $chkBGRS->execute(array(':bg' => $bg, ':biohpr' => $biohpr));
+      if ( $chkBGRS->rowCount() < 1 ) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "THE BIOGROUP WAS NOT FOUND.  EITHER THERE IS NO HPR RECORD, IT DOESN'T EXIST OR IT IS ALREADY MARKED AS QA COMPLETE.  IF YOU FEEL THIS IS IN ERROR, SEE A CHTNEASTERN INFORMATICS PERSON."));
+      }
+
+if ( $errorInd === 0 ) { 
+        $backupSQL = "insert into masterrecord.history_procure_biosample_qms (pbiosample, readlabel, qcvalv2, hprindicator, hprmarkbyon, qcindicator, qcmarkbyon, qcprocstatus, labaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresultid, slidereviewed, hpron, hprby, historyrecordon, historyrecordby) SELECT pbiosample, read_label, qcvalv2, HPRInd, hprmarkbyon, QCInd, qcmarkbyon, qcprocstatus, labactionaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresult, hprslidereviewed, hpron, hprby, now(), :usr FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') like :bg and hprresult = :hprresult and qcind = 0";
+        $backRS = $conn->prepare( $backupSQL ); 
+        $backRS->execute( array( ':bg' => "{$bg}%", ':hprresult' => $biohpr, ':usr' => "{$u['usr']}/QMS-QA-PROCESS"));
+
+        $qmsSQL = "update masterrecord.ut_procure_biosample set qcprocstatus = 'L', qmsstatusby = :statby, qmsstatuson = now(), qmsnote = '' where replace(read_label,'_','') = :bg and hprresult = :biohpr and qcind = 0";
+        $qmsRS = $conn->prepare($qmsSQL); 
+        $qmsRS->execute( array( ':statby' => 'QMS-QA-PROCESS-' . strtoupper($u['usr']), ':bg' => $bg, ':biohpr' => $biohpr));
+
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;                            
+    }
+   
     function markqafinalcomplete ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
