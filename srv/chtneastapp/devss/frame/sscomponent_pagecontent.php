@@ -1074,14 +1074,14 @@ return $rtnthis;
 function furtheractionrequests ( $rqststr, $whichusr ) { 
 if ( (int)$whichusr->allowcoord <> 1 ) { 
       $pg = "<h1>USER ({$whichusr->userid}) NOT ALLOWED ACCESS TO COORDINATOR MODULE";    
-} else { 
-      
+} else {  
     if ( trim( $rqststr[2] ) === ""  ) { 
-      
         $pg = bldFurtherActionQueue ( $whichusr );
-        
-    } else { 
-        $pg = "GET NUMBER";
+        $topBtnBar = generatePageTopBtnBar('faTable');
+    } else {
+        $r = explode("/", $_SERVER['REQUEST_URI']);  
+        $pg = bldFurtherActionItem($r[2]);
+
     }
 }
     
@@ -2753,6 +2753,13 @@ BTNTBL;
 
     break;
 
+case 'faTable':
+    $innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="alert('Not Functional Yet');" ><tr><td><i class="material-icons">import_export</i></td><td>Export</td></tr></table></td> 
+</tr>
+BTNTBL;
+    break;
 
 case 'qmsactionworkincon':
     $innerBar = <<<BTNTBL
@@ -5065,16 +5072,145 @@ RTNTHIS;
 return $rtnThis;
 }
 
+function bldFurtherActionItem ( $itmency ) { 
+
+    $ticketNbr = cryptservice( $itmency , 'd');
+
+    
+    //TODO:  TURN INTO A WEBSERVICE
+    require(serverkeys . "/sspdo.zck");    
+    $sql = "SELECT substr(concat('000000',idlabactions),-6) as ticketnbr , actionstartedind , ifnull(date_format(startedondate,'%m/%d/%Y'),'') as startedondate, ifnull(startedby,'') as startedby , ifnull(frommodule,'Unknown Module') frommodule, ifnull(objshipdoc,'') as objshipdoc, ifnull(objhprid,'') as objhprid, ifnull(objpbiosample,'') as objpbiosample, ifnull(objbgs,'') as objbgs, ifnull(assignedagent,'') as assignedagent, ifnull(actioncode,'UNKNOWN') as actioncode, ifnull(actiondesc,'') as actiondesc, ifnull(actionnote,'') as actionnote, ifnull(notifyoncomplete,0) as notifyoncomplete, ifnull(date_format(duedate,'%m/%d/%Y'),'') as duedate, ifnull(actionrequestedby,'UNKNOWN') as actionrequestedby, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as actionrequestedon , ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompleteon, ifnull(actioncompletedby,'') as actioncompletedby FROM masterrecord.ut_master_furtherlabactions where idlabactions = :ticketnumber and activeind = :activeind";
+    $rs = $conn->prepare($sql); 
+    $rs->execute(array(':ticketnumber' => (int)$ticketNbr, ':activeind' => 1)); 
+    if ( $rs->rowCount() <> 1 ) { 
+      //NO TICKET FOUND
+    $pg = <<<BLDPG
+<h2>Ticket Number {$ticketNbr} was not found.  See CHTN Eastern Informatics.</h2>
+BLDPG;
+    } else { 
+
+    $ticket = $rs->fetch(PDO::FETCH_ASSOC);
+    $pbioref = ( trim($ticket['objpbiosample']) !== "" ) ?  (int)$ticket['objpbiosample'] : "";
+    $pbioref .= ( trim($ticket['objbgs']) !== "" ) ?  ( trim($pbioref) === "" ) ? $ticket['objbgs'] : " / {$ticket['objbgs']}"  : "";
+    $sd = ( trim($ticket['objshipdoc']) !== "" ) ? substr(('000000'.$ticket['objshipdoc'] ),-6) : "";
+    $ddate = ( trim($ticket['duedate']) !== "" && $ticket['duedate'] !== '01/01/1900' ) ? $ticket['duedate'] : "";
+
+    $pg = <<<BLDPG
+<div id=ticketHolder>
+<div id=ticketHeadAnnounce>Further Action/Lab Action Request</div>
+
+<div class=tDataDsp>
+   <div class=tLabel>Ticket # </div>
+   <div class=tData>{$ticket['ticketnbr']}</div>
+</div> 
+
+<div class=tDataDspWide >
+   <div class=tLabel>Date Requested </div>
+   <div class=tData>{$ticket['actionrequestedon']}</div>
+</div> 
+
+<div class=tDataDspWide >
+   <div class=tLabel>Requested By</div>
+   <div class=tData>{$ticket['actionrequestedby']} ({$ticket['frommodule']})</div>
+</div> 
+
+<div class=tDataDsp>
+   <div class=tLabel>Notify </div>
+   <div class=tData> &nbsp; </div>
+</div> 
+
+<div class=tDataDspWide>
+   <div class=tLabel>Due Date </div>
+   <div class=tData>{$ddate}</div>
+</div> 
+
+<div class=tDataDspWide>
+   <div class=tLabel>Biogroup Ref. </div>
+   <div class=tData>{$pbioref}</div>
+</div> 
+
+<div class=tDataDspWide>
+   <div class=tLabel>Ship-Doc</div>
+   <div class=tData>{$sd}</div>
+</div> 
+
+<div class=tDataDspWide>
+   <div class=tLabel>HPR Review # </div>
+   <div class=tData>{$ticket['objhprid']}</div>
+</div> 
+
+<div class=tDataDspWide>
+   <div class=tLabel>Agent </div>
+   <div class=tData>{$ticket['assignedagent']}</div>
+</div> 
+
+<div class=tDataDspSuperWide>
+   <div class=tLabel>Work Started </div>
+   <div class=tData> &nbsp;</div>
+</div> 
+
+<div class=tDataDspWide>
+   <div class=tLabel>Completed </div>
+   <div class=tData> &nbsp;</div>
+</div> 
+
+
+
+
+</div>
+BLDPG;
+    }
+return $pg;
+}
+
 function bldFurtherActionQueue ( $whichuser ) { 
 
-//{"statusCode":200,"loggedsession":"faf5244b4ua16fm53d4tnobpb1","dbuserid":1,"userid":"proczack","friendlyname":"Zack","username":"Zack vonMenchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowweeklyupdate":1,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowqms":1,"allowhprreview":0,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":17,"accesslevel":"ADMINISTRATOR","profilepicturefile":"DJRUSbxf.png","officephone":"215-662-4570 x10","displayalternate":1,"alternateindirectory":1,"alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","cellcarrierco":"Verizon","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"menuvalue":"Collection Grid","pagesource":"collection-grid","additionalcode":"","dspsystemicon":"favorite","dspinmenu":1},{"menuvalue":"Procure Biosample","pagesource":"procure-biosample","additionalcode":"","dspsystemicon":"play_for_work","dspinmenu":1},{"menuvalue":"","pagesource":"GSR","additionalcode":"SEPARATOR","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Barcode Run","pagesource":"GSR","additionalcode":"genSystemReport('dailypristinebarcoderun')","dspsystemicon":"receipt","dspinmenu":1},{"menuvalue":"Histology Sheet","pagesource":"GSR","additionalcode":"genSystemReport('histologysheet')","dspsystemicon":"receipt","dspinmenu":1},{"menuvalue":"Daily Procurement Record","pagesource":"GSR","additionalcode":"genSystemReport('dailypristineprocurementsheet')","dspsystemicon":"receipt","dspinmenu":1}]],["433","DATA COORDINATOR","",[{"menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":"","dspsystemicon":"search","dspinmenu":1},{"menuvalue":"Shipment Documents","pagesource":"shipment-document","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":"HOLD-BIOGROUPDEFINITION","pagesource":"biogroup-definition","additionalcode":"CHANGED additionalinformation from 43 to 3 (access Levels)","dspsystemicon":"","dspinmenu":0},{"menuvalue":"Document Library","pagesource":"document-library","additionalcode":"","dspsystemicon":"account_balance","dspinmenu":1},{"menuvalue":null,"pagesource":"GSR","additionalcode":"SEPARATOR","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Further Action Requests","pagesource":"further-action-requests","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Investigator In-Take","pagesource":"inv-in-take","additionalcode":"","dspsystemicon":"","dspinmenu":1}]],["434","QUALITY MANAGEMENT","",[{"menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":"","dspsystemicon":"account_balance","dspinmenu":1},{"menuvalue":"Quality Assurance Actions","pagesource":"qms-actions","additionalcode":"","dspsystemicon":"","dspinmenu":1}]],["471","INVENTORY","",[{"menuvalue":"HOLD-INVENTORY","pagesource":"inventory","additionalcode":"","dspsystemicon":"","dspinmenu":0},{"menuvalue":"Inventory Biosamples","pagesource":"inventory\/inventory-biosamples","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Process Shipment (Pull\/Ship)","pagesource":"inventory\/shipment","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Inventory Count Function","pagesource":"inventory\/count","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Inventory Destroy","pagesource":"inventory\/destroy","additionalcode":"","dspsystemicon":"","dspinmenu":1},{"menuvalue":null,"pagesource":"GSR","additionalcode":"SEPARATOR","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Investigator Media","pagesource":"inventory\/inv-media","additionalcode":"","dspsystemicon":"","dspinmenu":1}]],["472","REPORTS","",[{"menuvalue":"All Reports","pagesource":"reports","additionalcode":"","dspsystemicon":"account_balance","dspinmenu":1},{"menuvalue":null,"pagesource":"GSR","additionalcode":"SEPARATOR","dspsystemicon":"","dspinmenu":1},{"menuvalue":"Shipdocs - Not Closed...","pagesource":"x","additionalcode":"navigateSite('reports\/nonclosedshipdocs')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"Shipments Queued To Investigat...","pagesource":"x","additionalcode":"navigateSite('reports\/iplusshiploglist')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"Shipments sent to Investigator...","pagesource":"x","additionalcode":"navigateSite('reports\/iplusuploaded')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"Masterrecord Procurement Listi...","pagesource":"x","additionalcode":"navigateSite('reports\/masterrecordprocurementlisting')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"HPR Reviews Performed in Last ...","pagesource":"x","additionalcode":"navigateSite('reports\/hprperformedinlastweek')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"HPR Inconclusive Further Actio...","pagesource":"x","additionalcode":"navigateSite('reports\/hprinconclusivefurtheractions')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"List of All HPR Slide Trays...","pagesource":"x","additionalcode":"navigateSite('reports\/allhprslidetrayslisting')","dspsystemicon":"x","dspinmenu":1},{"menuvalue":"BIOGROUPS Submitted to HPR ...","pagesource":"x","additionalcode":"navigateSite('reports\/hprsubmittals')","dspsystemicon":"x","dspinmenu":1}]],["473","UTILITIES","",[{"menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":"","dspsystemicon":"account_balance","dspinmenu":1},{"menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":"","dspsystemicon":"lock_open","dspinmenu":1}]],["474","HELP","scienceserver-help",[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]],"lastlogin":{"lastlogdate":"Mon Aug 26th, 2019 at 08:16","fromip":"174.201.23.199"},"accessnbr":"43"}       
-    
-if ( $whichuser->accessnbr ) 
-    
- $pg = <<<BLDTBL
+    //TODO: Turn into a webservice
+    require(serverkeys . "/sspdo.zck");    
+        $queSQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid, if ( actionstartedind = 1, 'Yes','No') as actionstartedind, if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'')  as actioncompletedon, ifnull(actioncompletedby,'') as actioncompletedby , ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref, substr(concat('000000',ifnull(objshipdoc,'')),-6) as shipdocref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where 1 = 1 and activeind = 1 and (  if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') = 'No' OR  datediff(now(),actioncompletedon) < 30 ) order by 3, duedate desc,  actionrequestedon desc";
+        $queRS = $conn->prepare($queSQL); 
+        $queRS->execute();
 
-   GET THIS USER'S LISTING:      {$whichuser->accessnbr}
+        $innerTbl = "<table id=faTable border=0><thead><tr><td> </td><td>Ticket #</td><td>Started</td><td>Priority</td><td>Due Date</td><td>Action To Perform</td><td>Bio/Ship-Doc Ref</td><td>Agent</td><td>Requested On/By</td><td>Complete</td><td>Completed On/By</td></tr></thead><tbody>";
+        while ( $rs = $queRS->fetch(PDO::FETCH_ASSOC)) {
+          $ticketency = cryptservice( $rs['faid'] );   
+          $dueDte = ( trim($rs['duedate']) !== "" ) ? "{$rs['duedate']}" : "";
+          $actDsp = $rs['actiondescription'];
+          $actDsp .= ( trim($rs['actionnote']) !== "" ) ? "<br>[<b>Detail Note</b>: {$rs['actionnote']}]" : "";
+          $bioRef = $rs['biosampleref'];
+          $bioRef .= ( trim($rs['shipdocref']) !== "000000" ) ?  ( trim($bioRef) !== "" ) ? "/SD: {$rs['shipdocref']}" : "" : ""; 
+          $comDsp = ( trim($rs['actioncompletedon']) !== "" ) ? "{$rs['actioncompletedon']} ({$rs['actioncompletedby']})" : "";
+
+          $icon = ""; 
+          $icon = ( trim($rs['actionstartedind']) === "No" ) ? "<center><i class=\"material-icons\">warning</i>" : $icon; 
+          $icon = ( trim($rs['actionstartedind']) === "Yes" ) ? "<center><i class=\"material-icons\">work</i>" : $icon; 
+          $icon = ( trim($rs['completedind']) === "Yes" ) ? "<center><i class=\"material-icons\">done_all</i>" : $icon;
+
+
+          $innerTbl .= "<tr class=faRow onclick=\"navigateSite('further-action-requests/{$ticketency}');\"><td class=faCell>{$icon}</td><td class=faCell>{$rs['faid']}</td><td class=faCell>{$rs['actionstartedind']}</td><td class=faCell>{$rs['dspPriority']}</td><td>{$dueDte}</td><td>{$actDsp}</td><td>{$bioRef}</td><td>{$rs['assignedagent']}</td><td>{$rs['requestedon']} ({$rs['requestedby']})</td><td>{$rs['completedind']}</td><td>{$comDsp}</td></tr>";
+        } 
+        $innerTbl .= "</tbody></table>";
+
+
+
+$pg = <<<BLDTBL
+    <div id=headTitle>Further Actions Ticket Listing (Lab Actions)</div>
+    <div id=headInstructions>
+            Below is the list of Further Actions which have been requested throughout ScienceServer.  It is sorted by 'Complete', due date, then by the requested on date.  The completed tickets for the last 30 days are shown at the bottom of the table.
+            
+            <table id=legendTbl>
+              <tr><td colspan=2 id=legendHead>Legend</td></tr>
+              <tr><td><i class="material-icons">warning</i></td><td>No Work has started</td></tr>
+              <tr><td><i class="material-icons">work</i></td><td>Work has started</td></tr>
+              <tr><td><i class="material-icons">done_all</i></td><td>Further Action is complete</td></tr>
+            </table>
+    </div>
+    <div id=furtherActionsQueHolder>
+      {$innerTbl}
+    </div>  
 BLDTBL;
+
+    
 return $pg;   
 }
 
