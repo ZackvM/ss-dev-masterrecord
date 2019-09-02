@@ -15,6 +15,13 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'furtheractionperformer':  
+        $pdta = json_decode($passedData, true);         
+        $titleBar = "Further Action Performed";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        $innerDialog = bldFurtherActionAction( $pdta['dialogid'], $passedData );
+      break;        
       case 'qmsInvestigatorEmailer':  
         $pdta = json_decode($passedData, true);         
         $rqstnbr =  cryptservice( $pdta['objid'], 'd');
@@ -3615,23 +3622,73 @@ RTNPAGE;
   return $rtnPage;    
 }
 
+function bldFurtherActionAction ( $dialog, $passedData ) { 
+  $pdta = json_decode($passedData, true);         
+  //{"ticket":113,"actioncode":"SENTRQST"} 
+  $pArr = json_decode( cryptservice( $pdta['objid'], 'd') , true);
 
 
+  require(serverkeys . "/sspdo.zck");    
+  //TODO: TURN INTO WEBSERVICE
+  $actionSQL = "SELECT ifnull(dspvalue,'ACTION ERROR') as actiondsp, ifnull(additionalinformation,0) as completeind, parentid FROM four.sys_master_menus where menu = 'FADETAILACTION' and menuvalue = :actioncode";
+  $actionRS = $conn->prepare( $actionSQL ); 
+  $actionRS->execute(array(':actioncode' => $pArr['actioncode']));
+  if ( $actionRS->rowCount() <> 1 ) { 
+      $dspPage = "ERROR FINDING ACTION CODE VALUE ... SEE A CHTNEASTERN INFORMATICS STAFF MEMBER";
+  } else {
+     $act = $actionRS->fetch(PDO::FETCH_ASSOC);
+     $ticket = substr(("000000" . $pArr['ticket']),-6);
+     $nowDte = date('m/d/Y');
 
+     $warning = ( (int)$act['completeind'] === 1 ) ? "THIS IS THE COMPLETION ACTION FOR THIS ACTION GROUP.  IF YOU CONTINUE, IT WILL MARK THIS ACTIVITY AS COMPLETE AND LOCK THIS ACTION GROUP." : "";
+     $complete = (int)$act['completeind'];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+     $dspPage = <<<DSPPAGE
+<input type=hidden id=fldDialogId value='{$dialog}'>
+<input type=hidden id=fldCompleteInd value={$complete}>
+<div id=infoHoldingTbl>
+  <div class=itmHoldr>
+    <div class=fldLbl>Action Performed</div>
+    <div class=fldDta>{$act['actiondsp']}<input type=hidden id=fldActionCode value='{$pArr['actioncode']}'></div>
+  </div>
+  <div class=itmHoldr>
+    <div class=fldLbl>Ticket #</div>
+    <div class=fldDta>{$ticket}<input type=hidden id=fldTicketNbr value={$pArr['ticket']}></div>
+  </div>
+  <div class=itmHoldr>
+    <div class=fldLbl>Date Performed</div>
+    <div class=fldDta><input type=text id=fldDatePerformed value='{$nowDte}'></div>
+    <div class=hint>(mm/dd/YYYY)</div> 
+  </div>
+  <div class=itmHoldr id=secondline>
+    <div class=fldLbl>Notes</div>
+    <div class=fldDta><TEXTAREA id=fldComments></TEXTAREA></div>
+    <div class=hint>Be Specific - Include Details - Who/What/How</div>
+  </div>
+</div>
+<div id=warningline>{$warning}</div>
+<div id=btnHoldr align=right><button onclick="sendActionUpdate();">Save</button>&nbsp;<button onclick="closeThisDialog('{$dialog}');">Cancel</button></div>
+DSPPAGE;
+  }
+  $rtnPage = <<<RTNPAGE
+<style>
+   #infoHoldingTbl { font-family: Roboto; font-size: 1.5vh; width: 36vw; display: grid; grid-template-columns: repeat( 3, 1fr); grid-gap: 5px;   }
+   .itmHoldr { border-left: 1px solid rgba(0,32,113,.6); border-bottom: 1px solid rgba(0,32,113,.6);} 
+   .fldLbl { font-family: Roboto; font-size: 1.3vh; font-weight: bold; padding: 10px 4px 0 4px; }
+   .fldDta { font-family: Roboto; font-size: 1.5vh; padding: 0 4px 0 4px; } 
+   .hint { font-family: Roboto; font-size: 1vh; color: rgba( 0,32,113,.6); padding: 0 4px 0 4px; }  
+   #fldDatePerformed { width: 8vw; font-size: 1.5vh; }
+   #fldComments { width: 35vw; }  
+   #secondline { grid-column: span 3; grid-row: 2; }
+   #warningline { width: 35vw; padding: 10px; text-align: center; font-family: Roboto; font-size: 1.6vh; color: rgba(237, 35, 0,1); font-weight: bold;  }  
+   #btnHoldr { width: 36vw; padding: 10px 6px; } 
+   button { border: 1px solid rgba(0,32,113,1); background: rgba(255,255,255,1); padding: 10px 4px; width: 3vw; transition: .5s; }
+   button:hover { cursor: pointer; background: rgba(0,32,113,1); color: rgba(255,255,255,1); }    
+</style>
+   {$dspPage}
+RTNPAGE;
+  return $rtnPage;
+}
 
 function bldQMSInvestigatorEmailer ( $dialog, $passedData ) { 
     
@@ -5075,11 +5132,10 @@ return $rtnThis;
 function bldFurtherActionItem ( $itmency ) { 
 
     $ticketNbr = cryptservice( $itmency , 'd');
-
-    
+ 
     //TODO:  TURN INTO A WEBSERVICE
     require(serverkeys . "/sspdo.zck");    
-    $sql = "SELECT substr(concat('000000',idlabactions),-6) as ticketnbr , actionstartedind , ifnull(date_format(startedondate,'%m/%d/%Y'),'') as startedondate, ifnull(startedby,'') as startedby , ifnull(frommodule,'Unknown Module') frommodule, ifnull(objshipdoc,'') as objshipdoc, ifnull(objhprid,'') as objhprid, ifnull(objpbiosample,'') as objpbiosample, ifnull(objbgs,'') as objbgs, ifnull(assignedagent,'') as assignedagent, ifnull(actioncode,'UNKNOWN') as actioncode, ifnull(actiondesc,'') as actiondesc, ifnull(actionnote,'') as actionnote, ifnull(notifyoncomplete,0) as notifyoncomplete, ifnull(date_format(duedate,'%m/%d/%Y'),'') as duedate, ifnull(actionrequestedby,'UNKNOWN') as actionrequestedby, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as actionrequestedon , ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompleteon, ifnull(actioncompletedby,'') as actioncompletedby FROM masterrecord.ut_master_furtherlabactions where idlabactions = :ticketnumber and activeind = :activeind";
+    $sql = "SELECT substr(concat('000000',idlabactions),-6) as ticketnbr , actionstartedind , ifnull(date_format(startedondate,'%m/%d/%Y'),'') as startedondate, ifnull(startedby,'') as startedby , ifnull(frommodule,'Unknown Module') frommodule, ifnull(objshipdoc,'') as objshipdoc, ifnull(objhprid,'') as objhprid, ifnull(objpbiosample,'') as objpbiosample, ifnull(objbgs,'') as objbgs, ifnull(assignedagent,'') as assignedagent, ifnull(actioncode,'UNKNOWN') as actioncode, ifnull(actiondesc,'') as actiondesc, ifnull(actionnote,'') as actionnote, ifnull(notifyoncomplete,0) as notifyoncomplete, ifnull(date_format(duedate,'%m/%d/%Y'),'') as duedate, ifnull(actionrequestedby,'UNKNOWN') as actionrequestedby, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as actionrequestedon , ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompleteon, ifnull(actioncompletedby,'') as actioncompletedby, faaction.assignablestatus as actiongridtype FROM masterrecord.ut_master_furtherlabactions fa LEFT JOIN (SELECT menuvalue, dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'FAACTIONLIST') faaction on fa.actioncode = faaction.menuvalue where idlabactions = :ticketnumber and activeind = :activeind";
     $rs = $conn->prepare($sql); 
     $rs->execute(array(':ticketnumber' => (int)$ticketNbr, ':activeind' => 1)); 
     if ( $rs->rowCount() <> 1 ) { 
@@ -5091,71 +5147,61 @@ BLDPG;
 
     $ticket = $rs->fetch(PDO::FETCH_ASSOC);
     $pbioref = ( trim($ticket['objpbiosample']) !== "" ) ?  (int)$ticket['objpbiosample'] : "";
-    $pbioref .= ( trim($ticket['objbgs']) !== "" ) ?  ( trim($pbioref) === "" ) ? $ticket['objbgs'] : " / {$ticket['objbgs']}"  : "";
-    $sd = ( trim($ticket['objshipdoc']) !== "" ) ? substr(('000000'.$ticket['objshipdoc'] ),-6) : "";
+    $pbioref .= ( trim($ticket['objbgs']) !== "" ) ?  ( trim($pbioref) === "" ) ? $ticket['objbgs'] : " / {$ticket['objbgs']}"  : "-";
+    $sd = ( trim($ticket['objshipdoc']) !== "" ) ? substr(('000000'.$ticket['objshipdoc'] ),-6) : "-";
     $ddate = ( trim($ticket['duedate']) !== "" && $ticket['duedate'] !== '01/01/1900' ) ? $ticket['duedate'] : "";
+    $notify = ( (int)trim($ticket['notifyoncomplete']) === 1 ) ? "Yes" : "No";
+    $workstart = ( trim($ticket['startedondate']) !== "" ) ? trim($ticket['startedondate']) : "";
+    $workstart .= ( trim($ticket['startedby']) !== "" ) ? ( $workstart === "" ) ? trim( $ticket['startedby'] ) : " :: {$ticket['startedby']}" : "-";
+  
+    $complete = ( trim($ticket['actioncompleteon']) !== "" ) ? trim($ticket['actioncompleteon']) : "";
+    $complete .= ( trim( $ticket['actioncompletedby']) !== "" ) ? ( trim($complete) === "" ) ? $ticket['actioncompletedby'] : " :: {$ticket['actioncompletedby']}" : "-";
+
+
+    //TODO:   TURN INTO A WEBSERVICE
+    $faListSQL = "SELECT actionlist.menuvalue detailactioncode, actionlist.dspvalue detailaction, ifnull(actionlist.additionalInformation,0) as completeactionind, doneaction.whoby, ifnull(date_format(doneaction.whenon,'%m/%d/%Y %H:%i'),'') as whenon, doneaction.comments FROM four.sys_master_menus actionlist left join (SELECT fadetailactioncode, whoby, whenon, comments FROM masterrecord.ut_master_faction_detail where faticket = :ticketnbr ) doneaction on actionlist.menuvalue = doneaction.fadetailactioncode  where actionlist.parentid = :actioncodeid and actionlist.menu = 'FADETAILACTION' and actionlist.dspind = 1 order by actionlist.dsporder";
+    $faListRS = $conn->prepare($faListSQL);
+    $faListRS->execute(array(':ticketnbr' => $ticketNbr, ':actioncodeid' => $ticket['actiongridtype']));
+   
+    $action = "<table border=0 cellspacing=0 cellpadding=0><thead><tr><td class=col1>Action</td><td class=col3>Performed By :: When</td><td class=col4>Comments</td></tr></thead><tbody>";
+    while ( $r = $faListRS->fetch(PDO::FETCH_ASSOC)) { 
+      $onwhen = ( trim($r['whenon']) !== "" ) ? " :: {$r['whenon']}" : "";
+      $pArr = array();
+      $pArr['ticket'] = (int)$ticketNbr;
+      $pArr['actioncode'] = $r['detailactioncode'];
+      $pArrJson = cryptservice(json_encode($pArr));
+      $actionPop = ( $onwhen === "" ) ? " generateDialog('furtheractionperformer','{$pArrJson}'); " : " alert('The \'Action\' has already been completed.'); ";  
+      $action .= "<tr onclick=\"{$actionPop}\"><td>{$r['detailaction']}</td><td>{$r['whoby']} {$onwhen}</td><td>{$r['comments']}</td></tr>";
+    }
+    $action .= "</tbody></table>";
+
 
     $pg = <<<BLDPG
 <div id=ticketHolder>
+
 <div id=ticketHeadAnnounce>Further Action/Lab Action Request</div>
 
-<div class=tDataDsp>
-   <div class=tLabel>Ticket # </div>
-   <div class=tData>{$ticket['ticketnbr']}</div>
+<div class=tDataDsp><div class=tLabel>Ticket # </div><div class=tData>{$ticket['ticketnbr']}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Date Requested </div><div class=tData>{$ticket['actionrequestedon']}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Requested By</div><div class=tData>{$ticket['actionrequestedby']} ({$ticket['frommodule']})</div></div> 
+<div class=tDataDsp><div class=tLabel>Notify </div><div class=tData>{$notify}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Due Date </div><div class=tData>{$ddate}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Biogroup Ref. </div><div class=tData>{$pbioref}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Ship-Doc</div><div class=tData>{$sd}</div></div> 
+<div class=tDataDspWide><div class=tLabel>HPR Review # </div><div class=tData>{$ticket['objhprid']}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Agent </div><div class=tData>{$ticket['assignedagent']}</div></div> 
+<div class=tDataDspSuperWide><div class=tLabel>Work Started</div><div class=tData>{$workstart}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Completed</div><div class=tData>{$complete}&nbsp;</div></div> 
+<div id=wholeLineTwo><div class=tLabel>Requested Action </div><div class=tData>{$ticket['actiondesc']}</div></div> 
+<div id=wholeLineThree><div class=tData>{$ticket['actionnote']}</div></div> 
+
+<div id=divDivOne>Actions Taken</div> 
+
+<div id=actionGrid>
+  Click row to complete action.
+  {$action} 
+
 </div> 
-
-<div class=tDataDspWide >
-   <div class=tLabel>Date Requested </div>
-   <div class=tData>{$ticket['actionrequestedon']}</div>
-</div> 
-
-<div class=tDataDspWide >
-   <div class=tLabel>Requested By</div>
-   <div class=tData>{$ticket['actionrequestedby']} ({$ticket['frommodule']})</div>
-</div> 
-
-<div class=tDataDsp>
-   <div class=tLabel>Notify </div>
-   <div class=tData> &nbsp; </div>
-</div> 
-
-<div class=tDataDspWide>
-   <div class=tLabel>Due Date </div>
-   <div class=tData>{$ddate}</div>
-</div> 
-
-<div class=tDataDspWide>
-   <div class=tLabel>Biogroup Ref. </div>
-   <div class=tData>{$pbioref}</div>
-</div> 
-
-<div class=tDataDspWide>
-   <div class=tLabel>Ship-Doc</div>
-   <div class=tData>{$sd}</div>
-</div> 
-
-<div class=tDataDspWide>
-   <div class=tLabel>HPR Review # </div>
-   <div class=tData>{$ticket['objhprid']}</div>
-</div> 
-
-<div class=tDataDspWide>
-   <div class=tLabel>Agent </div>
-   <div class=tData>{$ticket['assignedagent']}</div>
-</div> 
-
-<div class=tDataDspSuperWide>
-   <div class=tLabel>Work Started </div>
-   <div class=tData> &nbsp;</div>
-</div> 
-
-<div class=tDataDspWide>
-   <div class=tLabel>Completed </div>
-   <div class=tData> &nbsp;</div>
-</div> 
-
-
-
 
 </div>
 BLDPG;

@@ -322,6 +322,28 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 #ticketHolder .tDataDspSuperWide .tLabel { font-family: Roboto; font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .5vh .5vw 0 .5vw; } 
 #ticketHolder .tDataDspSuperWide .tData  { font-family: Roboto; font-size: 1.5vh;  color: rgba({$this->color_zackgrey},1); padding: .2vh .5vw .5vh .6vw; }
 
+#ticketHolder #wholeLineTwo { grid-column: 1 / 22; grid-row: 3; } 
+#ticketHolder #wholeLineTwo .tLabel { font-family: Roboto; font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .5vh .5vw 0 .5vw; } 
+#ticketHolder #wholeLineTwo .tData  { font-family: Roboto; font-size: 1.5vh;  color: rgba({$this->color_zackgrey},1); padding: .2vh .5vw .5vh .6vw; }
+
+#ticketHolder #wholeLineThree { grid-column: 1 / 22; grid-row: 4; } 
+#ticketHolder #wholeLineThree .tLabel { font-family: Roboto; font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .5vh .5vw 0 .5vw; } 
+#ticketHolder #wholeLineThree .tData  { font-family: Roboto; font-size: 1.5vh;  color: rgba({$this->color_zackgrey},1); padding: .2vh .5vw .5vh .6vw; }
+
+#ticketHolder #divDivOne { grid-column: 1 / 22; grid-row: 5; font-family: Roboto; font-size: 1.8vh; text-align: center; padding: .5vh 0; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_darkgrey},.5);}  
+
+#ticketHolder #actionGrid { grid-column: 1 / 22; grid-row: 6; box-sizing: border-box; padding: 1vh 1vw; font-family: Roboto; font-size: 1.3vh; color: rgba({$this->color_zackgrey},1);}
+#ticketHolder #actionGrid table { width: 100%; font-family: Roboto; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1);   }
+#ticketHolder #actionGrid table thead tr td { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: 8px; font-weight: bold; }
+#ticketHolder #actionGrid table .col1 { width: 30%; }  
+#ticketHolder #actionGrid table .col3 { width: 20%; }
+#ticketHolder #actionGrid table .col4 { width: 50%; }
+#ticketHolder #actionGrid table tbody tr:nth-child(even) { background: rgba({$this->color_darkgrey}, .2); }
+#ticketHolder #actionGrid table tbody tr:hover { background: rgba({$this->color_lamber},.8); cursor: pointer;  }
+#ticketHolder #actionGrid table tbody tr td { padding: 4px 8px; border-bottom: 1px solid rgba({$this->color_darkgrey},.7); border-right: 1px solid rgba({$this->color_darkgrey},.7); }  
+
+
+
 STYLESHEET;
 return $rtnThis;      
   }

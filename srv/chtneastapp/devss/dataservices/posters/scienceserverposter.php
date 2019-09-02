@@ -33,7 +33,103 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+    function furtheractionactionnote ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowCoord = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+      //{"ticket":"116","dateperformed":"09/02/2019","action":"SENT","dialog":"ZsZho9ioPFQdsKj","notes":"These are notes ","complete":"0"}
+
+      //(list( $errorInd, $msgArr[] ) = array(1 , "{$u['usr']}"));
+
+      ( !array_key_exists('ticket', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('dateperformed', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('action', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('dialog', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('notes', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('complete', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : "";       
+      ( trim($pdta['ticket']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO TICKET SPECIFIED.")) : "";
+      ( trim($pdta['action']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO ACTION CODE WAS SPECIFIED.")) : "";
+      ( trim($pdta['dialog']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO DIALOG CODE WAS SPECIFIED.")) : "";
+      ( trim($pdta['dateperformed']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO ACTION PERFORMANCE DATE SPECIFIED.")) : "";
+      ( !is_numeric( $pdta['complete'] )) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR: COMPLETE MUST BE NUMERIC AND EQUAL TO EITHER 0 OR 1")) : "";
+
+      //CHECK ACTION CODE
+      if ( trim($pdta['action']) !== "" ) {  
+        $chkSQL = "SELECT ifnull(additionalinformation,0) as completeind, assignablestatus as requirednote  FROM four.sys_master_menus where menu = 'FADETAILACTION' and menuvalue = :actioncode";
+        $chkRS = $conn->prepare($chkSQL);
+        $chkRS->execute(array(':actioncode' => $pdta['action'] ));
+        $complete = 0;
+        if ( $chkRS->rowCount() <> 1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "ERROR: ACTION CODE VALUE NOT FOUND."));
+        } else { 
+          $a = $chkRS->fetch(PDO::FETCH_ASSOC); 
+          ( (int)$a['requirednote'] === 1 && trim( $pdta['notes'] ) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THIS ACTION REQUIRES A NOTE ALSO BE MADE.")) : ""; 
+          $complete = (int)$a['completeind'];
+        }
+      } else { 
+         (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO ACTION CODE WAS SPECIFIED."));
+      }
+  
+      //CHECK DATE VALUE
+      ( !ssValidateDate( $pdta['dateperformed'], 'm/d/Y') ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE ACTION DATE IS INVALID.")) : "";
+
+
+      if ($errorInd === 0 ) {
+        $chkForUpdate = "SELECT idlabactions FROM masterrecord.ut_master_furtherlabactions where idlabactions = :ticket and actionstartedind = 0";
+        $chkForRS = $conn->prepare($chkForUpdate);
+        $chkForRS->execute(array(':ticket' => $pdta['ticket'] )); 
+        if ( $chkForRS->rowCount() === 1 ) { 
+            //UPDATE TICKET
+            $updSQL = "update masterrecord.ut_master_furtherlabactions set actionstartedind = 1, startedondate = now(), startedby = :usr where idlabactions = :ticket";
+            $updRS = $conn->prepare($updSQL); 
+            $updRS->execute(array(':usr' => $u['usr'], ':ticket' => (int)$pdta['ticket'] ));
+        }
+        
+        $pdte = strtotime($pdta['dateperformed']);
+        $newformat = date('Y-m-d',$pdte);
+        
+        $detSQL = "insert into masterrecord.ut_master_faction_detail ( faticket, fadetailactioncode, whoby, whenon, comments) values ( :ticket, :actioncode, :usr, :dateperformed, :notes)";
+        $detRS = $conn->prepare($detSQL);
+        $detRS->execute(array(':ticket' => (int)$pdta['ticket'], ':actioncode' => $pdta['action'], ':usr' => $u['usr'], ':dateperformed' => $newformat, ':notes' => $pdta['notes']));
+
+        if ( $complete === 1 ) {  
+          $comChkSQL = "SELECT * FROM masterrecord.ut_master_furtherlabactions where actioncompletedon is not null and idlabactions = :ticket";
+          $comChkRS = $conn->prepare($comChkSQL); 
+          $comChkRS->execute(array( ':ticket' => (int)$pdta['ticket'] )); 
+          if ( $comChkRS->rowCount() === 1 ) { 
+          } else {
+            $comSQL = "update masterrecord.ut_master_furtherlabactions set actioncompletedon = now() , actioncompletedby = :usr where idlabactions = :ticketnbr";
+            $comRS = $conn->prepare($comSQL); 
+            $comRS->execute(array(':usr' => $u['usr'], ':ticketnbr' => (int)$pdta['ticket'] ));
+          }
+        }
+        $dta = $pdta['dialog'];
+        $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;                 
+    }
+
     function deactivatepbfa ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -3714,6 +3810,11 @@ MBODY;
              break; 
            case 'qmsInvestigatorEmailer':
              $primeFocus = "textWriterArea";  
+             $left = '8vw';
+             $top = '8vh';
+             break;                
+           case 'furtheractionperformer':
+             $primeFocus = "";  
              $left = '8vw';
              $top = '8vh';
              break;                
