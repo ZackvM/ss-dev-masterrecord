@@ -182,7 +182,7 @@ class datadoers {
       $sessid = session_id(); 
             
       if ( $errorInd === 0 ) {
-         $pastFASQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid , if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(actionstartedind,0) as actionstartedind, ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'-') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where objpbiosample = :pbiosample and activeind = 1 order by idlabactions desc";
+         $pastFASQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid , if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(actionstartedind,0) as actionstartedind, ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '',  substr( ifnull(objpbiosample,''), 1, 5),   ifnull(objbgs,'')) as biosampleref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'-') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where objpbiosample = :pbiosample and activeind = 1 order by idlabactions desc";
          $pastFARS = $conn->prepare( $pastFASQL ); 
          $pastFARS->execute(array(':pbiosample' => $pdta['bgref']));
          if ( $pastFARS->rowCount() < 1 ) {
@@ -196,7 +196,8 @@ class datadoers {
               } else { 
                   $rmBtn = "<td>-</td>";                   
               }
-               
+              
+              
               $pfaTbl .= "<tr>{$rmBtn}<td>{$f['faid']}</td><td>{$f['completedind']}</td><td>{$f['biosampleref']}</td><td>{$f['requestingModule']}</td><td>{$f['actiondescription']}<br>{$f['actionnote']}</td><td>{$f['assignedagent']}</td><td>{$f['dspPriority']}<br>{$f['duedate']}</td><td>{$f['requestedby']}<br>{$f['requestedon']}</td></tr>";
            }
            $pfaTbl .= "</tbody></table>";
@@ -280,23 +281,33 @@ class datadoers {
             //"{\"rqstPayload\":\"{\\\"requestingmodule\\\":\\\"QMS-QA\\\",\\\"biohpr\\\":\\\"018623\\\",\\\"slidebgs\\\":\\\"83239T003\\\",\\\"bgreadlabel\\\":\\\"83239T\\\",\\\"pbiosample\\\":\\\"83239.00000000\\\"}\",\"bioReference\":\"83239T003\",\"actionsValue\":\"BIOSAMPLEPROC\",\"actionNote\":\"This is a note\",\"agent\":\"proczack\",\"priority\":\"FANORMAL\",\"duedate\":\"08\/30\/2019\"}"  
               $rqstpayload = json_decode( $pdta['rqstPayload'], true );       
               $notify = ( (int)$pdta['notifycomplete'] === 1 ) ? 1 : 0;
-
+              
+              $mod = ( trim( $rqstpayload['requestingmodule']) !== "" ) ?  $rqstpayload['requestingmodule'] : "UNKNOWN";
+              $biohpr = ( trim( $rqstpayload['biohpr'] ) !== "" ) ? (int)$rqstpayload['biohpr'] : 0; 
+              $pbiosamp = ( trim( $rqstpayload['pbiosample'] ) !== "" ) ? $rqstpayload['pbiosample'] : ""; 
+              $bgread = ( trim( $rqstpayload['bgreadlabel'] ) !== "" ) ? $rqstpayload['bgreadlabel'] : ""; 
+              $bioref = ( trim( $pdta['bioReference'] ) !== "" ) ? $pdta['bioReference'] : ""; 
+              $agnt = ( trim( $rqstpayload['agent'] ) !== "" ) ? $rqstpayload['agent'] : ""; 
+              $actval = ( trim( $pdta['actionsValue'] ) !== "" ) ? $pdta['actionsValue'] : "UNKNOWN"; 
+              $actnote =  ( trim( $rqstpayload['actionNote'] ) !== "" ) ? $rqstpayload['actionNote'] : ""; 
+              $prio = ( trim( $pdta['priority'] ) !== "" ) ? $pdta['priority'] : "FANORMAL"; 
+              
               $faInsSQL = "insert into masterrecord.ut_master_furtherlabactions ( frommodule, activeind, objhprid, objpbiosample, bgreadlabel, objbgs, assignedagent, actioncode, actiondesc, actionnote, notifyOnComplete, duedate, prioritymarkcode, actionrequestedby, actionrequestedon) values ( :frommodule, :activeind, :objhprid, :objpbiosample, :bgreadlabel, :objbgs, :assignedagent, :actioncode, :actiondesc, :actionnote, :notifyOnComplete, :duedate, :prioritymarkcode, :actionrequestedby, now())"; 
               $faInsRS = $conn->prepare($faInsSQL); 
               $faInsRS->execute(array(
-                ':frommodule' => $rqstpayload['requestingmodule']
+                ':frommodule' => $mod
                ,':activeind' => 1
-               ,':objhprid' => $rqstpayload['biohpr']
-               ,':objpbiosample' => $rqstpayload['pbiosample']
-               ,':bgreadlabel' => $rqstpayload['bgreadlabel']
-               ,':objbgs' => $pdta['bioReference'] 
-               ,':assignedagent' => $pdta['agent'] 
-               ,':actioncode' => $pdta['actionsValue'] 
+               ,':objhprid' => $biohpr
+               ,':objpbiosample' => $pbiosamp
+               ,':bgreadlabel' => $bgread
+               ,':objbgs' => $bioref
+               ,':assignedagent' => $agnt 
+               ,':actioncode' => $actval 
                ,':actiondesc' => $actionDsp
-               ,':actionnote' => $pdta['actionNote']
+               ,':actionnote' => $actnote
                ,':notifyOnComplete' => $notify
                ,':duedate' => $dd
-               ,':prioritymarkcode' => $pdta['priority']
+               ,':prioritymarkcode' => $prio
                ,':actionrequestedby' => $u['usr']
               ));
 
@@ -3699,6 +3710,11 @@ MBODY;
              $left = '27vw';
              $top = '13vh';               
             break;
+           case 'bgRqstFA': 
+             $primeFocus = "";
+             $left = '2vw';
+             $top = '12vh';               
+            break;                              
            case 'masterQMSAction':
              $primeFocus = "";
              $left = '13vw';

@@ -209,6 +209,21 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $innerDialog = bldDialogMasterAddSegment( $passedData );
         //$footerBar = "SEGMENT ADD";   
         break;        
+      case 'bgRqstFA':
+         $pdta = json_decode($passedData, true);   
+         $bg = cryptservice( $pdta['objid'] , 'd'); 
+         $faArr['requestingmodule'] = "BG-DEF";
+         $faArr['biohpr'] = "";
+         $faArr['slidebgs'] = "";
+         $faArr['bgreadlabel'] = "";
+         $faArr['pbiosample'] = $bg;        
+                 
+         $titleBar = "Request Further Action (Master-Record)";
+         $standardSysDialog = 0;
+         $closer = "closeThisDialog('{$pdta['dialogid']}');";                 
+         $innerDialog = bldFurtherActionDialog ( $pdta['dialogid'] , json_encode( $faArr) );
+         //$footerBar = "SEGMENT ADD";           
+          break;
       case 'prnew': 
         $pdta = json_decode($passedData, true);          
         $titleBar = "Pathology Report Uploader";
@@ -2701,7 +2716,6 @@ $innerBar = <<<BTNTBL
 </tr>
 BTNTBL;
 break;
-
 case 'biogroupdefinition':
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSeg><tr><td><i class="material-icons">cancel</i></td><td>Void Segment</td></tr></table></td>
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnEditDX><tr><td><i class="material-icons">edit</i></td><td>Edit DX</td></tr></table></td>
@@ -2713,7 +2727,8 @@ case 'biogroupdefinition':
   //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPristine><tr><td><i class="material-icons">change_history</i></td><td>Pristine</td></tr></table></td>
 $innerBar = <<<BTNTBL
 <tr>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSegment><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSegment><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnRqstFA><tr><td><i class="material-icons">perm_data_setting</i></td><td>Rqst Further Action</td></tr></table></td>        
 </tr>
 BTNTBL;
     break;
@@ -3533,8 +3548,6 @@ foreach ($htrarr['DATA'] as $agval) {
 $agm .= "</table>";
 $htrmnu = "<div class=menuHolderDiv><input type=hidden id=faFldPriorityValue value=\"{$givendspcode}\"><input type=text id=faFldPriority READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddHTR>{$agm}</div></div>";
 
-
-
 $pastFASQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid , if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(actionstartedind,0) as actionstartedind, ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'-') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where objpbiosample = :pbiosample and activeind = 1 order by idlabactions desc";
 
 $pastFARS = $conn->prepare( $pastFASQL ); 
@@ -3555,13 +3568,15 @@ if ( $pastFARS->rowCount() < 1 ) {
   $pfaTbl .= "</tbody></table>";
 }
 
+$bgdsp = ( trim($pdta['slidebgs']) !== "" ) ? trim($pdta['slidebgs']) : trim($pdta['pbiosample']);
+
 $dspPage = <<<DSPPAGE
 <div id=faWrapper>
 <table border=0>
   <tr><td id=faHead>Further Actions <input type=hidden id=faFldRequestJSON value='{$passedData}'></td></tr>
   <tr><td>
 <table border=0><tr>
-  <td><div class=faDivHolder><div class=dspLabel>Biosample # *</div><div class=elemHolder><input type=text id=faFldReference class="inputFld" value="{$pdta['slidebgs']}"></div></div></td>
+  <td><div class=faDivHolder><div class=dspLabel>Biosample # *</div><div class=elemHolder><input type=text id=faFldReference class="inputFld" value="{$bgdsp}"></div></div></td>
   <td><div class=faDivHolder><div class=dspLabel>Action to Take *</div><div class=elemHolder>{$faamnu}</div></div></td>
   <td><div class=faDivHolder><div class=dspLabel>Notes</div><div class=elemHolder><input type=text id=faFldNotes class="inputFld" value=""></div></div></td>
   <td><div class=faDivHolder><div class=dspLabel>Assign Agent</div><div class=elemHolder>{$agntmnu}</div></div></td>
@@ -5159,7 +5174,7 @@ BLDPG;
 
 
     //TODO:   TURN INTO A WEBSERVICE
-    $faListSQL = "SELECT actionlist.menuvalue detailactioncode, actionlist.dspvalue detailaction, ifnull(actionlist.additionalInformation,0) as completeactionind, doneaction.whoby, ifnull(date_format(doneaction.whenon,'%m/%d/%Y %H:%i'),'') as whenon, doneaction.comments FROM four.sys_master_menus actionlist left join (SELECT fadetailactioncode, whoby, whenon, comments FROM masterrecord.ut_master_faction_detail where faticket = :ticketnbr ) doneaction on actionlist.menuvalue = doneaction.fadetailactioncode  where actionlist.parentid = :actioncodeid and actionlist.menu = 'FADETAILACTION' and actionlist.dspind = 1 order by actionlist.dsporder";
+    $faListSQL = "SELECT actionlist.menuvalue detailactioncode, actionlist.dspvalue detailaction, ifnull(actionlist.additionalInformation,0) as completeactionind, doneaction.whoby, ifnull(date_format(doneaction.whenon,'%m/%d/%Y'),'') as whenon, doneaction.comments FROM four.sys_master_menus actionlist left join (SELECT fadetailactioncode, whoby, whenon, comments FROM masterrecord.ut_master_faction_detail where faticket = :ticketnbr ) doneaction on actionlist.menuvalue = doneaction.fadetailactioncode  where actionlist.parentid = :actioncodeid and actionlist.menu = 'FADETAILACTION' and actionlist.dspind = 1 order by actionlist.dsporder";
     $faListRS = $conn->prepare($faListSQL);
     $faListRS->execute(array(':ticketnbr' => $ticketNbr, ':actioncodeid' => $ticket['actiongridtype']));
    
