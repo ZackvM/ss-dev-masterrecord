@@ -1845,6 +1845,7 @@ select bs.pbiosample
       , substr(ifnull(mnupr.dspvalue,''),1,1) as pathologyrptind
       , ifnull(bs.pathreportid,0) as pathologyrptdocid 
       , substr(ifnull(mnuinfc.dspvalue,''),1,1) as informedconsentind
+      , substr(ifnull(mnuch.dspvalue,''),1,1) as chartindicator       
       , ifnull(bs.associd,'') as associd
       , ifnull(bs.biosamplecomment,'') as bscomment
       , ifnull(bs.questionhpr,'') as hprquestion
@@ -1860,6 +1861,7 @@ left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'c
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'rx') as mnurx on bs.radind = mnurx.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') as mnupr on bs.pathreport = mnupr.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INFC') as mnuinfc on bs.informedconsent = mnuinfc.menuvalue
+left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'BGCHARTIND') as mnuch on bs.chartind = mnuch.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PROCTYPE') as mnuprctype on bs.proctype = mnuprctype.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus mnu where mnu.menu = 'SEGMENTSTATUS') as mnuseg on sg.segstatus = mnuseg.menuvalue
 left join (SELECT iloc.scancode, iloc.locationdsp, ifnull(tsts.longvalue,'')  as hprtraystatusdsp, ifnull(rtn.locationdsp,'')  as heldwithin, ifnull(iloc.hprtrayheldwithinnote,'') as hprtrayheldwithinnote, ifnull(iloc.hprtrayreasonnotcompletenote,'') as hprtrayreasonnotcompletenote, ifnull(date_format(iloc.hprtraystatuson,'%m/%d/%Y'),'') as hprtraystatuson FROM four.sys_inventoryLocations iloc left join (SELECT dspvalue, longvalue FROM four.sys_master_menus where menu = 'HPRTrayStatus') as tsts on iloc.hprtraystatus = tsts.dspvalue left join four.sys_inventoryLocations rtn on iloc.hprtrayheldwithin = rtn.scancode where iloc.parentId = 293) as htry on sg.hprboxnbr = htry.scancode              

@@ -283,6 +283,19 @@ STYLESHEET;
  return $rtnThis;
   }
 
+  function chartreviewbuilder ( $mobileind ) { 
+
+$rtnThis = <<<STYLESHEET
+
+body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   box-sizing: border-box; }
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  }       
+      
+
+STYLESHEET;
+return $rtnThis;
+
+  }
+  
   function furtheractionrequests ( $mobileind ) { 
 $rtnThis = <<<STYLESHEET
 

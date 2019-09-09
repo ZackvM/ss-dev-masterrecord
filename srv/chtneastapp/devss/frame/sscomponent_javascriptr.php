@@ -2402,6 +2402,12 @@ $rtnThis = <<<RTNTHIS
 
 document.addEventListener('DOMContentLoaded', function() {  
   
+  if ( byId('btnRqstFA')) { 
+     byId('btnRqstFA').addEventListener('click', function() { 
+       generateDialog('bgRqstFA', byId('fldFAGetter').value );
+     }, false);
+  }        
+        
    if (byId('btnReloadGrid')) { 
     byId('btnReloadGrid').addEventListener('click', function() { 
         location.reload(true);
@@ -3283,7 +3289,7 @@ function makeFurtherActionRequest () {
   obj['notifycomplete'] = byId('faFldNotifyComplete').checked;
   var passdta = JSON.stringify(obj); 
   var mlURL = "/data-doers/save-further-action";
-  universalAJAX("POST",mlURL,passdta,answerFurtherActionRequests,1);
+  universalAJAX("POST",mlURL,passdta,answerFurtherActionRequests,2);
 }
 
 function answerFurtherActionRequests( rtnData ) { 
@@ -3317,7 +3323,7 @@ function bldFurtherActionGrid( pbiosample ) {
    obj['bgref'] = pbiosample;  
    var passdta = JSON.stringify(obj); 
    var mlURL = "/data-doers/display-pbfatbl";
-   universalAJAX("POST",mlURL,passdta,answerBldFurtherActionGrid,1);
+   universalAJAX("POST",mlURL,passdta,answerBldFurtherActionGrid,2);
 }
    
 function answerBldFurtherActionGrid ( rtnData ) { 
@@ -3342,7 +3348,7 @@ function answerBldFurtherActionGrid ( rtnData ) {
    obj['faid'] = parseInt(whichfaid);  
    var passdta = JSON.stringify(obj); 
    var mlURL = "/data-doers/deactivate-pbfa";
-   universalAJAX("POST",mlURL,passdta,answerDeactivateFA,1);
+   universalAJAX("POST",mlURL,passdta,answerDeactivateFA,2);
  }
    
  function answerDeactivateFA ( rtnData ) { 

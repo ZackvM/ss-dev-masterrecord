@@ -1066,7 +1066,7 @@ MOLESQL;
 select  
   dta.readlabel, concat(dta.bgsbg
   , if (dta.minseg = dta.maxseg, dta.minseg, concat(dta.minseg,'-',dta.maxseg))) as bgs
-  ,  dta.prepmethod, dta.preparation, dta.segstatus, sgst.dspvalue as segstatusdsp   , dta.shippeddate, dta.shipdocrefid, ifnull(sd.sdstatus,'') as sdstatus, ifnull(sd.salesorder,'') as salesorder, ifnull(sd.salesorderamount,'') as salesorderamount
+  ,  dta.prepmethod, dta.preparation, dta.metric, dta.mmdsp, dta.segstatus, sgst.dspvalue as segstatusdsp   , dta.shippeddate, dta.shipdocrefid, ifnull(sd.sdstatus,'') as sdstatus, ifnull(sd.salesorder,'') as salesorder, ifnull(sd.salesorderamount,'') as salesorderamount
   , dta.slidegroupid, dta.assignedto, dta.investlname, dta.investfname
   , dta.investinstitution, dta.assignedreq, dta.procurementdate, dta.specimencategory
   , dta.site, dta.subsite, dta.dx, dta.subdx, dta.metsite, dta.hprind, dta.qcind, dta.createdby
@@ -1081,7 +1081,10 @@ select
   conglom.readlabel, conglom.bgsbg
   , min(conglom.segmentlabel) minseg
   , max(conglom.segmentlabel) maxseg
-  ,  conglom.prepmethod, conglom.preparation, conglom.segstatus  , conglom.shippeddate, conglom.shipdocrefid
+  ,  conglom.prepmethod, conglom.preparation
+  , conglom.metric
+  , conglom.mmdsp
+  , conglom.segstatus  , conglom.shippeddate, conglom.shipdocrefid
   , conglom.slidegroupid, conglom.assignedto, conglom.investlname, conglom.investfname
   , conglom.investinstitution, conglom.assignedreq, conglom.procurementdate, conglom.specimencategory
   , conglom.site, conglom.subsite, conglom.dx, conglom.subdx, conglom.metsite, conglom.hprind, conglom.qcind, conglom.createdby
@@ -1090,7 +1093,7 @@ select
   from 
   (SELECT 
   replace(bs.read_label,'_','') as readlabel, substr(replace(sg.bgs,'_',''),1,6) as bgsbg, ifnull(sg.segmentlabel,'') as segmentlabel, ifnull(sg.prepmethod,'') as prepmethod
-  , ifnull(sg.preparation,'') as preparation, ifnull(sg.segstatus,'') as segstatus, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shippeddate  , ifnull(sg.shipdocrefid,'') as shipdocrefid
+  , ifnull(sg.preparation,'') as preparation, ifnull(sg.metric,'') as metric, ifnull(mmnu.longvalue,'') as mmdsp, ifnull(sg.segstatus,'') as segstatus, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shippeddate  , ifnull(sg.shipdocrefid,'') as shipdocrefid
   , ifnull(sg.SlideGroupID,'') as slidegroupid, ifnull(sg.assignedTo,'') as assignedto, ifnull(i.invest_lname,'') as investlname, ifnull(i.invest_fname,'') as investfname
   , ifnull(i.invest_homeinstitute,'') as investinstitution, ifnull(sg.assignedReq,'') as assignedreq 
   , ifnull(date_format(sg.procurementDate,'%m/%d/%Y'),'') as procurementdate
@@ -1104,11 +1107,12 @@ select
   , ifnull(date_format(bs.hpron,'%m/%d/%Y'),'') as hpron  
   FROM masterrecord.ut_procure_biosample bs
   left join masterrecord.ut_procure_segment sg on bs.pbiosample = sg.biosamplelabel
+  left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') as mmnu on sg.metricuom = mmnu.menuvalue                 
   left join vandyinvest.invest i on sg.assignedto = i.investid
   where bs.associd = :associd and bs.voidind <> 1 and sg.voidind <> 1 
   ) conglom
-  
-  group by conglom.readlabel, conglom.bgsbg, conglom.prepmethod, conglom.preparation, conglom.segstatus, conglom.shippeddate, conglom.shipdocrefid
+
+  group by conglom.readlabel, conglom.bgsbg, conglom.prepmethod, conglom.preparation, conglom.metric, conglom.mmdsp, conglom.segstatus, conglom.shippeddate, conglom.shipdocrefid
   , conglom.slidegroupid, conglom.assignedto, conglom.investlname, conglom.investfname
   , conglom.investinstitution, conglom.assignedreq, conglom.procurementdate, conglom.specimencategory
   , conglom.site, conglom.subsite, conglom.dx, conglom.subdx, conglom.metsite, conglom.hprind, conglom.qcind, conglom.createdby
@@ -3685,6 +3689,11 @@ MBODY;
          $primeFocus = '';
 
          switch ( $pdta['whichdialog'] ) { 
+           case 'chartbldr': 
+             $primeFocus = "";
+             $left = '5vw';
+             $top = '12vh';
+             break;               
            case 'dlgCMTEDIT':
              $primeFocus = "fldDspBGComment";
              $left = '25vw';
