@@ -367,7 +367,8 @@ LBLLBL;
     require(genAppFiles . "/dataconn/sspdo.zck"); 
     $dspdata = array(); 
     //TURN THIS INTO A WEBSERVICE 
-    $dataSQL = "SELECT pb.pbiosample, pb.seglabel, des.speccat, des.primarysite, pb.prp, pb.prpmet, qty as nbrofblock, nbrOSlides, sld.prpmet as sldprpmet FROM four.ut_procure_segment pb left join ( select count(1) as nbrOSlides, prpMet, cutfromblockid from four.ut_procure_segment where procuredat = :instone and date_format(inputon,'%Y%m%d') = :dteone and prp = 'SLIDE' group by prpmet, cutfromblockid) as sld on pb.bgs = sld.cutfromblockid left join (select * from four.ref_procureBiosample_designation where activeind = 1) des on pb.pbiosample = des.pbiosample where pb.procuredat = :insttwo and date_format(pb.inputon,'%Y%m%d') = :dtetwo and pb.prp = 'PB' and nbrOSlides is not null order by pb.pbiosample asc";
+    //TOOK OUT WHERE nbrOSlides IS NOT NULL 
+    $dataSQL = "SELECT pb.pbiosample, pb.seglabel, des.speccat, des.primarysite, pb.prp, pb.prpmet, qty as nbrofblock, ifnull(nbrOSlides,'') as nbrOSlides, ifnull(sld.prpmet,'') as sldprpmet FROM four.ut_procure_segment pb left join ( select count(1) as nbrOSlides, prpMet, cutfromblockid from four.ut_procure_segment where procuredat = :instone and date_format(inputon,'%Y%m%d') = :dteone and prp = 'SLIDE' group by prpmet, cutfromblockid) as sld on pb.bgs = sld.cutfromblockid left join (select * from four.ref_procureBiosample_designation where activeind = 1) des on pb.pbiosample = des.pbiosample where pb.procuredat = :insttwo and date_format(pb.inputon,'%Y%m%d') = :dtetwo and pb.prp = 'PB' order by pb.pbiosample asc";
     $dataRS = $conn->prepare($dataSQL); 
     $dataRS->execute(array( ':instone' => $presentinstitution, ':insttwo' => $presentinstitution, ':dteone' => $dspdate, ':dtetwo' => $dspdate)); 
     while ( $rd = $dataRS->fetch(PDO::FETCH_ASSOC)) { 

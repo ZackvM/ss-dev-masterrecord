@@ -1008,29 +1008,150 @@ return $rtnthis;
 }
 
 function inventory ( $rqststr, $whichusr ) { 
-
-  
+ 
   if ( (int)$whichusr->allowinventory === 1 ) {
-    switch ( strtolower(trim($rqststr[2]))) {      
-      case 'inventorybiosamples':
-        $rtnthis = bldInventoryAction_Inventorymaster($whichusr);
-        break;
-      case 'count':
-          $rtnthis = bldInventoryAction_Inventorytally($whichusr);
-          break;
-      default: 
-        $rtnthis = "<h2>{$rqststr[2]} NOT FOUND";
-    }
+     $tt = treeTop;
+     $rq = $rqststr[2];
+     //TODO MAKE THIS DYNAMIC
+     $selectorcheckin = "";
+     $selectormove = "";
+     $selectorpull = "";
+     $selectorship = "";
+     $selectorcount = "";
+     $selectordestroy = "";
+     $selectorinvmedia = "";
+     $pageTitle = "Inventory Module";
+     $pageDetail = "";
+     switch ( $rq ) { 
+       case 'checkin':
+         $selectorcheckin = " data-selected='true' ";
+         $pageTitle = "Check-In Biosamples";
+         $pageDetail = self::bldInventoryCheckIn();
+         break;
+       case 'movebiosample':
+         $selectormove = " data-selected='true' ";
+         $pageTitle = "Move Inventory";
+         $pageDetail = self::bldInventoryMove();
+         break;
+       case 'shippull':
+         $selectorpull = " data-selected='true' ";
+         $pageTitle = "Pull Biosamples For Shipment";
+         $pageDetail = self::bldInventoryPull();
+         break;
+       case 'shipship':
+         $selectorship = " data-selected='true' ";
+         $pageTitle = "Package Biosamples for Shipment";
+         $pageDetail = self::bldInventoryShip();
+         break;
+       case 'icount':
+         $selectorcount = " data-selected='true' ";
+         $pageTitle = "Basic Inventory Count Function";
+         $pageDetail = self::bldInventoryCount();
+         break;
+       case 'destroybiosamples':
+         $selectordestroy = " data-selected='true' ";
+         $pageTitle = "Scan Biosamples being destroyed";
+         $pageDetail = self::bldInventoryDestroy();
+         break;
+       case 'investigatorstuff':
+         $selectorinvmedia = " data-selected='true' ";
+         $pageTitle = "Scan Investigator Supplied Media";
+         $pageDetail = self::bldInventoryIMedia();
+         break;
+     }
 
+     $pageDetail = ( trim($pageDetail) === "" ) ?  self::bldInventoryMaster() : $pageDetail;
+
+     $rtnthis = <<<RTNTHIS
+<div id=inventoryMasterHoldr>
+<div id=inventoryTitle>{$pageTitle}</div>
+<div id=inventoryBtnBar>
+   <div class=iControlBtn {$selectorcheckin}><a href="{$tt}/inventory/check-in">Check-In</a></div>
+   <div class=iControlBtn {$selectormove}><a href="{$tt}/inventory/move-biosample">Move Inventory</a></div>
+   <div class=iControlBtn {$selectorpull}><a href="{$tt}/inventory/ship-pull">Pull Shipment</a></div>
+   <div class=iControlBtn {$selectorship}><a href="{$tt}/inventory/ship-ship">Ship Shipment</a></div>
+   <div class=iControlBtn {$selectorcount}><a href="{$tt}/inventory/icount">Inventory Count</a></div>
+   <div class=iControlBtn {$selectordestroy}><a href="{$tt}/inventory/destroy-biosamples">Destroy Biosamples</a></div>
+   <div class=iControlBtn {$selectorinvmedia}><a href="{$tt}/inventory/investigator-stuff">Investigator Media</a></div>    
+ </div>
+<div id=inventoryControlPage>{$pageDetail}</div>
+</div>
+RTNTHIS;
   } else { 
    $rtnthis = "<h2>USER NOT ALLOWED ACCESS TO INVENTORY";
   }
   return $rtnthis; 
 }
 
+function bldInventoryMaster() {
+
+  $at = genAppFiles;
+  $crsuffix1900 = base64file("{$at}/publicobj/graphics/heneywell1900CRSuffix.png", "crsuffix1900", "png", true, "");         
+  $pageContent = <<<PAGECONTENT
+This is the Inventory Module for CHTN-ED's ScienceServer.  Start by choosing an activity on the left. 
+<p>
+If you are using a Honeywell 1900 barcode scanner, then CR Suffix mode must be turned on.  You can activate this mode by scanning this barcode with your Honeywell 1900 Barcode scanner.  <p>
+<center>
+{$crsuffix1900} 
+PAGECONTENT;
+return $pageContent;
+}
+
+function bldInventoryCheckIn() { 
+    $pageContent = <<<PAGECONTENT
+<div id=inventoryCheckinElementHoldr>
+  <div id=locationscan></div>
+  <div id=labelscan></div>
+  <div id=ctlButtons></div>
+</div>
+PAGECONTENT;
+return $pageContent;
+}
+
+function bldInventoryMove() { 
+    $pageContent = <<<PAGECONTENT
+THIS IS THE MOVE SCREEN HOLDER
+PAGECONTENT;
+return $pageContent;
+}
+
+function bldInventoryPull() { 
+    $pageContent = <<<PAGECONTENT
+THIS IS THE PULL SHIPMENT SCREEN HOLDER
+PAGECONTENT;
+return $pageContent;
+}
+
+function bldInventoryShip() { 
+    $pageContent = <<<PAGECONTENT
+THIS IS THE SHIP SHIPMENT SCREEN HOLDER
+PAGECONTENT;
+return $pageContent;
+}
+
+function bldInventoryCount() { 
+    $pageContent = <<<PAGECONTENT
+THIS IS THE I-COUNT SCREEN HOLDER
+PAGECONTENT;
+return $pageContent;
+}
+
+function bldInventoryDestroy() { 
+    $pageContent = <<<PAGECONTENT
+THIS IS THE DESTROY SCREEN HOLDER
+PAGECONTENT;
+return $pageContent;
+}
+
+function bldInventoryIMedia() { 
+    $pageContent = <<<PAGECONTENT
+THIS IS THE INVESTIGATOR MEDIA SCREEN HOLDER
+PAGECONTENT;
+return $pageContent;
+}
+
+
 function reports ( $rqststr, $whichusr ) {
-
-
 $accesslvl = $whichusr->accessnbr;
 $user = $whichusr->userid;
 //$rststr[1] = REPORTS // $rqststr[2] = reportname-for-criteria-screen or report-results // $rqststr[3] = report-run-id 
@@ -7303,29 +7424,6 @@ function bldWeeklyGoals( $whichUsr ) {
   
     
     return "Our Weekly Goals " . $whichUsr->username . " ... " . $whichUsr->allowweeklyupdate;
-}
-
-function bldInventoryAction_Inventorytally ( $whichusr ) { 
-    
-       return "<h1>INVENTORY TALLY!";
-}
-
-function bldInventoryAction_Inventorymaster ( $whichusr ) { 
-    
-    $rtnThis = <<<RTNTHIS
-            
-<table>     
-    <tr><td class=fldLabel>Scan ... </td></tr>
-    <tr><td><input type=hidden READONLY id=fldLocationScanCode><input type=text READONLY id=fldDspScanToLocation></td></tr>
-    <tr><td><div id=errorDsp></div></td></tr>        
-    <tr><td><div id=dspScanList></div></td></tr>       
-</table>
-            
-RTNTHIS;
-    
-    
-
-   return $rtnThis;
 }
 
 function bldDialogAddSegment( $passeddata ) { 

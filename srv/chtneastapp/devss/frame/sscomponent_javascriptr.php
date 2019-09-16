@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
      if ( event.which == 13 && chars.length > 4 ) { 
        var barcode = chars.join("");          
-       readBarcodeAction( barcode ); 
+       doSomethingWithScan( barcode ); 
        chars = [];
      }
         
@@ -638,101 +638,54 @@ document.addEventListener('DOMContentLoaded', function() {
 
    }, false); 
 }, false);
-        
-        
+
+function clickedlabel(e) {
+  var ele = e.target; 
+  var eleId = ele.id;
+  alert(ele.dataset.label);
+}
+
+
+function doSomethingWithScan( scanvalue ) {
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+  var scanloc   = new RegExp(/^[A-Z]{4}\d+$/); 
+
+  if ( scanlabel.test( scanvalue ) ) { 
+    //BIOSAMPLE LABEL SCANNED
+    if ( byId('labelscan') ) {
+      //CHECK LABEL NOT ALREADY SCANNED
+      var lbls = document.getElementsByClassName("labelDspDiv");
+
+      for ( var i = 0; i < lbls.length; i++ ) { 
+        if ( byId(lbls[i].id).dataset.label == scanvalue ) { return null; }
+      } 
+      
+
+      var lblDiv = document.createElement('div');
+      lblDiv.id = "scannedlabel"+lbls.length;
+      lblDiv.className = "labelDspDiv";
+      lblDiv.dataset.label = scanvalue;
+      lblDiv.innerHTML = scanvalue; 
+      byId('labelscan').appendChild ( lblDiv );
+      lblDiv.addEventListener("click", clickedlabel );
+      //MAKE PROMISE TO LOOKUP DATA
+
+
+    } else { 
+      alert('control doesn\'t exist');
+    }
+  }
+
+  if ( scanloc.test( scanvalue ) ) {
+    alert('SCAN LOCATION: '+scanvalue);
+
+  }
+
+}        
         
 
 JAVASCR;
 
-//PAGE SPECIFIC JAVASCRIPT
-switch ( $rqststr[2] ) { 
-  case 'inventorybiosamples':
-//ADD ON CHECKIN
-
-$rtnThis .= <<<JADDON
-
-var scanlist = new Object();
-var scandetail = new Object();
-
-var cntr = 0;          
-function readBarcodeAction( barcode ) { 
-  return new Promise(function (resolve, reject) {
-   if ( !Object.values(scanlist).includes( barcode ) || Object.keys(scanlist).length == 0 ) {  
-    var loccntr = cntr;      
-    if (window.XMLHttpRequest) {
-      xhr = new XMLHttpRequest(); // code for modern browsers
-     } else {
-       xhr = new ActiveXObject("Microsoft.XMLHTTP"); // code for old IE browsers
-     }
-   
-     if (barcode.substring(0,3).toUpperCase() !== 'FRZ') {                      
-       scanlist[cntr] = barcode;    
-     }
-      var dta = new Object(); 
-     dta['barcode'] = barcode;
-     var sndthis = JSON.stringify(dta);
-     var grandurl = dataPath+"/data-doers/inventory-barcode-status";
-     xhr.open("POST", grandurl);
-     xhr.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));    
-     xhr.onload = () => resolve( buildScanGrid(xhr.responseText, loccntr ) );
-     xhr.onerror = () => reject( xhr.statusText );     
-     xhr.send(sndthis);
-     buildScannedList();
-     cntr++;
-     } else { 
-        byId('errorDsp').innerHTML = "ERROR: "+barcode+" has already been scanned ...";
-       //console.log('already scanned');
-     }
-  });
-}
-     
-function buildScannedList() { 
-  var dspTbl = "<table border=1><tr>";
-  var cellCntr = 0;    
-  const keys = Object.keys(scanlist);
-  for (const key of keys) {
-     dspTbl += "<td><div id=\"scancode"+key+"\">"+scanlist[key]+"</div></td>";   
-     cellCntr++;
-  } 
-  dspTbl += "</tr></table>";
-  byId('dspScanList').innerHTML = dspTbl;    
-}
-     
-function buildScanGrid( xhrresponse, whichcntr ) { 
-  //RETURN = {"MESSAGE":[],"ITEMSFOUND":1,"DATA":{"bgs":"87281T002","segstatus":"ASSIGNED","prepmethod":"FROZEN","dx":"NORMAL::BLOOD","scantype":"BIOSAMPLE"}} 11
-  //OR RETURN = {"MESSAGE":[],"ITEMSFOUND":1,"DATA":{"typeolocation":"STORAGE CONTAINER","scancode":"FRZB606","locationnote":"Box #1 (SC0184)","scantype":"LOCATION"}}
-  
-  var rsp = JSON.parse(xhrresponse);
-  switch ( rsp['DATA']['scantype'] ) { 
-    case 'LOCATION':
-       if ( parseInt(rsp['ITEMSFOUND']) !== 1) { 
-         alert('SCAN ERROR'); 
-       } else { 
-         if ( byId('fldLocationScanCode') ) { 
-           byId('fldLocationScanCode').value = rsp['DATA']['scancode'];
-         }
-         if ( byId('fldDspScanToLocation') ) { 
-           byId('fldDspScanToLocation').value = rsp['DATA']['lvl2parent'] + " / " + rsp['DATA']['lvl1parent'] + " / " + rsp['DATA']['locationnote'] + " [" + rsp['DATA']['typeolocation'] +"]";
-         }
-     }
-     break; 
-     case 'BIOSAMPLE': 
-       
-       if ( byId('scancode'+whichcntr) ) {
-           byId('scancode'+whichcntr).innerHTML = rsp['DATA']['bgs'] + " ... " + rsp['DATA']['segstatus'];
-       }
-     break; 
-  }
-     
-}
-
-
-
-JADDON;
-  break;
-  default:
-
-}
   return $rtnThis;
 }
 

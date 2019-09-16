@@ -1207,9 +1207,32 @@ function inventory ( $mobileind ) {
       $rtnThis = <<<STYLESHEET
 
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
-#fldDspScanToLocation { width: 60vw; border: none;  }
-#fldDspScanToLocation:focus, input:active { background: rgba($this->color_white},1); }              
-              
+
+#crsuffix1900 { width: 10vw; } 
+
+#inventoryMasterHoldr { display: grid; grid-template-columns: 1fr 8fr;}
+#inventoryMasterHoldr #inventoryTitle { grid-row: 1; grid-column: span 2; font-family: Roboto; font-size: 3vh; font-weight: bold; text-align: right; border-bottom: 2px solid rgba({$this->color_zackgrey},.5); padding: 0 2vw 0 0;  }
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn { border: 1px solid rgba({$this->color_zackgrey}, 1); margin-top: 10px; text-align: center; text-decoration: none; color: rgba({$this->color_zackgrey},1); overflow: hidden; height: 10vh; background: rgba({$this->color_lgrey},1); }
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn:hover { background: rgba({$this->color_lamber}, .5); } 
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); color: rgba({$this->color_white},1); } 
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn:first-child { margin-top: 2px; } 
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn a         { text-decoration: none; color: rgba({$this->color_zackgrey},1); display:inline-block; width: 100%; height: 100%; padding: 3.8vh 5px; font-family: Roboto; font-size: 1.8vh;  } 
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn a:link    { text-decoration: none; }
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn a:visited { text-decoration: none; }
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn a:hover   { text-decoration: none; }
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn a:active  { text-decoration: none; }
+
+#inventoryMasterHoldr #inventoryControlPage { padding: 0 0 0 10px; }
+
+
+#inventoryCheckinElementHoldr { display: grid; grid-template-rows: repeat( 10, 1fr); height: 100%; } 
+#inventoryCheckinElementHoldr #locationscan { grid-row: 1 / 2; border: 1px solid #000; } 
+#inventoryCheckinElementHoldr #labelscan { grid-row: 2 / 10; border: 1px solid #000; } 
+#inventoryCheckinElementHoldr #ctlButtons { grid-row: 10 / 11; border: 1px solid #000; } 
+
+
+
+
 
 
 STYLESHEET;
