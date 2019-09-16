@@ -1227,7 +1227,8 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
 #inventoryCheckinElementHoldr { display: grid; grid-template-rows: repeat( 10, 1fr); height: 100%; } 
 #inventoryCheckinElementHoldr #locationscan { grid-row: 1 / 2; border: 1px solid #000; } 
-#inventoryCheckinElementHoldr #labelscan { grid-row: 2 / 10; border: 1px solid #000; } 
+#inventoryCheckinElementHoldr #labelscan { grid-row: 2 / 10; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; grid-gap: 4px;  } 
+#inventoryCheckinElementHoldr #labelscan .labelDspDiv { border: 1px solid rgba({$this->color_zackgrey},1); padding: 3px; height: 4vh; } 
 #inventoryCheckinElementHoldr #ctlButtons { grid-row: 10 / 11; border: 1px solid #000; } 
 
 

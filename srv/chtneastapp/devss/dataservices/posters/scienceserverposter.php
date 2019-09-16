@@ -14,7 +14,7 @@ function __construct() {
       $request = explode("/", $args[0]); 
       if (trim($request[3]) === "") { 
         $this->responseCode = 400; 
-        $this->rtnData = json_encode(array("MESSAGE" => "DATA NAME MISSING","ITEMSFOUND" => 0, "DATA" => array()    ));
+        $this->rtnData = json_encode(array("MESSAGE" => "DATA NAME MISSING " . json_encode($request),"ITEMSFOUND" => 0, "DATA" => array()    ));
       } else { 
         $dp = new $request[2](); 
         if (method_exists($dp, $request[3])) { 
@@ -33,6 +33,48 @@ function __construct() {
 }
 
 class datadoers {
+    
+    function invtrylabeldxdesignation ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+      
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+      
+      //{"scanlabel":"88346T001"}
+      ( !array_key_exists('scanlabel', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'scanlabel' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['scanlabel']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  SCANLABEL MUST CONTAIN A VALUE.")) : ""; 
+
+      if ($errorInd === 0 ) {
+          $sql = "SELECT mn.dspvalue as segstatus, ucase(trim(concat(ifnull(sg.prepmethod,''), if(ifnull(sg.preparation,'')='','',concat(' [',ifnull(sg.preparation,''),']'))))) as prp, ucase(trim(concat(ifnull(bs.tisstype,''),' :: ', concat(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subsite,'')='','', concat( ' [',ifnull(bs.subsite,''),']' ))) ,' :: ', concat(if(ifnull(bs.diagnosis,'')='','',  ifnull(bs.diagnosis,'')), if(ifnull(bs.subdiagnos,'')='','',concat(' [', ifnull(bs.subdiagnos,''),']')))))))  desig FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') as mn on sg.segstatus = mn.menuvalue where replace(sg.bgs,'_','') = :bgs"; 
+          $rs = $conn->prepare($sql);
+          $rs->execute(array(':bgs' => $pdta['scanlabel'] ));
+          if ( $rs->rowCount() === 1 ) { 
+              $dta = $rs->fetch(PDO::FETCH_ASSOC);
+              $responseCode = 200;
+          } else { 
+              $dta = $passdata;
+          }
+      }      
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;      
+    }
 
     function furtheractionactionnote ( $request, $passdata ) { 
       $rows = array(); 
