@@ -15,6 +15,21 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'rqstLocationBarcode':
+        $pdta = json_decode($passedData, true);         
+        $titleBar = "Request Location Barcode Placard";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        $innerDialog = bldLocationPlacardRequest ( $pdta['dialogid'], $passedData);
+        break;                   
+      case 'rqstSampleBarcode':
+        $pdta = json_decode($passedData, true);         
+        $titleBar = "Request New Biosample Barcode Tag";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        //$innerDialog = bldChartReviewBuilder ( $pdta['dialogid'], $passedData);
+        $innerDialog = "REQUEST NEW BARCODE TAG";
+        break;                   
       case 'chartbldr':
         $pdta = json_decode($passedData, true);         
         $titleBar = "Biogroup Donor Chart Review Builder";
@@ -1022,38 +1037,53 @@ function inventory ( $rqststr, $whichusr ) {
      $selectorinvmedia = "";
      $pageTitle = "Inventory Module";
      $pageDetail = "";
+     $topBtnBar = generatePageTopBtnBar('inventory');
      switch ( $rq ) { 
        case 'checkin':
+         $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorcheckin = " data-selected='true' ";
          $pageTitle = "Check-In Biosamples";
          $pageDetail = self::bldInventoryCheckIn();
          break;
        case 'movebiosample':
+         $topBtnBar = generatePageTopBtnBar('inventory');
          $selectormove = " data-selected='true' ";
          $pageTitle = "Move Inventory";
          $pageDetail = self::bldInventoryMove();
          break;
+       case 'processhprtray':
+         $topBtnBar = generatePageTopBtnBar('inventory');
+         $selectorhpr = " data-selected='true' ";
+         $pageTitle = "HPR Tray Processor";
+         //$pageDetail = self::bldInventoryMove();
+         $pageDetail = "PAGE GOES HERE";
+         break;
        case 'shippull':
+         $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorpull = " data-selected='true' ";
          $pageTitle = "Pull Biosamples For Shipment";
          $pageDetail = self::bldInventoryPull();
          break;
        case 'shipship':
+         $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorship = " data-selected='true' ";
          $pageTitle = "Package Biosamples for Shipment";
          $pageDetail = self::bldInventoryShip();
          break;
        case 'icount':
+         $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorcount = " data-selected='true' ";
          $pageTitle = "Basic Inventory Count Function";
          $pageDetail = self::bldInventoryCount();
          break;
        case 'destroybiosamples':
+         $topBtnBar = generatePageTopBtnBar('inventory');
          $selectordestroy = " data-selected='true' ";
          $pageTitle = "Scan Biosamples being destroyed";
          $pageDetail = self::bldInventoryDestroy();
          break;
        case 'investigatorstuff':
+         $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorinvmedia = " data-selected='true' ";
          $pageTitle = "Scan Investigator Supplied Media";
          $pageDetail = self::bldInventoryIMedia();
@@ -1063,11 +1093,13 @@ function inventory ( $rqststr, $whichusr ) {
      $pageDetail = ( trim($pageDetail) === "" ) ?  self::bldInventoryMaster() : $pageDetail;
 
      $rtnthis = <<<RTNTHIS
+{$topBtnBar} 
 <div id=inventoryMasterHoldr>
 <div id=inventoryTitle>{$pageTitle}</div>
 <div id=inventoryBtnBar>
    <div class=iControlBtn {$selectorcheckin}><a href="{$tt}/inventory/check-in">Check-In</a></div>
    <div class=iControlBtn {$selectormove}><a href="{$tt}/inventory/move-biosample">Move Inventory</a></div>
+   <div class=iControlBtn {$selectorhpr}><a href="{$tt}/inventory/process-hpr-tray">Process HPR Tray</a></div>
    <div class=iControlBtn {$selectorpull}><a href="{$tt}/inventory/ship-pull">Pull Shipment</a></div>
    <div class=iControlBtn {$selectorship}><a href="{$tt}/inventory/ship-ship">Ship Shipment</a></div>
    <div class=iControlBtn {$selectorcount}><a href="{$tt}/inventory/icount">Inventory Count</a></div>
@@ -1100,8 +1132,14 @@ return $pageContent;
 function bldInventoryCheckIn() { 
     $pageContent = <<<PAGECONTENT
 <div id=inventoryCheckinElementHoldr>
-  <div id=locationscan></div>
-  <div id=labelscan></div>
+  <div id=locationscan>
+  <input type=hidden id=locscancode>
+  <div id=locscandsp></div>
+  </div>
+  <div id=itemCountDsp>SCAN COUNT: 0</div>
+  <div id=labelscan>
+    <div id=labelscanholderdiv></div>
+  </div>
   <div id=ctlButtons></div>
 </div>
 PAGECONTENT;
@@ -2931,6 +2969,16 @@ BTNTBL;
 
     break;
 
+
+case 'inventory':
+    $innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintLocationCard ><tr><td><i class="material-icons">print</i></td><td>Location Card</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintBCCard ><tr><td><i class="material-icons">print</i></td><td>Barcode Card</td></tr></table></td> 
+</tr>
+BTNTBL;
+    break;
+
 case 'faTable':
     $innerBar = <<<BTNTBL
 <tr>
@@ -3791,6 +3839,93 @@ button:hover { background: rgba(255,248,225,.6); cursor: pointer; }
 {$dspPage}
 RTNPAGE;
   return $rtnPage;    
+}
+
+function bldLocationPlacardRequest ( $dialog, $passedData ) { 
+
+    
+   $tt = treeTop;
+   $invListWS = json_decode( callrestapi("GET", dataTree . "/inventory-hierarchy",serverIdent, serverpw), true);
+   $iloc = $invListWS['DATA'];
+   //{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"root":{"locationid":0,"locationdsp":"Inventory Root Tree","scancode":"","child":[{"locationid":665,"scancode":"FRZC665","locationtype":"COLLECTION","locationdsp":"Ortho Collection","hierarchybotom":0,"child":[{"locationid":666,"scancode":"FRZL666","locationdsp":"LOC-666","locationtype":"LOCATION","hierarchybotom":0,"child":[{"locationid":667,"scancode":"FRZB667","locationdsp":"SC-667","locationtype":"STORAGE CABINET","hierarchybottom":1}]}]},{"locationid":664,"scancode":"FRZR565","locationtype":"ROOM","locationdsp":"Room 565","hierarchybotom":0},{"locationid":1,"scancode":"FRZR566","locationtype":"ROOM","locationdsp":"Room 566","hierarchybotom":0,"child":[{"locationid":1089,"scancode":"SSCO001","locationdsp":"SLIDE STORAGE","locationtype":"STORAGE CONTAINER","hierarchybotom":1},{"locationid":339,"scancode":"FRZF007","locationdsp":"PNS.165","locationtype":"STORAGE FREEZER","hierarchybotom":0,"child":[{"locationid":374,"scancode":"FRZS374","locationdsp":"PNS.165:001","locationtype":"SHELF","hierarchybottom":0,"child":[{"locationid":380,"scancode":"FRZB380","locationdsp":"SC-0019","locationtype":"STORAGE CONTAINER","hierarchybottom":1},{"locationid":381,"scancode":"FRZB381","locationdsp":"SC-0020","locationtype":"STORAGE CONTAINER","hierarchybottom":1},
+
+   $inner = "<div class=rootnode><div class=\"controlelements\">&#10148;</div><div class=dataelement>{$iloc['root']['locationdsp']}</div></div><div id=topContainer>";
+   foreach ( $iloc['root']['child'] as $ky => $vl ) {
+     $scode = cryptservice( "iloccard::" . $vl['scancode'],'e');  
+     $ccode = cryptservice( "ilocmap::" . $vl['scancode'],'e');  
+     $printer = ( (int)$vl['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$scode}\" target=\"_new\">&#128438;</a>" : ""; 
+     $conicon =  ( (int)$vl['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$ccode}\" target=\"_new\">&#128438;</a>" : "";
+     $inner .= "<div class=elementnode><div>&nbsp;</div><div class=\"controlelements\">&#10148;</div><div class=dataelement>{$conicon}&nbsp;{$vl['locationdsp']} [{$vl['locationtype']}]{$printer}</div></div>";
+     foreach ( $vl['child'] as $kyc => $vlc ) { 
+
+         $ccodea = cryptservice( "ilocmap::" . $vlc['scancode'],'e');  
+         $scodea = cryptservice( "iloccard::" . $vlc['scancode'],'e');  
+         $printerc = ( (int)$vlc['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$scodea}\" target=\"_new\">&#128438;</a>" : "";  
+         $conicona =  ( (int)$vlc['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$ccodea}\" target=\"_new\">&#128438;</a>" : "";
+         $inner .= "<div class=elementnodel1> 
+                                 <div>&nbsp;</div>
+                                 <div>&nbsp;</div>
+                                 <div class=\"controlelements\">&#10148;</div>
+                                 <div class=dataelement>{$conicona}&nbsp;{$vlc['locationdsp']} [{$vlc['locationtype']}] {$printerc}</div>
+                     </div>";
+         foreach ( $vlc['child'] as $kycc => $vlcc) { 
+  
+             $ccodeb = cryptservice( "ilocmap::" . $vlcc['scancode'],'e');  
+             $scodeb = cryptservice( "iloccard::" . $vlcc['scancode'],'e');  
+             $printercc = ( (int)$vlcc['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$scodeb}\" target=\"_new\">&#128438;</a>" : "";  
+             $coniconb =  ( (int)$vlcc['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$ccodeb}\" target=\"_new\">&#128438;</a>" : "";
+             $inner .= "<div class=elementnodel2>
+                                 <div>&nbsp;</div>
+                                 <div>&nbsp;</div>
+                                 <div>&nbsp;</div>
+                                 <div class=\"controlelements\">&#10148;</div> 
+                                 <div class=dataelement>{$coniconb}&nbsp;{$vlcc['locationdsp']} [{$vlcc['locationtype']}] {$printercc}</div></div>";
+             foreach ( $vlcc['child'] as $kyccc => $vlccc ) {
+               $ccodec = cryptservice( "ilocmap::" . $vlccc['scancode'],'e');  
+               $scodec = cryptservice( "iloccard::" . $vlccc['scancode'],'e');  
+               $printerccc = ( (int)$vlccc['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$scodec}\" target=\"_new\">&#128438;</a>" : "";  
+               $coniconc =  ( (int)$vlccc['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$ccodec}\" target=\"_new\">&#128438;</a>" : "";
+               $inner .= "<div class=elementnodel3> 
+                                 <div>&nbsp;</div>
+                                 <div>&nbsp;</div>
+                                 <div>&nbsp;</div>
+                                 <div>&nbsp;</div>
+                                 <div class=\"controlelements\">&#10148;</div>  
+                          <div class=dataelement>{$coniconc}&nbsp;{$vlccc['locationdsp']} [{$vlccc['locationtype']}] {$printerccc}</div></div>";
+             }
+           $inner .= "";
+         }
+         $inner .= "";
+     }
+     $inner .= "";
+   }
+   $inner .= "</div>";
+
+    $dspPage = <<<THISPAGE
+<div id=partholder>
+<div id=title>CHTNED Five Level Inventory Hierarchy Map</div>
+{$inner}
+</div>
+THISPAGE;
+
+  $rtnPage = <<<RTNPAGE
+<style>
+#partholder { border: 1px solid #000; height: 70vh; width: 25vw; overflow: auto; }
+#partholder #title { font-size: 1.8vh; font-weight: bold; text-align: center; padding: .5vh 0; } 
+#partholder .rootnode { display: grid; grid-template-columns:  20px auto; padding: 0 0 0 5px; } 
+#partholder #topContainer .elementnode { display: grid; grid-template-columns: 20px 20px auto; padding: 0 0 0 5px; background: rgba(100,149,237,.2); border-top: 1px solid rgba( 48,57,71,1 ); border-bottom: 1px solid rgba( 48,57,71,1 ); padding: .3vh 0;  }
+a, a:visited, a:active { text-decoration: none; font-size: 1.6vh; color: blue; }  
+a:hover {  color: green; }
+  
+#partholder #topContainer .elementnodel1 { display: grid; grid-template-columns: 20px 20px 20px auto; padding: 0 0 0 5px; }
+#partholder #topContainer .elementnodel2 { display: grid; grid-template-columns: 20px 20px 20px 20px auto; padding: 0 0 0 5px; }
+#partholder #topContainer .elementnodel3 { display: grid; grid-template-columns: 20px 20px 20px 20px 20px auto; padding: 0 0 0 5px; }
+.controlelements { font-size: 1.2vh; }
+.dataelement { font-size: 1.4vh; }  
+</style>
+   {$dspPage}
+RTNPAGE;
+  return $rtnPage;  
 }
 
 function bldChartReviewBuilder ( $dialog, $passedData ) { 

@@ -1207,16 +1207,17 @@ function inventory ( $mobileind ) {
       $rtnThis = <<<STYLESHEET
 
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw;  }
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; } 
 
 #crsuffix1900 { width: 10vw; } 
 
 #inventoryMasterHoldr { display: grid; grid-template-columns: 1fr 8fr;}
 #inventoryMasterHoldr #inventoryTitle { grid-row: 1; grid-column: span 2; font-family: Roboto; font-size: 3vh; font-weight: bold; text-align: right; border-bottom: 2px solid rgba({$this->color_zackgrey},.5); padding: 0 2vw 0 0;  }
-#inventoryMasterHoldr #inventoryBtnBar .iControlBtn { border: 1px solid rgba({$this->color_zackgrey}, 1); margin-top: 10px; text-align: center; text-decoration: none; color: rgba({$this->color_zackgrey},1); overflow: hidden; height: 10vh; background: rgba({$this->color_lgrey},1); }
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn { border: 1px solid rgba({$this->color_zackgrey}, 1); margin-top: 10px; text-align: center; text-decoration: none; color: rgba({$this->color_zackgrey},1); overflow: hidden; height: 8vh; background: rgba({$this->color_lgrey},1); }
 #inventoryMasterHoldr #inventoryBtnBar .iControlBtn:hover { background: rgba({$this->color_lamber}, .5); } 
 #inventoryMasterHoldr #inventoryBtnBar .iControlBtn[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); color: rgba({$this->color_white},1); } 
 #inventoryMasterHoldr #inventoryBtnBar .iControlBtn:first-child { margin-top: 2px; } 
-#inventoryMasterHoldr #inventoryBtnBar .iControlBtn a         { text-decoration: none; color: rgba({$this->color_zackgrey},1); display:inline-block; width: 100%; height: 100%; padding: 3.8vh 5px; font-family: Roboto; font-size: 1.8vh;  } 
+#inventoryMasterHoldr #inventoryBtnBar .iControlBtn a         { text-decoration: none; color: rgba({$this->color_zackgrey},1); display:inline-block; width: 100%; height: 100%; padding: 3.2vh 5px; font-family: Roboto; font-size: 1.5vh;  } 
 #inventoryMasterHoldr #inventoryBtnBar .iControlBtn a:link    { text-decoration: none; }
 #inventoryMasterHoldr #inventoryBtnBar .iControlBtn a:visited { text-decoration: none; }
 #inventoryMasterHoldr #inventoryBtnBar .iControlBtn a:hover   { text-decoration: none; }
@@ -1225,10 +1226,23 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #inventoryMasterHoldr #inventoryControlPage { padding: 0 0 0 10px; }
 
 
-#inventoryCheckinElementHoldr { display: grid; grid-template-rows: repeat( 10, 1fr); height: 100%; } 
-#inventoryCheckinElementHoldr #locationscan { grid-row: 1 / 2; border: 1px solid #000; } 
-#inventoryCheckinElementHoldr #labelscan { grid-row: 2 / 10; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; grid-gap: 4px;  } 
-#inventoryCheckinElementHoldr #labelscan .labelDspDiv { border: 1px solid rgba({$this->color_zackgrey},1); padding: 3px; height: 4vh; } 
+#inventoryCheckinElementHoldr { display: grid; grid-template-rows: repeat( 11, 1fr); height: 85%; } 
+#inventoryCheckinElementHoldr #locationscan { grid-row: 1 / 2; } 
+#inventoryCheckinElementHoldr #locationscan #locscandsp { font-family: Roboto; font-size: 1.5vh; color: rgba({$this->color_dblue},1); padding: .5vh 0 .5vh 5px;   } 
+
+#inventoryCheckinElementHoldr #itemCountDsp { grid-row: 2 / 3;  font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; } 
+#inventoryCheckinElementHoldr #labelscan { grid-row: 3 / 10; height: 60vh; overflow: auto; } 
+#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv { display: grid; grid-gap: 4px; grid-template-columns: repeat(5, 1fr); } 
+#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv { border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; height: 6vh; background-color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.4vh; }
+#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv:nth-child(even) { background: rgba({$this->color_mgrey},.3); }
+#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv .scanDisplay { font-weight: bold; color: rgba({$this->color_dblue},1); }
+ 
+
+
+
+
+
+
 #inventoryCheckinElementHoldr #ctlButtons { grid-row: 10 / 11; border: 1px solid #000; } 
 
 

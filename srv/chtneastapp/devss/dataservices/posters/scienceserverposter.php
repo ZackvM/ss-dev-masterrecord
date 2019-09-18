@@ -33,6 +33,49 @@ function __construct() {
 }
 
 class datadoers {
+
+    function invtrylocationheirach ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+      
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+      
+      ( !array_key_exists('scanlabel', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'scanlabel' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['scanlabel']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  SCANLABEL MUST CONTAIN A VALUE.")) : ""; 
+
+      if ($errorInd === 0 ) {
+          $sql = "SELECT btmlvl.scancode, trim(concat(if(ifnull(lvl4.locationdsp,'')='','',concat(ifnull(lvl4.locationdsp,''),' :: ')), if(ifnull(lvl3.locationdsp,'')='','',concat(ifnull(lvl3.locationdsp,''),' :: ')), if(ifnull(lvl2.locationdsp,'')='','',concat(ifnull(lvl2.locationdsp,''),' :: ')), if(ifnull(lvl1.locationdsp,'')='','',concat(ifnull(lvl1.locationdsp,''))))) as pathdsp, concat(ifnull(btmlvl.locationdsp,''), if(ifnull(btmlvl.typeolocation,'')='','',concat(' [',ifnull(btmlvl.typeolocation,''),']'))) thislocation FROM four.sys_inventoryLocations btmlvl left join (SELECT locationid, typeolocation, locationdsp, parentid FROM four.sys_inventoryLocations where activelocation = 1) as lvl1 on btmlvl.parentid = lvl1.locationid left join (SELECT locationid, typeolocation, locationdsp, parentid FROM four.sys_inventoryLocations where activelocation = 1) as lvl2 on lvl1.parentid = lvl2.locationid left join (SELECT locationid, typeolocation, locationdsp, parentid FROM four.sys_inventoryLocations where activelocation = 1) as lvl3 on lvl2.parentid = lvl3.locationid left join (SELECT locationid, typeolocation, locationdsp, parentid FROM four.sys_inventoryLocations where activelocation = 1) as lvl4 on lvl3.parentid = lvl4.locationid where ifnull(hierarchyBottomInd,0) = 1 and ifnull(hprtrayind,0) = 0 and ifnull(activelocation,0) = 1 and ifnull(physicalLocationInd,0) = 1 and scancode = :scancode"; 
+          $rs = $conn->prepare($sql);
+          $rs->execute(array(':scancode' => $pdta['scanlabel'] ));
+          if ( $rs->rowCount() === 1 ) { 
+              $dta = $rs->fetch(PDO::FETCH_ASSOC);
+              $responseCode = 200;
+          } else { 
+              $dta = $passdata;
+          }
+      }      
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;      
+
+
+    }
     
     function invtrylabeldxdesignation ( $request, $passdata ) { 
       $rows = array(); 
@@ -3881,6 +3924,16 @@ MBODY;
              $top = '8vh';
              break;                
            case 'furtheractionperformer':
+             $primeFocus = "";  
+             $left = '8vw';
+             $top = '8vh';
+             break;                
+           case 'rqstLocationBarcode':
+             $primeFocus = "";  
+             $left = '8vw';
+             $top = '8vh';
+             break;                
+           case 'rqstSampleBarcode':
              $primeFocus = "";  
              $left = '8vw';
              $top = '8vh';

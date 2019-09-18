@@ -2,6 +2,18 @@
 
 class javascriptr {
 
+  private $teststring = "";
+  private $sessid = "";
+  private $regcode = "";
+
+  function __construct() {
+    session_start();    
+    $this->teststring = "ZACK WAS HERE IN THE TEST STRING";
+    $this->sessid = session_id();
+    $this->regcode = registerServerIdent(session_id()); 
+  }
+
+
 function shipmentdocument ( $rqststr ) { 
 
     $tt = treeTop;
@@ -605,9 +617,10 @@ function inventory ( $rqststr ) {
   $sp = serverpw;
   
   //LOCAL USER CREDENTIALS BUILT HERE
-  $regUsr = session_id();  
-  $regCode = registerServerIdent($regUsr);  
-
+  $regUsr = $this->sessid;  
+  $regCode = $this->regcode; 
+  
+  
 //JAVASCRIPT AS APPLIES TO ALL INVENTORY SCREENS  
 $rtnThis = <<<JAVASCR
         
@@ -637,6 +650,16 @@ document.addEventListener('DOMContentLoaded', function() {
      }
 
    }, false); 
+
+   if ( byId('btnPrintLocationCard') ) { 
+     byId('btnPrintLocationCard').addEventListener('click', rqstLocationCode );
+   }
+
+   if ( byId('btnPrintBCCard') ) {
+     byId('btnPrintBCCard').addEventListener('click', rqstNewBarCode );
+   }
+
+
 }, false);
 
 function clickedlabel(e) {
@@ -645,6 +668,13 @@ function clickedlabel(e) {
   alert(ele.id);
 }
 
+function rqstLocationCode() {
+  generateDialog('rqstLocationBarcode','xxx-xxx');
+}
+
+function rqstNewBarCode() { 
+  generateDialog('rqstSampleBarcode','xxx-xxx');
+}
 
 function doSomethingWithScan ( scanvalue ) {
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
@@ -663,7 +693,7 @@ function doSomethingWithScan ( scanvalue ) {
       lblDiv.className = "labelDspDiv";
       lblDiv.dataset.label = scanvalue;
       //lblDiv.innerHTML = scanvalue; 
-      byId('labelscan').appendChild ( lblDiv );
+      byId('labelscanholderdiv').appendChild ( lblDiv );
       lblDiv.addEventListener("click", clickedlabel );
         
       var scnDsp = document.createElement('div');
@@ -677,7 +707,10 @@ function doSomethingWithScan ( scanvalue ) {
       desDsp.className = "desigDisplay";
       desDsp.innerHTML = "-";
       byId("scannedLabel"+lblsl).appendChild( desDsp );        
-           
+
+      var elemcnt = document.getElementsByClassName("labelDspDiv");
+      byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
+
       //MAKE PROMISE TO LOOKUP DATA
       fillInDesigLabelCode( scanvalue ).then (function (fulfilled) {         
             byId('desigDisplay'+lblsl).innerHTML = fulfilled;
@@ -685,18 +718,52 @@ function doSomethingWithScan ( scanvalue ) {
         .catch(function (error) {
             console.log(error.message);
         });
-        
+
+
     } else { 
-      alert('control doesn\'t exist');
+      alert('The Scan Control doesn\'t exist');
     }
   }
                 
   if ( scanloc.test( scanvalue ) ) {
-    alert('SCAN LOCATION: '+scanvalue);
+    //locationscan,locscancode,locscandsp
+    if ( byId('locationscan') ) { 
+      byId('locscancode').value = scanvalue;
+      byId('locscandsp').innerHTML = scanvalue;
+      
+      //MAKE PROMISE TO LOOKUP DATA
+      fillInLocationDisplay ( scanvalue ).then ( function (fulfilled) { 
+        byId('locscandsp').innerHTML = fulfilled;
+      })
+      .catch( function (error) { 
+        byId('locscancode').value = "";
+        byId('locscandsp').innerHTML = error;
+      });
+    }
   }
-
 }        
-        
+
+var fillInLocationDisplay = function ( scancode ) { 
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scanlabel'] = scancode.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-location-heirach", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) { 
+           var dta = JSON.parse( httpage.responseText );  
+           resolve( "<b>CHECKING INTO LOCATION</b>: "+ dta['DATA']['pathdsp'] + " :: <b>" +dta['DATA']['thislocation']+"</b> //<i>Scan Code</i>: "+dta['DATA']['scancode']);
+        } else { 
+          reject("NO LOCATION FOUND WITH THE SCANNED CODE: "+scancode);
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}
+
 var fillInDesigLabelCode = function ( scancode  ) {
   return new Promise(function(resolve, reject) {
     var obj = new Object(); 
@@ -718,7 +785,49 @@ var fillInDesigLabelCode = function ( scancode  ) {
     httpage.send ( passdta );
   });
 }    
+
+function generateDialog( whichdialog, whatobject ) { 
+  var dta = new Object(); 
+  dta['whichdialog'] = whichdialog;
+  dta['objid'] = whatobject;   
+  var passdta = JSON.stringify(dta);
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/preprocess-generate-dialog";
+  universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
+}
+            
+function answerPreprocessGenerateDialog( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+        var dta = JSON.parse(rtnData['responseText']);         
+        //TODO: MAKE SURE ALL ELEMENTS EXIST BEFORE CREATION
+        var d = document.createElement('div');
+        d.setAttribute("id", dta['DATA']['dialogID']); 
+        d.setAttribute("class","floatingDiv");
+        d.style.left = dta['DATA']['left'];
+        d.style.top = dta['DATA']['top'];
+        d.innerHTML = dta['DATA']['pageElement'];
+        document.body.appendChild(d);
+        byId(dta['DATA']['dialogID']).style.display = 'block';
+        if ( dta['DATA']['primeFocus'].trim() !== "" ) { 
+          byId(dta['DATA']['primeFocus'].trim()).focus();
+        }
+        byId('standardModalBacker').style.display = 'block';
+  }
+}
         
+function closeThisDialog(dlog) { 
+   byId(dlog).parentNode.removeChild(byId(dlog));
+   byId('standardModalBacker').style.display = 'none';        
+}
+
 JAVASCR;
 
   return $rtnThis;
@@ -1600,8 +1709,9 @@ function globalscripts ( $keypaircode, $usrid ) {
   $pw = serverpw;
   
   //LOCAL USER CREDENTIALS BUILT HERE
-  $regUsr = session_id();  
-  $regCode = registerServerIdent($regUsr);  
+  $regUsr = $this->sessid;  
+  $regCode = $this->regcode; 
+
 
 $rtnThis = <<<JAVASCR
         

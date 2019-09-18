@@ -34,6 +34,102 @@ class objgetter {
 }
 
 class objlisting { 
+ 
+  function inventoryhierarchy() { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW'];
+
+     if ( $authuser === serverIdent) { 
+         $cSQL = "SELECT locationid, scancode, typeolocation, locationdsp, ifnull(hierarchybottomind,0) as hierarchybottomind, ifnull(mastercontainerind,0) as mastercontainerind FROM four.sys_inventoryLocations where parentid = :parentid and ifnull(activelocation,0) = 1 and ifnull(physicalLocationInd,0) = 1 and mappableInd = 1 order by typeolocation, locationdsp";
+         $ccSQL = "SELECT locationid, scancode, typeolocation, locationdsp, ifnull(hierarchybottomind,0) as hierarchybottomind, ifnull(mastercontainerind,0) as mastercontainerind FROM four.sys_inventoryLocations where parentid = :parentid and ifnull(activelocation,0) = 1 and ifnull(physicalLocationInd,0) = 1 order by typeolocation, locationdsp";
+         $cRS = $conn->prepare($cSQL); 
+         $ccRS = $conn->prepare($ccSQL); 
+         $cccRS = $conn->prepare($ccSQL); 
+         $ccccRS = $conn->prepare($ccSQL); 
+         
+         $levelCount = 0;
+         $rootLocSQL = "SELECT locationid, locationdsp, scancode FROM four.sys_inventoryLocations where typeolocation = :whichroot and activelocation = 1";  
+         $rlRS = $conn->prepare( $rootLocSQL );
+         $rlRS->execute( array(':whichroot' => 'ROOT'));
+         if ( $rlRS->rowCount() > 0 ) {
+          $levelCount++;   
+          while ($r = $rlRS->fetch(PDO::FETCH_ASSOC)) { 
+              $dta['root'] = $r;
+              $cRS->execute(array(':parentid' => $r['locationid'])); 
+              if ( $cRS->rowCount() > 0 ) {
+                $cnt = 0;  
+                while ( $c = $cRS->fetch(PDO::FETCH_ASSOC)) { 
+                    $dta['root']['child'][$cnt]['locationid'] = $c['locationid'];
+                    $dta['root']['child'][$cnt]['scancode'] = $c['scancode'];
+                    $dta['root']['child'][$cnt]['locationtype'] = $c['typeolocation'];
+                    $dta['root']['child'][$cnt]['locationdsp'] = $c['locationdsp'];
+                    $dta['root']['child'][$cnt]['hierarchybotom'] = $c['hierarchybottomind'];
+                    $dta['root']['child'][$cnt]['containerind'] = $c['mastercontainerind'];
+                   
+                    $ccRS->execute(array(':parentid' => $c['locationid']));
+                    if ( $ccRS->rowCount() > 0 ) { 
+                      $cntc = 0; 
+                      while ($cc = $ccRS->fetch(PDO::FETCH_ASSOC)) { 
+                        $dta['root']['child'][$cnt]['child'][$cntc]['locationid'] = $cc['locationid'];
+                        $dta['root']['child'][$cnt]['child'][$cntc]['scancode'] = $cc['scancode'];
+                        $dta['root']['child'][$cnt]['child'][$cntc]['locationdsp'] = $cc['locationdsp'];
+                        $dta['root']['child'][$cnt]['child'][$cntc]['locationtype'] = $cc['typeolocation'];
+                        $dta['root']['child'][$cnt]['child'][$cntc]['hierarchybottom'] = $cc['hierarchybottomind'];
+                        $dta['root']['child'][$cnt]['child'][$cntc]['containerind'] = $cc['mastercontainerind'];
+
+                        $cccRS->execute(array(':parentid' => $cc['locationid']));
+                        if ( $cccRS->rowCount() > 0 ) { 
+                          $cntcc = 0; 
+                          while ($ccc = $cccRS->fetch(PDO::FETCH_ASSOC)) { 
+                            $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['locationid'] = $ccc['locationid'];
+                            $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['scancode'] = $ccc['scancode'];
+                            $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['locationdsp'] = $ccc['locationdsp'];
+                            $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['locationtype'] = $ccc['typeolocation'];
+                            $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['hierarchybottom'] = $ccc['hierarchybottomind'];
+                            $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['containerind'] = $ccc['mastercontainerind'];
+
+                              $ccccRS->execute(array(':parentid' => $ccc['locationid']));
+                              if ( $ccccRS->rowCount() > 0 ) { 
+                                $cntccc = 0; 
+                                while ($cccc = $ccccRS->fetch(PDO::FETCH_ASSOC)) { 
+                                  $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['child'][$cntccc]['locationid'] = $cccc['locationid'];
+                                  $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['child'][$cntccc]['scancode'] = $cccc['scancode'];
+                                  $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['child'][$cntccc]['locationdsp'] = $cccc['locationdsp'];
+                                  $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['child'][$cntccc]['locationtype'] = $cccc['typeolocation'];
+                                  $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['child'][$cntccc]['hierarchybottom'] = $cccc['hierarchybottomind'];
+                                  $dta['root']['child'][$cnt]['child'][$cntc]['child'][$cntcc]['child'][$cntccc]['containerind'] = $cccc['mastercontainerind'];
+                                  $cntccc++;
+                                }
+                              }
+                            $cntcc++;
+                          }
+                        }
+                        $cntc++;    
+                      }
+                    } 
+                    $cnt++;
+                }
+              }
+
+
+          }      
+         } else { 
+            //BIG ERROR
+         }
+         $itemsfound = $levelCount;
+         $responseCode = 200;
+     }                
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;     
+  }  
 
   function inventorysimplehprtraylist() { 
      $responseCode = 400;
