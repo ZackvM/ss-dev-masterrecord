@@ -27,10 +27,20 @@ if ( byId('btnLookup') ) {
 }, false);
 
 
+function displaydetaildiv( whichdiv ) { 
+  if ( byId(whichdiv).style.height == "" || byId(whichdiv).style.height == '0px' ) { 
+    byId(whichdiv).style.height = 'auto';        
+  } else { 
+    byId(whichdiv).style.height = 0;               
+  }
+}
+             
 function sendQryRequest() { 
   var dta = new Object();
   dta['qryType'] = 'ASTREQ';
   dta['RQStatus'] = byId('astRequestStatus').value.trim(); 
+  dta['SearchTerm'] = byId('astSearchTerm').value.trim(); 
+  dta['SPCTerm'] = byId('astRequestSPC').value.trim();               
   var passdta = JSON.stringify(dta);    
   var mlURL = "/data-doers/make-query-request";
   universalAJAX("POST",mlURL,passdta,answerQueryRequest,1);           

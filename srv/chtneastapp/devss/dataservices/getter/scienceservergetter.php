@@ -1311,6 +1311,10 @@ function hprrequestcode($whichobj, $rqst) {
 
 class globalMenus {
 
+    function astreqspecimencategories () { 
+        return "select ifnull(splst.speccat,'') as codevalue, ifnull(splst.speccat,'') as menuvalue, 0 as useasdefault, ifnull(splst.speccat,'') as lookupvalue from (SELECT distinct ifnull(req_tissuetype,'') as speccat FROM vandyinvest.investtissreq order by 1) splst";
+    }
+    
     function astrequeststatuses() { 
         return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'ASTREQUESTSTATUS' and dspind = 1 order by dsporder";
     }

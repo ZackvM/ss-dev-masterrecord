@@ -554,10 +554,10 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #contentholdr { }
 #contentholdr .wholerequestholdr {  }
 
+.label { font-size: 1.1vh; font-weight: bold; white-space: nowrap; }
+.data { font-size: 1.4vh; }   
 
-#contentholdr .wholerequestholdr .elementhold .label { font-size: 1.1vh; font-weight: bold; }
-#contentholdr .wholerequestholdr .elementhold .data { font-size: 1.4vh; }   
-
+.requestdetail { height: 0; overflow: hidden;  }
 
 STYLESHEET;
 return $rtnThis;    
