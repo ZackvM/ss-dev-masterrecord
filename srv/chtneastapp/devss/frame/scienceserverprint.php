@@ -11,7 +11,7 @@ class printobject {
     public $style = "";
     public $bodycontent = "";
 
-    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview', 'helpfile', 'systemreports'); //chartreview when that is built 
+    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview', 'helpfile', 'systemreports','systemobjectrequests'); //chartreview when that is built 
     //pxchart = Patient Chart
     
     function __construct() { 		  
@@ -129,7 +129,13 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $docIdElem = $unencry;
             $docid = $docIdElem;
             $bgnbr = '';                  
-          break;
+            break;
+        case 'systemobjectrequests':
+            $dt = "SCIENCESERVER SYSTEM OBJECT";
+            $docIdElem = $unencry;
+            $docid = $unencry;
+            $bgnbr = '';                  
+            break;
         default: 
             //RETURN ERROR
     }    
@@ -200,6 +206,9 @@ function pagetabs($docobject) {
     case 'SHIPMENT MANIFEST':
       $thisTab = substr(('000000' . $docobject['documentid']),-6) . " Shipment Document"; 
       break;
+    case 'SCIENCESERVER SYSTEM OBJECT':
+      $thisTab = "ScienceServer Object";
+        break;
     default: 
       $thisTab =  "SCIENCESERVER PRINTABLE DOCUMENTS"; 
     break; 
@@ -228,6 +237,9 @@ function documenttext($docobject, $orginalURI) {
     case 'SCIENCESERVER HELP DOCUMENT':
         $doctext = getSystemHelpDocument($docobject['documentid'],$orginalURI);
         break;    
+    case 'SCIENCESERVER SYSTEM OBJECT':
+        $doctext =  getSystemObject($docobject['documentid'], $originalURI) ;
+        break;
     }
     return $doctext;
 }
@@ -1209,6 +1221,101 @@ $output = shell_exec($linuxCmd);
     }
     return array('status' => $sts, 'text' =>  '', 'pathtodoc' => genAppFiles . "/publicobj/documents/pathrpts/pxchart{$filehandle}.pdf", 'format' => 'pdf');
 }
+
+function getSystemObject( $docid, $originalURI ) { 
+
+    $thisobj = explode("::",$docid);
+    require(serverkeys . "/sspdo.zck"); 
+
+    switch ( $thisobj[0] ) {
+      case "iloccard":
+        $at = genAppFiles;
+        $tt = treeTop;
+        $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .5in;  \" ");
+        $sql = "SELECT lvl3.typeolocation lvl3type, lvl3.locationdsp lvl3locdsp, lvl3.locationnote lvl3locnote, lvl2.typeolocation lvl2type, lvl2.locationdsp lvl2locdsp, lvl2.locationnote lvl2locnote, lvl1.typeolocation lvl1type, lvl1.locationdsp lvl1locdsp, lvl1.locationnote lvl1locnote, i.scancode, i.locationnote, i.locationdsp, i.typeolocation, i.hierarchyBottomInd FROM four.sys_inventoryLocations i left join ( SELECT locationid, typeOLocation, locationdsp, locationnote, parentid FROM four.sys_inventoryLocations where activelocation = 1 ) lvl1 on i.parentid = lvl1.locationid left join ( SELECT locationid, typeOLocation, locationdsp, locationnote, parentid FROM four.sys_inventoryLocations where activelocation = 1 ) lvl2 on lvl1.parentid = lvl2.locationid left join ( SELECT locationid, typeOLocation, locationdsp, locationnote, parentid FROM four.sys_inventoryLocations where activelocation = 1 ) lvl3 on lvl2.parentid = lvl3.locationid where i.scancode = :scancode and i.activelocation = 1 and i.physicalLocationInd = 1";
+       $rs = $conn->prepare($sql);
+       $rs->execute(array(':scancode' => $thisobj[1])); 
+       if ( $rs->rowCount() === 1 ) { 
+           //GOOD
+           //****************CREATE BARCODE
+           require ("{$at}/extlibs/bcodeLib/qrlib.php");
+           $tempDir = "{$at}/tmp/";
+           $codeContents = $thisobj[1];
+           $fileName = 'obj' . generateRandomString() . '.png';
+           $pngAbsoluteFilePath = $tempDir.$fileName;
+           if (!file_exists($pngAbsoluteFilePath)) {
+            QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+           } 
+           $qrcode = base64file("{$pngAbsoluteFilePath}", "topqrcode", "png", true, " style=\"height: .7in;\"   ");
+           //********************END BARCODE CREATION
+           $r = $rs->fetchall(PDO::FETCH_ASSOC);
+           $dte = date('m/d/Y');
+           //[{"lvl3type":"ROOM","lvl3locdsp":"Room 566","lvl3locnote":"Room566","lvl2type":"STORAGEFREEZER","lvl2locdsp":"PNS.165","lvl2locnote":"Panasonic-165","lvl1type":"SHELF","lvl1locdsp":"PNS.165:001","lvl1locnote":"Shelf#001","scancode":"FRZB380","locationnote":"Box #001(SC0019)","locationdsp":"SC-0019","typeolocation":"STORAGECONTAINER","hierarchyBottomInd":1}]
+           $inner = <<<SCNCARDTBL
+<table border=0 width=100%><tr><td id=typedenote><center>{$r[0]['typeolocation']}</td></tr></table>
+<table border=0 width=100%><tr><td><center>{$qrcode}</td></tr><tr><td><center>{$r[0]['locationnote']} ({$r[0]['locationdsp']})</td></tr></table>
+<table border=0 width=100%><tr><td align=right id=ipath>[ {$r[0]['lvl3locnote']} ({$r[0]['lvl3type']}) :: {$r[0]['lvl2locnote']} ({$r[0]['lvl2type']}) :: {$r[0]['lvl1locnote']} ({$r[0]['lvl1type']}) :: {$r[0]['locationnote']} ({$r[0]['typeolocation']}) ]</td></tr></table>
+<table border=0 width=100%><tr><td align=right id=prntdte>Print Date: {$dte}</td></tr></table>
+SCNCARDTBL;
+       } else { 
+          //BAD
+          $inner = "SCAN CODE NOT FOUND ... SEE A CHTNEASTERN INFORMATICS STAFF MEMBER";
+       }
+
+       $docstr = <<<DOCLAYOUT
+<style>
+@import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons);
+html {margin: 0;}
+#loccardholder { border: 2px solid #000; }
+#topblock { font-size: 11pt; }
+#typedenote { background: #000; color: #fff; padding: 5px 0; font-size: 9pt; font-weight: bold; } 
+.smlr { font-size: 8pt; }
+#ipath { font-size: 7pt; }  
+#prntdte { font-size: 6pt; font-weight: bold; }  
+</style>
+<body>
+<table border=0 width=100%>
+<tr>
+<td width=60%>
+    <div id=loccardholder>
+    <table border=0 width=100%>
+      <tr><td>{$favi}</td><td align=right id=topblock><b><span class=smlr>CHTN Eastern</span><br>Inventory Location Card</td></tr>
+    </table>
+    {$inner} 
+   </div>
+</td>
+<td width=40%>&nbsp;</td></tr>
+</table>
+</body>
+DOCLAYOUT;
+
+        $docText = $docstr;
+        break;
+      case "ilocmap":
+          $sql = "SELECT i.scancode, i.locationnote, i.locationdsp, lvl1.scancode lvl1scancode, lvl1.locationnote lvl1locationnote, lvl1.locationdsp lvl1locationdsp, lvl1.hierarchybottomind lvl1bottomind, lvl2.scancode lvl2scancode, lvl2.locationnote lvl2locationnote, lvl2.locationdsp lvl2locationdsp, lvl2.hierarchybottomind lvl2bottomind FROM four.sys_inventoryLocations i left join ( select * from four.sys_inventoryLocations where activelocation = 1 ) lvl1 on i.locationid = lvl1.parentid left join ( select * from four.sys_inventoryLocations where activelocation = 1 ) lvl2 on lvl1.locationid = lvl2.parentid where i.scancode = :locid and i.mastercontainerind = 1 and i.activelocation = 1";
+        $rs = $conn->prepare($sql);  
+        $rs->execute(array('locid' => $thisobj[1]));
+        if ( $rs->rowCount() > 0 ) { 
+          $r = $rs->fetchall(PDO::FETCH_ASSOC);
+          $docText = $thisobj[1] . "<p>" . json_encode($r);
+        } else { 
+          $docText = "NO CONTAINER CABINET FOUND WITH SCANCODE >>> " . $thisobj[1];
+        }
+        break;
+    }
+
+$filehandle = generateRandomString();                
+$prDocFile = genAppFiles . "/tmp/prz{$filehandle}.html";
+$prDhandle = fopen($prDocFile, 'w');
+fwrite($prDhandle, $docText);
+fclose;
+$prPDF = genAppFiles . "/publicobj/documents/pathrpts/pxchart{$filehandle}.pdf";
+$linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 4  --margin-right 4  --margin-top 4  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED  {$crnbr}\"     {$prDocFile} {$prPDF}";
+$output = shell_exec($linuxCmd);
+
+    return array('status' => $sts, 'text' =>  'THIS IS A SYSTEM OBJECT', 'pathtodoc' =>  genAppFiles . "/publicobj/documents/pathrpts/pxchart{$filehandle}.pdf", 'format' => 'pdf');
+}
+
 
 function getPathReportText($pathrptid, $orginalURI) { 
     $at = genAppFiles;

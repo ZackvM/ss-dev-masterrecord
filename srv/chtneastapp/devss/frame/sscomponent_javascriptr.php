@@ -13,6 +13,54 @@ class javascriptr {
     $this->regcode = registerServerIdent(session_id()); 
   }
 
+  function astrequestlisting ( $rqststr ) {
+     $tt = treetop; 
+     $rtnThis = <<<RTNTHIS
+
+document.addEventListener('DOMContentLoaded', function() { 
+
+if ( byId('btnLookup') ) { 
+   byId('btnLookup').addEventListener('click', sendQryRequest);
+}
+
+
+}, false);
+
+
+function sendQryRequest() { 
+  var dta = new Object();
+  dta['qryType'] = 'ASTREQ';
+  dta['RQStatus'] = byId('astRequestStatus').value.trim(); 
+  var passdta = JSON.stringify(dta);    
+  var mlURL = "/data-doers/make-query-request";
+  universalAJAX("POST",mlURL,passdta,answerQueryRequest,1);           
+}
+
+function answerQueryRequest(rtnData) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var rsp = JSON.parse(rtnData['responseText']); 
+    alert("* * * * ERROR * * * * \\n\\n"+rsp['MESSAGE']);
+  } else { 
+    //Redirect to results
+    var rsp = JSON.parse(rtnData['responseText']); 
+    navigateSite("ast-request-listing/"+rsp['DATA']['astsearchid']);
+  }        
+}
+
+function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) { 
+  if (byId(whichfield)) { 
+    if (byId(whichfield+'Value')) {
+      byId(whichfield+'Value').value = whatvalue;
+    }    
+    byId(whichfield).value = whatplaintext; 
+  }
+}
+
+
+RTNTHIS;
+     return $rtnThis;
+
+  }
 
 function shipmentdocument ( $rqststr ) { 
 

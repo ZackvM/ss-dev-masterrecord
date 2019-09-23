@@ -7284,20 +7284,20 @@ SQLSTMT;
 
       $rpt = explode("/",$pdta['request']['requestedreporturl']);
       if (count($rpt) === 2) { 
-      $rptsqlSQL = "SELECT ifnull(selectClause,'') as selectclause, ifnull(fromClause,'') as fromclause, ifnull(summaryfield,'') as summaryfield, ifnull(groupbyClause,'') as groupbyclause, ifnull(orderbyClause,'') as orderby, ifnull(accesslvl,100) as accesslevel, ifnull(allowgriddsp,0) as allowgriddsp, ifnull(allowpdf,0) as allowpdf FROM four.ut_reportlist where urlpath = :rpturl";
-      $rptsqlRS = $conn->prepare($rptsqlSQL); 
-      $rptsqlRS->execute(array(':rpturl' => $rpt[1])); 
-      if ($rptsqlRS->rowCount() <> 1) { 
-        $error = 1; 
-        $msgArr[] = "MAL-FORMED REPORT URL - SEE A CHTNED IT PERSON";
-      } else { 
-        $rptsql = $rptsqlRS->fetch(PDO::FETCH_ASSOC);
-        $pdta['request']['rptsql'] = $rptsql;
-      }
-      } else { 
-        $error = 1; 
-        $msgArr[] = "REPORT URL IN REQUEST DOES NOT CONTAIN ALL COMPONENTS"; 
-      }
+        $rptsqlSQL = "SELECT ifnull(selectClause,'') as selectclause, ifnull(fromClause,'') as fromclause, ifnull(summaryfield,'') as summaryfield, ifnull(groupbyClause,'') as groupbyclause, ifnull(orderbyClause,'') as orderby, ifnull(accesslvl,100) as accesslevel, ifnull(allowgriddsp,0) as allowgriddsp, ifnull(allowpdf,0) as allowpdf FROM four.ut_reportlist where urlpath = :rpturl";
+        $rptsqlRS = $conn->prepare($rptsqlSQL); 
+        $rptsqlRS->execute(array(':rpturl' => $rpt[1])); 
+        if ($rptsqlRS->rowCount() <> 1) { 
+          $error = 1; 
+          $msgArr[] = "MAL-FORMED REPORT URL - SEE A CHTNED IT PERSON";
+        } else { 
+          $rptsql = $rptsqlRS->fetch(PDO::FETCH_ASSOC);
+          $pdta['request']['rptsql'] = $rptsql;
+        }
+        } else { 
+          $error = 1; 
+          $msgArr[] = "REPORT URL IN REQUEST DOES NOT CONTAIN ALL COMPONENTS"; 
+        }
 
       session_start();        
       $usrSQL = "SELECT originalAccountName, allowcoord, accessnbr FROM four.sys_userbase where sessionid = :sessionid";
@@ -7704,6 +7704,26 @@ SQLSTMT;
                   $responseCode = 200;
                 }                
             }
+            break;
+            case 'ASTREQ':
+                //TODO:  MAKE DATA CHECKS
+                require(serverkeys . "/sspdo.zck");  
+                session_start();        
+                $usrSQL = "SELECT originalAccountName FROM four.sys_userbase where sessionid = :sessionid";
+                $usrR = $conn->prepare($usrSQL);
+                $usrR->execute(array(':sessionid' =>session_id()));
+                $msg = $usrR->rowCount();
+                if ($usrR->rowCount() < 1) { 
+                  $msg = "SESSION KEY IS INVALID.  LOG OUT OF SCIENCESERVER AND LOG BACK IN";  
+                } else { 
+                  $objid = strtolower( generateRandomString() );
+                  $u = $usrR->fetch(PDO::FETCH_ASSOC);
+                  $insSQL = "insert into four.objsrchdocument (objid, bywho, onwhen, srchterm, doctype) value (:objid,:whoby,now(),:srchtrm,:doctype)";
+                  $insR = $conn->prepare($insSQL);
+                  $insR->execute(array(':objid' => $objid, ':whoby' => $u['originalAccountName'], ':srchtrm' => $passedData, ':doctype' => trim($qryrqst['qryType'])    ));
+                  $data['astsearchid'] = $objid;
+                  $responseCode = 200;
+                }                
             break;
         default: 
           $msg = "TYPE OF QUERY NOT SPECIFIED OR NOT RECOGNIZED";          

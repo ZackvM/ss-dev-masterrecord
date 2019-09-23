@@ -1311,6 +1311,9 @@ function hprrequestcode($whichobj, $rqst) {
 
 class globalMenus {
 
+    function astrequeststatuses() { 
+        return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'ASTREQUESTSTATUS' and dspind = 1 order by dsporder";
+    }
 
     function furtheractionactions() { 
         return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue , ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' and dspind = 1 order by dsporder";

@@ -545,6 +545,23 @@ STYLESHEET;
 return $rtnThis;
 }
 
+function astrequestlisting ( $mobileind ) { 
+
+$rtnThis = <<<STYLESHEET
+body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.4vh; } 
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; } 
+
+#contentholdr { }
+#contentholdr .wholerequestholdr {  }
+
+
+#contentholdr .wholerequestholdr .elementhold .label { font-size: 1.1vh; font-weight: bold; }
+#contentholdr .wholerequestholdr .elementhold .data { font-size: 1.4vh; }   
+
+
+STYLESHEET;
+return $rtnThis;    
+}
 
 
 function shipmentdocument($mobileind) { 

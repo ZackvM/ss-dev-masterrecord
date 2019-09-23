@@ -777,6 +777,70 @@ RTNTHIS;
 
 }
 
+function astrequestlisting ( $rqststr, $usr ) { 
+  $url = explode("/",$_SERVER['REQUEST_URI']);   
+  if ( trim($url[2]) !== "" ) { 
+      //GET QUERY RESULTS
+      //TODO: MAKE THIS A WEBSERVICE!
+      require(genAppFiles . "/dataconn/sspdo.zck"); 
+      $sql = "SELECT objid, bywho, date_format(onwhen,'%m/%d/%Y') as onwhen, srchterm, doctype FROM four.objsrchdocument where objid = :objid and doctype = 'ASTREQ'";
+      $rs = $conn->prepare($sql); 
+      $rs->execute(array(':objid' => $url[2]));
+      if ( $rs->rowCount() === 1 ) { 
+          $r = $rs->fetch(PDO::FETCH_ASSOC);
+          $s = json_decode($r['srchterm'],true);
+
+          //TODO: MAKE THIS A WEBSERVICE!
+          if ($s['RQStatus'] == 'Active' ) {
+            $tqreqSQL = "SELECT rq.req_status reqstatus, rq.requestid, rq.req_number reqnumber,  rq.req_networked as networked, ifnull(rq.req_tissuetype,'') as tissuetype, ifnull(rq.req_anasitetype,'') as anasitetype, ifnull(rq.req_subsite,'') as subsite, ifnull(rq.req_subtype,'') as subtype, ifnull(rq.req_histologictype,'') as histologictype, ifnull(rq.req_diseasename,'') as diseasename, ifnull(rq.req_diseaseclass,'') as diseaseclass, ifnull(rq.req_diseasequalifier,'') as diseasequalifier, ifnull(rq.req_patienthx,'') as patienthx, ifnull(rq.req_hasmet,'') as hasmet, ifnull(rq.req_hasbf,'') as hasbf, ifnull(rq.req_hasnat,'') as hasnat, ifnull(rq.req_hasother,'') as hasother, ifnull(rq.req_hassolid,'') as hassolid, ifnull(rq.req_normalfromcapt,'') as normalfromcapt, ifnull(rq.req_normalfromdzpt,'') as normalfromdzpt, ifnull(rq.req_normalfromhtpt,'') as normalfromhtpt, ifnull(rq.req_tissuecomment,'') as tissuecomment FROM vandyinvest.investtissreq rq where 1=1 and req_status = 'Active' order by rq.requestid, rq.req_number";
+          } else {
+            $tqreqSQL = "SELECT rq.req_status reqstatus, rq.requestid, rq.req_number reqnumber,  rq.req_networked as networked, ifnull(rq.req_tissuetype,'') as tissuetype, ifnull(rq.req_anasitetype,'') as anasitetype, ifnull(rq.req_subsite,'') as subsite, ifnull(rq.req_subtype,'') as subtype, ifnull(rq.req_histologictype,'') as histologictype, ifnull(rq.req_diseasename,'') as diseasename, ifnull(rq.req_diseaseclass,'') as diseaseclass, ifnull(rq.req_diseasequalifier,'') as diseasequalifier, ifnull(rq.req_patienthx,'') as patienthx, ifnull(rq.req_hasmet,'') as hasmet, ifnull(rq.req_hasbf,'') as hasbf, ifnull(rq.req_hasnat,'') as hasnat, ifnull(rq.req_hasother,'') as hasother, ifnull(rq.req_hassolid,'') as hassolid, ifnull(rq.req_normalfromcapt,'') as normalfromcapt, ifnull(rq.req_normalfromdzpt,'') as normalfromdzpt, ifnull(rq.req_normalfromhtpt,'') as normalfromhtpt, ifnull(rq.req_tissuecomment,'') as tissuecomment FROM vandyinvest.investtissreq rq where 1=1 order by rq.requestid, rq.req_number";
+          }
+          $tqreqRS = $conn->prepare($tqreqSQL); 
+          $tqreqRS->execute();
+          if ( $tqreqRS->rowCount() < 1 ) { 
+            $pcontent = "NO TissueQuest Requests Have Been Found!";
+          } else {
+            $rq = $tqreqRS->fetchall(PDO::FETCH_ASSOC);  
+            $pcontent = "<div id=announcebar>Request(s) Found: " . $tqreqRS->rowCount() . "</div>";
+            $pcontent .= "<table id=contentholdr>";
+        
+            foreach ( $rq as $key => $value ) {
+              $pcontent .= "<tr id=\"{$value['requestid']}_holdr\" class=\"wholerequestholdr\">"; 
+              $pcontent .= "<td class=elementhold><div class=label>Request ID</div><div class=data>{$value['requestid']}</div></td>";
+              $pcontent .= "<td class=elementhold><div class=label>Specimen Category</div><div class=data>{$value['tissuetype']}</div></td>";
+              $pcontent .= "<td class=elementhold><div class=label>Site / Sub-site / Sub-Type</div><div class=data>{$value['anasitetype']} :: {$value['subsite']} :: {$value['subtype']}</div></td>";
+              $pcontent .= "<td class=elementhold><div class=label>Histologic Type</div><div class=data>{$value['histologictype']}  </div></td>";
+              $pcontent .= "<td class=elementhold><div class=label>Disease Condition / Class / Qualifier</div><div class=data>{$value['diseasename']} :: {$value['diseaseclass']} :: {$value['diseasequalifier']}</div></td>";
+                
+
+
+              $pcontent .= "</tr>";
+            }
+
+            $pcontent .= "</table>";
+          }
+
+
+$mainscreen = <<<PGCONTENT
+{$url[2]} {$r['bywho']} {$r['onwhen']} {$s['qryType']} {$s['RQStatus']}<p>
+{$pcontent}
+PGCONTENT;
+      } else { 
+        $mainscreen = <<<PGCONTENT
+THE QUERY OBJECT IDENTIFIER ({$url[2]}) WAS NOT FOUND.  SEE A CHTNEASTERN INFORMATICS PERSON.
+PGCONTENT;
+      }
+  } else { 
+      //BUILD QUERY SCREEN 
+      $mainscreen = bldASTLookup();
+  }  
+$rtnthis = <<<PGCONTENT
+{$mainscreen}
+PGCONTENT;
+return $rtnthis;
+}
+
 function biogroupdefinition( $rqststr, $usr ) { 
   $u = json_encode($usr);
   $r = json_encode($rqststr);
@@ -3842,38 +3906,33 @@ RTNPAGE;
 }
 
 function bldLocationPlacardRequest ( $dialog, $passedData ) { 
-
-    
+ 
    $tt = treeTop;
    $invListWS = json_decode( callrestapi("GET", dataTree . "/inventory-hierarchy",serverIdent, serverpw), true);
    $iloc = $invListWS['DATA'];
-   //{"MESSAGE":"","ITEMSFOUND":1,"DATA":{"root":{"locationid":0,"locationdsp":"Inventory Root Tree","scancode":"","child":[{"locationid":665,"scancode":"FRZC665","locationtype":"COLLECTION","locationdsp":"Ortho Collection","hierarchybotom":0,"child":[{"locationid":666,"scancode":"FRZL666","locationdsp":"LOC-666","locationtype":"LOCATION","hierarchybotom":0,"child":[{"locationid":667,"scancode":"FRZB667","locationdsp":"SC-667","locationtype":"STORAGE CABINET","hierarchybottom":1}]}]},{"locationid":664,"scancode":"FRZR565","locationtype":"ROOM","locationdsp":"Room 565","hierarchybotom":0},{"locationid":1,"scancode":"FRZR566","locationtype":"ROOM","locationdsp":"Room 566","hierarchybotom":0,"child":[{"locationid":1089,"scancode":"SSCO001","locationdsp":"SLIDE STORAGE","locationtype":"STORAGE CONTAINER","hierarchybotom":1},{"locationid":339,"scancode":"FRZF007","locationdsp":"PNS.165","locationtype":"STORAGE FREEZER","hierarchybotom":0,"child":[{"locationid":374,"scancode":"FRZS374","locationdsp":"PNS.165:001","locationtype":"SHELF","hierarchybottom":0,"child":[{"locationid":380,"scancode":"FRZB380","locationdsp":"SC-0019","locationtype":"STORAGE CONTAINER","hierarchybottom":1},{"locationid":381,"scancode":"FRZB381","locationdsp":"SC-0020","locationtype":"STORAGE CONTAINER","hierarchybottom":1},
-
    $inner = "<div class=rootnode><div class=\"controlelements\">&#10148;</div><div class=dataelement>{$iloc['root']['locationdsp']}</div></div><div id=topContainer>";
    foreach ( $iloc['root']['child'] as $ky => $vl ) {
      $scode = cryptservice( "iloccard::" . $vl['scancode'],'e');  
      $ccode = cryptservice( "ilocmap::" . $vl['scancode'],'e');  
-     $printer = ( (int)$vl['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$scode}\" target=\"_new\">&#128438;</a>" : ""; 
-     $conicon =  ( (int)$vl['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$ccode}\" target=\"_new\">&#128438;</a>" : "";
+     $printer = ( (int)$vl['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-object-requests/{$scode}\" target=\"_new" . str_replace('.','',uniqid('',true)) . "\">&#128438;</a>" : ""; 
+     $conicon =  ( (int)$vl['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-object-requests/{$ccode}\" target=\"_new" . str_replace('.','',uniqid('',true)) . "\">&#128438;</a>" : "";
      $inner .= "<div class=elementnode><div>&nbsp;</div><div class=\"controlelements\">&#10148;</div><div class=dataelement>{$conicon}&nbsp;{$vl['locationdsp']} [{$vl['locationtype']}]{$printer}</div></div>";
      foreach ( $vl['child'] as $kyc => $vlc ) { 
-
          $ccodea = cryptservice( "ilocmap::" . $vlc['scancode'],'e');  
          $scodea = cryptservice( "iloccard::" . $vlc['scancode'],'e');  
-         $printerc = ( (int)$vlc['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$scodea}\" target=\"_new\">&#128438;</a>" : "";  
-         $conicona =  ( (int)$vlc['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$ccodea}\" target=\"_new\">&#128438;</a>" : "";
+         $printerc = ( (int)$vlc['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-object-requests/{$scodea}\" target=\"_new" . str_replace('.','',uniqid('',true)) . "\">&#128438;</a>" : "";  
+         $conicona =  ( (int)$vlc['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-object-requests/{$ccodea}\" target=\"_new" . str_replace('.','',uniqid('',true)) . "\">&#128438;</a>" : "";
          $inner .= "<div class=elementnodel1> 
                                  <div>&nbsp;</div>
                                  <div>&nbsp;</div>
                                  <div class=\"controlelements\">&#10148;</div>
                                  <div class=dataelement>{$conicona}&nbsp;{$vlc['locationdsp']} [{$vlc['locationtype']}] {$printerc}</div>
                      </div>";
-         foreach ( $vlc['child'] as $kycc => $vlcc) { 
-  
+         foreach ( $vlc['child'] as $kycc => $vlcc) {  
              $ccodeb = cryptservice( "ilocmap::" . $vlcc['scancode'],'e');  
              $scodeb = cryptservice( "iloccard::" . $vlcc['scancode'],'e');  
-             $printercc = ( (int)$vlcc['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$scodeb}\" target=\"_new\">&#128438;</a>" : "";  
-             $coniconb =  ( (int)$vlcc['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$ccodeb}\" target=\"_new\">&#128438;</a>" : "";
+             $printercc = ( (int)$vlcc['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-object-requests/{$scodeb}\" target=\"_new" . str_replace('.','',uniqid('',true)) . "\">&#128438;</a>" : "";  
+             $coniconb =  ( (int)$vlcc['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-object-requests/{$ccodeb}\" target=\"_new" . str_replace('.','',uniqid('',true)) . "\">&#128438;</a>" : "";
              $inner .= "<div class=elementnodel2>
                                  <div>&nbsp;</div>
                                  <div>&nbsp;</div>
@@ -3883,8 +3942,8 @@ function bldLocationPlacardRequest ( $dialog, $passedData ) {
              foreach ( $vlcc['child'] as $kyccc => $vlccc ) {
                $ccodec = cryptservice( "ilocmap::" . $vlccc['scancode'],'e');  
                $scodec = cryptservice( "iloccard::" . $vlccc['scancode'],'e');  
-               $printerccc = ( (int)$vlccc['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$scodec}\" target=\"_new\">&#128438;</a>" : "";  
-               $coniconc =  ( (int)$vlccc['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-reports/{$ccodec}\" target=\"_new\">&#128438;</a>" : "";
+               $printerccc = ( (int)$vlccc['hierarchybottom'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-object-requests/{$scodec}\" target=\"_new" . str_replace('.','',uniqid('',true)) . "\">&#128438;</a>" : "";  
+               $coniconc =  ( (int)$vlccc['containerind'] === 1 ) ? "<a href=\"{$tt}/print-obj/system-object-requests/{$ccodec}\" target=\"_new" . str_replace('.','',uniqid('',true)) . "\">&#128438;</a>" : "";
                $inner .= "<div class=elementnodel3> 
                                  <div>&nbsp;</div>
                                  <div>&nbsp;</div>
@@ -6477,8 +6536,42 @@ RTNTHIS;
 return $rtnThis;
 }
 
+function bldASTLookup() {
+
+          $poarr = json_decode(callrestapi("GET", dataTree . "/global-menu/ast-request-statuses",serverIdent,serverpw),true);
+          $dfvl = "";
+          $po = "<table border=0 class=menuDropTbl>";
+          foreach ($poarr['DATA'] as $poval) {
+              if ( (int)$poval['useasdefault'] === 1 ) { 
+                $dfvl = $poval['lookupvalue'];
+              }    
+              $po .= "<tr><td onclick=\"fillField('astRequestStatus','{$poval['lookupvalue']}','{$poval['menuvalue']}');\" class=ddMenuItem>{$poval['menuvalue']}</td></tr>";
+          }
+          $po .= "</table>";
+
+
+    $thisPage = <<<THISPAGE
+            <table border=0>
+            <tr><td colspan=2 style="padding: 1vh .5vw 0 .5vw;">Request Status</td></tr>
+            <tr><td style="padding: 0 .5vw;">
+                     <div class=menuHolderDiv>
+                       <input type=text id=astRequestStatus class=sdinput value="{$dfvl}" READONLY>
+                       <div class=valueDropDown style="width: 10vw;">{$po}</div>
+                     </div></td>
+                <td>
+                  <table class=tblBtn id=btnLookup style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Lookup</td></tr></table>
+                </td></tr>
+            </table> 
+THISPAGE;
+    return $thisPage;
+
+}
+
 function bldShipDocLookup() {  
+
     
+
+
     $thisPage = <<<THISPAGE
             <table border=0>
             <tr><td colspan=2 style="padding: 1vh .5vw 0 .5vw;">Shipment Document #</td></tr>
@@ -6759,18 +6852,13 @@ SDPAGE;
     return $sdPage;
 }
 
-function bldDialogMasterQMSActionHPR ($biogroup, $readlabel) { 
-    
-    //<td class=faHead>Technician Accuracy</td> - No Longer Relevant on this screen
-    
+function bldDialogMasterQMSActionHPR ($biogroup, $readlabel) {  
     $hprAction = <<<HPRACTION
-
    <table border=0>
         <tr><td colspan=2>Histo-Pathologic Review</td></tr>
         <tr><td class=faHead>Decision</td></tr>
         <tr><td>{$biogroup} / {$readlabel}</td></tr>   
     </table>
-        
 HPRACTION;
     return $hprAction;
     
