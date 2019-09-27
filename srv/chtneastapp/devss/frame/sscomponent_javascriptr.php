@@ -23,24 +23,61 @@ if ( byId('btnLookup') ) {
    byId('btnLookup').addEventListener('click', sendQryRequest);
 }
 
+  if (byId('qryInvestigator')) { 
+    byId('qryInvestigator').addEventListener('keyup', function() {
+      if (byId('qryInvestigator').value.trim().length > 3) { 
+          getSuggestions('qryInvestigator'); 
+      } else { 
+        byId('investSuggestion').innerHTML = "&nbsp;";
+        byId('investSuggestion').style.display = 'none';
+      }
+    }, false);
+  }
+
 
 }, false);
 
 
-function displaydetaildiv( whichdiv ) { 
-  if ( byId(whichdiv).style.height == "" || byId(whichdiv).style.height == '0px' ) { 
-    byId(whichdiv).style.height = 'auto';        
-  } else { 
-    byId(whichdiv).style.height = 0;               
+function getSuggestions(whichfield, passedValue) { 
+switch (whichfield) { 
+  case 'qryInvestigator':
+    var given = new Object(); 
+    given['rqstsuggestion'] = 'vandyinvest-invest'; 
+    given['given'] = byId(whichfield).value.trim();
+    var passeddata = JSON.stringify(given);
+    var mlURL = "/data-doers/suggest-something";
+    universalAJAX("POST",mlURL,passeddata,answerInvestSuggestions,0);
+  break;
+}
+}
+
+function answerInvestSuggestions(rtnData) { 
+  var rsltTbl = "";
+  if (parseInt(rtnData['responseCode']) === 200 ) { 
+    var dta = JSON.parse(rtnData['responseText']);
+    if (parseInt( dta['ITEMSFOUND'] ) > 0 ) { 
+      var rsltTbl = "<table border=0 class=\"menuDropTbl\"><tr><td colspan=2 style=\"font-size: 1.2vh; padding: 8px;\">Below are suggestions for the investigator field. Use the investigator's ID.  These are live values from CHTN's TissueQuest. Found "+dta['ITEMSFOUND']+" matches.</td></tr>";
+      dta['DATA'].forEach(function(element) { 
+      rsltTbl += "<tr class=ddMenuItem onclick=\"fillField('qryInvestigator','"+element['investvalue']+"','"+element['investvalue']+"'); byId('investSuggestion').innerHTML = '&nbsp;'; byId('investSuggestion').style.display = 'none';\"><td valign=top>"+element['investvalue']+"</td><td valign=top>"+element['dspinvest']+"</td></tr>";
+    }); 
+      rsltTbl += "</table>";  
+      byId('investSuggestion').innerHTML = rsltTbl; 
+      byId('investSuggestion').style.display = 'block';
+    } else { 
+      byId('investSuggestion').innerHTML = "&nbsp;";
+      byId('investSuggestion').style.display = 'none';
+    }
   }
 }
-             
+ 
 function sendQryRequest() { 
   var dta = new Object();
   dta['qryType'] = 'ASTREQ';
   dta['RQStatus'] = byId('astRequestStatus').value.trim(); 
   dta['SearchTerm'] = byId('astSearchTerm').value.trim(); 
   dta['SPCTerm'] = byId('astRequestSPC').value.trim();               
+  dta['investid'] = byId('qryInvestigator').value.trim();               
+  dta['preparation'] = byId('astRequestPrep').value.trim();               
   var passdta = JSON.stringify(dta);    
   var mlURL = "/data-doers/make-query-request";
   universalAJAX("POST",mlURL,passdta,answerQueryRequest,1);           

@@ -1311,6 +1311,10 @@ function hprrequestcode($whichobj, $rqst) {
 
 class globalMenus {
 
+    function astreqpreps() { 
+      return "SELECT distinct prep_grouptype as codevalue, prep_grouptype as menuvalue, 0 as useasdefault, prep_grouptype as lookupvalue FROM vandytmp.yesterday_eastern_tissueprep where ifnull(prep_grouptype,'') <> '' order by prep_grouptype";
+    }
+
     function astreqspecimencategories () { 
         return "select ifnull(splst.speccat,'') as codevalue, ifnull(splst.speccat,'') as menuvalue, 0 as useasdefault, ifnull(splst.speccat,'') as lookupvalue from (SELECT distinct ifnull(req_tissuetype,'') as speccat FROM vandyinvest.investtissreq order by 1) splst";
     }

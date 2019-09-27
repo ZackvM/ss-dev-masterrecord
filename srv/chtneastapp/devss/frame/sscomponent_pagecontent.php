@@ -790,9 +790,99 @@ function astrequestlisting ( $rqststr, $usr ) {
           $r = $rs->fetch(PDO::FETCH_ASSOC);
           $s = json_decode($r['srchterm'],true);
 
-          //TODO: MAKE THIS A WEBSERVICE!
-          
-          $tqreqSQL = "SELECT rq.req_status reqstatus, rq.requestid,  rq.req_number reqnumber, ifnull(rq.req_status,'') as reqstatus, rq.req_networked as networked, ifnull(rq.req_tissuetype,'') as tissuetype, ifnull(rq.req_anasitetype,'') as anasitetype, ifnull(rq.req_subsite,'') as subsite, ifnull(rq.req_subtype,'') as subtype, ifnull(rq.req_histologictype,'') as histologictype, ifnull(rq.req_diseasename,'') as diseasename, ifnull(rq.req_diseaseclass,'') as diseaseclass, ifnull(rq.req_diseasequalifier,'') as diseasequalifier, ifnull(rq.req_patienthx,'') as patienthx, ifnull(rq.req_hasmet,'') as hasmet, ifnull(rq.req_hasbf,'') as hasbf, ifnull(rq.req_hasnat,'') as hasnat, ifnull(rq.req_hasother,'') as hasother, ifnull(rq.req_hassolid,'') as hassolid, ifnull(rq.req_normalfromcapt,'') as normalfromcapt, ifnull(rq.req_normalfromdzpt,'') as normalfromdzpt, ifnull(rq.req_normalfromhtpt,'') as normalfromhtpt, ifnull(rq.req_tissuecomment,'') as tissuecomment  , ifnull(td.tissueid,'') as tissueid, ifnull(td.tis_required,'') as tdrequired, ifnull(td.tis_anyall,'') as anyall, ifnull(td.tis_histotype,'') histotype,  ifnull(td.tis_tissuetype,'') as speccat, ifnull(td.tis_anasitetype,'') as asite, ifnull(td.tis_subsite,'') as subsite, ifnull(td.tis_subsitequalifier,'') as subsitequalifier, ifnull(td.tis_subtype,'') as subtype, ifnull(td.tis_hasuninvolved,'') as hasuninvolved, ifnull(tp.prep_preptype,'') as preptype, ifnull(tp.prep_required,'') as preprequired, pr.projid, i.investid FROM vandyinvest.investtissreq rq left join vandyinvest.eastern_tissuedetail td on rq.requestid = td.requestid left join vandyinvest.eastern_tissueprep tp on td.tissueid = tp.tissueid left join vandyinvest.investproj pr on rq.projid = pr.projid left join vandyinvest.invest i on pr.investid = i.investid where 1= 1  ";
+          //TODO: MAKE THIS A WEBSERVICE! 
+          $tqreqSQL = "
+              SELECT rq.req_status reqstatus
+              , rq.requestid
+              , rq.req_number reqnumber
+              , ifnull(rq.req_status,'') as reqstatus
+              , rq.req_networked as networked
+              , ifnull(rq.req_tissuetype,'') as tissuetype
+              , ifnull(rq.req_anasitetype,'') as anasitetype
+              , ifnull(rq.req_subsite,'') as subsite
+              , ifnull(rq.req_subtype,'') as subtype
+              , ifnull(rq.req_histologictype,'') as histologictype
+              , ifnull(rq.req_diseasename,'') as diseasename
+              , ifnull(rq.req_diseaseclass,'') as diseaseclass
+              , ifnull(rq.req_diseasequalifier,'') as diseasequalifier
+              , ifnull(rq.req_patienthx,'') as patienthx
+              , ifnull(rq.req_hasmet,'') as hasmet
+              , ifnull(rq.req_hasbf,'') as hasbf
+              , ifnull(rq.req_hasnat,'') as hasnat
+              , ifnull(rq.req_hasother,'') as hasother
+              , ifnull(rq.req_hassolid,'') as hassolid
+              , ifnull(rq.req_normalfromcapt,'') as normalfromcapt
+              , ifnull(rq.req_normalfromdzpt,'') as normalfromdzpt
+              , ifnull(rq.req_normalfromhtpt,'') as normalfromhtpt
+ 
+              , ifnull(rq.req_surgery,'') as rqsurgery
+              , ifnull(rq.req_postexcisiontime,'') as rqsurgerytime
+              , ifnull(rq.req_surgeryunit,'') as rqsurgerytimeunit
+
+              , ifnull(rq.req_autopsy,'') as rqautopsy
+              , ifnull(rq.req_postmortemtime,'') as rqautopsytime
+              , ifnull(rq.req_autopsyunit,'') as rqautopsyunit
+
+              , ifnull(rq.req_transplant,'') as rqtansplant
+              , ifnull(rq.req_posttransplanttime,'') as rqtranstime
+              , ifnull(rq.req_transplantunit,'') as rqtransunit
+
+              , ifnull(rq.req_phlebotomy,'') as rqphlm
+              , ifnull(rq.req_postphltime,'') as rqphlmtime
+              , ifnull(rq.req_phlebotomyunit,'') as rqphlmunit
+
+              , ifnull(rq.req_trauma,'') as trauma
+              , ifnull(rq.req_posttraumatime,'') as traumatime
+              , ifnull(rq.req_traumaunit,'') as traumaunit
+
+              , ifnull(rq.req_race,'') as ptrace
+              , ifnull(rq.req_gender,'') as ptsex
+              , ifnull(rq.req_agemin1,'') as ptagemin1
+              , ifnull(rq.req_agemax1,'') as ptagemax1
+              , ifnull(rq.req_ageunit1,'') as ptageunit1
+              , ifnull(rq.req_agemin2,'') as ptagemin2
+              , ifnull(rq.req_agemax2,'') as ptagemax2
+              , ifnull(rq.req_ageunit2,'') as ptageunit2
+
+              , ifnull(rq.req_chemoyn,'') as chemoind
+              , ifnull(rq.req_radyn,'') as radind
+
+              , ifnull(rq.req_tissuecomment,'') as tissuecomment  
+              , ifnull(td.tissueid,'') as tissueid
+              , ifnull(td.tis_required,'') as tdrequired
+              , ifnull(td.tis_anyall,'') as anyall
+              , ifnull(td.tis_histotype,'') histotype
+              , ifnull(td.tis_tissuetype,'') as speccat
+              , ifnull(td.tis_anasitetype,'') as asite
+              , ifnull(td.tis_subsite,'') as tdsubsite
+              , ifnull(td.tis_subsitequalifier,'') as tdsubsitequalifier
+              , ifnull(td.tis_subtype,'') as tdsubtype
+              , ifnull(td.tis_hasuninvolved,'') as hasuninvolved
+              , ifnull(tp.prep_preptype,'') as prepdettype
+              , ifnull(tp.prep_grouptype,'') as grptype
+              , ifnull(tp.prep_required,'') as preprequired
+
+              , ifnull(tp.prep_amount,'') as prepamount
+              , ifnull(tp.prep_amountunit,'') as prepamountunit
+              , ifnull(tp.prep_sizeh,'') as prepsizeh
+              , ifnull(tp.prep_sizel,'') as prepsizel
+              , ifnull(tp.prep_sizew,'') as prepsizew
+              , ifnull(tp.prep_sizeunit,'') as prepsizeunit
+
+              , pr.projid
+              , i.investid
+              , concat(ifnull(i.invest_fname,''),' ',ifnull(i.invest_lname,'')) as investigator
+              , ifnull(i.invest_homeinstitute,'') as institution
+              , ifnull(i.invest_division,'') as idivision
+              , ifnull(i.invest_institutiontype,'') as insttype
+              , ifnull(i.invest_networked,'') as inetworked
+              , ifnull(pr.proj_title,'') as projtitle 
+              FROM vandyinvest.investtissreq rq 
+                left join vandyinvest.eastern_tissuedetail td on rq.requestid = td.requestid 
+                left join vandyinvest.eastern_tissueprep tp on td.tissueid = tp.tissueid 
+                left join vandyinvest.investproj pr on rq.projid = pr.projid 
+                left join vandyinvest.invest i on pr.investid = i.investid 
+              where 1= 1  ";
           
           
           if ( trim($s['RQStatus']) === 'All Requests' )  { 
@@ -805,6 +895,11 @@ function astrequestlisting ( $rqststr, $usr ) {
           } else { 
               $tqreqSQL .= " and rq.req_tissuetype = :reqspc ";
               $qryArr[':reqspc'] = trim($s['SPCTerm']);
+          }
+
+          if ( trim($s['investid']) !== "" ) { 
+              $tqreqSQL .= " and i.investid = :icode ";
+              $qryArr[':icode'] = trim($s['investid']);
           }
           
           if ( trim($s['SearchTerm']) === '') { 
@@ -823,65 +918,185 @@ function astrequestlisting ( $rqststr, $usr ) {
               $qryArr[':stk'] = trim($s['SearchTerm']) . '%';
               $qryArr[':stl'] = trim($s['SearchTerm']) . '%';
           }
+
+          if ( trim($s['preparation']) === '' ) { 
+          } else { 
+            $tqreqSQL .= " and tp.prep_grouptype = :prpgrptype ";
+            $qryArr[':prpgrptype'] = $s['preparation'];
+          }
+
           $tqreqSQL .= " order by rq.requestid, rq.req_number, td.tissueid";          
           $tqreqRS = $conn->prepare($tqreqSQL); 
           $tqreqRS->execute($qryArr);
           if ( $tqreqRS->rowCount() < 1 ) { 
-            $pcontent = "NO TissueQuest Requests Have Been Found! " . $tqreqSQL;
+            $pcontent = "NO TissueQuest Requests Have Been Found! ";
           } else {
 
             $rq = $tqreqRS->fetchall(PDO::FETCH_ASSOC); 
             $rqnbr = "";
             $requestCntr = 0;
-            $pcontent .= "<table id=contentholdr border=0>";     
+            $pcontent .= "";     
             $subtblind = 0;
             $tissueid = "";
-            
+            $tsubtblind = 0; 
+            $lastSQL = "SELECT date_format(shippedDate,'%m/%d/%Y') as dspshippeddate, substr(concat('000000',ifnull(shipDocRefID,'')),-6) as shipdocrefid FROM masterrecord.ut_procure_segment where (shippeddate between concat(date_format(now(),'%Y'),'-01-01') and now()) and assignedreq = :requestid order by shippeddate desc limit 1";
+            $lastRS = $conn->prepare($lastSQL); 
             foreach ( $rq as $key => $value ) {
-              if ( $rqnbr !== $value['requestid'] ) {    
-                if ( $subtblind === 1 ) {   
-                  $pcontent .= "</table></div></td></tr>";  
+              //CHECK LAST SHIPPED SQL
+              //
+              if ( $rqnbr !== $value['requestid'] ) { 
+                if ( $tsubtblind === 1) { 
+                  $pcontent .= "</table>";  
                 }
-                $pcontent .= "<tr><td colspan=7 style=\"border-bottom: 1px solid #000;\">&nbsp;</td></tr><tr id=\"{$value['requestid']}_holdr\" class=\"wholerequestholdr\" onclick=\"displaydetaildiv('{$value['requestid']}');\">"; 
-                $pcontent .= "<td class=elementhold valign=top><div class=label>Request</div><div class=data>{$value['requestid']}</div></td>";
-                $pcontent .= "<td class=elementhold valign=top><div class=label>Request Status</div><div class=data>{$value['reqstatus']}</div></td>";
-                $pcontent .= "<td class=elementhold valign=top><div class=label>Specimen-Category</div><div class=data>{$value['tissuetype']}</div></td>";
-                $pcontent .= "<td class=elementhold valign=top><div class=label>Site :: Sub-site :: Sub-Type</div><div class=data>{$value['anasitetype']} :: {$value['subsite']} :: {$value['subtype']}</div></td>";
-                $pcontent .= "<td class=elementhold valign=top><div class=label>Histologic Type</div><div class=data>{$value['histologictype']}  </div></td>";
-                $pcontent .= "<td class=elementhold valign=top><div class=label>Disease Condition :: Class :: Qualifier</div><div class=data>{$value['diseasename']} :: {$value['diseaseclass']} :: {$value['diseasequalifier']}</div></td>";
-                $pcontent .= "<td class=elementhold valign=top><div class=label>Comments</div><div class=data>{$value['tissuecomment']}</div></td>";
-                $pcontent .= "</tr>";
+                if ( $subtblind === 1 ) {   
+                  $pcontent .= "</table></td></tr></table></div>";  
+                  $tsubtblind = 0; 
+                }
+
+                //$pcontent .= "<td valign=top><div class=label>Project Title</div><div class=data>{$value['projtitle']}</div></td>";
+                $spc = ( trim($value['tissuetype']) !== "" ) ? strtoupper($value['tissuetype']) : "";
+                $siteline = ( trim($value['anasitetype']) !== "" ) ? strtoupper(trim($value['anasitetype'])) : "";
+                $siteline .= ( trim($value['subsite']) !== "" ) ?  ( $siteline !== "" ) ? strtoupper( " [{$value['subsite']}]") : strtoupper("[{$value['subsite']}]") : "";
+                $siteline .= ( trim($value['subtype']) !== "" ) ? ( $siteline !== "" ) ? strtoupper(" :: {$value['subtype']}") : strtoupper("{$value['subtype']}") : "";
+                $dx = ( trim($value['diseasename']) !== "" ) ? $value['diseasename'] : "";
+                $dx .= ( trim($value['diseaseclass']) !== "" ) ? ( $dx === "" ) ? $value['diseaseclass'] : " / " . $value['diseaseclass'] : "";
+                $dx .= ( trim($value['diseasequalifier']) !== "" ) ? ( dx === "" ) ? $value['diseasequalifier'] : " [{$value['diseasequalifier']}]" : "";
+                $tcmts = ( trim($value['tissuecomment']) !== "" ) ? $value['tissuecomment'] : "";
+                $sts = ( trim($value['reqstatus']) !== "" ) ? $value['reqstatus'] : "";
+                $srgy  = ( trim($value['rqsurgery']) == 'Yes' ) ? ( trim($value['rqsurgerytime']) !== "" ) ? "{$value['rqsurgerytime']} {$value['rqsurgerytimeunit']}" : "Yes" : "No";
+                $autop = ( trim($value['rqautopsy']) == 'Yes' ) ? ( trim($value['rqautopsytime']) !== "" ) ? "{$value['rqautopsytime']} {$value['rqautopsyunit']}" : "Yes" : "No";
+                $transp = ( trim($value['rqtransplant']) == 'Yes' ) ? ( trim($value['rqtranstime']) !== "" ) ? "{$value['rqtranstime']} {$value['rqtransunit']}" : "Yes" : "No";
+                $phlm = ( trim($value['rqphlm']) == 'Yes' ) ? ( trim($value['rqphlmtime']) !== "" ) ? "{$value['rqphlmtime']} {$value['rqphlmunit']}" : "Yes" : "No";
+                $trma = ( trim($value['trauma']) == 'Yes' ) ? ( trim($value['rqtraumatime']) !== "" ) ? "{$value['rqtraumatime']} {$value['rqtraumaunit']}" : "Yes" : "No";
+                $agedsp = ( trim($value['ptagemin1']) !== "" ) ? $value['ptagemin1'] : "";
+                $agedsp .= ( trim($value['ptagemax1']) !== "" ) ? ( trim($agedsp) !== "") ? "-{$value['ptagemax1']}" : $value['ptagemax1'] : "";
+                $agedsp .= ( trim($value['ptageunit1']) !== "" ) ? ( trim($agedsp) !== "") ? " {$value['ptageunit1']}" : "" : "";
+                $agedsp .= ( trim($value['ptagemin2']) !== "" ) ? ( trim($agedsp) !== "") ? " / {$value['ptagemin2']}" : $value['ptagemin1'] : "";
+                $agedsp .= ( trim($value['ptagemax2']) !== "" ) ? ( trim($agedsp) !== "") ? "-{$value['ptagemax2']}" : $value['ptagemax2'] : "";
+                $agedsp .= ( trim($value['ptageunit2']) !== "" ) ? ( trim($value['ptagemin2']) !== "") ? " {$value['ptageunit2']}" : "" : "";
+                $cxrx = ( trim($value['chemoind']) !== "" ) ? "{$value['chemoind']}" : "-";
+                $cxrx .= ( trim($value['radind']) !== "" ) ? " / {$value['radind']}" : " / -";
+
+
+                $lastRS->execute(array(':requestid' => $value['requestid']));
+                $lastdsp = "[NOT SERVED THIS YEAR]";
+                if ( $lastRS->rowCount() > 0 ) { 
+                  $last = $lastRS->fetch(PDO::FETCH_ASSOC);
+                  $lastdsp = $last['dspshippeddate'];
+                  $lastdsp .= ( trim($last['shipdocrefid']) !== "" ) ? ( trim($lastdsp) !== "" ) ? " ({$last['shipdocrefid']})" : $last['shipdocrefid'] : "";
+                }
+
+                $pcontent .= "<div class=requestholdrdiv><table border=0 class=requestholdr><tr><td class=rqstdsp valign=top colspan=6>Request {$value['requestid']}</td></tr><tr>"; 
+                $pcontent .= "<td class=rqststat valign=top><div class=label>Request Status</div><div class=data>{$sts}&nbsp;</div></td>";
+                $pcontent .= "<td class=rqststat valign=top><div class=label>Last Served This Year</div><div class=data>{$lastdsp}&nbsp;</div></td>";
+                $pcontent .= "<td class=otherfld valign=top><div class=label>Specimen-Category</div><div class=data>{$spc}&nbsp;</div></td>";
+                $pcontent .= "<td class=otherfld valign=top><div class=label>Site [Subsite] :: Sub-Type</div><div class=data>{$siteline}&nbsp;</div></td>";
+                $pcontent .= "<td class=otherfld valign=top><div class=label>Histologic Type</div><div class=data>{$value['histologictype']}&nbsp;</div></td>";
+                $pcontent .= "<td class=otherfld valign=top><div class=label>Disease Diagnosis</div><div class=data>{$dx}&nbsp;</div></td>";
+                $pcontent .= "</tr></table>";
+
+                $pcontent .= "<table border=0 class=requestholdr><tr>";  
+                $pcontent .= "<td valign=top class=rqststat><div class=label>Invest</div><div class=data>{$value['investid']}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top class=rqststat><div class=label>Project</div><div class=data>{$value['projid']}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top class=otherfld><div class=label>Investigator</div><div class=data>{$value['investigator']}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top class=otherfld><div class=label>Division / Networked</div><div class=data>{$value['idivision']} / {$value['inetworked']}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top class=rqstcmts><div class=label>Institution (Type)</div><div class=data>{$value['institution']} ({$value['insttype']})&nbsp;</div></td>";
+                $pcontent .= "<td class=rqstcmts valign=top><div class=label>Comments</div><div class=data>{$tcmts}&nbsp;</div></td>";  
+
+                $pcontent .= "</tr></table>";
+
+                $pcontent .= "<table class=requestholdr><tr>"; 
+                $pcontent .= "<td valign=top class=rqststat><div class=label>Surgery</div><div class=data><center>{$srgy}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top class=rqststat><div class=label>Autopsy</div><div class=data><center>{$autop}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top class=rqststat><div class=label>Transplant</div><div class=data><center>{$transp}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top class=rqststat><div class=label>Phlembotomy</div><div class=data><center>{$phlm}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top class=rqststat><div class=label>Trauma</div><div class=data><center>{$trma}&nbsp;</div></td>"; 
+                $pcontent .= "<td valign=top class=otherfld><div class=label>Age</div><div class=data>{$agedsp}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top><div class=label>Race</div><div class=data>{$value['ptrace']}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top class=otherfld><div class=label>Sex</div><div class=data>{$value['ptsex']}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top><div class=label>Cx/Rx</div><div class=data><center>{$cxrx}&nbsp;</div></td>";
+                $pcontent .= "</tr></table>";
+
+
+
                 $rqnbr = $value['requestid'];
                 $requestCntr++;
-                $pcontent .= "<tr><td><div class=label>Project</div><div class=data>{$value['projid']}</div></td><td><div class=label>Invest #</div><div class=data>{$value['investid']}</div></td></tr><tr><td colspan=7><div id=\"{$value['requestid']}\" class=requestdetail><table border=1 >";
                 $subtblind = 1;
+         
+                $pcontent .= "<tr><td colspan=7>  <table border=0 class=tisholdrtbl>";
+                $pthxtxt = "";
+                $pthxdspind = 0; 
               }
-              
+
+              if ( $tissueid !== $value['tissueid'] ) {
+
+     
+                $colorArray = getColor( mt_rand(100000,999999)  );
+                $pbSqrBgColor = " style=\"background: rgba({$colorArray[0]}, {$colorArray[1]}, {$colorArray[2]},1); \" ";
+
+                if ($pthxtxt !== "<div class=label>Patient History</div><div class=data>{$value['patienthx']}&nbsp;</div>" ) { 
+                    $pthxtxt =   "<div class=label>Patient History</div><div class=data>{$value['patienthx']}&nbsp;</div>"; 
+                    $pthxdspind = 1;
+                } else { 
+                    $pthxdspind = 0;
+                }
+
+                $pthxdsp = ( $pthxdspind === 1 ) ? $pthxtxt : "";
+
+                $tddesignation = trim($value['speccat']);
+                $tddesignation .= ( trim($value['asite']) !== "" ) ? ($tddesignation !== "") ? " / {$value['asite']}" : "{$value['asite']}" : "";
+                  $ss = ( trim($value['tdsubsite']) !== "" ) ? $value['tdsubsite'] : ""; 
+                  $ssq = ( trim($value['tdsubsitequalifier']) !== "" ) ? $value['tdsubsitequalifier'] : "";
+                  $ssq .= ( trim($value['tdsubtype']) !== "" ) ? ( trim($ssq) !== "" ) ? " / {$value['tdsubtype']}" : "{$value['tdsubtype']}" : "";
+                  $ssq = ( trim($ssq) !== "" ) ? " [{$ssq}]" : "";
+                  $tddesignation .= ( trim($ss) !== "" ) ? " ({$ss}){$ssq}" : $ss;
+                $tddesignation = strtoupper($tddesignation);
+
+                $pcontent .= ( $tsubtblind === 1 ) ? "</table></td></tr>" : "";
+                $pcontent .= "<tr><td rowspan=2 class=linedenoter {$pbSqrBgColor}></td>";
+                $pcontent .= "<td valign=top class=nxtlength><div class=label>Sample Required?</div><div class=data>{$value['tdrequired']}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top class=semishortfld><div class=label>Biosample Requested </div><div class=data>{$tddesignation}&nbsp;</div></td>";
+                //$pcontent .= "<td valign=top class=shortfld><div class=label>Has MET</div><div class=data><center>{$value['hasmet']}</div></td>";
+                //$pcontent .= "<td valign=top class=shortfld><div class=label>Has NAT</div><div class=data><center>{$value['hasnat']}</div></td>";
+                //$pcontent .= "<td valign=top class=shortfld><div class=label>Has Solid</div><div class=data><center>{$value['hassolid']}</div></td>";
+                //$pcontent .= "<td valign=top class=shortfld><div class=label>Has BF</div><div class=data><center>{$value['hasbf']}</div></td>";
+                //$pcontent .= "<td valign=top class=shortfld><div class=label>Has Other</div><div class=data><center>{$value['hasother']}</div></td>";
+                $pcontent .= "<td valign=top class=shortfld><div class=label>From CA-PT</div><div class=data><center>{$value['normalfromcapt']}&nbsp;</div></td>";
+                $pcontent .= "<td valign=top rowspan=2>{$pthxdsp}&nbsp;</td>";
+
+
+                $pcontent .= "</tr>";
+                $pcontent .= "<tr><td colspan=20 style=\"padding: .5vh 0 1vh 1vw;\"><table border=0><tr><td class=medium><div class=label>Required?</div></td><td class=medium><div class=label>Preparation / Method</div></td><td class=medium><div class=label>Amount Requested</div></td></tr>";
+                $tissueid = $value['tissueid'];   
+                $tsubtblind = 1; 
+              }
+
+              if ( trim($value['grptype']) !== "" ) {
+
+                $prepamount = "";  
+                $prepamount = trim("{$value['prepamount']} {$value['prepamountunit']}");
+                $prepamount .= ( trim($value['prepsizew']) !== "" ) ? ( $prepamount !== "" ) ? " / {$value['prepsizew']}" : "{$value['prepsizew']}" : "";
+                $prepamount .= ( trim($value['prepsizeh']) !== "" ) ? ( $prepamount !== "" ) ? "x{$value['prepsizew']}" : "{$value['prepsizew']}" : "";
+                $prepamount .= ( trim($value['prepsizel']) !== "" ) ? ( $prepamount !== "" ) ? "x{$value['prepsizel']}" : "{$value['prepsizel']}" : "";
+                $prepamount .= ( trim($value['prepsizeunit']) !== "" ) ? ( $prepamount !== "" ) ? " {$value['prepsizeunit']}" : "{$value['prepsizeunit']}" : "";
+
+                $pcontent .= "<tr><td>{$value['preprequired']}&nbsp;</td><td>{$value['prepdettype']} ({$value['grptype']})&nbsp;</td><td>{$prepamount}&nbsp;</td></tr>";
+              }
                  
-                 if ( $tissueid !== $value['tissueid'] ) { 
-                    $pcontent .= "<tr>"
-                                         . "<td class=elementhold valign=top><div class=label>Required</div><div class=data>{$value['tdrequired']}</div></td>"
-                                         . "<td class=elementhold valign=top><div class=label>Any/All</div><div class=data>{$value['anyall']}</div></td>"
-                                         . "<td class=elementhold valign=top><div class=label>Histologic Type</div><div class=data>{$value['histotype']}</div></td>"
-                                         . "<td class=elementhold valign=top><div class=label>Biospecimen Type</div><div class=data>{$value['speccat']}</div></td>"
-                                        . "<td class=elementhold valign=top><div class=label>Site :: Subsite</div><div class=data>{$value['asite']} :: {$value['subsite']}</div></td>"
-                                        . "<td class=elementhold valign=top><div class=label>Sub-type :: Qualifier</div><div class=data>{$value['subtype']} :: {$value['subsitequalifier']}</div></td>"
-                                        . "<td class=elementhold valign=top><div class=label>uninvolved</div><div class=data>{$value['hasuninvolved']}</div></td>"
-                                      . "</tr>";
-                   $tissueid = $value['tissueid'];
-                 }
-                 
-                   $pcontent .= "<tr><td colspan=7><table border=1><tr>"
-                                                                                                   . "<td><div class=label>Required</div><div class=data>{$value['preprequired']}</td>"
-                                                                                                   . "<td><div class=label>Prep Type</div><div class=data>{$value['preptype']}</td>"
-                                                                                                   . "</tr></table></td></tr>";
             }
           }
 
-
 $mainscreen = <<<PGCONTENT
-{$r['bywho']} {$r['onwhen']} {$s['qryType']} {$s['RQStatus']} {$s['SearchTerm']} {$s['SPCTerm']}<p>
-<div>Request(s) Found: {$requestCntr}</div>
+<table id=rqpTbl border=0>
+  <tr><td colspan=10 style="font-size: 1.8vh; font-weight: bold; text-align: center;">Search Parameters</td></tr>
+  <tr><td valign=top id=rqpSrchA><div class=label>Search By</div><div class=data>{$r['bywho']} {$r['onwhen']}&nbsp;</div></td>
+      <td valign=top id=rqpSrchB><div class=label id=rqpStatus>Request Status</div><div class=data>{$s['RQStatus']}&nbsp;</div></td>
+      <td valign=top id=rqpSrchC><div class=label>Search Term</div><div class=data>{$s['SearchTerm']}&nbsp;</div></td>
+      <td valign=top id=rqpSrchD><div class=label>Specimen Category</div><div class=data>{$s['SPCTerm']}&nbsp;</div></td>
+      <td valign=top id=rqpSrchE><div class=label>Investigator</div><div class=data>{$s['investid']}&nbsp;</div></td>
+      <td valign=top id=rqpSrchF><div class=label>Preparation</div><div class=data>{$s['preparation']}&nbsp;</div></td></tr>
+</table>
+<div id=foundline>Request(s) Found: {$requestCntr}</div>
 
 {$pcontent}
 PGCONTENT;
@@ -6619,17 +6834,41 @@ function bldASTLookup() {
           }
           $spc .= "</table>";
 
-    $thisPage = <<<THISPAGE
+          //astreqpreps
+          $prparr = json_decode(callrestapi("GET", dataTree . "/global-menu/ast-req-preps",serverIdent,serverpw),true);
+          $prpdfvl = "";
+          $prp = "<table border=0 class=menuDropTbl><tr><td onclick=\"fillField('astRequestPrep','','');\" class=ddMenuItem align=right style=\"font-size: 1vh;\">[Clear]</td></tr>";
+          foreach ($prparr['DATA'] as $prpval) {
+              if ( (int)$prpval['useasdefault'] === 1 ) { 
+                $prpdfvl = $prpval['lookupvalue'];
+              }    
+              $prp .= "<tr><td onclick=\"fillField('astRequestPrep','{$prpval['lookupvalue']}','{$prpval['menuvalue']}');\" class=ddMenuItem>{$prpval['menuvalue']}</td></tr>";
+          }
+          $prp .= "</table>";
+
+          //<td><div class=menuHolderDiv><input type=text id=astRequestPrep value="{$prpdfvl}" READONLY><div class=valueDropDown style="width: 10vw;">{$prp}</div></div></td>
+          //<td>Detail Preparation<sup>*</sup></td>
+
+          $thisPage = <<<THISPAGE
+            <div id=ASTHeadline>A.S.T. Search List</div>
+            <div id=ASTInstruct>This CHTN Eastern at one time used a printed report called the AST (Autopsy/Surgery/Transplant) Request List to search for requests.  These requests come from the CHTN Central database.  This database is called TissueQuest and is hosted at Vanderbilt University.  The printed report was several hundreds of pages long and CHTN Eastern would print several copies at the beginning of each week.  Now with computerization, this AST List is interactive and searchable - but we've kept the name "AST".  <p>To Search the AST enter the specified search parameters in the fields below.  You can enter investigator information as you do on all other ScienceServer Screens - either with a name, institution or INV#.  If you use the 'Detail Preparation' parameter, the AST will only display preparations within the request that match (be aware that this field many return results unexpectedly).  Entering a term in the 'Search Term' field will search ALL Diagnosis Designation fields within the request (including comment fields) for that term.<p>This search is conducted against a grouping of data that is immense.  Searches can run up to 30 seconds to execute! </div>      
+
+            <div id=paraHolder>
             <table border=0>
-            <tr><td>Request Status</td><td>Search Term </td><td>TQ-Specimen Category</td></tr>
+            <tr><td>Request Status</td><td>Search Term </td><td>TQ-Specimen Category</td><td>Investigator ID</td></tr>
             <tr>
-                <td><div class=menuHolderDiv><input type=text id=astRequestStatus class=sdinput value="{$dfvl}" READONLY><div class=valueDropDown style="width: 10vw;">{$po}</div></div></td>
-                <td><input type=text id=astSearchTerm class=sdinput value=""></td>
-                <td><div class=menuHolderDiv><input type=text id=astRequestSPC class=sdinput value="{$spcdfvl}" READONLY><div class=valueDropDown style="width: 10vw;">{$spc}</div></div></td>
-                <td>                       
+                <td><div class=menuHolderDiv><input type=text id=astRequestStatus value="{$dfvl}" READONLY><div class=valueDropDown style="width: 10vw;">{$po}</div></div></td>
+                <td><input type=text id=astSearchTerm value=""></td>
+                <td><div class=menuHolderDiv><input type=text id=astRequestSPC value="{$spcdfvl}" READONLY><div class=valueDropDown style="width: 10vw;">{$spc}</div></div></td>
+                <td><div class=suggestionHolder><input type=text id=qryInvestigator class="inputFld"><div id=investSuggestion class=suggestionDisplay>&nbsp;</div></div></td>
+            </tr>
+            <tr>
+                <td colspan=10 align=right>                       
                   <table class=tblBtn id=btnLookup style="width: 6vw;"><tr><td style="font-size: 1.3vh;"><center>Lookup</td></tr></table>
-                </td></tr>
+                </td>
+            </tr>
             </table> 
+            </div>
 THISPAGE;
     return $thisPage;
 

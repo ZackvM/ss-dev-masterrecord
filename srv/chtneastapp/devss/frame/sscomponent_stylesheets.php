@@ -551,13 +551,52 @@ $rtnThis = <<<STYLESHEET
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.4vh; } 
 .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; } 
 
-#contentholdr { }
-#contentholdr .wholerequestholdr {  }
+#astRequestStatus { width: 10vw; }
+#astSearchTerm { width: 20vw; }
+#astRequestSPC { width: 10vw; } 
+#astRequestPrep { width: 7vw; }
 
-.label { font-size: 1.1vh; font-weight: bold; white-space: nowrap; }
-.data { font-size: 1.4vh; }   
+.suggestionHolder { position: relative; }
+.suggestionDisplay {min-width: 25vw; position: absolute; left: 0; max-height: 30vh; min-height: 15vh; overflow: auto; z-index: 25; box-sizing: border-box; display: none;background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); }
+.suggestionTable { max-width: 24vw; box-sizing: border-box; }
 
-.requestdetail { height: 0; overflow: hidden;  }
+.label { font-size: 1vh; font-weight: bold; white-space: nowrap; color: rgba({$this->color_zackgrey},.7); border-bottom: 1px solid rgba({$this->color_zackgrey},.7); padding-top: 5px; margin-bottom: 4px; }
+.data { font-size: 1.4vh; padding: 8px 0px 8px 4px; margin-bottom: 6px; border-bottom: 1px solid rgba({$this->color_darkgrey},.3); border-right: 1px solid rgba({$this->color_darkgrey},.3);}   
+
+
+#ASTHeadline { margin-left: 8vw; margin-right: 8vw; margin-bottom: 2vh; font-family: Roboto; font-size: 2.5vh; font-weight: bold; text-align: center; border-top: 3px double rgba({$this->color_zackgrey},1); border-bottom: 3px double rgba({$this->color_zackgrey},1); padding-bottom: .5vh; padding-top: .5vh; } 
+#ASTInstruct { margin-left: 8vw; margin-right: 8vw; margin-bottom: 2vh; font-family: Roboto; font-size: 1.4vh; text-align: justify; line-height: 1.8em;  }
+#paraHolder { margin-left: 8vw; margin-right: 8vw; } 
+
+#foundline { font-size: 1.1vh; padding-top: 4vh; font-weight: bold;  padding-left: 1.2vw; color: rgba({$this->color_dblue},1); } 
+
+#rqpTbl { margin-left: 1vw; border: 1px solid rgba({$this->color_zackgrey},1); padding: 8px; } 
+#rqpSrchA { width: 15vw; padding: 4px 8px 0 0; } 
+#rqpSrchB { width: 7vw; padding: 4px 8px 0 0; } 
+#rqpSrchC { width: 20vw; padding: 4px 8px 0 0; } 
+#rqpSrchD { width: 10vw; padding: 4px 8px 0 0; } 
+#rqpSrchE { width: 7vw; padding: 4px 8px 0 0; } 
+#rqpSrchF { width: 15vw; padding: 4px 8px 0 0; } 
+
+
+.requestholdrdiv { margin-left: 1vw; margin-top: 1.5vh; margin-bottom: 1.5vh; border: 1px solid rgba({$this->color_zackgrey},.7); padding: .1vh 0 .2vh 0; }
+.requestholdrdiv:nth-child(even) { background: rgba({$this->color_lightgrey},1);  } 
+
+.requestholdr { width: 98vw; }
+.requestholdr .rqstdsp { text-align: center; background: rgba({$this->color_cornflowerblue}, 1); color: rgba({$this->color_white},1); padding: 8px 0 8px 0; font-size: 1.8vh; font-weight: bold;}
+.requestholdr .rqststat { width: 4vw;  }
+.requestholdr .otherfld { width: 10vw; }  
+.requestholdr .rqstcmts { width: 45vw; }
+
+
+.tisholdrtbl { width: 96vw; margin-left: 1vw; margin-top: .6vh; border: none;  }
+.tisholdrtbl .linedenoter { width: .2vw; } 
+.tisholdrtbl .shortfld { width: 3vw; }
+.tisholdrtbl .semishortfld { width: 30vw; }
+.tisholdrtbl .nxtlength  { width: 10vw; }   
+
+.short { width: 5vw; }
+.medium { width: 12vw; }  
 
 STYLESHEET;
 return $rtnThis;    
