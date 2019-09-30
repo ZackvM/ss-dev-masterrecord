@@ -13,6 +13,8 @@ class javascriptr {
     $this->regcode = registerServerIdent(session_id()); 
   }
 
+//dta['preparation'] = byId('astRequestPrep').value.trim();               
+
   function astrequestlisting ( $rqststr ) {
      $tt = treetop; 
      $rtnThis = <<<RTNTHIS
@@ -77,7 +79,6 @@ function sendQryRequest() {
   dta['SearchTerm'] = byId('astSearchTerm').value.trim(); 
   dta['SPCTerm'] = byId('astRequestSPC').value.trim();               
   dta['investid'] = byId('qryInvestigator').value.trim();               
-  dta['preparation'] = byId('astRequestPrep').value.trim();               
   var passdta = JSON.stringify(dta);    
   var mlURL = "/data-doers/make-query-request";
   universalAJAX("POST",mlURL,passdta,answerQueryRequest,1);           

@@ -1080,7 +1080,7 @@ function astrequestlisting ( $rqststr, $usr ) {
                 $prepamount .= ( trim($value['prepsizel']) !== "" ) ? ( $prepamount !== "" ) ? "x{$value['prepsizel']}" : "{$value['prepsizel']}" : "";
                 $prepamount .= ( trim($value['prepsizeunit']) !== "" ) ? ( $prepamount !== "" ) ? " {$value['prepsizeunit']}" : "{$value['prepsizeunit']}" : "";
 
-                $pcontent .= "<tr><td>{$value['preprequired']}&nbsp;</td><td>{$value['prepdettype']} ({$value['grptype']})&nbsp;</td><td>{$prepamount}&nbsp;</td></tr>";
+                $pcontent .= "<tr><td valign=top><div class=data>{$value['preprequired']}&nbsp;</div></td><td valign=top><div class=data>{$value['prepdettype']} ({$value['grptype']})&nbsp;</div></td><td valign=top><div class=data>{$prepamount}&nbsp;</div></td></tr>";
               }
                  
             }
