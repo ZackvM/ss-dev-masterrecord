@@ -3937,7 +3937,12 @@ MBODY;
              $primeFocus = "";  
              $left = '8vw';
              $top = '8vh';
-             break;                
+             break;
+           case 'donorvault':
+             $primeFocus = "";  
+             $left = '8vw';
+             $top = '8vh';
+             break;
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);

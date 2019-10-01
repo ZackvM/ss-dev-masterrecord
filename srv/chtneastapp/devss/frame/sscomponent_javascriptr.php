@@ -1807,6 +1807,7 @@ function globalscripts ( $keypaircode, $usrid ) {
   //LOCAL USER CREDENTIALS BUILT HERE
   $regUsr = $this->sessid;  
   $regCode = $this->regcode; 
+  $vault = phiserver;
 
 
 $rtnThis = <<<JAVASCR
@@ -2230,8 +2231,7 @@ function answerGenSystemReport(rtnData) {
      openOutSidePage("{$tt}/print-obj/system-reports/"+prts['DATA']['reportobjectency']);
    }        
 }
-
-      
+           
 JAVASCR;
 return $rtnThis;    
 }

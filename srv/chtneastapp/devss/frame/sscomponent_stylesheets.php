@@ -275,7 +275,7 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 
 .helppicturecaption { font-size: 1.1vh; color: rgba({$this->color_darkgrey},1); font-weight: bold; font-style: italics; }
 
-
+.masterFloatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
 
 STYLESHEET;
 

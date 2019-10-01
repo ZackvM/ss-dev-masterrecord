@@ -15,6 +15,13 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'donorvault':
+        $pdta = json_decode($passedData, true);         
+        $titleBar = "Donor Vault Access";
+        $standardSysDialog = 0;
+        $closer = "closeThisMasterDialog('{$pdta['dialogid']}');";         
+        $innerDialog = "<p>" . $passedData . "<div id=porthole></div>";
+      break;                           
       case 'rqstLocationBarcode':
         $pdta = json_decode($passedData, true);         
         $titleBar = "Request Location Barcode Placard";
@@ -9380,12 +9387,17 @@ function bldBiosampleProcurement($usr) {
       //$tdydtev = '20180507';
       $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
       $procGrid = bldProcurementGrid($usr); //THIS IS THE PROCUREMENT GRID ELEMENTS
+      $dvault = phiserver;
 
       $holdingTbl = <<<HOLDINGTBL
             <div id=initialBiogroupInfo>
             <table border=0 id=procurementAddHoldingTbl>
                    <tr>
-                      <td valign=top id=procbtnsidebar><center><div class=ttholder onclick="openAppCard('appcard_procphilisting');"><i class="material-icons">how_to_reg</i><div class=tt>Donor Information/Operative Schedule</div></div></td>
+                      <td valign=top id=procbtnsidebar>
+                          <center>
+                          <div class=ttholder onclick="openAppCard('appcard_procphilisting');"><i class="material-icons">how_to_reg</i><div class=tt>Donor Information/Operative Schedule</div></div>
+                          <div class=ttholder onclick="openOutSidePage('{$dvault}');"><i class="material-icons">account_balance</i><div class=tt>Access Donor Vault</div></div>
+                      </td>
                       <td valign=top id=procGridHolderCell> {$procGrid}</td>
                       <td valign=top id=procGridBGDspNotDsp>&nbsp;</td>
                    </tr>
