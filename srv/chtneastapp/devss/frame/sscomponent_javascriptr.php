@@ -755,13 +755,47 @@ document.addEventListener('DOMContentLoaded', function() {
      byId('btnPrintBCCard').addEventListener('click', rqstNewBarCode );
    }
 
+   if ( byId('ctlBtnCheckCommit') ) { 
+     byId('ctlBtnCheckCommit').addEventListener('click', actionCheckCheck );
+   }
+   
+   if ( byId('ctlBtnCheckCancel') ) { 
+     byId('ctlBtnCheckCancel').addEventListener('click', actionCheckCancel );
+   }
 
 }, false);
 
 function clickedlabel(e) {
   var ele = e.target; 
   var eleId = ele.id;
-  alert(ele.id);
+  byId('scannedLabel'+parseInt(ele.id.replace( /^\D+/g, ''))).remove();
+  var elemcnt = document.getElementsByClassName("labelDspDiv");
+  byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
+}
+
+function actionCheckCheck() { 
+  
+  var obj = new Object(); 
+  var scanlist = [];
+  obj['location'] = byId('locscancode').value.trim();
+  var lbls = document.getElementsByClassName("labelDspDiv");
+  var lblsl = lbls.length;
+  for ( var i = 0; i < lbls.length; i++ ) { 
+    scanlist.push( byId(lbls[i].id).dataset.label );
+  } 
+  obj['scanlist'] = scanlist;   
+  var pdta = JSON.stringify(obj); 
+  console.log(pdta);
+}
+
+function actionCheckCancel() { 
+  byId('locscancode').value = '';
+  byId('locscandsp').innerHTML = '';
+  byId('itemCountDsp').innerHTML = 'SCAN COUNT: 0';
+  var myNode = byId('labelscanholderdiv');
+  while ( myNode.firstChild ) { 
+    myNode.removeChild(myNode.firstChild);
+  }  
 }
 
 function rqstLocationCode() {
@@ -774,8 +808,12 @@ function rqstNewBarCode() {
 
 function doSomethingWithScan ( scanvalue ) {
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
-  var scanloc   = new RegExp(/^[A-Z]{4}\d+$/); 
+  var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
+
+  var scanworked = 0;
+
   if ( scanlabel.test( scanvalue ) ) { 
+    scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {
       //CHECK LABEL NOT ALREADY SCANNED
@@ -812,16 +850,16 @@ function doSomethingWithScan ( scanvalue ) {
             byId('desigDisplay'+lblsl).innerHTML = fulfilled;
         })
         .catch(function (error) {
+            byId('desigDisplay'+lblsl).innerHTML = '<div class=errordspmsg>Scanned Label Not Found in Database. See Informatics Staff Memeber Immediately.</div>';
             console.log(error.message);
         });
-
-
     } else { 
       alert('The Scan Control doesn\'t exist');
     }
   }
                 
   if ( scanloc.test( scanvalue ) ) {
+    scanworked = 1;
     //locationscan,locscancode,locscandsp
     if ( byId('locationscan') ) { 
       byId('locscancode').value = scanvalue;
@@ -837,6 +875,11 @@ function doSomethingWithScan ( scanvalue ) {
       });
     }
   }
+
+  if ( scanworked === 0 ) { 
+    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
+  }
+
 }        
 
 var fillInLocationDisplay = function ( scancode ) { 
@@ -874,7 +917,7 @@ var fillInDesigLabelCode = function ( scancode  ) {
            //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
            resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
         } else { 
-          reject(Error("It broke!"));
+          reject(Error("It broke! "+httpage.responseText ));
         }
       }
     };
@@ -1011,7 +1054,7 @@ function makeFurtherActionRequest () {
   obj['priority'] = byId('faFldPriorityValue').value.trim(); 
   obj['duedate'] = byId('faFldByDate').value.trim();
   obj['notifycomplete'] = byId('faFldNotifyComplete').checked;
-  var passdta = JSON.stringify(obj); 
+  var passdta = JSON.stringify(obj);
   var mlURL = "/data-doers/save-further-action";      
   universalAJAX("POST",mlURL,passdta,answerFurtherActionRequests,2);
 }
@@ -3481,7 +3524,7 @@ function makeFurtherActionRequest () {
   obj['priority'] = byId('faFldPriorityValue').value.trim(); 
   obj['duedate'] = byId('faFldByDate').value.trim();
   obj['notifycomplete'] = byId('faFldNotifyComplete').checked;
-  var passdta = JSON.stringify(obj); 
+  var passdta = JSON.stringify(obj);
   var mlURL = "/data-doers/save-further-action";
   universalAJAX("POST",mlURL,passdta,answerFurtherActionRequests,2);
 }

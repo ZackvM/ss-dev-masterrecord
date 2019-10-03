@@ -1281,7 +1281,6 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
 #inventoryMasterHoldr #inventoryControlPage { padding: 0 0 0 10px; }
 
-
 #inventoryCheckinElementHoldr { display: grid; grid-template-rows: repeat( 11, 1fr); height: 85%; } 
 #inventoryCheckinElementHoldr #locationscan { grid-row: 1 / 2; } 
 #inventoryCheckinElementHoldr #locationscan #locscandsp { font-family: Roboto; font-size: 1.5vh; color: rgba({$this->color_dblue},1); padding: .5vh 0 .5vh 5px;   } 
@@ -1291,15 +1290,17 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv { display: grid; grid-gap: 4px; grid-template-columns: repeat(5, 1fr); } 
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv { border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; height: 6vh; background-color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.4vh; }
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv:nth-child(even) { background: rgba({$this->color_mgrey},.3); }
+#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv:hover { background: rgba({$this->color_lamber},.5); cursor: pointer; }
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv .scanDisplay { font-weight: bold; color: rgba({$this->color_dblue},1); }
  
+#inventoryCheckinElementHoldr #ctlButtons .iControlBtn { border: 1px solid rgba({$this->color_zackgrey}, 1); text-align: center; text-decoration: none; color: rgba({$this->color_zackgrey},1); overflow: hidden; height: 3vh; width: 6vw; background: rgba({$this->color_lgrey},1); font-size: 2.5vh; padding: 1vh 0; margin-top: .5vh; }
+#inventoryCheckinElementHoldr #ctlButtons .iControlBtn:hover { background: rgba({$this->color_lamber}, .5); cursor: pointer; }
+
+.errordspmsg { color: rgba({$this->color_bred},1); font-weight: bold; text-align: center; } 
 
 
 
-
-
-
-#inventoryCheckinElementHoldr #ctlButtons { grid-row: 10 / 11; border: 1px solid #000; } 
+#inventoryCheckinElementHoldr #ctlButtons { grid-row: 10 / 11; border-top: 1px solid rgba({$this->color_zackgrey},1); } 
 
 
 

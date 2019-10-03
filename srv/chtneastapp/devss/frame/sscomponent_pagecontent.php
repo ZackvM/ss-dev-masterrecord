@@ -1387,15 +1387,15 @@ function inventory ( $rqststr, $whichusr ) {
        case 'checkin':
          $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorcheckin = " data-selected='true' ";
-         $pageTitle = "Check-In Biosamples";
+         $pageTitle = "Check-In/Move Biosample Inventory";
          $pageDetail = self::bldInventoryCheckIn();
          break;
-       case 'movebiosample':
-         $topBtnBar = generatePageTopBtnBar('inventory');
-         $selectormove = " data-selected='true' ";
-         $pageTitle = "Move Inventory";
-         $pageDetail = self::bldInventoryMove();
-         break;
+//       case 'movebiosample':
+//         $topBtnBar = generatePageTopBtnBar('inventory');
+//         $selectormove = " data-selected='true' ";
+//         $pageTitle = "Place/Move Inventory";
+//         $pageDetail = self::bldInventoryMove();
+//         break;
        case 'processhprtray':
          $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorhpr = " data-selected='true' ";
@@ -1437,13 +1437,13 @@ function inventory ( $rqststr, $whichusr ) {
 
      $pageDetail = ( trim($pageDetail) === "" ) ?  self::bldInventoryMaster() : $pageDetail;
 
+     //<div class=iControlBtn {$selectormove}><a href="{$tt}/inventory/move-biosample">Place Inventory</a></div>
      $rtnthis = <<<RTNTHIS
 {$topBtnBar} 
 <div id=inventoryMasterHoldr>
 <div id=inventoryTitle>{$pageTitle}</div>
 <div id=inventoryBtnBar>
-   <div class=iControlBtn {$selectorcheckin}><a href="{$tt}/inventory/check-in">Check-In</a></div>
-   <div class=iControlBtn {$selectormove}><a href="{$tt}/inventory/move-biosample">Move Inventory</a></div>
+   <div class=iControlBtn {$selectorcheckin}><a href="{$tt}/inventory/check-in">Process Inventory</a></div>
    <div class=iControlBtn {$selectorhpr}><a href="{$tt}/inventory/process-hpr-tray">Process HPR Tray</a></div>
    <div class=iControlBtn {$selectorpull}><a href="{$tt}/inventory/ship-pull">Pull Shipment</a></div>
    <div class=iControlBtn {$selectorship}><a href="{$tt}/inventory/ship-ship">Ship Shipment</a></div>
@@ -1485,7 +1485,9 @@ function bldInventoryCheckIn() {
   <div id=labelscan>
     <div id=labelscanholderdiv></div>
   </div>
-  <div id=ctlButtons></div>
+  <div id=ctlButtons><center> 
+   <table><tr><td> <div class=iControlBtn id=ctlBtnCheckCommit><center>Submit</div> </td><td>  <div class=iControlBtn id=ctlBtnCheckCancel><center>Cancel</div> </td></tr></table>
+   </div>
 </div>
 PAGECONTENT;
 return $pageContent;

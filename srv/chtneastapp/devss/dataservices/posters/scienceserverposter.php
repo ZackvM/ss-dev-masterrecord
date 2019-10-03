@@ -102,7 +102,16 @@ class datadoers {
       ( !array_key_exists('scanlabel', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'scanlabel' DOES NOT EXIST.")) : ""; 
       ( trim($pdta['scanlabel']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  SCANLABEL MUST CONTAIN A VALUE.")) : ""; 
 
+
+
+
       if ($errorInd === 0 ) {
+
+          if ( preg_match('/^ED/i',$pdta['scanlabel']) ) { 
+            $pdta['scanlabel'] = preg_replace('/^ED/i','',$pdta['scanlabel']);
+          }
+
+
           $sql = "SELECT mn.dspvalue as segstatus, ucase(trim(concat(ifnull(sg.prepmethod,''), if(ifnull(sg.preparation,'')='','',concat(' [',ifnull(sg.preparation,''),']'))))) as prp, ucase(trim(concat(ifnull(bs.tisstype,''),' :: ', concat(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subsite,'')='','', concat( ' [',ifnull(bs.subsite,''),']' ))) ,' :: ', concat(if(ifnull(bs.diagnosis,'')='','',  ifnull(bs.diagnosis,'')), if(ifnull(bs.subdiagnos,'')='','',concat(' [', ifnull(bs.subdiagnos,''),']')))))))  desig FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') as mn on sg.segstatus = mn.menuvalue where replace(sg.bgs,'_','') = :bgs"; 
           $rs = $conn->prepare($sql);
           $rs->execute(array(':bgs' => $pdta['scanlabel'] ));
@@ -110,7 +119,7 @@ class datadoers {
               $dta = $rs->fetch(PDO::FETCH_ASSOC);
               $responseCode = 200;
           } else { 
-              $dta = $passdata;
+              $dta = $pdta['scanlabel'];
           }
       }      
       $msg = $msgArr;
@@ -324,6 +333,7 @@ class datadoers {
       ( !array_key_exists('rqstPayload', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'rqstPayload' DOES NOT EXIST.")) : ""; 
       ( !array_key_exists('bioReference', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'bioReference' DOES NOT EXIST.")) : ""; 
       ( !array_key_exists('actionsValue', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'actionsValue' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('actionNote', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'actionNote' DOES NOT EXIST.")) : ""; 
       ( !array_key_exists('priority', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'priority' DOES NOT EXIST.")) : ""; 
       ( !array_key_exists('notifycomplete', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'notifycomplete' DOES NOT EXIST.")) : ""; 
       ( !array_key_exists('agent', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'agent' DOES NOT EXIST.")) : ""; 
@@ -374,7 +384,7 @@ class datadoers {
               $bioref = ( trim( $pdta['bioReference'] ) !== "" ) ? $pdta['bioReference'] : ""; 
               $agnt = ( trim( $rqstpayload['agent'] ) !== "" ) ? $rqstpayload['agent'] : ""; 
               $actval = ( trim( $pdta['actionsValue'] ) !== "" ) ? $pdta['actionsValue'] : "UNKNOWN"; 
-              $actnote =  ( trim( $rqstpayload['actionNote'] ) !== "" ) ? $rqstpayload['actionNote'] : ""; 
+              $actnote =  ( trim( $pdta['actionNote'] ) !== "" ) ? $pdta['actionNote'] : ""; 
               $prio = ( trim( $pdta['priority'] ) !== "" ) ? $pdta['priority'] : "FANORMAL"; 
               
               $faInsSQL = "insert into masterrecord.ut_master_furtherlabactions ( frommodule, activeind, objhprid, objpbiosample, bgreadlabel, objbgs, assignedagent, actioncode, actiondesc, actionnote, notifyOnComplete, duedate, prioritymarkcode, actionrequestedby, actionrequestedon) values ( :frommodule, :activeind, :objhprid, :objpbiosample, :bgreadlabel, :objbgs, :assignedagent, :actioncode, :actiondesc, :actionnote, :notifyOnComplete, :duedate, :prioritymarkcode, :actionrequestedby, now())"; 
