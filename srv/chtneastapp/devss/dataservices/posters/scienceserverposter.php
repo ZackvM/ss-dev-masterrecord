@@ -382,7 +382,7 @@ class datadoers {
               $pbiosamp = ( trim( $rqstpayload['pbiosample'] ) !== "" ) ? $rqstpayload['pbiosample'] : ""; 
               $bgread = ( trim( $rqstpayload['bgreadlabel'] ) !== "" ) ? $rqstpayload['bgreadlabel'] : ""; 
               $bioref = ( trim( $pdta['bioReference'] ) !== "" ) ? $pdta['bioReference'] : ""; 
-              $agnt = ( trim( $rqstpayload['agent'] ) !== "" ) ? $rqstpayload['agent'] : ""; 
+              $agnt = ( trim( $pdta['agent'] ) !== "" ) ? $pdta['agent'] : ""; 
               $actval = ( trim( $pdta['actionsValue'] ) !== "" ) ? $pdta['actionsValue'] : "UNKNOWN"; 
               $actnote =  ( trim( $pdta['actionNote'] ) !== "" ) ? $pdta['actionNote'] : ""; 
               $prio = ( trim( $pdta['priority'] ) !== "" ) ? $pdta['priority'] : "FANORMAL"; 
@@ -3944,7 +3944,7 @@ MBODY;
              $top = '8vh';
              break;                
            case 'rqstSampleBarcode':
-             $primeFocus = "";  
+             $primeFocus = "bccodevalue";  
              $left = '8vw';
              $top = '8vh';
              break;

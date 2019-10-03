@@ -34,8 +34,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $titleBar = "Request New Biosample Barcode Tag";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";         
-        //$innerDialog = bldChartReviewBuilder ( $pdta['dialogid'], $passedData);
-        $innerDialog = "REQUEST NEW BARCODE TAG";
+        $innerDialog = bldInventoryBarcodeTag ( $pdta['dialogid'], $passedData );        
         break;                   
       case 'chartbldr':
         $pdta = json_decode($passedData, true);         
@@ -240,12 +239,20 @@ function sysDialogBuilder($whichdialog, $passedData) {
         break;        
       case 'bgRqstFA':
          $pdta = json_decode($passedData, true);   
-         $bg = cryptservice( $pdta['objid'] , 'd'); 
-         $faArr['requestingmodule'] = "FA-MOD";
-         $faArr['biohpr'] = "";
-         $faArr['slidebgs'] = "";
-         $faArr['bgreadlabel'] = "";
-         $faArr['pbiosample'] = $bg;        
+         if ( trim($pdta['objid']) !== 'xxx-xxxx' ) { 
+           $bg = cryptservice( $pdta['objid'] , 'd'); 
+           $faArr['requestingmodule'] = "FA-MODULE";
+           $faArr['biohpr'] = "";
+           $faArr['slidebgs'] = "";
+           $faArr['bgreadlabel'] = "";
+           $faArr['pbiosample'] = $bg; 
+         } else {
+           $faArr['requestingmodule'] = "FA-MODULE-GEN";
+           $faArr['biohpr'] = "";
+           $faArr['slidebgs'] = "";
+           $faArr['bgreadlabel'] = "";
+           $faArr['pbiosample'] = 'GEN-' . strtoupper(generateRandomString(8));              
+         }
          $titleBar = "Request Further Action (Master-Record)";
          $standardSysDialog = 0;
          $closer = "closeThisDialog('{$pdta['dialogid']}');";                 
@@ -2297,21 +2304,28 @@ foreach ( $graphListArr as $key => $grph ) {
 }
 
 $grphTbl = <<<METRICGRPHS
-
 <table border=0>
 <tr><td rowspan=3 valign=top class=dashBoardGraphic>{$graphics['grphrollshipgrid']}</td><td valign=top class=dashBoardGraphic style="height: 10vh;">{$graphics['grphinvestigatorinf']}</td><td class=dashBoardGraphic rowspan=3 valign=top>{$graphics['grphfreezer']}</td></tr>
 <tr><td valign=top class=dashBoardGraphic style="height: 10vh;"> {$graphics['grphsegshiptotal']} </td></tr>
 <tr><td valign=top class=dashBoardGraphic style="height: 10vh;"> {$graphics['grphslidessubmitted']} </td></tr>
-
 </table>
-
-
 METRICGRPHS;
 
+//TODO:  MAKE THIS A WEBSERVICE
+require(serverkeys . "/sspdo.zck");
+$faCntSQL = "SELECT count(1) as assignedme FROM masterrecord.ut_master_furtherlabactions where activeind = 1 and actioncompletedon is null and assignedagent = :usrid union SELECT count(1) as assignedme FROM masterrecord.ut_master_furtherlabactions where activeind = 1 and actioncompletedon is null and trim(ifnull(assignedagent,'')) = ''";
+$faCntRS = $conn->prepare($faCntSQL); 
+$faCntRS->execute(array(':usrid' => $whichUsr->userid));
+$faCnt = $faCntRS->fetchall(PDO::FETCH_ASSOC); 
+
+$fatTbl = "<table><tr><td colspan=2>Further Action Tickets</td></tr><tr><td>Tickets Assigned To Me </td><td>{$faCnt[0]['assignedme']}</td></tr><tr><td>Tickets Not Yet Assigned</td><td>{$faCnt[1]['assignedme']}</td></tr><tr><td colspan=2> <table><tr><td onclick=\"generateDialog('bgRqstFA', 'xxx-xxxx' );\">Create Ticket</td><td>Go To Queue</td></tr></table>     </td></tr></table>";
+
   $rtnthis = <<<PAGEHERE
-<table border=0 id=rootTable>
+<table border=1 id=rootTable>
     <tr><td rowspan=2 valign=top>{$grphTbl}</td><td style="width: 42vw;" align=right valign=top>{$weekGoal}</td></tr>
-    <tr><td style="width: 42vw;" align=right valign=top><div id="mainRootCalendar">{$fsCalendar}</div></td></tr>    
+    <tr><td style="width: 42vw;" align=right valign=top rowspan=3><div id="mainRootCalendar">{$fsCalendar}</div></td></tr> 
+    <tr><td valign=top>{$fatTbl}</td></tr>
+    <tr><td>&nbsp;</td></tr>
 </table>
   
 PAGEHERE;
@@ -4127,7 +4141,7 @@ $dspPage = <<<DSPPAGE
   <tr><td id=faHead>Further Actions <input type=hidden id=faFldRequestJSON value='{$passedData}'></td></tr>
   <tr><td>
 <table border=0><tr>
-  <td><div class=faDivHolder><div class=dspLabel>Biosample # *</div><div class=elemHolder><input type=text id=faFldReference class="inputFld" value="{$bgdsp}"></div></div></td>
+  <td><div class=faDivHolder><div class=dspLabel>Biogroup/Shipdoc/Ref# *</div><div class=elemHolder><input type=text id=faFldReference class="inputFld" value="{$bgdsp}"></div></div></td>
   <td><div class=faDivHolder><div class=dspLabel>Action to Take *</div><div class=elemHolder>{$faamnu}</div></div></td>
   <td><div class=faDivHolder><div class=dspLabel>Notes</div><div class=elemHolder><input type=text id=faFldNotes class="inputFld" value=""></div></div></td>
   <td><div class=faDivHolder><div class=dspLabel>Assign Agent</div><div class=elemHolder>{$agntmnu}</div></div></td>
@@ -4165,7 +4179,7 @@ button:hover { background: rgba(255,248,225,.6); cursor: pointer; }
 
 .ddMenuItem {font-size: 1.4vh; }  
 
-#faFldReference { width: 6vw; }
+#faFldReference { width: 8vw; }
 #faFldPriority { width: 9vw; }
 #faFldByDate { width: 8vw; } 
 #faFldActions { width: 14vw; } 
@@ -4184,6 +4198,34 @@ button:hover { background: rgba(255,248,225,.6); cursor: pointer; }
 
 </style>
 {$dspPage}
+RTNPAGE;
+  return $rtnPage;    
+}
+
+function bldInventoryBarcodeTag( $dialog, $passedData ) { 
+
+   $prntarr = json_decode(callrestapi("GET", dataTree . "/thermal-printer-list",serverIdent, serverpw), true);
+   $prnmenu = "<table border=0 class=menuDropTbl style=\"min-width: 19.8vw;\">";
+   foreach ($prntarr['DATA'] as $pky => $pval) { 
+     $prnmenu .= "<tr><td onclick=\"fillField('fldDialogLabelPrnter','{$pval['formatname']}','{$pval['printer']}');\" class=ddMenuItem>{$pval['printer']}</td></tr>";  
+   }
+   $prnmenu .= "</table>";
+
+$dspPage = <<<DSPPAGE
+        <div id=bcTagHold>
+              <div><input type=text id=bccodevalue onkeyup="checkBCCodeValue();"></div>
+               <div id=keyboardDsp>A</div>
+               <div><div class=menuHolderDiv><input type=hidden id=fldDialogLabelPrnterValue><input type=text id=fldDialogLabelPrnter style="font-size: 1.8vh; width: 20vw;"><div class=valueDropDown>{$prnmenu}</div></div></div>
+        </div>        
+DSPPAGE;
+   
+  $rtnPage = <<<RTNPAGE
+<style>
+  #bcTagHold { display: grid; grid-template-rows: 1fr 4fr 1fr 1fr; }
+  #bccodevalue { text-align: center; }         
+  #keyboardDsp { border: 1px solid #000; }          
+</style>
+   {$dspPage}
 RTNPAGE;
   return $rtnPage;    
 }
