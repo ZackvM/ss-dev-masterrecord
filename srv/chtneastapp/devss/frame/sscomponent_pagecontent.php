@@ -1616,11 +1616,18 @@ function furtheractionrequests ( $rqststr, $whichusr ) {
 if ( (int)$whichusr->allowcoord <> 1 ) { 
       $pg = "<h1>USER ({$whichusr->userid}) NOT ALLOWED ACCESS TO COORDINATOR MODULE";    
 } else {  
-    if ( trim( $rqststr[2] ) === ""  ) { 
-        $pg = bldFurtherActionQueue ( $whichusr );
-        $topBtnBar = generatePageTopBtnBar('faTable');
+    $r = explode("/", $_SERVER['REQUEST_URI']);  
+    if ( trim( $rqststr[2] ) === "" || trim( $rqststr[2] ) === 'sortby'  ) {
+        if ( trim( $rqststr[3] ) !== "" ) { 
+          $topBtnBar = generatePageTopBtnBar('faTable');
+          $rqagent = explode("::", cryptservice ( $r[3], 'd'));
+          $pg = bldFurtherActionQueue ( $whichusr, $rqagent );
+        } else { 
+          $pg = bldFurtherActionQueue ( $whichusr, '' );
+          $topBtnBar = generatePageTopBtnBar('faTable');
+        }
     } else {
-        $r = explode("/", $_SERVER['REQUEST_URI']);  
+        $topBtnBar = generatePageTopBtnBar('faTableEdit');
         $pg = bldFurtherActionItem($r[2]);
 
     }
@@ -2318,13 +2325,13 @@ $faCntRS = $conn->prepare($faCntSQL);
 $faCntRS->execute(array(':usrid' => $whichUsr->userid));
 $faCnt = $faCntRS->fetchall(PDO::FETCH_ASSOC); 
 
-$fatTbl = "<table><tr><td colspan=2>Further Action Tickets</td></tr><tr><td>Tickets Assigned To Me </td><td>{$faCnt[0]['assignedme']}</td></tr><tr><td>Tickets Not Yet Assigned</td><td>{$faCnt[1]['assignedme']}</td></tr><tr><td colspan=2> <table><tr><td onclick=\"generateDialog('bgRqstFA', 'xxx-xxxx' );\">Create Ticket</td><td>Go To Queue</td></tr></table>     </td></tr></table>";
+$fatTbl = "<table id=faQueueDspTbl cellspacing=0 cellpadding=0><tr><td colspan=2 id=faQueueTitleDsp>Further Action Tickets</td></tr><tr><td class=faQueueItemTitle>Tickets Assigned To Me </td><td class=faQueueItemMetric>{$faCnt[0]['assignedme']}</td></tr><tr><td class=faQueueItemTitle>Tickets Not Yet Assigned</td><td class=faQueueItemMetric>{$faCnt[1]['assignedme']}</td></tr><tr><td colspan=2 style=\"padding: 1vh 0 .5vh 0;\"><center> <table cellspacing=3><tr><td onclick=\"generateDialog('bgRqstFA', 'xxx-xxxx' );\" class=faQueueDspBtn>Create<br>Ticket</td><td onclick=\"navigateSite('further-action-requests');\" class=faQueueDspBtn>Go To<br>Queue</td></tr></table>     </td></tr></table>";
 
   $rtnthis = <<<PAGEHERE
-<table border=1 id=rootTable>
+<table border=0 id=rootTable>
     <tr><td rowspan=2 valign=top>{$grphTbl}</td><td style="width: 42vw;" align=right valign=top>{$weekGoal}</td></tr>
     <tr><td style="width: 42vw;" align=right valign=top rowspan=3><div id="mainRootCalendar">{$fsCalendar}</div></td></tr> 
-    <tr><td valign=top>{$fatTbl}</td></tr>
+    <tr><td valign=top> <table width=100% border=0><tr><td> {$fatTbl} </td><td>&nbsp;</td></tr></table>  </td></tr>
     <tr><td>&nbsp;</td></tr>
 </table>
   
@@ -3217,6 +3224,7 @@ function generatePageTopBtnBar($whichpage, $whichusr, $additionalinfo = "") {
 //TODO:  DUMP THE BUTTONS INTO A DATABASE AND GRAB WITH A WEBSERVICE    
 //TODO:  MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
 
+require(serverkeys . "/sspdo.zck");    
 switch ($whichpage) { 
 case 'shipdocedit':
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnCreateNewSD border=0><tr><td><i class="material-icons">fiber_new</i></td><td>New Ship-Doc</td></tr></table></td>       
@@ -3341,12 +3349,44 @@ BTNTBL;
     break;
 
 case 'faTable':
+
+    $agentListSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and allowInd = 1 and primaryInstCode = 'HUP' order by friendlyname";
+    $agentListRS = $conn->prepare($agentListSQL); 
+    $agentListRS->execute();
+
+    $innerdrop = "";      
+    while ( $agnt = $agentListRS->fetch(PDO::FETCH_ASSOC) ) {
+      $agentcode = cryptservice ( $agnt['originalaccountname'] . "::" . date('HimdY'), 'e');  
+      $innerdrop .= "<tr class=btnBarDropMenuItem id=btnDisplay_ALL onclick=\"navigateSite('further-action-requests/sort-by/{$agentcode}');\"><td><i class=\"material-icons\">arrow_right</i></td><td class=displaytypetext>Display: {$agnt['dspagent']}&nbsp;&nbsp;&nbsp</td></tr>";    
+    }
+
     $innerBar = <<<BTNTBL
 <tr>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="alert('Not Functional Yet');" ><tr><td><i class="material-icons">import_export</i></td><td>Export</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="generateDialog('bgRqstFA', 'xxx-xxxx' );" ><tr><td><i class="material-icons">post_add</i></td><td>New Ticket</td></tr></table></td> 
+  <td class=topBtnHolderCell>
+    <div class=ttholder>
+      <table class=topBtnDisplayer id=btnDisplayByStatus><tr><td><i class="material-icons">view_list</i></td><td>Display By Agent</td></tr></table>
+      <div class=tt>
+        <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
+          <tr class=btnBarDropMenuItem id=btnDisplay_ALL onclick="navigateSite('further-action-requests');"><td><i class="material-icons">arrow_right</i></td><td class=displaytypetext>Display: ALL&nbsp;&nbsp;&nbsp</td></tr>    
+          {$innerdrop}
+        </table>
+      </div>  
+    </div>
+  </td>           
 </tr>
 BTNTBL;
     break;
+
+case 'faTableEdit':
+    $innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="generateDialog('bgRqstFA', 'xxx-xxxx' );" ><tr><td><i class="material-icons">post_add</i></td><td>New Ticket</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="alert('Print');" ><tr><td><i class="material-icons">print</i></td><td>Print Ticket</td></tr></table></td> 
+</tr>
+BTNTBL;
+    break;
+
 
 case 'qmsactionworkincon':
     $innerBar = <<<BTNTBL
@@ -3360,9 +3400,6 @@ case 'qmsactionworkincon':
 BTNTBL;
     break;
 case 'qmsaction':
-
-
-
 
 //TODO:  Come up with dynamic way of doing this
     $innerBar = <<<BTNTBL
@@ -4119,7 +4156,7 @@ $pastFARS = $conn->prepare( $pastFASQL );
 $pastFARS->execute(array(':pbiosample' => $pdta['pbiosample']));
 if ( $pastFARS->rowCount() < 1 ) {
     //TODO: SET PF Default
-  $pfaTbl = " - No Further Actions Listed for this Biogroup - ";  
+  $pfaTbl = " - No Further Actions Listed for this reference (Biogroup/Shipdoc) - ";  
 } else {
   $pfaTbl = "<table border=0 id=faActionDspTbl><thead><tr><td></td><td>Ticket #</td><td>Completed</td><td>Biosample</td><td>Module</td><td>Action</td><td>Assigned Agent</td><td>Priority<br>Due Date</td><td>Requested By</td></tr></thead><tbody>";   
   while ( $f = $pastFARS->fetch(PDO::FETCH_ASSOC)) { 
@@ -5863,7 +5900,7 @@ function bldFurtherActionItem ( $itmency ) {
  
     //TODO:  TURN INTO A WEBSERVICE
     require(serverkeys . "/sspdo.zck");    
-    $sql = "SELECT substr(concat('000000',idlabactions),-6) as ticketnbr , actionstartedind , ifnull(date_format(startedondate,'%m/%d/%Y'),'') as startedondate, ifnull(startedby,'') as startedby , ifnull(frommodule,'Unknown Module') frommodule, ifnull(objshipdoc,'') as objshipdoc, ifnull(objhprid,'') as objhprid, ifnull(objpbiosample,'') as objpbiosample, ifnull(objbgs,'') as objbgs, ifnull(assignedagent,'') as assignedagent, ifnull(actioncode,'UNKNOWN') as actioncode, ifnull(actiondesc,'') as actiondesc, ifnull(actionnote,'') as actionnote, ifnull(notifyoncomplete,0) as notifyoncomplete, ifnull(date_format(duedate,'%m/%d/%Y'),'') as duedate, ifnull(actionrequestedby,'UNKNOWN') as actionrequestedby, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as actionrequestedon , ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompleteon, ifnull(actioncompletedby,'') as actioncompletedby, faaction.assignablestatus as actiongridtype FROM masterrecord.ut_master_furtherlabactions fa LEFT JOIN (SELECT menuvalue, dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'FAACTIONLIST') faaction on fa.actioncode = faaction.menuvalue where idlabactions = :ticketnumber and activeind = :activeind";
+    $sql = "SELECT substr(concat('000000',idlabactions),-6) as ticketnbr , actionstartedind , ifnull(date_format(startedondate,'%m/%d/%Y'),'') as startedondate, ifnull(startedby,'') as startedby , ifnull(frommodule,'Unknown Module') frommodule, ifnull(objshipdoc,'') as objshipdoc, ifnull(objhprid,'') as objhprid, ifnull(objpbiosample,'') as objpbiosample, ifnull(objbgs,'') as objbgs, ifnull(assignedagent,'') as assignedagent, ifnull(actioncode,'UNKNOWN') as actioncode, ifnull(actiondesc,'') as actiondesc, ifnull(actionnote,'') as actionnote, ifnull(notifyoncomplete,0) as notifyoncomplete, ifnull(date_format(duedate,'%Y-%m-%d'),'') as duedateval, ifnull(date_format(duedate,'%m/%d/%Y'),'') as duedate, ifnull(actionrequestedby,'UNKNOWN') as actionrequestedby, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as actionrequestedon , ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompleteon, ifnull(actioncompletedby,'') as actioncompletedby, faaction.assignablestatus as actiongridtype FROM masterrecord.ut_master_furtherlabactions fa LEFT JOIN (SELECT menuvalue, dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'FAACTIONLIST') faaction on fa.actioncode = faaction.menuvalue where idlabactions = :ticketnumber and activeind = :activeind";
     $rs = $conn->prepare($sql); 
     $rs->execute(array(':ticketnumber' => (int)$ticketNbr, ':activeind' => 1)); 
     if ( $rs->rowCount() <> 1 ) { 
@@ -5873,17 +5910,43 @@ function bldFurtherActionItem ( $itmency ) {
 BLDPG;
     } else { 
 
+
     $ticket = $rs->fetch(PDO::FETCH_ASSOC);
     $pbioref = ( trim($ticket['objpbiosample']) !== "" ) ?  (int)$ticket['objpbiosample'] : "";
     $pbioref .= ( trim($ticket['objbgs']) !== "" ) ?  ( trim($pbioref) === "" ) ? $ticket['objbgs'] : " / {$ticket['objbgs']}"  : "-";
-    $sd = ( trim($ticket['objshipdoc']) !== "" ) ? substr(('000000'.$ticket['objshipdoc'] ),-6) : "-";
+    $sd = ( trim($ticket['objshipdoc']) !== "" ) ? substr(('000000'.$ticket['objshipdoc'] ),-6) : "";
     $ddate = ( trim($ticket['duedate']) !== "" && $ticket['duedate'] !== '01/01/1900' ) ? $ticket['duedate'] : "";
+    $ddateval = ( trim($ticket['duedateval']) !== "" && $ticket['duedateval'] !== '1900-01-01' ) ? $ticket['duedateval'] : "";
     $notify = ( (int)trim($ticket['notifyoncomplete']) === 1 ) ? "Yes" : "No";
     $workstart = ( trim($ticket['startedondate']) !== "" ) ? trim($ticket['startedondate']) : "";
-    $workstart .= ( trim($ticket['startedby']) !== "" ) ? ( $workstart === "" ) ? trim( $ticket['startedby'] ) : " :: {$ticket['startedby']}" : "-";
-  
+    $workstart .= ( trim($ticket['startedby']) !== "" ) ? ( $workstart === "" ) ? trim( $ticket['startedby'] ) : " :: {$ticket['startedby']}" : "-";  
     $complete = ( trim($ticket['actioncompleteon']) !== "" ) ? trim($ticket['actioncompleteon']) : "";
     $complete .= ( trim( $ticket['actioncompletedby']) !== "" ) ? ( trim($complete) === "" ) ? $ticket['actioncompletedby'] : " :: {$ticket['actioncompletedby']}" : "-";
+
+    $agentListSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and allowInd = 1 and primaryInstCode = 'HUP' order by friendlyname";
+    $agentListRS = $conn->prepare($agentListSQL); 
+    $agentListRS->execute();
+    $agnt = "<table border=0 class=menuDropTbl>";
+    $agnt .= "<tr><td onclick=\"fillField('faFldAssAgent','','');\" class=ddMenuItem align=right style=\"font-size: 1.1vh;\">[clear]</td></tr>";
+    $thisagent = "";
+    $thisagentcode = "";
+    while ( $al = $agentListRS->fetch(PDO::FETCH_ASSOC)) { 
+        if ( trim($ticket['assignedagent']) === trim($al['originalaccountname']) ) { 
+          $thisagent = $al['dspagent'];
+          $thisagentcode = $al['originalaccountname'];
+        }
+      $agnt .= "<tr><td onclick=\"fillField('faFldAssAgent','{$al['originalaccountname']}','{$al['dspagent']}');\" class=ddMenuItem>{$al['dspagent']}</td></tr>";
+    }
+    $agnt .= "</table>";
+    $agntmnu = "<div class=menuHolderDiv><input type=hidden id=faFldAssAgentValue value=\"{$thisagentcode}\"><input type=text id=faFldAssAgent READONLY class=\"inputFld\" value=\"{$thisagent}\"><div class=valueDropDown id=ddHTR>{$agnt}</div></div>";
+
+    $fCalendar = buildcalendar('biosampleQueryFrom'); 
+    $bsqFromCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=hidden id=bsqueryFromDateValue value="{$ddateval}"><input type=text READONLY id=bsqueryFromDate class="inputFld" value="{$ddate}"></div>
+  <div class=valueDropDown style="width: 18vw;"><div id=bsqCalendar>{$fCalendar}</div></div>
+</div>
+CALENDAR;
 
 
     //TODO:   TURN INTO A WEBSERVICE
@@ -5903,6 +5966,7 @@ BLDPG;
     }
     $action .= "</tbody></table>";
 
+    $refer = ( trim($_SERVER['HTTP_REFERER']) !== "" ) ? $_SERVER['HTTP_REFERER'] : treeTop . "/further-action-requests";
 
     $pg = <<<BLDPG
 <div id=ticketHolder>
@@ -5913,15 +5977,19 @@ BLDPG;
 <div class=tDataDspWide><div class=tLabel>Date Requested </div><div class=tData>{$ticket['actionrequestedon']}</div></div> 
 <div class=tDataDspWide><div class=tLabel>Requested By</div><div class=tData>{$ticket['actionrequestedby']} ({$ticket['frommodule']})</div></div> 
 <div class=tDataDsp><div class=tLabel>Notify </div><div class=tData>{$notify}</div></div> 
-<div class=tDataDspWide><div class=tLabel>Due Date </div><div class=tData>{$ddate}</div></div> 
-<div class=tDataDspWide><div class=tLabel>Biogroup Ref. </div><div class=tData>{$pbioref}</div></div> 
-<div class=tDataDspWide><div class=tLabel>Ship-Doc</div><div class=tData>{$sd}</div></div> 
-<div class=tDataDspWide><div class=tLabel>HPR Review # </div><div class=tData>{$ticket['objhprid']}</div></div> 
-<div class=tDataDspWide><div class=tLabel>Agent </div><div class=tData>{$ticket['assignedagent']}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Due Date </div><div class=tDataFld>{$bsqFromCalendar}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Biogroup Ref. </div><div class=tDataFld><input type=text id=faFldRefBG value="{$pbioref}"></div></div> 
+<div class=tDataDspWide><div class=tLabel>Ship-Doc</div><div class=tDataFld><input type=text id=faFldRefSD value="{$sd}"></div></div> 
+<div class=tDataDspWide><div class=tLabel>HPR Review # </div><div class=tDataFld><input type=text id=faFldRefHPR value="{$ticket['objhprid']}"></div></div> 
+<div class=tDataDspSuperWide><div class=tLabel>Agent</div><div class=tDataFld>{$agntmnu}</div></div> 
 <div class=tDataDspSuperWide><div class=tLabel>Work Started</div><div class=tData>{$workstart}</div></div> 
-<div class=tDataDspWide><div class=tLabel>Completed</div><div class=tData>{$complete}&nbsp;</div></div> 
-<div id=wholeLineTwo><div class=tLabel>Requested Action </div><div class=tData>{$ticket['actiondesc']}</div></div> 
-<div id=wholeLineThree><div class=tData>{$ticket['actionnote']}</div></div> 
+<div class=tDataDsp><div class=tLabel>Completed</div><div class=tData>{$complete}&nbsp;</div></div> 
+
+<div id=wholeLineTwo><div class=tLabel>Requested Action </div><div class=tDataAct>{$ticket['actiondesc']}</div></div> 
+<div id=wholeLineThree><TEXTAREA id=faFldActionNote>{$ticket['actionnote']}</TEXTAREA></div> 
+
+<div id=btnHolder><center> <div id=innerbtnholder> <div class=actionBtns onclick="saveFATicketEdit();">Save</div> <div class=actionBtns onclick="openPageInTab('{$refer}');">Cancel</div>  </div></div>
+
 
 <div id=divDivOne>Actions Taken</div> 
 
@@ -5937,16 +6005,125 @@ BLDPG;
 return $pg;
 }
 
-function bldFurtherActionQueue ( $whichuser ) { 
+function bldFurtherActionQueue ( $whichuser, $thisperson ) { 
 
-    //TODO: Turn into a webservice
-    require(serverkeys . "/sspdo.zck");    
-        $queSQL = "SELECT  substr(concat('000000',idlabactions),-6) as faid, if ( actionstartedind = 1, 'Yes','No') as actionstartedind, if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'')  as actioncompletedon, ifnull(actioncompletedby,'') as actioncompletedby , ifnull(frommodule,'') as requestingModule , if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref, substr(concat('000000',ifnull(objshipdoc,'')),-6) as shipdocref  , ifnull(assignedagent,'') as assignedagent , ifnull(faact.dspvalue,'') as actiondescription, ifnull(actionnote,'') as actionnote , ifnull(fapri.dspvalue,'') as dspPriority , if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate , ifnull(actionrequestedby,'') as requestedby , ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon FROM masterrecord.ut_master_furtherlabactions fa left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue where 1 = 1 and activeind = 1 and (  if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') = 'No' OR  datediff(now(),actioncompletedon) < 30 ) order by 3, duedate desc,  actionrequestedon desc";
+        //TODO: Turn into a webservice
+    require(serverkeys . "/sspdo.zck");   
+if ( trim($thisperson) === "" ) {  
+        $queSQL = "SELECT substr(concat('000000',idlabactions),-6) as faid
+, if ( actionstartedind = 1, 'Yes','No') as actionstartedind
+, if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind
+, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'')  as actioncompletedon
+, ifnull(actioncompletedby,'') as actioncompletedby 
+, ifnull(frommodule,'') as requestingModule 
+, if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref
+, substr(concat('000000',ifnull(objshipdoc,'')),-6) as shipdocref
+, ifnull(assignedagent,'') as assignedagent  
+, if(ifnull(assignedagent,'')='','NO AGENT',ifnull(assignedagent,'')) as dspassignedagent 
+, ifnull(faact.dspvalue,'') as actiondescription
+, ifnull(actionnote,'') as actionnote 
+, ifnull(fapri.dspvalue,'') as dspPriority 
+, if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate 
+, ifnull(actionrequestedby,'') as requestedby 
+, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon 
+FROM masterrecord.ut_master_furtherlabactions fa 
+left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue 
+left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue 
+where 1 = 1 and activeind = 1 and ( if(ifnull(actioncompletedon,'') = '', 'No', 'Yes') = 'No' ) 
+union 
+SELECT  
+substr(concat('000000',idlabactions),-6) as faid
+, if ( actionstartedind = 1, 'Yes','No') as actionstartedind
+, if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind
+, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'')  as actioncompletedon
+, ifnull(actioncompletedby,'') as actioncompletedby 
+, ifnull(frommodule,'') as requestingModule 
+, if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref
+, substr(concat('000000',ifnull(objshipdoc,'')),-6) as shipdocref  
+, ifnull(assignedagent,'') as assignedagent 
+, if(ifnull(assignedagent,'')='','NO AGENT',ifnull(assignedagent,'')) as dspassignedagent
+, ifnull(faact.dspvalue,'') as actiondescription
+, ifnull(actionnote,'') as actionnote 
+, ifnull(fapri.dspvalue,'') as dspPriority 
+, if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate 
+, ifnull(actionrequestedby,'') as requestedby 
+, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon 
+FROM masterrecord.ut_master_furtherlabactions fa 
+left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue 
+left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue 
+where 1 = 1 and activeind = 1 and ( datediff(now(),actioncompletedon) < 15 ) 
+order by 3, 9, 14, 11";
         $queRS = $conn->prepare($queSQL); 
         $queRS->execute();
+        $ticketcount = $queRS->rowCount();
+} else { 
+        $queSQL = "SELECT substr(concat('000000',idlabactions),-6) as faid
+, if ( actionstartedind = 1, 'Yes','No') as actionstartedind
+, if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind
+, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'')  as actioncompletedon
+, ifnull(actioncompletedby,'') as actioncompletedby 
+, ifnull(frommodule,'') as requestingModule 
+, if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref
+, substr(concat('000000',ifnull(objshipdoc,'')),-6) as shipdocref
+, ifnull(assignedagent,'') as assignedagent  
+, if(ifnull(assignedagent,'')='','NO AGENT',ifnull(assignedagent,'')) as dspassignedagent 
+, ifnull(faact.dspvalue,'') as actiondescription
+, ifnull(actionnote,'') as actionnote 
+, ifnull(fapri.dspvalue,'') as dspPriority 
+, if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate 
+, ifnull(actionrequestedby,'') as requestedby 
+, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon 
+FROM masterrecord.ut_master_furtherlabactions fa 
+left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue 
+left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue 
+where 1 = 1 and activeind = 1 and ( if(ifnull(actioncompletedon,'') = '', 'No', 'Yes') = 'No' )
+and ( ifnull(assignedagent,'') = '' OR ifnull(assignedagent,'') = :agentuser ) 
+union 
+SELECT  
+substr(concat('000000',idlabactions),-6) as faid
+, if ( actionstartedind = 1, 'Yes','No') as actionstartedind
+, if (ifnull(actioncompletedon,'') = '', 'No', 'Yes') completedind
+, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'')  as actioncompletedon
+, ifnull(actioncompletedby,'') as actioncompletedby 
+, ifnull(frommodule,'') as requestingModule 
+, if(ifnull(objbgs,'') = '', ifnull(objpbiosample,'') ,ifnull(objbgs,'')) as biosampleref
+, substr(concat('000000',ifnull(objshipdoc,'')),-6) as shipdocref  
+, ifnull(assignedagent,'') as assignedagent 
+, if(ifnull(assignedagent,'')='','NO AGENT',ifnull(assignedagent,'')) as dspassignedagent
+, ifnull(faact.dspvalue,'') as actiondescription
+, ifnull(actionnote,'') as actionnote 
+, ifnull(fapri.dspvalue,'') as dspPriority 
+, if( ifnull(date_format(duedate,'%m/%d/%Y'),'') = '01/01/1900','',ifnull(date_format(duedate,'%m/%d/%Y'),'')) as duedate 
+, ifnull(actionrequestedby,'') as requestedby 
+, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as requestedon 
+FROM masterrecord.ut_master_furtherlabactions fa 
+left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') fapri on fa.prioritymarkcode = fapri.menuvalue 
+left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'FAACTIONLIST' ) as faact on fa.actioncode = faact.menuvalue 
+where 1 = 1 and activeind = 1 and ( datediff(now(),actioncompletedon) < 15 )
+and ( ifnull(assignedagent,'') = '' OR ifnull(assignedagent,'') = :agentusera )
+order by 3, 9, 14, 11";
+        $queRS = $conn->prepare($queSQL); 
+        $queRS->execute(array(':agentuser' => $thisperson[0], ':agentusera' => $thisperson[0]));
+        $ticketcount = $queRS->rowCount();
+}
 
-        $innerTbl = "<table id=faTable border=0><thead><tr><td> </td><td>Ticket #</td><td>Started</td><td>Priority</td><td>Due Date</td><td>Action To Perform</td><td>Bio/Ship-Doc Ref</td><td>Agent</td><td>Requested On/By</td><td>Complete</td><td>Completed On/By</td></tr></thead><tbody>";
-        while ( $rs = $queRS->fetch(PDO::FETCH_ASSOC)) {
+        $innerTbl = "<table id=faTable border=0><thead><tr><td> </td><td>Ticket #</td><td>Started</td><td>Priority</td><td>Due Date</td><td>Action To Perform</td><td>Bio/Ship-Doc/Ref</td><td>Agent</td><td>Requested On/By</td><td>Completed On/By</td></tr></thead><tbody>";
+        $agent = "";
+        $completelineind = 0;
+        $ticketOpen = 0; 
+        $ticketInProgress = 0;
+        $ticketClosed = 0; 
+        while ( $rs = $queRS->fetch(PDO::FETCH_ASSOC)) { 
+          
+
+          if ( $rs['completedind'] === 'Yes' && $completelineind === 0 ) { 
+            $innerTbl .= "<tr><td colspan=10 class=completeline> <table border=0><tr><td>COMPLETED TICKETS IN LAST 15 DAYS</td></tr></table></td></tr>";
+            $completelineind = 1;
+          }
+          if ( trim($rs['dspassignedagent']) !== $agent ) {
+            $innerTbl .= "<tr><td colspan=10 class=agentdisplay> <table border=0><tr><td>{$rs['dspassignedagent']}</td></tr></table></td></tr>";
+            $agent = $rs['dspassignedagent'];
+          }
           $ticketency = cryptservice( $rs['faid'] );   
           $dueDte = ( trim($rs['duedate']) !== "" ) ? "{$rs['duedate']}" : "";
           $actDsp = $rs['actiondescription'];
@@ -5956,32 +6133,44 @@ function bldFurtherActionQueue ( $whichuser ) {
           $comDsp = ( trim($rs['actioncompletedon']) !== "" ) ? "{$rs['actioncompletedon']} ({$rs['actioncompletedby']})" : "";
 
           $icon = ""; 
-          $icon = ( trim($rs['actionstartedind']) === "No" ) ? "<center><i class=\"material-icons\">warning</i>" : $icon; 
-          $icon = ( trim($rs['actionstartedind']) === "Yes" ) ? "<center><i class=\"material-icons\">work</i>" : $icon; 
-          $icon = ( trim($rs['completedind']) === "Yes" ) ? "<center><i class=\"material-icons\">done_all</i>" : $icon;
+          $icon = ( trim($rs['actionstartedind']) === "No" ) ? "<center><i class=\"material-icons nowork\">warning</i>" : $icon; 
+          $icon = ( trim($rs['actionstartedind']) === "Yes" ) ? "<center><i class=\"material-icons somework\">work</i>" : $icon; 
+          $icon = ( trim($rs['completedind']) === "Yes" ) ? "<center><i class=\"material-icons donework\">done_all</i>" : $icon;
+          
+          if ( trim($rs['completedind']) === "Yes" ) { 
+              $ticketClosed++; 
+          } else { 
+              if ( trim($rs['actionstartedind']) === "No" ) { 
+                  $ticketOpen++;
+              } else { 
+                  $ticketInProgress++;
+              }
+          }
 
-
-          $innerTbl .= "<tr class=faRow onclick=\"navigateSite('further-action-requests/{$ticketency}');\"><td class=faCell>{$icon}</td><td class=faCell>{$rs['faid']}</td><td class=faCell>{$rs['actionstartedind']}</td><td class=faCell>{$rs['dspPriority']}</td><td>{$dueDte}</td><td>{$actDsp}</td><td>{$bioRef}</td><td>{$rs['assignedagent']}</td><td>{$rs['requestedon']} ({$rs['requestedby']})</td><td>{$rs['completedind']}</td><td>{$comDsp}</td></tr>";
+          $innerTbl .= "<tr class=faRow onclick=\"navigateSite('further-action-requests/{$ticketency}');\"><td class=faCell>{$icon}</td><td class=faCell>{$rs['faid']}</td><td class=faCell>{$rs['actionstartedind']}</td><td class=faCell>{$rs['dspPriority']}</td><td>{$dueDte}</td><td>{$actDsp}</td><td>{$bioRef}</td><td>{$rs['dspassignedagent']}</td><td>{$rs['requestedon']} ({$rs['requestedby']})</td><td>{$comDsp}</td></tr>";
         } 
         $innerTbl .= "</tbody></table>";
 
-
+ $dspperson = ( trim($thisperson[0]) === "" ) ? "Queue Listing for All Agents" : "Queue Listing for {$thisperson[0]}"; 
 
 $pg = <<<BLDTBL
-    <div id=headTitle>Further Actions Ticket Listing (Lab Actions)</div>
-    <div id=headInstructions>
-            Below is the list of Further Actions which have been requested throughout ScienceServer.  It is sorted by 'Complete', due date, then by the requested on date.  The completed tickets for the last 30 days are shown at the bottom of the table.
-            
-            <table id=legendTbl>
-              <tr><td colspan=2 id=legendHead>Legend</td></tr>
-              <tr><td><i class="material-icons">warning</i></td><td>No Work has started</td></tr>
-              <tr><td><i class="material-icons">work</i></td><td>Work has started</td></tr>
-              <tr><td><i class="material-icons">done_all</i></td><td>Further Action is complete</td></tr>
-            </table>
-    </div>
+    <div id=headTitle>Further Actions Ticket Listing </div>
+    <div id=displayHolder>
     <div id=furtherActionsQueHolder>
       {$innerTbl}
     </div>  
+    <div id=headInstructions> 
+            <table id=legendTbl>
+              <tr><td colspan=3 id=legendHead>Legend</td></tr>
+              <tr><td colspan=3><center>{$dspperson}</td></tr>
+              <tr><td><i class="material-icons nowork">warning</i></td><td>Open Ticket</td><td align=right>{$ticketOpen}&nbsp;</td></tr>
+              <tr><td><i class="material-icons somework">work</i></td><td>In Progress Ticket</td><td align=right>{$ticketInProgress}&nbsp;</td></tr>
+              <tr><td><i class="material-icons donework">done_all</i></td><td>Completed Ticket</td><td align=right>{$ticketClosed}&nbsp;</td></tr>
+              <tr><td></td><td>Total</td><td align=right>{$ticketcount}&nbsp;</td></tr>
+            </table>
+    </div>
+    </div>
+&nbsp;<p>
 BLDTBL;
 
     

@@ -983,6 +983,7 @@ function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) {
     byId(whichfield).value = whatplaintext; 
   }
 }
+
 JAVASCR;
 
   return $rtnThis;
@@ -2642,6 +2643,18 @@ function answerSendActionUpdate ( rtnData ) {
    }
 }
 
+function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) { 
+  if (byId(whichfield)) { 
+    if (byId(whichfield+'Value')) {
+      byId(whichfield+'Value').value = whatvalue;
+    }    
+    byId(whichfield).value = whatplaintext; 
+  }
+}
+
+function saveFATicketEdit() {
+alert('save code goes here');
+}
 
 RTNTHIS;
 return $rtnThis;    
