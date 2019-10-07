@@ -128,6 +128,101 @@ class datadoers {
       return $rows;      
     }
 
+    function furtheractioneditticket ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowCoord = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+      //{"ticket":"\\\"bEZjT3NITUhaSDVkQnAzVEY0Y0Ridz09\\\"","duedate":"2019-10-11","BGRef":"83404 / 83404T001","SDRef":"0000","HPRRef":"18360","agent":"Gina","ticketnote":"This is a note that goes here"}
+      ( !array_key_exists('ticket', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('duedate', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'duedate' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('agent', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'agent' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('ticketnote', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticketnote' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['ticket']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO TICKET SPECIFIED.")) : "";
+      ( trim($pdta['duedate']) !== "" && !ssValidateDate( $pdta['duedate'], 'Y-m-d') ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE SPECIFIED 'DUE DATE' IS INVALID.")) : "";
+
+      //CHECK TICKET EXISTS
+      $ticket = cryptservice( $pdta['ticket'], 'd');
+      $chkTicketSQL = "SELECT idlabactions, ifnull(actioncompletedon,'') as actioncompletedon, ifnull(assignedagent,'') assignedagent  FROM masterrecord.ut_master_furtherlabactions where activeind = 1 and idlabactions = :ticket";
+      $chkRS = $conn->prepare($chkTicketSQL);
+      $chkRS->execute(array(':ticket' => (int)$ticket  ));
+      if ( $chkRS->rowCount() <> 1 ) {
+        (list( $errorInd, $msgArr[] ) = array(1 , "{$ticket} DOES NOT EXIST IN THE DATABASE.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER"));
+      } else { 
+        //CHECK TICKET NOT CLOSED  
+        $ticketChk = $chkRS->fetch(PDO::FETCH_ASSOC);
+        if ( trim($ticketChk['actioncompletedon']) !== "" ) { 
+            (list( $errorInd, $msgArr[] ) = array(1 , "TICKET {$ticket} HAS ALREADY BEEN COMPLETED AND MAY NOT BE EDITED."));
+        }
+      }
+
+      //TODO: CHECK PASSED VALUES
+      if ( trim($pdta['agent']) !== "" ) { 
+        $chkAgentSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and primaryInstCode = 'HUP' and originalAccountName = :agent order by friendlyname";
+        $chkAgentRS = $conn->prepare($chkAgentSQL); 
+        $chkAgentRS->execute(array(':agent' => $pdta['agent'] ));
+        if ( $chkAgentRS->rowCount() < 1 ) { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "THE SPECIFIED AGENT ({$pdta['agent']}) DOES NOT EXIST "));
+        }
+      }
+      $changeAgent = 0;
+      $changeAgent = ( strtolower(trim($pdta['agent'])) !== trim(strtolower($ticketChk['assignedagent'])) ) ? 1 : 0;
+
+
+      if ($errorInd === 0 ) {
+        //MAKE BACK UP OF TICKET
+          $buSQL = "insert into masterrecord.history_master_furtherlabactions (inputon, inputby, idlabactions, activeind, actionstartedind, startedondate, startedby, frommodule, objhprid, objshipdoc, objpbiosample, bgreadlabel, objbgs, assignedagent, lastagent, actioncode, actiondesc, actionnote, notifyOnComplete, duedate, prioritymarkcode, actionrequestedby, actionrequestedon, actioncompletedon, actioncompletedby, lasteditedon, lasteditby) SELECT now(), 'FA-EDIT', idlabactions, activeind, actionstartedind, startedondate, startedby, frommodule, objhprid, objshipdoc, objpbiosample, bgreadlabel, objbgs, assignedagent, lastagent, actioncode, actiondesc, actionnote, notifyOnComplete, duedate, prioritymarkcode, actionrequestedby, actionrequestedon, actioncompletedon, actioncompletedby, lasteditedon, lasteditby FROM masterrecord.ut_master_furtherlabactions where idlabactions = :ticketnbr";
+          $buRS = $conn->prepare($buSQL); 
+          $buRS->execute(array(':ticketnbr' => $ticket));
+
+
+          $updSQL = "update masterrecord.ut_master_furtherlabactions set lasteditedon = now(), lasteditby = :updater";
+          $updArr[':updater'] = strtoupper( $u['usr'] );
+
+          if ( $changeAgent === 1 ) {
+            $updSQL .= " , lastagent = assignedagent , assignedagent = :newassignedagent ";
+            $updArr[':newassignedagent'] = $pdta['agent'];
+          }
+
+          if ( trim($pdta['duedate']) !== "" ) {
+            $updSQL .= ",duedate = :duedate ";
+            $updArr[':duedate'] = $pdta['duedate']; 
+          } 
+
+          $updSQL .= ",actionnote = :actionnote ";
+          $updArr[':actionnote'] = trim( $pdta['ticketnote'] ); 
+
+          $updSQL .= "where idlabactions = :ticket";
+          $updArr[':ticket'] = $ticket;
+
+          $updRS = $conn->prepare($updSQL);
+          $updRS->execute( $updArr );
+
+
+        //$responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;                 
+    }
+
     function furtheractionactionnote ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();

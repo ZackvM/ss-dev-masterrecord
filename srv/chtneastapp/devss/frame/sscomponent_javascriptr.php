@@ -2613,7 +2613,6 @@ function closeThisDialog(dlog) {
 }
 
 function sendActionUpdate( ) { 
-
   var dta = new Object(); 
   dta['ticket'] = byId('fldTicketNbr').value;
   dta['dateperformed'] = byId('fldDatePerformed').value;
@@ -2653,8 +2652,31 @@ function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) {
 }
 
 function saveFATicketEdit() {
-alert('save code goes here');
+  var dta = new Object(); 
+  dta['ticket'] = byId('faFldTicketEncy').value.trim();
+  dta['duedate'] = byId('bsqueryFromDateValue').value.trim();
+  dta['agent'] = byId('faFldAssAgentValue').value.trim();
+  dta['ticketnote'] = byId('faFldActionNote').value.trim();
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/further-action-edit-ticket";
+  universalAJAX("POST",mlURL,passdta,answerSendActionUpdate,2);
 }
+
+function answerSendActionUpdate ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    //byId('standardModalBacker').style.display = 'none';    
+   } else {
+      //var dta = JSON.parse(rtnData['responseText']);        
+      alert('Saved');
+   }
+}
+
 
 RTNTHIS;
 return $rtnThis;    

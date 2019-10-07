@@ -4111,7 +4111,7 @@ function bldFurtherActionDialog ( $dialog, $passedData ) {
 $pdta = json_decode( $passedData, true );
 
 require(serverkeys . "/sspdo.zck");
-$agentListSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and allowInd = 1 and primaryInstCode = 'HUP' order by friendlyname";
+$agentListSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and primaryInstCode = 'HUP' order by friendlyname";
 $agentListRS = $conn->prepare($agentListSQL); 
 $agentListRS->execute();
 $agnt = "<table border=0 class=menuDropTbl>";
@@ -5900,7 +5900,7 @@ function bldFurtherActionItem ( $itmency ) {
  
     //TODO:  TURN INTO A WEBSERVICE
     require(serverkeys . "/sspdo.zck");    
-    $sql = "SELECT substr(concat('000000',idlabactions),-6) as ticketnbr , actionstartedind , ifnull(date_format(startedondate,'%m/%d/%Y'),'') as startedondate, ifnull(startedby,'') as startedby , ifnull(frommodule,'Unknown Module') frommodule, ifnull(objshipdoc,'') as objshipdoc, ifnull(objhprid,'') as objhprid, ifnull(objpbiosample,'') as objpbiosample, ifnull(objbgs,'') as objbgs, ifnull(assignedagent,'') as assignedagent, ifnull(actioncode,'UNKNOWN') as actioncode, ifnull(actiondesc,'') as actiondesc, ifnull(actionnote,'') as actionnote, ifnull(notifyoncomplete,0) as notifyoncomplete, ifnull(date_format(duedate,'%Y-%m-%d'),'') as duedateval, ifnull(date_format(duedate,'%m/%d/%Y'),'') as duedate, ifnull(actionrequestedby,'UNKNOWN') as actionrequestedby, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as actionrequestedon , ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompleteon, ifnull(actioncompletedby,'') as actioncompletedby, faaction.assignablestatus as actiongridtype FROM masterrecord.ut_master_furtherlabactions fa LEFT JOIN (SELECT menuvalue, dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'FAACTIONLIST') faaction on fa.actioncode = faaction.menuvalue where idlabactions = :ticketnumber and activeind = :activeind";
+    $sql = "SELECT substr(concat('000000',idlabactions),-6) as ticketnbr , actionstartedind , ifnull(date_format(startedondate,'%m/%d/%Y'),'') as startedondate, ifnull(startedby,'') as startedby , ifnull(frommodule,'Unknown Module') frommodule, ifnull(objshipdoc,'') as objshipdoc, ifnull(objhprid,'') as objhprid, ifnull(objpbiosample,'') as objpbiosample, ifnull(objbgs,'') as objbgs, ifnull(assignedagent,'') as assignedagent, ifnull(actioncode,'UNKNOWN') as actioncode, ifnull(actiondesc,'') as actiondesc, ifnull(actionnote,'') as actionnote, ifnull(notifyoncomplete,0) as notifyoncomplete, ifnull(date_format(duedate,'%Y-%m-%d'),'') as duedateval, ifnull(date_format(duedate,'%m/%d/%Y'),'') as duedate, ifnull(actionrequestedby,'UNKNOWN') as actionrequestedby, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as actionrequestedon , ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompleteon, ifnull(actioncompletedby,'') as actioncompletedby, faaction.assignablestatus as actiongridtype, ifnull(faprio.dspvalue,'') priorityvalue, ifnull(agentlist.dspagent,'') as lastagentdsp FROM masterrecord.ut_master_furtherlabactions fa LEFT JOIN (SELECT menuvalue, dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'FAACTIONLIST') faaction on fa.actioncode = faaction.menuvalue LEFT JOIN (SELECT menuvalue, dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') faprio on fa.prioritymarkcode = faprio.menuvalue left join (SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and primaryInstCode = 'HUP') as agentlist on fa.lastagent = agentlist.originalaccountname where idlabactions = :ticketnumber and activeind = :activeind";
     $rs = $conn->prepare($sql); 
     $rs->execute(array(':ticketnumber' => (int)$ticketNbr, ':activeind' => 1)); 
     if ( $rs->rowCount() <> 1 ) { 
@@ -5923,7 +5923,8 @@ BLDPG;
     $complete = ( trim($ticket['actioncompleteon']) !== "" ) ? trim($ticket['actioncompleteon']) : "";
     $complete .= ( trim( $ticket['actioncompletedby']) !== "" ) ? ( trim($complete) === "" ) ? $ticket['actioncompletedby'] : " :: {$ticket['actioncompletedby']}" : "-";
 
-    $agentListSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and allowInd = 1 and primaryInstCode = 'HUP' order by friendlyname";
+
+    $agentListSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and primaryInstCode = 'HUP' order by friendlyname";
     $agentListRS = $conn->prepare($agentListSQL); 
     $agentListRS->execute();
     $agnt = "<table border=0 class=menuDropTbl>";
@@ -5938,7 +5939,7 @@ BLDPG;
       $agnt .= "<tr><td onclick=\"fillField('faFldAssAgent','{$al['originalaccountname']}','{$al['dspagent']}');\" class=ddMenuItem>{$al['dspagent']}</td></tr>";
     }
     $agnt .= "</table>";
-    $agntmnu = "<div class=menuHolderDiv><input type=hidden id=faFldAssAgentValue value=\"{$thisagentcode}\"><input type=text id=faFldAssAgent READONLY class=\"inputFld\" value=\"{$thisagent}\"><div class=valueDropDown id=ddHTR>{$agnt}</div></div>";
+    $agntmnu = "<div class=menuHolderDiv><input type=hidden id=faFldAssAgentValue value=\"{$thisagentcode}\"><input type=text id=faFldAssAgent READONLY class=\"inputFld\" value=\"{$thisagent}\"><div class=valueDropDown id=ddHTRz>{$agnt}</div></div>";
 
     $fCalendar = buildcalendar('biosampleQueryFrom'); 
     $bsqFromCalendar = <<<CALENDAR
@@ -5966,6 +5967,8 @@ CALENDAR;
     }
     $action .= "</tbody></table>";
 
+    $hprdsp = ( (int)$ticket['objhprid'] === 0 ) ? "" : $ticket['objhprid']; 
+
     $refer = ( trim($_SERVER['HTTP_REFERER']) !== "" ) ? $_SERVER['HTTP_REFERER'] : treeTop . "/further-action-requests";
 
     $pg = <<<BLDPG
@@ -5973,14 +5976,15 @@ CALENDAR;
 
 <div id=ticketHeadAnnounce>Further Action/Lab Action Request</div>
 
-<div class=tDataDsp><div class=tLabel>Ticket # </div><div class=tData>{$ticket['ticketnbr']}</div></div> 
-<div class=tDataDspWide><div class=tLabel>Date Requested </div><div class=tData>{$ticket['actionrequestedon']}</div></div> 
-<div class=tDataDspWide><div class=tLabel>Requested By</div><div class=tData>{$ticket['actionrequestedby']} ({$ticket['frommodule']})</div></div> 
+<div class=tDataDsp><div class=tLabel>Ticket # </div><div class=tData>{$ticket['ticketnbr']}<input type=hidden id=faFldTicketEncy value="{$itmency}"></div></div> 
+<div class=tDataDsp><div class=tLabel>Date Requested </div><div class=tData>{$ticket['actionrequestedon']}</div></div> 
+<div class=tDataDsp><div class=tLabel>Request By</div><div class=tData>{$ticket['actionrequestedby']}</div></div> 
 <div class=tDataDsp><div class=tLabel>Notify </div><div class=tData>{$notify}</div></div> 
 <div class=tDataDspWide><div class=tLabel>Due Date </div><div class=tDataFld>{$bsqFromCalendar}</div></div> 
-<div class=tDataDspWide><div class=tLabel>Biogroup Ref. </div><div class=tDataFld><input type=text id=faFldRefBG value="{$pbioref}"></div></div> 
-<div class=tDataDspWide><div class=tLabel>Ship-Doc</div><div class=tDataFld><input type=text id=faFldRefSD value="{$sd}"></div></div> 
-<div class=tDataDspWide><div class=tLabel>HPR Review # </div><div class=tDataFld><input type=text id=faFldRefHPR value="{$ticket['objhprid']}"></div></div> 
+<div class=tDataDspWide><div class=tLabel>Priority</div><div class=tData>{$ticket['priorityvalue']}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Biogroup Ref. </div><div class=tData>{$pbioref}</div></div> 
+<div class=tDataDspWide><div class=tLabel>Ship-Doc</div><div class=tData>{$sd}</div></div> 
+<div class=tDataDspWide><div class=tLabel>HPR Review # </div><div class=tData>{$hprdsp}</div></div> 
 <div class=tDataDspSuperWide><div class=tLabel>Agent</div><div class=tDataFld>{$agntmnu}</div></div> 
 <div class=tDataDspSuperWide><div class=tLabel>Work Started</div><div class=tData>{$workstart}</div></div> 
 <div class=tDataDsp><div class=tLabel>Completed</div><div class=tData>{$complete}&nbsp;</div></div> 

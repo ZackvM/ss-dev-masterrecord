@@ -352,7 +352,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 
 .tData  { font-family: Roboto; font-size: 1.8vh;  color: rgba({$this->color_zackgrey},1); padding: 1.5vh .5vw .5vh .6vw; }
 .tDataFld  { padding: .1vh .5vw .5vh .6vw; }
-.tDataAct { font-family: Roboto; font-size: 1.4vh;  color: rgba({$this->color_zackgrey},1); padding: .1vh 0 .5vh .7vw; } 
+.tDataAct { font-family: Roboto; font-size: 2vh;  color: rgba({$this->color_darkgreen},1); font-weight: bold; padding: .1vh 0 .5vh .7vw; } 
 
 #ticketHolder .tDataDspWide { border-bottom: 1px solid rgba({$this->color_darkgrey},.5); border-right: 1px solid rgba({$this->color_darkgrey},.5); grid-column: span 2;} 
 #ticketHolder .tDataDspWide .tLabel { font-family: Roboto; font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .5vh .5vw 0 .5vw; } 
@@ -360,7 +360,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 #ticketHolder .tDataDspSuperWide { border-bottom: 1px solid rgba({$this->color_darkgrey},.5); border-right: 1px solid rgba({$this->color_darkgrey},.5); grid-column: span 3;} 
 #ticketHolder .tDataDspSuperWide .tLabel { font-family: Roboto; font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .5vh .5vw 0 .5vw; } 
 
-#ticketHolder #wholeLineTwo { grid-column: 1 / 22; grid-row: 3; } 
+#ticketHolder #wholeLineTwo { grid-column: 1 / 22; grid-row: 3; margin-top: 2vh; } 
 #ticketHolder #wholeLineTwo .tLabel { font-family: Roboto; font-size: 1.4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .5vh .5vw 0 .5vw; } 
 
 #ticketHolder #wholeLineThree { grid-column: 1 / 22; grid-row: 4; padding-left: .6vw; padding-bottom: .5vh;  } 
@@ -369,7 +369,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 #ticketHolder #divDivOne { grid-column: 1 / 22; grid-row: 6; font-family: Roboto; font-size: 1.8vh; text-align: center; padding: .5vh 0; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_darkgrey},.5);}  
 
 
-#btnHolder { grid-column: 1 / 22; grid-row: 5; }
+#btnHolder { grid-column: 1 / 22; grid-row: 5; margin-top: 2vh; }
 #btnHolder #innerbtnholder { width: 8vw; display: grid; grid-template-columns: repeat(2, 1fr); grid-gap: 5px; } 
 #btnHolder #innerbtnholder .actionBtns { border: 1px solid rgba({$this->color_zackgrey},1); width: 4vw; font-family: Roboto; font-size: 1.5vh; text-align: center; padding: .8vh 0; color: rgba({$this->color_zackgrey},1); margin-bottom: 1vh; background: rgba({$this->color_cornflowerblue},.2); transition: .5s; }  
 #btnHolder #innerbtnholder .actionBtns:hover { cursor: pointer; color: rgba({$this->color_white},1); background: rgba({$this->color_cornflowerblue},1); } 
@@ -389,7 +389,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 #faFldRefHPR { width: 8vw; }
 #faFldAssAgent { width: 13vw; } 
 #bsqueryFromDate { width: 8vw; }
-
+#ddHTRz { width: 15vw; } 
 
 STYLESHEET;
 return $rtnThis;      
