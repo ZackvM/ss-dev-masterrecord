@@ -11,7 +11,7 @@ class printobject {
     public $style = "";
     public $bodycontent = "";
 
-    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview', 'helpfile', 'systemreports','systemobjectrequests'); //chartreview when that is built 
+    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview', 'helpfile', 'systemreports','systemobjectrequests','furtheractionticket'); //chartreview when that is built 
     //pxchart = Patient Chart
     
     function __construct() { 		  
@@ -112,6 +112,12 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             //$pr = $prR->fetch(PDO::FETCH_ASSOC);
             $bgnbr = '';                  
             break;
+        case 'furtheractionticket':
+            $dt = "FATICKET";
+            $docIdElem = explode("-", $unencry);
+            $docid = $docIdElem[0];
+            $bgnbr = '';                  
+            break;        
         case 'reports': 
             $dt = "SCIENCESERVER PRINTABLE REPORTS";
             $docIdElem = explode("-", $unencry);
@@ -228,6 +234,9 @@ function documenttext($docobject, $orginalURI) {
     case 'CHART REVIEW': 
         $doctext = getChartReview($docobject['documentid'], $orginalURI);
         break;
+    case 'FATICKET': 
+        $doctext = getFATicket ($docobject['documentid'], $orginalURI);
+        break;        
     case 'SCIENCESERVER PRINTABLE REPORTS':
         $doctext = getPrintableReport($docobject['documentid'],$orginalURI);
         break;
@@ -1098,6 +1107,42 @@ $output = shell_exec($linuxCmd);
         }
     }
     return array('status' => 200, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => 'pdf');
+}
+
+function getFATicket( $docid, $originalURI ) { 
+    $at = genAppFiles;
+    $tt = treeTop;
+    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+    require(serverkeys . "/sspdo.zck");  
+    session_start();
+
+    $uripart = explode("/", $originalURI);
+    $fatnbr = cryptservice($uripart[3],'d');
+        $docText = <<<PRTEXT
+             <html>
+                <head>
+                <style>
+                   @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
+                   html {margin: 0;}
+                   body { margin: 0; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1); }
+                   .line {border-bottom: 1px solid rgba(0,0,0,1); height: 2pt; }
+                </style>
+                </head>
+                <body>
+FURTHER ACTION TICKET ... {$docid} -- {$fatnbr}
+                </body> 
+                </html>
+PRTEXT;
+
+$filehandle = generateRandomString();                
+$prDocFile = genAppFiles . "/tmp/FAT{$filehandle}.html";
+$prDhandle = fopen($prDocFile, 'w');
+fwrite($prDhandle, $docText);
+fclose;
+$prPDF = genAppFiles . "/publicobj/documents/fatickets/fat{$filehandle}.pdf";
+$linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED  {$crnbr}\"     {$prDocFile} {$prPDF}";
+$output = shell_exec($linuxCmd);
+    return array('status' => $sts, 'text' =>  '', 'pathtodoc' => genAppFiles . "/publicobj/documents/fatickets/fat{$filehandle}.pdf", 'format' => 'pdf');    
 }
 
 function getChartReview($chartreviewid, $originalURI) { 

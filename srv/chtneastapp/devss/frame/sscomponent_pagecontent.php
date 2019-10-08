@@ -3382,7 +3382,7 @@ case 'faTableEdit':
     $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="generateDialog('bgRqstFA', 'xxx-xxxx' );" ><tr><td><i class="material-icons">post_add</i></td><td>New Ticket</td></tr></table></td> 
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="alert('Print');" ><tr><td><i class="material-icons">print</i></td><td>Print Ticket</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="printThisTicket();" ><tr><td><i class="material-icons">print</i></td><td>Print Ticket</td></tr></table></td> 
 </tr>
 BTNTBL;
     break;
@@ -4375,9 +4375,7 @@ RTNPAGE;
 
 function bldFurtherActionAction ( $dialog, $passedData ) { 
   $pdta = json_decode($passedData, true);         
-  //{"ticket":113,"actioncode":"SENTRQST"} 
   $pArr = json_decode( cryptservice( $pdta['objid'], 'd') , true);
-
 
   require(serverkeys . "/sspdo.zck");    
   //TODO: TURN INTO WEBSERVICE
@@ -4393,7 +4391,11 @@ function bldFurtherActionAction ( $dialog, $passedData ) {
 
      $warning = ( (int)$act['completeind'] === 1 ) ? "THIS IS THE COMPLETION ACTION FOR THIS ACTION GROUP.  IF YOU CONTINUE, IT WILL MARK THIS ACTIVITY AS COMPLETE AND LOCK THIS ACTION GROUP." : "";
      $complete = (int)$act['completeind'];
+     
+     $taskcomplete = ( (int)$complete === 0 ) ? "<input type=checkbox id=thistaskcompleteind CHECKED><label for=\"thistaskcompleteind\">This action is now complete. Clicking this box will lock this further action task.</label>" : "";
 
+     
+     
      $dspPage = <<<DSPPAGE
 <input type=hidden id=fldDialogId value='{$dialog}'>
 <input type=hidden id=fldCompleteInd value={$complete}>
@@ -4415,12 +4417,17 @@ function bldFurtherActionAction ( $dialog, $passedData ) {
     <div class=fldLbl>Notes</div>
     <div class=fldDta><TEXTAREA id=fldComments></TEXTAREA></div>
     <div class=hint>Be Specific - Include Details - Who/What/How</div>
+    <div>{$taskcomplete}</div>
   </div>
 </div>
 <div id=warningline>{$warning}</div>
 <div id=btnHoldr align=right><button onclick="sendActionUpdate();">Save</button>&nbsp;<button onclick="closeThisDialog('{$dialog}');">Cancel</button></div>
 DSPPAGE;
   }
+
+
+
+
   $rtnPage = <<<RTNPAGE
 <style>
    #infoHoldingTbl { font-family: Roboto; font-size: 1.5vh; width: 36vw; display: grid; grid-template-columns: repeat( 3, 1fr); grid-gap: 5px;   }
@@ -5951,31 +5958,54 @@ CALENDAR;
 
 
     //TODO:   TURN INTO A WEBSERVICE
-    $faListSQL = "SELECT actionlist.menuvalue detailactioncode, actionlist.dspvalue detailaction, ifnull(actionlist.additionalInformation,0) as completeactionind, doneaction.whoby, ifnull(date_format(doneaction.whenon,'%m/%d/%Y'),'') as whenon, doneaction.comments FROM four.sys_master_menus actionlist left join (SELECT fadetailactioncode, whoby, whenon, comments FROM masterrecord.ut_master_faction_detail where faticket = :ticketnbr ) doneaction on actionlist.menuvalue = doneaction.fadetailactioncode  where actionlist.parentid = :actioncodeid and actionlist.menu = 'FADETAILACTION' and actionlist.dspind = 1 order by actionlist.dsporder";
+    $faListSQL = "SELECT actionlist.menuvalue detailactioncode, actionlist.dspvalue detailaction, ifnull(actionlist.additionalInformation,0) as completeactionind, doneaction.whoby, ifnull(date_format(doneaction.whenon,'%m/%d/%Y'),'') as whenon, doneaction.comments, ifnull(doneaction.finishedstepind,0) finishedstep, ifnull(doneaction.finishedby,'') as finishedby, ifnull(date_format(doneaction.finishedon,'%m/%d/%Y %H:%i'),'') as finisheddate  FROM four.sys_master_menus actionlist left join (SELECT fadetailactioncode, whoby, whenon, comments, finishedstepind, finishedby, finishedon FROM masterrecord.ut_master_faction_detail where faticket = :ticketnbr ) doneaction on actionlist.menuvalue = doneaction.fadetailactioncode  where actionlist.parentid = :actioncodeid and actionlist.menu = 'FADETAILACTION' and actionlist.dspind = 1 order by actionlist.dsporder";
     $faListRS = $conn->prepare($faListSQL);
     $faListRS->execute(array(':ticketnbr' => $ticketNbr, ':actioncodeid' => $ticket['actiongridtype']));
    
-    $action = "<table border=0 cellspacing=0 cellpadding=0><thead><tr><td class=col1>Action</td><td class=col3>Performed By :: When</td><td class=col4>Comments</td></tr></thead><tbody>";
+    $action = "<table border=0 cellspacing=0 cellpadding=0><thead><tr><td class=col5></td><td class=col6>#</td><td class=col1>Action</td><td class=col3>Performed By :: When</td><td class=col4>Comments</td></tr></thead><tbody>";
+    $faActionDsp = "";
+    $faActionStepCount = 0;
     while ( $r = $faListRS->fetch(PDO::FETCH_ASSOC)) { 
       $onwhen = ( trim($r['whenon']) !== "" ) ? " :: {$r['whenon']}" : "";
+      $finishedind = (int)$r['finishedstep'];
       $pArr = array();
       $pArr['ticket'] = (int)$ticketNbr;
       $pArr['actioncode'] = $r['detailactioncode'];
       $pArrJson = cryptservice(json_encode($pArr));
-      $actionPop = ( $onwhen === "" ) ? " generateDialog('furtheractionperformer','{$pArrJson}'); " : " alert('The \'Action\' has already been completed.'); ";  
-      $action .= "<tr onclick=\"{$actionPop}\"><td>{$r['detailaction']}</td><td>{$r['whoby']} {$onwhen}</td><td>{$r['comments']}</td></tr>";
+      
+      
+      $fad = "";
+      $stepCountDsp = "&nbsp;";
+      $comcheckdsp = "";
+      if ( $faActionDsp !== $r['detailaction'] ) { 
+          $fad = $r['detailaction'];
+          $faActionDsp = $r['detailaction']; 
+          
+          if ( trim($ticket['actioncompleteon']) === "" ) { 
+            $actionPop = ( $finishedind === 0 ) ? " generateDialog('furtheractionperformer','{$pArrJson}'); " : " alert('The Action ({$faActionDsp}) has already been completed.'); ";  
+          } else { 
+            $actionPop = " alert('This ticket ({$ticket['ticketnbr']}) has already been completed and closed.'); ";    
+          }
+          
+          $comcheckdsp = ( $finishedind === 1) ? "<i class=\"material-icons\">check_circle_outline</i>" : "";
+          $faActionStepCount++;
+          $stepCountDsp = "{$faActionStepCount}.";          
+      } else { 
+          $fad = "&nbsp;";
+          $actionPop = "";
+      }
+      
+      $action .= "<tr onclick=\"{$actionPop}\"><td>{$comcheckdsp}</td><td>{$stepCountDsp}</td><td>{$fad}</td><td>{$r['whoby']} {$onwhen}</td><td>{$r['comments']}</td></tr>";
     }
     $action .= "</tbody></table>";
 
-    $hprdsp = ( (int)$ticket['objhprid'] === 0 ) ? "" : $ticket['objhprid']; 
-
+    $hprdsp = ( (int)$ticket['objhprid'] === 0 ) ? "" : $ticket['objhprid'];
     $refer = ( trim($_SERVER['HTTP_REFERER']) !== "" ) ? $_SERVER['HTTP_REFERER'] : treeTop . "/further-action-requests";
-
+    $lastAgnt =  ( trim($ticket['lastagentdsp']) !== "" ) ? " (Last Assigned: {$ticket['lastagentdsp']})" : "";
+    
     $pg = <<<BLDPG
 <div id=ticketHolder>
-
 <div id=ticketHeadAnnounce>Further Action/Lab Action Request</div>
-
 <div class=tDataDsp><div class=tLabel>Ticket # </div><div class=tData>{$ticket['ticketnbr']}<input type=hidden id=faFldTicketEncy value="{$itmency}"></div></div> 
 <div class=tDataDsp><div class=tLabel>Date Requested </div><div class=tData>{$ticket['actionrequestedon']}</div></div> 
 <div class=tDataDsp><div class=tLabel>Request By</div><div class=tData>{$ticket['actionrequestedby']}</div></div> 
@@ -5985,7 +6015,7 @@ CALENDAR;
 <div class=tDataDspWide><div class=tLabel>Biogroup Ref. </div><div class=tData>{$pbioref}</div></div> 
 <div class=tDataDspWide><div class=tLabel>Ship-Doc</div><div class=tData>{$sd}</div></div> 
 <div class=tDataDspWide><div class=tLabel>HPR Review # </div><div class=tData>{$hprdsp}</div></div> 
-<div class=tDataDspSuperWide><div class=tLabel>Agent</div><div class=tDataFld>{$agntmnu}</div></div> 
+<div class=tDataDspSuperWide><div class=tLabel>Agent</div><div class=tDataFld>{$agntmnu}{$lastAgnt}</div></div> 
 <div class=tDataDspSuperWide><div class=tLabel>Work Started</div><div class=tData>{$workstart}</div></div> 
 <div class=tDataDsp><div class=tLabel>Completed</div><div class=tData>{$complete}&nbsp;</div></div> 
 
@@ -5998,9 +6028,8 @@ CALENDAR;
 <div id=divDivOne>Actions Taken</div> 
 
 <div id=actionGrid>
-  Click row to complete action.
+  Click row to perform/complete the action.
   {$action} 
-
 </div> 
 
 </div>

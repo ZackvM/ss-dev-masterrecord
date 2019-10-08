@@ -190,31 +190,23 @@ class datadoers {
           $buRS = $conn->prepare($buSQL); 
           $buRS->execute(array(':ticketnbr' => $ticket));
 
-
           $updSQL = "update masterrecord.ut_master_furtherlabactions set lasteditedon = now(), lasteditby = :updater";
           $updArr[':updater'] = strtoupper( $u['usr'] );
-
           if ( $changeAgent === 1 ) {
             $updSQL .= " , lastagent = assignedagent , assignedagent = :newassignedagent ";
             $updArr[':newassignedagent'] = $pdta['agent'];
           }
-
           if ( trim($pdta['duedate']) !== "" ) {
             $updSQL .= ",duedate = :duedate ";
             $updArr[':duedate'] = $pdta['duedate']; 
           } 
-
           $updSQL .= ",actionnote = :actionnote ";
           $updArr[':actionnote'] = trim( $pdta['ticketnote'] ); 
-
           $updSQL .= "where idlabactions = :ticket";
           $updArr[':ticket'] = $ticket;
-
           $updRS = $conn->prepare($updSQL);
           $updRS->execute( $updArr );
-
-
-        //$responseCode = 200;
+          $responseCode = 200;
       }
 
       $msg = $msgArr;
@@ -248,16 +240,18 @@ class datadoers {
       //(list( $errorInd, $msgArr[] ) = array(1 , "{$u['usr']}"));
 
       ( !array_key_exists('ticket', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
-      ( !array_key_exists('dateperformed', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
-      ( !array_key_exists('action', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
-      ( !array_key_exists('dialog', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
-      ( !array_key_exists('notes', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
-      ( !array_key_exists('complete', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : "";       
+      ( !array_key_exists('dateperformed', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'dateperformed' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('action', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'action' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('dialog', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'dialog' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('notes', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'notes' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('complete', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'complete' DOES NOT EXIST.")) : "";  
+      ( !array_key_exists('taskcomplete', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'taskcomplete' DOES NOT EXIST.")) : "";   
       ( trim($pdta['ticket']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO TICKET SPECIFIED.")) : "";
       ( trim($pdta['action']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO ACTION CODE WAS SPECIFIED.")) : "";
       ( trim($pdta['dialog']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO DIALOG CODE WAS SPECIFIED.")) : "";
       ( trim($pdta['dateperformed']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  NO ACTION PERFORMANCE DATE SPECIFIED.")) : "";
       ( !is_numeric( $pdta['complete'] )) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR: COMPLETE MUST BE NUMERIC AND EQUAL TO EITHER 0 OR 1")) : "";
+      ( !is_numeric( $pdta['taskcomplete'] )) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR: TASK COMPLETE MUST BE NUMERIC AND EQUAL TO EITHER 0 OR 1")) : "";
 
       //CHECK ACTION CODE
       if ( trim($pdta['action']) !== "" ) {  
@@ -296,7 +290,13 @@ class datadoers {
         
         $detSQL = "insert into masterrecord.ut_master_faction_detail ( faticket, fadetailactioncode, whoby, whenon, comments) values ( :ticket, :actioncode, :usr, :dateperformed, :notes)";
         $detRS = $conn->prepare($detSQL);
-        $detRS->execute(array(':ticket' => (int)$pdta['ticket'], ':actioncode' => $pdta['action'], ':usr' => $u['usr'], ':dateperformed' => $newformat, ':notes' => $pdta['notes']));
+        $detRS->execute(array(':ticket' => (int)$pdta['ticket'], ':actioncode' => $pdta['action'], ':usr' => $u['usr'], ':dateperformed' => $newformat, ':notes' => $pdta['notes']));        
+        if ( (int)$pdta['taskcomplete'] === 1 ) { 
+             //MAKE TASK AS COMPLETE
+            $updSQL = "update masterrecord.ut_master_faction_detail set finishedstepind = 1, finishedby = :comptech, finishedon = now() where faticket =:ticket and faDetailActionCode = :actioncode ";
+            $updRS = $conn->prepare($updSQL);
+            $updRS->execute(array(':comptech' => $u['usr'], ':ticket' => (int)$pdta['ticket'], ':actioncode' => $pdta['action']));
+        }
 
         if ( $complete === 1 ) {  
           $comChkSQL = "SELECT * FROM masterrecord.ut_master_furtherlabactions where actioncompletedon is not null and idlabactions = :ticket";

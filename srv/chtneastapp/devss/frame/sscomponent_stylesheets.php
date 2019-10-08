@@ -382,7 +382,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 #ticketHolder #actionGrid table .col4 { width: 50%; }
 #ticketHolder #actionGrid table tbody tr:nth-child(even) { background: rgba({$this->color_darkgrey}, .2); }
 #ticketHolder #actionGrid table tbody tr:hover { background: rgba({$this->color_lamber},.8); cursor: pointer;  }
-#ticketHolder #actionGrid table tbody tr td { padding: 4px 8px; border-bottom: 1px solid rgba({$this->color_darkgrey},.7); border-right: 1px solid rgba({$this->color_darkgrey},.7); }  
+#ticketHolder #actionGrid table tbody tr td { padding: 4px 8px;  }  
 
 #faFldRefBG { width: 8vw; }
 #faFldRefSD { width: 8vw; }
@@ -392,6 +392,7 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 #ddHTRz { width: 15vw; } 
 
 STYLESHEET;
+//border-bottom: 1px solid rgba({$this->color_darkgrey},.7); border-right: 1px solid rgba({$this->color_darkgrey},.7);
 return $rtnThis;      
   }
   
