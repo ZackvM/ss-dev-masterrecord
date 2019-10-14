@@ -34,6 +34,256 @@ function __construct() {
 
 class datadoers {
 
+    function rqstinventorylabelencrypt ( $request, $passdata ) { 
+      //{"labeltext":"32701A2A","printer":"INVCARD","printformat":"PRINTCARD"}
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+      ( !array_key_exists('labeltext', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'labeltext' DOES NOT EXIST.")) : ""; 
+      if ( $errorInd === 0 ) { 
+        $dta['dataencryption'] = cryptservice( $pdta['labeltext'],'e');
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    }
+
+    function printthisinventorylabel ( $request, $passdata ) { 
+      //{"labeltext":"32701A2A","printer":"INVCARD","printformat":"PRINTCARD"}
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+      
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+      
+      ( !array_key_exists('ticket', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
+      
+      if ($errorInd === 0 ) {
+
+
+          $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    }
+
+    function furtheractionemailsendticket ( $request, $passdata ) {
+      //{"ticket":"a2JSdkdxZENhb2ZsTkRCMG1PbnFhZz09","recip":"proczack","emailtext":"This is a text element","dialogid":"wsTk2zPbLanzwuo"}
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+      
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      ( !array_key_exists('ticket', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('recip', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'recip' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('emailtext', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'emailtext' DOES NOT EXIST.")) : ""; 
+      ( !array_key_exists('dialogid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'dialogid' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['ticket']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  TICKET MUST CONTAIN A VALUE.")) : ""; 
+      ( trim($pdta['recip']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  'Team Member to Email' MUST CONTAIN A VALUE.")) : ""; 
+
+      if ($errorInd === 0 ) {
+  
+        $docid = cryptservice($pdta['ticket'],'d'); 
+        $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .5in;  \" ");
+        //****************CREATE BARCODE
+        require ("{$at}/extlibs/bcodeLib/qrlib.php");
+        $tempDir = "{$at}/tmp/";
+        $codeContents = "FAT{$docid}";
+        $fileName = 'fat' . generateRandomString() . '.png';
+        $pngAbsoluteFilePath = $tempDir.$fileName;
+        if (!file_exists($pngAbsoluteFilePath)) {
+          QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+        } 
+        $qrcode = base64file("{$pngAbsoluteFilePath}", "topqrcode", "png", true, " style=\"height: .5in;\"   ");
+        //********************END BARCODE CREATION
+        $ticketSQL = <<<TICKETSQL
+SELECT substr(concat('000000',idlabactions),-6) as ticketnbr, actionstartedind, ifnull(date_format(startedondate,'%m/%d/%Y'),'') as startedondate, ifnull(startedby,'') as startedby, ifnull(frommodule,'Unknown Module') frommodule, ifnull(objshipdoc,'') as objshipdoc, ifnull(objhprid,'') as objhprid, ifnull(objpbiosample,'') as objpbiosample, ifnull(objbgs,'') as objbgs, ifnull(assignedagent,'') as assignedagent, ifnull(actioncode,'UNKNOWN') as actioncode, ifnull(actiondesc,'') as actiondesc, ifnull(actionnote,'') as actionnote, ifnull(notifyoncomplete,0) as notifyoncomplete, ifnull(date_format(duedate,'%Y-%m-%d'),'') as duedateval, ifnull(date_format(duedate,'%m/%d/%Y'),'') as duedate, ifnull(actionrequestedby,'UNKNOWN') as actionrequestedby, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as actionrequestedon, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompleteon, ifnull(actioncompletedby,'') as actioncompletedby, faaction.assignablestatus as actiongridtype, prioritymarkcode, faprio.dspvalue as prioritydsp, lastagent, ifnull(agentlist.dspagent,'') as lastagentdsp FROM masterrecord.ut_master_furtherlabactions fa LEFT JOIN (SELECT menuvalue, dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'FAACTIONLIST') faaction on fa.actioncode = faaction.menuvalue LEFT JOIN (SELECT menuvalue, dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') faprio on fa.prioritymarkcode = faprio.menuvalue left join (SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and primaryInstCode = 'HUP') as agentlist on fa.lastagent = agentlist.originalaccountname where idlabactions = :ticket and activeind = 1
+TICKETSQL;
+        $ticketRS = $conn->prepare($ticketSQL);
+        $ticketRS->execute(array(':ticket' => (int)$docid));
+        if ( $ticketRS->rowCount() === 1 ) {
+          $ticket = $ticketRS->fetch(PDO::FETCH_ASSOC);
+          $duedate = ( trim($ticket['duedate']) === '01/01/1900' ) ? "" : trim($ticket['duedate']);
+          $notify = ( (int)$ticket['notifyoncomplete'] === 0 ) ? "No" : "Yes";
+    $faListSQL = "SELECT actionlist.menuvalue detailactioncode, actionlist.dspvalue detailaction, ifnull(actionlist.additionalInformation,0) as completeactionind, doneaction.whoby, ifnull(date_format(doneaction.whenon,'%m/%d/%Y'),'') as whenon, doneaction.comments, ifnull(doneaction.finishedstepind,0) finishedstep, ifnull(doneaction.finishedby,'') as finishedby, ifnull(date_format(doneaction.finishedon,'%m/%d/%Y %H:%i'),'') as finisheddate  FROM four.sys_master_menus actionlist left join (SELECT fadetailactioncode, whoby, whenon, comments, finishedstepind, finishedby, finishedon FROM masterrecord.ut_master_faction_detail where faticket = :ticketnbr ) doneaction on actionlist.menuvalue = doneaction.fadetailactioncode  where actionlist.parentid = :actioncodeid and actionlist.menu = 'FADETAILACTION' and actionlist.dspind = 1 order by actionlist.dsporder";
+    $faListRS = $conn->prepare($faListSQL);
+    $faListRS->execute(array(':ticketnbr' => (int)$docid, ':actioncodeid' => $ticket['actiongridtype']));
+    $action = "<table border=0 cellspacing=0 cellpadding=0 width=100% id=actTbl><thead><tr><td class='col6 actTblHead'><center>#</td><td class='col1 actTblHead'>Action</td><td class='col3 actTblHead'>Performed By :: When</td><td class='col4 actTblHead'>Comments</td></tr></thead><tbody>";
+    $faActionDsp = "";
+    $faActionStepCount = 0;
+    while ( $r = $faListRS->fetch(PDO::FETCH_ASSOC)) { 
+      $onwhen = ( trim($r['whenon']) !== "" ) ? " :: {$r['whenon']}" : "";
+      $finishedind = (int)$r['finishedstep'];
+      $fad = "";
+      $stepCountDsp = "&nbsp;";
+      $comcheckdsp = "";
+      if ( $faActionDsp !== $r['detailaction'] ) { 
+          $fad = $r['detailaction'];
+          $faActionDsp = $r['detailaction'];  
+          $comcheckdsp = ( $finishedind === 1) ? "<i class=\"material-icons\">check_circle_outline</i>" : "";
+          $faActionStepCount++;
+          $stepCountDsp = "{$faActionStepCount}.";          
+      } else { 
+          $fad = "&nbsp;";
+          $actionPop = "";
+      } 
+      $action .= "<tr><td>{$stepCountDsp}</td><td>{$fad}</td><td>{$r['whoby']} {$onwhen}</td><td>{$r['comments']}</td></tr>";
+    }
+    $action .= "</tbody></table>";
+           $docText = <<<PRTEXT
+             <html><head><style>
+                   @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons);
+                   html {margin: 0;}
+                   body { margin: 0; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1); }
+                   .line {border-bottom: 1px solid rgba(0,0,0,1); height: 2pt; }
+                   .label { font-size: 8pt; font-weight: bold; }
+                   .datadsp { font-size: 10pt; }  
+                   .holdersqr { border: 1px solid rgba(201,201,201,1); padding: 2px; }
+                   .actTblHead {font-size: 8pt; font-weight: bold; background: rgba(0,0,0,1); color: rgba(255,255,255,1); padding: 5px 2px; }
+                   #actTbl tbody tr td { border-bottom: 1px solid rgba(201,201,201,1); border-right: 1px solid rgba(201,201,201,1); font-size: 9pt; padding: 5px 2px; } 
+                </style>
+                </head>
+                <body>
+                <table border=0 width=100% style="border: 1px solid #000;">
+                <tr><td valign=top rowspan=2>{$favi}</td><td style="font-size: 16pt; font-weight: bold; padding: 15px 0 0 0; text-align:center; ">ScienceServer Further Action Request Ticket</td><td align=right valign=top rowspan=2>{$qrcode}</td></tr>
+                <tr><td style="font-size: 12pt; font-weight: bold; padding: 0 0 0 0; text-align:center; ">Ticket: {$ticket['ticketnbr']}</td></tr>
+                  <tr><td colspan=3>
+                    <table width=100%>
+                      <tr>
+                        <td valign=top class="holdersqr" width=20%><div class=label>Requested On</div><div class=datadsp>{$ticket['actionrequestedon']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=20%><div class=label>Requested By</div><div class=datadsp>{$ticket['actionrequestedby']} ({$ticket['frommodule']})&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=20%><div class=label>Notify When Complete</div><div class=datadsp>{$notify}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=20%><div class=label>Priority</div><div class=datadsp>{$ticket['prioritydsp']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=20%><div class=label>Due Date</div><div class=datadsp>{$duedate}&nbsp;</div></td>
+                      </tr>
+                    </table>
+                   </td></tr>
+                  <tr><td colspan=3>
+                    <table width=100%>
+                      <tr>
+                        <td valign=top class="holdersqr"><div class=label>Request Type</div><div class=datadsp>{$ticket['actiondesc']}&nbsp;</div></td>
+                      </tr>
+                    </table>
+                   </td></tr>
+                  <tr><td colspan=3>
+                    <table width=100%>
+                      <tr>
+                        <td valign=top class="holdersqr"><div class=label>Request Notes</div><div class=datadsp>{$ticket['actionnote']}&nbsp;</div></td>
+                      </tr>
+                    </table>
+                   </td></tr>
+                   <tr><td colspan=3>
+                    <table width=100%>
+                      <tr>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Assigned Agent</div><div class=datadsp>{$ticket['assignedagent']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Last Agent </div><div class=datadsp>{$ticket['lastagentdsp']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Started By</div><div class=datadsp>{$ticket['startedby']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Started On</div><div class=datadsp>{$ticket['startedondate']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Completed On</div><div class=datadsp>{$ticket['actioncompleteon']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Completed By</div><div class=datadsp>{$ticket['actioncompletedby']}&nbsp;</div></td>
+                      </tr>
+                    </table>
+                   </td></tr>
+                  <tr><td colspan=3>
+                    <table width=100%>
+                      <tr>
+                        <td valign=top class="holdersqr" width=25%><div class=label>Ship-Doc Reference</div><div class=datadsp>{$ticket['objshipdoc']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=25%><div class=label>HPR Reference</div><div class=datadsp>{$ticket['objhprid']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=25%><div class=label>Biogroup Reference</div><div class=datadsp>{$ticket['objpbiosample']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=25%><div class=label>Segment Reference</div><div class=datadsp>{$ticket['objbgs']}&nbsp;</div></td>
+                      </tr>
+                    </table>
+                   </td></tr>
+                  <tr><td colspan=3>
+                    {$action} 
+                  </td></tr>
+                </table>
+                </body>
+                </html>
+PRTEXT;
+
+          $filehandle = generateRandomString();                
+          $prDocFile = genAppFiles . "/tmp/FAT{$filehandle}.html";
+          $prDhandle = fopen($prDocFile, 'w');
+          fwrite($prDhandle, $docText);
+          fclose;
+          $prPDF = genAppFiles . "/publicobj/documents/fatickets/fat{$filehandle}.pdf";
+          $linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED  {$crnbr}\"     {$prDocFile} {$prPDF}";
+          $output = shell_exec($linuxCmd);
+
+
+
+          //{"ticket":"a2JSdkdxZENhb2ZsTkRCMG1PbnFhZz09","recip":"proczack","emailtext":"This is a text element","dialogid":"wsTk2zPbLanzwuo"}
+
+          $recipEmlSQL = "SELECT emailaddress FROM four.sys_userbase where originalaccountname = :acct";
+          $recipRS = $conn->prepare($recipEmlSQL);
+          $recipRS->execute(array(':acct' => $pdta['recip']));
+          if ( $recipRS->rowCount() === 1 ) { 
+              $eml = $recipRS->fetch(PDO::FETCH_ASSOC);
+              $emaillist[] = $eml['emailaddress'];
+          }
+          $eText = preg_replace( '/\\n/','<br>', preg_replace( '/\\n\\n/','<p>',$pdta['emailtext'] ));
+          $emaillist[] = "zackvm@zacheryv.com";
+          $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgBody, htmlind, wheninput, bywho, srverattachment, attachmentname) value(:towhoaddressarray, 'CHTN-EASTERN QMS FOLLOWUP EMAIL', :msgBody, 1, now(), 'QA-QMS EMAILER', :afile, 'FURTHER ACTION TICKET')";
+          $emlRS = $conn->prepare( $emlSQL );
+          $emlRS->execute(array ( ':towhoaddressarray' => json_encode( $emaillist ), ':msgBody' => "<table border=1><tr><td><CENTER>THE MESSAGE BELOW IS FROM THE FURTHER ACTION TICKETING SYSTEM AT CHTNEASTERN ({$u['friendlyname']}/{$u['emailaddress']}) .  PLEASE DO NOT RESPONSED TO THIS EMAIL.  CONTACT THE CHTNEASTERN OFFICE DIRECTLY EITHER BY EMAIL chtnmail@uphs.upenn.edu OR BY CALLING (215) 662-4570.</td></tr><tr><td>{$eText}</td></tr></table>",':afile' => genAppFiles . "/publicobj/documents/fatickets/fat{$filehandle}.pdf" ));
+
+          $dta['dialogid'] = $pdta['dialogid'];
+          $responseCode = 200;
+        } else {  
+            $docText = "TICKET {$docid} NOT FOUND";
+            (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  TICKET DOES NOT EXIST."));
+        }
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    }
+
     function invtrylocationheirach ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -72,9 +322,7 @@ class datadoers {
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
-      return $rows;      
-
-
+      return $rows;     
     }
     
     function invtrylabeldxdesignation ( $request, $passdata ) { 
@@ -4039,11 +4287,17 @@ MBODY;
              $top = '8vh';
              break;                
            case 'rqstSampleBarcode':
-             $primeFocus = "bccodevalue";  
+             $primeFocus = "";  
+             //$primeFocus = "bccodevalue";  
              $left = '8vw';
              $top = '8vh';
              break;
            case 'donorvault':
+             $primeFocus = "";  
+             $left = '8vw';
+             $top = '8vh';
+             break;
+           case 'faSendTicket':
              $primeFocus = "";  
              $left = '8vw';
              $top = '8vh';

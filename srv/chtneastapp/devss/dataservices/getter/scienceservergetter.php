@@ -178,6 +178,29 @@ class objlisting {
      return $rows;     
   }
 
+  function thermalprinterlistdialog() {
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "Zack was here";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW'];
+     if ( $authuser === serverIdent) {
+          $prnSQL = "SELECT ifnull(printername,'') as printername,  ifnull(printerlocation,'') as printerlocation, ifnull(formatname,'') as formatname FROM serverControls.lblFormats where dspPrinter = 1";     
+          $prnRS = $conn->prepare($prnSQL);
+          $prnRS->execute();
+          while ($r = $prnRS->fetch(PDO::FETCH_ASSOC)) { 
+              $dta[] = $r;
+          }
+     }                
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;     
+  }  
+
   function thermalprinterlist() {
      $responseCode = 400;
      $rows = array();

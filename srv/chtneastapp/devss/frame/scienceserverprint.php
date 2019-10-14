@@ -11,7 +11,7 @@ class printobject {
     public $style = "";
     public $bodycontent = "";
 
-    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview', 'helpfile', 'systemreports','systemobjectrequests','furtheractionticket'); //chartreview when that is built 
+    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreview', 'helpfile', 'systemreports','systemobjectrequests','furtheractionticket','inventoryitemtag'); //chartreview when that is built 
     //pxchart = Patient Chart
     
     function __construct() { 		  
@@ -117,7 +117,13 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $docIdElem = explode("-", $unencry);
             $docid = $docIdElem[0];
             $bgnbr = '';                  
-            break;        
+            break;
+        case 'inventoryitemtag':
+            $dt = "INVITEMTAG";
+            $docIdElem = explode("-", $unencry);
+            $docid = $docIdElem[0];
+            $bgnbr = '';                  
+            break;
         case 'reports': 
             $dt = "SCIENCESERVER PRINTABLE REPORTS";
             $docIdElem = explode("-", $unencry);
@@ -234,6 +240,9 @@ function documenttext($docobject, $orginalURI) {
     case 'CHART REVIEW': 
         $doctext = getChartReview($docobject['documentid'], $orginalURI);
         break;
+    case 'INVITEMTAG': 
+        $doctext = getInvItemTag ($docobject['documentid'], $orginalURI);
+        break;        
     case 'FATICKET': 
         $doctext = getFATicket ($docobject['documentid'], $orginalURI);
         break;        
@@ -1109,30 +1118,269 @@ $output = shell_exec($linuxCmd);
     return array('status' => 200, 'text' => $docText, 'pathtodoc' => $sdPDF, 'format' => 'pdf');
 }
 
+function getInvItemTag ( $docid, $originalURI ) { 
+    $at = genAppFiles;
+    $tt = treeTop;
+    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .5in;  \" ");
+    $tempDir = "{$at}/tmp/";
+    require("{$at}/extlibs/bcodeLib/qrlib.php");
+    //$presInst = $rqst['user'][0]['presentinstitution'];
+    //  $r = "Run By: {$rqst['user'][0]['emailaddress']} at " . date('H:i');
+    $tday = date('Y-m-d');
+    require(serverkeys . "/sspdo.zck");  
+    session_start();
+
+       //****************CREATE BARCODE
+        $codeContents = "{$docid}";
+        $fileName = 'ittbc' . generateRandomString() . '.png';
+        $pngAbsoluteFilePath = $tempDir.$fileName;
+        if (!file_exists($pngAbsoluteFilePath)) {
+          QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+        } 
+        $qrcode = base64file("{$pngAbsoluteFilePath}", "", "png", true," style=\"height: 1in;\" ");
+        //********************END BARCODE CREATION
+
+        $detSQL = "SELECT replace(sg.bgs,'_','') as bgs, ifnull(sg.prepmethod,'') as prpmet, ifnull(sg.preparation,'') as prp, ifnull(bs.tissType,'') as speccat, ifnull(bs.anatomicSite,'') as primarysite, ifnull(bs.subSite,'') as primarysubsite, ifnull(bs.diagnosis,'') as diagnosis, ifnull(bs.subdiagnos,'') as diagnosismodifier, ifnull(bs.metsSite,'') as metsite, ifnull(sg.metric,'') as metric, ifnull(mt.longvalue,'') as metricuom, ifnull(bs.pxiage,'') as pxiage, ifnull(ag.longvalue,'') as pxiAgeUOM, ifnull(bs.pxirace,'') as pxirace, ifnull(bs.pxigender,'') as pxigender  FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pbiosample left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') as mt on sg.metricuom = mt.menuvalue LEFT JOIN (SELECT menu, menuValue, longvalue FROM four.sys_master_menus where menu = 'AGEUOM') as ag on bs.pxiageuom = ag.menuValue where replace(sg.bgs,'_','') = :labelnbr and sg.voidind <> 1";
+        $detRS = $conn->prepare($detSQL); 
+        $detRS->execute(array(':labelnbr' => $docid));
+        if ( $detRS->rowCount() > 0 ) { 
+            $records = $detRS->fetch(PDO::FETCH_ASSOC); 
+        } else { 
+            $records = array();
+        }
+
+    $lblTbl = <<<LBLLBL
+<table border=0 cellpadding=0 cellspacing=0 style="width: 4in; height: 5.21in; border: 1px solid #000000; box-sizing: border-box;">
+<tr><td style="padding: 0 0 0 4px;">{$favi}</td><td align=right valign=bottom> 
+
+   <table>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 14pt; color: #000084; font-weight: bold; text-align: right;">CHTNEastern Biosample</td></tr>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 10pt; color: #000084; font-weight: bold; text-align: right;">3400 Spruce Street, DULLES 565<br>Philadelphia, PA 19104</td></tr>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 9pt; color: #000084; font-weight: bold; text-align: right;">(215) 662-4570</td></tr>
+      <tr>
+        <td style="font-family: tahoma, verdana; font-size: 9pt; color: #000084; font-weight: bold; text-align: right;">https://www.chtneast.org</td>
+     </tr></table>
+
+</td></tr>
+<tr><td colspan=2><center>{$qrcode}</td></tr>
+<tr><td colspan=2 style="font-size: 9pt; border-bottom: 1px solid #d3d3d3; font-weight: bold; padding: 4px 0 0 4px;">Biosample Number</td></tr>
+<tr><td colspan=2 style="font-size: 11pt; text-align: center;">{$docid}</td></tr>
+<tr><td colspan=2 style="font-size: 9pt; border-bottom: 1px solid #d3d3d3; font-weight: bold; padding: 4px 0 0 4px;">Diagnosis Designation</td></tr>
+<tr><td colspan=2 style="font-size: 11pt; text-align: center;">{$records['speccat']} :: {$records['primarysite']} :: {$records['primarysubsite']} :: {$records['diagnosis']} :: {$records['diagnosismodifier']}</td></tr>
+<tr><td colspan=2 style="font-size: 9pt; border-bottom: 1px solid #d3d3d3; font-weight: bold; padding: 4px 0 0 4px;">Preparation</td></tr>
+<tr><td colspan=2 style="font-size: 11pt; text-align: center;">{$records['prpmet']} ({$records['prp']} / {$records['metric']} {$records['metricuom']})<br>{$records['pxiage']} {$records['pxiAgeUOM']} / {$records['pxirace']} / {$records['pxigender']}</td></tr>
+<tr><td colspan=2 style="max-height: 3in;">&nbsp;</td></tr>
+</table>
+LBLLBL;
+    
+    $rowTbl .= "<td>{$lblTbl}</td>";
+
+           $docText = <<<PRTEXT
+             <html>
+                <head>
+                <style>
+                   @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons);
+                   html {margin: 0;}
+                   body { margin: 0; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1); }
+                </style>
+                </head>
+                <body>
+<table border=0 style="width: 8in;"><tr>{$rowTbl}</tr></table>
+PRTEXT;
+
+$filehandle = generateRandomString();                
+$prDocFile = genAppFiles . "/tmp/IIT{$filehandle}.html";
+$prDhandle = fopen($prDocFile, 'w');
+fwrite($prDhandle, $docText);
+fclose;
+$prPDF = genAppFiles . "/publicobj/documents/fatickets/iit{$filehandle}.pdf";
+$linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED  {$crnbr}\"     {$prDocFile} {$prPDF}";
+$output = shell_exec($linuxCmd);
+    return array('status' => $sts, 'text' =>  '', 'pathtodoc' => genAppFiles . "/publicobj/documents/fatickets/iit{$filehandle}.pdf", 'format' => 'pdf');    
+}
+
 function getFATicket( $docid, $originalURI ) { 
     $at = genAppFiles;
     $tt = treeTop;
-    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .5in;  \" ");
     require(serverkeys . "/sspdo.zck");  
     session_start();
 
     $uripart = explode("/", $originalURI);
     $fatnbr = cryptservice($uripart[3],'d');
-        $docText = <<<PRTEXT
+
+        //****************CREATE BARCODE
+        require ("{$at}/extlibs/bcodeLib/qrlib.php");
+        $tempDir = "{$at}/tmp/";
+        $codeContents = "FAT{$docid}";
+        $fileName = 'fat' . generateRandomString() . '.png';
+        $pngAbsoluteFilePath = $tempDir.$fileName;
+        if (!file_exists($pngAbsoluteFilePath)) {
+          QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+        } 
+        $qrcode = base64file("{$pngAbsoluteFilePath}", "topqrcode", "png", true, " style=\"height: .5in;\"   ");
+        //********************END BARCODE CREATION
+
+        $ticketSQL = <<<TICKETSQL
+SELECT substr(concat('000000',idlabactions),-6) as ticketnbr
+, actionstartedind
+, ifnull(date_format(startedondate,'%m/%d/%Y'),'') as startedondate
+, ifnull(startedby,'') as startedby
+, ifnull(frommodule,'Unknown Module') frommodule
+, ifnull(objshipdoc,'') as objshipdoc
+, ifnull(objhprid,'') as objhprid
+, ifnull(objpbiosample,'') as objpbiosample
+, ifnull(objbgs,'') as objbgs
+, ifnull(assignedagent,'') as assignedagent
+, ifnull(actioncode,'UNKNOWN') as actioncode
+, ifnull(actiondesc,'') as actiondesc
+, ifnull(actionnote,'') as actionnote
+, ifnull(notifyoncomplete,0) as notifyoncomplete
+, ifnull(date_format(duedate,'%Y-%m-%d'),'') as duedateval
+, ifnull(date_format(duedate,'%m/%d/%Y'),'') as duedate
+, ifnull(actionrequestedby,'UNKNOWN') as actionrequestedby
+, ifnull(date_format(actionrequestedon,'%m/%d/%Y'),'') as actionrequestedon
+, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompleteon
+, ifnull(actioncompletedby,'') as actioncompletedby
+, faaction.assignablestatus as actiongridtype
+, prioritymarkcode
+, faprio.dspvalue as prioritydsp
+, lastagent
+, ifnull(agentlist.dspagent,'') as lastagentdsp
+FROM masterrecord.ut_master_furtherlabactions fa
+LEFT JOIN (SELECT menuvalue, dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'FAACTIONLIST') faaction on fa.actioncode = faaction.menuvalue
+LEFT JOIN (SELECT menuvalue, dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'FAPRIORITYSCALE') faprio on fa.prioritymarkcode = faprio.menuvalue
+left join (SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and primaryInstCode = 'HUP') as agentlist on fa.lastagent = agentlist.originalaccountname
+where idlabactions = :ticket and activeind = 1
+TICKETSQL;
+
+        $ticketRS = $conn->prepare($ticketSQL);
+        $ticketRS->execute(array(':ticket' => (int)$docid));
+
+        if ( $ticketRS->rowCount() === 1 ) {
+          $ticket = $ticketRS->fetch(PDO::FETCH_ASSOC);
+          $duedate = ( trim($ticket['duedate']) === '01/01/1900' ) ? "" : trim($ticket['duedate']);
+          $notify = ( (int)$ticket['notifyoncomplete'] === 0 ) ? "No" : "Yes";
+
+    $faListSQL = "SELECT actionlist.menuvalue detailactioncode, actionlist.dspvalue detailaction, ifnull(actionlist.additionalInformation,0) as completeactionind, doneaction.whoby, ifnull(date_format(doneaction.whenon,'%m/%d/%Y'),'') as whenon, doneaction.comments, ifnull(doneaction.finishedstepind,0) finishedstep, ifnull(doneaction.finishedby,'') as finishedby, ifnull(date_format(doneaction.finishedon,'%m/%d/%Y %H:%i'),'') as finisheddate  FROM four.sys_master_menus actionlist left join (SELECT fadetailactioncode, whoby, whenon, comments, finishedstepind, finishedby, finishedon FROM masterrecord.ut_master_faction_detail where faticket = :ticketnbr ) doneaction on actionlist.menuvalue = doneaction.fadetailactioncode  where actionlist.parentid = :actioncodeid and actionlist.menu = 'FADETAILACTION' and actionlist.dspind = 1 order by actionlist.dsporder";
+    $faListRS = $conn->prepare($faListSQL);
+    $faListRS->execute(array(':ticketnbr' => (int)$docid, ':actioncodeid' => $ticket['actiongridtype']));
+   
+    $action = "<table border=0 cellspacing=0 cellpadding=0 width=100% id=actTbl><thead><tr><td class='col6 actTblHead'><center>#</td><td class='col1 actTblHead'>Action</td><td class='col3 actTblHead'>Performed By :: When</td><td class='col4 actTblHead'>Comments</td></tr></thead><tbody>";
+    $faActionDsp = "";
+    $faActionStepCount = 0;
+    while ( $r = $faListRS->fetch(PDO::FETCH_ASSOC)) { 
+      $onwhen = ( trim($r['whenon']) !== "" ) ? " :: {$r['whenon']}" : "";
+      $finishedind = (int)$r['finishedstep'];
+       
+      $fad = "";
+      $stepCountDsp = "&nbsp;";
+      $comcheckdsp = "";
+      if ( $faActionDsp !== $r['detailaction'] ) { 
+          $fad = $r['detailaction'];
+          $faActionDsp = $r['detailaction'];  
+          $comcheckdsp = ( $finishedind === 1) ? "<i class=\"material-icons\">check_circle_outline</i>" : "";
+          $faActionStepCount++;
+          $stepCountDsp = "{$faActionStepCount}.";          
+      } else { 
+          $fad = "&nbsp;";
+          $actionPop = "";
+      } 
+      $action .= "<tr><td>{$stepCountDsp}</td><td>{$fad}</td><td>{$r['whoby']} {$onwhen}</td><td>{$r['comments']}</td></tr>";
+    }
+    $action .= "</tbody></table>";
+
+           $docText = <<<PRTEXT
              <html>
                 <head>
                 <style>
-                   @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
+                   @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons);
                    html {margin: 0;}
                    body { margin: 0; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1); }
                    .line {border-bottom: 1px solid rgba(0,0,0,1); height: 2pt; }
+                   .label { font-size: 8pt; font-weight: bold; }
+                   .datadsp { font-size: 10pt; }  
+                   .holdersqr { border: 1px solid rgba(201,201,201,1); padding: 2px; }
+                   .actTblHead {font-size: 8pt; font-weight: bold; background: rgba(0,0,0,1); color: rgba(255,255,255,1); padding: 5px 2px; }
+                   #actTbl tbody tr td { border-bottom: 1px solid rgba(201,201,201,1); border-right: 1px solid rgba(201,201,201,1); font-size: 9pt; padding: 5px 2px; } 
                 </style>
                 </head>
                 <body>
-FURTHER ACTION TICKET ... {$docid} -- {$fatnbr}
+
+                <table border=0 width=100% style="border: 1px solid #000;">
+                <tr><td valign=top rowspan=2>{$favi}</td><td style="font-size: 16pt; font-weight: bold; padding: 15px 0 0 0; text-align:center; ">ScienceServer Further Action Request Ticket</td><td align=right valign=top rowspan=2>{$qrcode}</td></tr>
+                <tr><td style="font-size: 12pt; font-weight: bold; padding: 0 0 0 0; text-align:center; ">Ticket: {$ticket['ticketnbr']}</td></tr>
+                
+                  <tr><td colspan=3>
+                    <table width=100%>
+                      <tr>
+                        <td valign=top class="holdersqr" width=20%><div class=label>Requested On</div><div class=datadsp>{$ticket['actionrequestedon']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=20%><div class=label>Requested By</div><div class=datadsp>{$ticket['actionrequestedby']} ({$ticket['frommodule']})&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=20%><div class=label>Notify When Complete</div><div class=datadsp>{$notify}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=20%><div class=label>Priority</div><div class=datadsp>{$ticket['prioritydsp']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=20%><div class=label>Due Date</div><div class=datadsp>{$duedate}&nbsp;</div></td>
+                      </tr>
+                    </table>
+                   </td></tr>
+
+                  <tr><td colspan=3>
+                    <table width=100%>
+                      <tr>
+                        <td valign=top class="holdersqr"><div class=label>Request Type</div><div class=datadsp>{$ticket['actiondesc']}&nbsp;</div></td>
+                      </tr>
+                    </table>
+                   </td></tr>
+
+                  <tr><td colspan=3>
+                    <table width=100%>
+                      <tr>
+                        <td valign=top class="holdersqr"><div class=label>Request Notes</div><div class=datadsp>{$ticket['actionnote']}&nbsp;</div></td>
+                      </tr>
+                    </table>
+                   </td></tr>
+                  
+                   <tr><td colspan=3>
+                    <table width=100%>
+                      <tr>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Assigned Agent</div><div class=datadsp>{$ticket['assignedagent']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Last Agent </div><div class=datadsp>{$ticket['lastagentdsp']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Started By</div><div class=datadsp>{$ticket['startedby']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Started On</div><div class=datadsp>{$ticket['startedondate']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Completed On</div><div class=datadsp>{$ticket['actioncompleteon']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=15%><div class=label>Completed By</div><div class=datadsp>{$ticket['actioncompletedby']}&nbsp;</div></td>
+                      </tr>
+                    </table>
+                   </td></tr>
+
+                  <tr><td colspan=3>
+                    <table width=100%>
+                      <tr>
+                        <td valign=top class="holdersqr" width=25%><div class=label>Ship-Doc Reference</div><div class=datadsp>{$ticket['objshipdoc']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=25%><div class=label>HPR Reference</div><div class=datadsp>{$ticket['objhprid']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=25%><div class=label>Biogroup Reference</div><div class=datadsp>{$ticket['objpbiosample']}&nbsp;</div></td>
+                        <td valign=top class="holdersqr" width=25%><div class=label>Segment Reference</div><div class=datadsp>{$ticket['objbgs']}&nbsp;</div></td>
+                      </tr>
+                    </table>
+                   </td></tr>
+
+                  <tr><td colspan=3>
+                    {$action} 
+                  </td></tr>
+
+
+                </table>
+
+                
+
                 </body> 
                 </html>
 PRTEXT;
+        } else {  
+            $docText = "TICKET {$docid} NOT FOUND";
+        }
 
 $filehandle = generateRandomString();                
 $prDocFile = genAppFiles . "/tmp/FAT{$filehandle}.html";

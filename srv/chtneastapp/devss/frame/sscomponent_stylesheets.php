@@ -1338,10 +1338,6 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #inventoryCheckinElementHoldr #ctlButtons { grid-row: 10 / 11; border-top: 1px solid rgba({$this->color_zackgrey},1); } 
 
 
-
-
-
-
 STYLESHEET;
       return $rtnThis;
 

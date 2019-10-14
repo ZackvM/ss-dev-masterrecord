@@ -781,8 +781,7 @@ function clickedlabel(e) {
   byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
 }
 
-function actionCheckCheck() { 
-  
+function actionCheckCheck() {  
   var obj = new Object(); 
   var scanlist = [];
   obj['location'] = byId('locscancode').value.trim();
@@ -981,6 +980,87 @@ function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) {
       byId(whichfield+'Value').value = whatvalue;
     }    
     byId(whichfield).value = whatplaintext; 
+  }
+}
+
+function makeBCCodeValue( whatvalue ) {
+  if ( whatvalue.trim() !== "" && whatvalue.trim() !== '-' ) { 
+    if ( byId('bccodevalue') ) { 
+      byId('bccodevalue').value = byId('bccodevalue').value.trim() + whatvalue;
+    }
+  } else {  
+    if ( byId('bccodevalue').value.length > 0 ) {
+       byId('bccodevalue').value = byId('bccodevalue').value.trim().substr(0, byId('bccodevalue').value.length - 1);
+    }
+  }
+  checkBCCodeValue();     
+}
+
+function clearThis() { 
+  byId('bccodevalue').value = "";
+}
+
+function selectPrinter( whichprinter ) { 
+  var x = document.getElementsByClassName("labelingdsp");
+   for ( var i = 0; i < x.length; i++ ) {
+     x[i].dataset.selected = 'false';
+   }
+  byId( whichprinter ).dataset.selected = 'true';
+}
+
+function printRqstBarcodeLabel() { 
+  var dta = new Object(); 
+  dta['labeltext'] = byId('bccodevalue').value.trim();
+  var x = document.getElementsByClassName("labelingdsp");
+  for ( var i = 0; i < x.length; i++ ) {
+    if( x[i].dataset.selected == 'true' ) {
+      dta['printer'] = x[i].dataset.prnname;
+      dta['printformat'] = x[i].dataset.labelformat;
+    }
+  }
+
+  var passdta = JSON.stringify(dta);
+  if ( dta['printformat'] === 'PRINTCARD' ) {
+    if ( dta['labeltext'] === "" ) { 
+      alert('You did not type a label value');
+      return 0;
+    } else {
+      var mlURL = "/data-doers/rqst-inventory-label-encrypt";
+      universalAJAX("POST",mlURL,passdta,answerEncryptRqstBarcodeLabel,2);
+    } 
+  } else {
+    var mlURL = "/data-doers/print-this-inventory-label";
+    universalAJAX("POST",mlURL,passdta,answerPrintRqstBarcodeLabel,2);
+  }
+}
+
+function answerPrintRqstBarcodeLabel( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+    //var dta = JSON.parse(rtnData['responseText']);        
+    alert('Label Printed'); 
+    byId('bccodevalue').value = ""; 
+  }
+}
+
+function answerEncryptRqstBarcodeLabel ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+    var dta = JSON.parse(rtnData['responseText']);        
+    byId('bccodevalue').value = "";
+    openOutSidePage('{$tt}/print-obj/inventory-item-tag/'+dta['DATA']['dataencryption'] ); 
   }
 }
 
@@ -2681,6 +2761,37 @@ function printThisTicket() {
     openOutSidePage("{$tt}/print-obj/further-action-ticket/"+byId('faFldTicketEncy').value.trim());  
   }
 }
+
+function sendThisTicket() { 
+  generateDialog ('faSendTicket',byId('faFldTicketEncy').value.trim() );
+}
+
+function emailThisHereTicket() { 
+  var dta = new Object(); 
+  dta['ticket'] = byId('encyFASendTicket').value.trim();
+  dta['recip'] = byId('faFldEmlAgentValue').value.trim();
+  dta['emailtext'] = byId('faSendEmailText').value.trim();
+  dta['dialogid'] = byId('faDialogId').value.trim();
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/further-action-email-send-ticket";
+  universalAJAX("POST",mlURL,passdta,answerSendActionEmail,2);
+}
+
+function answerSendActionEmail ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     alert('SAVED');
+     var dta = JSON.parse(rtnData['responseText']);        
+     closeThisDialog(dta['DATA']['dialogid']);
+   }        
+}
+
 RTNTHIS;
 return $rtnThis;    
 }

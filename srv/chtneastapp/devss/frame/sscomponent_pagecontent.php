@@ -22,6 +22,13 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $closer = "closeThisMasterDialog('{$pdta['dialogid']}');";         
         $innerDialog = "<p>" . $passedData . "<div id=porthole></div>";
       break;                           
+      case 'faSendTicket':
+        $pdta = json_decode($passedData, true);         
+        $titleBar = "Email Ticket";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        $innerDialog = bldFAEmailer( $passedData );
+        break;                   
       case 'rqstLocationBarcode':
         $pdta = json_decode($passedData, true);         
         $titleBar = "Request Location Barcode Placard";
@@ -3382,7 +3389,8 @@ case 'faTableEdit':
     $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="generateDialog('bgRqstFA', 'xxx-xxxx' );" ><tr><td><i class="material-icons">post_add</i></td><td>New Ticket</td></tr></table></td> 
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="printThisTicket();" ><tr><td><i class="material-icons">print</i></td><td>Print Ticket</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="printThisTicket();"><tr><td><i class="material-icons">print</i></td><td>Print Ticket</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="sendThisTicket();"><tr><td><i class="material-icons">mail</i></td><td>Send Ticket</td></tr></table></td> 
 </tr>
 BTNTBL;
     break;
@@ -4241,28 +4249,123 @@ RTNPAGE;
 
 function bldInventoryBarcodeTag( $dialog, $passedData ) { 
 
-   $prntarr = json_decode(callrestapi("GET", dataTree . "/thermal-printer-list",serverIdent, serverpw), true);
-   $prnmenu = "<table border=0 class=menuDropTbl style=\"min-width: 19.8vw;\">";
+   $prntarr = json_decode(callrestapi("GET", dataTree . "/thermal-printer-list-dialog",serverIdent, serverpw), true);
+   $pcntr = 0;
    foreach ($prntarr['DATA'] as $pky => $pval) { 
-     $prnmenu .= "<tr><td onclick=\"fillField('fldDialogLabelPrnter','{$pval['formatname']}','{$pval['printer']}');\" class=ddMenuItem>{$pval['printer']}</td></tr>";  
+     $prnmenu .= "<div id='printer{$pcntr}' class=labelingdsp data-prnname='{$pval['printername']}' data-labelformat='{$pval['formatname']}' data-selected='false' onclick=\"selectPrinter(this.id);\"> <div class=labelDeviceName>{$pval['printername']}</div><div class=labelDeviceLocation>{$pval['printerlocation']}</div></div>"; 
+     $pcntr++;
    }
-   $prnmenu .= "</table>";
+   $prnmenu .= "<div id='printer{$pcntr}' class=labelingdsp data-prnname='INVCARD' data-labelformat='PRINTCARD'  data-selected='true' onclick=\"selectPrinter(this.id);\"><div class=labelDeviceName>Inventory Barcode Card Tag</div><div class=labelDeviceLocation>On-Screen Inventory Tag-Card</div></div>";  
 
-$dspPage = <<<DSPPAGE
+   $dspPage = <<<DSPPAGE
+
+    <div id=masterHold>
         <div id=bcTagHold>
-              <div><input type=text id=bccodevalue onkeyup="checkBCCodeValue();"></div>
-               <div id=keyboardDsp>A</div>
-               <div><div class=menuHolderDiv><input type=hidden id=fldDialogLabelPrnterValue><input type=text id=fldDialogLabelPrnter style="font-size: 1.8vh; width: 20vw;"><div class=valueDropDown>{$prnmenu}</div></div></div>
+                      
+              <div id=fldHolder><div class=label>Biosample Label</div><input type=text id=bccodevalue onkeyup="checkBCCodeValue();"></div>
+
+               <div id=keyboardDsp>
+
+                  <div id=keyboardRowHolder1><div class=keyboardBtn onclick="makeBCCodeValue('1');">1</div><div class=keyboardBtn onclick="makeBCCodeValue('2');">2</div><div class=keyboardBtn onclick="makeBCCodeValue('3');">3</div><div class=keyboardBtn onclick="makeBCCodeValue('4');">4</div><div class=keyboardBtn onclick="makeBCCodeValue('5');">5</div><div class=keyboardBtn onclick="makeBCCodeValue('6');">6</div><div class=keyboardBtn onclick="makeBCCodeValue('7');">7</div><div class=keyboardBtn onclick="makeBCCodeValue('8');">8</div><div class=keyboardBtn onclick="makeBCCodeValue('9');">9</div><div class=keyboardBtn onclick="makeBCCodeValue('0');">0</div></div>
+
+                  <div id=keyboardRowHolder2><div class=keyboardBtn onclick="makeBCCodeValue('Q');">Q</div><div class=keyboardBtn onclick="makeBCCodeValue('W');">W</div><div class=keyboardBtn onclick="makeBCCodeValue('E');">E</div><div class=keyboardBtn onclick="makeBCCodeValue('R');">R</div><div class=keyboardBtn onclick="makeBCCodeValue('T');">T</div><div class=keyboardBtn onclick="makeBCCodeValue('Y');">Y</div><div class=keyboardBtn onclick="makeBCCodeValue('U');">U</div><div class=keyboardBtn onclick="makeBCCodeValue('I');">I</div><div class=keyboardBtn onclick="makeBCCodeValue('O');">O</div><div class=keyboardBtn onclick="makeBCCodeValue('P');">P</div></div>
+                 
+                  <div id=keyboardRowHolder3><div class=keyboardBtn onclick="makeBCCodeValue('A');">A</div><div class=keyboardBtn onclick="makeBCCodeValue('S');">S</div><div class=keyboardBtn onclick="makeBCCodeValue('D');">D</div><div class=keyboardBtn onclick="makeBCCodeValue('F');">F</div><div class=keyboardBtn onclick="makeBCCodeValue('G');">G</div><div class=keyboardBtn onclick="makeBCCodeValue('H');">H</div><div class=keyboardBtn onclick="makeBCCodeValue('J');">J</div><div class=keyboardBtn onclick="makeBCCodeValue('K');">K</div><div class=keyboardBtn onclick="makeBCCodeValue('L');">L</div></div>
+                  
+                  <div id=keyboardRowHolder4><div class=keyboardBtn onclick="makeBCCodeValue('Z');">Z</div><div class=keyboardBtn onclick="makeBCCodeValue('X');">X</div><div class=keyboardBtn onclick="makeBCCodeValue('C');">C</div><div class=keyboardBtn onclick="makeBCCodeValue('V');">V</div><div class=keyboardBtn onclick="makeBCCodeValue('B');">B</div><div class=keyboardBtn onclick="makeBCCodeValue('N');">N</div><div class=keyboardBtn onclick="makeBCCodeValue('M');">M</div><div class=keyboardBtn onclick="makeBCCodeValue('@');">@</div><div class=keyboardBtn onclick="makeBCCodeValue('-');"><i class="material-icons">backspace</i></div></div>
+ 
+               </div>
+
+              <div id=cmdBtnHolder> <div class=cmdBtn onclick="clearThis();">CLEAR</div><div class=cmdBtn onclick="printRqstBarcodeLabel();">PRINT</div><div class=cmdBtn onclick="closeThisDialog('{$dialog}');">CANCEL</div>    </div>
+
         </div>        
+
+<div id=printerRealEstate> 
+  <div class=label>Choose a Labeling-System</div> 
+  <div id=labellerHolder> 
+    {$prnmenu}  
+  </div> 
+</div>
+
+</div>
 DSPPAGE;
    
   $rtnPage = <<<RTNPAGE
 <style>
-  #bcTagHold { display: grid; grid-template-rows: 1fr 4fr 1fr 1fr; }
-  #bccodevalue { text-align: center; }         
-  #keyboardDsp { border: 1px solid #000; }          
+  #masterHold { display: grid; grid-template-columns: 4fr 2fr; } 
+  #bcTagHold { display: grid; grid-template-rows: 1fr 3fr 1fr; }
+  #fldHolder { margin: .6vh .2vw .2vh .2vw; }
+  #fldHolder .label {font-size: 1.3vh; font-weight: bold; }
+  #fldHolder1 {  margin: .6vh .2vw; }
+  #fldHolder1 .label {font-size: 1.3vh; font-weight: bold; }
+  #bccodevalue { text-align: center; font-size: 1.9vh; width: 40vw; }         
+  #keyboardDsp { display: grid; grid-template-rows: repeat(4, 1fr); margin: .3vh .2vw;  }  
+  #keyboardRowHolder1 { display: grid; grid-template-columns: repeat(10, 1fr); grid-gap: 5px; margin-top: .2vh; }        
+  #keyboardRowHolder2 { display: grid; grid-template-columns: repeat(10, 1fr); grid-gap: 5px; margin-top: .2vh; }        
+  #keyboardRowHolder3 { display: grid; grid-template-columns: repeat(9, 1fr); grid-gap: 5px; margin-top: .2vh; }        
+  #keyboardRowHolder4 { display: grid; grid-template-columns: repeat(9, 1fr); grid-gap: 5px; margin-top: .2vh; }        
+
+  .keyboardBtn { border: 1px solid rgba(201,201,201,1); text-align: center; font-size: 5vh; width: 3.5vw; color: rgba( 180,180,180,1); transition: .9s; }
+  #keyboardRowHolder3 .keyboardBtn { width: 3.9vw; } 
+  #keyboardRowHolder4 .keyboardBtn { width: 3.9vw; }
+  .keyboardBtn:hover { background: rgba(100,149,237,1); color: rgba(255,255,255,1); cursor: pointer;   } 
+  .keyboardBtn:focus { background: rgba(100,149,237,1); color: rgba(255,255,255,1); }
+  .keyboardBtn .material-icons { font-size: 3vh; } 
+
+  #cmdBtnHolder { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 5px; margin: .6vh .2vw; border-top: 2px solid rgba(201,201,201,1); padding-top: .3vh; }
+  .cmdBtn { border: 1px solid rgba(201,201,201,1); text-align: center; font-size: 5vh; color: rgba( 190,190,190,1); transition: .9s; padding-top: .6vh; } 
+  .cmdBtn:hover { background: rgba(100,149,237,1); color: rgba(255,255,255,1); cursor: pointer;   } 
+  .cmdBtn:focus { background: rgba(100,149,237,1); color: rgba(255,255,255,1); }
+  .cmdBtn:active { background: rgba(100,149,237,1); color: rgba(255,255,255,1); }
+ 
+  #printerRealEstate { margin: .6vh .2vw .2vh .2vw; display: grid; grid-template-rows: 1.9vh 1fr; } 
+  #printerRealEstate .label { font-size: 1.3vh; font-weight: bold; }
+  #printerRealEstate #labellerHolder { height: 40vh; overflow: auto;  }
+  #printerRealEstate #labellerHolder .labelingdsp { height: 4vh; border: 1px solid rgba(201,201,201,1); margin: .2vh 0; padding: .2vh .2vw; color: rgba(170,170,170,1);}
+  #printerRealEstate #labellerHolder .labelingdsp[data-selected='true'] { background: rgba(100,149,237,1); color: rgba(255,255,255,1); } 
+  #printerRealEstate #labellerHolder .labelingdsp .labelDeviceName { font-size: 2vh;  }   
+  #printerRealEstate #labellerHolder .labelingdsp .labelDeviceLocation { font-size: 1vh; }   
+
+  .labelingdsp {  } 
+
 </style>
    {$dspPage}
+RTNPAGE;
+  return $rtnPage;    
+}
+
+function bldFAEmailer ( $passedData ) { 
+    //{"whichdialog":"faSendTicket","objid":"a2JSdkdxZENhb2ZsTkRCMG1PbnFhZz09","dialogid":"lKtuL2sCkOlYgpw"}
+    $pdta = json_decode( $passedData, true );
+    require(serverkeys . "/sspdo.zck");
+    $agentListSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and primaryInstCode = 'HUP' order by friendlyname";
+    $agentListRS = $conn->prepare($agentListSQL); 
+    $agentListRS->execute();
+    $agnt = "<table border=0 class=menuDropTbl>";
+      $agnt .= "<tr><td onclick=\"fillField('faFldEmlAgent','','');\" class=ddMenuItem align=right style=\"font-size: 1.1vh;\">[clear]</td></tr>";
+      while ( $al = $agentListRS->fetch(PDO::FETCH_ASSOC)) { 
+        $agnt .= "<tr><td onclick=\"fillField('faFldEmlAgent','{$al['originalaccountname']}','{$al['dspagent']}');\" class=ddMenuItem>{$al['dspagent']}</td></tr>";
+      }
+      $agnt .= "</table>";
+    $agntmnu = "<div class=menuHolderDiv><input type=hidden id=faFldEmlAgentValue value=\"\"><input type=text id=faFldEmlAgent READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown style=\"width: 25vw;\">{$agnt}</div></div>";
+
+    $ticketnbr = cryptservice( $pdta['objid'] ,'d');
+
+  $rtnPage = <<<RTNPAGE
+<style>
+  .ctlBtn { border: 1px solid rgba( 201,201,201,1); font-size: 1.8vh; color: rgba(201,201,201,1); background: rgba(255,255,255,1); transition: .5s; }
+  .ctlBtn tr td { padding: .3vh .3vw; }  
+  .ctlBtn:hover { background: rgba(100,149,237,1); color: rgba(255,255,255,1); cursor: pointer; }
+  #faSendEmailText { width: 25vw; height: 15vh; resize: none; }
+  .sflabel { font-size: 1.3vh; font-weight: bold; padding-top: .8vh;  }  
+</style>
+<input type=hidden id=encyFASendTicket value="{$pdta['objid']}">
+<input type=hidden id=faDialogId value="{$pdta['dialogid']}">
+<div id=pageholder>
+   <div id=row1><div class=sflabel>Team Member to Email</div>{$agntmnu}</div>
+   <div id=row2><div class=sflabel>Email Text (A PDF of the Ticket will be attached to Email)</div><textarea id=faSendEmailText></textarea></div>
+   <div id=row3 align=right><table><tr><td>  <table onclick="emailThisHereTicket();" class=ctlBtn><tr><td>Send Email</td></tr></table> <td><td> <table onclick="closeThisDialog('{$pdta['dialogid']}');" class=ctlBtn><tr><td>Cancel</td></tr></table> </td></tr></table> </div>
+</div>
 RTNPAGE;
   return $rtnPage;    
 }
@@ -5972,8 +6075,7 @@ CALENDAR;
       $pArr['ticket'] = (int)$ticketNbr;
       $pArr['actioncode'] = $r['detailactioncode'];
       $pArrJson = cryptservice(json_encode($pArr));
-      
-      
+       
       $fad = "";
       $stepCountDsp = "&nbsp;";
       $comcheckdsp = "";
