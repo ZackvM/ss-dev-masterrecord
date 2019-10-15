@@ -47,7 +47,20 @@ class datadoers {
       $at = genAppFiles;
       session_start(); 
       $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+      
       ( !array_key_exists('labeltext', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'labeltext' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['labeltext']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'Biosample Label' cannot be blank")) : "";        
+
+      
       if ( $errorInd === 0 ) { 
         $dta['dataencryption'] = cryptservice( $pdta['labeltext'],'e');
         $responseCode = 200;

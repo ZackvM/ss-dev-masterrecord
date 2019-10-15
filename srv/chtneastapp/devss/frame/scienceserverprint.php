@@ -106,10 +106,10 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $dt = "SHIPMENT MANIFEST";
             $docIdElem = explode("-", $unencry);
             $docid = $docIdElem[0];
-            //$prSQL = "select shipdocrefid FROM masterrecord.ut_shipdoc sd where shipdocrefid = :prid"; 
-            //$prR = $conn->prepare($prSQL);
-            //$prR->execute(array(':prid' => $docid));
-            //$pr = $prR->fetch(PDO::FETCH_ASSOC);
+            $prSQL = "select shipdocrefid FROM masterrecord.ut_shipdoc sd where shipdocrefid = :prid"; 
+            $prR = $conn->prepare($prSQL);
+            $prR->execute(array(':prid' => $docid));
+            $pr = $prR->fetch(PDO::FETCH_ASSOC);
             $bgnbr = '';                  
             break;
         case 'furtheractionticket':
@@ -786,7 +786,7 @@ function getShipmentDocument($sdid, $originalURL) {
 
 
     //****************CREATE BARCODE
-        require ("{$at}/extlibs/bcodeLib/qrlib.php");
+       require ("{$at}/extlibs/bcodeLib/qrlib.php");
         $tempDir = "{$at}/tmp/";
         $codeContents = "{$tt}{$orginalURL}";
         $fileName = 'pr' . generateRandomString() . '.png';
@@ -808,9 +808,9 @@ function getShipmentDocument($sdid, $originalURL) {
         
         $topR = $conn->prepare($topSQL);
         $topR->execute(array(':sdnbr' => $sdid, ':matchsd' => $sdid ));
-        if ($topR->rowCount() < 1) { 
+       if ($topR->rowCount() < 1) { 
            //NO SD FOUND
-        } else { 
+       } else { 
         
             $sd = $topR->fetch(PDO::FETCH_ASSOC);
 
@@ -835,7 +835,6 @@ function getShipmentDocument($sdid, $originalURL) {
             $setupon = $sd['setupon'];
             $setupby = $sd['setupby'];
 
-            
             if (trim($sd['investname']) === "" ) {
               $iSQL = "SELECT concat(ifnull(invest_lname,''),', ', ifnull(invest_fname,'')) as iname FROM vandyinvest.invest where investid = :icode";
               $inv = $conn->prepare($iSQL);
@@ -869,36 +868,28 @@ function getShipmentDocument($sdid, $originalURL) {
                     } else { 
                         $bd .= $dtl['subsite'];
                     }
-                }
-                
+                }                
                 if (trim($dtl['dx']) !== "") { 
-                    
                     if (trim($bd) !== "") { 
                        $bd .= " / " . $dtl['dx'];
                     } else { 
                         $bd .= $dtl['dx'];
                     }
-                    
                 }
-                
                 if (trim($dtl['subdx']) !== "") { 
-                    
                     if (trim($bd) !== "") { 
                         $bd .= " [" . trim($dtl['subdx']) . "]";
                     } else { 
                         $bd .= trim($dtl['subdx']);
                     }
-                    
-                }
+               }
                 
                 if (trim($dtl['specimencategory']) !== "") { 
-                    
                     if (trim($bd) !== "") { 
                         $bd .= " (" . trim($dtl['specimencategory']) . ")";
                     } else { 
                         $bd .= trim($dtl['specimencategory']);
                     }
-                    
                 }   
                 
                 if (trim($dtl['prepmet']) !== "") { 
@@ -906,13 +897,11 @@ function getShipmentDocument($sdid, $originalURL) {
                 }                
                 
                 if (trim($dtl['preparation']) !== "") { 
-                    
                     if (trim($prp) === "") { 
                         $prp = $dtl['preparation']; 
                     } else { 
                         $prp .= " / " . $dtl['preparation'];
                     }
-                    
                 }
                 
                 $weightMet = trim( trim($dtl['metric']) . " " . trim($dtl['metricuom']));
@@ -927,23 +916,28 @@ function getShipmentDocument($sdid, $originalURL) {
                     $rower = 0;                    
                 }
                 
-                //CHECK FOR DIRECT SHIPMENT MIA
+//                //CHECK FOR DIRECT SHIPMENT MIA
                 if ( strtoupper($dtl['prptdsp']) === 'P' && (int)$dtl['hprind'] === 0 ) { 
-                   //TODO: MAKE THIS A WEBSERVICE 
+//                   //TODO: MAKE THIS A WEBSERVICE 
                    $chkSQL = "SELECT * FROM masterrecord.ut_master_furtherlabactions where frommodule = :module and objpbiosample = :pbio and actioncode = :actioncode and objshipdoc = :objshipdoc and activeind = 1"; 
                    $chkRS = $conn->prepare($chkSQL);
-                   $chkRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-S', ':objshipdoc' => $sdid));
-                   //$chkRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-' . $dtl['proctype'], ':objshipdoc' => $sdid));
+                   $chkRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-S', ':objshipdoc' => $sdid));                 
                    if ( $chkRS->rowCount() === 0 ) {
-                     //ADD MIA
-                     $insSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule, activeind,objshipdoc,objpbiosample,actioncode,actiondesc,actionrequestedby,actionrequestedon) VALUES ('SHIPPING', :activeind,:objshipdoc,:biosampleref,:miatype,'PRE-QMS DIRECT SHIPMENT',:rqstby,now())";
-                     $insRS = $conn->prepare($insSQL); 
-                     $insRS->execute(array(':objshipdoc' => $sdid, ':activeind' => 1,   ':biosampleref' => (int)$dtl['pbiosample'], ':rqstby' => $usr['originalaccountname'], ':miatype' => "MIA-{$dtl['proctype']}"));
+                    //ADD MIA
+                    //$insSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule, activeind,objshipdoc,objpbiosample,actioncode,actiondesc,actionrequestedby,actionrequestedon) VALUES ('SHIPPING', :activeind,:objshipdoc,:biosampleref,:miatype,'PRE-QMS DIRECT SHIPMENT',:rqstby,now())";
+                    // $insRS = $conn->prepare($insSQL); 
+                    // $insRS->execute(array(':objshipdoc' => $sdid, ':activeind' => 1,   ':biosampleref' => (int)$dtl['pbiosample'], ':rqstby' => $usr['originalaccountname'], ':miatype' => "MIA-{$dtl['proctype']}"));
+                    //TODO:  DO NOT HARD CODE THESE VALUES - Assigned Agent Value
+                    $insSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule, activeind,objshipdoc,objpbiosample,actioncode,actiondesc,actionrequestedby,actionrequestedon, assignedagent) VALUES ('SHIPPING', :activeind,:objshipdoc,:biosampleref,:miatype,'PRE-QMS DIRECT SHIPMENT',:rqstby,now(), 'Gina')";
+                    $insRS = $conn->prepare($insSQL); 
+                    $insRS->execute(array(':objshipdoc' => $sdid, ':activeind' => 1,   ':biosampleref' => (int)$dtl['pbiosample'], ':rqstby' => $usr['originalaccountname'], ':miatype' => "MIA-{$dtl['proctype']}"));                     
                    }
                 }
-                //CHECK MASTER FURTHER ACTIONS FOR MIA REFERENCE
-                $miaSQL = "SELECT actioncode, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompletedon, ifnull(actioncompletedby,'') as actioncompletedby FROM masterrecord.ut_master_furtherlabactions where frommodule = :module and objpbiosample = :pbio and actioncode = :actioncode and objshipdoc = :objshipdoc and activeind = 1"; 
-                $miaRS = $conn->prepare($chkSQL);
+//                //CHECK MASTER FURTHER ACTIONS FOR MIA REFERENCE
+                $miaSQL = "SELECT actioncode, ifnull(date_format(actioncompletedon,'%m/%d/%Y'),'') as actioncompletedon, ifnull(actioncompletedby,'') as actioncompletedby "
+                                  . "FROM masterrecord.ut_master_furtherlabactions "
+                                  . "where frommodule = :module and objpbiosample = :pbio and actioncode = :actioncode and objshipdoc = :objshipdoc and activeind = 1";
+                $miaRS = $conn->prepare($miaSQL);
                 $miaRS->execute(array(':module' => 'SHIPPING', ':pbio' => (int)$dtl['pbiosample'], ':actioncode' => 'MIA-' . $dtl['proctype'], ':objshipdoc' => $sdid));
                 if ( $miaRS->rowCount() < 1) { 
                 } else { 
@@ -957,7 +951,7 @@ function getShipmentDocument($sdid, $originalURL) {
                   }
                 }
 
-                $innerTblLine .=  "<tr style=\"{$bgc} height: 20pt;\">"
+                 $innerTblLine .=  "<tr style=\"{$bgc} height: 20pt;\">"
                                              . "<td style=\"text-align: right; padding: 1px 3px 1px 1px; border: 1px solid rgba(203,203,203,1); border-left: none;border-top: none;  \">{$dtl['qty']}</td>"
                                              . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$dtl['bgs']} {$footnoteind}</td>"
                                              . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$bd}</td>"
@@ -969,24 +963,10 @@ function getShipmentDocument($sdid, $originalURL) {
                $tQty += (int)$dtl['qty'];
             }
 
-
-
             $miaText = "";
-            if ( $miaa === 1 && $mias === 1) { 
-              //DISPLAY MIA BOTH TEXT
-                  $miaText = "<tr><td class=MIAText>* We strive to provide you with all required specimen data available at the time of tissue shipment, but there are some exceptions.  Same-day direct tissue shipments (Fresh) are provided with a provisional diagnosis only, as pathology reports are not immediately available.  Tissue samples that are not accessioned by surgical pathology will never produce a report (e.g., normal placenta, normal foreskin, etc.).  Autopsy reports may not be available for one to two months.  The missing reports will be emailed to you as soon as they become available. Please feel free to contact our coordinators at (215) 662-4570 if you have any questions.  Thank you. </td></tr>";
-            } else { 
-              if ( $miaa === 1 ) { 
-                  //DISPLAY MIA AUTOPSY
-                  $miaText = "<tr><td class=MIAText>* We strive to provide you with all required specimen data available at the time of tissue shipment, but there are some exceptions.  Same-day direct tissue shipments (Fresh) are provided with a provisional diagnosis only, as pathology reports are not immediately available.  Autopsy reports may not be available for one to two months.  The missing reports will be emailed to you as soon as they become available. Please feel free to contact our coordinators at (215) 662-4570 if you have any questions.  Thank you. </td></tr>";
-              } 
-              if ( $mias === 1 ) {
-                  //DISPLAY MIA SURGERY
-                  $miaText = "<tr><td class=MIAText>* We strive to provide you with all required specimen data available at the time of tissue shipment, but there are some exceptions.  Same-day direct tissue shipments (Fresh) are provided with a provisional diagnosis only, as pathology reports are not immediately available.  Tissue samples that are not accessioned by surgical pathology will never produce a report (e.g., normal placenta, normal foreskin, etc).  The missing reports will be emailed to you as soon as they become available. Please feel free to contact our coordinators at (215) 662-4570 if you have any questions.  Thank you.</td></tr>";
-              }
-            }
-
-
+            $miaText =  ( $miaa === 1 && $mias === 1) ? "<tr><td class=MIAText>* We strive to provide you with all required specimen data available at the time of tissue shipment, but there are some exceptions.  Same-day direct tissue shipments (Fresh) are provided with a provisional diagnosis only, as pathology reports are not immediately available.  Tissue samples that are not accessioned by surgical pathology will never produce a report (e.g., normal placenta, normal foreskin, etc.).  Autopsy reports may not be available for one to two months.  The missing reports will be emailed to you as soon as they become available. Please feel free to contact our coordinators at (215) 662-4570 if you have any questions.  Thank you.</td></tr>" : "";
+            $miaText =  ( $miaa === 1 && $mias === 0 ) ? "<tr><td class=MIAText>* We strive to provide you with all required specimen data available at the time of tissue shipment, but there are some exceptions.  Same-day direct tissue shipments (Fresh) are provided with a provisional diagnosis only, as pathology reports are not immediately available.  Autopsy reports may not be available for one to two months.  The missing reports will be emailed to you as soon as they become available. Please feel free to contact our coordinators at (215) 662-4570 if you have any questions.  Thank you. </td></tr>" : "";
+            $miaText =  ( $miaa === 0 && $mias === 1 ) ? "<tr><td class=MIAText> </td></tr>" : "";
 
     $docText = <<<RTNTHIS
 <html>

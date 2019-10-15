@@ -9747,6 +9747,8 @@ function bldBiosampleProcurement($usr) {
       //USER NOT ALLOWED TO PROCURE
       $holdingTbl = "<h1>USER NOT ALLOWED TO PROCURE BIOSAMPLES";
     } else { 
+      session_start();
+      $sessid = cryptservice( session_id() . "::" . date('YmdHis')  , 'e' );
       $today = new DateTime('now');
       $tdydte = $today->format('m/d/Y');
       $tdydtev = $today->format('Y-m-d');
@@ -9755,7 +9757,7 @@ function bldBiosampleProcurement($usr) {
       //$tdydtev = '20180507';
       $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
       $procGrid = bldProcurementGrid($usr); //THIS IS THE PROCUREMENT GRID ELEMENTS
-      $dvault = phiserver;
+      $dvault = phiserver . "/" . $sessid;
 
       $holdingTbl = <<<HOLDINGTBL
             <div id=initialBiogroupInfo>

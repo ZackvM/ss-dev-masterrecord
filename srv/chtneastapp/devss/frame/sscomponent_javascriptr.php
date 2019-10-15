@@ -1021,13 +1021,8 @@ function printRqstBarcodeLabel() {
 
   var passdta = JSON.stringify(dta);
   if ( dta['printformat'] === 'PRINTCARD' ) {
-    if ( dta['labeltext'] === "" ) { 
-      alert('You did not type a label value');
-      return 0;
-    } else {
       var mlURL = "/data-doers/rqst-inventory-label-encrypt";
       universalAJAX("POST",mlURL,passdta,answerEncryptRqstBarcodeLabel,2);
-    } 
   } else {
     var mlURL = "/data-doers/print-this-inventory-label";
     universalAJAX("POST",mlURL,passdta,answerPrintRqstBarcodeLabel,2);
@@ -1042,6 +1037,7 @@ function answerPrintRqstBarcodeLabel( rtnData ) {
        dspMsg += "\\n - "+element;
     });
     alert("ERROR:\\n"+dspMsg);
+    byId('bccodevalue').focus();
    } else {
     //var dta = JSON.parse(rtnData['responseText']);        
     alert('Label Printed'); 
