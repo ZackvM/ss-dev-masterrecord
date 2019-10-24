@@ -34,6 +34,111 @@ function __construct() {
 
 class datadoers {
 
+    function invtrysegmentstatuser ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      //{"location":"FRZB383","scanlist":["88322T001","88321T003"]}
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      ( !array_key_exists('location', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'location' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['location']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU DID NOT SPECIFY WHERE YOU ARE PLACING THESE BIOSAMPLES")) : "";        
+
+      //CHECK VALID INVENTORY LOCATION
+      $locSQL = "SELECT btm.scancode, trim(concat(ifnull(nxtblvl.locationnote,''), if(ifnull(nxtalvl.locationnote,'')='','',concat(' :: ',ifnull(nxtalvl.locationnote,''))), if(ifnull(nxtlvl.locationnote,''),'',concat(' :: ', ifnull(nxtlvl.locationnote,''))), if(ifnull(btm.locationnote,'')='','', concat(' :: ',ifnull(btm.locationnote,''))), if(ifnull(btm.typeolocation,'')='','',concat(' [', ifnull(btm.typeolocation,''),']')))) as locationdsc FROM four.sys_inventoryLocations btm left join (SELECT locationid, locationnote, parentid FROM four.sys_inventoryLocations) as nxtlvl on btm.parentid = nxtlvl.locationid left join (SELECT locationid, locationnote, parentid FROM four.sys_inventoryLocations) as nxtalvl on nxtlvl.parentid = nxtalvl.locationid left join (SELECT locationid, locationnote, parentid FROM four.sys_inventoryLocations) as nxtblvl on nxtalvl.parentid = nxtblvl.locationid where scancode = :scanlabel and hierarchyBottomInd = 1 and hprtrayind = 0 and activelocation = 1";
+      $locRS = $conn->prepare($locSQL); 
+      $locRS->execute(array(':scanlabel' => $pdta['location']));
+
+      if ( $locRS->rowCount() < 1 ) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "SCANNED LOCATION WAS NOT FOUND.  OPERATION CEASED!"));
+      } else { 
+        $l = $locRS->fetch(PDO::FETCH_ASSOC); 
+        (list( $errorInd, $msgArr[] ) = array(1 , $l['scancode'] . " -- " . $l['locationdsc']  ));
+      }
+      //CHECK NO SEGMENT IS SHIPPED
+      $scnlst = $pdta['scanlist'];
+      $segChkSQL = "SELECT replace(bgs,'_','') as bgs, segmentid, segstatus, shippedDate FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :bgs";
+      $segRS = $conn->prepare($segChkSQL);
+      foreach ( $scnlst as $k => $v ) {
+        $segRS->execute(array(':bgs' => $v));
+        if ( $segRS->rowCount() < 1 ) { 
+            (list( $errorInd, $msgArr[] ) = array(1 , "LABEL {$v} NOT FOUND.  OPERATION CEASED!"));
+        } else { 
+            $tst = $segRS->fetch(PDO::FETCH_ASSOC);
+            if ( strtoupper($tst['segstatus'] ) === 'SHIPPED' || strtoupper($tst['segstatus'] ) === 'DESTROYED' ) { 
+              (list( $errorInd, $msgArr[] ) = array(1 , "LABEL {$v} IS MARKED AS " . strtoupper($tst['segstatus'])  . ".  INVENTORY OPERATIONS CANNOT BE PERFORMED ON SEGMENTS IN THIS STATUS.  OPERATION CEASED!"));
+            } else { 
+              //STATUS IS GOOD  
+            }
+        }
+
+      }
+      //WHAT IS THE STATUS? 
+      if ( $errorInd === 0 ) { 
+        
+
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    }
+
+    function invtryhprtrayscanpreprocess ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      ( !array_key_exists('scancode', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'labeltext' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['scancode']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'Biosample Label' cannot be blank")) : "";        
+
+      if ( $errorInd === 0 ) { 
+        
+
+
+
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    }
+
     function rqstinventorylabelencrypt ( $request, $passdata ) { 
       //{"labeltext":"32701A2A","printer":"INVCARD","printformat":"PRINTCARD"}
       $rows = array(); 
@@ -72,7 +177,8 @@ class datadoers {
     }
 
     function printthisinventorylabel ( $request, $passdata ) { 
-      //{"labeltext":"32701A2A","printer":"INVCARD","printformat":"PRINTCARD"}
+        //{"labeltext":"55843T001","printer":"Slide Label","printformat":"newslideFormat"}
+        //{"labeltext":"55843T001","printer":"BBP81Coord","printformat":"newslideFormat"}
       $rows = array(); 
       $dta = array();
       $responseCode = 503;
@@ -94,12 +200,25 @@ class datadoers {
          $u = $rs->fetch(PDO::FETCH_ASSOC);
       }       
       
-      ( !array_key_exists('ticket', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ticket' DOES NOT EXIST.")) : ""; 
-      
+      ( !array_key_exists('labeltext', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'labeltext' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['labeltext']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'Biosample Label' cannot be blank")) : "";        
+      ( !array_key_exists('printer', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'printer' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['printer']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A 'Labelling System' must be specified")) : "";        
+      ( !array_key_exists('printformat', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'printformat' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['printformat']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A 'labelling system' must be specified")) : "";        
+
       if ($errorInd === 0 ) {
+          $prntVal['FIELD01'] = $pdta['labeltext'];
+          $prntVal['FIELD02'] = $pdta['labeltext'];
+          $prntVal['FIELD03'] = $pdta['labeltext'];
+          $prntVal['FIELD04'] = $pdta['labeltext'];
+          $msgArr[] = $pdta['printer'] . " ... " . $pdta['printformat'] . " ... " . json_encode($prntVal);
 
+          $insSQL = "insert into serverControls.lblToPrint( labelrequested, printerrequested, datastringpayload, bywho, onwhen) values(:formatname,:printername,:datastring,:usr,now())";
+          $insRS = $conn->prepare($insSQL); 
+          $insRS->execute(array(':formatname' => $pdta['printformat'], ':printername' => $pdta['printer'], ':datastring' => json_encode($prntVal), ':usr' => $u['usr']));
 
-          $responseCode = 200;
+//          $responseCode = 200;
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 

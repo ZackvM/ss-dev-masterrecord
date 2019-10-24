@@ -189,7 +189,7 @@ class objlisting {
      $authuser = $_SERVER['PHP_AUTH_USER']; 
      $authpw = $_SERVER['PHP_AUTH_PW'];
      if ( $authuser === serverIdent) {
-          $prnSQL = "SELECT ifnull(printername,'') as printername,  ifnull(printerlocation,'') as printerlocation, ifnull(formatname,'') as formatname FROM serverControls.lblFormats where dspPrinter = 1";     
+          $prnSQL = "SELECT ifnull(printername,'') as printernamedsp, ifnull(linuxlprname,'') as printername,  ifnull(printerlocation,'') as printerlocation, ifnull(formatname,'') as formatname FROM serverControls.lblFormats where dspPrinter = 1";     
           $prnRS = $conn->prepare($prnSQL);
           $prnRS->execute();
           while ($r = $prnRS->fetch(PDO::FETCH_ASSOC)) { 

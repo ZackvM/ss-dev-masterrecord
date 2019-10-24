@@ -1398,76 +1398,66 @@ function inventory ( $rqststr, $whichusr ) {
      $pageDetail = "";
      $topBtnBar = generatePageTopBtnBar('inventory');
      switch ( $rq ) { 
-       case 'checkin':
+       case 'processinventory':
          $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorcheckin = " data-selected='true' ";
-         $pageTitle = "Check-In/Move Biosample Inventory";
-         $pageDetail = self::bldInventoryCheckIn();
+         $pageTitle = "Process Biosample Inventory (Check-In/Move)";
+         $pageDetail = self::bldInventoryProcessInventory();
          break;
-//       case 'movebiosample':
-//         $topBtnBar = generatePageTopBtnBar('inventory');
-//         $selectormove = " data-selected='true' ";
-//         $pageTitle = "Place/Move Inventory";
-//         $pageDetail = self::bldInventoryMove();
-//         break;
        case 'processhprtray':
          $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorhpr = " data-selected='true' ";
-         $pageTitle = "HPR Tray Processor";
-         //$pageDetail = self::bldInventoryMove();
-         $pageDetail = "PAGE GOES HERE";
+         $pageTitle = "Process HPR Tray";
+         $pageDetail = self::bldInventoryProcessHPRTray();
          break;
-       case 'shippull':
+       case 'processshipment':
          $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorpull = " data-selected='true' ";
-         $pageTitle = "Pull Biosamples For Shipment";
-         $pageDetail = self::bldInventoryPull();
-         break;
-       case 'shipship':
-         $topBtnBar = generatePageTopBtnBar('inventory');
-         $selectorship = " data-selected='true' ";
-         $pageTitle = "Package Biosamples for Shipment";
-         $pageDetail = self::bldInventoryShip();
+         $pageTitle = "Process Biosamples For Shipment (Pull/Ship)";
+         $pageDetail = self::bldInventoryProcessShipment();
          break;
        case 'icount':
          $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorcount = " data-selected='true' ";
-         $pageTitle = "Basic Inventory Count Function";
+         $pageTitle = "Basic Inventory Biosample Count";
          $pageDetail = self::bldInventoryCount();
          break;
        case 'destroybiosamples':
          $topBtnBar = generatePageTopBtnBar('inventory');
          $selectordestroy = " data-selected='true' ";
-         $pageTitle = "Scan Biosamples being destroyed";
+         $pageTitle = "Biosamples Being Destroyed";
          $pageDetail = self::bldInventoryDestroy();
          break;
-       case 'investigatorstuff':
+       case 'investigatorsupplies':
          $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorinvmedia = " data-selected='true' ";
-         $pageTitle = "Scan Investigator Supplied Media";
+         $pageTitle = "Scan Investigator Supplies (Media/Kits)";
          $pageDetail = self::bldInventoryIMedia();
          break;
      }
 
      $pageDetail = ( trim($pageDetail) === "" ) ?  self::bldInventoryMaster() : $pageDetail;
-
-     //<div class=iControlBtn {$selectormove}><a href="{$tt}/inventory/move-biosample">Place Inventory</a></div>
+/*
+ *  PROCESS INVENTORY = MOVE INVENTORY / CHECK-IN AND CHANGE STATUS / PROCESS HPR SLIDE
+ *  PROCESS SHIPMENT = GIVE A PULL OR SHIP BUTTON
+ */
      $rtnthis = <<<RTNTHIS
 {$topBtnBar} 
 <div id=inventoryMasterHoldr>
 <div id=inventoryTitle>{$pageTitle}</div>
 <div id=inventoryBtnBar>
-   <div class=iControlBtn {$selectorcheckin}><a href="{$tt}/inventory/check-in">Process Inventory</a></div>
+   <div class=iControlBtn {$selectorcheckin}><a href="{$tt}/inventory/process-inventory">Process Inventory</a></div>
    <div class=iControlBtn {$selectorhpr}><a href="{$tt}/inventory/process-hpr-tray">Process HPR Tray</a></div>
-   <div class=iControlBtn {$selectorpull}><a href="{$tt}/inventory/ship-pull">Pull Shipment</a></div>
-   <div class=iControlBtn {$selectorship}><a href="{$tt}/inventory/ship-ship">Ship Shipment</a></div>
+   <div class=iControlBtn {$selectorpull}><a href="{$tt}/inventory/process-shipment">Process Shipment</a></div>
    <div class=iControlBtn {$selectorcount}><a href="{$tt}/inventory/icount">Inventory Count</a></div>
    <div class=iControlBtn {$selectordestroy}><a href="{$tt}/inventory/destroy-biosamples">Destroy Biosamples</a></div>
-   <div class=iControlBtn {$selectorinvmedia}><a href="{$tt}/inventory/investigator-stuff">Investigator Media</a></div>    
+   <div class=iControlBtn {$selectorinvmedia}><a href="{$tt}/inventory/investigator-supplies">Investigator Supplies</a></div>    
  </div>
 <div id=inventoryControlPage>{$pageDetail}</div>
 </div>
 RTNTHIS;
+     //<div class=iControlBtn {$selectormove}><a href="{$tt}/inventory/move-biosample">Place Inventory</a></div>
+     //<div class=iControlBtn {$selectorship}><a href="{$tt}/inventory/ship-ship">Ship Shipment</a></div>
   } else { 
    $rtnthis = "<h2>USER NOT ALLOWED ACCESS TO INVENTORY";
   }
@@ -1488,15 +1478,45 @@ PAGECONTENT;
 return $pageContent;
 }
 
-function bldInventoryCheckIn() { 
+
+function bldInventoryProcessHPRTray() {
+/*
+ * MAKE THIS SCREEN FUNCTION FOR HPR Tray PROCESSING 
+ */
     $pageContent = <<<PAGECONTENT
 <div id=inventoryCheckinElementHoldr>
   <div id=locationscan>
+  <input type=hidden id=locscancode>
+  <div class=scanfieldlabel>1) Scan HPR Slide-tray location label</div>
+  <div id=locscandsp_hprt></div>
+  </div>
+  <div id=itemCountDsp>&nbsp;</div>
+  <div id=labelscan>
+    <div id=labelscanholderdiv></div>
+  </div>
+  <div id=ctlButtons><center> 
+   <table><tr><td> <div class=iControlBtn id=ctlBtnHPRTrayCommit><center>Submit</div> </td><td>  <div class=iControlBtn id=ctlBtnCheckCancel><center>Cancel</div> </td></tr></table>
+   </div>
+</div>
+PAGECONTENT;
+return $pageContent;
+}
+
+
+function bldInventoryProcessInventory() {
+/*
+ * MAKE THIS SCREEN FUNCTION FOR CHECK-INs, MOVES PROCESSING 
+ */
+    $pageContent = <<<PAGECONTENT
+<div id=inventoryCheckinElementHoldr>
+  <div id=locationscan>
+  <div class=scanfieldlabel>1) Scan location where placing biosample</div>
   <input type=hidden id=locscancode>
   <div id=locscandsp></div>
   </div>
   <div id=itemCountDsp>SCAN COUNT: 0</div>
   <div id=labelscan>
+    <div class=scanfieldlabel>2) Scan Biosample Segment(s). Click segment label to 'delete' from scan list</div>
     <div id=labelscanholderdiv></div>
   </div>
   <div id=ctlButtons><center> 
@@ -1507,37 +1527,46 @@ PAGECONTENT;
 return $pageContent;
 }
 
-function bldInventoryMove() { 
+function bldInventoryProcessShipment() {
     $pageContent = <<<PAGECONTENT
-THIS IS THE MOVE SCREEN HOLDER
-PAGECONTENT;
-return $pageContent;
-}
-
-function bldInventoryPull() { 
-    $pageContent = <<<PAGECONTENT
-THIS IS THE PULL SHIPMENT SCREEN HOLDER
-PAGECONTENT;
-return $pageContent;
-}
-
-function bldInventoryShip() { 
-    $pageContent = <<<PAGECONTENT
-THIS IS THE SHIP SHIPMENT SCREEN HOLDER
+THIS IS THE SHIPMENT SCREEN HOLDER - Pick Pull or ship
 PAGECONTENT;
 return $pageContent;
 }
 
 function bldInventoryCount() { 
     $pageContent = <<<PAGECONTENT
-THIS IS THE I-COUNT SCREEN HOLDER
+<div id=inventoryCheckinElementHoldr>
+  <div id=locationscan>
+  <input type=hidden id=locscancode>
+  <div class=scanfieldlabel>1) Scanned location that is being inventory counted</div>
+  <div id=locscandsp></div>
+  </div>
+  <div id=itemCountDsp>SCAN COUNT: 0</div>
+  <div id=labelscan>
+    <div class=scanfieldlabel>2) scanned biosample segment items. Click segment item to 'Delete' from scan list</div>
+    <div id=labelscanholderdiv></div>
+  </div>
+  <div id=ctlButtons><center> 
+   <table><tr><td> <div class=iControlBtn id=ctlBtnCommitCount><center>Submit</div> </td><td>  <div class=iControlBtn id=ctlBtnCountCancel><center>Cancel</div> </td></tr></table>
+   </div>
+</div>
 PAGECONTENT;
 return $pageContent;
 }
 
-function bldInventoryDestroy() { 
-    $pageContent = <<<PAGECONTENT
-THIS IS THE DESTROY SCREEN HOLDER
+function bldInventoryDestroy() {
+$pageContent = <<<PAGECONTENT
+<div id=inventoryCheckinElementHoldr>
+  <div id=labelscan>
+    <div class=scanfieldlabel>1) scanned biosample labels that are being destroyed. Click biosample label to 'Delete' from scan list</div>
+    <div id=labelscanholderdiv></div>
+  </div>
+  <div id=itemCountDsp>SCAN COUNT: 0</div>
+  <div id=ctlButtons><center> 
+   <table><tr><td> <div class=iControlBtn id=ctlBtnCommitCount><center>Submit</div> </td><td>  <div class=iControlBtn id=ctlBtnCountCancel><center>Cancel</div> </td></tr></table>
+   </div>
+</div>
 PAGECONTENT;
 return $pageContent;
 }
@@ -3350,7 +3379,7 @@ case 'inventory':
     $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintLocationCard ><tr><td><i class="material-icons">print</i></td><td>Location Card</td></tr></table></td> 
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintBCCard ><tr><td><i class="material-icons">print</i></td><td>Barcode Card</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintBCCard ><tr><td><i class="material-icons">print</i></td><td>Barcode Tag</td></tr></table></td> 
 </tr>
 BTNTBL;
     break;
@@ -4252,10 +4281,10 @@ function bldInventoryBarcodeTag( $dialog, $passedData ) {
    $prntarr = json_decode(callrestapi("GET", dataTree . "/thermal-printer-list-dialog",serverIdent, serverpw), true);
    $pcntr = 0;
    foreach ($prntarr['DATA'] as $pky => $pval) { 
-     $prnmenu .= "<div id='printer{$pcntr}' class=labelingdsp data-prnname='{$pval['printername']}' data-labelformat='{$pval['formatname']}' data-selected='false' onclick=\"selectPrinter(this.id);\"> <div class=labelDeviceName>{$pval['printername']}</div><div class=labelDeviceLocation>{$pval['printerlocation']}</div></div>"; 
+     $prnmenu .= "<div id='printer{$pcntr}' class=labelingdsp data-prnname='{$pval['printername']}' data-labelformat='{$pval['formatname']}' data-selected='false' onclick=\"selectPrinter(this.id);\"> <div class=labelDeviceName>{$pval['printernamedsp']}</div><div class=labelDeviceLocation>{$pval['printerlocation']}</div></div>"; 
      $pcntr++;
    }
-   $prnmenu .= "<div id='printer{$pcntr}' class=labelingdsp data-prnname='INVCARD' data-labelformat='PRINTCARD'  data-selected='true' onclick=\"selectPrinter(this.id);\"><div class=labelDeviceName>Inventory Barcode Card Tag</div><div class=labelDeviceLocation>On-Screen Inventory Tag-Card</div></div>";  
+   $prnmenu .= "<div id='printer{$pcntr}' class=labelingdsp data-prnname='INVCARD' data-labelformat='PRINTCARD'  data-selected='true' onclick=\"selectPrinter(this.id);\"><div class=labelDeviceName>Inventory Barcode Tag</div><div class=labelDeviceLocation>On-Screen Inventory Tag-Card</div></div>";  
 
    $dspPage = <<<DSPPAGE
 
@@ -4305,9 +4334,9 @@ DSPPAGE;
   #keyboardRowHolder3 { display: grid; grid-template-columns: repeat(9, 1fr); grid-gap: 5px; margin-top: .2vh; }        
   #keyboardRowHolder4 { display: grid; grid-template-columns: repeat(9, 1fr); grid-gap: 5px; margin-top: .2vh; }        
 
-  .keyboardBtn { border: 1px solid rgba(201,201,201,1); text-align: center; font-size: 5vh; width: 3.5vw; color: rgba( 180,180,180,1); transition: .9s; }
-  #keyboardRowHolder3 .keyboardBtn { width: 3.9vw; } 
-  #keyboardRowHolder4 .keyboardBtn { width: 3.9vw; }
+  .keyboardBtn { border: 1px solid rgba(201,201,201,1); text-align: center; font-size: 6vh; width: 4vw; color: rgba( 180,180,180,1); transition: .9s; }
+  #keyboardRowHolder3 .keyboardBtn { width: 4.4vw; } 
+  #keyboardRowHolder4 .keyboardBtn { width: 4.4vw; }
   .keyboardBtn:hover { background: rgba(100,149,237,1); color: rgba(255,255,255,1); cursor: pointer;   } 
   .keyboardBtn:focus { background: rgba(100,149,237,1); color: rgba(255,255,255,1); }
   .keyboardBtn .material-icons { font-size: 3vh; } 

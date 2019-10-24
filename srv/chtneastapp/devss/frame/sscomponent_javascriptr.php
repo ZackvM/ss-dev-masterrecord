@@ -727,23 +727,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
    //THIS IS BARCODE SCANNER CODE
    document.addEventListener('keypress', function( event ) {
-     if ( event.which >= 33 && event.which <= 126 ) { 
+   if ( event.which >= 33 && event.which <= 126 ) { 
        chars.push(String.fromCharCode(event.which)); 
-     }
+   }
         
-     if ( event.which == 13 && chars.length > 4 ) { 
-       var barcode = chars.join("");          
-       doSomethingWithScan( barcode ); 
-       chars = [];
-     }
+   if ( event.which == 13 && chars.length > 4 ) { 
+     var barcode = chars.join("");          
+     doSomethingWithScan( barcode ); 
+     chars = [];
+   }
         
-     if ( pressed == false ) { 
-       pressed = true; 
-       t = setTimeout( function() { 
-         chars = [];
-         pressed = false;
-       }, 400);
-     }
+   if ( pressed == false ) { 
+     pressed = true; 
+     t = setTimeout( function() { 
+     chars = [];
+     pressed = false;
+   }, 400);
+   }
 
    }, false); 
 
@@ -760,9 +760,12 @@ document.addEventListener('DOMContentLoaded', function() {
    }
    
    if ( byId('ctlBtnCheckCancel') ) { 
-     byId('ctlBtnCheckCancel').addEventListener('click', actionCheckCancel );
+     byId('ctlBtnCheckCancel').addEventListener('click', actionCancel );
    }
-        
+
+   if ( byId('ctlBtnCountCancel') ) { 
+     byId('ctlBtnCountCancel').addEventListener('click', actionCancel );
+   }
 
 }, false);
 
@@ -781,30 +784,6 @@ function clickedlabel(e) {
   byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
 }
 
-function actionCheckCheck() {  
-  var obj = new Object(); 
-  var scanlist = [];
-  obj['location'] = byId('locscancode').value.trim();
-  var lbls = document.getElementsByClassName("labelDspDiv");
-  var lblsl = lbls.length;
-  for ( var i = 0; i < lbls.length; i++ ) { 
-    scanlist.push( byId(lbls[i].id).dataset.label );
-  } 
-  obj['scanlist'] = scanlist;   
-  var pdta = JSON.stringify(obj); 
-  console.log(pdta);
-}
-
-function actionCheckCancel() { 
-  byId('locscancode').value = '';
-  byId('locscandsp').innerHTML = '';
-  byId('itemCountDsp').innerHTML = 'SCAN COUNT: 0';
-  var myNode = byId('labelscanholderdiv');
-  while ( myNode.firstChild ) { 
-    myNode.removeChild(myNode.firstChild);
-  }  
-}
-
 function rqstLocationCode() {
   generateDialog('rqstLocationBarcode','xxx-xxx');
 }
@@ -812,126 +791,7 @@ function rqstLocationCode() {
 function rqstNewBarCode() { 
   generateDialog('rqstSampleBarcode','xxx-xxx');
 }
-
-function doSomethingWithScan ( scanvalue ) {
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
-  var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
-
-  var scanworked = 0;
-
-  if ( scanlabel.test( scanvalue ) ) { 
-    scanworked = 1;
-    //BIOSAMPLE LABEL SCANNED
-    if ( byId('labelscan') ) {
-      //CHECK LABEL NOT ALREADY SCANNED
-      var lbls = document.getElementsByClassName("labelDspDiv");
-      var lblsl = lbls.length;
-      for ( var i = 0; i < lbls.length; i++ ) { 
-        if ( byId(lbls[i].id).dataset.label == scanvalue ) { return null; }
-      } 
-      var lblDiv = document.createElement('div');
-      lblDiv.id = "scannedLabel"+lblsl;
-      lblDiv.className = "labelDspDiv";
-      lblDiv.dataset.label = scanvalue;
-      //lblDiv.innerHTML = scanvalue; 
-      byId('labelscanholderdiv').appendChild ( lblDiv );
-      lblDiv.addEventListener("click", clickedlabel );
-        
-      var scnDsp = document.createElement('div');
-      scnDsp.id = "scanDisplay"+lblsl;
-      scnDsp.className = "scanDisplay";
-      scnDsp.innerHTML = scanvalue;
-      byId("scannedLabel"+lblsl).appendChild( scnDsp );
-
-      var desDsp = document.createElement('div');
-      desDsp.id = "desigDisplay"+lblsl;
-      desDsp.className = "desigDisplay";
-      desDsp.innerHTML = "-";
-      byId("scannedLabel"+lblsl).appendChild( desDsp );        
-
-      var elemcnt = document.getElementsByClassName("labelDspDiv");
-      byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
-
-      //MAKE PROMISE TO LOOKUP DATA
-      fillInDesigLabelCode( scanvalue ).then (function (fulfilled) {         
-            byId('desigDisplay'+lblsl).innerHTML = fulfilled;
-        })
-        .catch(function (error) {
-            byId('desigDisplay'+lblsl).innerHTML = '<div class=errordspmsg>Scanned Label Not Found in Database. See Informatics Staff Memeber Immediately.</div>';
-            console.log(error.message);
-        });
-    } else { 
-      alert('The Scan Control doesn\'t exist');
-    }
-  }
-                
-  if ( scanloc.test( scanvalue ) ) {
-    scanworked = 1;
-    //locationscan,locscancode,locscandsp
-    if ( byId('locationscan') ) { 
-      byId('locscancode').value = scanvalue;
-      byId('locscandsp').innerHTML = scanvalue;
-      
-      //MAKE PROMISE TO LOOKUP DATA
-      fillInLocationDisplay ( scanvalue ).then ( function (fulfilled) { 
-        byId('locscandsp').innerHTML = fulfilled;
-      })
-      .catch( function (error) { 
-        byId('locscancode').value = "";
-        byId('locscandsp').innerHTML = error;
-      });
-    }
-  }
-
-  if ( scanworked === 0 ) { 
-    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
-  }
-
-}        
-
-var fillInLocationDisplay = function ( scancode ) { 
-  return new Promise(function(resolve, reject) {
-    var obj = new Object(); 
-    obj['scanlabel'] = scancode.trim();
-    var passdta = JSON.stringify(obj);         
-    httpage.open("POST",dataPath+"/data-doers/invtry-location-heirach", true)    
-    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
-    httpage.onreadystatechange = function() { 
-      if (httpage.readyState === 4) {
-         if ( parseInt(httpage.status) === 200 ) { 
-           var dta = JSON.parse( httpage.responseText );  
-           resolve( "<b>CHECKING INTO LOCATION</b>: "+ dta['DATA']['pathdsp'] + " :: <b>" +dta['DATA']['thislocation']+"</b> //<i>Scan Code</i>: "+dta['DATA']['scancode']);
-        } else { 
-          reject("NO LOCATION FOUND WITH THE SCANNED CODE: "+scancode);
-        }
-      }
-    };
-    httpage.send ( passdta );
-  });
-}
-
-var fillInDesigLabelCode = function ( scancode  ) {
-  return new Promise(function(resolve, reject) {
-    var obj = new Object(); 
-    obj['scanlabel'] = scancode.trim();
-    var passdta = JSON.stringify(obj);         
-    httpage.open("POST",dataPath+"/data-doers/invtry-label-dxdesignation", true)    
-    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
-    httpage.onreadystatechange = function() { 
-      if (httpage.readyState === 4) {
-         if ( parseInt(httpage.status) === 200 ) { 
-           var dta = JSON.parse( httpage.responseText );  
-           //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
-           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
-        } else { 
-          reject(Error("It broke! "+httpage.responseText ));
-        }
-      }
-    };
-    httpage.send ( passdta );
-  });
-}    
-
+       
 function generateDialog( whichdialog, whatobject ) { 
   var dta = new Object(); 
   dta['whichdialog'] = whichdialog;
@@ -1062,6 +922,582 @@ function answerEncryptRqstBarcodeLabel ( rtnData ) {
 
 JAVASCR;
 
+switch ( $rqststr[2] ) { 
+
+  case 'processinventory':
+      $rtnThis .= <<<PROCINVT
+
+var fillInLocationDisplay = function ( scancode ) { 
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scanlabel'] = scancode.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-location-heirach", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) { 
+           var dta = JSON.parse( httpage.responseText );  
+           resolve( "<b>CHECKING INTO LOCATION</b>: "+ dta['DATA']['pathdsp'] + " :: <b>" +dta['DATA']['thislocation']+"</b> //<i>Scan Code</i>: "+dta['DATA']['scancode']);
+        } else { 
+          reject("NO LOCATION FOUND WITH THE SCANNED CODE: "+scancode);
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}
+
+var fillInDesigLabelCode = function ( scancode  ) {
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scanlabel'] = scancode.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-label-dxdesignation", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) { 
+           var dta = JSON.parse( httpage.responseText );  
+           //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
+           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+        } else { 
+          reject(Error("It broke! "+httpage.responseText ));
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}   
+    
+function actionCheckCheck() {  
+  var obj = new Object(); 
+  var scanlist = [];
+  obj['location'] = byId('locscancode').value.trim();
+  var lbls = document.getElementsByClassName("labelDspDiv");
+  var lblsl = lbls.length;
+  for ( var i = 0; i < lbls.length; i++ ) { 
+    scanlist.push( byId(lbls[i].id).dataset.label );
+  } 
+  obj['scanlist'] = scanlist;   
+  var pdta = JSON.stringify(obj);
+  byId('standardModalBacker').style.display = 'block';    
+  var mlURL = "/data-doers/invtry-segment-statuser";
+  universalAJAX("POST",mlURL,pdta,answerInventorySegmentStatuser,2);
+}
+
+function answerInventorySegmentStatuser ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+        var dta = JSON.parse(rtnData['responseText']);         
+  }
+}
+
+function actionCancel() {
+  if ( byId('locscancode') ) {
+    byId('locscancode').value = '';
+  }
+  if ( byId('locscandsp') ) {
+    byId('locscandsp').innerHTML = '';
+  }
+  if ( byId('itemCountDsp') ) {
+    byId('itemCountDsp').innerHTML = 'SCAN COUNT: 0';
+  }
+  if ( byId('labelscanholderdiv') ) {
+    var myNode = byId('labelscanholderdiv');
+    while ( myNode.firstChild ) { 
+      myNode.removeChild(myNode.firstChild);
+    }  
+  }
+}
+
+function doSomethingWithScan ( scanvalue ) {
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+  var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
+
+  var scanworked = 0;
+
+  if ( scanlabel.test( scanvalue ) ) { 
+    scanworked = 1;
+    //BIOSAMPLE LABEL SCANNED
+    if ( byId('labelscan') ) {
+      //CHECK LABEL NOT ALREADY SCANNED
+      var lbls = document.getElementsByClassName("labelDspDiv");
+      var lblsl = lbls.length;
+      for ( var i = 0; i < lbls.length; i++ ) { 
+        if ( byId(lbls[i].id).dataset.label == scanvalue ) { return null; }
+      } 
+
+      var nxtItemNbr = 0;
+      if ( lblsl > 0 ) {
+        nxtItemNbr =  parseInt(lbls[ (lblsl - 1) ].id.replace( /^\D+/g, '')) + 1; 
+      } 
+
+      var lblDiv = document.createElement('div');
+      lblDiv.id = "scannedLabel"+nxtItemNbr;
+      lblDiv.className = "labelDspDiv";
+      lblDiv.dataset.label = scanvalue;
+      //lblDiv.innerHTML = scanvalue; 
+      byId('labelscanholderdiv').appendChild ( lblDiv );
+      lblDiv.addEventListener("click", clickedlabel );
+        
+      var scnDsp = document.createElement('div');
+      scnDsp.id = "scanDisplay"+nxtItemNbr;
+      scnDsp.className = "scanDisplay";
+      scnDsp.innerHTML = scanvalue;
+      byId("scannedLabel"+nxtItemNbr).appendChild( scnDsp );
+
+      var desDsp = document.createElement('div');
+      desDsp.id = "desigDisplay"+nxtItemNbr;
+      desDsp.className = "desigDisplay";
+      desDsp.innerHTML = "-";
+      byId("scannedLabel"+nxtItemNbr).appendChild( desDsp );        
+
+      var elemcnt = document.getElementsByClassName("labelDspDiv");
+      byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
+
+      //MAKE PROMISE TO LOOKUP DATA
+      fillInDesigLabelCode( scanvalue ).then (function (fulfilled) {         
+            byId('desigDisplay'+nxtItemNbr).innerHTML = fulfilled;
+        })
+        .catch(function (error) {
+            byId('desigDisplay'+nxtItemNbr).innerHTML = '<div class=errordspmsg>Scanned Label Not Found in Database. See Informatics Staff Memeber Immediately.</div>';
+            console.log(error.message);
+        });
+    } else { 
+      alert('The Scan Control doesn\'t exist');
+    }
+  }
+                
+  if ( scanloc.test( scanvalue ) ) {
+    scanworked = 1;
+    //locationscan,locscancode,locscandsp
+    if ( byId('locationscan') ) { 
+      byId('locscancode').value = scanvalue;
+      byId('locscandsp').innerHTML = scanvalue;
+      
+      //MAKE PROMISE TO LOOKUP DATA
+      fillInLocationDisplay ( scanvalue ).then ( function (fulfilled) { 
+        byId('locscandsp').innerHTML = fulfilled;
+      })
+      .catch( function (error) { 
+        byId('locscancode').value = "";
+        byId('locscandsp').innerHTML = error;
+      });
+    }
+  }
+
+  if ( scanworked === 0 ) { 
+    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
+  }
+
+} 
+
+          
+PROCINVT;
+      break;
+  case 'destroybiosamples':
+      $rtnThis .= <<<PROCINVT
+
+var fillInDesigLabelCode = function ( scancode  ) {
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scanlabel'] = scancode.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-label-dxdesignation", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) { 
+           var dta = JSON.parse( httpage.responseText );  
+           //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
+           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+        } else { 
+          reject(Error("It broke! "+httpage.responseText ));
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}   
+
+function actionCancel() {
+  if ( byId('locscancode') ) {
+    byId('locscancode').value = '';
+  }
+  if ( byId('locscandsp') ) {
+    byId('locscandsp').innerHTML = '';
+  }
+  if ( byId('itemCountDsp') ) {
+    byId('itemCountDsp').innerHTML = 'SCAN COUNT: 0';
+  }
+  if ( byId('labelscanholderdiv') ) {
+    var myNode = byId('labelscanholderdiv');
+    while ( myNode.firstChild ) { 
+      myNode.removeChild(myNode.firstChild);
+    }  
+  }
+}
+
+function doSomethingWithScan ( scanvalue ) {
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+
+  var scanworked = 0;
+  if ( scanlabel.test( scanvalue ) ) { 
+    scanworked = 1;
+    //BIOSAMPLE LABEL SCANNED
+    if ( byId('labelscan') ) {
+      //CHECK LABEL NOT ALREADY SCANNED
+      var lbls = document.getElementsByClassName("labelDspDiv");
+      var lblsl = lbls.length;
+      for ( var i = 0; i < lbls.length; i++ ) { 
+        if ( byId(lbls[i].id).dataset.label == scanvalue ) { return null; }
+      } 
+
+      var nxtItemNbr = 0;
+      if ( lblsl > 0 ) {
+        nxtItemNbr =  parseInt(lbls[ (lblsl - 1) ].id.replace( /^\D+/g, '')) + 1; 
+      } 
+
+      var lblDiv = document.createElement('div');
+      lblDiv.id = "scannedLabel"+nxtItemNbr;
+      lblDiv.className = "labelDspDiv";
+      lblDiv.dataset.label = scanvalue;
+      //lblDiv.innerHTML = scanvalue; 
+      byId('labelscanholderdiv').appendChild ( lblDiv );
+      lblDiv.addEventListener("click", clickedlabel );
+        
+      var scnDsp = document.createElement('div');
+      scnDsp.id = "scanDisplay"+nxtItemNbr;
+      scnDsp.className = "scanDisplay";
+      scnDsp.innerHTML = scanvalue;
+      byId("scannedLabel"+nxtItemNbr).appendChild( scnDsp );
+
+      var desDsp = document.createElement('div');
+      desDsp.id = "desigDisplay"+nxtItemNbr;
+      desDsp.className = "desigDisplay";
+      desDsp.innerHTML = "-";
+      byId("scannedLabel"+nxtItemNbr).appendChild( desDsp );        
+
+      var elemcnt = document.getElementsByClassName("labelDspDiv");
+      byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
+
+      //MAKE PROMISE TO LOOKUP DATA
+      fillInDesigLabelCode( scanvalue ).then (function (fulfilled) {         
+            byId('desigDisplay'+nxtItemNbr).innerHTML = fulfilled;
+        })
+        .catch(function (error) {
+            byId('desigDisplay'+nxtItemNbr).innerHTML = '<div class=errordspmsg>Scanned Label Not Found in Database. See Informatics Staff Memeber Immediately.</div>';
+            console.log(error.message);
+        });
+    } else { 
+      alert('The Scan Control doesn\'t exist');
+    }
+  }
+                
+  if ( scanworked === 0 ) { 
+    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
+  }
+
+} 
+  
+PROCINVT;
+      break;
+  case 'icount': 
+      $rtnThis .= <<<PROCINVT
+
+var fillInLocationDisplay = function ( scancode ) { 
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scanlabel'] = scancode.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-location-heirach", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) { 
+           var dta = JSON.parse( httpage.responseText );  
+           resolve( "<b>CHECKING INTO LOCATION</b>: "+ dta['DATA']['pathdsp'] + " :: <b>" +dta['DATA']['thislocation']+"</b> //<i>Scan Code</i>: "+dta['DATA']['scancode']);
+        } else { 
+          reject("NO LOCATION FOUND WITH THE SCANNED CODE: "+scancode);
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}
+
+var fillInDesigLabelCode = function ( scancode  ) {
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scanlabel'] = scancode.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-label-dxdesignation", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) { 
+           var dta = JSON.parse( httpage.responseText );  
+           //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
+           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+        } else { 
+          reject(Error("It broke! "+httpage.responseText ));
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}   
+    
+function actionCancel() {
+  if ( byId('locscancode') ) {
+    byId('locscancode').value = '';
+  }
+  if ( byId('locscandsp') ) {
+    byId('locscandsp').innerHTML = '';
+  }
+  if ( byId('itemCountDsp') ) {
+    byId('itemCountDsp').innerHTML = 'SCAN COUNT: 0';
+  }
+  if ( byId('labelscanholderdiv') ) {
+    var myNode = byId('labelscanholderdiv');
+    while ( myNode.firstChild ) { 
+      myNode.removeChild(myNode.firstChild);
+    }  
+  }
+}
+
+function doSomethingWithScan ( scanvalue ) {
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+  var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
+
+  var scanworked = 0;
+
+  if ( scanlabel.test( scanvalue ) ) { 
+    scanworked = 1;
+    //BIOSAMPLE LABEL SCANNED
+    if ( byId('labelscan') ) {
+      //CHECK LABEL NOT ALREADY SCANNED
+      var lbls = document.getElementsByClassName("labelDspDiv");
+      var lblsl = lbls.length;
+      for ( var i = 0; i < lbls.length; i++ ) { 
+        if ( byId(lbls[i].id).dataset.label == scanvalue ) { return null; }
+      } 
+
+      var nxtItemNbr = 0;
+      if ( lblsl > 0 ) {
+        nxtItemNbr =  parseInt(lbls[ (lblsl - 1) ].id.replace( /^\D+/g, '')) + 1; 
+      } 
+
+      var lblDiv = document.createElement('div');
+      lblDiv.id = "scannedLabel"+nxtItemNbr;
+      lblDiv.className = "labelDspDiv";
+      lblDiv.dataset.label = scanvalue;
+      //lblDiv.innerHTML = scanvalue; 
+      byId('labelscanholderdiv').appendChild ( lblDiv );
+      lblDiv.addEventListener("click", clickedlabel );
+        
+      var scnDsp = document.createElement('div');
+      scnDsp.id = "scanDisplay"+nxtItemNbr;
+      scnDsp.className = "scanDisplay";
+      scnDsp.innerHTML = scanvalue;
+      byId("scannedLabel"+nxtItemNbr).appendChild( scnDsp );
+
+      var desDsp = document.createElement('div');
+      desDsp.id = "desigDisplay"+nxtItemNbr;
+      desDsp.className = "desigDisplay";
+      desDsp.innerHTML = "-";
+      byId("scannedLabel"+nxtItemNbr).appendChild( desDsp );        
+
+      var elemcnt = document.getElementsByClassName("labelDspDiv");
+      byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
+
+      //MAKE PROMISE TO LOOKUP DATA
+      fillInDesigLabelCode( scanvalue ).then (function (fulfilled) {         
+            byId('desigDisplay'+nxtItemNbr).innerHTML = fulfilled;
+        })
+        .catch(function (error) {
+            byId('desigDisplay'+nxtItemNbr).innerHTML = '<div class=errordspmsg>Scanned Label Not Found in Database. See Informatics Staff Memeber Immediately.</div>';
+            console.log(error.message);
+        });
+    } else { 
+      alert('The Scan Control doesn\'t exist');
+    }
+  }
+                
+  if ( scanloc.test( scanvalue ) ) {
+    scanworked = 1;
+    //locationscan,locscancode,locscandsp
+    if ( byId('locationscan') ) { 
+      byId('locscancode').value = scanvalue;
+      byId('locscandsp').innerHTML = scanvalue;
+      
+      //MAKE PROMISE TO LOOKUP DATA
+      fillInLocationDisplay ( scanvalue ).then ( function (fulfilled) { 
+        byId('locscandsp').innerHTML = fulfilled;
+      })
+      .catch( function (error) { 
+        byId('locscancode').value = "";
+        byId('locscandsp').innerHTML = error;
+      });
+    }
+  }
+
+  if ( scanworked === 0 ) { 
+    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
+  }
+
+} 
+
+PROCINVT;
+      break;
+
+  case 'processhprtray':
+      $rtnThis .= <<<PROCINVT
+
+function doSomethingWithScan ( scanvalue ) {
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+  var scanhpr   = new RegExp(/^HPRT\d+$/); 
+  
+  var scanworked = 0;
+
+  if ( scanlabel.test( scanvalue ) ) { 
+    scanworked = 1;
+    //BIOSAMPLE LABEL SCANNED
+    if ( byId('labelscan') ) {
+      //CHECK LABEL NOT ALREADY SCANNED
+      var lbls = document.getElementsByClassName("labelDspDiv");
+      var lblsl = lbls.length;
+      for ( var i = 0; i < lbls.length; i++ ) { 
+        if ( byId(lbls[i].id).dataset.label == scanvalue ) { return null; }
+      } 
+
+      var nxtItemNbr = 0;
+      if ( lblsl > 0 ) {
+        nxtItemNbr =  parseInt(lbls[ (lblsl - 1) ].id.replace( /^\D+/g, '')) + 1; 
+      } 
+
+      var lblDiv = document.createElement('div');
+      lblDiv.id = "scannedLabel"+nxtItemNbr;
+      lblDiv.className = "labelDspDiv";
+      lblDiv.dataset.label = scanvalue;
+      //lblDiv.innerHTML = scanvalue; 
+      byId('labelscanholderdiv').appendChild ( lblDiv );
+      lblDiv.addEventListener("click", clickedlabel );
+        
+      var scnDsp = document.createElement('div');
+      scnDsp.id = "scanDisplay"+nxtItemNbr;
+      scnDsp.className = "scanDisplay";
+      scnDsp.innerHTML = scanvalue;
+      byId("scannedLabel"+nxtItemNbr).appendChild( scnDsp );
+
+      var desDsp = document.createElement('div');
+      desDsp.id = "desigDisplay"+nxtItemNbr;
+      desDsp.className = "desigDisplay";
+      desDsp.innerHTML = "-";
+      byId("scannedLabel"+nxtItemNbr).appendChild( desDsp );        
+
+      var elemcnt = document.getElementsByClassName("labelDspDiv");
+      byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
+
+      //MAKE PROMISE TO LOOKUP DATA
+      fillInDesigLabelCode( scanvalue ).then (function (fulfilled) {         
+            byId('desigDisplay'+nxtItemNbr).innerHTML = fulfilled;
+        })
+        .catch(function (error) {
+            byId('desigDisplay'+nxtItemNbr).innerHTML = '<div class=errordspmsg>Scanned Label Not Found in Database. See Informatics Staff Memeber Immediately.</div>';
+            console.log(error.message);
+        });
+    } else { 
+      alert('The Scan Control doesn\'t exist');
+    }
+  }
+  
+  if ( scanhpr.test( scanvalue ) ) {
+    scanworked = 1;
+    var dta = new Object(); 
+    dta['scancode'] = scanvalue;
+    var passdta = JSON.stringify(dta);
+    byId('standardModalBacker').style.display = 'block';
+    actionCancel();
+    var mlURL = "/data-doers/invtry-hprtray-scan-preprocess";
+    universalAJAX("POST",mlURL,passdta,answerHPRTrayScanPreprocess,2);
+  }
+
+  if ( scanworked === 0 ) { 
+    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
+  }
+
+}           
+   
+function answerHPRTrayScanPreprocess( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+        var dta = JSON.parse(rtnData['responseText']);         
+
+   }
+}          
+    
+var fillInDesigLabelCode = function ( scancode  ) {
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scanlabel'] = scancode.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-label-dxdesignation", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) { 
+           var dta = JSON.parse( httpage.responseText );  
+           //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
+           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+        } else { 
+          reject(Error("It broke! "+httpage.responseText ));
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}      
+
+function actionCancel() {
+  if ( byId('locscancode') ) {
+    byId('locscancode').value = '';
+  }
+  if ( byId('locscandsp') ) {
+    byId('locscandsp').innerHTML = '';
+  }
+  if ( byId('itemCountDsp') ) {
+    byId('itemCountDsp').innerHTML = 'SCAN COUNT: 0';
+  }
+  if ( byId('labelscanholderdiv') ) {
+    var myNode = byId('labelscanholderdiv');
+    while ( myNode.firstChild ) { 
+      myNode.removeChild(myNode.firstChild);
+    }  
+  }
+}
+
+
+PROCINVT;
+      
+      break;
+}    
+     
   return $rtnThis;
 }
 

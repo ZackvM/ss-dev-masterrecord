@@ -1333,7 +1333,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
 .errordspmsg { color: rgba({$this->color_bred},1); font-weight: bold; text-align: center; } 
 
-
+.scanfieldlabel { font-size: 1.8vh; font-weight: bold; } 
 
 #inventoryCheckinElementHoldr #ctlButtons { grid-row: 10 / 11; border-top: 1px solid rgba({$this->color_zackgrey},1); } 
 
