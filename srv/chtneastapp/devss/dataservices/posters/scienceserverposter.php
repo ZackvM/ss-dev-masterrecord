@@ -73,23 +73,33 @@ class datadoers {
       }
       //CHECK NO SEGMENT IS SHIPPED
       $scnlst = $pdta['scanlist'];
-      $segChkSQL = "SELECT replace(bgs,'_','') as bgs, segmentid, segstatus, shippedDate FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :bgs";
-      $segRS = $conn->prepare($segChkSQL);
-      foreach ( $scnlst as $k => $v ) {
-        $segRS->execute(array(':bgs' => $v));
-        if ( $segRS->rowCount() < 1 ) { 
-            (list( $errorInd, $msgArr[] ) = array(1 , "LABEL {$v} NOT FOUND.  OPERATION CEASED!"));
-        } else { 
-            $tst = $segRS->fetch(PDO::FETCH_ASSOC);
-            if ( strtoupper($tst['segstatus'] ) === 'SHIPPED' || strtoupper($tst['segstatus'] ) === 'DESTROYED' ) { 
-              (list( $errorInd, $msgArr[] ) = array(1 , "LABEL {$v} IS MARKED AS " . strtoupper($tst['segstatus'])  . ".  INVENTORY OPERATIONS CANNOT BE PERFORMED ON SEGMENTS IN THIS STATUS.  OPERATION CEASED!"));
-            } else { 
-              //STATUS IS GOOD  
-            }
-        }
+      
+      //START HERE 2019-10-28
+      
+      //USE THIS STATEMENT INSTEAD 
+      //SELECT replace(bgs,'_','') as bgs, segmentid, segstatus, shippedDate FROM masterrecord.ut_procure_segment where replace(bgs,'_','') IN ('54098T001','44945A1PBDX1','88823T001') AND ((segstatus = 'SHIPPED' OR segstatus = 'DESTROYED') OR shippeddate is not null);      
+      ////NOT THIS ONE 
+      //$segChkSQL = "SELECT replace(bgs,'_','') as bgs, segmentid, segstatus, shippedDate FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :bgs";
+      //$segRS = $conn->prepare($segChkSQL);
+      //foreach ( $scnlst as $k => $v ) {
+      //  $segRS->execute(array(':bgs' => $v));
+      //  if ( $segRS->rowCount() < 1 ) { 
+      //      (list( $errorInd, $msgArr[] ) = array(1 , "LABEL {$v} NOT FOUND.  OPERATION CEASED!"));
+      //  } else { 
+      //      $tst = $segRS->fetch(PDO::FETCH_ASSOC);
+      //      if ( strtoupper($tst['segstatus'] ) === 'SHIPPED' || strtoupper($tst['segstatus'] ) === 'DESTROYED' ) { 
+      //        (list( $errorInd, $msgArr[] ) = array(1 , "LABEL {$v} IS MARKED AS " . strtoupper($tst['segstatus'])  . ".  INVENTORY OPERATIONS CANNOT BE PERFORMED ON SEGMENTS IN THIS STATUS.  OPERATION CEASED!"));
+      //      } else { 
+      //        //STATUS IS GOOD  
+      //      }
+      //  }
 
-      }
+      //}
       //WHAT IS THE STATUS? 
+      
+      
+      
+      
       if ( $errorInd === 0 ) { 
         
 
