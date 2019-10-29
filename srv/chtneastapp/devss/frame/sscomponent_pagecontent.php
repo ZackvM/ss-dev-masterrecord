@@ -9787,6 +9787,10 @@ function bldBiosampleProcurement($usr) {
       $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
       $procGrid = bldProcurementGrid($usr); //THIS IS THE PROCUREMENT GRID ELEMENTS
       $dvault = phiserver . "/" . $sessid;
+      $linkToVault = "";
+      if ( (int)$usr->allowpxi === 1 ) {
+        $linkToVault = "<div class=ttholder onclick=\"openOutSidePage('{$dvault}');\"><i class=\"material-icons\">account_balance</i><div class=tt>Access Donor Vault</div></div>";
+      }
 
       $holdingTbl = <<<HOLDINGTBL
             <div id=initialBiogroupInfo>
@@ -9795,7 +9799,7 @@ function bldBiosampleProcurement($usr) {
                       <td valign=top id=procbtnsidebar>
                           <center>
                           <div class=ttholder onclick="openAppCard('appcard_procphilisting');"><i class="material-icons">how_to_reg</i><div class=tt>Donor Information/Operative Schedule</div></div>
-                          <div class=ttholder onclick="openOutSidePage('{$dvault}');"><i class="material-icons">account_balance</i><div class=tt>Access Donor Vault</div></div>
+                          {$linkToVault}
                       </td>
                       <td valign=top id=procGridHolderCell> {$procGrid}</td>
                       <td valign=top id=procGridBGDspNotDsp>&nbsp;</td>

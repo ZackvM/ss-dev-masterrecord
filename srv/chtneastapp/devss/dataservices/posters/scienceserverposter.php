@@ -33,6 +33,49 @@ function __construct() {
 }
 
 class datadoers {
+    
+    function vaultuserlogincheck ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id();
+      
+      $ssid = explode("::", cryptservice($pdta['usrency'], 'd'));
+      $chkUsrSQL = "SELECT userid, emailaddress, originalaccountname, presentinstitution, altphonecellcarrier FROM four.sys_userbase where sessionid = :sessionid and allowInd = 1 and allowlinux = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0";
+      $chkRS = $conn->prepare($chkUsrSQL); 
+      $chkRS->execute(array(':sessionid' => $ssid[0]));
+      if ( $chkRS->rowCount() <> 1 ) { 
+        $msgArr[] = "USER NOT ALLOWED - SCIENCESERVER DOES NOT KNOW WHO YOU ARE.";
+      } else {
+        $u = $chkRS->fetch(PDO::FETCH_ASSOC);
+        $rndStr = strtoupper(generateRandomString(8));                                
+        $dta = $u;
+        
+        $sndSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgbody, htmlind, wheninput, bywho) value (:phone,'SSv7 Donor-Vault Password',:dvmsg,0,now(),:usrinput)";
+        $sndMsg = 'Here is the single use password to the CHTNEastern\'s Donor Vault: ' . $rndStr;
+        $usrinput = 'DONOR-VAULT-REQUEST (' . $u['emailaddress'] . ")";
+        $sndRS = $conn->prepare($sndSQL); 
+        $sndRS->execute(array(':phone' => "[\"{$u['altphonecellcarrier']}\"]",':dvmsg' => $sndMsg, ':usrinput' => $usrinput));
+        
+        $captureUsrPWSQL = "update four.sys_userbase set pxipassword = :encypw where sessionid = :ssid and allowInd = 1 and allowlinux = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0";
+        $captureUsrPWRS = $conn->prepare($captureUsrPWSQL); 
+        $captureUsrPWRS->execute(array('encypw' => cryptservice($rndStr,'e',true,$ssid[0]), ':ssid' => $ssid[0] ));
+        $responseCode = 200;
+      }
+            
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;                    
+    }
+    
 
     function invtrysegmentstatuser ( $request, $passdata ) { 
       $rows = array(); 
