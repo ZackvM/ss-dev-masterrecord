@@ -34,6 +34,100 @@ function __construct() {
 
 class datadoers {
     
+    function vaultgetuser ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+     
+      
+      ( !array_key_exists('pxiguidency', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'pxiguidency' DOES NOT EXIST.")) : ""; 
+      
+      $usrguid = explode("::",cryptservice($pdta['pxiguidency'],'d'));
+      $usrSQL = "SELECT ifnull(friendlyName,'') as friendlyname, ifnull(emailaddress,'') as userid, ifnull(date_format( pxisessionexpire, '%H:%i'),'') as expiretime, ifnull(originalAccountName,'') as origacctname"
+              . ", ifnull(accessLevel,'') as accesslevel, ifnull(accessNbr,0) as accessnbr "
+              . "FROM four.sys_userbase "
+              . "where pxiguidident = :pxiguid "
+              . "and timestampdiff(MINUTE,now(),pxisessionexpire) > 0 "
+              . "and allowind = 1 "
+              . "and allowlinux = 1 "
+              . "and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 "
+              . "and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0";
+      $usrRS = $conn->prepare($usrSQL);
+      $usrRS->execute(array(':pxiguid' => $usrguid[0]));
+      if ( $usrRS->rowCount() <> 1 ) {
+        (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  USER NOT FOUND"));
+      } else { 
+          $u = $usrRS->fetch(PDO::FETCH_ASSOC);
+      }
+      
+      if ( $errorInd === 0 ) { 
+         $dta = $u;    
+         $responseCode = 200;    
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;        
+    }
+   
+    function vaultuserloginpwcheck ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+
+      ( !array_key_exists('ency', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'ency' DOES NOT EXIST.")) : ""; 
+      
+      if ( $errorInd === 0 ) { 
+        $vaultpw = json_decode( chtndecrypt($pdta['ency']), true );
+
+        ( !array_key_exists('user', $vaultpw) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'user' DOES NOT EXIST.")) : "";
+        ( !array_key_exists('pword', $vaultpw) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'pword' DOES NOT EXIST.")) : "";
+       
+        if ( $errorInd === 0 ) {
+         $usrSQL = "SELECT userid, emailaddress FROM four.sys_userbase where allowInd = 1 and allowlinux = 1  and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and emailaddress = :usr and pxipassword = :pword";
+         $usrRS = $conn->prepare($usrSQL);
+         $usrRS->execute(array(':usr' => $vaultpw['user'], ':pword' => $vaultpw['pword']));
+         if ( $usrRS->rowCount() < 1 ) {
+           (list( $errorInd, $msgArr[] ) = array(1 , "USER NOT FOUND OR NOT ALLOWED ACCESS"));
+         } else {
+           $urecord = $usrRS->fetch(PDO::FETCH_ASSOC);  
+           $msgArr[] = $vaultpw['user'] . " :: " .  $vaultpw['pword'] . " :: " . $urecord['userid'] . " :: " . $urecord['emailaddress'];
+           $newpxiid = guidv4();
+           $updSQL = "update four.sys_userbase set pxiguidident = :pxiident, pxisessionexpire = date_add(now(), interval 30 minute) where emailaddress = :usremail and userid = :usrid";
+           $updRS = $conn->prepare($updSQL);
+           $updRS->execute(array(':usremail' => $urecord['emailaddress'], ':usrid' => $urecord['userid'], ':pxiident' => $newpxiid));
+           
+           $ip = clientipserver();
+           $trckSQL = "insert into four.sys_lastLogins(userid, usremail, logdatetime, fromip) values(:userid, :usremail, now(), :ip)";
+           $trckR = $conn->prepare($trckSQL);
+           $trckR->execute(array(':userid' => $urecord['userid'], ':usremail' => $urecord['emailaddress'], ':ip' => 'VAULT-LOGIN: ' . $ip));
+           
+           captureSystemActivity($newpxiid, '', 'true', $urecord['emailaddress'], '', '', $urecord['emailaddress'], 'POST', 'VAULT LOGIN SUCCESS');
+           
+           $dta = $newpxiid;
+           $responseCode = 200;
+         }
+        }
+       
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;        
+    }
+    
     function vaultuserlogincheck ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -58,6 +152,7 @@ class datadoers {
         $rndStr = strtoupper(generateRandomString(8));                                
         $dta = $u;
         
+        //SEND PASSWORD TEXT
         $sndSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgbody, htmlind, wheninput, bywho) value (:phone,'SSv7 Donor-Vault Password',:dvmsg,0,now(),:usrinput)";
         $sndMsg = 'Here is the single use password to the CHTNEastern\'s Donor Vault: ' . $rndStr;
         $usrinput = 'DONOR-VAULT-REQUEST (' . $u['emailaddress'] . ")";
@@ -66,7 +161,7 @@ class datadoers {
         
         $captureUsrPWSQL = "update four.sys_userbase set pxipassword = :encypw where sessionid = :ssid and allowInd = 1 and allowlinux = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0";
         $captureUsrPWRS = $conn->prepare($captureUsrPWSQL); 
-        $captureUsrPWRS->execute(array('encypw' => cryptservice($rndStr,'e',true,$ssid[0]), ':ssid' => $ssid[0] ));
+        $captureUsrPWRS->execute(array('encypw' => $rndStr, ':ssid' => $ssid[0] ));
         $responseCode = 200;
       }
             
@@ -76,7 +171,6 @@ class datadoers {
       return $rows;                    
     }
     
-
     function invtrysegmentstatuser ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -1033,7 +1127,6 @@ PRTEXT;
 
     }
 
-
     function qmsgetemailletter ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -1359,7 +1452,6 @@ if ( $errorInd === 0 ) {
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;              
     }
-
 
     function qamoletestfinal ( $request, $passdata ) { 
       $rows = array(); 
@@ -1831,7 +1923,16 @@ PRISTINESQL;
 
         }
 
-        $queSQL = "SELECT replace(ifnull(bs.read_label,''),'_','') as readlabel, ifnull(bs.tisstype,'') as procspeccat, ifnull(bs.anatomicsite,'') as procsite, ifnull(bs.subsite,'') as procsubsite, ifnull(bs.diagnosis,'') as procdiagnosis, ifnull(bs.subdiagnos,'') as procsubdiagnosis, ifnull(bs.QCProcStatus,'') as qmsprocstatusvalue, ifnull(hsts.dspvalue,'') as qmsstatusdsp, ifnull(bs.HPRDecision,'') as hprdecisionvalue, ifnull(hdc.dspvalue,'') as hprdecisiondsp, ifnull(hpr.speccat,'') as hprspeccat, ifnull(hpr.site,'') as hprsite, ifnull(hpr.subsite,'') as hprsubsite, ifnull(hpr.dx,'') as hprdiagnosis, ifnull(hpr.subdiagnosis,'') as hprsubdiagnosis, ifnull(bs.HPRResult,0) as hprresultid, replace(ifnull(bs.HPRSlideReviewed,''),'_','') as hprslidereviewed, ifnull(bs.HPRBy,'') as hprby , ifnull(date_format(bs.HPROn, '%m/%d/%Y'),'') as hpron FROM masterrecord.ut_procure_biosample bs left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as hsts on bs.qcprocstatus = hsts.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hdc on bs.hprdecision = hdc.menuvalue left join (SELECT biohpr, speccat, site, subsite, dx, subdiagnosis FROM masterrecord.ut_hpr_biosample) as hpr on bs.hprresult = hpr.biohpr where hprind = 1 and qcind = 0 and bs.qcprocstatus = 'H' {$addhprdecision} order by pbiosample asc";
+        $queSQL = "SELECT replace(ifnull(bs.read_label,''),'_','') as readlabel, ifnull(bs.tisstype,'') as procspeccat, ifnull(bs.anatomicsite,'') as procsite, ifnull(bs.subsite,'') as procsubsite, ifnull(bs.diagnosis,'') as procdiagnosis"
+                . ", ifnull(bs.subdiagnos,'') as procsubdiagnosis, ifnull(bs.QCProcStatus,'') as qmsprocstatusvalue, ifnull(hsts.dspvalue,'') as qmsstatusdsp, ifnull(bs.HPRDecision,'') as hprdecisionvalue"
+                . ", ifnull(hdc.dspvalue,'') as hprdecisiondsp, ifnull(hpr.speccat,'') as hprspeccat, ifnull(hpr.site,'') as hprsite, ifnull(hpr.subsite,'') as hprsubsite, ifnull(hpr.dx,'') as hprdiagnosis"
+                . ", ifnull(hpr.subdiagnosis,'') as hprsubdiagnosis, ifnull(bs.HPRResult,0) as hprresultid, replace(ifnull(bs.HPRSlideReviewed,''),'_','') as hprslidereviewed, ifnull(bs.HPRBy,'') as hprby "
+                . ", ifnull(date_format(bs.HPROn, '%m/%d/%Y'),'') as hpron "
+                . "FROM masterrecord.ut_procure_biosample bs "
+                . "left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as hsts on bs.qcprocstatus = hsts.menuvalue "
+                . "left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hdc on bs.hprdecision = hdc.menuvalue "
+                . "left join (SELECT biohpr, speccat, site, subsite, dx, subdiagnosis FROM masterrecord.ut_hpr_biosample) as hpr on bs.hprresult = hpr.biohpr "
+                . "where hprind = 1 and qcind = 0 and bs.qcprocstatus = 'H' {$addhprdecision} order by pbiosample asc";
           $queRS = $conn->prepare($queSQL);
           if ( $addhprdecision !== "" ) { 
               $queRS->execute(array(':decisioncode' => $hprdecisioncode )); 
@@ -2459,7 +2560,6 @@ SQLSTMT;
       return $rows;
     }
 
-
     function hprvocabbrowser ( $request, $passdata ) { 
       //SEE function searchvocabularyterms and searchVocabByTerm
       $responseCode = 400; 
@@ -2514,7 +2614,6 @@ SQLSTMT;
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;
     } 
-
 
    function hprworkbenchsidepanel($request, $passdata) {  
       $responseCode = 400; 
@@ -2622,7 +2721,6 @@ SQLSTMT;
       return $rows;
     }
 
-
     function hprsendemail( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 503;
@@ -2689,8 +2787,6 @@ MBODY;
       return $rows;
     }
    
-
-
     function getmontheventlist ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 503;
@@ -3468,8 +3564,6 @@ MBODY;
       return $rows;       
     } 
 
-
-
     function shipmentdocumentdata ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 503;
@@ -3654,8 +3748,7 @@ MBODY;
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;       
     }
-    
-    
+     
     function pristinebarcoderun ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array(); 
@@ -3694,8 +3787,6 @@ MBODY;
       return $rows;   
     }
 
-    
-    
     function inventorybarcodestatus ( $request, $passdata ) {   
       $rows = array(); 
       $responseCode = 400;
@@ -3936,8 +4027,6 @@ MBODY;
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;        
     }
-    
-    
     
     function dialogactionbgdefinitiondesignationsave ( $request, $passdata ) { 
       $rows = array(); 
@@ -4582,7 +4671,6 @@ MBODY;
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows; 
     }
-    
     
     function masterbgrecord ( $request, $passdata ) { 
       $rows = array(); 
@@ -9418,9 +9506,6 @@ function bldDialogGetter($whichdialog, $passedData) {
   $rtnDialog = $bldr->sysDialogBuilder($whichdialog, $passedData);
   return $rtnDialog;
 }
-
-
-
 
 /* INITIAL PRISTINE BIOGROUP CHECKS
  * //$passdata = {"PRCBGNbr":"","PRCProcDate":"01/22/2019","PRCProcedureTypeValue":"S","PRCProcedureType":"Surgery","PRCCollectionTypeValue":"EXC","PRCCollectionType":"Excision","PRCTechInstitute":"PROCZACK :: HUP","PRCInitialMetric":".8","PRCMetricUOMValue":"4","PRCMetricUOM":"Grams",
