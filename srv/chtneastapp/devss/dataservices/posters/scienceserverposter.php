@@ -96,7 +96,7 @@ class datadoers {
         ( !array_key_exists('pword', $vaultpw) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'pword' DOES NOT EXIST.")) : "";
        
         if ( $errorInd === 0 ) {
-         $usrSQL = "SELECT userid, emailaddress FROM four.sys_userbase where allowInd = 1 and allowlinux = 1  and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and emailaddress = :usr and pxipassword = :pword";
+         $usrSQL = "SELECT userid, emailaddress FROM four.sys_userbase where allowInd = 1 and allowlinux = 1 and TIMESTAMPDIFF(MINUTE,now(),pxipasswordexpire) > 0 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and emailaddress = :usr and pxipassword = :pword";
          $usrRS = $conn->prepare($usrSQL);
          $usrRS->execute(array(':usr' => $vaultpw['user'], ':pword' => $vaultpw['pword']));
          if ( $usrRS->rowCount() < 1 ) {
@@ -141,8 +141,10 @@ class datadoers {
       session_start(); 
       $sessid = session_id();
       
-      $ssid = explode("::", cryptservice($pdta['usrency'], 'd'));
-      $chkUsrSQL = "SELECT userid, emailaddress, originalaccountname, presentinstitution, altphonecellcarrier FROM four.sys_userbase where sessionid = :sessionid and allowInd = 1 and allowlinux = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0";
+      $ssid = explode("::", cryptservice($pdta['idstr'], 'd', true, $sessid));
+      $chkUsrSQL = "SELECT userid, emailaddress, originalaccountname, presentinstitution, altphonecellcarrier "
+              . "FROM four.sys_userbase "
+              . "where sessionid = :sessionid and allowInd = 1 and allowlinux = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0";
       $chkRS = $conn->prepare($chkUsrSQL); 
       $chkRS->execute(array(':sessionid' => $ssid[0]));
       if ( $chkRS->rowCount() <> 1 ) { 
@@ -159,17 +161,59 @@ class datadoers {
         $sndRS = $conn->prepare($sndSQL); 
         $sndRS->execute(array(':phone' => "[\"{$u['altphonecellcarrier']}\"]",':dvmsg' => $sndMsg, ':usrinput' => $usrinput));
         
-        $captureUsrPWSQL = "update four.sys_userbase set pxipassword = :encypw where sessionid = :ssid and allowInd = 1 and allowlinux = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0";
+        $captureUsrPWSQL = "update four.sys_userbase set pxipassword = :encypw, pxipasswordexpire = date_add(now(), interval 15 minute) where sessionid = :ssid and allowInd = 1 and allowlinux = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0";
         $captureUsrPWRS = $conn->prepare($captureUsrPWSQL); 
         $captureUsrPWRS->execute(array('encypw' => $rndStr, ':ssid' => $ssid[0] ));
+        
+        $dta = cryptservice($sessid,'e');
+        
         $responseCode = 200;
       }
-            
+      
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;                    
     }
+    
+    function vaultgetuseremail ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+      session_start(); 
+        
+      $ss = cryptservice( $pdta['usrency'], 'd');
+      $chkSQL = "SELECT emailaddress FROM four.sys_userbase where allowInd = 1 and sessionid = :session";
+      $chkRS = $conn->prepare($chkSQL);
+      $chkRS->execute(array(':session' => $ss ));
+      if ( $chkRS->rowCount() < 1 ) { 
+        $dta = "NO EMAIL LISTED FOR SESSION";
+      } else { 
+        $chk = $chkRS->fetch(PDO::FETCH_ASSOC);
+        $dta = $chk['emailaddress'];
+      }
+      
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;        
+    }
+    
+
+
+
+
+
+
+    
+    
+    //////////////// ^^^ VAULT ABOVE /////////////////
     
     function invtrysegmentstatuser ( $request, $passdata ) { 
       $rows = array(); 

@@ -2322,6 +2322,28 @@ req = new XMLHttpRequest();
 return req;
 }
 
+function popDV( idstr ) {
+  var dta = new Object();
+  dta['idstr'] = idstr;
+  var passdata = JSON.stringify(dta); 
+  var mlURL = "/data-doers/vault-user-login-check";
+  universalAJAX("POST",mlURL,passdata,answerPopDV,1);
+}
+
+function answerPopDV ( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+      var msgs = JSON.parse(rtnData['responseText']);
+      var dspMsg = ""; 
+      msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+      });
+      alert("DONOR VAULT ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse(rtnData['responseText']);
+     openOutSidePage('{$vault}/'+dta['DATA'] );
+   }        
+}
+
 function universalAJAXStreamTwo(methd, url, passedDataJSON, callbackfunc, dspBacker) { 
   if (dspBacker === 1) { 
     byId('standardModalBacker').style.display = 'block';

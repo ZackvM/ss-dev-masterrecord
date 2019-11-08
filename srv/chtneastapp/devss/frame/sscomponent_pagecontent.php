@@ -9777,7 +9777,8 @@ function bldBiosampleProcurement($usr) {
       $holdingTbl = "<h1>USER NOT ALLOWED TO PROCURE BIOSAMPLES";
     } else { 
       session_start();
-      $sessid = cryptservice( session_id() . "::" . date('YmdHis')  , 'e' );
+      $ky = generateRandomString();
+      $sessid = cryptservice( session_id() . "::" . date('YmdHis')  , 'e', true, session_id());
       $today = new DateTime('now');
       $tdydte = $today->format('m/d/Y');
       $tdydtev = $today->format('Y-m-d');
@@ -9786,10 +9787,11 @@ function bldBiosampleProcurement($usr) {
       //$tdydtev = '20180507';
       $orlistTbl = bldORScheduleTbl(  json_decode(callrestapi("GET", dataTree . "/simple-or-schedule/{$usr->presentinstitution}/{$tdydtev}",serverIdent, serverpw), true) );
       $procGrid = bldProcurementGrid($usr); //THIS IS THE PROCUREMENT GRID ELEMENTS
-      $dvault = phiserver . "/" . $sessid;
+      //$dvault = phiserver . "/" . $sessid;
+      $dvault = $sessid;
       $linkToVault = "";
       if ( (int)$usr->allowpxi === 1 ) {
-        $linkToVault = "<div class=ttholder onclick=\"openOutSidePage('{$dvault}');\"><i class=\"material-icons\">account_balance</i><div class=tt>Access Donor Vault</div></div>";
+        $linkToVault = "<div class=ttholder onclick=\"popDV('{$dvault}');\"><i class=\"material-icons\">account_balance</i><div class=tt>Access Donor Vault</div></div>";
       }
 
       $holdingTbl = <<<HOLDINGTBL
