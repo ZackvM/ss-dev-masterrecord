@@ -25,9 +25,8 @@ define("dataTree","https://dev.chtneast.org/data-services");
 define("applicationTree","/srv/chtneastapp/devss/frame");
 define("genAppFiles","/srv/chtneastapp/devss");
 define("serverkeys","/srv/chtneastapp/devss/dataconn");
-//define("phiserver","https://chtn2017.uphs.upenn.edu");
-
-define("phiserver","https://devvault.chtneast.org");
+define("phiserver","https://chtn2017.uphs.upenn.edu");
+//define("phiserver","https://devvault.chtneast.org");
 //MODULUS HAS BEEN CHANGED TO DEV.CHTNEAST.ORG
 define("eModulus","C7D2CD63A61A810F7A220477B584415CABCF740E4FA567D0B606488D3D5C30BAE359CA3EAA45348A4DC28E8CA6E5BCEC3C37A429AB3145D70100EE3BB494B60DA522CA4762FC2519EEF6FFEE30484FB0EC537C3A88A8B2E8571AA2FC35ABBB701BA82B3CD0B2942010DECF20083A420395EF4D40E964FA447C9D5BED0E91FC35F12748BB0715572B74C01C791675AF024E961548CE4AA7F7D15610D4468C9AC961E7D6D88A6B0A61D2AD183A9DFE2E542A50C1C5E593B40EC62F8C16970017C68D2044004F608E101CD30B69310A5EE550681AB411802806409D04F2BBB3C49B1483C9B9E977FCEBA6F4C8A3CB5F53AE734FC293871DCE95F40AD7B9774F4DD3");
 define("eExponent","10001");
@@ -138,6 +137,11 @@ echo $pg;
         $data = "";
         switch ($method) { 
           case 'POST':
+            header('Content-type: application/json; charset=utf8');
+            header('Access-Control-Allow-Origin: *'); 
+            header('Access-Control-Allow-Header: Origin, X-Requested-With, Content-Type, Accept');
+            header('Access-Control-Max-Age: 3628800'); 
+            header('Access-Control-Allow-Methods: GET, POST');              
             $authuser = $_SERVER['PHP_AUTH_USER']; 
             $authpw = $_SERVER['PHP_AUTH_PW']; 
             if ((int)checkPostingUser($authuser, $authpw) === 200) { 
@@ -176,12 +180,6 @@ echo $pg;
               $responseCode = 405;
               header('HTTP/1.0 401 Unauthorized');
         }
-
-        header('Content-type: application/json; charset=utf8');
-        header('Access-Control-Allow-Origin: *'); 
-        header('Access-Control-Allow-Header: Origin, X-Requested-With, Content-Type, Accept');
-        header('Access-Control-Max-Age: 3628800'); 
-        header('Access-Control-Allow-Methods: GET, POST');
         http_response_code($responseCode);
         echo $data;
     break;        

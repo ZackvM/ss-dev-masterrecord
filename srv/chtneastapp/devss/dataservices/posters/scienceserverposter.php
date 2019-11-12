@@ -49,6 +49,7 @@ class datadoers {
       ( !array_key_exists('pxiguidency', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'pxiguidency' DOES NOT EXIST.")) : ""; 
       
       $usrguid = explode("::",cryptservice($pdta['pxiguidency'],'d'));
+      //$usrguid = cryptservice($pdta['pxiguidency'],'d');       
       $usrSQL = "SELECT ifnull(friendlyName,'') as friendlyname, ifnull(emailaddress,'') as userid, ifnull(date_format( pxisessionexpire, '%H:%i'),'') as expiretime, ifnull(originalAccountName,'') as origacctname"
               . ", ifnull(accessLevel,'') as accesslevel, ifnull(accessNbr,0) as accessnbr "
               . "FROM four.sys_userbase "
@@ -61,7 +62,7 @@ class datadoers {
       $usrRS = $conn->prepare($usrSQL);
       $usrRS->execute(array(':pxiguid' => $usrguid[0]));
       if ( $usrRS->rowCount() <> 1 ) {
-        (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  USER NOT FOUND"));
+        (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  USER NOT FOUND {$usrguid[0]}"));
       } else { 
           $u = $usrRS->fetch(PDO::FETCH_ASSOC);
       }
@@ -205,15 +206,43 @@ class datadoers {
       return $rows;        
     }
     
-
-
-
-
-
-
-    
+    function vaultretrievependingprs ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;        
+      
+      $prSQL = "SELECT pbiosample, replace(read_label ,'_','') as readlabel, ifnull(prc.dspvalue,'') as proctype, ifnull(qms.dspvalue,'') as qmsprocstatus, ifnull(procureinstitution,'') as procureinstitution, ifnull(date_format(createdon,'%Y-%m-%d'),'') procurementdate, ifnull(date_format(proceduredate,'%m/%d/%Y'),'') as proceduredate, ucase(trim(concat(trim(concat(pxiage,' ', ifnull(agu.dspvalue,''))),' / ', pxirace,' / ', ifnull(psx.dspvalue,'')))) ars, ucase(trim(concat(ifnull(tissType,''), ' / ', concat(ifnull(anatomicSite,''), if(ifnull(subsite,'') = '','',concat(' [', ifnull(subsite,''),']'))), ' / ' , concat(ifnull(diagnosis,''), if(ifnull(subdiagnos,'') ='','',concat(' [',ifnull(subdiagnos,''),']')))))) as dx, ifnull(pxiid,'') as pxiid, ifnull(assocID,'') as associd, date_format(createdon,'%Y-%m')  procurementdatedsp FROM masterrecord.ut_procure_biosample bs left join (SELECT menu, menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') qms on bs.QCProcStatus = qms.menuvalue left join (SELECT menu, menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PROCTYPE') prc on bs.proctype = prc.menuvalue left join (SELECT menu, menuvalue, dspvalue FROM four.sys_master_menus where menu = 'AGEUOM') agu on bs.pxiageuom = agu.menuvalue left join (SELECT menu, menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PXSEX') psx on bs.pxiGender = psx.menuvalue where pathReport = 2 and ( proceduredate > '2018-01-01' and proceduredate < now()) and voidind <> 1 order by 12 desc";
+      $prRS = $conn->prepare($prSQL); 
+      $prRS->execute();
+      $itemsfound = $prRS->rowCount(); 
+      while ($r = $prRS->fetch(PDO::FETCH_ASSOC) ) { 
+          $dta[] = $r;
+      }
+ 
+      $responseCode = 200;
+          
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;        
+    }
     
     //////////////// ^^^ VAULT ABOVE /////////////////
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     function invtrysegmentstatuser ( $request, $passdata ) { 
       $rows = array(); 
