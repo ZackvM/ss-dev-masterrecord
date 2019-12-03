@@ -2460,7 +2460,7 @@ $rtnThis = <<<PAGECONTENT
 <tr><td><input type=password id=ssPswd></td></tr>   
 {$addLine}
 <tr><td align=right>{$controlBtn}</td></tr>
-<tr><td><center> <span class=pseudoLink>Forgot Password</span> </td></tr>    
+<tr><td><center> <span class=pseudoLink id=forgetLink>Forgot Password</span> </td></tr>    
 </table>        
 </div>
 <div id=loginFooter><b>Disclaimer</b>: This is the Specimen Management Data Application (SMDA) for the Eastern Division of the Cooperative Human Tissue Network.  It provides access to collection data by employees, remote site contracts and investigators of the CHTNEastern Division.   You must have a valid username and password to access this system.  If you need credentials for this application, please contact a CHTNED Manager.  Unauthorized activity is tracked and reported! To contact the offices of CHTNED, please call (215) 662-4570 or email chtnmail /at/ uphs.upenn.edu</div>

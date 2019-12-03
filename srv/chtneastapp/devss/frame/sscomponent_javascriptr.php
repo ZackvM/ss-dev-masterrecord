@@ -3035,6 +3035,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
+  if ( byId('forgetLink')) { 
+    byId('forgetLink').addEventListener('click', function () { sendPWordReset(); }, false);     
+  }
+
   document.addEventListener('keypress', function(event) { 
     if (event.which === 13) { 
       doLogin();
@@ -3042,6 +3046,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }, false);
 
 }, false);
+
+function sendPWordReset() { 
+
+alert('SEND RESET');
+
+}
 
 function doLogin() { 
   var crd = new Object(); 

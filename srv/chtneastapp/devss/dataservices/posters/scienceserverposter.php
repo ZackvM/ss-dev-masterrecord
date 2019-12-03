@@ -34,6 +34,33 @@ function __construct() {
 
 class datadoers {
     
+    function vaultconsentdocumentlisting ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 400;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;        
+      
+      $prSQL = "SELECT menuvalue, dspvalue, useasdefault FROM four.sys_master_menus where menu = 'CONSENTDOCUMENTS' and dspind = 1 order by dsporder";
+      $prRS = $conn->prepare($prSQL); 
+      $prRS->execute();
+      $itemsfound = $prRS->rowCount(); 
+      while ($r = $prRS->fetch(PDO::FETCH_ASSOC) ) { 
+          $dta[] = $r;
+      }
+ 
+      $responseCode = 200;
+          
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;        
+    }
+    
     function vaultgetuser ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
