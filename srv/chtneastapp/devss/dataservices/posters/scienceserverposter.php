@@ -2743,6 +2743,8 @@ SQLSTMT;
         default:
          //DEFAULT 
       }
+      $sidePanelSQL .= " order by 3 asc";
+      
       if ($bldSidePanel === 1) {  
         require(serverkeys . "/sspdo.zck");  
         $listRS = $conn->prepare($sidePanelSQL); 
