@@ -73,7 +73,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $closer = "closeThisDialog('{$pdta['dialogid']}');";         
         $innerDialog =  bldImmunoMoleTestValues ( $pdta['dialogid'], $passedData );
       break;
-     case 'qmsRestatusSegments':
+      case 'qmsRestatusSegments':
         $pdta = json_decode($passedData, true);         
         $rqstnbr =  cryptservice( $pdta['objid'], 'd');
         $titleBar = "Status Segments (QMS Mass Update)";
@@ -81,7 +81,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $closer = "closeThisDialog('{$pdta['dialogid']}');";         
         $innerDialog = bldQMSGlobalSegmentUpdate ( $pdta['dialogid'] , $passedData );     
     break;
-    case 'irequestdisplay':
+      case 'irequestdisplay':
         $pdta = json_decode($passedData, true);         
         $rqstnbr =  cryptservice( $pdta['objid'], 'd');
         $titleBar = "Investigator Request Information ({$rqstnbr})";
@@ -89,21 +89,21 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $closer = "closeThisDialog('{$pdta['dialogid']}');";         
         $innerDialog = bldInvestigatorRequestDialog ( $pdta['dialogid'] , $passedData );     
     break;
-    case 'hprreturnslidetray':
+      case 'hprreturnslidetray':
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Slide Tray Return (Override)";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";              
         $innerDialog = bldHPRSlideTrayReturnOverride ( $pdta['dialogid'], $passedData );
         break;
-    case 'datacoordhprdisplay': 
+      case 'datacoordhprdisplay': 
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Review";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";              
         $innerDialog = bldHPRReviewDisplay ( $pdta['dialogid'], $passedData );
         break;
-    case 'trayreturndialog': 
+      case 'trayreturndialog': 
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Unusuable Biosample";
         $standardSysDialog = 0;
@@ -166,7 +166,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $innerDialog = bldHPRPRBigViewer ( $pdta['dialogid'], $pdta['objid'] );
         //$footerBar = "SEGMENT ADD";       
         break;        
-        case 'hprAssistEmailer':
+      case 'hprAssistEmailer':
         $pdta = json_decode($passedData, true);          
         $titleBar = "HPR Direct Emailer";
         $standardSysDialog = 0;
@@ -519,7 +519,6 @@ BGTBL;
 DIALOGINNER;
         $footerBar = "";
       break;
-
       case 'dataCoordinatorShipDocCreate': 
         $si = serverIdent;
         $sp = serverpw;

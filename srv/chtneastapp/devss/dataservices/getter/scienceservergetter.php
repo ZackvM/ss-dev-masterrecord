@@ -154,7 +154,29 @@ class objlisting {
      return $rows;     
   }  
 
-
+    function vaultconsentdocquestions( $whichobj, $urirqst ) {
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = $whichobj;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $cquestionSQL = "SELECT menuvalue, dspvalue, additionalInformation FROM four.sys_master_menus where menu = 'CONSENTDOCQUESTIONS' and parentID = :pid and dspind = 1 order by dsporder";
+     $cqRS = $conn->prepare($cquestionSQL);
+     $cqRS->execute(array(':pid' => $whichobj));
+     if ( $cqRS->rowCount() > 0 ) {
+       $itemsfound = $cqRS->rowCount();  
+       while ($r = $cqRS->fetch(PDO::FETCH_ASSOC)) { 
+         $dta[] = $r;
+       }
+       $responseCode = 200;
+     }
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;     
+  }
+  
   function hprreviewerlist() {
      $responseCode = 400;
      $rows = array();

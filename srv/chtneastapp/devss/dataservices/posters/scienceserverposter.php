@@ -34,6 +34,29 @@ function __construct() {
 
 class datadoers {
     
+    function vaultconsentdocquestions( $request, $passdata ) {
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = $whichobj;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $cquestionSQL = "SELECT menuvalue, dspvalue, additionalInformation FROM four.sys_master_menus where menu = 'CONSENTDOCQUESTIONS' and parentID = :pid and dspind = 1 order by dsporder";
+     $cqRS = $conn->prepare($cquestionSQL);
+     $cqRS->execute(array(':pid' => $whichobj));
+     if ( $cqRS->rowCount() > 0 ) {
+       $itemsfound = $cqRS->rowCount();  
+       while ($r = $cqRS->fetch(PDO::FETCH_ASSOC)) { 
+         $dta[] = $r;
+       }
+       $responseCode = 200;
+     }
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;     
+  }
+    
     function vaultconsentdocumentlisting ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -3104,9 +3127,19 @@ MBODY;
           
           $updSQL = "update masterrecord.ut_shipdoc set salesorder = :so, salesorderamount = :soamt,  soby = :usr, soon = now() where shipdocrefid = :sd";
           $updRS = $conn->prepare($updSQL);
-          $updRS->execute(array(':so' => $pdta['sonbr'] , ':soamt' => (float)$pdta['soamt'], ':usr' => $u['usr'], ':sd' => $sd));            
-          
+          $updRS->execute(array(':so' => $pdta['sonbr'] , ':soamt' => (float)$pdta['soamt'], ':usr' => $u['usr'], ':sd' => $sd));             
           $dta['dialogid'] = $pdta['dialogid']; 
+
+          //todo:  Get Investigator email address
+          $iEmail[] = "dfitzsim@pennmedicine.upenn.edu";
+          $iEmail[] = "zacheryv@pennmedicine.upenn.edu";
+          $iEmail[] = "zackvm@zacheryv.com";
+
+          if ( $iEmail !== "" ) { 
+            $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgBody, htmlind, wheninput, bywho) value(:towhoaddressarray, 'CHTN-EASTERN SHIPMENT FOLLOWUP EMAIL', :msgBody, 1, now(), :bywho)";
+            $emlRS = $conn->prepare( $emlSQL );
+            $emlRS->execute(array ( ':towhoaddressarray' => json_encode( $iEmail ), ':msgBody' => "<table border=1><tr><td><CENTER>THE MESSAGE BELOW IS ABOUT YOUR RECENT SHIPMENT WITH SURVEY LINK.<p>PLEASE DO NOT RESPONSED TO THIS EMAIL. CONTACT THE CHTNEASTERN OFFICE DIRECTLY EITHER BY EMAIL chtnmail@uphs.upenn.edu OR BY CALLING (215) 662-4570.</td></tr><tr><td>SURVEY LINK TEXT</td></tr></table>", ':bywho' =>  "SALES-ORDER-ADD-{$u['usr']}" ));
+          }
           $responseCode = 200;
       }
 

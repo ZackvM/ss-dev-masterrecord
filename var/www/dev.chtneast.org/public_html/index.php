@@ -52,7 +52,6 @@ require(serverkeys . "/serverid.zck");
 //    exit(1);
 //}
 
-
 define("serverIdent",$serverid);
 define("servertrupw", $serverpw);
 define("serverpw", cryptservice($serverpw) );
