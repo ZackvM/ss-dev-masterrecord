@@ -34,6 +34,26 @@ function __construct() {
 
 class datadoers {
     
+    function vaultmarkprno ( $request, $passdata ) { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+
+     $msgArr[] = "ZACK WAS HERE";
+
+
+    
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;            
+    }
+    
+        
     function vaultconsentdocquestions( $request, $passdata ) {
      $responseCode = 400;
      $rows = array();
