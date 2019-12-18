@@ -41,15 +41,42 @@ class datadoers {
      $errorInd = 0;
      $itemsfound = 0;
      require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode( $passdata, true);
+     //[\"{\\\"user\\\":\\\"zacheryv@mail.med.upenn.edu\\\",\\\"bglist\\\":\\\"[\\\\\\\"88338T\\\\\\\",\\\\\\\"88339T\\\\\\\"]\\\",\\\"reason\\\":\\\"These are normal foreskin samples and should never have had the indicator for a pathology report\\\"
 
-     $msgArr[] = "ZACK WAS HERE";
+     ( !array_key_exists('user', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'user' DOES NOT EXIST.")) : ""; 
+     ( !array_key_exists('bglist', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'bglist' DOES NOT EXIST.")) : ""; 
+     ( !array_key_exists('reason', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'reason' DOES NOT EXIST.")) : ""; 
 
 
-    
+     if ( $errorInd === 0 ) {
 
+       //CHECK USER 
+       $chkUSQL = "SELECT userid FROM four.sys_userbase where emailAddress = :useremail and allowind = 1 and allowlinux = 1 and allowCoord = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and TIMESTAMPDIFF(MINUTE, now(), pxisessionexpire) > 0";       
+       $chkURS = $conn->prepare( $chkUSQL );
+       $chkURS->execute( array( ':useremail' => $pdta['user'] ));
+       ( $chkURS->rowCount() < 1 ) ? ( list( $errorInd, $msgArr[] ) = array( 1 , "USER NOT ALLOWED ACCESS TO THE MAIN SCIENCESERVER DATABASE - EITHER SESSION EXPIRED OR CREDENTIALS INCORRECT") ) : "";
+       $bglist = json_decode( $pdta['bglist'], true);
+       ( count( $bglist ) < 1 ) ? ( list( $errorInd, $msgArr[] ) = array( 1 , "NO BIOGROUP READ LABELS SUPPLIED IN REQUEST") ) : "";
+       ( trim($pdta['reason']) === "" ) ? ( list( $errorInd, $msgArr[] ) = array( 1 , "No Reason for changing biogroup's Pathology Report Status given") ) : "";
+   
+       if ( $errorInd === 0 ) { 
+
+         $histSQL = "insert into masterrecord.history_procure_biosample_pathrpt (pbiosample, pathreportind, prid, changeby, changeon, reason) SELECT pbiosample, ifnull(pathreport,0) as pathreportind, ifnull(pathreportid,0) as pathreportid, :user, now(), :reason FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') = :bglabel";
+         $histRS = $conn->prepare($histSQL);
+         $updSQL = "update masterrecord.ut_procure_biosample set pathReport = 0 where replace(read_Label,'_','') = :bglabel";
+         $updRS = $conn->prepare($updSQL);
+
+         foreach ( $bglist as $v ) { 
+           $histRS->execute(array(':user' => 'zacheryv@mail.med.upenn.edu', ':bglabel' => $v, ':reason' => $pdta['reason']  ));
+           $updRS->execute(array(':bglabel' => $v ));
+         }
+         $responseCode = 200;
+       }
+     }
      $msg = $msgArr;
      $rows['statusCode'] = $responseCode; 
-     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
      return $rows;            
     }
     
@@ -7705,7 +7732,7 @@ UPDSQL;
     left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'ageuom') ageuom on orl.ageuomcode = ageuom.menuvalue 
     left join (SELECT menuvalue, dspvalue, useasdefault, menuvalue as lookupvalue FROM four.sys_master_menus where menu = 'pxTARGET') as trg on orl.targetind = trg.menuvalue
     left join (SELECT ucase(ifnull(mnu.menuvalue,'')) as codevalue, ucase(ifnull(mnu.dspvalue,'')) as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where menu = 'infc') ic on if(ifnull(orl.infcind,1)=0,1, ifnull(orl.infcind,1)) = ic.codevalue
-    where pxicode = :donorid and location = :usrpresentloc
+    where pxicode = :donorid and location = :usrpresentloc and date_format(listdate,'%Y-%m-%d') = date_format(now(),'%Y-%m-%d') 
 SQLSTMT;
      $rs = $conn->prepare($donorSQL); 
      $rs->execute(array(':donorid' => $donorid, ':usrpresentloc' => $requestedInstitution)); 
