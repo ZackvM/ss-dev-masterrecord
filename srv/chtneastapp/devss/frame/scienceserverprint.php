@@ -404,6 +404,9 @@ LBLLBL;
     while ( $rd = $dataRS->fetch(PDO::FETCH_ASSOC)) { 
       $dspdata[] = $rd;
     }
+    
+    //four.tmp_histoSheetAdds
+    
 
     //[{"pbiosample":87905,"seglabel":"001","specCat":"NORMAL","primarySite":"KIDNEY","prp":"PB","prpmet":"H&ESLIDE","nbrofblock":1,"nbrOSlides":1},
     $dsptbl = "<table border=0 cellspacing=0 cellpadding=0 width=100% id=rqstTbl><thead><th rowspan=2>#</th><th rowspan=2>Case<br>Number</th><th rowspan=2>Container<br>Number</th><th rowspan=2>Label</th><th rowspan=2>Tissue</th><th rowspan=2>Prep</th><th rowspan=2>Added</th><th rowspan=2># of<br>Block</th><th colspan=2 style=\"border-bottom: none; border-right: 2px solid rgba(48,57,71,1);\">Slide Requests</th><th rowspan=2>Cass.<br>Sent</th><th rowspan=2>Cass.<br>Recvd</th><th rowspan=2>SLIDE<br>Sent</th><th rowspan=2>SLIDE<br>Rcvd</th></tr><tr><th style=\"border-right: none;\">#</th><th style=\"border-right: 2px solid rgba(48,57,71,1);\">Type</th></thead><tbody>";
