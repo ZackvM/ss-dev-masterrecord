@@ -33,7 +33,32 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+    function vaultcheckpxiids ( $request, $passdata ) { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode( $passdata, true);
+     //SELECT replace(read_Label,'_','') as readlabel FROM masterrecord.ut_procure_biosample where pxiid = '23070fd9-f3ef-46f4-b055-c6843d2edc02'
+
+
+     foreach ( $pdta['pxilist'] as $value ) { 
+
+       $dta[] = $value;    
+
+     }
+
+
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;            
+    }
+
     function vaultmarkprno ( $request, $passdata ) { 
      $responseCode = 400;
      $rows = array();
