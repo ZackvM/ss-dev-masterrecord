@@ -42,16 +42,21 @@ class datadoers {
      $itemsfound = 0;
      require(serverkeys . "/sspdo.zck");
      $pdta = json_decode( $passdata, true);
-     //SELECT replace(read_Label,'_','') as readlabel FROM masterrecord.ut_procure_biosample where pxiid = '23070fd9-f3ef-46f4-b055-c6843d2edc02'
-
-
+ 
+     $chkSQL = "SELECT replace(read_Label,'_','') as readlabel FROM masterrecord.ut_procure_biosample where pxiid = :pxiid";
+     $chkRS = $conn->prepare($chkSQL);
      foreach ( $pdta['pxilist'] as $value ) { 
-
-       $dta[] = $value;    
-
+       $chkRS->execute(array(':pxiid' => $value)); 
+       if ( $chkRS->rowCount() > 0 ) { 
+         while ( $r = $chkRS->fetch(PDO::FETCH_ASSOC)) {   
+           $itemsfound++;
+           //$bg = $chkRS->fetch(PDO::FETCH_ASSOC);
+           $dta[] = $r['readlabel'];    
+         }
+       } 
      }
 
-
+     $responseCode = 200;
 
      $msg = $msgArr;
      $rows['statusCode'] = $responseCode; 
