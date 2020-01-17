@@ -1378,6 +1378,10 @@ function hprrequestcode($whichobj, $rqst) {
 }
 
 class globalMenus {
+    
+    function icddocsearchoptions() { 
+      return "SELECT ifnull(menuvalue,'') as codevalue, ifnull(dspvalue,'') as menuvalue, ifnull(useasdefault,0) as useasdefault, ifnull(menuvalue,'') as lookupvalue  FROM four.sys_master_menus where menu = 'INFORMEDCONSENTWATCHSEARCH' and dspind = 1 order by dspOrder";
+    }
 
     function astreqpreps() { 
       return "SELECT distinct prep_grouptype as codevalue, prep_grouptype as menuvalue, 0 as useasdefault, prep_grouptype as lookupvalue FROM vandytmp.yesterday_eastern_tissueprep where ifnull(prep_grouptype,'') <> '' order by prep_grouptype";
