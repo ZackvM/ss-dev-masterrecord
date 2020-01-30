@@ -171,7 +171,6 @@ class bldssuser {
               }
 
               if ( (int)$mod['moduleid'] === 472 ) {
-
                 $rptListSQL = "SELECT concat(substr(rl.reportname,1,30),'...') as menuvalue, 'x' as pagesource, concat('navigateSite(\'reports/',ifnull(rl.urlpath,''),'\')') as additionalcode,'x' as dspsystemicon, 1 as dspinmenu FROM four.ut_reportgroup_to_reportlist rtr left join four.ut_reportlist rl on rtr.reportid = rl.reportid where userfav = :usr  and rtr.dspind = 1 and rl.dspind = 1 and rl.accesslvl <= :accessnbr order by rtr.dsporder limit 10";
                 $rptListRS = $conn->prepare($rptListSQL);
                 $rptListRS->execute(array(':accessnbr' => $ur['accessnbr'], ':usr' => $ur['ssusername']));
@@ -179,6 +178,12 @@ class bldssuser {
                   $sbmod[] = $rpt; 
                 }
               }
+
+              
+              //$sessid = cryptservice( session_id() . "::" . date('YmdHis')  , 'e', true, session_id());
+              //ADD ACCESS DONOR VAULT HERE
+
+
 
               $mods[]  = array($mod['moduleid'],$mod['module'],$mod['pagesource'],$sbmod);
            }

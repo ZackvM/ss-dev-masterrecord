@@ -34,6 +34,52 @@ function __construct() {
 
 class datadoers {
 
+    function vaulticbiogroupupdate ( $request, $passdata ) { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata, true); 
+     foreach ( $pdta as $key => $value ) {
+       if ( !cryptservice($key,'d') ) { 
+         $locarr[ $key ] = $value; 
+       } else { 
+         $locarr[ cryptservice($key,'d') ] = chtndecrypt( $value );
+       }
+     }
+     ( !array_key_exists('fileselector', $locarr) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'fileselector' DOES NOT EXIST.")) : ""; 
+     ( !array_key_exists('bgroupdelimit', $locarr) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'bgroupdelimit' DOES NOT EXIST.")) : ""; 
+     ( !array_key_exists('icid', $locarr) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'icid' DOES NOT EXIST.")) : ""; 
+     if ( $errorInd === 0 ) {
+       ( trim($locarr['fileselector']) === '' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FILE SELECTOR CANNOT BE EMPTY.")) : "";
+       ( trim($locarr['icid']) === '' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "INFORMED CONSENT ID MUST BE SUPPLIED.")) : "";
+       ( trim($locarr['bgroupdelimit']) === '' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU HAVE NOT SPECIFIED ANY BIOGROUPS.")) : "";
+       if ( $errorInd === 0 ) {  
+         $bgList = explode( ',', trim( str_replace(' ','',$locarr['bgroupdelimit'])));
+         $bgChkSQL = "SELECT pbiosample FROM masterrecord.ut_procure_biosample where replace(read_Label,'_','') = :bglabel and ifnull(dvaulticselector,'') = '' and voidind <> 1 "; 
+         $bgChkRS = $conn->prepare($bgChkSQL);
+         foreach ( $bgList as $k => $v ) { 
+           $bgChkRS->execute(array(':bglabel' => $v));
+           ( $bgChkRS->rowCount() === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Biogroup Label {$v} either doesn't exist or already has an informed consent uploaded.")) : "";
+         }
+         if ( $errorInd === 0 ) { 
+           $updSQL = "update masterrecord.ut_procure_biosample set informedConsent = 2, dvaulticselector = :fselector, dvaulticuploadon = now(), dvaulticuploadby = :uname where replace(read_Label,'_','') = :bglbl";
+           $updRS = $conn->prepare( $updSQL );            
+           foreach ( $bgList as $bgk => $bgv ) {   
+              $updRS->execute(array( ':bglbl' => $bgv, ':fselector' => $locarr['fileselector'], ':uname' => $locarr['vaultuser'] ));
+              $responseCode = 200;
+           }
+         }
+       }
+     } 
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;            
+    }
+
     function vaultcheckpxiids ( $request, $passdata ) { 
      $responseCode = 400;
      $rows = array();
