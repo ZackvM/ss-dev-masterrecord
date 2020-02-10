@@ -1550,10 +1550,14 @@ document.addEventListener('DOMContentLoaded', function() {
          
   if (byId('btnHPRRecord')) { 
     byId('btnHPRRecord').addEventListener('click', function() { alert('Viewing the HPR Record is not yet operational. Try later.'); }, false);
-  }   
-      
+  }
+            
 }, false); 
- 
+
+function genSegContext( e, segmentid ) {  
+  e.preventDefault();        
+}
+   
 function rowselector(whichrow) { 
   if (byId(whichrow)) { 
     if (byId(whichrow).dataset.selected === "false") { 
@@ -2086,7 +2090,8 @@ function addDefinedSegment(printInd) {
     ( byId('fldSEGselectorAssignReq') ) ? dta['assignReq'] = byId('fldSEGselectorAssignReq').value : noErrorInd = 0;
     ( byId('fldSEGSGComments') ) ? dta['segComments'] = byId('fldSEGSGComments').value : noErrorInd = 0;
     ( byId('fldSEGDefinitionRepeater') ) ? dta['definitionRepeater'] = byId('fldSEGDefinitionRepeater').value : noErrorInd = 0;
-    ( byId('fldSEGParentExhaustInd') ) ? dta['parentExhaustedInd'] = byId('fldSEGParentExhaustInd').checked : noErrorInd = 0;        
+    ( byId('fldSEGParentExhaustInd') ) ? dta['parentExhaustedInd'] = byId('fldSEGParentExhaustInd').checked : noErrorInd = 0;  
+    ( byId('fldSEGAddToHisto') ) ? dta['addToHisto'] = byId('fldSEGAddToHisto').checked : noErrorInd = 0;      
     dta['printSlideInd'] = printInd;
     if ( noErrorInd === 1 ) {
       byId('btnSaveSeg').style.display = 'none';
@@ -2129,6 +2134,7 @@ function answerCoordinatorAddSegments(rtnData) {
       byId('fldSEGSGComments').value = "";
       byId('fldSEGDefinitionRepeater').value = 1;
       byId('fldSEGParentExhaustInd').checked = false;
+      byId('fldSEGAddToHisto').checked = false;
    }    
 }
 
@@ -4676,7 +4682,8 @@ function saveDonorSpecifics() {
   dta['protocolnbr'] = byId('fldADDProtocolNbr').value.trim();
   dta['sogi'] = byId('fldPRCUpennSOGIValue').value.trim();
   dta['cx'] = byId('fldPRCPXICXValue').value.trim(); 
-  dta['rx'] = byId('fldPRCPXIRXValue').value.trim();         
+  dta['rx'] = byId('fldPRCPXIRXValue').value.trim();   
+  dta['procedureDate'] = byId('fldProcedureDate').value.trim();       
   var passdta = JSON.stringify(dta);
   var mlURL = "/data-doers/save-encounter-donor";
   //TODO:  Add a wait swirly   

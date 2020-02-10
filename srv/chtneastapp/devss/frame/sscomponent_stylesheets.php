@@ -888,7 +888,7 @@ textarea { font-size: 1.3vh; }
 #segBGDXD { font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); font-weight: bold; padding: 1vh 0 0 0; width: 35vw;  overflow: hidden; border-bottom: 1px solid rgba({$this->color_cornflowerblue},1); }
 
 #fldParentSegment { width: 10vw; }
-#divSegmentDisplayLister { width: 10vw; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); height: 34vh; overflow: auto;     }
+#divSegmentDisplayLister { width: 10vw; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1); height: 43vh; overflow: auto;     }
 #fldSEGDefinitionRepeater { width: 8vw; text-align: right; }
 .reqInd {font-size: 1.3vh; color: rgba({$this->color_bred},1); font-weight: bold; }
 
@@ -922,9 +922,6 @@ textarea { font-size: 1.3vh; }
 .assttholder:hover .tt { display: block; z-index: 49; }
 .assttholder .qlSmallIcon {font-size: 1.2vh; }
 .assttholder .smlFont { font-size: 1vh; }
-
-
-
 
 STYLESHEET;
 return $rtnThis;

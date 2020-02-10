@@ -4157,6 +4157,7 @@ MBODY;
       ( strtoupper(trim($pdta['preparationMethodValue'])) !== 'SLIDE' && !is_numeric( trim($pdta['addMetric'])) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "METRIC VALUES MUST BE NUMERIC")) : "";
       ( strtoupper(trim($pdta['preparationMethodValue'])) !== 'SLIDE' && !(floatval($pdta['addMetric']) > 0) ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "THE METRIC VALUE MUST BE GREATER THAN ZERO")) : ""; 
       ( strtoupper(trim($pdta['preparationMethodValue'])) !== 'SLIDE' && trim($pdta['addMetricUOMValue']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FOR ALL PREPARATIONS BUT SLIDES, A METRIC UNIT OF MEASURE (UOM) MUST BE STATED")) : "";
+      
       if ( trim($pdta['addMetricUOMValue']) !== "" ) { 
           $chkMetSQL = "SELECT menuid FROM four.sys_master_menus where menu = :mnu  and menuvalue = :val";
           $chkMetRS = $conn->prepare($chkMetSQL);
@@ -4198,8 +4199,33 @@ MBODY;
 
       ( trim($pdta['definitionRepeater']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'REPEAT' VALUE MUST NOT BE BLANK ")) : "";
       ( !is_numeric($pdta['definitionRepeater'])) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'REPEAT' VALUE MUST BE A NUMBER")) : "";
-      ( intval($pdta['definitionRepeater']) < 0 || intval($pdta['definitionRepeater']) > 125 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'REPEAT' VALUE CAN ONLY BE BETWEEN 1 AND 125")) : "";
-
+      ( (int)$pdta['definitionRepeater'] < 1 || (int)$pdta['definitionRepeater'] > 124 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE 'REPEAT' VALUE CAN ONLY BE BETWEEN 1 AND 125")) : "";
+      
+      //CHECK CONSUMED/PARENT IF SPECIFIED
+      if (  trim($pdta['parentSegment'] ) !== '' && $pdta['parentExhaustedInd'] ) { 
+        $segChkSQL = "SELECT ifnull(prepmethod,'') as prepmethod, ifnull(preparation,'') as preparation, ifnull(segstatus,'') as segstatus, ifnull(shipdocrefid,'') as shipdocrefid, ifnull(shippeddate,'') as shippeddate FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :bgs"; 
+        $segChkRS = $conn->prepare($segChkSQL); 
+        $segChkRS->execute(array(':bgs' => $pdta['parentSegment'] ));
+        $segChk = $segChkRS->fetch(PDO::FETCH_ASSOC);   
+        //trim($segChk['segstatus']) !== 'ASSIGNED' &&
+        ( trim($segChk['prepmethod']) === 'SLIDE' || trim($segChk['prepmethod']) === 'MICRO' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED PARENT SEGMENT ({$pdta['parentSegment']}) MAY NOT HAVE A PREPARATION METHOD OF 'SLIDE' OR 'MICRO-ARRAY' ")) : "";
+        (  trim($segChk['segstatus']) !== 'BANKED' && trim($segChk['segstatus']) !== 'PERMCOLLECT' && trim($segChk['segstatus']) !== 'ONOFFER'  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED PARENT SEGMENT ({$pdta['parentSegment']} / {$segChk['segstatus']} ) IS NOT STATUSED TO ALLOW MODIFICATION ( BANKED/PERMANENT COLLECTION) ")) : "";
+        ( trim($segChk['shipdocrefid']) !== '' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED PARENT SEGMENT ({$pdta['parentSegment']}) IS LISTED ON A SHIP-DOC (" . substr(('000000' . $segChk['shipdocrefid']),-6) . ")")) : "";
+        ( trim($segChk['shippeddate']) !== '' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED PARENT SEGMENT ({$pdta['parentSegment']}) HAS ALREADY BEEN SHIPPED")) : "";          
+      }
+      
+      
+      //CHECK SLIDE PARENT ON HISTO SHEET  UPDATE SQL ONLY UPDATES PARENT SO CHECK NOT NECESSARY
+      if ( $pdta['addToHisto'] ) { 
+           
+          
+          
+      }
+      
+      if ( $pdta['printSlideInd'] === 1 ) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , " AT THIS TIME, THE PRINT FUNCTION IS NOT OPERATIONAL!"));
+      }         
+      
       if ( $errorInd === 0 ) { 
         //SAVE SEGMENTS
         $cntr = 0;  
@@ -4210,7 +4236,7 @@ MBODY;
         $entryRS = $conn->prepare($entrySQL);
 
         //PARENT SEGMENT HOURS POST
-        $bgReadLabelSQL = "SELECT replace(read_Label,'_','') as readlabel FROM masterrecord.ut_procure_biosample where pbiosample = :bgnum";
+        $bgReadLabelSQL = "SELECT replace(read_Label,'_','') as readlabel, ifnull(anatomicsite,'') as asite, ifnull(tisstype,'') as speccat FROM masterrecord.ut_procure_biosample where pbiosample = :bgnum";
         $bgReadLabelRS = $conn->prepare($bgReadLabelSQL); 
         $bgReadLabelRS->execute(array(':bgnum' => $pdta['bgNum'] ));
         $bgReadLabel = $bgReadLabelRS->fetch(PDO::FETCH_ASSOC);
@@ -4234,11 +4260,10 @@ MBODY;
         while ( $cntr < intval($pdta['definitionRepeater'])) {  
            $nxtRS->execute(array(':pbiosample' => $pdta['bgNum']));
            $nxt = $nxtRS->fetch(PDO::FETCH_ASSOC);
-           (list( $errorInd, $msgArr[] ) = array(1 , "{$nxt['topSegment']} / {$bgReadLabel['readlabel']} / {$parentHRPost} "));
+          // (list( $errorInd, $msgArr[] ) = array(1 , "{$nxt['topSegment']} / {$bgReadLabel['readlabel']} / {$parentHRPost} "));
         //{"bgNum":"82106","parentSegment":"","noParentInd":false,"preparationMethodValue":"","preparationMethod":"","preparation":""
         //,"preparationValue":"","addMetric":"","addMetricUOMValue":"","addMetricUOM":"","preparationContainerValue":"","preparationContainer":""
         //,"assignInv":"","assignReq":"","segComments":"","definitionRepeater":1,"parentExhaustedInd":false,"printSlideInd":0}
-
            $newBGS = $bgReadLabel['readlabel'] . substr(('000' . ((int)$nxt['topSegment'] + 1)),-3);
            $entryRS->execute(array(
               ':biosampleLabel' => $pdta['bgNum']  
@@ -4262,22 +4287,41 @@ MBODY;
            ));
            $cntr++;
         }
-        $responseCode = 200;   
-      }
-
-      if ( $pdta['printSlideInd'] === 1 ) { 
-        (list( $errorInd, $msgArr[] ) = array(1 , "BIOSAMPLES HAVE BEEN SAVED.  HOWEVER, THE PRINT FUNCTION AT THIS TIME IS NOT OPERATIONAL! REFRESH YOUR SCREEN TO SEE CHANGES."));
-      }   
-
+       
       if ( $pdta['parentExhaustedInd'] ) { 
           //MARK PARENT PENDING DESTROY
           $histSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) SELECT segmentId, segstatus, statusby, statusdate, now(), :usr FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :parentbgs";
           $histRS = $conn->prepare($histSQL);
           $histRS->execute(array(':usr' => $u['originalaccountname'], ':parentbgs' => trim($pdta['parentSegment'])));
           //TODO:  MAKE THIS SEGMENT STATUS 'PENDDEST' DYNAMIC
-          $updSQL = "update masterrecord.ut_procure_segment set segStatus = 'PENDDEST', statusdate = now(), statusBy = :bywho  where replace(bgs,'_','') = :parentbgs";
+          $updSQL = "update masterrecord.ut_procure_segment set segStatus = 'CONSUMED', statusdate = now(), statusBy = :bywho  where replace(bgs,'_','') = :parentbgs";
           $updRS = $conn->prepare($updSQL); 
           $updRS->execute(array(':bywho' => $u['originalaccountname'], ':parentbgs' => trim($pdta['parentSegment']))); 
+      }
+
+      //ADD TO HISTO SHEET
+      if ( $pdta['addToHisto'] ) {          
+          if ( trim($pdta['preparationMethodValue']) === 'SLIDE' ) { 
+              //ADD SLIDE TO PARENT
+              $prepSQL = "SELECT longvalue FROM four.sys_master_menus where menu = 'PREPDETAIL' and menuvalue = :slidetype"; 
+              $prepRS = $conn->prepare($prepSQL);
+              $prepRS->execute(array(':slidetype' => $pdta['preparationValue']  ));
+              $prep = $prepRS->fetch(PDO::FETCH_ASSOC);
+              
+              $updSQL = "update four.ut_tmp_histoadd set nbrofslides = :nbrofslides, slidetype = :slideType  where concat(ifnull(casebg,''),ifnull(casesegment,'')) = :parentnbr ";
+              $updRS = $conn->prepare( $updSQL ); 
+              $updRS->execute ( array ( ':nbrofslides' => (int)$pdta['definitionRepeater'], ':slideType' => $prep['longvalue'], ':parentnbr' => trim($pdta['parentSegment']) ));
+          } else { 
+              if ( trim($pdta['preparationMethodValue']) === 'PB') {
+                $insSQL ="insert into four.ut_tmp_histoadd ( casebg, casesegment, label, specat, nbrofblocks, addedby, addedon, dspind) values( :casebg, :casesegment, :label, :speccat, :nbrofblocks, :addedby, now(), :dspind)";
+                $insRS = $conn->prepare( $insSQL );
+                $insRS->execute( array( ':casebg' =>  $bgReadLabel['readlabel']    ,':casesegment' => substr(('000' . ((int)$nxt['topSegment'] + 1)),-3) ,':label' => $bgReadLabel['asite']  ,':speccat' => $bgReadLabel['speccat'],':nbrofblocks' => (int)$pdta['definitionRepeater'] ,':addedby' => $u['originalaccountname'],':dspind' => 1 ));
+              }
+          }
+
+      }
+                
+        $responseCode = 200;   
       }
 
       $msg = $msgArr;
@@ -7363,10 +7407,10 @@ MSGTXT;
      //2) DOES ENCOUNTER EXIST
      $eid = cryptservice($pdta['encyeid'], 'd');
      ( trim($eid) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Encounter Id is missing - See a CHTNEastern Informatics Staff member")) : "";
-     $chkESQL = "SELECT * FROM four.tmp_ORListing where location = :loc and PXICode = :eid";
+     $chkESQL = "SELECT * FROM four.tmp_ORListing where location = :loc and PXICode = :eid and date_format(ListDate,'%m/%d/%Y') = :procdate";
      $chkERS = $conn->prepare($chkESQL); 
-     $chkERS->execute(array(':loc' => $presUserInst, ':eid' => $eid));
-     ( $chkERS->rowCount() !== 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Encounter Id Not Found in Data Tables.  See a CHTNEASTERN Informatics staff member")) : "";
+     $chkERS->execute(array(':loc' => $presUserInst, ':eid' => $eid, ':procdate' => $pdta['procedureDate']  ));
+     ( $chkERS->rowCount() !== 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Encounter Id Not Found in Data Tables.  See a CHTNEASTERN Informatics staff member {$pdta['procedureDate']}")) : "";
 
      //( 1 === 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "{$eid} {$oAccount} {$presUserInst}")) : "";
      
@@ -7423,7 +7467,7 @@ MSGTXT;
                             , upennsogi = :sogi
                             , lastupdatedby = :lastby
                             , lastupdateon = now() 
-                            where location = :presInst and PXICode = :pxicode
+                            where location = :presInst and PXICode = :pxicode and date_format(ListDate,'%m/%d/%Y') = :procdate
 UPDSQL;
             $updR = $conn->prepare($updSQL);
             //TODO:  Make this dynamic
@@ -7455,7 +7499,8 @@ UPDSQL;
                            ,':sogi' => ( trim($pdta['sogi']) === "") ? "NO DATA" : trim($pdta['sogi']) 
                            ,':lastby' => $oAccount
                            ,':presInst' => $presUserInst
-                           ,':pxicode' => $eid ));
+                           ,':pxicode' => $eid
+                           ,':procdate' => $pdta['procedureDate']  ));
             
             if ($tg === 'N') { 
                 $noteInsSQL = "insert into  four.tmp_ORListing_casenotes (donorphiid, notetype, notetext, dspind, bywho, onwhen)  values (:donorphiid, :notetype, :notetext, 1, :bywho, now() ) "; 

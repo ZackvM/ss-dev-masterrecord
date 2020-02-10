@@ -3323,10 +3323,11 @@ case 'biogroupdefinition':
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnHPRRecord><tr><td><i class="material-icons">gavel</i></td><td>View HPR</td></tr></table></td>
   //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAssocGrp><tr><td><i class="material-icons">group_work</i></td><td>Associative</td></tr></table></td>
   //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPristine><tr><td><i class="material-icons">change_history</i></td><td>Pristine</td></tr></table></td>
+    //  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnConsumeSegment> <tr><td><i class="material-icons">autorenew</i></td><td>Consume Segment</td></tr></table></td>  
 $innerBar = <<<BTNTBL
 <tr>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSegment><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnRqstFA><tr><td><i class="material-icons">perm_data_setting</i></td><td>Rqst Further Action</td></tr></table></td>        
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnRqstFA><tr><td><i class="material-icons">perm_data_setting</i></td><td>Rqst Further Action</td></tr></table></td>
 </tr>
 BTNTBL;
     break;
@@ -4725,7 +4726,7 @@ function bldQMSGlobalSegmentUpdate( $dialog, $passedData ) {
   $pdta = json_decode( $passedData, true );
   $bglist = json_decode($pdta['objid'] , true); 
 
-  //TURN INTO WEBSERVICE  
+  //TODO:  TURN INTO WEBSERVICE  
   $chkSQL = "SELECT ifnull(segmentid,'') as segmentid, ifnull(replace(bgs,'_',''),'') as bgs, ifnull(sg.segstatus,'') as segstatus, ifnull(segsts.dspValue,'') as segstatusdsp, ifnull(segsts.assignablestatus,'') as assignablestatus, ifnull(segsts.qmschangeind,'') as qmschangeind, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shippeddate, ifnull(sg.shipdocrefid,'') as shipdocrefid FROM masterrecord.ut_procure_segment sg left join (SELECT menuvalue, dspvalue, assignablestatus, commercialvalue as qmschangeind FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') as segsts on sg.segstatus = segsts.menuvalue where replace(bgs,'_','') = :bgs";
   $chkRS = $conn->prepare($chkSQL);
   $genErrorInd = 0; 
@@ -7831,6 +7832,7 @@ $rtnThis = <<<RTNTHIS
 </td></tr>
 <tr><td valign=top><input type=text id=fldSEGDefinitionRepeater value=1></td></tr>
 <tr><td><input type=checkbox id=fldSEGParentExhaustInd><label for=fldSEGParentExhaustInd>Parent Component has been Exhausted</label></td></tr>
+<tr><td colspan=2><input type=checkbox id=fldSEGAddToHisto><label for=fldSEGParentExhaustInd>Add To Today's Histology Sheet (For Slides, Parent MUST be on Histology Sheet)</label></td></tr>
 <tr><td colspan=2 style="text-align: right; font-size: 1vh; color: rgba(237, 35, 0, 1); font-weight: bold;">{$usrrecord['originalaccountname']} / {$usrrecord['institutionname']} </td></tr>
 </table>
 
@@ -8738,7 +8740,7 @@ function bldQuickEditDonor($passeddata) {
 
 <table>
        <tr><td class=DNRLbl>Encounter ID: </td><td class=DNRDta>{$pxicode} </td><td class=DNRLbl>Institution: </td><td class=DNRDta>{$locationdsp} ({$location})</td></tr>
-       <tr><td class=DNRLbl>Procedure Date: </td><td class=DNRDta>{$ORDate} @ {$starttime}</td><td class=DNRLbl>Surgeon: </td><td class=DNRDta>{$surgeons} </td></tr>
+       <tr><td class=DNRLbl>Procedure Date: </td><td class=DNRDta>{$ORDate} <input type=hidden value='{$ORDate}' id=fldProcedureDate> @ {$starttime}</td><td class=DNRLbl>Surgeon: </td><td class=DNRDta>{$surgeons} </td></tr>
 </table>
 
 <table><tr><td class=DNRLbl>Procedure Description</td></tr><tr><td class=procedureTextDsp>{$proceduretext} </td></tr></table>
@@ -10266,6 +10268,7 @@ if ( strtoupper($bg['qcprocstatus']) === 'Q' ) {
                     data-segmentid = {$svl['segmentid']}
                     data-selected = "false"
                     onclick="rowselector('sg{$svl['segmentid']}');" 
+                    oncontextmenu = "genSegContext(event, {$svl['segmentid']} );"
                   >
                       <td class=seg-lbl>{$svl['segmentlabel']}&nbsp;</td>
                       <td><div class=segstatusdspinfo>{$svl['segstatus']}<div class=segstatusinfo>{$segststbl}</div></div></td>
