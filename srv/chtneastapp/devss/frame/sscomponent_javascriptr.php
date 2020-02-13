@@ -153,6 +153,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
+  if ( byId('btnAddSpcSrvcFee')) { 
+    byId('btnAddSpcSrvcFee').addEventListener('click', function() { 
+     var obj = new Object();
+     obj['sdency'] = byId('sdency').value.trim();
+     var passdata = JSON.stringify(obj);
+     generateDialog( 'shipdocspcsrvfee', passdata );
+    }, false);
+  }
+
  if (byId('btnShipOverride')) { 
     byId('btnShipOverride').addEventListener('click', function() { 
      var obj = new Object();
@@ -188,6 +197,36 @@ document.addEventListener('DOMContentLoaded', function() {
   }   
                                  
 }, false);
+
+ function saveSDService() { 
+   var obj = new Object();
+   obj['sdsrvcency'] = byId('sdsrvcency').value.trim();
+   obj['spcsrvcvalue'] = byId('spcSrvcValue').value.trim();
+   obj['spcsrvcrate'] = byId('spcRate').value.trim();
+   obj['spcsrvcqty'] = byId('spcQty').value.trim();
+   var passdata = JSON.stringify(obj);
+   var mlURL = "/data-doers/shipdoc-special-service-add";
+   universalAJAX("POST",mlURL,passdata,answerSaveSDService,2);         
+ }
+
+ function answerSaveSDService ( rtnData ) {
+   //console.log( rtnData );
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("SHIPMENT DOCUMENT ERROR:\\n"+dspMsg);
+   } else {
+     byId('spcSrvcValue').value = '';
+     byId('spcSrvc').value = '';
+     byId('spcRate').value = '';
+     byId('spcQty').value = '';
+     alert('Special Service Fee has been saved to this Ship-Doc.\\n\\nEither Continue adding Service Fees or refresh your screen to see changes');
+   }         
+ }
 
  function saveSOOverride() { 
    var obj = new Object();
@@ -336,6 +375,33 @@ function answerRemoveBGSFromSD(rtnData) {
      closeThisDialog ( dta['DATA']['dialogid'] );
    }
 }        
+
+function removeSpcSrv( ssfid, cellid ) {
+   var obj = new Object();
+   obj['sdency'] = byId('sdency').value.trim();
+   obj['ssfid'] = ssfid;
+   obj['dspcell'] = cellid; 
+   var passdata = JSON.stringify(obj);
+   console.log( passdata );
+   var mlURL = "/data-doers/shipdoc-remove-spc-srv-fee";
+   universalAJAX("POST",mlURL,passdata,answerRemoveSSFFromSD,2);
+}
+
+function answerRemoveSSFFromSD ( rtnData ) {
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("SHIPMENT DOCUMENT ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse(rtnData['responseText']); 
+     var elem = document.getElementById("cell"+dta['DATA']['dspcellid']);
+     elem.parentElement.removeChild(elem); 
+   }
+}
 
 function removeBGSfromSD(segid, cellid) {
   if (!byId('sdency') || byId('sdency').value.trim() === "") { 

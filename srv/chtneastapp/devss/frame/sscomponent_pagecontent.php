@@ -15,6 +15,13 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'shipdocspcsrvfee':
+        $pdta = json_decode($passedData, true);         
+        $titleBar = "Add Speacial Service Fee";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        $innerDialog = bldSpcSrvSDFee( $passedData );
+      break;                           
       case 'donorvault':
         $pdta = json_decode($passedData, true);         
         $titleBar = "Donor Vault Access";
@@ -3270,6 +3277,7 @@ case 'shipdocedit':
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnSaveSD border=0><tr><td><i class="material-icons">save</i></td><td>Save</td></tr></table></td> 
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintSD border=0><tr><td><i class="material-icons">print</i></td><td>Print</td></tr></table></td>             
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSegment border=0><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Segment</td></tr></table></td>         
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSpcSrvcFee border=0><tr><td><i class="material-icons">add_circle_outline</i></td><td>Add Special Service</td></tr></table></td>         
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnShipOverride border=0><tr><td><i class="material-icons">local_shipping</i></td><td>Ship Override</td></tr></table></td>         
 <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnAddSO border=0><tr><td><i class="material-icons">monetization_on</i></td><td>Add Sales Order</td></tr></table></td>         
 </tr>        
@@ -4360,6 +4368,88 @@ DSPPAGE;
 </style>
    {$dspPage}
 RTNPAGE;
+  return $rtnPage;    
+}
+
+function bldSpcSrvSDFee( $passedData ) { 
+
+  require(serverkeys . "/sspdo.zck");
+  $pdta = json_decode( $passedData, true );
+  $objid = json_decode( $pdta['objid'], true );
+  $sd = substr(('000000' . cryptservice($objid['sdency'], 'd' )),-6);
+
+  $sdChkSQL = "SELECT sdstatus, institutiontype, investcode, investname FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr and sdstatus <> 'CLOSED' "; 
+  $sdChkRS = $conn->prepare( $sdChkSQL );
+  $sdChkRS->execute( array( ':sdnbr' => (int)$sd));
+
+  if ( $sdChkRS->rowCount() === 1 ) {
+    
+    $sdChk = $sdChkRS->fetch(PDO::FETCH_ASSOC);  
+
+    //TODO: Turn this into a webservice
+    $feeSQL = "SELECT menuvalue, dspvalue, academValue, commercialValue, additionalInformation FROM four.sys_master_menus where menu = 'SPCSDSRVCFEE' and dspind = 1 order by dspOrder"; 
+    $feeRS = $conn->prepare($feeSQL); 
+    $feeRS->execute();
+    $instMnu = "<table border=0 class=menuDropTbl>";
+    while ($f = $feeRS->fetch(PDO::FETCH_ASSOC)) {
+        if ( trim($sdChk['institutiontype']) === 'Academic/Non-Profit' ) { 
+          $fillRate = "fillField('spcRate','{$f['academValue']}','{$f['academValue']}');";
+          if ( $f['additionalInformation'] === 'FL' ) { 
+            $fillQty = "fillField('spcQty','1','1');fillField('spcQtyType','FL','FL');";
+          } else { 
+            $fillQty = "fillField('spcQty','','');fillField('spcQtyType','HR','HR');";
+          }
+          $actn = "byId('spcQty').focus();";
+        } else {
+          $fillRate = "fillField('spcRate','{$f['commercialValue']}','{$f['commercialValue']}');";
+          if ( $f['additionalInformation'] === 'FL' ) { 
+            $fillQty = "fillField('spcQty','1','1');fillField('spcQtyType','FL','FL');";
+          } else { 
+            $fillQty = "fillField('spcQty','','');fillField('spcQtyType','HR','HR');";
+          }
+          $actn = "byId('spcQty').focus();";
+        }
+        $instMnu .= "<tr><td onclick=\"fillField('spcSrvc','{$f['menuvalue']}','{$f['dspvalue']}');{$fillRate}{$fillQty}{$actn}\" class=ddMenuItem>{$f['dspvalue']}</td></tr>";
+    } 
+    $instMnu .= "</table>";
+
+  
+  $rtnPage = <<<RTNPAGE
+<style>
+#spcRate { width: 4vw; text-align: right; }
+#spcQty { width: 4vw; text-align: right; }
+#btnAdd { width: 5vw; border: 1px solid #000; text-align: center; padding: 1vh 0; margin-top: 1.8vh; }
+#btnAdd:hover { cursor: pointer; background: rgba(100,149,237,1); color: rgba(255,255,255,1); }  
+#addLine { display: grid; grid-template-columns: 2fr 4vw 4vw; grid-gap: 10px; margin: .5vh .4vw; } 
+</style>
+<input type=hidden id=sdsrvcency value='{$objid['sdency']}'>
+<input type=hidden id=investType value='{$sdChk['institutiontype']}'>
+<div>Add a special service fee to Ship-Doc {$sd} ({$sdChk['investcode']} / {$sdChk['investname']}).</div>
+<div id=addLine>
+  <div class=menuHolderDiv>
+    <div>Special Service</div>
+    <input type=hidden id=spcSrvcValue value=""><input type=text id=spcSrvc READONLY value=""><div class=valueDropDown style="width: 21vw;">{$instMnu}</div></div>
+  <div>
+    <div>Rate</div>
+    <input type=text id=spcRate>
+  </div>
+  <div>
+    <div>Qty/Hr</div>
+    <input type=text id=spcQty>
+    <input type=hidden id=spcQtyType>
+  </div>
+</div>
+<div align=right>
+<table><tr><td><table class=tblBtn id=btnBGSLookup style="width: 6vw;" onclick="saveSDService();"><tr><td style="font-size: 1.3vh;"><center>Add Service</td></tr></table><td><td><table class=tblBtn id=btnBGSLookup style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');location.reload(true);"><tr><td style="font-size: 1.3vh;"><center>Refresh Screen</td></tr></table><td><table class=tblBtn id=btnBGSLookup style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.3vh;"><center>Cancel</td></tr></table></td></tr></table>
+</div> 
+RTNPAGE;
+  } else { 
+  $rtnPage = <<<RTNPAGE
+<style>
+</style>
+<div>You may not add special service fees to ship-doc {$sd}.  Either the ship-doc doesn't exist or is already 'CLOSED'</div>
+RTNPAGE;
+  }
   return $rtnPage;    
 }
 
@@ -7497,24 +7587,47 @@ foreach ( $sd['DATA']['sddetail'] as $dkey => $dval ) {
 </table>
 INFOTBL;
 
-switch ( $sdstatus ) {
-     case 'NEW':
-         //ALLOW DELBTN
-         $delbtn = "<i class=\"material-icons action-icon\" onclick=\"removeBGSfromSD('{$dval['segmentid']}','{$cellident}');\">remove_circle_outline</i>";
-         break;
-     case 'OPEN':
-         //ALLOW DELBTN
-         $delbtn = "<i class=\"material-icons action-icon\" onclick=\"removeBGSfromSD('{$dval['segmentid']}','{$cellident}');\">remove_circle_outline</i>";
-         break;
-     case 'LOCKED':
-         //ALLOW ONLY IF NOT PULLED       
-         $delbtn =  ( (int)$dval['pulledind'] === 0 )  ?  "<i class=\"material-icons action-icon\" onclick=\"removeBGSfromSD('{$dval['segmentid']}','{$cellident}');\">remove_circle_outline</i>" : "<i class=\"material-icons\">vpn_lock</i>";
-         break;
-     case 'CLOSED':
-         //DON'T ALLOW
-         $delbtn = "<i class=\"material-icons\">vpn_lock</i>";
-         break;    
-}
+  $delbtn = "";
+  if ( (int)$dval['segmentid'] === 0 ) {
+    //SPECIAL SERVICES DISPLAY GOES HERE
+    switch ( $sdstatus ) {
+      case 'NEW':
+        //ALLOW DELBTN
+        $delbtn = "<i class=\"material-icons action-icon\" onclick=\"removeSpcSrv('{$dval['shipdocDetId']}','{$cellident}');\">remove_circle_outline</i>";
+        break;
+      case 'OPEN':
+        //ALLOW DELBTN
+        $delbtn = "<i class=\"material-icons action-icon\" onclick=\"removeSpcSrv('{$dval['shipdocDetId']}','{$cellident}');\">remove_circle_outline</i>";
+        break;
+      case 'LOCKED':
+        //ALLOW ONLY IF NOT PULLED       
+        $delbtn = "<i class=\"material-icons action-icon\" onclick=\"removeSpcSrv('{$dval['shipdocDetId']}','{$cellident}');\">remove_circle_outline</i>";
+        break;
+      case 'CLOSED':
+        //DON'T ALLOW
+        $delbtn = "<i class=\"material-icons\">vpn_lock</i>";
+        break;    
+    }
+  } else {
+    switch ( $sdstatus ) {
+      case 'NEW':
+        //ALLOW DELBTN
+        $delbtn = "<i class=\"material-icons action-icon\" onclick=\"removeBGSfromSD('{$dval['segmentid']}','{$cellident}');\">remove_circle_outline</i>";
+        break;
+      case 'OPEN':
+        //ALLOW DELBTN
+        $delbtn = "<i class=\"material-icons action-icon\" onclick=\"removeBGSfromSD('{$dval['segmentid']}','{$cellident}');\">remove_circle_outline</i>";
+        break;
+      case 'LOCKED':
+        //ALLOW ONLY IF NOT PULLED       
+        $delbtn =  ( (int)$dval['pulledind'] === 0 )  ?  "<i class=\"material-icons action-icon\" onclick=\"removeBGSfromSD('{$dval['segmentid']}','{$cellident}');\">remove_circle_outline</i>" : "<i class=\"material-icons\">vpn_lock</i>";
+        break;
+      case 'CLOSED':
+        //DON'T ALLOW
+        $delbtn = "<i class=\"material-icons\">vpn_lock</i>";
+        break;    
+    }
+  }
 
 //INNER DISPLAY TABLE 
 $innerDet = <<<INNDETTBL

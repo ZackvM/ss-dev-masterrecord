@@ -853,9 +853,9 @@ function getShipmentDocument($sdid, $originalURL) {
             }
             
             //TODO: Turn this into a webservice
-            $dtlSQL = "SELECT ifnull(sg.qty,0) as qty, ifnull(sg.bgs,'') as bgs, ifnull(bs.pbiosample,'') as pbiosample, ucase(ifnull(bs.proctype,'')) as proctype, ucase(substr(ifnull(prpt.dspvalue,''),1,1)) as prptdsp, ifnull(hprind,0) as hprind, ifnull(qcind,0) as qcind, ifnull(bs.pxiage,'') as pxiage, ifnull(bs.pxirace,'') as pxirace, ifnull(bs.pxigender,'') as pxigender, ifnull(bs.anatomicsite,'') as site, ifnull(bs.subsite,'') as subsite, ifnull(bs.diagnosis,'') as dx, ifnull(bs.subdiagnos,'') as subdx, ifnull(bs.tisstype,'') as specimencategory, ifnull(sg.hourspost,0) as hrpst, ifnull(sg.prepmethod,'') as prepmet , ifnull(sg.preparation,'') as preparation, ifnull(sg.metric,0) as metric, ifnull(mt.longvalue,'') as metricuom, ifnull(cx.dspvalue,'') as chemo, ifnull(rx.dspvalue,'') as rad, date_format(procurementdate,'%Y-%m-%d') as procurementdate FROM masterrecord.ut_shipdocdetails sdd left join masterrecord.ut_procure_segment sg on sdd.segid = sg.segmentid left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') mt on sg.metricUOM = mt.menuvalue left join (SELECT  menuvalue, dspvalue FROM four.sys_master_menus where menu = 'CX') cx on bs.chemoind = cx.menuvalue  left join (SELECT  menuvalue, dspvalue FROM four.sys_master_menus where menu = 'RX') rx on bs.radind = rx.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') prpt on bs.pathReport = prpt.menuvalue where sdd.shipdocrefid = :sdnbr order by sg.bgs"; 
+            $dtlSQL = "SELECT ifnull(sg.qty,0) as qty, ifnull(sg.bgs,'') as bgs, ifnull(bs.pbiosample,'') as pbiosample, ucase(ifnull(bs.proctype,'')) as proctype, ucase(substr(ifnull(prpt.dspvalue,''),1,1)) as prptdsp, ifnull(hprind,0) as hprind, ifnull(qcind,0) as qcind, ifnull(bs.pxiage,'') as pxiage, ifnull(bs.pxirace,'') as pxirace, ifnull(bs.pxigender,'') as pxigender, ifnull(bs.anatomicsite,'') as site, ifnull(bs.subsite,'') as subsite, ifnull(bs.diagnosis,'') as dx, ifnull(bs.subdiagnos,'') as subdx, ifnull(bs.tisstype,'') as specimencategory, ifnull(sg.hourspost,0) as hrpst, ifnull(sg.prepmethod,'') as prepmet , ifnull(sg.preparation,'') as preparation, ifnull(sg.metric,0) as metric, ifnull(mt.longvalue,'') as metricuom, ifnull(cx.dspvalue,'') as chemo, ifnull(rx.dspvalue,'') as rad, date_format(procurementdate,'%Y-%m-%d') as procurementdate FROM masterrecord.ut_shipdocdetails sdd left join masterrecord.ut_procure_segment sg on sdd.segid = sg.segmentid left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') mt on sg.metricUOM = mt.menuvalue left join (SELECT  menuvalue, dspvalue FROM four.sys_master_menus where menu = 'CX') cx on bs.chemoind = cx.menuvalue  left join (SELECT  menuvalue, dspvalue FROM four.sys_master_menus where menu = 'RX') rx on bs.radind = rx.menuvalue left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PRpt') prpt on bs.pathReport = prpt.menuvalue where sdd.shipdocrefid = :sdnbr union SELECT qtymetric, 'SSF','SPCSRVCFEE','','','','','','','', concat(ifnull(srvfeedsp,''),' [Special Service Fee]') , concat('$',format(ifnull(totalfee,'0'),2)) ,'','','','','','', concat('$',format(ifnull(totalfee,'0'),2)),'' ,'','','' FROM masterrecord.ut_shipdoc_spcsrvfee where shipdocrefid = :sdnbra and dspind = 1 order by 2 asc"; 
             $dtlR = $conn->prepare($dtlSQL); 
-            $dtlR->execute(array(':sdnbr' => $sdid)); 
+            $dtlR->execute(array(':sdnbr' => $sdid, ':sdnbra' => $sdid)); 
 
             $nLines = 0;
             $tQty = 0;
@@ -863,7 +863,13 @@ function getShipmentDocument($sdid, $originalURL) {
             $mias = 0;
             $miaa = 0; 
             while ($dtl = $dtlR->fetch(PDO::FETCH_ASSOC)) { 
-                
+              $bd = "";
+              $prp = "";
+              $weightMet = "";
+              $ars = "";
+              $cxrx = "";
+
+
                 $bd = (trim($dtl['site']) !== "") ? trim($dtl['site']) : "";
                 if ( trim($dtl['subsite']) !== "") { 
                     if ( trim($bd) !== "" ) { 
@@ -894,7 +900,9 @@ function getShipmentDocument($sdid, $originalURL) {
                         $bd .= trim($dtl['specimencategory']);
                     }
                 }   
-                
+
+     
+              if ( trim($dtl['pbiosample']) !== 'SPCSRVCFEE' ) { 
                 if (trim($dtl['prepmet']) !== "") { 
                     $prp = trim($dtl['prepmet']);
                 }                
@@ -910,7 +918,9 @@ function getShipmentDocument($sdid, $originalURL) {
                 $weightMet = trim( trim($dtl['metric']) . " " . trim($dtl['metricuom']));
                 $ars = trim( trim($dtl['pxiage'])  . '/' . substr(trim($dtl['pxirace']), 0, 1) . '/' . substr(trim($dtl['pxigender']),0,1) );    
                 $cxrx = substr(trim($dtl['chemo']),0,1) . "/" . substr(trim($dtl['rad']), 0,1);
-                
+              }
+
+
                 if ($rower === 0) { 
                     $bgc = " background: rgba(240,240,240,1); "; 
                     $rower = 1;
@@ -963,7 +973,9 @@ function getShipmentDocument($sdid, $originalURL) {
                                              . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none;\">{$ars}</td>"
                                              . "<td style=\"padding: 2px; border: 1px solid rgba(203,203,203,1); border-left: none; border-top: none; border-right: none; text-align: right;\">{$cxrx}</td></tr>";
                $nLines += 1;
-               $tQty += (int)$dtl['qty'];
+
+    
+               $tQty += ( trim($dtl['pbiosample']) === 'SPCSRVCFEE' ) ? 0 : (int)$dtl['qty'];
             }
 
             $miaText = "";

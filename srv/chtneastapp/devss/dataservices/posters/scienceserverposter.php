@@ -34,6 +34,76 @@ function __construct() {
 
 class datadoers {
 
+    function shipdocspecialserviceadd ( $request, $passdata ) { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     session_start(); 
+     $sessid = session_id(); 
+     //{"sdsrvcency":"dUFtblliYlB6SW45QTBxZ3V2ZVlrQT09","spcsrvcvalue":"SRVC.11","spcsrvcrate":"25","spcsrvcqty":"1.2"}
+     $pdta = json_decode($passdata, true); 
+     
+     $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+     $rs = $conn->prepare($chkUsrSQL); 
+     $rs->execute(array(':sessid' => $sessid ));
+     if ( $rs->rowCount() <  1 ) {
+       (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+     } else { 
+       $u = $rs->fetch(PDO::FETCH_ASSOC);
+     }       
+
+     if ( $errorInd === 0 ) {
+       $sd = cryptservice($pdta['sdsrvcency'], 'd' );
+       $sdChkSQL = "SELECT sdstatus, institutiontype, investcode, investname FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr and sdstatus <> 'CLOSED' "; 
+       $sdChkRS = $conn->prepare( $sdChkSQL );
+       $sdChkRS->execute( array( ':sdnbr' => (int)$sd ));
+       ( $sdChkRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "EITHER SHIPDOC {$sd} IS CLOSED OR DOESN'T EXIST.  YOU MAY NOT ADD SERVICES TO IT.")) : "";
+
+       if ( $errorInd === 0 ) {
+
+         $srvcCode = $pdta['spcsrvcvalue'];
+         $srvcFeeTypeSQL = "SELECT ifnull(dspvalue,'') as dspvalue, ifnull(additionalinformation,'HR') as qtymetric FROM four.sys_master_menus where menuvalue = :srvcCode and dspind = 1";
+         $srvcFeeTypeRS = $conn->prepare($srvcFeeTypeSQL); 
+         $srvcFeeTypeRS->execute(array(':srvcCode' => $srvcCode));
+
+         ( $srvcFeeTypeRS->rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "THE SERVICE FEE TYPE WAS NOT FOUND.  SEE CHTNEASTN INFORMATICS")) : "";
+
+         if ( $errorInd === 0 ) { 
+           $srvcFeeType = $srvcFeeTypeRS->fetch(PDO::FETCH_ASSOC);
+    
+           ( trim($pdta['spcsrvcrate']) === '' || trim($pdta['spcsrvcqty']) === '' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Both Rate and Qty/HR are required fields")) : "";
+           ( !is_numeric($pdta['spcsrvcrate']) || !is_numeric($pdta['spcsrvcqty']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Both Rate and Qty/HR can only be numeric fields")) : "";
+           ( (double)$pdta['spcsrvcrate'] > 0 ) ? "" : (list( $errorInd, $msgArr[] ) = array(1 , "Rate must be greater than zero"));
+           ( (double)$pdta['spcsrvcqty'] > 0 ) ? "" : (list( $errorInd, $msgArr[] ) = array(1 , "Qty/HR must be greater than zero"));
+ 
+           if ( $errorInd === 0 ) {
+             if ( $srvcFeeType['qtymetric'] === 'FL') {
+               $ttlChrg =   ( (double)$pdta['spcsrvcrate'] * (int)$pdta['spcsrvcqty'] );
+               $thisRate = (double)$pdta['spcsrvcrate'];
+               $thisMetric = (int)$pdta['spcsrvcqty'];
+             } else {  
+               $ttlChrg =   ( (double)$pdta['spcsrvcrate'] * (double)$pdta['spcsrvcqty'] );
+               $thisRate = (double)$pdta['spcsrvcrate'];
+               $thisMetric = (double)$pdta['spcsrvcqty'];
+             }
+             $insSQL = "insert into masterrecord.ut_shipdoc_spcsrvfee ( shipdocrefid, dspInd, srvcfeecode, srvfeedsp, basecharge, qtymetric, totalfee, inputon, inputby) values(:sd, 1, :srvcfeecode, :srvfeedsp, :basecharge, :qtymetric, :totalfee, now(), :inputby)";
+             $insRS = $conn->prepare($insSQL); 
+             $insRS->execute(array(':sd' => $sd,':srvcfeecode' => $srvcCode,':srvfeedsp' => $srvcFeeType['dspvalue'],':basecharge' => $thisRate,':qtymetric' => $thisMetric,':totalfee' => $ttlChrg,':inputby' => $u['emailaddress']));
+             $responseCode = 200;
+           }
+         }
+       }
+     } 
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;            
+    }
+
     function vaulticbiogroupupdate ( $request, $passdata ) { 
      $responseCode = 400;
      $rows = array();
@@ -3565,6 +3635,54 @@ MBODY;
       return $rows;       
     }
 
+    function shipdocremovespcsrvfee ( $request, $passdata ) {
+      //{"sdency":"dUFtblliYlB6SW45QTBxZ3V2ZVlrQT09","ssfid":"7","dspcell":"ybwZoeBs"}  
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $sess = session_id();
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW'];      
+      $authchk = cryptservice($authpw,'d', true, $authuser);
+      $goodUser = 0;
+
+      $dta['dspcellid'] = $pdta['dspcell'];
+      $sd = cryptservice( $pdta['sdency'], 'd');
+      
+      //DATACHECKS     
+      if ( $authuser !== $authchk || $authuser !== $sess ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "The User's authentication method does not match.  See a CHTNEastern Informatics staff member."));
+      } 
+      $chkUsrSQL = "SELECT emailaddress, originalaccountname, presentinstitution FROM four.sys_userbase where allowind = 1 and allowCoord = 1 and sessionid = :sess  and timestampdiff(day, now(), passwordexpiredate) > 0";
+      $chkUsrR = $conn->prepare($chkUsrSQL); 
+      $chkUsrR->execute(array(':sess' => $sess));
+      if ($chkUsrR->rowCount() <> 1) { 
+        (list( $errorInd, $msgArr[] ) = array(1 , "Authentication Error:  Either your Session has expired, your password has expired, or don't have access to the coordinator function"));
+      } else { 
+          $u = $chkUsrR->fetch(PDO::FETCH_ASSOC);
+          $goodUser = 1;
+      }
+
+      ( !$sd ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Shipment Document Number missing.  See CHTNEastern Informatics")) : "";
+      ( trim($pdta['ssfid']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Shipment Document Special Service Fee Id missing.  See CHTNEastern Informatics")) : "";
+
+      if ( $goodUser === 1 && $errorInd === 0 ) {
+        $updSQL = "update masterrecord.ut_shipdoc_spcsrvfee set dspind = 0, lastupdated = now(), lastupdatedby = :usr where shipdocrefid = :sd and srvcfeeid = :ssfid";
+        $updRS = $conn->prepare($updSQL);
+        $updRS->execute(array(':usr' => $u['emailaddress'], ':sd' => $sd, ':ssfid' => $pdta['ssfid'] ));
+        $responseCode = 200;
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;       
+    }
+
     function shipdocremovesegment ( $request, $passdata ) {
       //dialogid	TWaECoPecCCtJEN // dspcell	BKgdTzqg // rnote	// rreason	// sdency	ZkFBTkJsZUM5SXhVcEtvOURscGUwQT09 // segid	449032 // segstatus	  
       $rows = array(); 
@@ -3845,9 +3963,9 @@ MBODY;
             $dta['sdhead'][] = $s;
           }
      
-          $detSQL = "SELECT sdd.shipdocDetId, sdd.shipdocrefId, sg.segmentid, ifnull(date_format(sdd.addon,'%m/%d/%Y'),'') as addtosdon, ifnull(sdd.addedBy,'') as addtosdby,  ifnull(sdd.pulledind,0) as pulledind, ifnull(date_format(sdd.pulledOn,'%m/%d/%Y'),'') as pulledon, ifnull(sdd.pulledby,'') as pulledby , sg.bgs, ucase(trim(concat(ifnull(bs.tissType,''), if(ifnull(bs.anatomicSite,'')='','',concat(' :: ',ifnull(bs.anatomicSite,''))) , if(ifnull(bs.subSite,'')='','', concat(' (',ifnull(bs.subSite,''),')')) , if(ifnull(bs.diagnosis,'')='','',concat(' :: ',ifnull(bs.diagnosis,''))), if(ifnull(bs.subdiagnos,'')='','',concat(' (', ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.metsSite,'')='','',concat(' METS: ',ifnull(bs.metsSite,'')))))) as dxdesig,  if( trim(ifnull(sg.metric,'')) = '','',concat( ifnull(sg.metric,''), ifnull(uom.dspvalue,''))) as metric, concat(ifnull(sg.prepMethod,''), if(ifnull(sg.Preparation,'')='','',concat(' / ',ifnull(sg.Preparation,'')))) preparation, ifnull(sg.qty,1) as qty, ifnull(sg.scannedLocation,'') as inventorylocation FROM masterrecord.ut_shipdocdetails sdd left join masterrecord.ut_procure_segment sg on sdd.segID = sg.segmentId left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricUOM = uom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where sdd.shipdocrefid = :sdnbr";
+          $detSQL = "SELECT sdd.shipdocDetId, sdd.shipdocrefId, sg.segmentid, ifnull(date_format(sdd.addon,'%m/%d/%Y'),'') as addtosdon, ifnull(sdd.addedBy,'') as addtosdby,  ifnull(sdd.pulledind,0) as pulledind, ifnull(date_format(sdd.pulledOn,'%m/%d/%Y'),'') as pulledon, ifnull(sdd.pulledby,'') as pulledby , sg.bgs, ucase(trim(concat(ifnull(bs.tissType,''), if(ifnull(bs.anatomicSite,'')='','',concat(' :: ',ifnull(bs.anatomicSite,''))) , if(ifnull(bs.subSite,'')='','', concat(' (',ifnull(bs.subSite,''),')')) , if(ifnull(bs.diagnosis,'')='','',concat(' :: ',ifnull(bs.diagnosis,''))), if(ifnull(bs.subdiagnos,'')='','',concat(' (', ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.metsSite,'')='','',concat(' METS: ',ifnull(bs.metsSite,'')))))) as dxdesig,  if( trim(ifnull(sg.metric,'')) = '','',concat( ifnull(sg.metric,''), ifnull(uom.dspvalue,''))) as metric, concat(ifnull(sg.prepMethod,''), if(ifnull(sg.Preparation,'')='','',concat(' / ',ifnull(sg.Preparation,'')))) preparation, ifnull(sg.qty,1) as qty, ifnull(sg.scannedLocation,'') as inventorylocation FROM masterrecord.ut_shipdocdetails sdd left join masterrecord.ut_procure_segment sg on sdd.segID = sg.segmentId left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'METRIC') uom on sg.metricUOM = uom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where sdd.shipdocrefid = :sdnbr union SELECT srvcfeeid, shipdocrefid, 0, date_format(inputon, '%m/%d/%Y') as addedtosdon, inputby addedtosdby, 0, '', '', 'Special Service Fee', '', concat('@ $',ifnull(basecharge,'0')) as basecharge, srvfeedsp, concat(ifnull(qtymetric,''),'/$',format(ifnull(totalfee,''),2)), '' FROM masterrecord.ut_shipdoc_spcsrvfee where shipdocrefid = :sdnbra and dspind = 1 ";
           $detRS = $conn->prepare($detSQL); 
-          $detRS->execute(array(':sdnbr' => $sdnbr));
+          $detRS->execute(array(':sdnbr' => $sdnbr, ':sdnbra' => $sdnbr ));
           if ( $detRS->rowCount() > 0 ) { 
             while ($sd = $detRS->fetch(PDO::FETCH_ASSOC)) { 
               $dta['sddetail'][] = $sd;
@@ -4874,6 +4992,11 @@ MBODY;
              $top = '8vh';
              break;
            case 'faSendTicket':
+             $primeFocus = "";  
+             $left = '8vw';
+             $top = '8vh';
+             break;
+           case 'shipdocspcsrvfee':
              $primeFocus = "";  
              $left = '8vw';
              $top = '8vh';
