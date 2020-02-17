@@ -154,6 +154,32 @@ class objlisting {
      return $rows;     
   }  
 
+
+  function vaultsearchbg ( $whichobj, $urirqst ) {
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = $whichobj;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $msgArr[] = $whichobj;
+     
+     $cquestionSQL = "SELECT distinct pxiID FROM masterrecord.ut_procure_biosample where replace(read_label,'_','') like :mval";
+     $cqRS = $conn->prepare($cquestionSQL);
+     $cqRS->execute(array(':mval' => "{$whichobj}%"));
+     if ( $cqRS->rowCount() > 0 ) {
+       $itemsfound = $cqRS->rowCount(); 
+       $dta = $cqRS->fetchAll(PDO::FETCH_ASSOC);
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;     
+  }
+
+
+
   function vaultconsentdocquestionstext( $whichobj, $urirqst ) {
      $responseCode = 400;
      $rows = array();
