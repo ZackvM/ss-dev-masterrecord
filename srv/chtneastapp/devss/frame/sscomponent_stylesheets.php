@@ -296,6 +296,37 @@ return $rtnThis;
 
   }
   
+   function useradministration ( $mobileind ) { 
+$rtnThis = <<<STYLESHEET
+
+body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   box-sizing: border-box; }
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
+
+#pageContentHolder { display: grid; grid-template-columns: 5fr 3fr; width: 100%; height: 90vh; grid-gap: .2vw;  box-sizing: border-box; }
+#pageContentHolder .holderDivs { border: 1px solid rgba({$this->color_zackgrey},1); height: 87vh;  } 
+
+#userListSide { overflow: auto; }
+.checkboxThree { width: 5vw; height: 3vh; background: rgba( {$this->color_lamber}, 1 ); margin: 0; border-radius: 2px; position: relative; border: 1px solid rgba({$this->color_zackgrey},1); }
+.checkboxThree:before { content: 'On '; position: absolute; top: .7vh; left: .5vw; height: .1vh; color: rgba({$this->color_darkgreen},1 ); font-family: 'Roboto'; font-size: 1.4vh; }
+.checkboxThree:after  { content: 'Off'; position: absolute; top: .7vh; left: 3.2vw; height: .1vh; color: rgba({$this->color_bred},1); font-family: 'Roboto'; font-size: 1.4vh; }
+.checkboxThree label  { display: block; width: 2vw; height: 1.7vh; border-radius: 50px; transition: all .5s ease; cursor: pointer; position: absolute; top: .7vh; z-index: 1; left: .5vw; background: rgba( {$this->color_zackgrey}, 1  ); }
+.checkboxThree input[type=checkbox]:checked + label { left: 2.3vw; background: rgba( {$this->color_darkgreen}, 1 ); }
+.checkboxThree .checkboxThreeInput { visibility: hidden; }
+
+#userDisplayTbl { font-family: 'Roboto'; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); width: 100%; } 
+#userDisplayTbl thead tr th { background: rgba({$this->color_zackgrey},1); font-size: 1.2vh; color: rgba({$this->color_white},1); padding: .5vh .3vw; }
+#userDisplayTbl tbody tr:nth-child(even) { background: rgba({$this->color_darkgrey},.2); }
+#userDisplayTbl tbody tr:hover { cursor: pointer; background: rgba({$this->color_lamber},.8); }
+
+#userDisplayTbl tbody tr td { padding: .2vh .3vw; border-bottom: 1px solid rgba({$this->color_darkgrey},1); border-right: 1px solid rgba({$this->color_darkgrey},1);  } 
+.uemail { font-size: 1.1vh; } 
+.instWriterDsp { background: rgba({$this->color_aqua},1); padding: 1vh .3vw; } 
+
+STYLESHEET;
+return $rtnThis;
+
+   }
+  
   function furtheractionrequests ( $mobileind ) { 
 $rtnThis = <<<STYLESHEET
 

@@ -156,7 +156,7 @@ class bldssuser {
            $elArr['cellcarrierco'] = $ur['ccarrier'];
                      
            //GET ALLOWED MODULES
-           $modSQL = "SELECT mods.moduleid, mm.module, mm.pagesource FROM four.sys_userbase_modules mods left join (SELECT menuid as modid, ucase(menuvalue) as module, ifnull(pagesource,'') as pagesource FROM four.sys_master_menus where menu = 'SS5MODULES' and dspInd = 1 order by dsporder) mm on mods.moduleid = mm.modid where userid = :userid and mods.onoffind = 1";
+           $modSQL = "SELECT mods.moduleid, mm.module, mm.pagesource FROM four.sys_userbase_modules mods left join (SELECT menuid as modid, ucase(menuvalue) as module, ifnull(pagesource,'') as pagesource FROM four.sys_master_menus where menu = 'SS5MODULES' and dspInd = 1 order by dsporder) mm on mods.moduleid = mm.modid where userid = :userid and mods.onoffind = 1  order by moduleid";
            $modR = $conn->prepare($modSQL);
            $modR->execute(array(':userid' => $uid));
            $mods = array();

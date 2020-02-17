@@ -108,10 +108,11 @@ if ($whichpage !== "login") {
 
     $expDay = ((int)$whichUsr->daysuntilpasswordexp === 1) ? "{$whichUsr->daysuntilpasswordexp} day" : "{$whichUsr->daysuntilpasswordexp} days";
     $expDayNotice = ( (int)$whichUsr->daysuntilpasswordexp < 10 ) ? "<span class=expireDayNoticeRed>{$expDay}</span>" : "<span class=expireDayNoticeGreen>{$expDay}</span>";
+    $tagVersion = scienceserverTagVersion;
 
     //$lastlog = ( trim($whichUsr->lastlogin['lastlogdate']) !== "" ) ?  " <b>| Last Access</b>: {$whichUsr->lastlogin['lastlogdate']} from {$whichUsr->lastlogin['fromip']}" : " <b>| Last Access</b>: - ";
     $lastlog = ( trim($whichUsr->lastlogin['lastlogdate']) !== "" ) ?  " <b>| Last Access</b>: {$whichUsr->lastlogin['lastlogdate']} " : " <b>| Last Access</b>: - ";
-    $dspUser = "<b>User</b>: {$whichUsr->userid} ({$whichUsr->username}) <b>| Email</b>: {$whichUsr->useremail} <b>| Password Expires</b>: {$expDayNotice}{$lastlog} <b>| Present Institution</b>: {$igivendspvalue}";
+    $dspUser = "<b>User</b>: {$whichUsr->userid} ({$whichUsr->username}) <b>| Email</b>: {$whichUsr->useremail} <b>| Password Expires</b>: {$expDayNotice}{$lastlog} <b>| Present Institution</b>: {$igivendspvalue} | ScienceServer Version: {$tagVersion} ";
      
     $topBar = <<<TBAR
           <div id=topMenuHolder>

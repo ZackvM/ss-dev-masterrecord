@@ -15,6 +15,60 @@ class javascriptr {
 
 //dta['preparation'] = byId('astRequestPrep').value.trim();               
 
+  function useradministration ( $rqststr ) { 
+    $tt = treetop; 
+     $rtnThis = <<<RTNTHIS
+
+function sendResetPassword( uency ) { 
+  var given = new Object();  
+  given['uency'] = uency; 
+  var passeddata = JSON.stringify(given);
+  var mlURL = "/data-doers/user-send-reset-password";
+  universalAJAX("POST",mlURL,passeddata,answerSendResetPassword,1);              
+}
+             
+function answerSendResetPassword ( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("ERROR:\\n"+dspMsg);
+   } else {
+     alert('Password Email Sent');             
+   }                  
+}
+                         
+function toggleAllow(uency, toggleind ) { 
+  var given = new Object();  
+  given['uency'] = uency; 
+  given['toggleind'] = toggleind;
+  var passeddata = JSON.stringify(given);
+  var mlURL = "/data-doers/user-toggle-allow";
+  universalAJAX("POST",mlURL,passeddata,answerUserToggleAllow,1);             
+}
+
+function answerUserToggleAllow ( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("ERROR:\\n"+dspMsg);
+   } else {
+
+   }                                   
+}
+   
+             
+RTNTHIS;
+     return $rtnThis;
+  }
+ 
   function astrequestlisting ( $rqststr ) {
      $tt = treetop; 
      $rtnThis = <<<RTNTHIS

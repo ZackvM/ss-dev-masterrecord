@@ -804,6 +804,39 @@ RTNTHIS;
 
 }
 
+function useradministration ( $rqststr, $usr ) { 
+  require(genAppFiles . "/dataconn/sspdo.zck");     
+  $topBtnBar = generatePageTopBtnBar('useradministration', $usr, "" );
+    
+  $userSideSQL = "SELECT userid, username, emailaddress,  allowind, failedlogins, date_format(passwordexpiredate,'%m/%d/%Y' ) as pwordexpire, primaryinstcode FROM four.sys_userbase order by allowind desc, primaryInstCode, lastname";
+  $userSideRS = $conn->prepare( $userSideSQL); 
+  $userSideRS->execute();
+  $instWriter = "";
+  $userSideTbl = "<table border=0 cellpadding=0 cellspacing=0 id=userDisplayTbl><thead><tr><th>User</th><th>Access Allowed</th><th>User Lock-out</th><th>P-word Reset</th><th>P-word Expire</th></tr></thead><tbody>";
+  while ( $u = $userSideRS->fetch(PDO::FETCH_ASSOC)) { 
+      $uency = cryptservice( $u['emailaddress'], 'e' );
+      $preset = "<i class=\"material-icons\"  onclick=\"sendResetPassword('{$uency} ');\">touch_app</i>";      
+      $lck = ( (int)$u['failedlogins'] < 6 ) ? "<i class=\"material-icons\">lock_open</i>" : "<i class=\"material-icons\">lock</i>";      
+      $chkd = ( (int)$u['allowind'] === 1 ) ? "CHECKED" : "";
+      $allowedInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" class=\"checkboxThreeInput\" id=\"checkbox{$u['userid']}Input\"  {$chkd}  onchange=\"toggleAllow('{$uency} ', this.checked);\"  /><label for=\"checkbox{$u['userid']}Input\"></label></div>";
+      if ( $instWriter !== $u['primaryinstcode'] ) { 
+          $userSideTbl .= "<tr><td colspan=5 class=instWriterDsp><center>" . $u['primaryinstcode'] . "</td></tr>";
+          $instWriter = $u['primaryinstcode'];
+      }      
+      $userSideTbl .= "<tr><td><div class=uname>{$u['username']}</div><div class=uemail>({$u['emailaddress']})</div></td><td><center>{$allowedInd}</td><td><center>{$lck}</td><td><center>{$preset}</td><td>{$u['pwordexpire']}</td></tr>";      
+  }
+  $userSideTbl .= "</tbody></table>";
+
+$rtnthis = <<<PGCONTENT
+{$topBtnBar}
+<div id=pageContentHolder>
+   <div id=defineUserSide class=holderDivs>  </div>   
+   <div id=userListSide class=holderDivs>{$userSideTbl}</div>
+</div>
+PGCONTENT;
+return $rtnthis;    
+}
+
 function astrequestlisting ( $rqststr, $usr ) { 
   $url = explode("/",$_SERVER['REQUEST_URI']);   
   if ( trim($url[2]) !== "" ) { 
@@ -3268,6 +3301,13 @@ function generatePageTopBtnBar($whichpage, $whichusr, $additionalinfo = "") {
 
 require(serverkeys . "/sspdo.zck");    
 switch ($whichpage) { 
+  case 'useradministration': 
+    $innerBar = <<<BTNTBL
+<tr>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnSDLookup border=0><tr><td><i class="material-icons">fiber_new</i></td><td>New User</td></tr></table></td> 
+ </tr>
+BTNTBL;
+      break;    
 case 'shipdocedit':
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnCreateNewSD border=0><tr><td><i class="material-icons">fiber_new</i></td><td>New Ship-Doc</td></tr></table></td>       
     //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnVoidSD border=0><tr><td><i class="material-icons">block</i></td><td>Void</td></tr></table></td>         

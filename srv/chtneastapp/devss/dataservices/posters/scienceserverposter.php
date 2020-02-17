@@ -33,6 +33,108 @@ function __construct() {
 }
 
 class datadoers {
+    
+    function usersendresetpassword ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and accessnbr > 42"; 
+     $rs = $conn->prepare($chkUsrSQL); 
+     $rs->execute(array(':sessid' => $sessid ));
+     if ( $rs->rowCount() <  1 ) {
+       (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+     } else { 
+       $u = $rs->fetch(PDO::FETCH_ASSOC);
+     }       
+     
+     //DATA CHECKS HERE
+     if ( $errorInd === 0 ) {
+         $emlid = cryptservice( $pdta['uency'] , 'd') ;
+         //TODO: CHECK USER EXISTS
+         
+         $backupSQL = "insert into four.sys_userbase_history (userid,failedlogins,friendlyName,lastname,emailAddress,fiveonepword,zackOnly,changePWordInd,originalAccountName,informaticsInd,freshNotificationInd,allowInd,allowWeeklyUpdate,allowlinux,pxipassword,pxipasswordexpire,pxiguidident,pxisessionexpire,allowProc,allowCoord,allowHPR,allowQMS,allowHPRInquirer,allowHPRReview,allowInvtry,allowfinancials,sessionid,presentinstitution,sessionExpire,ssv5guid,sessionNeverExpires,userName,displayName,dspjobtitle,primaryFunction,primaryInstCode,passwordExpireDate,pwordResetCode,pwordResetExpire,altinfochangecode,altinfochangecodeexpire,inputOn,inputBy,accessLevel,accessNbr,lastUpdatedOn,lastUpdatedBy,logCardId,inventorypinkey,logCardExpDte,dspAlternateInDir,dspindirectory,dsporderindirectory,sex,profilePicURL,profilePhone,profileAltEmail,dlExpireDate,altPhone,altPhoneType,altPhoneCellCarrier,cellcarriercode,historyon,historyby)  SELECT *, now() as historyinputon, :userupdater as historyby FROM four.sys_userbase where emailaddress = :emladd";
+         $backupRS = $conn->prepare($backupSQL);
+         $backupRS->execute( array(':emladd' => $emlid, ':userupdater' => "{$u['emailaddress']} (USER ADMIN [EMAIL RESET])"   ));
+
+         //ZACK TRUE: $2y$12$bCYanxxxkaRZwbf2KmivG.7UXS1mU9Kl/jTf.WoAveflirLJvXcP2
+         //$randomBytes = strtoupper(generateRandomString(9));
+         $randomBytes = "CHTNEast";
+         $options = [ 'cost' => 12 ];        
+         $pword =  password_hash($randomBytes, PASSWORD_BCRYPT, $options);
+         $updSQL = "update four.sys_userbase set fiveonepword = :fiveonepword, allowind = 1, passwordexpiredate = date_add(now(), INTERVAL 6 month), lastupdatedon = now(), lastupdatedby = :thisadmin where emailaddress = :emailaddress";
+         $updRS = $conn->prepare( $updSQL );
+         $updRS->execute ( array ( ':fiveonepword' => $pword, ':thisadmin' => "{$u['emailaddress']} (USER ADMIN [PASSWORD RESET])", ':emailaddress' => $emlid   ));
+         
+         $sndSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgbody, htmlind, wheninput, bywho) value (:emailto,'SSv7 Password Reset Email',:dvmsg,0,now(),:usrinput)";
+        $sndMsg = 'Here is the single use password to the CHTNEastern\'s Donor Vault: ' . $rndStr;
+        $usrinput = 'ADMIN-PASSWORD-RESET (' . $u['emailaddress'] . ")";
+        $sndRS = $conn->prepare($sndSQL); 
+        //$sndRS->execute(array(':phone' => "[\"{$u['altphonecellcarrier']}\"]",':dvmsg' => $sndMsg, ':usrinput' => $usrinput));
+         
+         
+         $msgArr[] = $pword;
+
+             
+         
+     }     
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                               
+    }
+    
+    function usertoggleallow ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true); 
+     
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and accessnbr > 42"; 
+     $rs = $conn->prepare($chkUsrSQL); 
+     $rs->execute(array(':sessid' => $sessid ));
+     if ( $rs->rowCount() <  1 ) {
+       (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+     } else { 
+       $u = $rs->fetch(PDO::FETCH_ASSOC);
+     }       
+     
+     //DATA CHECKS HERE
+     
+     if ( $errorInd === 0 ) {
+         $emlid = cryptservice( $pdta['uency'] , 'd') ;
+         //TODO: CHECK USER EXISTS
+
+         $backupSQL = "insert into four.sys_userbase_history (userid,failedlogins,friendlyName,lastname,emailAddress,fiveonepword,zackOnly,changePWordInd,originalAccountName,informaticsInd,freshNotificationInd,allowInd,allowWeeklyUpdate,allowlinux,pxipassword,pxipasswordexpire,pxiguidident,pxisessionexpire,allowProc,allowCoord,allowHPR,allowQMS,allowHPRInquirer,allowHPRReview,allowInvtry,allowfinancials,sessionid,presentinstitution,sessionExpire,ssv5guid,sessionNeverExpires,userName,displayName,dspjobtitle,primaryFunction,primaryInstCode,passwordExpireDate,pwordResetCode,pwordResetExpire,altinfochangecode,altinfochangecodeexpire,inputOn,inputBy,accessLevel,accessNbr,lastUpdatedOn,lastUpdatedBy,logCardId,inventorypinkey,logCardExpDte,dspAlternateInDir,dspindirectory,dsporderindirectory,sex,profilePicURL,profilePhone,profileAltEmail,dlExpireDate,altPhone,altPhoneType,altPhoneCellCarrier,cellcarriercode,historyon,historyby)  SELECT *, now() as historyinputon, :userupdater as historyby FROM four.sys_userbase where emailaddress = :emladd";
+         $backupRS = $conn->prepare($backupSQL);
+         $backupRS->execute( array(':emladd' => $emlid, ':userupdater' => "{$u['emailaddress']} (USER ADMIN [ALLOW TOGGLE])"   ));
+         
+         if ( $pdta['toggleind'] ) { 
+             $updSQL = "update four.sys_userbase set allowInd = 1, lastupdatedon = now(), lastupdatedby = :thisadmin where emailaddress = :emailaddress";
+         } else { 
+             $updSQL = "update four.sys_userbase set allowInd = 0, lastupdatedon = now(), lastupdatedby = :thisadmin where emailaddress = :emailaddress";
+         }
+         $updRS = $conn->prepare($updSQL); 
+         $updRS->execute(array(':thisadmin' => "{$u['emailaddress']} (USER ADMIN)", ':emailaddress' => $emlid ));
+         $responseCode = 200;   
+     }        
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;               
+        
+    }
 
     function shipdocspecialserviceadd ( $request, $passdata ) { 
      $responseCode = 400;
@@ -6860,7 +6962,7 @@ PAGERHERE;
         //ALLOW CHANGE
         $myInst = $myInstitutionRS->fetch(PDO::FETCH_ASSOC);   
          //BACKUP USER 
-         $backupSQL = "insert into four.sys_userbase_history SELECT * FROM four.sys_userbase where sessionid = :sessid";
+         $backupSQL = "insert into four.sys_userbase_history (userid,failedlogins,friendlyName,lastname,emailAddress,fiveonepword,zackOnly,changePWordInd,originalAccountName,informaticsInd,freshNotificationInd,allowInd,allowWeeklyUpdate,allowlinux,pxipassword,pxipasswordexpire,pxiguidident,pxisessionexpire,allowProc,allowCoord,allowHPR,allowQMS,allowHPRInquirer,allowHPRReview,allowInvtry,allowfinancials,sessionid,presentinstitution,sessionExpire,ssv5guid,sessionNeverExpires,userName,displayName,dspjobtitle,primaryFunction,primaryInstCode,passwordExpireDate,pwordResetCode,pwordResetExpire,altinfochangecode,altinfochangecodeexpire,inputOn,inputBy,accessLevel,accessNbr,lastUpdatedOn,lastUpdatedBy,logCardId,inventorypinkey,logCardExpDte,dspAlternateInDir,dspindirectory,dsporderindirectory,sex,profilePicURL,profilePhone,profileAltEmail,dlExpireDate,altPhone,altPhoneType,altPhoneCellCarrier,cellcarriercode,historyon,historyby)  SELECT *, now() as historyinputon, 'UPDATE-BY-SYSTEM' as historyby FROM four.sys_userbase where sessionid = :sessid";
          $backupRS = $conn->prepare($backupSQL);
          $backupRS->execute( array(':sessid' => $sessid ));
          $updSQL = "update four.sys_userbase set presentinstitution = :changeinstto, lastUpdatedBy = 'SET-PRESENT-INST-FUNC', lastUpdatedOn = now() where sessionid = :sessid";
@@ -6920,7 +7022,7 @@ PAGERHERE;
          $options = [ 'cost' => 12 ];
          $npword =  password_hash( $randomBytes, PASSWORD_BCRYPT, $options );
          //BACKUP USER 
-         $backupSQL = "insert into four.sys_userbase_history SELECT * FROM four.sys_userbase where sessionid = :sessid and pwordresetcode = BINARY :codechange";
+         $backupSQL = "insert into four.sys_userbase_history (userid,failedlogins,friendlyName,lastname,emailAddress,fiveonepword,zackOnly,changePWordInd,originalAccountName,informaticsInd,freshNotificationInd,allowInd,allowWeeklyUpdate,allowlinux,pxipassword,pxipasswordexpire,pxiguidident,pxisessionexpire,allowProc,allowCoord,allowHPR,allowQMS,allowHPRInquirer,allowHPRReview,allowInvtry,allowfinancials,sessionid,presentinstitution,sessionExpire,ssv5guid,sessionNeverExpires,userName,displayName,dspjobtitle,primaryFunction,primaryInstCode,passwordExpireDate,pwordResetCode,pwordResetExpire,altinfochangecode,altinfochangecodeexpire,inputOn,inputBy,accessLevel,accessNbr,lastUpdatedOn,lastUpdatedBy,logCardId,inventorypinkey,logCardExpDte,dspAlternateInDir,dspindirectory,dsporderindirectory,sex,profilePicURL,profilePhone,profileAltEmail,dlExpireDate,altPhone,altPhoneType,altPhoneCellCarrier,cellcarriercode,historyon,historyby)  SELECT *, now() as historyinputon, 'UPDATE-BY-SYSTEM' as historyby FROM four.sys_userbase where sessionid = :sessid and pwordresetcode = BINARY :codechange";
          $backupRS = $conn->prepare($backupSQL);
          $backupRS->execute(array(':sessid' => $sessid, ':altchange' => $crd['changecode']));
          $usrUpdSQL  = "update four.sys_userbase set fiveonepword = :newpword, pwordresetcode = NULL, pwordResetExpire = NULL, passwordexpiredate = date_add(now(), INTERVAL 6 month), lastUpdatedBy = 'CHANGE-PASSWORD-FUNC', lastUpdatedOn = now() where allowind = 1 and sessionid = :sessid and pwordresetcode = :resetcode and datediff(passwordexpiredate, now()) > -1 and TIMESTAMPDIFF(MINUTE, now(), pwordResetExpire) > 0";
@@ -7009,7 +7111,7 @@ PAGERHERE;
           }
 
           //BACKUP USER 
-          $backupSQL = "insert into four.sys_userbase_history SELECT * FROM four.sys_userbase where sessionid = :sessid and altinfochangecode = BINARY :altchange";
+          $backupSQL = "insert into four.sys_userbase_history (userid,failedlogins,friendlyName,lastname,emailAddress,fiveonepword,zackOnly,changePWordInd,originalAccountName,informaticsInd,freshNotificationInd,allowInd,allowWeeklyUpdate,allowlinux,pxipassword,pxipasswordexpire,pxiguidident,pxisessionexpire,allowProc,allowCoord,allowHPR,allowQMS,allowHPRInquirer,allowHPRReview,allowInvtry,allowfinancials,sessionid,presentinstitution,sessionExpire,ssv5guid,sessionNeverExpires,userName,displayName,dspjobtitle,primaryFunction,primaryInstCode,passwordExpireDate,pwordResetCode,pwordResetExpire,altinfochangecode,altinfochangecodeexpire,inputOn,inputBy,accessLevel,accessNbr,lastUpdatedOn,lastUpdatedBy,logCardId,inventorypinkey,logCardExpDte,dspAlternateInDir,dspindirectory,dsporderindirectory,sex,profilePicURL,profilePhone,profileAltEmail,dlExpireDate,altPhone,altPhoneType,altPhoneCellCarrier,cellcarriercode,historyon,historyby)  SELECT *, now() as historyinputon, 'UPDATE-BY-SYSTEM' as historyby FROM four.sys_userbase where sessionid = :sessid and altinfochangecode = BINARY :altchange";
           $backupRS = $conn->prepare($backupSQL);
           $backupRS->execute(array(':sessid' => $sessid, ':altchange' => $changecode));
           
