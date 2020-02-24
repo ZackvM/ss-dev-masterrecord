@@ -178,13 +178,9 @@ class bldssuser {
                   $sbmod[] = $rpt; 
                 }
               }
-
               
               //$sessid = cryptservice( session_id() . "::" . date('YmdHis')  , 'e', true, session_id());
               //ADD ACCESS DONOR VAULT HERE
-
-
-
               $mods[]  = array($mod['moduleid'],$mod['module'],$mod['pagesource'],$sbmod);
            }
            

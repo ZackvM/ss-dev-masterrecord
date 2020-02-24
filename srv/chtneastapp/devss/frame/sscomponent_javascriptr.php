@@ -19,6 +19,52 @@ class javascriptr {
     $tt = treetop; 
      $rtnThis = <<<RTNTHIS
 
+function getUserSpecifics ( uency ) { 
+  byId('defineUserSide').innerHTML = "";
+  var given = new Object();  
+  given['uency'] = uency; 
+  var passeddata = JSON.stringify(given);
+  var mlURL = "/data-doers/user-get-specifics-dsp";
+  universalAJAX("POST",mlURL,passeddata,answerGetUserSpecifics,1);
+}
+
+function answerGetUserSpecifics ( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("ERROR:\\n"+dspMsg);
+   } else {
+     var rsp = JSON.parse(rtnData['responseText']); 
+     byId('defineUserSide').innerHTML = rsp['DATA'];
+   }                  
+}
+
+function sendUnlock ( uency ) { 
+  var given = new Object();  
+  given['uency'] = uency; 
+  var passeddata = JSON.stringify(given);
+  var mlURL = "/data-doers/user-send-unlock";
+  universalAJAX("POST",mlURL,passeddata,answerSendUnlock,1);
+}
+
+function answerSendUnlock ( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("ERROR:\\n"+dspMsg);
+   } else {
+     alert('Lock out has been removed.  Refresh your screen');
+   }                  
+}
+
 function sendResetPassword( uency ) { 
   var given = new Object();  
   given['uency'] = uency; 
@@ -37,7 +83,7 @@ function answerSendResetPassword ( rtnData ) {
      //ERROR MESSAGE HERE
      alert("ERROR:\\n"+dspMsg);
    } else {
-     alert('Password Email Sent');             
+     alert('Password Reset Email has been sent.\\n\\nUser Account has been reactivated and expiration has been set for two days from now\\n\\nTo see these changes refresh you screen');
    }                  
 }
                          
@@ -60,10 +106,17 @@ function answerUserToggleAllow ( rtnData ) {
      //ERROR MESSAGE HERE
      alert("ERROR:\\n"+dspMsg);
    } else {
-
    }                                   
 }
    
+function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) { 
+  if (byId(whichfield)) { 
+    if (byId(whichfield+'Value')) {
+      byId(whichfield+'Value').value = whatvalue;
+    }    
+    byId(whichfield).value = whatplaintext; 
+  }
+}
              
 RTNTHIS;
      return $rtnThis;

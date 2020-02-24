@@ -815,15 +815,16 @@ function useradministration ( $rqststr, $usr ) {
   $userSideTbl = "<table border=0 cellpadding=0 cellspacing=0 id=userDisplayTbl><thead><tr><th>User</th><th>Access Allowed</th><th>User Lock-out</th><th>P-word Reset</th><th>P-word Expire</th></tr></thead><tbody>";
   while ( $u = $userSideRS->fetch(PDO::FETCH_ASSOC)) { 
       $uency = cryptservice( $u['emailaddress'], 'e' );
-      $preset = "<i class=\"material-icons\"  onclick=\"sendResetPassword('{$uency} ');\">touch_app</i>";      
-      $lck = ( (int)$u['failedlogins'] < 6 ) ? "<i class=\"material-icons\">lock_open</i>" : "<i class=\"material-icons\">lock</i>";      
+      $preset = "<i class=\"material-icons\" onclick=\"sendResetPassword('{$uency}');\">touch_app</i>";      
+      $lck = ( (int)$u['failedlogins'] < 6 ) ? "<i class=\"material-icons\">lock_open</i>" : "<i class=\"material-icons\" onclick=\"sendUnlock('{$uency}');\">lock</i>";      
       $chkd = ( (int)$u['allowind'] === 1 ) ? "CHECKED" : "";
       $allowedInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" class=\"checkboxThreeInput\" id=\"checkbox{$u['userid']}Input\"  {$chkd}  onchange=\"toggleAllow('{$uency} ', this.checked);\"  /><label for=\"checkbox{$u['userid']}Input\"></label></div>";
-      if ( $instWriter !== $u['primaryinstcode'] ) { 
-          $userSideTbl .= "<tr><td colspan=5 class=instWriterDsp><center>" . $u['primaryinstcode'] . "</td></tr>";
+      if ( $instWriter !== $u['primaryinstcode'] ) {
+          $inact = ( $u['allowind'] === 0 ) ? " / INACTIVE" : "";
+          $userSideTbl .= "<tr><td colspan=5 class=instWriterDsp><center>{$u['primaryinstcode']}{$inact}</td></tr>";
           $instWriter = $u['primaryinstcode'];
-      }      
-      $userSideTbl .= "<tr><td><div class=uname>{$u['username']}</div><div class=uemail>({$u['emailaddress']})</div></td><td><center>{$allowedInd}</td><td><center>{$lck}</td><td><center>{$preset}</td><td>{$u['pwordexpire']}</td></tr>";      
+      }     
+      $userSideTbl .= "<tr><td onclick=\"getUserSpecifics('{$uency}');\"><div class=uname>{$u['username']}</div><div class=uemail>({$u['emailaddress']})</div></td><td><center>{$allowedInd}</td><td><center>{$lck}</td><td><center>{$preset}</td><td>{$u['pwordexpire']}</td></tr>";      
   }
   $userSideTbl .= "</tbody></table>";
 

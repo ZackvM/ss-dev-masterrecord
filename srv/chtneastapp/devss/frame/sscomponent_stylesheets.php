@@ -322,6 +322,77 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 .uemail { font-size: 1.1vh; } 
 .instWriterDsp { background: rgba({$this->color_aqua},1); padding: 1vh .3vw; } 
 
+
+#defineUserSide #userSideHeader { background: rgba({$this->color_zackgrey},1); width: 100%; color: rgba({$this->color_white},1); font-family: Roboto; font-size: 2vh; padding: 1vh 1vw; box-sizing: border-box;  }
+
+#mainPageHolder { display: grid; grid-template-columns: 20vw auto; box-sizing: border-box; }
+#mainPageHolder #picDspBar { background: rgba({$this->color_lamber},.4);   } 
+#profilePictHold { } 
+.sidebarprofilepicture {width: 18vw; height: auto;  -webkit-box-shadow: 5px 5px 20px 7px rgba(0,0,0,0.1);box-shadow: 5px 5px 20px 7px rgba(0,0,0,0.1); border: 5px solid rgba({$this->color_white},1); border-radius: 10px; margin: .5vh 1vw .6vh 1vw;   }  
+
+
+.dataElementHoldSide { margin: 0 0 0 1vw; } 
+.dataElementHoldSide .dataElementLabelSml { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .3vh .2vw 0 .2vw; margin-top: 1vh; }
+.dataElementHoldSide .dataElementDataFld { font-size: 1.5vh; border-bottom: 1px solid rgba({$this->color_zackgrey},1); padding: .3vh .2vw 0 .2vw; }  
+
+#mainPageHolder #dataDspBar {  } 
+#dataLineOne { display: grid; grid-template-columns: repeat( 5, 1fr ); grid-gap: .2vw; padding: 1vh 0 0 0; }
+#dataLineTwo { display: grid; grid-template-columns: repeat( 3, 1fr ); grid-gap: .2vw; padding: 1vh 0 0 0; }
+#dataLineThree { display: grid; grid-template-columns: repeat( 2, 1fr ); grid-gap: .2vw; padding: 1vh 0 0 0; }
+#dataLineFour { display: grid; grid-template-columns: repeat( 5, 1fr ); grid-gap: .2vw; padding: 1vh 0 0 0; }
+#dataLineFive { display: grid; grid-template-columns:  1fr 1fr; grid-gap: .2vw; padding: 1vh 0 0 0; }
+#dataLineAllows { display: grid; grid-template-columns: repeat( 4, 1fr); grid-gap: .2vw; padding: 2vh .2vw 0 .2vw; }
+#dataLineModsAndInsts { display: grid; grid-template-columns: repeat( 2, 1fr); grid-gap: .2vw; padding: 1vh .2vw 0 .2vw; } 
+
+.dataElementHold .dataElementLabel { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1);  }
+.dataElementHold .dataElementData { }
+.dataElementHold .dataElementData input { font-size: 1.5vh; padding: .4vh .2vw;  }  
+
+#updFldUserGender { width: 8vw; }
+#dropDownUserGender { width: 12vw; } 
+
+#updFldFriendly { width: 8vw; } 
+#updFldLastName { width: 8vw; }
+#updFldOriginalAcct { width: 8vw; }
+#updFldDisplayName { width: 8vw; } 
+#updFldUsersName { width: 8vw; } 
+#updFldJobTitle { width: 16vw; } 
+#updFldAccessLvl { width: 16vw; }
+#dropDownAccLvl { width: 16vw; } 
+#updFldOverridePIN { width: 6vw; } 
+#updFldPrimaryInst { width: 21vw; }
+#dropDownInst { width: 21vw; } 
+#updFldPrimaryFunction { width: 19vw; } 
+#updFldProfilePhone { width: 10vw; } 
+#updFldSMSPhone { width: 8vw; } 
+#updFldCellCarrier { width: 11vw; }
+#dropDownCC { width: 11vw; }
+#updFldDLExpire { width: 9vw; }
+#updFldAltEmail { width: 25vw; } 
+
+
+#allowHeader { grid-column: 1 / 5; margin: .5vh 0 0 0; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); text-align: center; font-size: 1.4vh; padding: .2vh 0; box-sizing: border-box;   }
+.allowDspDiv { border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_grey},1); display: grid; grid-template-columns: 1fr 1fr; } 
+.allowLabelDsp {  font-size: 1.3vh; padding: .2vh .3vw; box-sizing: border-box;  } 
+
+.modinst { border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; padding: .2vh .1vw;  } 
+.allowHeaderInst { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); text-align: center; font-size: 1.4vh; padding: .2vh 0; box-sizing: border-box; }
+
+.instListDiv { display: grid; grid-template-columns: 3fr 1fr; border-bottom: 1px solid rgba({$this->color_zackgrey},.5);  }
+.iAllowHold { padding: .1vh 0 .1vh 0; }  
+.iAllowName { font-size: 1.3vh; padding: .3vh 0 .3vh 0;     } 
+
+.modListDiv { display: grid; grid-template-columns: 3fr 1fr; border-bottom: 1px solid rgba({$this->color_zackgrey},.5);  }
+.mAllowHold { padding: .1vh 0 .1vh 0; }  
+.mAllowName { font-size: 1.3vh; padding: .3vh 0 .3vh 0;     } 
+
+#ufile { width: 18vw; font-size: 1.3vh; padding: 0;   } 
+
+
+
+
+
+
 STYLESHEET;
 return $rtnThis;
 

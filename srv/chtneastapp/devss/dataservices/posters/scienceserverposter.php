@@ -33,7 +33,255 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+    function usergetspecificsdsp ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true); 
+      $at = genAppFiles;
+      $si = serverIdent;
+      $sp = serverpw;
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and accessnbr > 42"; 
+     $rs = $conn->prepare($chkUsrSQL); 
+     $rs->execute(array(':sessid' => $sessid ));
+     if ( $rs->rowCount() <  1 ) {
+       (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+     } else { 
+       $u = $rs->fetch(PDO::FETCH_ASSOC);
+     }       
+
+     //DATA CHECKS HERE
+     if ( $errorInd === 0 ) {
+         $emlid = cryptservice( $pdta['uency'] , 'd') ;
+
+         $userSQL = "SELECT emailaddress, userid, failedlogins, friendlyname, lastname, originalaccountname, allowInd as ind_allow_System_Access, informaticsind as ind_allow_Informatics, freshNotificationInd as ind_allow_Fresh_Notification, allowWeeklyUpdate as ind_allow_Weekly_Email_Notification, allowlinux as ind_allow_Donor_Vault_Access, allowProc as ind_allow_Procurement, allowCoord as ind_allow_Data_Coordinator, allowHPR as ind_allow_HPR, allowQMS as ind_allow_QMS, allowHPRInquirer as ind_allow_HPR_Inquiry, allowHPRReview as ind_allow_HPR_Review, allowInvtry as ind_allow_Inventory, allowfinancials as ind_allow_Financials, displayName, userName, dspjobtitle, primaryFunction, primaryInstCode, inst.dspvalue as primaryInst, date_format(passwordExpireDate,'%m/%d/%Y') as passwordExpireDate, inputBy, date_format(inputon, '%m/%d/%Y') as inputon, accessLevel, al.dspvalue accesslvldsp , accessNbr, date_format(lastUpdatedOn,'%m/%d/%Y') as lastupdatedon, lastUpdatedBy, inventorypinkey, sex, profilePicURL, profileAltEmail, profilePhone, ifnull(dlExpireDate,'') as dlexpiredate, altPhone, altPhoneType, altPhoneCellCarrier, cellcarriercode FROM four.sys_userbase ub left join ( SELECT ifnull(menuvalue,'UNKNOWN') as menuvalue, dspvalue FROM four.sys_master_menus where menu = 'accssLVL') al on ub.accessLevel = al.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION' ) as inst on ub.primaryinstcode = inst.menuvalue where emailaddress = :passedEmail";
+         $userRS = $conn->prepare( $userSQL ); 
+         $userRS->execute(array(':passedEmail' => $emlid  ));
+         if ( $userRS->rowCount() !== 1 ) {  
+             $msgArr[] = $emlid . " not found in system.  See CHTNEastern Informatics";
+         } else { 
+             $user = $userRS->fetch(PDO::FETCH_ASSOC);
+             $uacct = strtoupper( $user['emailaddress'] );
+             $uacctnbr = substr(("000000" . $user['userid']) ,-6);
+             if ( $user['profilePicURL'] == 'avatar_male' ||  $user['profilePicURL'] == 'avatar_female' ) { 
+               $profilepic = base64file("{$at}/publicobj/graphics/usrprofile/{$user['profilePicURL']}.png", "profilePicDsp", "png", true, " class=sidebarprofilepicture ");
+             } else {
+               $profilepic = base64file("{$at}/publicobj/graphics/usrprofile/{$user['profilePicURL']}", "profilePicDsp", "png", true, " class=sidebarprofilepicture ");
+             }
+
+             //TODO:  Make Webservice
+             $accLvlSQL = "SELECT concat(ifnull(menuvalue,'UNKNOWN'),':', ifnull(assignablestatus,0)) as menuvalue, dspvalue FROM four.sys_master_menus where menu = 'accssLVL' and dspind = 1 order by dsporder";
+             $accessLvlRS = $conn->prepare( $accLvlSQL ); 
+             $accessLvlRS->execute();
+             //<tr><td align=right onclick=\"fillField('updFldAccessLvl','','');\" class=ddMenuClearOption>[clear]</td></tr>
+             $acclvl = "<table border=0 class=menuDropTbl>";
+             while ($hprtval = $accessLvlRS->fetch(PDO::FETCH_ASSOC)) {
+               $acclvl .= "<tr><td onclick=\"fillField('updFldAccessLvl','{$hprtval['menuvalue']}','{$hprtval['dspvalue']}');\" class=ddMenuItem>{$hprtval['dspvalue']}</td></tr>";
+             }
+             $acclvl .= "</table>";
+       
+             $procinstarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/allinstitutions",$si,$sp),true);
+             //<tr><td align=right onclick=\"fillField('qryProcInst','','');\" class=ddMenuClearOption>[clear]</td></tr>
+             $proc = "<table border=0 class=menuDropTbl>";
+             foreach ($procinstarr['DATA'] as $procval) { 
+               $proc .= "<tr><td onclick=\"fillField('updFldPrimaryInst','{$procval['lookupvalue']}','{$procval['menuvalue']}');\" class=ddMenuItem>{$procval['menuvalue']}</td></tr>";
+             }
+             $proc .= "</table>";
+
+             $sex = "<table border=0 class=menuDropTbl>";
+             $sex .= "<tr><td onclick=\"fillField('updFldUserGender','F','Female');\" class=ddMenuItem>Female</td></tr>";
+             $sex .= "<tr><td onclick=\"fillField('updFldUserGender','M','Male');\" class=ddMenuItem>Male</td></tr>";
+             $sex .= "<tr><td onclick=\"fillField('updFldUserGender','O','Other/Non-Specified');\" class=ddMenuItem>Other/Non-Specified</td></tr>";
+             $sex .= "</table>";
+
+             $sexValue = $user['sex'];
+             switch ( $sexValue ) {
+               case 'M':
+                 $sexDsp = 'Male';
+                 break;
+               case 'F':
+                 $sexDsp = 'Female';
+                 break;
+               case 'O':
+                 $sexDsp = 'Other/Non-Specified';
+                 break;    
+             }
+
+             $ccarr = json_decode(callrestapi("GET", dataTree . "/globalmenu/cell-carriers",$si,$sp),true);
+             $ccDfltVal = $user['cellcarriercode'];
+             $ccDfltDsp = "";
+             $cc = "<table border=0 class=menuDropTbl>";
+             foreach ($ccarr['DATA'] as $ccval) {
+               if ( $ccDfltVal === $ccval['lookupvalue'] ) { 
+                 $ccDfltDsp = $ccval['menuvalue']; 
+               } 
+               $cc .= "<tr><td onclick=\"fillField('updFldCellCarrier','{$ccval['lookupvalue']}','{$ccval['menuvalue']}');\" class=ddMenuItem>{$ccval['menuvalue']}</td></tr>";
+             }
+             $cc .= "</table>";
+             
+             $allows = "";
+             $allowCntr = 0;
+             foreach ( $user as $ukey => $uval ) {
+               if ( substr( $ukey,0,10) === 'ind_allow_' ) {  
+                $chkd = ( (int)$uval === 1 ) ? "CHECKED" : "";
+                $allowedInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" class=\"checkboxThreeInput\" id=\"checkbox{$allowCntr}Input\"  {$chkd}  /><label for=\"checkbox{$allowCntr}Input\"></label></div>";
+                $allows .= "<div class=allowDspDiv><div class=allowLabelDsp>" . preg_replace('/_/',' ', preg_replace('/ind_allow_/','',$ukey)) . "</div><div class=allowIndicator>{$allowedInd}</div></div>";
+                $allowCntr++;
+               }
+             }
+
+             $instSQL = "SELECT ucase(instlist.menuvalue) as institutioncode, instlist.dspvalue as institutionname, ifnull(ainst.onoffind,0) as onoffind FROM four.sys_master_menus as instlist left join (select * from four.sys_userbase_allowinstitution where userid = :userid and onoffind = 1) ainst on instlist.menuid = ainst.institutionmenuid where menu = 'INSTITUTION'  order by instlist.menuvalue ";
+             $instRS = $conn->prepare( $instSQL );
+             $instRS->execute( array( ':userid' => $user['userid'] ));
+         
+             while ( $i = $instRS->fetch(PDO::FETCH_ASSOC) ) {
+               $chkd = ( (int)$i['onoffind'] === 1 ) ? "CHECKED" : "";
+               $iAllowedInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" class=\"checkboxThreeInput\" id=\"checkbox{$i['institutioncode']}Input\"  {$chkd}  /><label for=\"checkbox{$i['institutioncode']}Input\"></label></div>";
+               $divInstList .= "<div class=instListDiv><div class=iAllowName>{$i['institutionname']}</div><div class=iAllowHold>  {$iAllowedInd} </div></div>";
+             }
+
+
+             $modSQL = "SELECT md.menuid as modid, ucase(md.menuvalue) as module, ifnull(modu.onoffind,0) as onoffind FROM four.sys_master_menus md left join (select * from four.sys_userbase_modules where userid = :userid and onoffind = 1) modu on md.menuid = modu.moduleid where md.menu = 'SS5MODULES' order by md.dsporder";
+             $modRS = $conn->prepare($modSQL);
+             $modRS->execute(array( ':userid' => $user['userid'] )); 
+
+             while ( $m = $modRS->fetch(PDO::FETCH_ASSOC)) { 
+               $chkd = ( (int)$m['onoffind'] === 1 ) ? "CHECKED" : "";
+               $mAllowedInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" class=\"checkboxThreeInput\" id=\"checkbox{$m['modid']}Input\"  {$chkd}  /><label for=\"checkbox{$m['modid']}Input\"></label></div>";
+               $divModList .= "<div class=modListDiv><div class=mAllowName>{$m['module']}</div><div class=mAllowHold>  {$mAllowedInd} </div></div>";
+             }
+
+
+             $dta = <<<PGCONTENT
+<div id=userSideHeader>USER ACCOUNT: {$uacct} ({$uacctnbr})<input type=hidden id=updFldIdent value="{$pdta['uency']}"></div>
+
+<div id=mainPageHolder>
+
+  <div id=picDspBar>   
+    <div id=profilePictHold>{$profilepic}</div>
+    <div class=dataElementHoldSide><div class=dataElementLabelSml>Account Name</div><div class=dataElementDataFld>{$uacct}</div></div>
+    <div class=dataElementHoldSide><div class=dataElementLabelSml>Account #</div><div class=dataElementDataFld>{$uacctnbr}</div></div>
+    <div class=dataElementHoldSide><div class=dataElementLabelSml>User Created On / By</div><div class=dataElementDataFld>{$user['inputon']} ({$user['inputBy']})</div></div>
+    <div class=dataElementHoldSide><div class=dataElementLabelSml>Last Modified On</div><div class=dataElementDataFld>{$user['lastupdatedon']}</div></div>
+    <div class=dataElementHoldSide><div class=dataElementLabelSml>Last Modified By</div><div class=dataElementDataFld>{$user['lastUpdatedBy']}</div></div>
+    <div class=dataElementHoldSide><div class=dataElementLabelSml>Password Expires On</div><div class=dataElementDataFld>{$user['passwordExpireDate']}</div></div>
+    <div class=dataElementHoldSide><div class=dataElementLabelSml>Failed Logins</div><div class=dataElementDataFld>{$user['failedlogins']}</div></div>
+    <div class=dataElementHoldSide>
+         <div class=dataElementLabelSml>Choose a Profile Picture File (Click Save...)</div>
+         <div class=dataElementDataFld> <input type="file" name="file" id="ufile" class="inputfile" />  </div>
+    </div>
+
+
+
+  </div>
+
+  <div id=dataDspBar>
+
+    <div id=dataLineOne>
+      <div class=dataElementHold id=divUserSex><div class=dataElementLabel>Gender</div><div class=dataElementData><div class=menuHolderDiv><input type=hidden id=updUserGenderValue value="{$sexValue}"><input type=text value="{$sexDsp}" id=updFldUserGender READONLY><div class=valueDropDown id=dropDownUserGender>{$sex}</div></div></div></div>
+      <div class=dataElementHold><div class=dataElementLabel>Friendly Name</div><div class=dataElementData><input type=text value="{$user['friendlyname']}" id=updFldFriendly></div></div>
+      <div class=dataElementHold><div class=dataElementLabel>Last Name</div><div class=dataElementData><input type=text value="{$user['lastname']}" id=updFldLastName></div></div>
+      <div class=dataElementHold><div class=dataElementLabel>Original Acct Name</div><div class=dataElementData><input type=text value="{$user['originalaccountname']}" id=updFldOriginalAcct READONLY></div></div>
+      <div class=dataElementHold><div class=dataElementLabel>User's Name</div><div class=dataElementData><input type=text value="{$user['userName']}" id=updFldUsersName></div></div>
+    </div>
+
+    <div id=dataLineTwo>
+      <div class=dataElementHold id=divDspJobTitle><div class=dataElementLabel>Job Title</div><div class=dataElementData><input type=text value="{$user['dspjobtitle']}" id=updFldJobTitle></div></div>
+      <div class=dataElementHold id=divDspAccessLvl><div class=dataElementLabel>System Access</div><div class=dataElementData><div class=menuHolderDiv><input type=hidden id=updFldAccessLvlValue value="{$user['accessLevel']}:{$user['accessNbr']}"><input type=text value="{$user['accesslvldsp']}" id=updFldAccessLvl READONLY><div class=valueDropDown id=dropDownAccLvl>{$acclvl}</div></div></div></div>
+      <div class=dataElementHold><div class=dataElementLabel>Over-Ride PIN</div><div class=dataElementData><input type=text value="{$user['inventorypinkey']}" id=updFldOverridePIN></div></div>
+    </div>
+
+    <div id=dataLineThree>
+      <div class=dataElementHold id=divDspAccessLvl><div class=dataElementLabel>Primary Institution</div><div class=dataElementData><div class=menuHolderDiv><input type=hidden id=updFldPrimaryInstValue value="{$user['primaryInstCode']}"><input type=text value="{$user['primaryInst']}" id=updFldPrimaryInst READONLY><div class=valueDropDown id=dropDownInst>{$proc}</div></div></div></div>
+      <div class=dataElementHold><div class=dataElementLabel>Primary Function</div><div class=dataElementData><input type=text value="{$user['primaryFunction']}" id=updFldPrimaryFunction></div></div>
+    </div>
+
+    <div id=dataLineFour>
+      <div class=dataElementHold><div class=dataElementLabel>Office Phone</div><div class=dataElementData><input type=text value="{$user['profilePhone']}" id=updFldProfilePhone></div></div>
+      <div class=dataElementHold><div class=dataElementLabel>SMS Phone (Cell #)</div><div class=dataElementData><input type=text value="{$user['altPhone']}" id=updFldSMSPhone></div></div>
+      <div class=dataElementHold><div class=dataElementLabel>SMS Cell Carrier</div><div class=dataElementData><div class=menuHolderDiv><input type=hidden id=updFldCellCarrierValue value="{$ccDfltVal}"><input type=text value="{$ccDfltDsp}" id=updFldCellCarrier READONLY><div class=valueDropDown id=dropDownCC>{$cc}</div></div></div></div>
+      <div class=dataElementHold><div class=dataElementLabel>Driver Expire (YYYY-mm-dd)</div><div class=dataElementData><input type=text value="{$user['dlexpiredate']}" id=updFldDLExpire></div></div>
+    </div>
+
+    <div id=dataLineFive>
+      <div class=dataElementHold><div class=dataElementLabel>Alternate Email</div><div class=dataElementData><input type=text value="{$user['profileAltEmail']}" id=updFldAltEmail></div></div>
+      <div align=right style="padding: 1vh 1vw 0 0;"> <button>Save</button> </div> 
+    </div>
+
+    <div id=dataLineAllows>
+      <div id=allowHeader>Allowed System Components</div> 
+      {$allows} 
+    </div>
+
+    <div id=dataLineModsAndInsts>
+     <div class=modinst> <div class=allowHeaderInst>Allowed Institutions</div>{$divInstList}</div>
+     <div class=modinst> <div class=allowHeaderInst>Allowed Modules</div>{$divModList}</div>
+    </div>
+
+
+  </div>
+
+
+</div>
+
+
+PGCONTENT;
+           $responseCode = 200;
+         }
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                               
+    }
+
+    function usersendunlock ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and accessnbr > 42"; 
+     $rs = $conn->prepare($chkUsrSQL); 
+     $rs->execute(array(':sessid' => $sessid ));
+     if ( $rs->rowCount() <  1 ) {
+       (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+     } else { 
+       $u = $rs->fetch(PDO::FETCH_ASSOC);
+     }       
+
+     //DATA CHECKS HERE
+     if ( $errorInd === 0 ) {
+         $emlid = cryptservice( $pdta['uency'] , 'd') ;
+
+         $backupSQL = "insert into four.sys_userbase_history (userid,failedlogins,friendlyName,lastname,emailAddress,fiveonepword,zackOnly,changePWordInd,originalAccountName,informaticsInd,freshNotificationInd,allowInd,allowWeeklyUpdate,allowlinux,pxipassword,pxipasswordexpire,pxiguidident,pxisessionexpire,allowProc,allowCoord,allowHPR,allowQMS,allowHPRInquirer,allowHPRReview,allowInvtry,allowfinancials,sessionid,presentinstitution,sessionExpire,ssv5guid,sessionNeverExpires,userName,displayName,dspjobtitle,primaryFunction,primaryInstCode,passwordExpireDate,pwordResetCode,pwordResetExpire,altinfochangecode,altinfochangecodeexpire,inputOn,inputBy,accessLevel,accessNbr,lastUpdatedOn,lastUpdatedBy,logCardId,inventorypinkey,logCardExpDte,dspAlternateInDir,dspindirectory,dsporderindirectory,sex,profilePicURL,profilePhone,profileAltEmail,dlExpireDate,altPhone,altPhoneType,altPhoneCellCarrier,cellcarriercode,historyon,historyby)  SELECT *, now() as historyinputon, :userupdater as historyby FROM four.sys_userbase where emailaddress = :emladd";
+         $backupRS = $conn->prepare($backupSQL);
+         $backupRS->execute( array(':emladd' => $emlid, ':userupdater' => "{$u['emailaddress']} (USER ADMIN [EMAIL RESET])"   ));
+
+         $updSQL = "update four.sys_userbase set failedlogins = 0, lastupdatedon = now(), lastupdatedby = :updater where emailAddress = :emlid";
+         $updRS = $conn->prepare($updSQL); 
+         $updRS->execute(array( ':updater' => "{$u['emailaddress']} (UNLOCK UTIL)", ':emlid' => $emlid ));
+
+         $responseCode = 200;
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                               
+    } 
+
     function usersendresetpassword ( $request, $passdata ) { 
       $responseCode = 400;
       $rows = array();
@@ -63,25 +311,29 @@ class datadoers {
          $backupRS = $conn->prepare($backupSQL);
          $backupRS->execute( array(':emladd' => $emlid, ':userupdater' => "{$u['emailaddress']} (USER ADMIN [EMAIL RESET])"   ));
 
-         //ZACK TRUE: $2y$12$bCYanxxxkaRZwbf2KmivG.7UXS1mU9Kl/jTf.WoAveflirLJvXcP2
-         //$randomBytes = strtoupper(generateRandomString(9));
-         $randomBytes = "CHTNEast";
-         $options = [ 'cost' => 12 ];        
+         $randomBytes = strtoupper(generateRandomString(9));
+         $options = [ 'cost' => 12, ];        
          $pword =  password_hash($randomBytes, PASSWORD_BCRYPT, $options);
-         $updSQL = "update four.sys_userbase set fiveonepword = :fiveonepword, allowind = 1, passwordexpiredate = date_add(now(), INTERVAL 6 month), lastupdatedon = now(), lastupdatedby = :thisadmin where emailaddress = :emailaddress";
+         $updSQL = "update four.sys_userbase set fiveonepword = :fiveonepword, allowind = 1, passwordexpiredate = date_add(now(), INTERVAL 2 day), lastupdatedon = now(), lastupdatedby = :thisadmin where emailaddress = :emailaddress";
          $updRS = $conn->prepare( $updSQL );
-         $updRS->execute ( array ( ':fiveonepword' => $pword, ':thisadmin' => "{$u['emailaddress']} (USER ADMIN [PASSWORD RESET])", ':emailaddress' => $emlid   ));
-         
-         $sndSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgbody, htmlind, wheninput, bywho) value (:emailto,'SSv7 Password Reset Email',:dvmsg,0,now(),:usrinput)";
-        $sndMsg = 'Here is the single use password to the CHTNEastern\'s Donor Vault: ' . $rndStr;
-        $usrinput = 'ADMIN-PASSWORD-RESET (' . $u['emailaddress'] . ")";
-        $sndRS = $conn->prepare($sndSQL); 
-        //$sndRS->execute(array(':phone' => "[\"{$u['altphonecellcarrier']}\"]",':dvmsg' => $sndMsg, ':usrinput' => $usrinput));
-         
-         
-         $msgArr[] = $pword;
+         $updRS->execute ( array ( ':fiveonepword' => $pword, ':thisadmin' => "{$u['emailaddress']} (PWORD RESET)", ':emailaddress' => $emlid   ));
 
-             
+         $sndMsg = <<<EMAILBODY
+<table border>
+<tr><td><h2>ScienceServer Password Reset Email</h2></td></tr>
+<tr><td>Dear ______ <p>You or a system administrator has requested a password reset for access to ScienceServer at CHTNEast.  The following password is {$randomBytes}.  This password will valid for 2 days.  Please log into the system and use the 'Manage Access' Utility under the User Profile Sidebar.  <p>Thanks, <br>ScienceServer</td></tr>
+</table> 
+EMAILBODY;
+         $usrinput = 'ADMIN-PASSWORD-RESET (' . $u['emailaddress'] . ")";
+
+          $eText = "The following password: {$randomBytes} is valid for 2 days.  Once logged into ScienceServer, go to the 'Manage Access' utility under the User Profile Sidebar to change the password to something more permanent.";
+          $emaillist[] = "zacheryv@mail.med.upenn.edu";
+          $emaillist[] = $emlid;
+          $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgBody, htmlind, wheninput, bywho) value(:towhoaddressarray, 'CHTNEastern ScienceServer PWord Reset', :msgBody, 1, now(), 'PWORD RESET EMAILER')";
+          $emlRS = $conn->prepare( $emlSQL );
+          $emlRS->execute(array ( ':towhoaddressarray' => json_encode( $emaillist ), ':msgBody' => "<table border=1><tr><td><CENTER>THE MESSAGE BELOW IS FROM THE SCIENCESERVER SYSTEM AT CHTNEAST.ORG ({$u['friendlyname']}/{$u['emailaddress']}) .  PLEASE DO NOT RESPONSED TO THIS EMAIL.  CONTACT THE CHTNEASTERN OFFICE DIRECTLY EITHER BY EMAIL chtnmail@uphs.upenn.edu OR BY CALLING (215) 662-4570.</td></tr><tr><td>{$eText}</td></tr></table>"));
+       
+       $responseCode = 200;     
          
      }     
      $msg = $msgArr;
