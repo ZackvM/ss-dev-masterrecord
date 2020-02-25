@@ -742,6 +742,8 @@ DIALOGINNER;
 <table class=tblBtn id=btnDialogAssign style="width: 6vw;" onclick="sendSegmentAssignment('invest');" ><tr><td><center>Assign</td></tr></table>
 </td><td>
 <table class=tblBtn id=btnDialogBank style="width: 6vw;" onclick="sendSegmentAssignment('bank');"><tr><td><center>Bank</td></tr></table>
+</td><td>
+<table class=tblBtn id=btnDialogBank style="width: 6vw;" onclick="sendSegmentAssignment('penddestroy');"><tr><td><center>P-Destroy</td></tr></table>
 </td></tr></table>
 
  </td></tr>
@@ -1433,6 +1435,7 @@ function inventory ( $rqststr, $whichusr ) {
      $selectorship = "";
      $selectorcount = "";
      $selectordestroy = "";
+     $selectorpdestroy = "";
      $selectorinvmedia = "";
      $pageTitle = "Inventory Module";
      $pageDetail = "";
@@ -1468,6 +1471,12 @@ function inventory ( $rqststr, $whichusr ) {
          $pageTitle = "Biosamples Being Destroyed";
          $pageDetail = self::bldInventoryDestroy();
          break;
+       case 'pendingdestroybiosamples':
+         $topBtnBar = generatePageTopBtnBar('inventory');
+         $selectorpdestroy = " data-selected='true' ";
+         $pageTitle = "Biosamples Mark Pending Destroyed";
+         $pageDetail = self::bldInventoryPendingDestroy();
+         break;     
        case 'investigatorsupplies':
          $topBtnBar = generatePageTopBtnBar('inventory');
          $selectorinvmedia = " data-selected='true' ";
@@ -1490,6 +1499,7 @@ function inventory ( $rqststr, $whichusr ) {
    <div class=iControlBtn {$selectorhpr}><a href="{$tt}/inventory/process-hpr-tray">Process HPR Tray</a></div>
    <div class=iControlBtn {$selectorpull}><a href="{$tt}/inventory/process-shipment">Process Shipment</a></div>
    <div class=iControlBtn {$selectorcount}><a href="{$tt}/inventory/icount">Inventory Count</a></div>
+   <div class=iControlBtn {$selectorpdestroy}><a href="{$tt}/inventory/pending-destroy-biosamples">P-Destroy Biosamples</a></div>
    <div class=iControlBtn {$selectordestroy}><a href="{$tt}/inventory/destroy-biosamples">Destroy Biosamples</a></div>
    <div class=iControlBtn {$selectorinvmedia}><a href="{$tt}/inventory/investigator-supplies">Investigator Supplies</a></div>    
  </div>
@@ -1603,6 +1613,43 @@ $pageContent = <<<PAGECONTENT
     <div id=labelscanholderdiv></div>
   </div>
   <div id=itemCountDsp>SCAN COUNT: 0</div>
+  <div id=ctlButtons><center> 
+   <table><tr><td> <div class=iControlBtn id=ctlBtnCommitCount><center>Submit</div> </td><td>  <div class=iControlBtn id=ctlBtnCountCancel><center>Cancel</div> </td></tr></table>
+   </div>
+</div>
+PAGECONTENT;
+return $pageContent;
+}
+
+function bldInventoryPendingDestroy() {
+$pageContent = <<<PAGECONTENT
+<div id=inventoryCheckinElementHoldr>
+  <div id=labelscan>
+    <div class=scanfieldlabel>1) scanned biosample labels that are being destroyed. Click biosample label to 'Delete' from scan list</div>
+    <div id=labelscanholderdiv></div>
+  </div>
+  <div id=itemCountDsp>SCAN COUNT: 0</div>
+        
+   <div id=IKeyOverride>
+        <div id=usrPinOverrideHold>
+          <div class=dataLabel>Inventory Pin</div>
+          <div><input type=text id=fldUsrInventoryPin READONLY></div>    
+   </div>
+   <div id=ctlPad>
+      <div class=ctlPadBtn onclick="pinme('0');">0</div>
+      <div class=ctlPadBtn onclick="pinme('1');">1</div>        
+      <div class=ctlPadBtn onclick="pinme('2');">2</div>
+      <div class=ctlPadBtn onclick="pinme('3');">3</div>
+      <div class=ctlPadBtn onclick="pinme('4');">4</div>
+      <div class=ctlPadBtn onclick="pinme('5');">5</div>
+      <div class=ctlPadBtn onclick="pinme('6');">6</div>
+      <div class=ctlPadBtn onclick="pinme('7');">7</div>
+      <div class=ctlPadBtn onclick="pinme('8');">8</div>
+      <div class=ctlPadBtn onclick="pinme('9');">9</div>
+      <div class=ctlPadBtn onclick="pinme('B');"><i class=material-icons>arrow_back_ios</i></div>          
+   </div>     
+   </div>    
+   
   <div id=ctlButtons><center> 
    <table><tr><td> <div class=iControlBtn id=ctlBtnCommitCount><center>Submit</div> </td><td>  <div class=iControlBtn id=ctlBtnCountCancel><center>Cancel</div> </td></tr></table>
    </div>
@@ -6225,7 +6272,7 @@ CALENDAR;
     $faListRS = $conn->prepare($faListSQL);
     $faListRS->execute(array(':ticketnbr' => $ticketNbr, ':actioncodeid' => $ticket['actiongridtype']));
    
-    $action = "<table border=0 cellspacing=0 cellpadding=0><thead><tr><td class=col5></td><td class=col6>#</td><td class=col1>Action</td><td class=col3>Performed By :: When</td><td class=col4>Comments</td></tr></thead><tbody>";
+    $action = "{$ticket['actiongridtype']}    <table border=0 cellspacing=0 cellpadding=0><thead><tr><td class=col5></td><td class=col6>#</td><td class=col1>Action</td><td class=col3>Performed By :: When</td><td class=col4>Comments</td></tr></thead><tbody>";
     $faActionDsp = "";
     $faActionStepCount = 0;
     while ( $r = $faListRS->fetch(PDO::FETCH_ASSOC)) { 

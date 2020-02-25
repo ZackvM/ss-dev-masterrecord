@@ -118,6 +118,29 @@ function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) {
   }
 }
              
+function sendChangeModHeaderRequest(whichmodheader, whatvalue) { 
+  var given = new Object();  
+  given['uency'] = byId('updFldIdent').value; 
+  given['toggleind'] = whichmodheader;
+  given['togglevalue'] = whatvalue;             
+  var passeddata = JSON.stringify(given);
+  var mlURL = "/data-doers/user-toggle-mod-header";
+  universalAJAX("POST",mlURL,passeddata,answerUserToggleModHeader,1);            
+}
+             
+function answerUserToggleModHeader ( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     //ERROR MESSAGE HERE
+     alert("ERROR:\\n"+dspMsg);
+   } else {
+   }     
+}
+             
 RTNTHIS;
      return $rtnThis;
   }
@@ -1279,6 +1302,140 @@ PROCINVT;
   case 'destroybiosamples':
       $rtnThis .= <<<PROCINVT
 
+var fillInDesigLabelCode = function ( scancode  ) {
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scanlabel'] = scancode.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-label-dxdesignation", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) { 
+           var dta = JSON.parse( httpage.responseText );  
+           //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
+           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+        } else { 
+          reject(Error("It broke! "+httpage.responseText ));
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}   
+
+function actionCancel() {
+  if ( byId('locscancode') ) {
+    byId('locscancode').value = '';
+  }
+  if ( byId('locscandsp') ) {
+    byId('locscandsp').innerHTML = '';
+  }
+  if ( byId('itemCountDsp') ) {
+    byId('itemCountDsp').innerHTML = 'SCAN COUNT: 0';
+  }
+  if ( byId('labelscanholderdiv') ) {
+    var myNode = byId('labelscanholderdiv');
+    while ( myNode.firstChild ) { 
+      myNode.removeChild(myNode.firstChild);
+    }  
+  }
+}
+
+function doSomethingWithScan ( scanvalue ) {
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+
+  var scanworked = 0;
+  if ( scanlabel.test( scanvalue ) ) { 
+    scanworked = 1;
+    //BIOSAMPLE LABEL SCANNED
+    if ( byId('labelscan') ) {
+      //CHECK LABEL NOT ALREADY SCANNED
+      var lbls = document.getElementsByClassName("labelDspDiv");
+      var lblsl = lbls.length;
+      for ( var i = 0; i < lbls.length; i++ ) { 
+        if ( byId(lbls[i].id).dataset.label == scanvalue ) { return null; }
+      } 
+
+      var nxtItemNbr = 0;
+      if ( lblsl > 0 ) {
+        nxtItemNbr =  parseInt(lbls[ (lblsl - 1) ].id.replace( /^\D+/g, '')) + 1; 
+      } 
+
+      var lblDiv = document.createElement('div');
+      lblDiv.id = "scannedLabel"+nxtItemNbr;
+      lblDiv.className = "labelDspDiv";
+      lblDiv.dataset.label = scanvalue;
+      //lblDiv.innerHTML = scanvalue; 
+      byId('labelscanholderdiv').appendChild ( lblDiv );
+      lblDiv.addEventListener("click", clickedlabel );
+        
+      var scnDsp = document.createElement('div');
+      scnDsp.id = "scanDisplay"+nxtItemNbr;
+      scnDsp.className = "scanDisplay";
+      scnDsp.innerHTML = scanvalue;
+      byId("scannedLabel"+nxtItemNbr).appendChild( scnDsp );
+
+      var desDsp = document.createElement('div');
+      desDsp.id = "desigDisplay"+nxtItemNbr;
+      desDsp.className = "desigDisplay";
+      desDsp.innerHTML = "-";
+      byId("scannedLabel"+nxtItemNbr).appendChild( desDsp );        
+
+      var elemcnt = document.getElementsByClassName("labelDspDiv");
+      byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
+
+      //MAKE PROMISE TO LOOKUP DATA
+      fillInDesigLabelCode( scanvalue ).then (function (fulfilled) {         
+            byId('desigDisplay'+nxtItemNbr).innerHTML = fulfilled;
+        })
+        .catch(function (error) {
+            byId('desigDisplay'+nxtItemNbr).innerHTML = '<div class=errordspmsg>Scanned Label Not Found in Database. See Informatics Staff Memeber Immediately.</div>';
+            console.log(error.message);
+        });
+    } else { 
+      alert('The Scan Control doesn\'t exist');
+    }
+  }
+                
+  if ( scanworked === 0 ) { 
+    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
+  }
+
+} 
+  
+PROCINVT;
+      break;
+  case 'pendingdestroybiosamples':
+      $rtnThis .= <<<PROCINVT
+
+document.addEventListener('DOMContentLoaded', function() {
+
+if (  byId('ctlBtnCommitCount') ) { 
+    byId('ctlBtnCommitCount').addEventListener( 'click' , function() { sendPDRequest(); }, false );    
+}
+   
+          
+          
+}, false);          
+          
+function sendPDRequest() { 
+    
+  alert('here i am');      
+   
+}          
+          
+function pinme( keypressed ) {
+  var upinval = byId('fldUsrInventoryPin').value.trim();
+  if ( keypressed === 'B' ) { 
+     var nwupinval = upinval.substring(0, upinval.length - 1);          
+  } else { 
+    var nwupinval = upinval+keypressed;
+  }
+  byId('fldUsrInventoryPin').value = nwupinval;        
+}          
+          
+          
 var fillInDesigLabelCode = function ( scancode  ) {
   return new Promise(function(resolve, reject) {
     var obj = new Object(); 
@@ -7861,8 +8018,11 @@ function sendSegmentAssignment(typeofassign) {
       dta['investigatorid'] = 'BANK';
       dta['requestnbr'] = '';
       break;
+   case 'penddestroy':
+      dta['investigatorid'] = 'PENDDESTROY';
+      dta['requestnbr'] = '';
+      break;
   }
-
   var passdata = JSON.stringify(dta);
   var mlURL = "/data-doers/assign-segments";
   universalAJAX("POST",mlURL,passdata,answerSendSegmentAssignment,2);

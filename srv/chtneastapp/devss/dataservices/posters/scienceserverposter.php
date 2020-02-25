@@ -33,6 +33,51 @@ function __construct() {
 }
 
 class datadoers {
+    
+    function usertogglemodheader ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true); 
+      $at = genAppFiles;
+      $si = serverIdent;
+      $sp = serverpw;
+      
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and accessnbr > 42"; 
+     $rs = $conn->prepare($chkUsrSQL); 
+     $rs->execute(array(':sessid' => $sessid ));
+     if ( $rs->rowCount() <  1 ) {
+       (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+     } else { 
+       $u = $rs->fetch(PDO::FETCH_ASSOC);
+     }       
+
+     
+     $emlid = cryptservice( $pdta['uency'] , 'd') ;  
+     $msgArr[] = $emlid;
+         //$backupSQL = "insert into four.sys_userbase_history (userid,failedlogins,friendlyName,lastname,emailAddress,fiveonepword,zackOnly,changePWordInd,originalAccountName,informaticsInd,freshNotificationInd,allowInd,allowWeeklyUpdate,allowlinux,pxipassword,pxipasswordexpire,pxiguidident,pxisessionexpire,allowProc,allowCoord,allowHPR,allowQMS,allowHPRInquirer,allowHPRReview,allowInvtry,allowfinancials,sessionid,presentinstitution,sessionExpire,ssv5guid,sessionNeverExpires,userName,displayName,dspjobtitle,primaryFunction,primaryInstCode,passwordExpireDate,pwordResetCode,pwordResetExpire,altinfochangecode,altinfochangecodeexpire,inputOn,inputBy,accessLevel,accessNbr,lastUpdatedOn,lastUpdatedBy,logCardId,inventorypinkey,logCardExpDte,dspAlternateInDir,dspindirectory,dsporderindirectory,sex,profilePicURL,profilePhone,profileAltEmail,dlExpireDate,altPhone,altPhoneType,altPhoneCellCarrier,cellcarriercode,historyon,historyby)  SELECT *, now() as historyinputon, :userupdater as historyby FROM four.sys_userbase where emailaddress = :emladd";
+         //$backupRS = $conn->prepare($backupSQL);
+         //$backupRS->execute( array(':emladd' => $emlid, ':userupdater' => "{$u['emailaddress']} (USER ADMIN [MOD HEAD CHANGE])"   ));
+     
+
+         $msgArr[] = $pdta['toggleind'];
+         $msgArr[] = $pdta['togglevalue'];
+     
+     
+     
+     
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;         
+    }
+    
 
     function usergetspecificsdsp ( $request, $passdata ) { 
       $responseCode = 400;
@@ -61,7 +106,21 @@ class datadoers {
      if ( $errorInd === 0 ) {
          $emlid = cryptservice( $pdta['uency'] , 'd') ;
 
-         $userSQL = "SELECT emailaddress, userid, failedlogins, friendlyname, lastname, originalaccountname, allowInd as ind_allow_System_Access, informaticsind as ind_allow_Informatics, freshNotificationInd as ind_allow_Fresh_Notification, allowWeeklyUpdate as ind_allow_Weekly_Email_Notification, allowlinux as ind_allow_Donor_Vault_Access, allowProc as ind_allow_Procurement, allowCoord as ind_allow_Data_Coordinator, allowHPR as ind_allow_HPR, allowQMS as ind_allow_QMS, allowHPRInquirer as ind_allow_HPR_Inquiry, allowHPRReview as ind_allow_HPR_Review, allowInvtry as ind_allow_Inventory, allowfinancials as ind_allow_Financials, displayName, userName, dspjobtitle, primaryFunction, primaryInstCode, inst.dspvalue as primaryInst, date_format(passwordExpireDate,'%m/%d/%Y') as passwordExpireDate, inputBy, date_format(inputon, '%m/%d/%Y') as inputon, accessLevel, al.dspvalue accesslvldsp , accessNbr, date_format(lastUpdatedOn,'%m/%d/%Y') as lastupdatedon, lastUpdatedBy, inventorypinkey, sex, profilePicURL, profileAltEmail, profilePhone, ifnull(dlExpireDate,'') as dlexpiredate, altPhone, altPhoneType, altPhoneCellCarrier, cellcarriercode FROM four.sys_userbase ub left join ( SELECT ifnull(menuvalue,'UNKNOWN') as menuvalue, dspvalue FROM four.sys_master_menus where menu = 'accssLVL') al on ub.accessLevel = al.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION' ) as inst on ub.primaryinstcode = inst.menuvalue where emailaddress = :passedEmail";
+         $userSQL = "SELECT emailaddress, userid, failedlogins, friendlyname, lastname, originalaccountname"
+                 . ", allowInd as ind_allow_System_Access"
+                 . ", informaticsind as ind_allow_Informatics"
+                 . ", freshNotificationInd as ind_allow_Fresh_Notification"
+                 . ", allowWeeklyUpdate as ind_allow_Weekly_Email_Notification"
+                 . ", allowlinux as ind_allow_Donor_Vault_Access"
+                 . ", allowProc as ind_allow_Procurement"
+                 . ", allowCoord as ind_allow_Data_Coordinator"
+                 . ", allowHPR as ind_allow_HPR"
+                 . ", allowQMS as ind_allow_QMS"
+                 . ", allowHPRInquirer as ind_allow_HPR_Inquiry"
+                 . ", allowHPRReview as ind_allow_HPR_Review"
+                 . ", allowInvtry as ind_allow_Inventory"
+                 . ", allowfinancials as ind_allow_Financials"
+                 . ", displayName, userName, dspjobtitle, primaryFunction, primaryInstCode, inst.dspvalue as primaryInst, date_format(passwordExpireDate,'%m/%d/%Y') as passwordExpireDate, inputBy, date_format(inputon, '%m/%d/%Y') as inputon, accessLevel, al.dspvalue accesslvldsp , accessNbr, date_format(lastUpdatedOn,'%m/%d/%Y') as lastupdatedon, lastUpdatedBy, inventorypinkey, sex, profilePicURL, profileAltEmail, profilePhone, ifnull(dlExpireDate,'') as dlexpiredate, altPhone, altPhoneType, altPhoneCellCarrier, cellcarriercode FROM four.sys_userbase ub left join ( SELECT ifnull(menuvalue,'UNKNOWN') as menuvalue, dspvalue FROM four.sys_master_menus where menu = 'accssLVL') al on ub.accessLevel = al.menuvalue left join ( SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION' ) as inst on ub.primaryinstcode = inst.menuvalue where emailaddress = :passedEmail";
          $userRS = $conn->prepare( $userSQL ); 
          $userRS->execute(array(':passedEmail' => $emlid  ));
          if ( $userRS->rowCount() !== 1 ) {  
@@ -131,7 +190,7 @@ class datadoers {
              foreach ( $user as $ukey => $uval ) {
                if ( substr( $ukey,0,10) === 'ind_allow_' ) {  
                 $chkd = ( (int)$uval === 1 ) ? "CHECKED" : "";
-                $allowedInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" class=\"checkboxThreeInput\" id=\"checkbox{$allowCntr}Input\"  {$chkd}  /><label for=\"checkbox{$allowCntr}Input\"></label></div>";
+                $allowedInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" onchange=\"sendChangeModHeaderRequest('{$ukey}',this.checked);\" class=\"checkboxThreeInput\" id=\"checkbox{$allowCntr}Input\"  {$chkd}  /><label for=\"checkbox{$allowCntr}Input\"></label></div>";
                 $allows .= "<div class=allowDspDiv><div class=allowLabelDsp>" . preg_replace('/_/',' ', preg_replace('/ind_allow_/','',$ukey)) . "</div><div class=allowIndicator>{$allowedInd}</div></div>";
                 $allowCntr++;
                }
@@ -141,22 +200,26 @@ class datadoers {
              $instRS = $conn->prepare( $instSQL );
              $instRS->execute( array( ':userid' => $user['userid'] ));
          
+             $divInstList = "<div id=instListHolder>";
              while ( $i = $instRS->fetch(PDO::FETCH_ASSOC) ) {
                $chkd = ( (int)$i['onoffind'] === 1 ) ? "CHECKED" : "";
                $iAllowedInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" class=\"checkboxThreeInput\" id=\"checkbox{$i['institutioncode']}Input\"  {$chkd}  /><label for=\"checkbox{$i['institutioncode']}Input\"></label></div>";
                $divInstList .= "<div class=instListDiv><div class=iAllowName>{$i['institutionname']}</div><div class=iAllowHold>  {$iAllowedInd} </div></div>";
              }
+             $divInstList .= "</div>";
 
 
              $modSQL = "SELECT md.menuid as modid, ucase(md.menuvalue) as module, ifnull(modu.onoffind,0) as onoffind FROM four.sys_master_menus md left join (select * from four.sys_userbase_modules where userid = :userid and onoffind = 1) modu on md.menuid = modu.moduleid where md.menu = 'SS5MODULES' order by md.dsporder";
              $modRS = $conn->prepare($modSQL);
              $modRS->execute(array( ':userid' => $user['userid'] )); 
 
+             $divModList = "<div id=modListHolder>";
              while ( $m = $modRS->fetch(PDO::FETCH_ASSOC)) { 
                $chkd = ( (int)$m['onoffind'] === 1 ) ? "CHECKED" : "";
                $mAllowedInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" class=\"checkboxThreeInput\" id=\"checkbox{$m['modid']}Input\"  {$chkd}  /><label for=\"checkbox{$m['modid']}Input\"></label></div>";
                $divModList .= "<div class=modListDiv><div class=mAllowName>{$m['module']}</div><div class=mAllowHold>  {$mAllowedInd} </div></div>";
              }
+             $divModList .= "</div>";
 
 
              $dta = <<<PGCONTENT
@@ -3678,15 +3741,15 @@ MBODY;
           $dta['dialogid'] = $pdta['dialogid']; 
 
           //todo:  Get Investigator email address
-          $iEmail[] = "dfitzsim@pennmedicine.upenn.edu";
-          $iEmail[] = "zacheryv@pennmedicine.upenn.edu";
-          $iEmail[] = "zackvm@zacheryv.com";
+          //$iEmail[] = "dfitzsim@pennmedicine.upenn.edu";
+          //$iEmail[] = "zacheryv@pennmedicine.upenn.edu";
+          //$iEmail[] = "zackvm@zacheryv.com";
 
-          if ( $iEmail !== "" ) { 
-            $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgBody, htmlind, wheninput, bywho) value(:towhoaddressarray, 'CHTN-EASTERN SHIPMENT FOLLOWUP EMAIL', :msgBody, 1, now(), :bywho)";
-            $emlRS = $conn->prepare( $emlSQL );
-            $emlRS->execute(array ( ':towhoaddressarray' => json_encode( $iEmail ), ':msgBody' => "<table border=1><tr><td><CENTER>THE MESSAGE BELOW IS ABOUT YOUR RECENT SHIPMENT WITH SURVEY LINK.<p>PLEASE DO NOT RESPONSED TO THIS EMAIL. CONTACT THE CHTNEASTERN OFFICE DIRECTLY EITHER BY EMAIL chtnmail@uphs.upenn.edu OR BY CALLING (215) 662-4570.</td></tr><tr><td>SURVEY LINK TEXT</td></tr></table>", ':bywho' =>  "SALES-ORDER-ADD-{$u['usr']}" ));
-          }
+          //if ( $iEmail !== "" ) { 
+          //  $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgBody, htmlind, wheninput, bywho) value(:towhoaddressarray, 'CHTN-EASTERN SHIPMENT FOLLOWUP EMAIL', :msgBody, 1, now(), :bywho)";
+          //  $emlRS = $conn->prepare( $emlSQL );
+          //  $emlRS->execute(array ( ':towhoaddressarray' => json_encode( $iEmail ), ':msgBody' => "<table border=1><tr><td><CENTER>THE MESSAGE BELOW IS ABOUT YOUR RECENT SHIPMENT WITH SURVEY LINK.<p>PLEASE DO NOT RESPONSED TO THIS EMAIL. CONTACT THE CHTNEASTERN OFFICE DIRECTLY EITHER BY EMAIL chtnmail@uphs.upenn.edu OR BY CALLING (215) 662-4570.</td></tr><tr><td>SURVEY LINK TEXT</td></tr></table>", ':bywho' =>  "SALES-ORDER-ADD-{$u['usr']}" ));
+//          }
           $responseCode = 200;
       }
 
@@ -8958,28 +9021,35 @@ SQLSTMT;
       if ($qryrqst['investigatorid'] === 'BANK') { 
           $assInv = 'BANKED';  //SEGMENT STATUS FROM SYS_MASTER_MENUS
           $assProj = "";
-          $assReq = '';
+          $assReq = '';          
       } else { 
-          if (trim($qryrqst['requestnbr']) === "" || trim($qryrqst['investigatorid']) === "") { 
-            $error = 1; 
-            $msgArr[] = "Both an Investigator and a request number is required.  No Segments have been assigned.";
-          } else { 
-            //CHECK VALIDITY OF INV/REQ
-            $chkSQL = "select rq.requestid, pr.projid, pr.investid from vandyinvest.investtissreq rq left join vandyinvest.investproj pr on rq.projid = pr.projid where rq.requestid = :rq and pr.investid = :iv";
-            $chkR = $conn->prepare($chkSQL);
-            $chkR->execute(array(':rq' => trim($qryrqst['requestnbr']), ':iv' => trim($qryrqst['investigatorid'])));
-            if ($chkR->rowCount() < 1) { 
+          if ($qryrqst['investigatorid'] === 'PENDDESTROY' ) { 
+            $assInv = 'PENDDEST';  //SEGMENT STATUS FROM SYS_MASTER_MENUS
+            $assProj = "";
+            $assReq = '';                            
+          } else {          
+            if (trim($qryrqst['requestnbr']) === "" || trim($qryrqst['investigatorid']) === "") { 
               $error = 1; 
-              $msgArr[] = "The specified Investigator/request number combination is NOT valid ({$qryrqst['investigatorid']}/{$qryrqst['requestnbr']}).  No Segments have been assigned.";
-            } else {
-              $dbrq = $chkR->fetch(PDO::FETCH_ASSOC);  
-              $assInv = strtoupper(trim($qryrqst['investigatorid']));  //SEGMENT STATUS FROM SYS_MASTER_MENUS
-              $assProj = strtoupper(trim($dbrq['projid']));
-              $assReq = strtoupper(trim($qryrqst['requestnbr']));
+              $msgArr[] = "Both an Investigator and a request number is required.  No Segments have been assigned.";
+            } else { 
+              //CHECK VALIDITY OF INV/REQ
+              $chkSQL = "select rq.requestid, pr.projid, pr.investid from vandyinvest.investtissreq rq left join vandyinvest.investproj pr on rq.projid = pr.projid where rq.requestid = :rq and pr.investid = :iv";
+              $chkR = $conn->prepare($chkSQL);
+              $chkR->execute(array(':rq' => trim($qryrqst['requestnbr']), ':iv' => trim($qryrqst['investigatorid'])));
+              if ($chkR->rowCount() < 1) { 
+                $error = 1; 
+                $msgArr[] = "The specified Investigator/request number combination is NOT valid ({$qryrqst['investigatorid']}/{$qryrqst['requestnbr']}).  No Segments have been assigned.";
+              } else {
+                $dbrq = $chkR->fetch(PDO::FETCH_ASSOC);  
+                $assInv = strtoupper(trim($qryrqst['investigatorid']));  //SEGMENT STATUS FROM SYS_MASTER_MENUS
+                $assProj = strtoupper(trim($dbrq['projid']));
+                $assReq = strtoupper(trim($qryrqst['requestnbr']));
+              }
             }
           }
+          
       }
-
+      
       //3) CHECK SEGMENT EXISTS AND IS IN A STATE TO BE REASSIGNED - CHECKING SEGMENTS FIRST MAKES THIS SORT OF A TRANSACTIONAL COMPONENT
       $assignableSQL = "select menuvalue, dspvalue, assignablestatus from four.sys_master_menus where menu = 'SEGMENTSTATUS'";
       $assignableRS = $conn->prepare($assignableSQL); 
@@ -9026,7 +9096,7 @@ SQLSTMT;
           $msgArr[] = "Segment does not Exist.  See CHTN Eastern IT (dbSegmentId: {$v['segmentid']})";
         }             
       } 
-
+      
       if ($error === 0) { 
           session_start(); 
           $usrSQL = "SELECT originalAccountName FROM four.sys_userbase where sessionid = :sessionid";
@@ -9065,16 +9135,23 @@ SQLSTMT;
                   $aPrj = '';
                   $aRq = '';
                 } else { 
-                  $sts = 'ASSIGNED'; 
-                  $stsB = $u['originalAccountName']; 
-                  $aTo = $assInv;
-                  $aPrj = $assProj;
-                  $aRq = $assReq;
-                } 
+                    if ( $assInv === 'PENDDEST') { 
+                      $sts = 'PENDDEST'; 
+                      $stsB = $u['originalAccountName']; 
+                      $aTo = '';
+                      $aPrj = '';
+                      $aRq = '';                      
+                    } else { 
+                      $sts = 'ASSIGNED'; 
+                      $stsB = $u['originalAccountName']; 
+                      $aTo = $assInv;
+                      $aPrj = $assProj;
+                      $aRq = $assReq;
+                    } 
+                }
                 $segUpdSQL = "update masterrecord.ut_procure_segment set segstatus = :segStat, statusdate = now(), statusby = :statBy, assignedto = :aTo, assignedproj = :aPrj, assignedreq = :aRq, assignmentdate = now(), assignedby = :aBy where segmentid = :segid ";
                 $segUpdR = $conn->prepare($segUpdSQL); 
                 $segUpdR->execute(array(':segStat' => $sts, ':statBy' => $stsB, ':aTo' => $aTo, ':aPrj' => $aPrj, ':aRq' => $aRq, ':aBy' => $stsB, ':segid' => $v['segmentid']));
-
             }
             $responseCode = 200;
           //  //SEND STATUS 200 

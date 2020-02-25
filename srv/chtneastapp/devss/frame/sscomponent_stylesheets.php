@@ -343,7 +343,8 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 #dataLineFive { display: grid; grid-template-columns:  1fr 1fr; grid-gap: .2vw; padding: 1vh 0 0 0; }
 #dataLineAllows { display: grid; grid-template-columns: repeat( 4, 1fr); grid-gap: .2vw; padding: 2vh .2vw 0 .2vw; }
 #dataLineModsAndInsts { display: grid; grid-template-columns: repeat( 2, 1fr); grid-gap: .2vw; padding: 1vh .2vw 0 .2vw; } 
-
+#instListHolder { height: 28vh; overflow: auto;     }
+#modListHolder{ height: 28vh; overflow: auto;     }
 .dataElementHold .dataElementLabel { font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1);  }
 .dataElementHold .dataElementData { }
 .dataElementHold .dataElementData input { font-size: 1.5vh; padding: .4vh .2vw;  }  
@@ -1420,7 +1421,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #inventoryCheckinElementHoldr #locationscan #locscandsp { font-family: Roboto; font-size: 1.5vh; color: rgba({$this->color_dblue},1); padding: .5vh 0 .5vh 5px;   } 
 
 #inventoryCheckinElementHoldr #itemCountDsp { grid-row: 2 / 3;  font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; } 
-#inventoryCheckinElementHoldr #labelscan { grid-row: 3 / 10; height: 60vh; overflow: auto; } 
+#inventoryCheckinElementHoldr #labelscan { grid-row: 3 / 8; height: 55vh; overflow: auto; } 
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv { display: grid; grid-gap: 4px; grid-template-columns: repeat(5, 1fr); } 
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv { border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; height: 6vh; background-color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.4vh; }
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv:nth-child(even) { background: rgba({$this->color_mgrey},.3); }
@@ -1434,8 +1435,19 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
 .scanfieldlabel { font-size: 1.8vh; font-weight: bold; } 
 
-#inventoryCheckinElementHoldr #ctlButtons { grid-row: 10 / 11; border-top: 1px solid rgba({$this->color_zackgrey},1); } 
+#inventoryCheckinElementHoldr #ctlButtons { grid-row: 9 / 10; border-top: 1px solid rgba({$this->color_zackgrey},1); } 
 
+#IKeyOverride { grid-row: 8 / 9; display: grid;  grid-template-columns: 8vw auto; }
+#usrPinOverrideHold { margin: 0 .2vw 0 .2vw; }
+.dataLabel { font-size: 1.5vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); }
+#fldUsrInventoryPin { width: 7vw; text-align: center; }
+
+#ctlPad { display: grid; grid-template-columns: repeat( 11, 3vw); grid-gap: .2vw; padding: 1.3vh 0 0 0; } 
+#ctlPad .ctlPadBtn {  border: 1px solid rgba({$this->color_zackgrey},1); height: 6vh; width: 3vw;  box-sizing: border-box;  font-size: 2vh; font-weight: bold; padding: 1.6vh 0 1.6vh 1.1vw; transition: 1s; 
+-webkit-box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
+-moz-box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
+box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);  } 
+#ctlPad .ctlPadBtn:hover { cursor: pointer; }  
 
 STYLESHEET;
       return $rtnThis;
