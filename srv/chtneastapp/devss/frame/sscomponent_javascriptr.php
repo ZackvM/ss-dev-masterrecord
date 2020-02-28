@@ -1302,6 +1302,47 @@ PROCINVT;
   case 'destroybiosamples':
       $rtnThis .= <<<PROCINVT
 
+
+document.addEventListener('DOMContentLoaded', function() {
+
+  if (  byId('ctlBtnCommitCount') ) { 
+    byId('ctlBtnCommitCount').addEventListener( 'click' , function() { sendDRequest(); }, false );    
+  }
+           
+}, false);          
+
+function sendDRequest () { 
+  var obj = new Object();
+  var bgslist = new Object(); 
+  var lbls = document.getElementsByClassName("labelDspDiv");
+  var lblsl = lbls.length;
+  for ( var i = 0; i < lbls.length; i++ ) { 
+    bgslist[i] = byId(lbls[i].id).dataset.label;
+  } 
+  obj['bgslist'] = bgslist;
+  var passdta = JSON.stringify(obj);         
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/inventory-action-destroy";
+  universalAJAX("POST",mlURL,passdta,answerSendDRequest,2);
+}
+
+function answerSendDRequest ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+     alert('Biosample Segment(s) have been updated to \'Destroyed\''); 
+     actionCancel();
+     byId('standardModalBacker').style.display = 'none';    
+   }
+
+}
+
 var fillInDesigLabelCode = function ( scancode  ) {
   return new Promise(function(resolve, reject) {
     var obj = new Object(); 
@@ -1402,7 +1443,7 @@ function doSomethingWithScan ( scanvalue ) {
     alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
   }
 
-} 
+}
   
 PROCINVT;
       break;
@@ -1411,19 +1452,44 @@ PROCINVT;
 
 document.addEventListener('DOMContentLoaded', function() {
 
-if (  byId('ctlBtnCommitCount') ) { 
+  if (  byId('ctlBtnCommitCount') ) { 
     byId('ctlBtnCommitCount').addEventListener( 'click' , function() { sendPDRequest(); }, false );    
-}
-   
-          
-          
+  }
+           
 }, false);          
           
 function sendPDRequest() { 
-    
-  alert('here i am');      
-   
+  var obj = new Object();
+  var bgslist = new Object(); 
+  var lbls = document.getElementsByClassName("labelDspDiv");
+  var lblsl = lbls.length;
+  for ( var i = 0; i < lbls.length; i++ ) { 
+    bgslist[i] = byId(lbls[i].id).dataset.label;
+  } 
+  obj['bgslist'] = bgslist;
+  obj['ipin'] = window.btoa( encryptedString(key, byId('fldUsrInventoryPin').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );
+  var passdta = JSON.stringify(obj);         
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/inventory-action-pdestroy";
+  universalAJAX("POST",mlURL,passdta,answerSendPDRequest,2);
 }          
+
+function answerSendPDRequest ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+     alert('Biosample Segment(s) have been updated to \'Pending Destroy\''); 
+     byId('fldUsrInventoryPin').value = "";
+     actionCancel();
+     byId('standardModalBacker').style.display = 'none';    
+   }
+}
           
 function pinme( keypressed ) {
   var upinval = byId('fldUsrInventoryPin').value.trim();
@@ -1447,7 +1513,6 @@ var fillInDesigLabelCode = function ( scancode  ) {
       if (httpage.readyState === 4) {
          if ( parseInt(httpage.status) === 200 ) { 
            var dta = JSON.parse( httpage.responseText );  
-           //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
            resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
         } else { 
           reject(Error("It broke! "+httpage.responseText ));

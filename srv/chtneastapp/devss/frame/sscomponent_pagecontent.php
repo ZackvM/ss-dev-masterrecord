@@ -1625,7 +1625,7 @@ function bldInventoryPendingDestroy() {
 $pageContent = <<<PAGECONTENT
 <div id=inventoryCheckinElementHoldr>
   <div id=labelscan>
-    <div class=scanfieldlabel>1) scanned biosample labels that are being destroyed. Click biosample label to 'Delete' from scan list</div>
+    <div class=scanfieldlabel>1) Scanned biosample labels that are being marked 'Pending Destroy'. Click biosample label to 'Delete' from scan list</div>
     <div id=labelscanholderdiv></div>
   </div>
   <div id=itemCountDsp>SCAN COUNT: 0</div>

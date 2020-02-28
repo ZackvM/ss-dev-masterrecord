@@ -33,7 +33,138 @@ function __construct() {
 }
 
 class datadoers {
-    
+
+    function inventoryactiondestroy ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true); 
+      $usrpin = chtndecrypt($pdta['ipin'], true);
+      $at = genAppFiles;
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sid and allowind = 1 and allowInvtry = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+     $rs = $conn->prepare($chkUsrSQL); 
+     $rs->execute(array(':sid' => $sessid));
+     if ( $rs->rowCount() <  1 ) {
+       (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO STATUS SEGMENTS AS DESTROYED. LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+     } else { 
+       $u = $rs->fetch(PDO::FETCH_ASSOC);
+     }       
+
+     ( count($pdta['bgslist']) < 1 ) ? list($errorInd, $msgArr[]) = array(1,"YOU HAVE NOT SCANNED ANY SAMPLES.") :  "";
+
+     if ( $errorInd === 0 ) { 
+       $chkSQL = "SELECT bgs, ifnull(segstatus,'') as segstatus, ifnull(sgs.longValue,'') as segstatusdsp, ifnull(sgs.assignablestatus,0) as assignablestatus, ifnull(shipdocrefid,'') as shipdocrefid, ifnull(shippeddate,'') as shippeddate, ifnull(voidind,0) as voidind FROM masterrecord.ut_procure_segment sg left join ( SELECT menuvalue, longvalue, assignablestatus FROM four.sys_master_menus where menu = 'segmentstatus' ) as sgs on sg.segstatus = sgs.menuvalue where replace(bgs,'_','') = :bgs";
+       $chkRS = $conn->prepare( $chkSQL );
+       foreach ( $pdta['bgslist'] as $k => $v ) {
+         $chkRS->execute(array( ':bgs' => preg_replace('/^ED/i','', preg_replace('/\_/','',$v)) ));
+         if ( $chkRS->rowCount() < 1 ) { 
+             list($errorInd, $msgArr[]) = array(1,"{$v} WAS NOT FOUND IN MASTERRECORD.  IF THIS IS IN ERROR, SEE CHTNINFORMATICS.");
+         } else {
+             $bgs = $chkRS->fetch(PDO::FETCH_ASSOC);
+             //{"bgs":"47604A1H","segstatus":"PENDDEST","segstatusdsp":"Pending Destroy","assignablestatus":1,"shipdocrefid":"","shippeddate":"","voidind":0}
+             ( (int)$bgs['voidind'] <>  0  ) ? list($errorInd, $msgArr[]) = array(1,"SEGMENT LABEL, {$v}, IS A VOIDED BIOSAMPLE SEGMENT. PROCESS ABORTED.") : "";
+             ( trim($bgs['segstatus']) !== 'PENDDEST'  ) ? list($errorInd, $msgArr[]) = array(1,"SEGMENT LABEL, {$v}, IS STATUSED '" . strtoupper($bgs['segstatusdsp']) . "' AND MAY NOT BE STATUSED AS 'DESTROYED'. PROCESS ABORTED.") : "";
+             ( trim($bgs['shipdocrefid']) !== "" ) ? list($errorInd, $msgArr[]) = array(1,"SEGMENT LABEL, {$v}, APPEARS ON SHIP-DOC " . substr(('000000' . $bgs['shipdocrefid']),-6) . " AND MAY NOT BE STATUSED AS 'DESTROYED'. PROCESS ABORTED.") : "";
+             ( trim($bgs['shippeddate']) !== "" ) ? list($errorInd, $msgArr[]) = array(1,"SEGMENT LABEL, {$v}, HAS A SHIPMENT DATE AND MAY NOT BE STATUSED AS 'DESTROYED'. PROCESS ABORTED.") : "";
+         } 
+       }
+
+       if ( $errorInd === 0 ) { 
+         //Go AHEAD AND RESTATUS
+
+         $hisSQL = "insert into masterrecord.history_procure_segment_status( segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby, newstatus) SELECT segmentid, segstatus, statusBy, statusDate, now(), :u, 'DESTROYED' FROM masterrecord.ut_procure_segment where replace(bgs,'_','')  = :bgs";
+         $hisRS = $conn->prepare( $hisSQL );
+
+         $updSQL = "update masterrecord.ut_procure_segment set segstatus = 'DESTROYED', statusdate = now(), statusby = :updater where replace(bgs,'_','')  = :bgs ";
+         $updRS = $conn->prepare( $updSQL );
+
+         foreach ( $pdta['bgslist'] as $k => $v ) {
+           $hisRS->execute(array( ':bgs' => preg_replace('/^ED/i','',preg_replace('/\_/','',$v)), ':u' => $u['emailaddress']  ));
+           $updRS->execute(array( ':bgs' => preg_replace('/^ED/i','', preg_replace('/\_/','',$v)), ':updater' => $u['emailaddress'] )); 
+         }    
+         $responseCode = 200;
+       }
+     }
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;         
+    } 
+
+
+
+    function inventoryactionpdestroy ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true); 
+      $usrpin = chtndecrypt($pdta['ipin'], true);
+      $at = genAppFiles;
+      //{"bgslist":{"0":"47604A1H","1":"87871T001"},"ipin":"wz7o0LLerYW0ufUK+prP+OYRUL4GmevO9N/8h9DKjoInRoQYLxw5yVF7mzePXS5xNpsjDUAeJ+UPmLVsBJSa8+NlmFBRLW/zZXlMYPhpVTZNnuZo3pq22ESZnth/SkD4ipJIlDSpc3/pCl3i5JWHZhIT+zFy7etzBYnZGlL23wzZRViKrUtk0rhahVMeJLc+fHAdKr0PHSWmZtiwtEnx+7Zw+3zY0DDmvCSzS8XJBa69P77WsLESpfI/yoNDYD+751GEklTG0FxKfXcQomotCa4ATORckrM/+4GMFaxmEcpeldHApoqMix1JleoRH9aelE3ZJz3Wh+94AJfrQxtimA=="}
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sid and inventorypinkey = :ipin and allowind = 1 and allowInvtry = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+     $rs = $conn->prepare($chkUsrSQL); 
+     $rs->execute(array(':sid' => $sessid, ':ipin' => $usrpin ));
+     if ( $rs->rowCount() <  1 ) {
+       (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO STATUS SEGMENTS AS PENDING DESTROY.  CHECK YOUR INVENTORY OVER-RIDE PIN.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+     } else { 
+       $u = $rs->fetch(PDO::FETCH_ASSOC);
+     }       
+
+     ( count($pdta['bgslist']) < 1 ) ? list($errorInd, $msgArr[]) = array(1,"YOU HAVE NOT SCANNED ANY SAMPLES.") :  "";
+
+     if ( $errorInd === 0 ) { 
+       $chkSQL = "SELECT bgs, ifnull(segstatus,'') as segstatus, ifnull(sgs.longValue,'') as segstatusdsp, ifnull(sgs.assignablestatus,0) as assignablestatus, ifnull(shipdocrefid,'') as shipdocrefid, ifnull(shippeddate,'') as shippeddate, ifnull(voidind,0) as voidind FROM masterrecord.ut_procure_segment sg left join ( SELECT menuvalue, longvalue, assignablestatus FROM four.sys_master_menus where menu = 'segmentstatus' ) as sgs on sg.segstatus = sgs.menuvalue where replace(bgs,'_','') = :bgs";
+       $chkRS = $conn->prepare( $chkSQL );
+       foreach ( $pdta['bgslist'] as $k => $v ) {
+         $chkRS->execute(array( ':bgs' => preg_replace('/^ED/i','', preg_replace('/\_/','',$v)) ));
+         if ( $chkRS->rowCount() < 1 ) { 
+             list($errorInd, $msgArr[]) = array(1,"{$v} WAS NOT FOUND IN MASTERRECORD.  IF THIS IS IN ERROR, SEE CHTNINFORMATICS.");
+         } else {
+             $bgs = $chkRS->fetch(PDO::FETCH_ASSOC);
+             //{"bgs":"47604A1H","segstatus":"PENDDEST","segstatusdsp":"Pending Destroy","assignablestatus":1,"shipdocrefid":"","shippeddate":"","voidind":0}
+             ( (int)$bgs['voidind'] <>  0  ) ? list($errorInd, $msgArr[]) = array(1,"SEGMENT LABEL, {$v}, IS A VOIDED BIOSAMPLE SEGMENT. PROCESS ABORTED.") : "";
+             ( (int)$bgs['assignablestatus'] === 0  ) ? list($errorInd, $msgArr[]) = array(1,"SEGMENT LABEL, {$v}, IS STATUSED '" . strtoupper($bgs['segstatusdsp']) . "' AND MAY NOT BE STATUSED AS 'PENDING DESTROY'. PROCESS ABORTED.") : "";
+             ( trim($bgs['shipdocrefid']) !== "" ) ? list($errorInd, $msgArr[]) = array(1,"SEGMENT LABEL, {$v}, APPEARS ON SHIP-DOC " . substr(('000000' . $bgs['shipdocrefid']),-6) . " AND MAY NOT BE STATUSED AS 'PENDING DESTROY'. PROCESS ABORTED.") : "";
+             ( trim($bgs['shippeddate']) !== "" ) ? list($errorInd, $msgArr[]) = array(1,"SEGMENT LABEL, {$v}, HAS A SHIPMENT DATE AND MAY NOT BE STATUSED AS 'PENDING DESTROY'. PROCESS ABORTED.") : "";
+         } 
+       }
+
+       if ( $errorInd === 0 ) { 
+         //Go AHEAD AND RESTATUS
+
+         $hisSQL = "insert into masterrecord.history_procure_segment_status( segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby, newstatus) SELECT segmentid, segstatus, statusBy, statusDate, now(), :u, 'PENDDEST' FROM masterrecord.ut_procure_segment where replace(bgs,'_','')  = :bgs";
+         $hisRS = $conn->prepare( $hisSQL );
+
+         $updSQL = "update masterrecord.ut_procure_segment set segstatus = 'PENDDEST', statusdate = now(), statusby = :updater where replace(bgs,'_','')  = :bgs ";
+         $updRS = $conn->prepare( $updSQL );
+
+         foreach ( $pdta['bgslist'] as $k => $v ) {
+           $hisRS->execute(array( ':bgs' => preg_replace('/^ED/i','',preg_replace('/\_/','',$v)), ':u' => $u['emailaddress']  ));
+           $updRS->execute(array( ':bgs' => preg_replace('/^ED/i','', preg_replace('/\_/','',$v)), ':updater' => $u['emailaddress'] )); 
+         }    
+         $responseCode = 200;
+       }
+     }
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;         
+    } 
+
     function usertogglemodheader ( $request, $passdata ) { 
       $responseCode = 400;
       $rows = array();
@@ -4744,7 +4875,7 @@ MBODY;
         $segChk = $segChkRS->fetch(PDO::FETCH_ASSOC);   
         //trim($segChk['segstatus']) !== 'ASSIGNED' &&
         ( trim($segChk['prepmethod']) === 'SLIDE' || trim($segChk['prepmethod']) === 'MICRO' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED PARENT SEGMENT ({$pdta['parentSegment']}) MAY NOT HAVE A PREPARATION METHOD OF 'SLIDE' OR 'MICRO-ARRAY' ")) : "";
-        (  trim($segChk['segstatus']) !== 'BANKED' && trim($segChk['segstatus']) !== 'PERMCOLLECT' && trim($segChk['segstatus']) !== 'ONOFFER'  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED PARENT SEGMENT ({$pdta['parentSegment']} / {$segChk['segstatus']} ) IS NOT STATUSED TO ALLOW MODIFICATION ( BANKED/PERMANENT COLLECTION) ")) : "";
+        (  trim($segChk['segstatus']) !== 'BANKED' && trim($segChk['segstatus']) !== 'PERMCOLLECT' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED PARENT SEGMENT ({$pdta['parentSegment']} / {$segChk['segstatus']} ) IS NOT STATUSED TO ALLOW MODIFICATION ( BANKED/PERMANENT COLLECTION) ")) : "";
         ( trim($segChk['shipdocrefid']) !== '' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED PARENT SEGMENT ({$pdta['parentSegment']}) IS LISTED ON A SHIP-DOC (" . substr(('000000' . $segChk['shipdocrefid']),-6) . ")")) : "";
         ( trim($segChk['shippeddate']) !== '' ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED PARENT SEGMENT ({$pdta['parentSegment']}) HAS ALREADY BEEN SHIPPED")) : "";          
       }
@@ -4764,7 +4895,8 @@ MBODY;
       if ( $errorInd === 0 ) { 
         //SAVE SEGMENTS
         $cntr = 0;  
-        $nxtSegSQL = "SELECT CAST(max(segmentlabel) AS UNSIGNED) as topSegment FROM masterrecord.ut_procure_segment where biosamplelabel = :pbiosample"; 
+//        $nxtSegSQL = "SELECT CAST(max(segmentlabel) AS UNSIGNED) as topSegment FROM masterrecord.ut_procure_segment where biosamplelabel = :pbiosample";
+        $nxtSegSQL = "SELECT ifnull(CAST(max(segmentlabel) AS UNSIGNED),0) as topSegment FROM masterrecord.ut_procure_segment where biosamplelabel = :pbiosample and ( cast(segmentlabel as unsigned) * 1 ) > 0"; 
         $nxtRS = $conn->prepare($nxtSegSQL);
       
         $entrySQL = "insert into masterrecord.ut_procure_segment(biosampleLabel, SegmentLabel, bgs, segStatus, statusDate, statusBy, HoursPost, Metric, metricUOM, prepMethod, Preparation, QTY, assignedTo, assignedReq, assignmentdate, assignedby, procurementDate, SlideGroupID, enteredBy, enteredOn, internalComments, segmentComments, slideFromBlockId, procuredAt, prpcontainer) values (:biosampleLabel, :segmentLabel, :bgs, 'ONOFFER', now(), :statusBy, :hoursPost, :metric, :metricUOM, :prepMethod, :preparation, 1, :assignedTo, :assignedReq, now(), :assignedby, now(), :slideGroupID, :enteredBy, now(), 'MASTERRECORD COORDINATOR SCREEN ENTRY', :segmentComments, :slideFromBlockId, :procuredAt, :prpcontainer)";
@@ -4792,17 +4924,13 @@ MBODY;
 
         $slideGroup = generateRandomString(15);
 
+        $nxtRS->execute(array(':pbiosample' => $pdta['bgNum']));
+        $nxt = $nxtRS->fetch(PDO::FETCH_ASSOC);
         while ( $cntr < intval($pdta['definitionRepeater'])) {  
-           $nxtRS->execute(array(':pbiosample' => $pdta['bgNum']));
-           $nxt = $nxtRS->fetch(PDO::FETCH_ASSOC);
-          // (list( $errorInd, $msgArr[] ) = array(1 , "{$nxt['topSegment']} / {$bgReadLabel['readlabel']} / {$parentHRPost} "));
-        //{"bgNum":"82106","parentSegment":"","noParentInd":false,"preparationMethodValue":"","preparationMethod":"","preparation":""
-        //,"preparationValue":"","addMetric":"","addMetricUOMValue":"","addMetricUOM":"","preparationContainerValue":"","preparationContainer":""
-        //,"assignInv":"","assignReq":"","segComments":"","definitionRepeater":1,"parentExhaustedInd":false,"printSlideInd":0}
-           $newBGS = $bgReadLabel['readlabel'] . substr(('000' . ((int)$nxt['topSegment'] + 1)),-3);
+           $newBGS = $bgReadLabel['readlabel'] . substr(('000' . (((int)$nxt['topSegment'] + $cntr) + 1)),-3);
            $entryRS->execute(array(
               ':biosampleLabel' => $pdta['bgNum']  
-             ,':segmentLabel' => substr(('000' . ((int)$nxt['topSegment'] + 1)),-3)
+             ,':segmentLabel' => substr(('000' . (((int)$nxt['topSegment'] + $cntr)  + 1)),-3)
              ,':bgs' =>  $newBGS
              ,':statusBy' => $u['originalaccountname']  
              ,':hoursPost' => $parentHRPost
