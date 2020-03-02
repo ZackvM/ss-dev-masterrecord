@@ -1155,7 +1155,6 @@ var fillInDesigLabelCode = function ( scancode  ) {
       if (httpage.readyState === 4) {
          if ( parseInt(httpage.status) === 200 ) { 
            var dta = JSON.parse( httpage.responseText );  
-           //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
            resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
         } else { 
           reject(Error("It broke! "+httpage.responseText ));
@@ -1274,7 +1273,6 @@ function doSomethingWithScan ( scanvalue ) {
                 
   if ( scanloc.test( scanvalue ) ) {
     scanworked = 1;
-    //locationscan,locscancode,locscandsp
     if ( byId('locationscan') ) { 
       byId('locscancode').value = scanvalue;
       byId('locscandsp').innerHTML = scanvalue;
@@ -1608,6 +1606,47 @@ PROCINVT;
   case 'icount': 
       $rtnThis .= <<<PROCINVT
 
+document.addEventListener('DOMContentLoaded', function() {
+
+  if (  byId('ctlBtnCommitCount') ) { 
+    byId('ctlBtnCommitCount').addEventListener( 'click' , function() { sendICountRequest(); }, false );    
+  }
+           
+}, false);          
+          
+function sendICountRequest() { 
+  var obj = new Object();
+  var bgslist = new Object(); 
+  var lbls = document.getElementsByClassName("labelDspDiv");
+  var lblsl = lbls.length;
+  for ( var i = 0; i < lbls.length; i++ ) { 
+    bgslist[i] = byId(lbls[i].id).dataset.label;
+  } 
+  obj['bgslist'] = bgslist;
+  obj['scanloccode'] = byId('locscancode').value;
+  var passdta = JSON.stringify(obj);
+  //{"bgslist":{"0":"46925A7PBQ"},"scanloccode":"FRZB381"} 
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/inventory-action-icount";
+  universalAJAX("POST",mlURL,passdta,answerSendICountRequest,2);
+}          
+
+function answerSendICountRequest ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+     alert('Inventory Location has been counted'); 
+     actionCancel();
+     byId('standardModalBacker').style.display = 'none';    
+   }
+}
+
 var fillInLocationDisplay = function ( scancode ) { 
   return new Promise(function(resolve, reject) {
     var obj = new Object(); 
@@ -1619,7 +1658,8 @@ var fillInLocationDisplay = function ( scancode ) {
       if (httpage.readyState === 4) {
          if ( parseInt(httpage.status) === 200 ) { 
            var dta = JSON.parse( httpage.responseText );  
-           resolve( "<b>CHECKING INTO LOCATION</b>: "+ dta['DATA']['pathdsp'] + " :: <b>" +dta['DATA']['thislocation']+"</b> //<i>Scan Code</i>: "+dta['DATA']['scancode']);
+           //resolve( "<b>CHECKING INTO LOCATION</b>: "+ dta['DATA']['pathdsp'] + " :: <b>" +dta['DATA']['thislocation']+"</b> //<i>Scan Code</i>: "+dta['DATA']['scancode']);
+           resolve( "<b>Location being counted</b>: "+ dta['DATA']['pathdsp'] ) ;
         } else { 
           reject("NO LOCATION FOUND WITH THE SCANNED CODE: "+scancode);
         }

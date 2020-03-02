@@ -1558,8 +1558,8 @@ function bldInventoryProcessInventory() {
  * MAKE THIS SCREEN FUNCTION FOR CHECK-INs, MOVES PROCESSING 
  */
     $pageContent = <<<PAGECONTENT
-<div id=inventoryCheckinElementHoldr>
-  <div id=locationscan>
+<div id=inventoryCheckinElementHoldr> 
+  <div id=locationscan> 
   <div class=scanfieldlabel>1) Scan location where placing biosample</div>
   <input type=hidden id=locscancode>
   <div id=locscandsp></div>
@@ -1588,13 +1588,14 @@ function bldInventoryCount() {
     $pageContent = <<<PAGECONTENT
 <div id=inventoryCheckinElementHoldr>
   <div id=locationscan>
+<div id=instructionBlock>Instructions: This screen is for inventory counting.  Simply scan a container box (inventoy location).  This will create a temporary inventory listing in the database which can be reviewed by CHTNEastern Management and Informatics to perform updates to the masterrecord inventory locations. This merely counts what is in the location container box without regard to the status or other locations.  </div>
   <input type=hidden id=locscancode>
-  <div class=scanfieldlabel>1) Scanned location that is being inventory counted</div>
+  <div class=scanfieldlabel>1) Scanned location that is being counted</div>
   <div id=locscandsp></div>
   </div>
   <div id=itemCountDsp>SCAN COUNT: 0</div>
   <div id=labelscan>
-    <div class=scanfieldlabel>2) scanned biosample segment items. Click segment item to 'Delete' from scan list</div>
+    <div class=scanfieldlabel>2) Scanned biosample segment items. Click segment item to 'Delete' from scan list. Click 'Submit' when finished.</div>
     <div id=labelscanholderdiv></div>
   </div>
   <div id=ctlButtons><center> 

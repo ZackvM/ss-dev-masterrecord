@@ -1418,7 +1418,8 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 
 #inventoryCheckinElementHoldr { display: grid; grid-template-rows: repeat( 11, 1fr); height: 85%; } 
 #inventoryCheckinElementHoldr #locationscan { grid-row: 1 / 2; } 
-#inventoryCheckinElementHoldr #locationscan #locscandsp { font-family: Roboto; font-size: 1.5vh; color: rgba({$this->color_dblue},1); padding: .5vh 0 .5vh 5px;   } 
+#inventoryCheckinElementHoldr #locationscan #locscandsp { font-family: Roboto; font-size: 2vh; color: rgba({$this->color_dblue},1); padding: 1vh 0 1vh 3vw;   }
+#inventoryCheckinElementHoldr #locationscan #instructionBlock { font-family: Roboto; font-size: 1.3vh; color: rgba({$this->color_dblue},1); padding: .5vh 5vw .5vh 0;    }
 
 #inventoryCheckinElementHoldr #itemCountDsp { grid-row: 2 / 3;  font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; } 
 #inventoryCheckinElementHoldr #labelscan { grid-row: 3 / 8; height: 55vh; overflow: auto; } 
