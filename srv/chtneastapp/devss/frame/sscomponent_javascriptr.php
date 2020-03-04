@@ -1215,11 +1215,12 @@ function actionCancel() {
 
 function doSomethingWithScan ( scanvalue ) {
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
 
   var scanworked = 0;
 
-  if ( scanlabel.test( scanvalue ) ) { 
+  if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {
@@ -1383,9 +1384,10 @@ function actionCancel() {
 
 function doSomethingWithScan ( scanvalue ) {
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
 
   var scanworked = 0;
-  if ( scanlabel.test( scanvalue ) ) { 
+  if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {
@@ -1541,9 +1543,10 @@ function actionCancel() {
 
 function doSomethingWithScan ( scanvalue ) {
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
 
   var scanworked = 0;
-  if ( scanlabel.test( scanvalue ) ) { 
+  if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {
@@ -1711,11 +1714,12 @@ function actionCancel() {
 
 function doSomethingWithScan ( scanvalue ) {
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
 
   var scanworked = 0;
 
-  if ( scanlabel.test( scanvalue ) ) { 
+  if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {
@@ -1799,11 +1803,12 @@ PROCINVT;
 
 function doSomethingWithScan ( scanvalue ) {
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   var scanhpr   = new RegExp(/^HPRT\d+$/); 
   
   var scanworked = 0;
 
-  if ( scanlabel.test( scanvalue ) ) { 
+  if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {

@@ -33,6 +33,118 @@ function __construct() {
 }
 
 class datadoers {
+ 
+    function transientbanksearch ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true); 
+      $at = genAppFiles;
+
+
+      //TODO:  DATA CHECKS AND STRUCTURE CHECKS
+
+
+
+
+
+
+      //    "requester": "EST","requestedDataPage": 0,"requestedSite": "THYROID","requestedDiagnosis": "CARCINOMA","requestedCategory": "MALIGNANT","requestedPreparation": ["PB", "FROZEN"]
+      if ( count($pdta['requestedPreparation'])  === 0 ) { 
+        //NO NO NO - A PREP MUST BE SPECIFIED
+        $responseCode = 400;
+        $msgArr[] = "No Preparation method was specified";
+      } else { 
+          if ( trim($pdta['requestedSite']) === "" && trim($pdta['requestedDiagnosis']) === "" ) { 
+            $responseCode = 400;
+            $msgArr[] = "Either a site or a diagnosis must be specified";
+          } else {
+            $crit = [];  
+            $baseSQL = "SELECT replace(sg.bgs,'_','') as bgs, ifnull(bs.tissType,'') as specimencategory, concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subsite,'')='','',concat(' | ', ifnull(bs.subsite,'')))) as site, concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' | ',ifnull(bs.subdiagnos,'')))) diagnosis, trim(sg.Preparation) as preparation, sg.hourspost, if(ifnull(sg.metric,'') ='','', concat(ifnull(sg.metric,''),' ',ifnull(muom.longvalue,''))) as metric, ifnull(pr.selector,'') as prselector FROM masterrecord.ut_procure_segment sg left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') muom on sg.metricUOM = muom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (select prid, selector from masterrecord.qcpathreports) pr on bs.pathreportid = pr.prid where sg.segStatus = 'BANKED' ";
+            if ( trim($pdta['requestedCategory']) !== "" ) { 
+              $baseSQL .= " and bs.tisstype = :requestedCategory ";
+              $crit[':requestedCategory'] = $pdta['requestedCategory'];
+            } 
+            if ( trim($pdta['requestedSite']) !== "" ) { 
+              $baseSQL .= " and ( bs.anatomicSite like :requestedSiteA or bs.subSite like :requestedSiteB ) ";
+              $crit[':requestedSiteA'] = "{$pdta['requestedSite']}%";
+              $crit[':requestedSiteB'] = "{$pdta['requestedSite']}%";
+            }
+            if ( trim($pdta['requestedDiagnosis']) !== "" ) {
+              $baseSQL .= " and ( bs.diagnosis like :requestedDiagnosisA or bs.subdiagnos like :requestedDiagnosisB ) ";
+              $crit[':requestedDiagnosisA'] = "{$pdta['requestedDiagnosis']}%";
+              $crit[':requestedDiagnosisB'] = "{$pdta['requestedDiagnosis']}%";
+            }
+            $prepString = "";
+            $pcnt = 1;
+            foreach ( $pdta['requestedPreparation'] as $prep ) { 
+              $prepString .= ( $prepString === "" ) ? " sg.prepmethod = :requestedPrep{$pcnt} " : " OR sg.prepmethod = :requestedPrep{$pcnt}";
+              $crit[':requestedPrep'. $pcnt] = $prep;
+              $pcnt++;
+            }
+            $baseSQL .= " and ( {$prepString} )";
+            $rsltRS = $conn->prepare( $baseSQL );
+            $rsltRS->execute( $crit );
+            if ( $rsltRS->rowCount() < 1 ) {
+              $responseCode = 404;
+              $msgArr[] = "No Biosamples found matching your criteria";
+            } else {
+              $responseCode = 200;  
+              $itemsfound = $rsltRS->rowCount();
+              $dta = $rsltRS->fetchAll(PDO::FETCH_ASSOC);
+            }
+          }         
+      }  
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    }
+
+    function inventoryactionicount ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true); 
+      $at = genAppFiles;
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sid and allowind = 1 and allowInvtry = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+        (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO STATUS SEGMENTS AS DESTROYED. LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      ( trim($pdta['scanloccode']) === "" ) ? list($errorInd, $msgArr[]) = array(1,"NO INVENTORY STORAGE CONTAINER SPECIFIED.") :  "";
+      ( count($pdta['bgslist']) < 1 ) ? list($errorInd, $msgArr[]) = array(1,"YOU HAVE NOT SCANNED ANY SAMPLES.") :  "";
+
+
+      if ( $errorInd === 0 ) {
+        $insSQL = "insert into four.tmp_inventory_scanned ( label, locationid, bywhom, onwhen, pisession ) value(:label, :locationid, :bywhom, now(), :pisession )";
+        $insRS = $conn->prepare( $insSQL );    
+        foreach ( $pdta['bgslist'] as $k => $v ) {
+          $insRS->execute(array(':label' => preg_replace('/^ED/i','', preg_replace('/\_/','',$v)),':locationid' => $pdta['scanloccode'],':bywhom' => $u['emailaddress'], ':pisession' => $sessid  ));
+        }
+        $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    }
 
     function inventoryactiondestroy ( $request, $passdata ) { 
       $responseCode = 400;
@@ -1229,7 +1341,7 @@ EMAILBODY;
           $insRS = $conn->prepare($insSQL); 
           $insRS->execute(array(':formatname' => $pdta['printformat'], ':printername' => $pdta['printer'], ':datastring' => json_encode($prntVal), ':usr' => $u['usr']));
 
-//          $responseCode = 200;
+          $responseCode = 200;
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
