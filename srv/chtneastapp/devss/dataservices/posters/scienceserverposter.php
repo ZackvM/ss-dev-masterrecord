@@ -50,10 +50,6 @@ class datadoers {
       //TODO:  DATA CHECKS AND STRUCTURE CHECKS
 
 
-
-
-
-
       //    "requester": "EST","requestedDataPage": 0,"requestedSite": "THYROID","requestedDiagnosis": "CARCINOMA","requestedCategory": "MALIGNANT","requestedPreparation": ["PB", "FROZEN"]
       if ( count($pdta['requestedPreparation'])  === 0 ) { 
         //NO NO NO - A PREP MUST BE SPECIFIED
@@ -65,7 +61,7 @@ class datadoers {
             $msgArr[] = "Either a site or a diagnosis must be specified";
           } else {
             $crit = [];  
-            $baseSQL = "SELECT replace(sg.bgs,'_','') as bgs, ifnull(bs.tissType,'') as specimencategory, concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subsite,'')='','',concat(' | ', ifnull(bs.subsite,'')))) as site, concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' | ',ifnull(bs.subdiagnos,'')))) diagnosis, trim(sg.Preparation) as preparation, sg.hourspost, if(ifnull(sg.metric,'') ='','', concat(ifnull(sg.metric,''),' ',ifnull(muom.longvalue,''))) as metric, ifnull(pr.selector,'') as prselector FROM masterrecord.ut_procure_segment sg left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') muom on sg.metricUOM = muom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample left join (select prid, selector from masterrecord.qcpathreports) pr on bs.pathreportid = pr.prid where sg.segStatus = 'BANKED' ";
+            $baseSQL = "SELECT replace(sg.bgs,'_','') as bgs, ifnull(bs.tissType,'') as specimencategory, concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subsite,'')='','',concat(' | ', ifnull(bs.subsite,'')))) as site, concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' | ',ifnull(bs.subdiagnos,'')))) diagnosis,  concat(  substr(concat('00',ifnull(bs.pxiAge,0)),-2)    ,' | ', ucase(substr(ifnull(bs.pxiRace,'-'),1,3)) ,' | ', ucase(ifnull(bs.pxiGender,'-'))) as ars , trim(sg.Preparation) as preparation, sg.hourspost, if(ifnull(sg.metric,'') ='','', concat(ifnull(sg.metric,''),' ',ifnull(muom.longvalue,''))) as metric, ifnull(bs.pathreportid,'') as prselector FROM masterrecord.ut_procure_segment sg left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'METRIC') muom on sg.metricUOM = muom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample where sg.segStatus = 'BANKED' ";
             if ( trim($pdta['requestedCategory']) !== "" ) { 
               $baseSQL .= " and bs.tisstype = :requestedCategory ";
               $crit[':requestedCategory'] = $pdta['requestedCategory'];
@@ -87,7 +83,7 @@ class datadoers {
               $crit[':requestedPrep'. $pcnt] = $prep;
               $pcnt++;
             }
-            $baseSQL .= " and ( {$prepString} )";
+            $baseSQL .= " and ( {$prepString} ) order by bs.anatomicsite, bs.subsite, bs.tisstype, bs.diagnosis, bs.subdiagnos";
             $rsltRS = $conn->prepare( $baseSQL );
             $rsltRS->execute( $crit );
             if ( $rsltRS->rowCount() < 1 ) {
@@ -1187,7 +1183,6 @@ EMAILBODY;
       //CHECK NO SEGMENT IS SHIPPED
       $scnlst = $pdta['scanlist'];
       
-      //START HERE 2019-10-28
       
       //USE THIS STATEMENT INSTEAD 
       //SELECT replace(bgs,'_','') as bgs, segmentid, segstatus, shippedDate FROM masterrecord.ut_procure_segment where replace(bgs,'_','') IN ('54098T001','44945A1PBDX1','88823T001') AND ((segstatus = 'SHIPPED' OR segstatus = 'DESTROYED') OR shippeddate is not null);      
