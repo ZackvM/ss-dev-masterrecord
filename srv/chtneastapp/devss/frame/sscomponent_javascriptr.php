@@ -926,10 +926,11 @@ document.addEventListener('DOMContentLoaded', function() {
    if ( event.which >= 33 && event.which <= 126 ) { 
        chars.push(String.fromCharCode(event.which)); 
    }
-        
+   
+   const regex = /_/gi;
    if ( event.which == 13 && chars.length > 4 ) { 
      var barcode = chars.join("");          
-     doSomethingWithScan( barcode ); 
+     doSomethingWithScan( barcode.replace( regex, '' ) ); 
      chars = [];
    }
         
@@ -1095,7 +1096,6 @@ function answerPrintRqstBarcodeLabel( rtnData ) {
     alert("ERROR:\\n"+dspMsg);
     byId('bccodevalue').focus();
    } else {
-    //var dta = JSON.parse(rtnData['responseText']);        
     alert('Label Printed'); 
     byId('bccodevalue').value = ""; 
   }
@@ -1214,6 +1214,7 @@ function actionCancel() {
 }
 
 function doSomethingWithScan ( scanvalue ) {
+    
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
 

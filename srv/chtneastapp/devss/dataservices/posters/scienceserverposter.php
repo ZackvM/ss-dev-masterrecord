@@ -1223,13 +1223,14 @@ EMAILBODY;
           $prntVal['FIELD02'] = $pdta['labeltext'];
           $prntVal['FIELD03'] = $pdta['labeltext'];
           $prntVal['FIELD04'] = $pdta['labeltext'];
-          $msgArr[] = $pdta['printer'] . " ... " . $pdta['printformat'] . " ... " . json_encode($prntVal);
+          //$msgArr[] = $pdta['printer'] . " ... " . $pdta['printformat'] . " ... " . json_encode($prntVal);
+          $msgArr[] = "ZACK WAS HERE";
 
           $insSQL = "insert into serverControls.lblToPrint( labelrequested, printerrequested, datastringpayload, bywho, onwhen) values(:formatname,:printername,:datastring,:usr,now())";
           $insRS = $conn->prepare($insSQL); 
           $insRS->execute(array(':formatname' => $pdta['printformat'], ':printername' => $pdta['printer'], ':datastring' => json_encode($prntVal), ':usr' => $u['usr']));
 
-//          $responseCode = 200;
+          $responseCode = 200;
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
