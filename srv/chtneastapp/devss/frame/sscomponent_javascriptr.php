@@ -1134,7 +1134,7 @@ var fillInLocationDisplay = function ( scancode ) {
       if (httpage.readyState === 4) {
          if ( parseInt(httpage.status) === 200 ) { 
            var dta = JSON.parse( httpage.responseText );  
-           resolve( "<b>CHECKING INTO LOCATION</b>: "+ dta['DATA']['pathdsp'] + " :: <b>" +dta['DATA']['thislocation']+"</b> //<i>Scan Code</i>: "+dta['DATA']['scancode']);
+           resolve( "<b>Scanning to</b>: "+ dta['DATA']['pathdsp'] ) ;
         } else { 
           reject("NO LOCATION FOUND WITH THE SCANNED CODE: "+scancode);
         }
@@ -1214,13 +1214,25 @@ function actionCancel() {
 }
 
 function doSomethingWithScan ( scanvalue ) {
+<<<<<<< HEAD
     
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+=======
+
+
+  //TODO:  MAKE THIS DYNAMIC - SPECIAL OLD BARCODE ENCODING CHARACTERS
+  scanvalue = scanvalue.replace(/%V$/mg,"@");
+  scanvalue = scanvalue.replace(/%O/g,"");
+  //////////////////
+
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
+>>>>>>> 45077e108172f1ca20b13cf220dbc3d170e756b8
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
 
   var scanworked = 0;
 
-  if ( scanlabel.test( scanvalue ) ) { 
+  if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {
@@ -1383,10 +1395,17 @@ function actionCancel() {
 }
 
 function doSomethingWithScan ( scanvalue ) {
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+
+  //TODO:  MAKE THIS DYNAMIC - SPECIAL OLD BARCODE ENCODING CHARACTERS
+  scanvalue = scanvalue.replace(/%V$/mg,"@");
+  scanvalue = scanvalue.replace(/%O/g,"");
+  //////////////////
+
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
 
   var scanworked = 0;
-  if ( scanlabel.test( scanvalue ) ) { 
+  if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {
@@ -1541,10 +1560,17 @@ function actionCancel() {
 }
 
 function doSomethingWithScan ( scanvalue ) {
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+
+  //TODO:  MAKE THIS DYNAMIC - SPECIAL OLD BARCODE ENCODING CHARACTERS
+  scanvalue = scanvalue.replace(/%V$/mg,"@");
+  scanvalue = scanvalue.replace(/%O/g,"");
+  //////////////////
+
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
 
   var scanworked = 0;
-  if ( scanlabel.test( scanvalue ) ) { 
+  if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {
@@ -1711,12 +1737,20 @@ function actionCancel() {
 }
 
 function doSomethingWithScan ( scanvalue ) {
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+
+
+  //TODO:  MAKE THIS DYNAMIC - SPECIAL OLD BARCODE ENCODING CHARACTERS
+  scanvalue = scanvalue.replace(/%V$/mg,"@");
+  scanvalue = scanvalue.replace(/%O/g,"");
+  //////////////////
+
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
 
   var scanworked = 0;
 
-  if ( scanlabel.test( scanvalue ) ) { 
+  if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {
@@ -1799,12 +1833,17 @@ PROCINVT;
       $rtnThis .= <<<PROCINVT
 
 function doSomethingWithScan ( scanvalue ) {
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
+
+  //TODO:  SPECIAL BARCODE ENCODING
+
+
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$(@)?/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   var scanhpr   = new RegExp(/^HPRT\d+$/); 
   
   var scanworked = 0;
 
-  if ( scanlabel.test( scanvalue ) ) { 
+  if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
     if ( byId('labelscan') ) {
