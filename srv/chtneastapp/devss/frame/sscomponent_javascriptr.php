@@ -976,7 +976,12 @@ function checkBCCodeValue() {
 function clickedlabel(e) {
   var ele = e.target; 
   var eleId = ele.id;
-  byId('scannedLabel'+parseInt(ele.id.replace( /^\D+/g, ''))).remove();
+  if ( eleId.substr(0,9) === "childwarn" || eleId.substr(0,9) === "dspsegsts" || eleId.substr(0,9) === "dspsegprp" || eleId.substr(0,9) === "dspsegdxd" ) {
+    var pNode = byId(eleId).parentNode;
+    byId( pNode.parentNode.id ).remove();   
+  } else {
+    byId('scannedLabel'+parseInt(ele.id.replace( /^\D+/g, ''))).remove();
+  }
   var elemcnt = document.getElementsByClassName("labelDspDiv");
   byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
 }
@@ -1154,8 +1159,18 @@ var fillInDesigLabelCode = function ( scancode  ) {
     httpage.onreadystatechange = function() { 
       if (httpage.readyState === 4) {
          if ( parseInt(httpage.status) === 200 ) { 
-           var dta = JSON.parse( httpage.responseText );  
-           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+           var dta = JSON.parse( httpage.responseText ); 
+           if ( dta['DATA']['invmoveind'] !== 'NOMOVE' ) { 
+             //resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " ("+dta['DATA']['segstatus']+")"  );
+             var thisid = Math.random().toString(36).slice(2); 
+             var dspLine = "<div class=lblsegstatusdsp id=\'dspsegsts'+thisid+'\'>"+dta['DATA']['segstatus']+"</div>";
+             dspLine += "<div <div class=lblsegprpdsp id=\'dspsegprp'+thisid+'\'>"+dta['DATA']['prp']+"</div>";
+             dspLine += "<div class=lblsegdxdsp id=\'dspsegdxd'+thisid+'\'>"+dta['DATA']['desig']+"</div>";
+             resolve( dspLine ); 
+           } else {
+             var thisid = Math.random().toString(36).slice(2); 
+             resolve( '<div class=scanwarning id=\'childwarn'+thisid+'\'>REMOVE SEGMENT! STATUS IS \''+dta['DATA']['segstatus'].toUpperCase()+'\'</div>'); 
+           }
         } else { 
           reject(Error("It broke! "+httpage.responseText ));
         }
@@ -1165,7 +1180,7 @@ var fillInDesigLabelCode = function ( scancode  ) {
   });
 }   
     
-function actionCheckCheck() {  
+function actionCheckCheck() { 
   var obj = new Object(); 
   var scanlist = [];
   obj['location'] = byId('locscancode').value.trim();
@@ -1177,11 +1192,15 @@ function actionCheckCheck() {
   obj['scanlist'] = scanlist;   
   var pdta = JSON.stringify(obj);
   byId('standardModalBacker').style.display = 'block';    
+  byId('waitMsgTitle').innerHTML = 'Processing Inventory'; 
+  byId('waitMsg').innerHTML = 'Please wait as we send your inventory process request to the server.  Depending on how many segments you have scanned this could take some time.  Please wait ... '; 
+  byId('dspIWait').style.display = 'block';
   var mlURL = "/data-doers/invtry-segment-statuser";
   universalAJAX("POST",mlURL,pdta,answerInventorySegmentStatuser,2);
 }
 
-function answerInventorySegmentStatuser ( rtnData ) { 
+function answerInventorySegmentStatuser ( rtnData ) {
+  byId('dspIWait').style.display = 'none'; 
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
     var dspMsg = ""; 
@@ -1191,7 +1210,12 @@ function answerInventorySegmentStatuser ( rtnData ) {
     alert("ERROR:\\n"+dspMsg);
     byId('standardModalBacker').style.display = 'none';    
    } else {
-        var dta = JSON.parse(rtnData['responseText']);         
+     alert('Biosample Segment(s) have been updated'); 
+     actionCancel();
+     byId('standardModalBacker').style.display = 'none';    
+     byId('dspIWait').style.display = 'none';
+     byId('waitMsgTitle').innerHTML = ''; 
+     byId('waitMsg').innerHTML = ''; 
   }
 }
 
@@ -1214,21 +1238,17 @@ function actionCancel() {
 }
 
 function doSomethingWithScan ( scanvalue ) {
-<<<<<<< HEAD
     
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$/);
-=======
-
-
   //TODO:  MAKE THIS DYNAMIC - SPECIAL OLD BARCODE ENCODING CHARACTERS
   scanvalue = scanvalue.replace(/%V$/mg,"@");
   scanvalue = scanvalue.replace(/%O/g,"");
+  scanvalue = scanvalue.replace(/^(ED)/,"");
   //////////////////
 
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
   var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
->>>>>>> 45077e108172f1ca20b13cf220dbc3d170e756b8
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
+  var scanloca  = new RegExp(/^SSC[A-Za-z]{1}\d+$/); 
 
   var scanworked = 0;
 
@@ -1276,7 +1296,7 @@ function doSomethingWithScan ( scanvalue ) {
             byId('desigDisplay'+nxtItemNbr).innerHTML = fulfilled;
         })
         .catch(function (error) {
-            byId('desigDisplay'+nxtItemNbr).innerHTML = '<div class=errordspmsg>Scanned Label Not Found in Database. See Informatics Staff Memeber Immediately.</div>';
+            byId('desigDisplay'+nxtItemNbr).innerHTML = '<span class=errordspmsg>Scanned Label Not Found in Database. See Informatics Staff Memeber Immediately.</span>';
             console.log(error.message);
         });
     } else { 
@@ -1284,7 +1304,7 @@ function doSomethingWithScan ( scanvalue ) {
     }
   }
                 
-  if ( scanloc.test( scanvalue ) ) {
+  if ( scanloc.test( scanvalue ) || scanloca.test( scanvalue ) ) {
     scanworked = 1;
     if ( byId('locationscan') ) { 
       byId('locscancode').value = scanvalue;
@@ -1366,7 +1386,12 @@ var fillInDesigLabelCode = function ( scancode  ) {
          if ( parseInt(httpage.status) === 200 ) { 
            var dta = JSON.parse( httpage.responseText );  
            //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
-           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+           //resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+             var thisid = Math.random().toString(36).slice(2); 
+             var dspLine = "<div class=lblsegstatusdsp id=\'dspsegsts'+thisid+'\'>"+dta['DATA']['segstatus']+"</div>";
+             dspLine += "<div <div class=lblsegprpdsp id=\'dspsegprp'+thisid+'\'>"+dta['DATA']['prp']+"</div>";
+             dspLine += "<div class=lblsegdxdsp id=\'dspsegdxd'+thisid+'\'>"+dta['DATA']['desig']+"</div>";
+             resolve( dspLine ); 
         } else { 
           reject(Error("It broke! "+httpage.responseText ));
         }
@@ -1531,7 +1556,12 @@ var fillInDesigLabelCode = function ( scancode  ) {
       if (httpage.readyState === 4) {
          if ( parseInt(httpage.status) === 200 ) { 
            var dta = JSON.parse( httpage.responseText );  
-           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+           //resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+             var thisid = Math.random().toString(36).slice(2); 
+             var dspLine = "<div class=lblsegstatusdsp id=\'dspsegsts'+thisid+'\'>"+dta['DATA']['segstatus']+"</div>";
+             dspLine += "<div <div class=lblsegprpdsp id=\'dspsegprp'+thisid+'\'>"+dta['DATA']['prp']+"</div>";
+             dspLine += "<div class=lblsegdxdsp id=\'dspsegdxd'+thisid+'\'>"+dta['DATA']['desig']+"</div>";
+             resolve( dspLine ); 
         } else { 
           reject(Error("It broke! "+httpage.responseText ));
         }
@@ -1708,7 +1738,12 @@ var fillInDesigLabelCode = function ( scancode  ) {
          if ( parseInt(httpage.status) === 200 ) { 
            var dta = JSON.parse( httpage.responseText );  
            //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
-           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+           //resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+             var thisid = Math.random().toString(36).slice(2); 
+             var dspLine = "<div class=lblsegstatusdsp id=\'dspsegsts'+thisid+'\'>"+dta['DATA']['segstatus']+"</div>";
+             dspLine += "<div <div class=lblsegprpdsp id=\'dspsegprp'+thisid+'\'>"+dta['DATA']['prp']+"</div>";
+             dspLine += "<div class=lblsegdxdsp id=\'dspsegdxd'+thisid+'\'>"+dta['DATA']['desig']+"</div>";
+             resolve( dspLine ); 
         } else { 
           reject(Error("It broke! "+httpage.responseText ));
         }
@@ -1828,7 +1863,6 @@ function doSomethingWithScan ( scanvalue ) {
 
 PROCINVT;
       break;
-
   case 'processhprtray':
       $rtnThis .= <<<PROCINVT
 
@@ -1939,7 +1973,12 @@ var fillInDesigLabelCode = function ( scancode  ) {
          if ( parseInt(httpage.status) === 200 ) { 
            var dta = JSON.parse( httpage.responseText );  
            //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"segstatus":"Assigned","prp":"OCT [OCT]","desig":"NORMAL :: LUNG ::"}}
-           resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+           //resolve( dta['DATA']['desig']+" / "+ dta['DATA']['prp'] + " " +dta['DATA']['segstatus']  );
+             var thisid = Math.random().toString(36).slice(2); 
+             var dspLine = "<div class=lblsegstatusdsp id=\'dspsegsts'+thisid+'\'>"+dta['DATA']['segstatus']+"</div>";
+             dspLine += "<div <div class=lblsegprpdsp id=\'dspsegprp'+thisid+'\'>"+dta['DATA']['prp']+"</div>";
+             dspLine += "<div class=lblsegdxdsp id=\'dspsegdxd'+thisid+'\'>"+dta['DATA']['desig']+"</div>";
+             resolve( dspLine ); 
         } else { 
           reject(Error("It broke! "+httpage.responseText ));
         }
@@ -1970,6 +2009,34 @@ function actionCancel() {
 
 PROCINVT;
       
+      break;
+  case 'processshipment': 
+     $rtnThis .= <<<PROCINVT
+
+function doSomethingWithScan ( scanvalue ) {
+
+  //TODO:  SPECIAL BARCODE ENCODING
+  //var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$(@)?/);
+  //var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
+  //var scanhpr   = new RegExp(/^HPRT\d+$/); 
+  var sdlabel = new RegExp(/^SD\[\d{6}\]$/);
+
+
+
+  var scanworked = 0;
+
+  if ( sdlabel.test( scanvalue ) ) { 
+    scanworked = 1;
+    //BIOSAMPLE LABEL SCANNED
+    alert( 'SHIP DOC: ' + scanvalue );
+  }
+  
+  if ( scanworked === 0 ) { 
+    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
+  }
+
+} 
+PROCINVT;
       break;
 }    
      
@@ -3079,7 +3146,9 @@ function openPageInTab(whichURL) {
 }
 
 function navigateSite(whichURL) {
-    byId('standardModalBacker').style.display = 'block';
+    if ( byId('standardModalBacker') ) { 
+      byId('standardModalBacker').style.display = 'block';
+    }
     if (whichURL) {
       window.location.href = treeTop+'/'+whichURL;
     } else {     
@@ -3337,6 +3406,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
 }, false);        
 
+function openEditDocDialog( whichdocumentid ) { 
+  if ( whichdocumentid.trim() !== "" ) { 
+    var mlURL = "/setup-help-doc-edit-dialog/" + whichdocumentid;
+    universalAJAX("GET",mlURL,"",answerEditDocDialog, 1);
+  }
+}
+
+function answerEditDocDialog ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("HELP TICKET ERROR:\\n"+dspMsg);
+   } else { 
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+        if (byId('waitIcon')) {             
+          byId('waitIcon').style.display = 'none';  
+        }
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = "-40vw";
+       byId('standardModalDialog').style.left = "50%";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "2vh";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+   }        
+}
+
 function openHelpTicket() { 
   var mlURL = "/get-help-ticket-dialog";
   universalAJAX("GET",mlURL,"",answerOpenHelpTicket, 1);
@@ -3432,6 +3533,20 @@ function answerSubmitHelpTicket(rtnData) {
       byId('standardModalDialog').style.display = 'none';
    }        
 }
+
+function displayIndex() { 
+  if ( byId('indexMenuSlide') ) {
+    if ( parseInt(byId('indexMenuSlide').style.right) === -155 || isNaN(parseInt(byId('indexMenuSlide').style.right))  ) { 
+      byId('indexMenuSlide').style.right = '0vw';
+      if ( byId('fldHlpSrch') ) { 
+        byId('fldHlpSrch').focus();
+      }
+    } else {
+      byId('indexMenuSlide').style.right = '-155vw';
+    }
+  } 
+}
+
 
 JAVASCR;
 return $rtnThis;
@@ -8167,6 +8282,10 @@ function sendSegmentAssignment(typeofassign) {
       dta['investigatorid'] = 'PENDDESTROY';
       dta['requestnbr'] = '';
       break;
+   case 'permcollect':
+      dta['investigatorid'] = 'PERMCOLLECT';
+      dta['requestnbr'] = '';
+      break;
   }
   var passdata = JSON.stringify(dta);
   var mlURL = "/data-doers/assign-segments";
@@ -8175,8 +8294,12 @@ function sendSegmentAssignment(typeofassign) {
 
 function answerSendSegmentAssignment(rtnData) {  
   if (parseInt(rtnData['responseCode']) !== 200) { 
-    var rsp = JSON.parse(rtnData['responseText']); 
-    alert("* * * * ERROR * * * * \\n\\n"+rsp['MESSAGE']);
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("* * * * ERROR * * * *\\n"+dspMsg);
   } else { 
     //Redirect to results
     location.reload(); 

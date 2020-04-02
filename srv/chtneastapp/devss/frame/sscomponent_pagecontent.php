@@ -312,7 +312,12 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $closer = "closeThisDialog('{$pdta['dialogid']}');";        
         $innerDialog = bldDialogCoordEditComments( $passedData );        
         //$footerBar = "DONOR RECORD";
-      break;    
+        break;
+      case 'dialogHelpDocEdit': 
+        $titleBar = "ScienceServer Edit Help Document";
+        //$footerBar = "DONOR RECORD";
+        $innerDialog = bldHelpDocumentEditDialogBox($passedData);
+        break;
       case 'dialogHelpTicket':
         $titleBar = "ScienceServer HelpTicket Submission";
         //$footerBar = "DONOR RECORD";
@@ -744,7 +749,11 @@ DIALOGINNER;
 <table class=tblBtn id=btnDialogBank style="width: 6vw;" onclick="sendSegmentAssignment('bank');"><tr><td><center>Bank</td></tr></table>
 </td><td>
 <table class=tblBtn id=btnDialogBank style="width: 6vw;" onclick="sendSegmentAssignment('penddestroy');"><tr><td><center>P-Destroy</td></tr></table>
-</td></tr></table>
+</td>
+<td>
+  <table class=tblBtn id=btnDialogBank style="width: 6vw;" onclick="sendSegmentAssignment('permcollect');"><tr><td><center>P-Collection</td></tr></table>
+</td>
+</tr></table>
 
  </td></tr>
 </table>
@@ -1490,6 +1499,11 @@ function inventory ( $rqststr, $whichusr ) {
  *  PROCESS INVENTORY = MOVE INVENTORY / CHECK-IN AND CHANGE STATUS / PROCESS HPR SLIDE
  *  PROCESS SHIPMENT = GIVE A PULL OR SHIP BUTTON
  */
+
+
+  $at = genAppFiles;
+  $waiticon = base64file("{$at}/publicobj/graphics/zwait2.gif", "waiticongif", "gif", true, "");         
+
      $rtnthis = <<<RTNTHIS
 {$topBtnBar} 
 <div id=inventoryMasterHoldr>
@@ -1505,6 +1519,13 @@ function inventory ( $rqststr, $whichusr ) {
  </div>
 <div id=inventoryControlPage>{$pageDetail}</div>
 </div>
+
+<div id=dspIWait>
+<div id=waitMsgTitle> Title </div> 
+<div id=waitMsg>WAIT ... </div>
+<div id=waitIcon><center>{$waiticon}</div>
+</div>
+
 RTNTHIS;
      //<div class=iControlBtn {$selectormove}><a href="{$tt}/inventory/move-biosample">Place Inventory</a></div>
      //<div class=iControlBtn {$selectorship}><a href="{$tt}/inventory/ship-ship">Ship Shipment</a></div>
@@ -1789,7 +1810,229 @@ PAGEHERE;
     return $rtnthis;
 }
 
-function scienceserverhelp($rqststr, $whichusr) { 
+function scienceserverhelp ( $rqststr, $whichusr ) {
+
+  $tt = treeTop; 
+  $givenSearchTerm = "";  
+  $dta = json_decode(callrestapi("GET", dataTree . "/sshlp-topic-list", serverIdent, serverpw),true);
+  $t = "<div id=mainHelpFileHolder>";
+  foreach ( $dta['DATA'] as $key => $val ) {
+    $t .= "<div class=ssHlpModDiv><a href=\"{$tt}/scienceserver-help/{$val['modurlref']}\" class=hlpModuleTbl><div><i class=\"material-icons sideindicon\">keyboard_arrow_right</i></div><div>{$val['module']}</div></a>";
+    $t .= "<div class=hldTopicDocList> ";
+    if ((int)count($val['topics']) > 0) { 
+      foreach ( $val['topics'] as $tky => $tvl ) {
+        switch ($tvl['topictype']) { 
+          case 'TOPIC': 
+              $topicon = "<i class=\"material-icons topicicon\">library_books</i>";
+              break;
+          case 'PDF':
+              $topicon = "<i class=\"material-icons topicicon\">picture_as_pdf</i>";
+              break;
+          case 'SCREEN':
+              $topicon = "<i class=\"material-icons topicicon\">desktop_windows</i>";    
+              break;
+          default:
+          $topicon = "<i class=\"material-icons topicicon\">desktop_windows</i>";
+        }
+        $t .= "<a href=\"{$tt}/scienceserver-help/{$val['modurlref']}/{$tvl['topicurl']}\" class=\"hlpTopicDiv\"><div>{$topicon}</div><div>{$tvl['topictitle']}</div></a>";
+        if ((int)count($tvl['functionslist']) > 0 ) { 
+          foreach ( $tvl['functionslist'] as $fky => $fvl ) { 
+            $t .= "<a class=\"hlpTopicDiv\" href='{$tt}/scienceserver-help/{$val['modurlref']}/{$fvl['helpurl']}');\"><div><i class=\"material-icons topicicon\">arrow_right</i></div><div>{$fvl['title']}</div></a>";
+          }
+        }
+      }
+    }
+
+    $t .= "</div></div>";
+  }
+  $t .= "</div>";
+
+  if ( trim($rqststr[2]) === "" ) {
+    //NO TOPIC REQUESTED - DISPLAY GENERAL PAGE
+    $topBtnBar = generatePageTopBtnBar('scienceserverhelp', $whichusr);
+
+
+    $helpFile = <<<RTNTHIS
+<div id=help_welcomediv>
+<div id=help_welcometitle>ScienceServer v7 Help Files</div>
+     <div id=help_welcomeinstructions>
+     These are documents to assist you with the use and documentation of CHTN Eastern's Specimen/Laboratory Information Management System (SMS/LIMS) <span class=ssdsp>ScienceServer</span> version 7.  To find 'Help' with a particular screen or function in <span class=ssdsp>ScienceServer</span>, click the 'Display Index' button above.  From the AppCard slideout-tray, you can either scroll the list of documents (categorized into <span class=ssdsp>ScienceServer</span> functions), or use the 'Search Term' box to find a certain key word within the document text. Clicking on a topic in the index will display all documents in that topic.  Clicking on a document title will display the document.  There are three types of documents in the index: 1)  general help documents indicated with a <span><i class="material-icons">library_books</i></span> icon; 2) screen help documents indicated with a <span><i class="material-icons">desktop_windows</i></span> icon.  These documents display on the functional screens within <span class=ssdsp>ScienceServer</span>; and, 3) uploaded pdfs indicated with a <span><i class="material-icons">picture_as_pdf</i></span>icon.  These are documents generated outside of the <span class=ssdsp>ScienceServer</span> environment but have relavency to <span class=ssdsp>ScienceServer</span>.  These documents are opened in a PDF view within the <span class=ssdsp>ScienceServer</span> help window.<p>Finally, if you cannot find a document which will answer your question/concern about <span class=ssdsp>ScienceServer</span>, you can click on the 'Open Help Ticket' above, which will send a ticket to the CHTN Eastern Informatics team.  An informatics team member will get back to you with an answer.  
+     </div>
+</div>
+RTNTHIS;
+  } else {
+    if ( trim($rqststr[2]) === "querysearch" ) { 
+      //MAKE QUERY RESULTS    
+      $rsltdta = json_decode(callrestapi("GET", dataTree . "/search-help-results/{$rqststr[3]}", serverIdent, serverpw),true);
+      $searchtermarr = json_decode($rsltdta['DATA']['head']['srchterm'], true);
+      $givenSearchTerm = $searchtermarr['searchterm'];
+      $itemsfound =$rsltdta['ITEMSFOUND']; 
+      $objid = $rsltdta['DATA']['head']['objid'];
+      $bywho = $rsltdta['DATA']['head']['bywho'];
+      $onwhen = $rsltdta['DATA']['head']['onwhendsp'];
+
+      foreach ($rsltdta['DATA']['searchresults'] as $rkey => $rval) { 
+        $abs = strip_tags( $rval['abstract'] );
+        $inner .= "<tr><td colspan=2>";
+          $inner .= "<table class=zoogleTbl onclick=\"navigateSite('scienceserver-help/{$rval['modindexurl']}/{$rval['helpurl']}');\">";
+          $inner .= "<tr><td class=zoogleTitle>{$rval['titledsp']}</td></tr>";
+          $inner .= "<tr><td class=zoogleURL>{$tt}/scienceserver-help/{$rval['urldsp']}</td></tr>";
+          $inner .= "<tr><td class=zoogleAbstract>{$abs}</td></tr>";
+        $inner .= "</table>";
+        $inner .= "</td></tr>";
+      }
+      
+      $topBtnBar = generatePageTopBtnBar('scienceserverhelp', $whichusr);
+      $helpFile = <<<RTNTHIS
+<table border=0 cellspacing=0 cellpadding=0 id=resultsSearchTbl>
+<tr><td id=title colspan=2>Search Results</td></tr>
+<tr><td id=itemsfound>Items found: {$itemsfound}</td><td id=bywhowhen align=right valign=top> Query By: {$bywho} ({$onwhen}) </td></tr>
+{$inner}
+</table>
+RTNTHIS;
+
+    } else {
+      if ( trim($rqststr[3]) === "" ) { 
+        //DISPLAY TOPIC LIST
+        $rsltdta = json_decode(callrestapi("GET", dataTree . "/topic-document-list/{$rqststr[2]}", serverIdent, serverpw),true);
+        $mTitle = ( trim($rsltdta['DATA']['module']['module']) !== "" ) ? trim($rsltdta['DATA']['module']['module']) : "Module Not Found";
+        $mTitle .= ( trim($rsltdta['DATA']['module']['moduleid']) !== "" ) ? " <span class=smllr>[Module #: " .substr( ('0000' . trim($rsltdta['DATA']['module']['moduleid'])),-6) . "]</span>" : "";
+        $mDesc = ( trim($rsltdta['DATA']['module']['moduledescription']) !== "" ) ? trim($rsltdta['DATA']['module']['moduledescription']) : "";
+        $mDocs = "";
+        foreach ( $rsltdta['DATA']['module']['documentlist'] as $dk => $dv ) { 
+            $dTitle = ( trim($dv['doctitle']) !== "" ) ? trim($dv['doctitle']) : "&nbsp;"; 
+            $dSTitle = ( trim($dv['docsubtitle']) !== "" ) ? trim($dv['docsubtitle']) : "&nbsp;"; 
+            switch ($dv['helptype']) { 
+              case 'TOPIC': 
+                $topicon = "<i class=\"material-icons\">library_books</i>";
+                break;
+              case 'PDF':
+                $topicon = "<i class=\"material-icons\">picture_as_pdf</i>";
+                break;
+              case 'SCREEN':
+                $topicon = "<i class=\"material-icons\">desktop_windows</i>";    
+                break;
+              default:
+                $topicon = "<i class=\"material-icons\">desktop_windows</i>";
+            }
+            $mDocs .= "<a href=\"{$tt}/scienceserver-help/{$rsltdta['DATA']['module']['modurlref']}/{$dv['helpurl']}\" class=mDocHolder><div class=mDocDspIcon>{$topicon}</div><div class=mDocTitle>{$dTitle}</div><div class=mDocSTitle>{$dSTitle}</div></a>"; 
+        }
+        $topBtnBar = generatePageTopBtnBar('scienceserverhelp', $whichusr);
+        $helpFile = <<<RTNTHIS
+<div id=moduletitleline>
+  <div id=mtitle>{$mTitle}</div>
+  <div id=mDesc>{$mDesc}</div>
+</div>
+
+<div id=mDocumentList>
+  {$mDocs}
+</div>
+
+RTNTHIS;
+      } else { 
+        //DISPLAY DOCUMENT
+   
+    $rsltdta = json_decode(callrestapi("GET", dataTree . "/help-document-text/{$rqststr[3]}", serverIdent, serverpw),true);
+    if ( (int)$rsltdta['ITEMSFOUND'] > 0 ) {
+      $topBtnBar = generatePageTopBtnBar('scienceserverhelp', $whichusr, $rqststr[3] );
+      if ( $rsltdta['DATA']['docobj']['hlpType'] === 'PDF' ) { 
+        $hlpTxt = base64file( genAppFiles . $rsltdta['DATA']['docobj']['htmltxt'], "HELPDSPPDF","pdfhlp",true);
+      } else {
+        $hlpTxt = putPicturesInHelpText( $rsltdta['DATA']['docobj']['htmltxt'] );
+      }
+
+      $modDsp = "";
+      foreach ( $rsltdta['DATA']['docobj']['modules'] as $mk => $mv ) {
+        $chk = ( (int)$mv['helpdocid'] <> 0 ) ? "<span class=cGreen>In</span> " : "Not In";  
+        $modDsp .= "<div class=mElemHldMod>{$chk} {$mv['module']} </div>";
+      }
+
+      $helpFile = <<<RTNTHIS
+<div id=hDocObjHoldr>
+  <div id=hDocTitle>{$rsltdta['DATA']['docobj']['hlpTitle']}</div>
+  <div id=hDocSTitle>{$rsltdta['DATA']['docobj']['hlpSubTitle']}</div>
+  <div id=hDocText>
+    {$hlpTxt} 
+  </div>
+
+  <div id=hDocMetricsHolder>
+    <center>
+    <div id=metricBox>
+      <div id=metricTitle>Document Metrics</div>
+
+    
+      <div class=mElemHld>
+        <div class=mElemLbl>Type</div>
+        <div class=mElemDta>{$rsltdta['DATA']['docobj']['hlpType']}</div>
+      </div>
+
+      <div class=mElemHld>
+        <div class=mElemLbl>Document Version</div>
+        <div class=mElemDta>{$rsltdta['DATA']['docobj']['versionmajor']}.{$rsltdta['DATA']['docobj']['versionminor']}</div>
+      </div>
+
+      <div class=mElemHld>
+        <div class=mElemLbl>Creating Author</div>
+        <div class=mElemDta>{$rsltdta['DATA']['docobj']['byemail']}</div>
+      </div>
+
+      <div class=mElemHld>
+        <div class=mElemLbl>Creation Date</div>
+        <div class=mElemDta>{$rsltdta['DATA']['docobj']['initialdte']}</div>
+      </div>
+
+      <div class=mElemHld>
+        <div class=mElemLbl>Last Edited By</div>
+        <div class=mElemDta>{$rsltdta['DATA']['docobj']['lstemail']}</div>
+      </div>
+
+      <div class=mElemHld>
+        <div class=mElemLbl>Last Edited</div>
+        <div class=mElemDta>{$rsltdta['DATA']['docobj']['lstdte']}</div>
+      </div>
+
+      <div id=metricModTitle>Modules</div>
+
+        {$modDsp} 
+
+    </div>
+
+   </div> 
+</div>
+RTNTHIS;
+    } else {
+    $helpFile = <<<RTNTHIS
+ERROR: NO DOCUMENT FOUND
+RTNTHIS;
+    }
+      }    
+    }
+  }
+
+$rtnthis = <<<PAGEHERE
+{$topBtnBar}
+<div id=indexMenuSlide>
+  <div id=indexHolder> 
+    <div id=srchBoxHolder>
+      <div><input type=text id=fldHlpSrch value="{$givenSearchTerm}" placeholder="Search Term"> </div> 
+      <div><table class=tblBtn id=btnSearchHelp style="width: 6vw; border-collapse: collapse;"><tr><td style="font-size: 1.7vh; padding: .5vh 0; background: rgba(48,57,71,1); border: 1px solid  rgba(255,255,255,1); color: rgba(255,255,255,1);"><center>Search</td></tr></table></div>  
+    </div>
+  </div>
+  {$t}
+</div>
+
+<div id=documentDisplay>
+{$helpFile}
+</div>
+
+PAGEHERE;
+
+return $rtnthis;    
+
+}
+
+
+function scienceserverhelp_bu20200324($rqststr, $whichusr) { 
 
 $tt = treeTop; 
 $givenSearchTerm = "";  
@@ -1873,7 +2116,8 @@ RTNTHIS;
 } else { 
   $helpFile = "<div id=instructionDiv>SELECT A SCIENCESERVER HELP FILE FROM THE OPTION LIST ON THE LEFT</div>";
 }
-    
+
+
 $dta = json_decode(callrestapi("GET", dataTree . "/sshlp-topic-list", serverIdent, serverpw),true);
 $t = "<div id=mainHelpFileHolder>";
 $modCntr = 0;
@@ -1883,7 +2127,6 @@ foreach ($dta['DATA'] as $key => $val) {
   $t .= "<div class=ssHlpModDiv><table cellspacing=0 cellpadding=0 class=hlpModuleTbl><tr><td><i class=\"material-icons\">keyboard_arrow_right</i></td><td>{$val['module']}</td></tr></table>";
   if ((int)count($val['topics']) > 0) { 
     foreach ( $val['topics'] as $tky => $tvl ) {
-      //$topicon = ($tvl['topictype'] === "TOPIC") ? "<i class=\"material-icons topicicon\">library_books</i>" :  ($tvl['topictype'] === "PDF") ? "" : "<i class=\"material-icons topicicon\">desktop_windows</i>"; 
       switch ($tvl['topictype']) { 
           case 'TOPIC': 
               $topicon = "<i class=\"material-icons topicicon\">library_books</i>";
@@ -1913,19 +2156,27 @@ foreach ($dta['DATA'] as $key => $val) {
 }
 $t .= "</div>";
 
+
+
+
+
 $rtnthis = <<<PAGEHERE
-<table border=0 id=sshHoldingTable>
-   <tr><td colspan=2 id=head> 
-       <table style="border-collapse: collapse;" width=100%><tr><td id=ssHelpFilesHeaderDsp> SCIENCESERVER HELP FILES </td>
-                 <td align=right>
-                   <table style="border-collapse: collapse;"><tr><td> <input type=text id=fldHlpSrch value="{$givenSearchTerm}"> </td>
-                              <td><table class=tblBtn id=btnSearchHelp style="width: 6vw;"><tr><td><center>Search</td></tr></table></td>
-                              {$printTopicBtn}
-                              <td><table class=tblBtn id=btnHelpTicket style="width: 6vw;"><tr><td><center><i class="material-icons helpticket">build</i></td></tr></table></td></tr></table>
-            </td></tr></table>
-        </td></tr>
-<tr><td valign=top id=topicDivHolder><div id=divDspTopicList>{$t}</div></td><td valign=top> {$helpFile}  </td></tr>
-</table>
+<div id=helperdspholder>
+  <div> </div>  
+  <div id=helpdsptitleline> 
+     <div id=SSTitle>ScienceServer Help Documents</div>
+     <div id=srchHolder align=right> 
+       <table style="border-collapse: collapse;">
+         <tr><td> <input type=text id=fldHlpSrch value="{$givenSearchTerm}"> </td> 
+             <td><table class=tblBtn id=btnSearchHelp style="width: 6vw;"><tr><td><center>Search</td></tr></table></td> 
+             {$printTopicBtn} 
+             <td><table class=tblBtn id=btnHelpTicket style="width: 6vw;"><tr><td><center><i class="material-icons helpticket">build</i></td></tr></table></td> 
+         </tr></table>  
+     </div> 
+     </div>
+  <div id=helpindexholder>{$t}</div>
+  <div> </div> <div id=helpdocumentholder> {$helpFile}  </div>
+</div>
 PAGEHERE;
 
 return $rtnthis;    
@@ -3348,8 +3599,34 @@ function generatePageTopBtnBar($whichpage, $whichusr, $additionalinfo = "") {
 //TODO:  DUMP THE BUTTONS INTO A DATABASE AND GRAB WITH A WEBSERVICE    
 //TODO:  MOVE ALL JAVASCRIPT TO JAVASCRIPT FILE
 
+$tt = treeTop;
+
 require(serverkeys . "/sspdo.zck");    
-switch ($whichpage) { 
+switch ($whichpage) {
+  case 'scienceserverhelp':
+    if ( trim($additionalinfo) !== "" ) {
+          
+      $hlpurl = cryptservice( $additionalinfo );
+      $pBtn = "<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintDoc border=0 onclick=\"openOutSidePage('{$tt}/print-obj/help-file/{$hlpurl}');\"><tr><td><i class=\"material-icons\">print</i></td><td>Print Document</td></tr></table></td>";
+      if ( $whichusr->useremail === 'zacheryv@mail.med.upenn.edu' || $whichusr->useremail === 'dfitzsim@pennmedicine.upenn.edu' || $whichusr->useremail === 'xarthur@pennmedicine.upenn.edu') {  
+        $eBtn = "<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintDoc border=0 onclick=\"openEditDocDialog('{$hlpurl}');\"><tr><td><i class=\"material-icons\">edit</i></td><td>Edit Document</td></tr></table></td>";
+      }
+    }
+
+    if ( $whichusr->useremail === 'zacheryv@mail.med.upenn.edu' || $whichusr->useremail === 'dfitzsim@pennmedicine.upenn.edu' || $whichusr->useremail === 'xarthur@pennmedicine.upenn.edu') {
+        $nBtn = "<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintDoc border=0 onclick=\"alert('_new');\"><tr><td><i class=\"material-icons\">note_add</i></td><td>New Document</td></tr></table></td>";
+    } 
+
+    $innerBar = <<<BTNTBL
+<tr>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnSDLookup border=0 onclick="displayIndex();"><tr><td><i class="material-icons">list</i></td><td>Display Index</td></tr></table></td>
+{$nBtn} 
+{$eBtn} 
+{$pBtn}
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnHelpTicket border=0 onclick="openHelpTicket();"><tr><td><i class="material-icons">build</i></td><td>Open Help Ticket</td></tr></table></td>
+</tr>
+BTNTBL;
+    break;
   case 'useradministration': 
     $innerBar = <<<BTNTBL
 <tr>
@@ -3623,10 +3900,10 @@ $innerBar = <<<BTNTBL
 
   <td class=topBtnHolderCell>
     <div class=ttholder>
-      <table class=topBtnDisplayer id=btnAssignGrouping><tr><td><i class="material-icons">insert_link</i></td><td>Assignment &amp; Linkage</td></tr></table>
+      <table class=topBtnDisplayer id=btnAssignGrouping><tr><td><i class="material-icons">insert_link</i></td><td>Status/Assign &amp; Linkage</td></tr></table>
       <div class=tt>
         <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
-          <tr class=btnBarDropMenuItem id=btnBarRsltAssignSample><td><i class="material-icons">arrow_right</i></td><td>Assign Segments to Requests &nbsp;&nbsp;&nbsp</td></tr>     
+          <tr class=btnBarDropMenuItem id=btnBarRsltAssignSample><td><i class="material-icons">arrow_right</i></td><td>Assign/Status Segments &nbsp;&nbsp;&nbsp</td></tr>     
           <tr class=btnBarDropMenuItem id=btnBarRsltRequestLink><td><i class="material-icons">arrow_right</i></td><td>Create Request Linkage &nbsp;&nbsp;&nbsp</td></tr>     
         </table>
       </div>  
@@ -3943,6 +4220,86 @@ RTNTHIS;
   return $rtnThis;
 }
 
+function bldHelpDocumentEditDialogBox ( $passedData ) { 
+
+  session_start(); 
+  $sid = session_id();
+  $pdta = json_decode($passedData,true);
+  //{"helpdocid":"reportingmodule"} 
+  require(serverkeys . "/sspdo.zck");
+
+  $hdocSQL = "SELECT h.helpurl, h.versionmajor, h.versionminor, h.helptype, h.screenreference, h.helpdspind, h.title, h.subtitle, h.bywhomemail, h.initialdate, h.lasteditbyemail, h.lastedit, h.txt FROM four.base_ss7_help h where replace(helpurl,'-','') = :docid"; 
+  $hdocRS = $conn->prepare($hdocSQL);
+  $hdocRS->execute(array(':docid' => $pdta['helpdocid'] ));
+  if ( $hdocRS->rowCount() > 0 ) {
+    $hdoc = $hdocRS->fetch(PDO::FETCH_ASSOC);
+   
+    $hdsp = ( (int)$hdoc['helpdspind'] === 1 ) ? "Yes" : "No"; 
+
+    $rtnThis = <<<RTNTHIS
+  <style>
+    #instrTbl { width: 80vw; font-size: 1.5vh; text-align: justify; line-height: 1.6em;  }
+    #docEditor { width: 80vw; height: 30vh; resize: none; font-family: arial; font-size: 1.3vh; }
+    #hdocMetLine { display: grid; grid-template-columns: repeat( 4, 1fr); grid-gap: .2vw; padding: .2vh .1vw; border: 1px solid #000; margin-top: .5vh; margin-bottom: .5vh;  } 
+    #hdocMetLine .hdocMSectionline { grid-column: span 4; background: rgba(48,57,71,1); color: rgba(255,255,255,1); font-size: 1.5vh; font-weight: bold; padding: .2vh .3vw; }
+    #hdocMetLine .hdocMetElemHold { border: 1px solid rgba(48,57,71,1); padding: .2vh .1vw; }
+    #hdocMetLine .hdocMetElemHold .hdocMetElemLbl { font-size: 1.3vh; font-weight: bold; color: rgba(48,57,71,1); }
+    #hdocMetLine .hdocMetElemHold .hdocMetElem { font-size: 1.3vh; color: rgba(48,57,71,1);  }
+
+  </style>
+
+<table id=instrTbl>
+<tr>
+   <td class=cellholder><b>Instructions</b>: Help Document Edit Screen ... </td></tr>
+</table>
+
+<div id=hdocMetLine>
+   <div class=hdocMSectionline>Document Metrics</div>
+
+   <div class=hdocMetElemHold>
+     <div class=hdocMetElemLbl>Version</div>
+     <div class=hdocMetElem>{$hdoc['versionmajor']}.{$hdoc['versionminor']}</div>
+   </div>
+
+   <div class=hdocMetElemHold>
+     <div class=hdocMetElemLbl>Type</div>
+     <div class=hdocMetElem>{$hdoc['helptype']}</div>
+   </div>
+
+   <div class=hdocMetElemHold>
+     <div class=hdocMetElemLbl>Screen Reference</div>
+     <div class=hdocMetElem>{$hdoc['screenreference']}</div>
+   </div>
+
+   <div class=hdocMetElemHold>
+     <div class=hdocMetElemLbl>Display Indicator</div>
+     <div class=hdocMetElem>{$hdsp}</div>
+   </div>
+
+
+</div>
+<div 
+
+<div>
+  <div class=editLbl>Text</div>
+  <div class=editElem> 
+    <TEXTAREA id=docEditor>{$hdoc['txt']}</TEXTAREA>
+  </div>
+</div>
+<div>BTNS</div>
+
+RTNTHIS;
+
+  } else { 
+
+    $rtnThis = <<<RTNTHIS
+NO HELP DOCUMENT FOUND!
+RTNTHIS;
+  }
+  return $rtnThis;
+
+}
+
 function bldHelpTicketDialogBox($passedData) { 
     //GET USER 
 
@@ -3987,11 +4344,6 @@ function bldHelpTicketDialogBox($passedData) {
     }
     $agm .= "</table>";
     $modmnu = "<div class=menuHolderDiv><input type=hidden id=fldModValue value=\"{$givendspcode}\"><input type=text id=fldMod READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddMod>{$agm}</div></div>";
-
-
-
-
-
 
 $rtnThis = <<<RTNTHIS
 <style>

@@ -397,7 +397,27 @@ class objlisting {
      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
      return $rows;       
   }  
-    
+
+  function setuphelpdoceditdialog ( $whichobj, $urirqst ) { 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $errorInd = 0;
+    $msgArr = array();
+    $itemsfound = 0;
+    $uri =  explode("/",$_SERVER['REQUEST_URI']);
+    ( trim($uri[3]) === "" ) ? list($errorInd, $msgArr[]) = array(1,"Help Doc id not specified") : "";
+    (!cryptservice ( $uri[3],'d') )  ? list($errorInd, $msgArr[]) = array(1,"Encrypted helpdocid cannot be decoded ... ") : list( $hdocid ) = array ( cryptservice( $uri[3], 'd'));
+    if ( $errorInd === 0 ) { 
+        $pdta['helpdocid'] = $hdocid;
+      $dta = array('pagecontent' => bldDialogGetter( 'dialogHelpDocEdit',json_encode($pdta)));
+      ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+    }
+    $msg = $msgArr;
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;      
+  }
+
   function gethelpticketdialog($whichobj, $urirqst) { 
     $responseCode = 400; 
     $msg = "BAD REQUEST";
@@ -411,6 +431,77 @@ class objlisting {
     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
     return $rows;      
   }
+
+  function helpdocumenttext ( $whichobj, $urirqst ) { 
+    $responseCode = 400; 
+    $msgArr = array();
+    $modArray = array();
+    $itemsfound = 0;
+
+    if ( trim($whichobj) !== "" ) { 
+      require(serverkeys . "/sspdo.zck");
+      $docSQL = "SELECT ifnull(helptype,'') as hlpType, ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(txt,'') as htmltxt, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(helpurl,'') as helpurl, ifnull(versionmajor,'') as versionmajor, ifnull(versionminor,'') as versionminor, hlpid FROM four.base_ss7_help where replace(helpurl,'-','') = :helpobj and helpdspind = 1";
+      $docRS = $conn->prepare( $docSQL );
+      $docRS->execute( array( ':helpobj' => $whichobj ));
+      if ( $docRS->rowCount() > 0 ) { 
+          //FOUND
+          $itemsfound = $docRS->rowCount(); 
+          $dta['docobj'] = $docRS->fetch(PDO::FETCH_ASSOC); 
+          $modSchdSQL = "SELECT mx.moduleid, mx.module, ifnull(ix.helpdocid,0) as helpdocid FROM four.base_ssv7_help_index_modulelist mx left join (select * from four.base_ss7_help_doc_to_idx ix where ix.helpdocid = :hlpdocid and ix.dspind = 1) ix on mx.moduleid = ix.modindxid where mx.dspind = 1";
+          $modSchdRS = $conn->prepare($modSchdSQL); 
+          $modSchdRS->execute(array(':hlpdocid' => $dta['docobj']['hlpid'] ));
+          while ( $m = $modSchdRS->fetch(PDO::FETCH_ASSOC)) { 
+            $dta['docobj']['modules'][] = $m;
+          } 
+
+      } else { 
+        $responseCode = 404;
+        $msgArr[] = $whichobj . " WAS NOT FOUND IN DATABASE AS A HELP DOCUMENT OBJECT";
+      }
+    }
+
+    $msg = $msgArr;
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;      
+  }
+
+  function topicdocumentlist ( $whichobj, $urirqst ) { 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $msgArr = array();
+    $modArray = array();
+    $itemsfound = 0;
+    
+    if ( trim($whichobj) !== "" ) {
+      require(serverkeys . "/sspdo.zck");
+      $modSQL = "SELECT moduleid, module, moduledescription, modurlref FROM four.base_ssv7_help_index_modulelist where replace(modurlref,'-','') = :modurl and dspind = 1";
+      $modRS = $conn->prepare( $modSQL );
+      $modRS->execute( array( ':modurl' =>$whichobj ));
+      if ( $modRS->rowCount() > 0 ) { 
+        $mod = $modRS->fetch(PDO::FETCH_ASSOC); 
+        $dta['module'] = $mod;
+
+        $docSQL = "SELECT h.helpurl, ifnull(h.helptype,'') as helptype, ifnull(h.title,'') as doctitle, ifnull(h.subtitle,'') as docsubtitle FROM four.base_ss7_help_doc_to_idx mx left join four.base_ss7_help h on mx.helpdocid = h.hlpid where mx.modindxid = :modid and mx.dspind = 1 order by mx.orderbyind"; 
+        $docRS = $conn->prepare( $docSQL ); 
+        $docRS->execute( array(':modid' => $mod['moduleid'] ));
+
+        while ( $d = $docRS->fetch(PDO::FETCH_ASSOC)) { 
+          $dta['module']['documentlist'][] = $d;
+        }
+        $msg = "";
+        $responseCode = 200;
+      } else { 
+        $responseCode = 404;
+        $msgArr[] = $whichobj . " WAS NOT FOUND IN DATABASE AS A MODULE TOPIC IN HELP";
+      }
+    }
+
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;      
+  }
+
 
   function searchhelpresults($whichobj, $urirqst) { 
     $responseCode = 400; 
@@ -446,7 +537,7 @@ class objlisting {
     $modArray = array();
     $itemsfound = 0;
     require(serverkeys . "/sspdo.zck");
-    $modListSQL = "SELECT moduleid, module FROM four.base_ssv7_help_index_modulelist where dspind = 1 order by dsporder";
+    $modListSQL = "SELECT moduleid, module, modurlref FROM four.base_ssv7_help_index_modulelist where dspind = 1 order by dsporder";
     $modListRS = $conn->prepare($modListSQL); 
     $modListRS->execute();
     if ($modListRS->rowCount() > 0) { 
@@ -454,8 +545,9 @@ class objlisting {
       while ($modList = $modListRS->fetch(PDO::FETCH_ASSOC)) { 
           $modArray[$modArrCnt]['moduleid'] = $modList['moduleid'];
           $modArray[$modArrCnt]['module'] = $modList['module'];
+          $modArray[$modArrCnt]['modurlref'] = $modList['modurlref'];
           $topicArray = array();
-          $topicSQL = "SELECT hlpid, helptype, helpurl, screenreference, title  FROM four.base_ss7_help where helpdspind = 1 and (helptype = 'SCREEN' or helptype = 'TOPIC' or helptype = 'PDF') and belongstoindexid = :modIndex order by helpdsporder";
+          $topicSQL = "SELECT hlpid, helptype, helpurl, screenreference, title FROM four.base_ss7_help h left join four.base_ss7_help_doc_to_idx m on h.hlpid = m.helpdocid where m.dspind = 1 and (helptype = 'SCREEN' or helptype = 'TOPIC' or helptype = 'PDF') and m.modindxid = :modIndex order by m.orderbyind";
           $topicRS = $conn->prepare($topicSQL);
           $topicRS->execute(array(':modIndex' => $modList['moduleid'])); 
           if ($topicRS->rowCount() > 0 ) { 
@@ -466,19 +558,19 @@ class objlisting {
                   $topicArray[$topicCnt]['topicurl'] = $topics['helpurl'];
                   $topicArray[$topicCnt]['screenref'] = $topics['screenreference'];
                   $topicArray[$topicCnt]['topictitle'] = $topics['title'];
-                  $funcSQL = "SELECT hlpid, screenreference, title, helpurl FROM four.base_ss7_help where helpdspind = 1 and helptype = 'FUNCTIONALITYDESC' and belongstoindexid = :topicid order by helpdsporder";
-                  $funcRS = $conn->prepare($funcSQL); 
-                  $funcRS->execute(array(':topicid' => $topics['hlpid']));
-                  $funcArray = array();
-                  if ($funcRS->rowCount() > 0) { 
-                    $funcCnt = 0; 
-                    while ($func = $funcRS->fetch(PDO::FETCH_ASSOC)) { 
-                      $funcArray[] = $func;
-                    }
-                    $topicArray[$topicCnt]['functionslist'] = $funcArray;
-                  } else { 
-                    $topicArray[$topicCnt]['functionslist'] = $funcArray;
-                  }
+//                  $funcSQL = "SELECT hlpid, screenreference, title, helpurl FROM four.base_ss7_help where helpdspind = 1 and helptype = 'FUNCTIONALITYDESC' and belongstoindexid = :topicid order by helpdsporder";
+//                  $funcRS = $conn->prepare($funcSQL); 
+//                  $funcRS->execute(array(':topicid' => $topics['hlpid']));
+//                  $funcArray = array();
+//                  if ($funcRS->rowCount() > 0) { 
+//                    $funcCnt = 0; 
+//                    while ($func = $funcRS->fetch(PDO::FETCH_ASSOC)) { 
+//                      $funcArray[] = $func;
+//                    }
+//                    $topicArray[$topicCnt]['functionslist'] = $funcArray;
+//                  } else { 
+//                    $topicArray[$topicCnt]['functionslist'] = $funcArray;
+//                  }
                 $topicCnt++;
               }
               $modArray[$modArrCnt]['topics'] = $topicArray;
@@ -1700,14 +1792,16 @@ function chkUserBySession($givensessionid) {
 function runhelpsearchquery($srchrqstjson) { 
   require(serverkeys . "/sspdo.zck");
   $rqstDta = json_decode($srchrqstjson, true);
-  $sql = "SELECT helpurl, screenreference, title, subtitle, txt, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte FROM four.base_ss7_help where 1=1 and ((ifnull(txt,'') like :textsrch) or (ifnull(title,'') like :titlesrch) or (ifnull(subtitle,'') like :subtitlesrch))";
+//  $sql = "SELECT helpurl, screenreference, title, subtitle, txt, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte FROM four.base_ss7_help where 1=1 and ((ifnull(txt,'') like :textsrch) or (ifnull(title,'') like :titlesrch) or (ifnull(subtitle,'') like :subtitlesrch))";
+  $sql = "SELECT  x.modurlref, h.helpurl, h.screenreference, h.title, h.subtitle, h.txt, ifnull(h.bywhomemail,'') as byemail, ifnull(date_format(h.initialdate,'%M %d, %Y'),'') as initialdte, ifnull(h.lasteditbyemail,'') as lstemail, ifnull(date_format(h.lastedit,'%M %d, %Y'),'') as lstdte FROM four.base_ss7_help h  left join four.base_ss7_help_doc_to_idx m on h.hlpid = m.helpdocid left join four.base_ssv7_help_index_modulelist x on m.modindxid = x.moduleid where 1=1 and m.dspind = 1 and ((ifnull(txt,'') like :textsrch) or (ifnull(title,'') like :titlesrch) or (ifnull(subtitle,'') like :subtitlesrch))";
   $rs = $conn->prepare($sql); 
   $rs->execute(array(":textsrch" => "%{$rqstDta['searchterm']}%", ":titlesrch" => "%{$rqstDta['searchterm']}%", ":subtitlesrch" => "%{$rqstDta['searchterm']}%"));
   $rtnData = array();
   if ( $rs->rowCount() > 0 ) {
     $rsltCntr = 0;  
     while ( $r = $rs->fetch(PDO::FETCH_ASSOC)) {
-      $rtnData[$rsltCntr]['matchesfound']       = $rs->rowCount();  
+      $rtnData[$rsltCntr]['matchesfound']       = $rs->rowCount();
+      $rtnData[$rsltCntr]['modindexurl']        = $r['modurlref'];
       $rtnData[$rsltCntr]['helpurl']            = $r['helpurl'];
       $urldsp                                   = preg_replace("/{$rqstDta['searchterm']}/i",'<b>$0</b>', $r['helpurl'] ); 
       $rtnData[$rsltCntr]['urldsp']             = $urldsp;

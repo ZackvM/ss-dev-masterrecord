@@ -24,6 +24,7 @@ class stylesheets {
   public $color_lightgrey = "239, 239, 239";
   public $color_darkgrey = "145,145,145";
   public $color_zackgrey = "48,57,71";  //#303947 
+  public $color_zackgrey_highlight = "87, 103, 128"; //#576780
   public $color_zackcomp = "235,242,255"; //#ebf2ff
   public $color_deeppurple = "107, 18, 102";
   public $color_aqua = "203, 232, 240";
@@ -223,7 +224,7 @@ input[type=checkbox] { width: 2vw; }
 input[type=checkbox] + label { color: rgba({$this->color_lblue},1); }
 input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-weight: bold; }
 
-.tblBtn tr td { font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); }
+.tblBtn tr td { font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1);  }
 .tblBtn tr td:hover { background: rgba({$this->color_mblue},1); color: rgba({$this->color_white},1); cursor: pointer; }
 .tblBtn tr td.active { background: rgba({$this->color_darkgreen},1); }
 .tblBtn[data-aselected='1'] tr td { background: rgba({$this->color_darkgreen},1); color: rgba({$this->color_white},1); cursor: pointer; }
@@ -1335,7 +1336,102 @@ STYLESHEET;
 return $rtnThis;
 }
 
-function scienceserverhelp($mobileind) { 
+function scienceserverhelp ( ) {
+
+      $rtnThis = <<<STYLESHEET
+
+body { margin: 0; box-sizing: border-box;  }
+
+
+#indexMenuSlide { position: fixed; background: rgba({$this->color_zackgrey},1); top: 0; right: -155vw; width: 55vw; height: 100vh; display: grid; grid-template-columns: 55vw; transition: all 1s ease; z-index: 20; } 
+#indexMenuSlide #indexHolder { padding: 11vh 1vw 0 1vw; display: grid; grid-template-rows: 5vh auto; grid-gap: .2vh; } 
+#indexMenuSlide #indexHolder #srchBoxHolder { height: 100%; box-sizing: border-box; padding: .4vh 0 0 0; display: grid; grid-template-columns: 40vw 6vw ; grid-gap: .2vw;   } 
+#indexMenuSlide #mainHelpFileHolder { border: 1px solid #fff; box-sizing: border-box; width: 53vw; height: 83vh; overflow: auto; margin: 0 1vw;   }  
+
+
+#fldHlpSrch { font-size: 1.7vh; padding: .5vh .2vw; background: rgba({$this->color_zackgrey},1); border: 1px solid rgba({$this->color_white},1); color: rgba({$this->color_white},1); width: 40vw;  } 
+
+.ssHlpModDiv {  } 
+.hldTopicDocList { display: block; transition: all .4s ease;  } 
+.hlpModuleTbl { display: grid; grid-template-columns: 1vw auto; text-decoration: none; color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.5vh; transition: all .2s ease; padding: .3vh .3vw; outline: none; }
+.hlpModuleTbl:hover { color: rgba({$this->color_neongreen},1);   } 
+.ssHlpModDiv:hover .hldTopicDocList { display: block; }    
+
+.hlpTopicDiv { display: grid; grid-template-columns: 1.5vw auto; text-decoration: none; color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.5vh; outline: none; padding: .6vh 2vw .8vh 2vw; }
+.hlpTopicDiv:hover { background: rgba({$this->color_zackgrey_highlight},1); color: rgba({$this->color_white},1); } 
+.topicicon { font-size: 1.5vh; }  
+
+.sideindicon { font-size: 1.5vh; }  
+
+
+
+#documentDisplay { margin: 12vh 5vw 1vh 5vw; }
+#documentIcons { position: fixed; top: 8vh; left: 1vw; height: 87vh; width: 2.5vw; border-right: 1px solid rgba({$this->color_mgrey}, .6); }
+
+.ttholder { position: relative; color: rgba({$this->color_ddrwgrey},1); padding: 0 .6vw; margin-bottom: 1vh; }
+.ttholder:hover { cursor: pointer; color: rgba({$this->color_zackgrey},1); }
+.ttholder:hover .tt { display: block; text-align: left; }
+.tt { position: absolute; left: -.5vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); box-sizing: border-box; padding: 4px 3px; display: none; white-space: nowrap; z-index: 40; }
+
+
+
+#resultsSearchTbl { width: 100%; }
+#resultsSearchTbl #title { font-size: 3.3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: 1vh 0 1vh 0; text-align: center; border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
+#resultsSearchTbl #itemsfound { font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: 1vh 0 1vh .8vw; } 
+#resultsSearchTbl #bywhowhen { font-size: 1.6vh; font-style: italic; color: rgba({$this->color_zackgrey},1); padding: 1vh 0 1vh .8vw; }
+
+#resultsSearchTbl .zoogleTbl { width: 100%;  }
+#resultsSearchTbl .zoogleTbl:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
+#resultsSearchTbl .zoogleTbl .zoogleTitle { font-size: 2vh; color: rgba({$this->color_cornflowerblue},1); font-weight: bold; padding: 1vh 3vw 0 5vw; }
+#resultsSearchTbl .zoogleTbl .zoogleURL { font-size: 1.6vh; color: rgba({$this->color_darkgreen},1); padding: 0 3vw .3vh 5vw; }
+#resultsSearchTbl .zoogleTbl .zoogleAbstract { font-size: 1.6vh; color: rgba({$this->color_zackgrey},1); padding: .3vh 25vw 1vh 5vw;text-align: justify; line-height: 1.8em; }
+
+
+
+#help_welcometitle { font-size: 3vh; color: rgba({$this->color_zackgrey},1); text-align: center; font-weight: bold; }
+#help_welcomeinstructions { font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); padding: 3vh 8vw; text-align: justify; line-height: 1.8em; }
+   .ssdsp { font-weight: bold; color: rgba({$this->color_cornflowerblue},1);   }
+
+#moduletitleline { border-bottom: 2px solid rgba({$this->color_zackgrey},1); } 
+#moduletitleline #mtitle { font-family: Roboto; font-size: 3vh; color: rgba({$this->color_zackgrey},1); font-weight: bold; }  
+#moduletitleline #mtitle .smllr { font-size: 1.8vh; } 
+#moduletitleline #mDesc { font-family: Roboto; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); }  
+
+
+
+#mDocumentList { display: grid; grid-template-columns: repeat( 4, 1fr); grid-gap: .3vw; padding: 3vh .5vw; }
+#mDocumentList a { text-decoration: none; display: grid; grid-template-columns: 3vw auto; color: rgba({$this->color_zackgrey},1); border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); height: 7vh; overflow: hidden; }
+#mDocumentList a:hover { background: rgba({$this->color_lamber},.6); } 
+#mDocumentList a .mDocDspIcon { grid-row: span 2; padding: 1.5vh .5vw; border-right: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_dblue},1); }
+#mDocumentList a .mDocDspIcon .material-icons { font-size: 3.5vh; color: rgba({$this->color_white},1); } 
+#mDocumentList a .mDocTitle { font-family: Roboto; font-size: 1.7vh; padding: .3vh .2vw; }
+#mDocumentList a .mDocSTitle { font-family: Roboto; font-size: 1.4vh; padding: 0 .2vw 3vh .2vw; text-align: justify; line-height: 1.4em; }      
+
+#hDocObjHoldr { margin: 1vh 3vw; border-left: 1px solid rgba({$this->color_zackgrey},.4); border-right: 1px solid rgba({$this->color_zackgrey},.4);padding: 1vh 1vw; } 
+#hDocTitle { font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
+#hDocSTitle { font-family: Roboto; font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; border-bottom: 2px solid rgba({$this->color_zackgrey},1); padding-bottom: .4vh; margin-bottom: 2vh; }
+#hDocText { font-family: Roboto; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); line-height: 1.5em; text-align: justify; }  
+
+#hDocMetricsHolder { margin: 3vh 5vw;  }
+#hDocMetricsHolder #metricBox { border: 1px solid rgba({$this->color_zackgrey},1); padding: .3vh .2vw; text-align: left; display: grid; grid-template-columns: repeat( 6, 1fr); grid-gap: .3vw;} 
+#hDocMetricsHolder #metricBox #metricTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.3vh; font-weight: bold; padding: .4vh .3vw; text-align: left; grid-column: span 6;  }
+#hDocMetricsHolder #metricBox #metricModTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.3vh; font-weight: bold; padding: .4vh .3vw; text-align: left; grid-column: span 6;    }
+#hDocMetricsHolder #metricBox .mElemHld { border: 1px solid rgba({$this->color_zackgrey},.4); box-sizing: border-box; }
+#hDocMetricsHolder #metricBox .mElemHldMod { border: 1px solid rgba({$this->color_zackgrey},.4); box-sizing: border-box; font-family: Roboto; font-size: 1.5vh; padding: .2vh .3vw;  }
+#hDocMetricsHolder #metricBox .mElemHldMod .cGreen { color: rgba({$this->color_darkgreen},1); font-weight: bold; }
+#hDocMetricsHolder #metricBox .mElemHld .mElemLbl { font-family: Roboto; font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .3vh .2vw 0 .2vw; } 
+#hDocMetricsHolder #metricBox .mElemHld .mElemDta { font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_zackgrey},1); padding: 0 .2vw .3vh .2vw; } 
+ 
+
+
+
+
+STYLESHEET;
+return $rtnThis;
+}
+
+
+function scienceserverhelp_bu20200324($mobileind) { 
 
       $rtnThis = <<<STYLESHEET
 
@@ -1350,7 +1446,6 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
 .ssHlpModDiv { position: relative; }
 
 #ticketCHolder { width: 1vw; }
-#mainHelpFileHolder { position: relative; width: 25vw; }
 
 .hlpModuleTbl { font-size: 1.7vh; color: rgba({$this->color_zackgrey},1); }
 
@@ -1370,8 +1465,8 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
 
 .helpticket { font-size: 1.5vh; }
 
-#hlpMainHolderDiv {padding: 5vh 1vw 0 1vw; border-left: 1px solid rgba({$this->color_darkgrey},1); min-height: 75vh; } 
-#hlpMainTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; padding: .5vh 0 .8vh 0; }
+#hlpMainHolderDiv {padding: 2vh 2vw 0 1vw;  min-height: 75vh; } 
+#hlpMainTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; padding: 0 0 .8vh 0; }
 #hlpMainSubTitle { width: 100%; font-family: Roboto; font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; padding: .5vh 0 .8vh 0; }
 #hlpMainByLine { width: 100%; font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_darkgreen},1); text-align: right; padding: .8vh 0 .8vh 0; }
 #hlpMainText { width: 100%; font-family: Roboto; font-size: 1.8vh; line-height: 1.8em; text-align: justify; padding: 1vh 0 0 0; }
@@ -1389,11 +1484,23 @@ body { margin: 0; margin-top: 9vh; box-sizing: border-box; padding: 0 1vw 0 1vw;
 
 .screenShotDspDiv { position: relative; clear: left; }
 
+#helperdspholder { display: grid; grid-template-columns: 22vw 76vw; grid-gap: .2vw; grid-template-rows: 5.5vh auto; width: 98vw; height: 88vh; box-sizing: border-box;  } 
+#helperdspholder #helpdsptitleline { display: grid; grid-template-columns: repeat( 2, 1fr); border-bottom: 2px solid rgba({$this->color_zackgrey},1); height: 5.5vh;   }
+#helperdspholder #helpdsptitleline #SSTitle { height: 5.5vh; box-sizing: border-box; font-family: Roboto; font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: 1.5vh .3vw .3vh .3vw; font-variant: small-caps;  }
+#helperdspholder #helpdsptitleline #srchHolder { height: 5.5vh;}  
+
+#helpindexholder { border-right: 1px solid rgba({$this->color_zackgrey},1); height: 87vh; width: 22vw; overflow: auto; position: fixed; top: 9vh; }  
+
+
+#mainHelpFileHolder { position: relative; width: 21vw;  }
+
 STYLESHEET;
 return $rtnThis;
 }
 
 function inventory ( $mobileind ) { 
+
+//<!-- #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv:nth-child(even) { background: rgba({$this->color_mgrey},.3); } //-->
 
       $rtnThis = <<<STYLESHEET
 
@@ -1424,10 +1531,13 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #inventoryCheckinElementHoldr #itemCountDsp { grid-row: 2 / 3;  font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; } 
 #inventoryCheckinElementHoldr #labelscan { grid-row: 3 / 8; height: 55vh; overflow: auto; } 
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv { display: grid; grid-gap: 4px; grid-template-columns: repeat(5, 1fr); } 
-#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv { border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; height: 6vh; background-color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.4vh; }
-#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv:nth-child(even) { background: rgba({$this->color_mgrey},.3); }
+#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv { border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; height: 8vh; background-color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.4vh; overflow: hidden; }
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv:hover { background: rgba({$this->color_lamber},.5); cursor: pointer; }
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv .scanDisplay { font-weight: bold; color: rgba({$this->color_dblue},1); }
+#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv .lblsegstatusdsp { font-weight: bold; color: rgba({$this->color_cornflowerblue},1); font-size: 1.8vh; text-align: center; }
+#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv .lblsegprpdsp { font-weight: bold; color: rgba({$this->color_dblue},1); font-size: 1.4vh; text-align: center; }
+#inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv .lblsegdxdsp { color: rgba({$this->color_dblue},1); font-size: 1.2vh; text-align: center; }
+ 
  
 #inventoryCheckinElementHoldr #ctlButtons .iControlBtn { border: 1px solid rgba({$this->color_zackgrey}, 1); text-align: center; text-decoration: none; color: rgba({$this->color_zackgrey},1); overflow: hidden; height: 3vh; width: 6vw; background: rgba({$this->color_lgrey},1); font-size: 2.5vh; padding: 1vh 0; margin-top: .5vh; }
 #inventoryCheckinElementHoldr #ctlButtons .iControlBtn:hover { background: rgba({$this->color_lamber}, .5); cursor: pointer; }
@@ -1449,6 +1559,13 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 -moz-box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);  } 
 #ctlPad .ctlPadBtn:hover { cursor: pointer; }  
+
+.scanwarning { font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_bred},1); }  
+
+#dspIWait { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba({$this->color_lamber},1); width: 30vw; height: 20vh; border: 8px solid rgba({$this->color_mgrey},1); border-radius: 8px; box-sizing: border-box; padding: 1vh 1vw; display: none; z-index: 101;   }
+#waiticongif { width: auto; height: 2vh;    } 
+#waitMsgTitle { font-family: Roboto; font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); border-bottom: 2px solid rgba({$this->color_zackgrey},1);     }
+#waitMsg { font-family: Roboto; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); padding: .5vh 0 1vh 0; line-height: 1.5em;   }
 
 STYLESHEET;
       return $rtnThis;

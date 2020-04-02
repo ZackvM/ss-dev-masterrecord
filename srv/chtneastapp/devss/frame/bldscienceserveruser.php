@@ -178,7 +178,17 @@ class bldssuser {
                   $sbmod[] = $rpt; 
                 }
               }
-              
+
+              if ( (int)$mod['moduleid'] === 474 ) { 
+                //HELP FILES
+                $hlpMnuSubSQL = "SELECT module as menuvalue,  concat('scienceserver-help/', ifnull(modurlref,'')) as pagesource, '' as additionalcode, 'x' as dspsystemicon, 1 as dspinmenu FROM four.base_ssv7_help_index_modulelist where dsponmenuind = 1 and dspind = 1 order by dsporder"; 
+                $hlpMnuSubRS = $conn->prepare($hlpMnuSubSQL);
+                $hlpMnuSubRS->execute(); 
+                while ( $hlp = $hlpMnuSubRS->fetch(PDO::FETCH_ASSOC) ) { 
+                  $sbmod[] = $hlp;
+                } 
+              }
+
               //$sessid = cryptservice( session_id() . "::" . date('YmdHis')  , 'e', true, session_id());
               //ADD ACCESS DONOR VAULT HERE
               $mods[]  = array($mod['moduleid'],$mod['module'],$mod['pagesource'],$sbmod);

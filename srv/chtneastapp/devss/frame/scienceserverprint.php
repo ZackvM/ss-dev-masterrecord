@@ -692,11 +692,11 @@ function getSystemHelpDocument($docid, $originalURL) {
         //********************END BARCODE CREATION
 
 require(genAppFiles . "/dataconn/sspdo.zck"); 
-$hlpSQL = "SELECT ifnull(helptype,'') as hlpType, ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt , ifnull(helpurl,'') as helpurl FROM four.base_ss7_help where helpurl = :dataurl ";        
+$hlpSQL = "SELECT ifnull(helptype,'') as hlpType, ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt , ifnull(helpurl,'') as helpurl FROM four.base_ss7_help where replace(helpurl,'-','') = :dataurl ";        
 $hlpR = $conn->prepare($hlpSQL); 
-$hlpR->execute(array(':dataurl' => trim($docid)));        
+$hlpR->execute(array(':dataurl' => trim($docid)   ));        
 if ($hlpR->rowCount() < 1) { 
-    $helpFile = "NO HELP FILE FOUND WITH THAT URL";
+    $helpFile = "NO HELP FILE FOUND WITH THAT URL" . $docid . " - " . $originalURL;
       } else {           
         $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);    
           $hlpTitle = $hlp['hlpTitle'];
@@ -791,7 +791,8 @@ function getShipmentDocument($sdid, $originalURL) {
     //****************CREATE BARCODE
        require ("{$at}/extlibs/bcodeLib/qrlib.php");
         $tempDir = "{$at}/tmp/";
-        $codeContents = "{$tt}{$orginalURL}";
+        //$codeContents = "{$tt}{$orginalURL}";
+        $codeContents = "SD[{$dspsd}]";
         $fileName = 'pr' . generateRandomString() . '.png';
         $pngAbsoluteFilePath = $tempDir.$fileName;
         if (!file_exists($pngAbsoluteFilePath)) {

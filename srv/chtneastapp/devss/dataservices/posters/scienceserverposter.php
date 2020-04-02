@@ -1177,41 +1177,109 @@ EMAILBODY;
       if ( $locRS->rowCount() < 1 ) { 
         (list( $errorInd, $msgArr[] ) = array(1 , "SCANNED LOCATION WAS NOT FOUND.  OPERATION CEASED!"));
       } else { 
-        $l = $locRS->fetch(PDO::FETCH_ASSOC); 
-        (list( $errorInd, $msgArr[] ) = array(1 , $l['scancode'] . " -- " . $l['locationdsc']  ));
+          $l = $locRS->fetch(PDO::FETCH_ASSOC);
+         //TODO: THIS NEXT LINE IS FOR TESTING ONLY - REMOVE TO MAKE FUNCTION WORK 
+         //(list( $errorInd, $msgArr[] ) = array(1 , $l['scancode'] . " -- " . $l['locationdsc']  ));
       }
+
       //CHECK NO SEGMENT IS SHIPPED
-      $scnlst = $pdta['scanlist'];
-      
-      
+      $inscnlst =  str_repeat('?,', count($pdta['scanlist']) - 1) . "?";
       //USE THIS STATEMENT INSTEAD 
-      //SELECT replace(bgs,'_','') as bgs, segmentid, segstatus, shippedDate FROM masterrecord.ut_procure_segment where replace(bgs,'_','') IN ('54098T001','44945A1PBDX1','88823T001') AND ((segstatus = 'SHIPPED' OR segstatus = 'DESTROYED') OR shippeddate is not null);      
-      ////NOT THIS ONE 
-      //$segChkSQL = "SELECT replace(bgs,'_','') as bgs, segmentid, segstatus, shippedDate FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :bgs";
-      //$segRS = $conn->prepare($segChkSQL);
-      //foreach ( $scnlst as $k => $v ) {
-      //  $segRS->execute(array(':bgs' => $v));
-      //  if ( $segRS->rowCount() < 1 ) { 
-      //      (list( $errorInd, $msgArr[] ) = array(1 , "LABEL {$v} NOT FOUND.  OPERATION CEASED!"));
-      //  } else { 
-      //      $tst = $segRS->fetch(PDO::FETCH_ASSOC);
-      //      if ( strtoupper($tst['segstatus'] ) === 'SHIPPED' || strtoupper($tst['segstatus'] ) === 'DESTROYED' ) { 
-      //        (list( $errorInd, $msgArr[] ) = array(1 , "LABEL {$v} IS MARKED AS " . strtoupper($tst['segstatus'])  . ".  INVENTORY OPERATIONS CANNOT BE PERFORMED ON SEGMENTS IN THIS STATUS.  OPERATION CEASED!"));
-      //      } else { 
-      //        //STATUS IS GOOD  
-      //      }
-      //  }
-
-      //}
-      //WHAT IS THE STATUS? 
-      
-      
-      
-      
+      $sgSQL = "SELECT replace(sg.bgs,'_','') as bgs, ifnull(sg.segstatus,'') as segstatus, ifnull(amv.allowmove,'') as allowmove, ifnull(sg.shippedDate,'') as shippeddate FROM masterrecord.ut_procure_segment sg left join (SELECT menuvalue, explainerline as allowmove FROM four.sys_master_menus where  menu = 'segmentstatus') as amv on sg.segstatus = amv.menuvalue where replace(bgs,'_','') IN ( {$inscnlst} ) and amv.allowmove <> 'NOMOVE' and ifnull(sg.shippedDate,'') = ''";      
+      $sgRS = $conn->prepare( $sgSQL );
+      $sgRS->execute( $pdta['scanlist']  );
+      ( count( $pdta['scanlist'] ) <> $sgRS->rowCount() ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SCANNED LABELS WERE FOUND IN THE DATABASE OR ARE NOT STATUSED TO MOVE IN INVENTORY.  CHECK SCANS AND TRY AGAIN.")) : "";
+ 
+      //WHAT IS THE STATUS?
       if ( $errorInd === 0 ) { 
-        
 
-        $responseCode = 200;
+        $lookupSQL = "SELECT replace(sg.bgs,'_','') as bgs, ifnull(sg.segstatus,'') as segstatus, ifnull(amv.allowmove,'NOMOVE') as allowmove, ifnull(sg.assignedTo,'') as assignedto, ifnull(sg.prepmethod,'') as prepmethod FROM masterrecord.ut_procure_segment sg left join (SELECT menuvalue, explainerline as allowmove FROM four.sys_master_menus where  menu = 'segmentstatus') as amv on sg.segstatus = amv.menuvalue where replace(sg.bgs,'_','') = :bgs and amv.allowmove <> 'NOMOVE'  and ifnull(sg.shippedDate,'') = ''";
+        $lookupRS = $conn->prepare( $lookupSQL );
+        
+        $updInvHistSQL = "insert into masterrecord.history_procure_segment_inventory ( segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) select sg.segmentid, replace(sg.bgs,'_','') as bgs, ifnull(sg.scannedLocation,'NOVALUE') as scannedlocation, ifnull(sg.scanloccode,'NOVALUE') as scanloccode, ifnull(sg.scannedStatus,'NOVALUE') as scannedstatus, ifnull(sg.scannedBy,'') as scannedby, ifnull(sg.scannedDate,'1900-01-01') as scanneddate, now(), 'proczack' from masterrecord.ut_procure_segment sg where replace(bgs,'_','') = :bgs";
+        $updInvHistRS = $conn->prepare( $updInvHistSQL );
+
+        $segHistSQL = "insert into masterrecord.history_procure_segment_status ( segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby ) select sg.segmentId, sg.segstatus, sg.statusby, sg.statusDate, now(), :usr from masterrecord.ut_procure_segment sg where replace(sg.bgs,'_','') = :bgs"; 
+        $segHistRS = $conn->prepare( $segHistSQL );
+ 
+        $toBankSQL = "update masterrecord.ut_procure_segment set segstatus = 'BANKED', statusdate = now(), statusby = :usr  where replace(bgs,'_','') = :bgs"; 
+        $toBankRS = $conn->prepare( $toBankSQL ); 
+
+        $toAssignSQL = "update masterrecord.ut_procure_segment set segstatus = 'ASSIGNED', statusdate = now(), statusby = :usr  where replace(bgs,'_','') = :bgs";
+        $toAssignRS = $conn->prepare( $toAssignSQL ); 
+        
+        $toPermColSQL = "update masterrecord.ut_procure_segment set segstatus = 'PERMCOLLECT', statusdate = now(), statusby = :usr  where replace(bgs,'_','') = :bgs";
+        $toPermColRS = $conn->prepare( $toPermColSQL ); 
+
+        $moveInvSQL = "update masterrecord.ut_procure_segment set scannedlocation = :locationdsp, scanloccode= :loccode, scannedStatus = 'INVENTORY MOVE',scannedBy = :u, scanneddate = now() where replace(bgs,'_','') = :bgs";
+        $moveInvRS = $conn->prepare( $moveInvSQL );
+
+        foreach ( $pdta['scanlist'] as $k => $v ) { 
+          $lookupRS->execute(array(':bgs' => $v ));
+          if ( $lookupRS->rowCount() === 1 ) { 
+            $bgs = $lookupRS->fetch(PDO::FETCH_ASSOC);  
+            //(list( $errorInd, $msgArr[] ) = array(1 , $k . " -- " . $v . " -- " . $bgs['segstatus'] . ", " . $bgs['allowmove']  ));
+            switch ( $bgs['allowmove'] ) {
+              case 'MOVECHANGESTAT':
+                //STATUSES: ONOFFER / XNFIPI / RETRACT
+                //TODO:  MAKE THIS SWITCH DYNAMIC
+                switch ( $bgs['segstatus'] ) {
+                  case 'RETRACT':
+                    $segHistRS->execute( array( ':bgs' => $v, ':usr' => $u['emailaddress'] ));
+                    $updInvHistRS->execute(array(':bgs' => $v));
+                    //TODO:  DECIDE WHETHER TO BLANK OUT SHIPDOC INFO AND ASSIGNMENT ... NOTHING IS DONE ON THIS AS OF YET 
+                    $moveInvRS->execute( array( ':locationdsp' => $l['locationdsc'], ':loccode' => $l['scancode'], ':u' => $u['emailaddress'], ':bgs' => $v));        
+                    break;
+                  case 'XNFIPI':
+                    $segHistRS->execute( array( ':bgs' => $v, ':usr' => $u['emailaddress'] ));
+                    $updInvHistRS->execute(array(':bgs' => $v));
+                    //TODO:  DECIDE WHETHER TO BLANK OUT SHIPDOC INFO AND ASSIGNMENT ... NOTHING IS DONE ON THIS AS OF YET 
+                    $moveInvRS->execute( array( ':locationdsp' => $l['locationdsc'], ':loccode' => $l['scancode'], ':u' => $u['emailaddress'], ':bgs' => $v));        
+                    break;
+                  case 'ONOFFER':
+                    $segHistRS->execute( array( ':bgs' => $v, ':usr' => $u['emailaddress'] ));
+                    $updInvHistRS->execute(array(':bgs' => $v));
+                    $moveInvRS->execute( array( ':locationdsp' => $l['locationdsc'], ':loccode' => $l['scancode'], ':u' => $u['emailaddress'], ':bgs' => $v));        
+
+                    if ( trim($bgs['assignedto']) === "" ) { 
+                      if ( trim(strtoupper($bgs['prepmethod'])) === 'SLIDE' ) {
+                        $toPermColRS->execute(array(':bgs' => $v, ':usr' => $u['emailaddress'] ));
+                      } else {
+                        $toBankRS->execute(array( ':bgs' => $v, ':usr' => $u['emailaddress'] ));
+                      }
+
+                    } else {
+
+                      if ( substr(trim(strtoupper($bgs['assignedto'])),0,3) === 'INV') {  
+                        $toAssignRS->execute(array( ':bgs' => $v, ':usr' => $u['emailaddress'] ));
+                      } else {
+                        //PROBABLY QC - DECIDE PERMCOLL OR BANK
+                        if ( trim(strtoupper($bgs['prepmethod'])) === 'SLIDE' ) {
+                          $toPermColRS->execute(array(':bgs' => $v, ':usr' => $u['emailaddress'] ));
+                        } else { 
+                          $toBankRS->execute(array( ':bgs' => $v, ':usr' => $u['emailaddress'] ));
+                        }
+                      }
+
+                    }
+
+                    break;
+                }
+                break;
+              case 'NOMOVE':
+                break;
+              case 'MOVEALLOWED':
+                $updInvHistRS->execute(array(':bgs' => $v));
+                $moveInvRS->execute( array( ':locationdsp' => $l['locationdsc'], ':loccode' => $l['scancode'], ':u' => $u['emailaddress'], ':bgs' => $v));        
+                break;
+            } 
+          } else {
+            (list( $errorInd, $msgArr[] ) = array(1 , "{$v} was not able to be moved.  Unknown reason.  See a CHTNEastern Informatics staff member."));
+          }
+        }
+        if ( $errorInd === 0 ) { 
+          $responseCode = 200;
+        }
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
@@ -1249,7 +1317,9 @@ EMAILBODY;
 
 
 
-        $responseCode = 200;
+
+
+        //$responseCode = 200;
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
@@ -1602,9 +1672,6 @@ PRTEXT;
       ( !array_key_exists('scanlabel', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'scanlabel' DOES NOT EXIST.")) : ""; 
       ( trim($pdta['scanlabel']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  SCANLABEL MUST CONTAIN A VALUE.")) : ""; 
 
-
-
-
       if ($errorInd === 0 ) {
 
           if ( preg_match('/^ED/i',$pdta['scanlabel']) ) { 
@@ -1612,7 +1679,7 @@ PRTEXT;
           }
 
 
-          $sql = "SELECT mn.dspvalue as segstatus, ucase(trim(concat(ifnull(sg.prepmethod,''), if(ifnull(sg.preparation,'')='','',concat(' [',ifnull(sg.preparation,''),']'))))) as prp, ucase(trim(concat(ifnull(bs.tisstype,''),' :: ', concat(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subsite,'')='','', concat( ' [',ifnull(bs.subsite,''),']' ))) ,' :: ', concat(if(ifnull(bs.diagnosis,'')='','',  ifnull(bs.diagnosis,'')), if(ifnull(bs.subdiagnos,'')='','',concat(' [', ifnull(bs.subdiagnos,''),']')))))))  desig FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') as mn on sg.segstatus = mn.menuvalue where replace(sg.bgs,'_','') = :bgs"; 
+          $sql = "SELECT replace(ifnull(bgs,''),'_','') as bgs, mn.dspvalue as segstatus, mn.invmoveind, ucase(trim(concat(ifnull(sg.prepmethod,''), if(ifnull(sg.preparation,'')='','',concat(' [',ifnull(sg.preparation,''),']'))))) as prp, ucase(trim(concat(ifnull(bs.tisstype,''),' :: ', concat(concat(ifnull(bs.anatomicsite,''), if(ifnull(bs.subsite,'')='','', concat( ' [',ifnull(bs.subsite,''),']' ))) ,' :: ', concat(if(ifnull(bs.diagnosis,'')='','',  ifnull(bs.diagnosis,'')), if(ifnull(bs.subdiagnos,'')='','',concat(' [', ifnull(bs.subdiagnos,''),']')))))))  desig FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample left join (SELECT menuvalue, dspvalue, ifnull(explainerline,'') as invmoveind FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') as mn on sg.segstatus = mn.menuvalue where replace(sg.bgs,'_','') = :bgs"; 
           $rs = $conn->prepare($sql);
           $rs->execute(array(':bgs' => $pdta['scanlabel'] ));
           if ( $rs->rowCount() === 1 ) { 
@@ -1918,7 +1985,7 @@ PRTEXT;
       if ($rs->rowCount() === 1) { 
         $u = $rs->fetch(PDO::FETCH_ASSOC);
       } else { 
-        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMBER."));
       }
 
 
@@ -2242,13 +2309,13 @@ PRTEXT;
           (list( $errorInd, $msgArr[] ) = array(1 , "The 'Investigator id' field must have a value"));    
       } else { 
           //TODO:  DON'T HARD CODE THIS
-          if ( strtoupper(trim($pdta['assignInvCode'])) !== 'BANK' && strtoupper(substr(trim($pdta['assignInvCode']), 0, 3)) !== 'INV' && strtoupper(trim($pdta['assignInvCode'])) !== 'PENDING DESTROY' && strtoupper(trim($pdta['assignInvCode'])) !== 'PERMANENT COLLECTION'  ) { 
-            (list( $errorInd, $msgArr[] ) = array(1 , "The 'Investigator id' field must contain either an investigator's INV code, the status of 'Bank', 'Permanent Collection' or 'Pending Destroy'."));                                
-          } else { 
-              $iv = "";
-              $pv = "";
-              $rv = "";
-              if ( strtoupper(substr(trim($pdta['assignInvCode']), 0, 3)) === 'INV' ) { 
+         if ( strtoupper(trim($pdta['assignInvCode'])) !== 'BANK' && strtoupper(substr(trim($pdta['assignInvCode']), 0, 3)) !== 'INV' && strtoupper(trim($pdta['assignInvCode'])) !== 'PENDING DESTROY' && strtoupper(trim($pdta['assignInvCode'])) !== 'PERMANENT COLLECTION') { 
+           (list( $errorInd, $msgArr[] ) = array(1 , "The 'Investigator id' field must contain either an investigator's INV code, the status of 'Bank', 'Permanent Collection' or 'Pending Destroy'."));                                
+         } else { 
+            $iv = "";
+            $pv = "";
+            $rv = "";
+            if ( strtoupper(substr(trim($pdta['assignInvCode']), 0, 3)) === 'INV' ) { 
                   if ( trim($pdta['assignReqCode']) === "" ) { 
                       (list( $errorInd, $msgArr[] ) = array(1 , "When specifying an investigator, a request number must also be specified."));                                
                   } else {
@@ -3048,7 +3115,7 @@ PRISTINESQL;
           $reviewer = $u['usr'];
         } 
       } else { 
-        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMBER."));
       }
 
       $segChkSQL = "SELECT sg.biosamplelabel, sg.bgs, ifnull(sg.hprslideread,0) as hprslideread, replace(read_label,'_','') as readlabel FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where sg.segmentid = :segid";
@@ -3185,7 +3252,7 @@ PRISTINESQL;
           $reviewer = $u['usr'];
         } 
       } else { 
-        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMBER."));
       }
       //CHECK SEGID EXISTS AND IS VALID
       $segChkSQL = "SELECT sg.biosamplelabel, sg.bgs, ifnull(sg.hprslideread,0) as hprslideread, replace(read_label,'_','') as readlabel FROM masterrecord.ut_procure_segment sg left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where sg.segmentid = :segid";
@@ -3383,7 +3450,7 @@ PRISTINESQL;
       if ($rs->rowCount() === 1) { 
         $u = $rs->fetch(PDO::FETCH_ASSOC);
       } else { 
-        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMBER."));
       }
 
 
@@ -3862,7 +3929,7 @@ MBODY;
       if ($rs->rowCount() === 1) { 
         $u = $rs->fetch(PDO::FETCH_ASSOC);
       } else { 
-        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+        (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMBER."));
       }
       //{{\"calEventDte\":\"2019-05-15\",\"calEventStartTime\":\"\",\"calEventEndTime\":\"\",\"calEventAllDayInd\":false,\"calEventType\":\"\",\"calEventPHIIni\":\"\",\"calEventSurgeon\":\"\",\"calEventTitle\":\"\",\"calEventDesc\":\"\",\"calEventForWho\":\"ALLINST\"}"}}
       //DATACHECKS
@@ -8491,7 +8558,7 @@ UPDSQL;
      if ($rs->rowCount() === 1) { 
        $usrrecord = $rs->fetch(PDO::FETCH_ASSOC);
      } else { 
-       (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+       (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMBER."));
      }
 
      if ($errorInd === 0) { 
@@ -8960,7 +9027,7 @@ SQLSTMT;
             $where .= " and ({$val}) ";
           }
           //TODO:  ADD THESE COMPONENTS IN TO SQL
-         $groupby =  (trim($rqjson['request']['rptsql']['groupbyclause']) === '') ? '' : " GROUP BY {$rqjson['request']['rptsql']['groupbyclause']}";
+          $groupby =  (trim($rqjson['request']['rptsql']['groupbyclause']) === '') ? '' : " GROUP BY {$rqjson['request']['rptsql']['groupbyclause']}";
 //        $summaryfield = $r['rptsql']['summaryfield'];
 
           $sqlstmt = "SELECT  {$select}  FROM  {$from}  {$where}  {$groupby}  {$orderby}";
@@ -9243,7 +9310,186 @@ SQLSTMT;
       return $rows;
     }
 
-   function assignsegments($request, $passdata) { 
+    function assignsegments($request, $passdata) { 
+      $responseCode = 400; 
+      $errorInd = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $data = array();
+      $rows = array(); 
+      $msgArr = array();
+      require(serverkeys . "/sspdo.zck");  
+      session_start(); 
+      $sessid = session_id();
+      $qryrqst = json_decode($passdata, true);
+      //{"segmentlist":"{\"0\":{\"biogroup\":\"87106\",\"bgslabel\":\"87106T014\",\"segmentid\":\"459918\"}}","investigatorid":"PERMCOLLECT","requestnbr":""}
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sid and allowind = 1 and allowCoord = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+        (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO STATUS SEGMENTS. LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR. "));
+      } else { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+
+      if ( $errorInd === 0 ) {
+        $needkeys = array("segmentlist","investigatorid","requestnbr");
+        $keysExist = 1;
+        foreach ($needkeys as $keyval) { 
+          if (!array_key_exists($keyval, $qryrqst)) {
+            $keysExist = 0;
+          }
+        }
+        if ($keysExist === 0) { 
+          $errorInd = 1; 
+          $msgArr[] = "ERROR:  BAD REQUEST ARRAY IN BODY ";
+        }
+
+        if ( $errorInd === 0 ) { 
+          switch ( strtoupper(trim($qryrqst['investigatorid']))) { 
+            case 'BANK': 
+              $sts = 'BANKED'; 
+              $stsB = $u['usr']; 
+              $aTo = '';
+              $aPrj = '';
+              $aRq = '';
+              $assInv   = 'BANKED';
+              $assProj  = '';
+              $assReq   = '';
+              break;
+            case 'PENDDESTROY':
+              $sts = 'PENDDEST'; 
+              $stsB = $u['usr']; 
+              $aTo = '';
+              $aPrj = '';
+              $aRq = '';
+              $assInv   = 'PENDDEST';
+              $assProj  = '';
+              $assReq   = '';
+              break;
+            case 'PERMCOLLECT': 
+              $sts = 'PERMCOLLECT'; 
+              $stsB = $u['usr']; 
+              $aTo = '';
+              $aPrj = '';
+              $aRq = '';
+              $assInv   = 'PERMCOLLECT';
+              $assProj  = '';
+              $assReq   = '';
+              break;
+             default: 
+               if (trim($qryrqst['requestnbr']) === "" || trim($qryrqst['investigatorid']) === "") { 
+                 $errorInd = 1; 
+                 $msgArr[] = "Both an Investigator and a request number is required.  No Segments have been assigned.";
+               } else { 
+                 //CHECK VALIDITY OF INV/REQ
+                 $chkSQL = "select rq.requestid, pr.projid, pr.investid from vandyinvest.investtissreq rq left join vandyinvest.investproj pr on rq.projid = pr.projid where rq.requestid = :rq and pr.investid = :iv";
+                 $chkR = $conn->prepare($chkSQL);
+                 $chkR->execute(array(':rq' => trim($qryrqst['requestnbr']) , ':iv' => trim($qryrqst['investigatorid'])));
+                 if ($chkR->rowCount() < 1) { 
+                   $errorInd = 1; 
+                   $msgArr[] = "The specified Investigator/request number combination is NOT valid ({$qryrqst['investigatorid']}/{$qryrqst['requestnbr']}).  No Segments have been assigned.";
+                 } else {
+                   $dbrq = $chkR->fetch(PDO::FETCH_ASSOC);  
+                   $assInv = strtoupper(trim($qryrqst['investigatorid']));  //SEGMENT STATUS FROM SYS_MASTER_MENUS
+                   $assProj = strtoupper(trim($dbrq['projid']));
+                   $assReq = strtoupper(trim($qryrqst['requestnbr']));
+                   $sts = 'ASSIGNED'; 
+                   $stsB = $u['usr']; 
+                   $aTo = strtoupper(trim($qryrqst['investigatorid']));
+                   $aPrj = strtoupper(trim($dbrq['projid']));
+                   $aRq = strtoupper(trim($qryrqst['requestnbr']));
+                 }
+               }
+          } 
+
+          if ( $errorInd === 0 ) { 
+            //3) CHECK SEGMENT EXISTS AND IS IN A STATE TO BE REASSIGNED - CHECKING SEGMENTS FIRST MAKES THIS SORT OF A TRANSACTIONAL COMPONENT
+            $assignableSQL = "select menuvalue, dspvalue, assignablestatus from four.sys_master_menus where menu = 'SEGMENTSTATUS'";
+            $assignableRS = $conn->prepare($assignableSQL); 
+            $assignableRS->execute(); 
+            while ($asr = $assignableRS->fetch(PDO::FETCH_ASSOC)) { 
+              $assignableStatus[] = $asr;
+            }
+            $segList = json_decode($qryrqst['segmentlist'], true);
+            foreach ($segList as $k => $v) {  
+              $chkSQL = "SELECT replace(ifnull(bgs,''),'T_','') as bgs, ifnull(segstatus,'') as segstatus, ifnull(date_format(shippeddate,'%m/%d/%Y'),'') as shippeddate, ifnull(shipdocrefid,'') as shipdocrefid FROM masterrecord.ut_procure_segment where segmentid = :segmentid";
+              $chkR = $conn->prepare($chkSQL); 
+              $chkR->execute(array(':segmentid' => $v['segmentid'] ));
+              if ($chkR->rowCount() > 0) { 
+                $r = $chkR->fetch(PDO::FETCH_ASSOC);
+                //CHECK SHIPDATE
+                if ($r['shippeddate'] !== "") { 
+                  $errorInd = 1;
+                  $msgArr[] = "Segment Label {$r['bgs']} has a shipment date ({$r['shippeddate']}) .  This segment is unable to be assigned.";
+                }                 
+                //CHECK SHIPDOCID 
+                if ( (int)$r['shipdocrefid'] <> 0 ) { 
+                  $errorInd = 1;
+                  $sddsp = substr(('000000' . $r['shipdocrefid']),-6);
+                  $msgArr[] = "Segment Label {$r['bgs']} is listed on ship-doc ({$sddsp}) .  This segment is unable to be assigned.";
+                }                
+                //CHECK STATUS
+                $statusFound = 0;
+                foreach ($assignableStatus as $aKey => $aVal) {
+                  if (strtoupper(trim($r['segstatus'])) === strtoupper(trim($aVal['menuvalue']))) {
+                    $statusFound = 1;
+                    if ((int)$aVal['assignablestatus'] === 0) {
+                      $errorInd = 1; 
+                      $msgArr[] = "{$r['bgs']} is statused as \"{$aVal['dspvalue']}\".  This segment status is unable to be assigned.";
+                    }
+                  }
+                }
+                if ($statusFound === 0) { 
+                  $errorInd = 1;
+                  $msgArr[] = "Segment Label {$r['bgs']} has an invalid status.  This segment is unable to be assigned.";
+                }                
+              } else { 
+                $errorInd = 1; 
+                $msgArr[] = "Segment does not Exist.  See CHTN Eastern IT (dbSegmentId: {$v['segmentid']})";
+              }             
+            } 
+
+
+            if ( $errorInd === 0 ) { 
+
+              foreach ($segList as $k => $v) {  
+                //GET PREVIOUS STATUS AND ASSIGNMENT
+                $prvSQL = "select bgs, ifnull(segstatus,'') segstatus, statusdate, ifnull(statusby,'') statusby, ifnull(assignedTo,'') assignedto , ifnull(assignedProj,'') assignedproj, ifnull(assignedReq,'') assignedreq, assignmentdate, ifnull(assignedby,'') assignedby from masterrecord.ut_procure_segment where segmentid = :segid";
+                $prvR = $conn->prepare($prvSQL); 
+                $prvR->execute(array(':segid' => $v['segmentid']));
+                $prvRec = $prvR->fetch(PDO::FETCH_ASSOC);                 
+                //SAVE OLD STATUS TO HISTORY TABLE
+                $svePrvSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) values(:segid,:segstatus,:segstatusby,:segstatuson,now(),:enteredby)"; 
+                $svePrvR = $conn->prepare($svePrvSQL); 
+                $svePrvR->execute(array(':segid' => $v['segmentid'], ':segstatus' => $prvRec['segstatus'], ':segstatusby' => $prvRec['statusby'], ':segstatuson' => $prvRec['statusdate'], ':enteredby' => $u['originalAccountName'])); 
+                //SAVE OLD ASSIGNMENT 
+                $aInv = (trim($prvRec['assignedto']) === "") ? "NO-INV-ASSIGNMENT" : trim($prvRec['assignedto']); 
+                $aPrj = (trim($prvRec['assignedproj']) === "") ? "NO-PROJ-ASSIGNMENT" : trim($prvRec['assignedproj']); 
+                $aReq = (trim($prvRec['assignedreq']) === "") ? "NO-REQ-ASSIGNMENT" : trim($prvRec['assignedreq']);
+                $aBy = (trim($prvRec['assignedby']) === "") ? "NO-BY-ASSIGNMENT" : trim($prvRec['assignedby']); 
+                $prvASQL = "insert into masterrecord.history_procure_segment_assignment(segmentid, previousassignment, previousproject, previousrequest, previousassignmentdate, previousassignmentby, enteredby, enteredon) values(:segmentid, :previousassignment, :previousproject, :previousrequest, :previousassignmentdate, :previousassignmentby, :enteredby, now())";
+                $prvAR = $conn->prepare($prvASQL); 
+                $prvAR->execute(array(':segmentid' => $v['segmentid'],':previousassignment' => $aInv,':previousproject' => $aPrj,':previousrequest' => $aReq,':previousassignmentdate' => $prvRec['assignmentdate'],':previousassignmentby' => $aBy,':enteredby' => $u['originalAccountName'])); 
+                $segUpdSQL = "update masterrecord.ut_procure_segment set segstatus = :segStat, statusdate = now(), statusby = :statBy, assignedto = :aTo, assignedproj = :aPrj, assignedreq = :aRq, assignmentdate = now(), assignedby = :aBy where segmentid = :segid ";
+                $segUpdR = $conn->prepare($segUpdSQL); 
+                $segUpdR->execute(array(':segStat' => $sts, ':statBy' => $stsB, ':aTo' => $aTo, ':aPrj' => $aPrj, ':aRq' => $aRq, ':aBy' => $stsB, ':segid' => $v['segmentid']));
+
+              }
+              $responseCode = 200;
+            }
+          }
+        }
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $data);
+      return $rows;
+    } 
+    
+   function assignsegmentsbu20200331($request, $passdata) { 
 //{"segmentlist":"{\"0\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948001\",\"segmentid\":\"431100\"},\"1\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948003\",\"segmentid\":\"431102\"},\"2\":{\"biogroup\":\"81948\",\"bgslabel\":\"81948004\",\"segmentid\":\"431103\"}}","investigatorid":"INV3000","requestnbr":"REQ19002"}
       $responseCode = 400; 
       $error = 0;

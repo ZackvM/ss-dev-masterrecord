@@ -47,6 +47,8 @@ if ($whichpage !== "login") {
     $at = genAppFiles;
     $chtn = base64file("{$at}/publicobj/graphics/smlchtnlogo.png", "barchtnlogo", "png", true);   
     
+
+
     $controlList = "<table border=0 cellpadding=0 cellspacing=0>";
     foreach ($whichUsr->allowedmodules as $modval) {
         if (trim($modval[2]) !== "") { 
@@ -86,6 +88,8 @@ if ($whichpage !== "login") {
         }
     }
     $controlList .= "</table>";
+
+
 
     $uBtnsj = json_decode(callrestapi("GET", dataTree . "/ssuniversalcontrols", serverIdent, serverpw),true);
     $controlListUniverse = "<table border=0 cellspacing=0 cellpadding=0>";
