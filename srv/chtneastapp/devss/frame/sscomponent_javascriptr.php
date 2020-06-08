@@ -1870,62 +1870,67 @@ function doSomethingWithScan ( scanvalue ) {
 
   //TODO:  SPECIAL BARCODE ENCODING
 
-
   var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$(@)?/);
   var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   var scanhpr   = new RegExp(/^HPRT\d+$/); 
-  
+  var sldloc = new RegExp(/^SSC[A-Z]{1}\d+$/); 
+  var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
+
+
   var scanworked = 0;
 
   if ( scanlabel.test( scanvalue ) || zlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //BIOSAMPLE LABEL SCANNED
-    if ( byId('labelscan') ) {
-      //CHECK LABEL NOT ALREADY SCANNED
-      var lbls = document.getElementsByClassName("labelDspDiv");
-      var lblsl = lbls.length;
-      for ( var i = 0; i < lbls.length; i++ ) { 
-        if ( byId(lbls[i].id).dataset.label == scanvalue ) { return null; }
-      } 
+    switch ( trayassignable ) {
+      case 0: 
+        //DO NOTHING
+        ( workingtrayid.trim() === "" ) ? alert('You must scan an HPR tray before scanning slides') : alert('This HPR tray, '+byId('tlocdisplay').innerHTML+', is not in a state to process.  It must be released from review');         
+        break;
+      case 1:
+        //LOAD TRAY 
 
-      var nxtItemNbr = 0;
-      if ( lblsl > 0 ) {
-        nxtItemNbr =  parseInt(lbls[ (lblsl - 1) ].id.replace( /^\D+/g, '')) + 1; 
-      } 
+        break;
+      case 2: 
+        //UNLOAD TRAY
+        scanvalue =  scanvalue.replace(/^(ED|ed)/,"") ;
+        if ( slidertnloc === "" ) {
+          alert('You have not scanned a location where you are placing this slide.');
+        } else {
+          //alert( scanvalue );
+          //make promise 
+          if ( byId('labelscan') ) {
+            var lbls = document.getElementsByClassName("slidedspdiv");
+            var lblsl = lbls.length;
+            var slidefound = 0;
+            for ( var i = 0; i < lbls.length; i++ ) { 
+              if ( byId(lbls[i].id).dataset.label == scanvalue ) { slidefound = 1; }
+            } 
 
-      var lblDiv = document.createElement('div');
-      lblDiv.id = "scannedLabel"+nxtItemNbr;
-      lblDiv.className = "labelDspDiv";
-      lblDiv.dataset.label = scanvalue;
-      //lblDiv.innerHTML = scanvalue; 
-      byId('labelscanholderdiv').appendChild ( lblDiv );
-      lblDiv.addEventListener("click", clickedlabel );
-        
-      var scnDsp = document.createElement('div');
-      scnDsp.id = "scanDisplay"+nxtItemNbr;
-      scnDsp.className = "scanDisplay";
-      scnDsp.innerHTML = scanvalue;
-      byId("scannedLabel"+nxtItemNbr).appendChild( scnDsp );
+            if ( slidefound === 1 ) { 
+              slideRemoveFromTray ( scanvalue , slidertnloc,  workingtrayid).then (function (fulfilled) { 
+                var dta = JSON.parse( fulfilled );  
+                console.log ( dta['DATA'] + ' /// ' + dta['ITEMSFOUND'] );
+                byId('hprlabelscanholderdiv').removeChild(byId('sld'+dta['DATA']));
+                if ( parseInt( dta['ITEMSFOUND'] ) === 0 ) { 
+                  alert('HPR TRAY HAS BEEN STATUSED FOR RE-USE.  YOU MAY RETURN THE HPR TRAY TO SERVICE');
+                  location.reload(true);
+                } else { 
+                  byId('itemCountDsp').innerHTML = "SLIDES IN TRAY: "+parseInt( dta['ITEMSFOUND'] );
+                }
+              })
+              .catch(function (error) {
+                console.log(error.message);
+              });
+            } else { 
+              alert( 'The scanned slide ('+scanvalue+') was not found in this HPR Tray.  Please see a CHTNEastern Informatics staff member' );
 
-      var desDsp = document.createElement('div');
-      desDsp.id = "desigDisplay"+nxtItemNbr;
-      desDsp.className = "desigDisplay";
-      desDsp.innerHTML = "-";
-      byId("scannedLabel"+nxtItemNbr).appendChild( desDsp );        
-
-      var elemcnt = document.getElementsByClassName("labelDspDiv");
-      byId('itemCountDsp').innerHTML = "SCAN COUNT: " + elemcnt.length; 
-
-      //MAKE PROMISE TO LOOKUP DATA
-      fillInDesigLabelCode( scanvalue ).then (function (fulfilled) {         
-            byId('desigDisplay'+nxtItemNbr).innerHTML = fulfilled;
-        })
-        .catch(function (error) {
-            byId('desigDisplay'+nxtItemNbr).innerHTML = '<div class=errordspmsg>Scanned Label Not Found in Database. See Informatics Staff Memeber Immediately.</div>';
-            console.log(error.message);
-        });
-    } else { 
-      alert('The Scan Control doesn\'t exist');
+            }
+          } else { 
+            alert('The Scan Control doesn\'t exist');
+          }
+        }
+        break;
     }
   }
   
@@ -1940,12 +1945,68 @@ function doSomethingWithScan ( scanvalue ) {
     universalAJAX("POST",mlURL,passdta,answerHPRTrayScanPreprocess,2);
   }
 
-  if ( scanworked === 0 ) { 
-    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
+  if ( sldloc.test ( scanvalue ) || scanloc.test ( scanvalue ) ) {
+    scanworked = 1;
+    if ( workingtrayid.trim() === "" ) { 
+      alert('You must scan an HPR Tray before specifying where slides will be stored.  ');
+    } else {   
+      switch ( trayassignable ) {
+        case 0: 
+          //DO NOTHING
+          alert('This HPR tray, '+byId('tlocdisplay').innerHTML+', is not in a state to process.  It must be released from review');         
+          break;
+        case 1:
+          //LOAD TRAY 
+          alert('This HPR tray, '+byId('tlocdisplay').innerHTML+', is not in a state to unload.');         
+          break;
+        case 2: 
+          //UNLOAD TRAY
+          var dta = new Object(); 
+          dta['scancode'] = scanvalue;
+          var passdta = JSON.stringify(dta);
+          byId('standardModalBacker').style.display = 'block';
+          slidertnloc = "";
+          byId('locationplace').innerHTML = "";
+          byId('scanAnnounce').innerHTML = "Scan location where placing slides ...";
+          var mlURL = "/data-doers/invtry-hprtray-scan-slide-location";
+          universalAJAX("POST",mlURL,passdta,answerHPRTrayScanSlideLocation,2);
+          break;
+      }
+    }
   }
 
+  if ( scanworked === 0 ) { 
+    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified as an HPR-Slide-Tray by ScienceServer.  Please create a new label for this component to trigger an action');
+  }
 }           
-   
+
+
+var slidertnloc = "";
+function answerHPRTrayScanSlideLocation ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    slidertnloc = "";
+    byId('locationplace').innerHTML = "";
+    byId('scanAnnounce').innerHTML = "2) Scan location where placing slides ...";
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+     var dta = JSON.parse(rtnData['responseText']);         
+     byId('locationplace').innerHTML = dta['DATA'][0]['pathdsp'];
+     slidertnloc = dta['DATA'][0]['scancode'];    
+     byId('scanAnnounce').innerHTML = "Slides will be filed in: ";
+     byId('standardModalBacker').style.display = 'none';    
+   }
+}
+
+var slidecount = 0; 
+var trayassignable = 0; 
+var workingtrayid = "";
+
 function answerHPRTrayScanPreprocess( rtnData ) { 
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
@@ -1956,11 +2017,87 @@ function answerHPRTrayScanPreprocess( rtnData ) {
     alert("ERROR:\\n"+dspMsg);
     byId('standardModalBacker').style.display = 'none';    
    } else {
-        var dta = JSON.parse(rtnData['responseText']);         
+     var dta = JSON.parse(rtnData['responseText']);         
+     var trayname = dta['DATA']['locationDisplay'] + ""; 
+     workingtrayid = dta['DATA']['locscancode'];
+     byId('tlocdisplay').innerHTML = trayname;
+     var traystatus = dta['DATA']['traystatus']+" ["+dta['DATA']['traystatuson']+" :: "+dta['DATA']['traystatusby']+"]";
+     byId('tstatus').innerHTML = traystatus;
+     var trayloc = dta['DATA']['heldwithin'];
+     trayloc += ( dta['DATA']['heldnote'].trim() !== "" ) ? " ("+dta['DATA']['heldnote']+")" : "";
+     byId('tlocation').innerHTML = trayloc;
+     var rvnote = dta['DATA']['reasonnotcomplete'];
+     rvnote += ( dta['DATA']['notcompletenote'].trim() !== "" ) ? ": "+dta['DATA']['notcompletenote'] : ""; 
+     byId('treview').innerHTML = rvnote;
+     var assignable = dta['DATA']['assignablestatus'];
+     var slidelisting = "";
+     dta['DATA']['slides'].forEach( function(element) {
+       var p = element['prepmethod'];
+       p += ( element['preparation'].trim() !== "" ) ? " ("+element['preparation']+")" : "";
+       var s = element['dspstatus'];
+       var d = element['specimencategory'];
+       d += ( element['site'].trim() !== "" ) ? " :: " + element['site'] : "";
+       d += ( element['dx'].trim() !== "" ) ? " :: " + element['dx'] : "";
+       d += ( element['sdx'].trim() !== "" ) ? " [" + element['sdx'] + "]" : "";
+       slidelisting += "<div class=slidedspdiv id='sld"+element['bgs']+"' data-label='"+element['bgs']+"' ><div class=sBGS>"+element['bgs']+"</div><div class=sdxd>"+d+"</div><div class=sstatus>"+s+"</div><div class=sprep>"+p+"</div></div>";
+     });
+     byId('hprlabelscanholderdiv').innerHTML = slidelisting; 
 
+     switch ( parseInt(assignable) ) {
+       case 0: 
+           //WITH REVIEWER
+           byId('ctlBtnHPRTrayCommit').style.display = 'none';
+           trayassignable = 0;
+           byId('telemholda').innerHTML = "HPR TRAY HELD WITH REVIEWER"; 
+         break;
+       case 1:
+           //LOAD TRAY
+           trayassignable = 1;
+           byId('telemholda').innerHTML = "LOADING/SENDING HPR TRAY"; 
+
+         break;
+       case 2:
+           //UNLOAD TRAY
+           trayassignable = 2; 
+           //WHERE ARE SLIDES GOING
+           byId('telemholda').innerHTML = "UNLOADING/CHECKING-IN HPR TRAY"; 
+           byId('putawaylocation').style.display = 'block';
+         break;
+     }
+
+     if ( parseInt(dta['ITEMSFOUND']) > 0 ) { 
+       slidecount = parseInt(dta['ITEMSFOUND']);
+     } 
+     byId('itemCountDsp').innerHTML = "SLIDES IN TRAY: "+slidecount;
+     byId('standardModalBacker').style.display = 'none';    
    }
 }          
-    
+
+var slideRemoveFromTray = function ( scancode, newloccode, hprtrayid ) { 
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scancode'] = scancode.trim();
+    obj['newloccode'] = newloccode.trim();
+    obj['hprtrayid'] = hprtrayid.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-remove-slide-hprtray", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) {      
+          var dta = JSON.parse( httpage.responseText );  
+          resolve( httpage.responseText   ); 
+        } else { 
+          reject(Error("It broke! "+httpage.responseText ));
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}
+
+
+
 var fillInDesigLabelCode = function ( scancode  ) {
   return new Promise(function(resolve, reject) {
     var obj = new Object(); 
@@ -1996,13 +2133,25 @@ function actionCancel() {
     byId('locscandsp').innerHTML = '';
   }
   if ( byId('itemCountDsp') ) {
-    byId('itemCountDsp').innerHTML = 'SCAN COUNT: 0';
+    slidecount = 0;
+    byId('itemCountDsp').innerHTML = '&nbsp;';
   }
-  if ( byId('labelscanholderdiv') ) {
-    var myNode = byId('labelscanholderdiv');
-    while ( myNode.firstChild ) { 
-      myNode.removeChild(myNode.firstChild);
-    }  
+  trayassignable = 0; 
+  if ( byId('ctlBtnHPRTrayCommit') ) {
+    //byId('ctlBtnHPRTrayCommit').style.display = 'block';
+  }
+  workingtrayid = "";
+  byId('tlocdisplay').innerHTML = "&nbsp;";
+  byId('tstatus').innerHTML = "&nbsp;";
+  byId('tlocation').innerHTML = "&nbsp;";
+  byId('treview').innerHTML = "&nbsp;";
+  byId('telemholda').innerHTML = ""; 
+  slidertnloc = "";
+  byId('locationplace').innerHTML = "";
+  byId('scanAnnounce').innerHTML = "2) Scan location where placing slides ...";
+  byId('putawaylocation').style.display = 'none';
+  if ( byId('hprlabelscanholderdiv') ) {
+    byId('hprlabelscanholderdiv').innerHTML = "&nbsp;"
   }
 }
 
@@ -3625,6 +3774,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }, false);
   }
 
+  if ( byId('btnForgotEmail') ) { 
+    byId('btnForgotEmail').addEventListener('click', function() {
+      rqstPwdReset();
+    }, false);
+  }
+
   if (byId('btnLoginCtl')) {
     byId('btnLoginCtl').addEventListener('click', function() {
       doLogin();
@@ -3645,7 +3800,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function sendPWordReset() { 
 
-alert('SEND RESET');
+alert('SEND RESET NOT WORKING YET');
 
 }
 
@@ -3679,6 +3834,26 @@ function doLogin() {
   };
   httpage.send(passdata);
 } 
+
+function rqstPwdReset() { 
+  var dta = new Object(); 
+  dta['rqstuser'] = byId('ssUser').value;
+  var passdata = JSON.stringify(dta);
+  var mlURL = "{$tt}/data-services/system-posts/request-password-reset";
+  httpage.open("POST",mlURL,true);
+  httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+  httpage.onreadystatechange = function () { 
+    if (httpage.readyState === 4) {
+      if (httpage.status === 200) { 
+          alert('If you are a registered ScienceServer user, you will receive a password reset email.');
+      } else { 
+        var rcd = JSON.parse(httpage.responseText);
+        alert(rcd['MESSAGE']);
+      }
+  }
+  };
+  httpage.send(passdata);
+}
 
 function rqstDualCode() { 
   var dta = new Object(); 
@@ -8418,7 +8593,7 @@ function updateRtnLocations() {
   dta['devreason'] = byId('fldTRtnDeviationReason').value;
   byId('waiterIndicator').style.display = 'block';
   byId('rtnBtnDsp').style.display = 'none';
-  console.log(JSON.stringify(dta));
+  //console.log(JSON.stringify(dta));
   var passdata = JSON.stringify(dta);
   var mlURL = "/data-doers/return-hpr-tray-inventory";
   universalAJAX("POST",mlURL,passdata,answerReturnHPRTrayInventory,2);
@@ -8520,6 +8695,43 @@ function answerPreprocessGenerateDialog( rtnData ) {
 function closeThisDialog(dlog) { 
    byId(dlog).parentNode.removeChild(byId(dlog));
    byId('standardModalBacker').style.display = 'none';        
+}
+
+function savechartreviewdocument () { 
+  var dta = new Object(); 
+  dta['crid'] = byId('fldCRId').value;
+  dta['bgref'] = byId('fldCRBGRefd').value;   
+  dta['bgassoc'] = byId('fldCRAssoc').value;   
+  dta['doctxt'] = byId('crtexteditor').value;   
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/save-chart-review-document";
+  universalAJAX("POST",mlURL,passdta,answerSaveChartReviewDocument,2);
+}
+
+function answerSaveChartReviewDocument ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     //update crid with new id - if applicable 
+     var dta = JSON.parse(rtnData['responseText']);         
+     byId('fldCRId').value = parseInt( dta['DATA']['chartreviewid'] );
+     byId('CRIdDsp').innerHTML = ( '000000' + parseInt( dta['DATA']['chartreviewid'] )).substr(-6);
+     alert('Chart Review '+( '000000' + parseInt( dta['DATA']['chartreviewid'] )).substr(-6)+' has been saved!');     
+   }
+}
+
+function printChartReview ( e, chartid ) { 
+  e.stopPropagation(); 
+  if (parseInt(chartid) === 0 ) { 
+    alert( 'You must specify a chart review id (only saved charts are printable)');
+  } else { 
+    openOutSidePage('{$tt}/print-obj/chart-review-report/'+chartid);  
+  }
 }
 
 

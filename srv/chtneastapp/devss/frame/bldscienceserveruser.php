@@ -39,7 +39,7 @@ class bldssuser {
     function __construct() {
         //$args = func_get_args(); 
         $userelements = self::getUserInformation();
-        if (trim($userelements['sssession']) !== "") { 
+        if ( trim($userelements['sssession']) !== "" ) { 
           $this->statusCode = 200;  
           $this->loggedsession = $userelements['sssession'];
           $this->dbuserid = $userelements['ssuserid'];

@@ -1529,7 +1529,7 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 1vw 0 1vw
 #inventoryCheckinElementHoldr #locationscan #instructionBlock { font-family: Roboto; font-size: 1.3vh; color: rgba({$this->color_dblue},1); padding: .5vh 5vw .5vh 0;    }
 
 #inventoryCheckinElementHoldr #itemCountDsp { grid-row: 2 / 3;  font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; } 
-#inventoryCheckinElementHoldr #labelscan { grid-row: 3 / 8; height: 55vh; overflow: auto; } 
+#inventoryCheckinElementHoldr #labelscan { grid-row: 3 / 8; height: 35vh; overflow: auto; } 
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv { display: grid; grid-gap: 4px; grid-template-columns: repeat(5, 1fr); } 
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv { border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; height: 8vh; background-color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.4vh; overflow: hidden; }
 #inventoryCheckinElementHoldr #labelscan #labelscanholderdiv .labelDspDiv:hover { background: rgba({$this->color_lamber},.5); cursor: pointer; }
@@ -1566,6 +1566,20 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);  }
 #waiticongif { width: auto; height: 2vh;    } 
 #waitMsgTitle { font-family: Roboto; font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); border-bottom: 2px solid rgba({$this->color_zackgrey},1);     }
 #waitMsg { font-family: Roboto; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); padding: .5vh 0 1vh 0; line-height: 1.5em;   }
+
+#locscandsp_hprt {  display: grid; grid-template-columns: 7vw 23vw 25vw 30vw; grid-gap: .3vw;  } 
+#locscandsp_hprt .telemhold { border: 1px solid rgba({$this->color_zackgrey},1); margin-top: .5vh; padding: .2vh .2vw; boz-sizing: border-box; }
+#locscandsp_hprt #telemholda { grid-column: span 4; font-size: 1.5vh; padding: .5vh .3vw 0 .3vw; color: rgba({$this->color_darkgreen},1);  }
+#locscandsp_hprt #putawaylocation  { grid-column: span 4; font-size: 1.5vh; display: block; padding: 0 .3vw .5vh .3vw; }
+#locscandsp_hprt .tDataLabel { font-family: Roboto; color: rgba{$this->color_zackgrey},1); font-size: 1.2vh; font-weight: bold;   }  
+#locscandsp_hprt .tData { font-family: Roboto; color: rgba{$this->color_zackgrey},1); font-size: 1.5vh; padding: 0 0 0 .2vw; }  
+
+#hprlabelscanholderdiv { display: grid; grid-template-columns: repeat( 5, 15vw); grid-gap: .3vw;  }
+#hprlabelscanholderdiv .slidedspdiv { border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_cornflowerblue},.1); } 
+#hprlabelscanholderdiv .slidedspdiv .sBGS { font-size: 1.4vh; padding: .2vh .3vw 0 .3vw; color: rgba({$this->color_zackgrey},1); font-weight: bold;}
+#hprlabelscanholderdiv .slidedspdiv .sdxd { font-size: 1.2vh; font-weight: bold; text-align: center; padding: .1vh .3vw 0 .3vw; height: 4vh; overflow: auto; }
+#hprlabelscanholderdiv .slidedspdiv .sstatus { font-size: 1.1vh; color: rgba({$this->color_darkgreen},1); padding: .2vh .3vw .5vh .3vw;  text-align: center;  }  
+#hprlabelscanholderdiv .slidedspdiv .sprep { background: rgba({$this->color_dblue},1); font-size: 1vh; text-align: right; color: rgba({$this->color_white},1); padding: .1vh .3vw; } 
 
 STYLESHEET;
       return $rtnThis;
@@ -2177,10 +2191,14 @@ body {margin: 0; height: 100%; width: 100%; background: rgba({$this->color_white
 #loginGrid input {width: 100%; box-sizing: border-box; font-family: Roboto; font-size: 1.8vh;color: rgba({$this->color_zackgrey},1); padding: 1.3vh .5vw 1.3vh .5vw; border: 1px solid rgba({$this->color_zackcomp},1);  }
 #loginGrid input:focus, #loginGrid input:active {background: rgba({$this->color_lamber},.5); border: 1px solid rgba({$this->color_dblue},.5);  outline: none;  }
 
+#loginGrid #elementHolderBTNs { display: grid; grid-template-columns: 5fr 1fr 1fr; grid-gap: .2vw; margin-top: .8vh; } 
+#loginGrid .elementHolder { margin-bottom: 1vh; margin-top: 1vh; }
+#loginGrid .elementHolder .elementLabel {  font-family: Roboto; font-size: 1.4vh; font-weight: bold; color: rgba({$this->color_mblue},1); padding-top: 1vh; }  
+
 #loginFooter {font-family: Roboto; font-size: 1.2vh; line-height: 1.8em; padding: 2vh .8vw 2vh .8vw; text-align: justify; border-top: 1px solid rgba({$this->color_dblue},1); background: rgba({$this->color_lightgrey},1); }
 #loginvnbr { font-family: Roboto; font-size: .9vh; padding: .4vh .4vw .4vh .8vw; text-align: right; background: rgba({$this->color_lightgrey},1); }
 
-.adminBtn {font-family: Roboto; font-size: 1.8vh; border: 1px solid rgba({$this->color_mblue},1); color: rgba({$this->color_mblue}, 1); padding: 8px 4px 8px 4px; }
+.adminBtn {font-family: Roboto; font-size: 1.4vh; font-weight: bold;  border: 1px solid rgba({$this->color_mblue},1); color: rgba({$this->color_mblue}, 1); padding: 8px 4px 8px 4px; }
 .adminBtn:hover {cursor: pointer; background: rgba({$this->color_lgrey},1); }
 
 .pseudoLink { font-size: 1vh; font-weight: normal; }

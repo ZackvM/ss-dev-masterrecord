@@ -102,6 +102,74 @@ class datadoers {
       return $rows;         
     }
 
+    function savechartreviewdocument ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true); 
+      $at = genAppFiles;
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sid and allowind = 1 and allowcoord = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+        (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO STATUS SEGMENTS AS DESTROYED. LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+
+      $msgArr[] = "ZACK IN FUNCTION";
+      //DO DATA CHECKS HERE
+      //( trim($pdta['scanloccode']) === "" ) ? list($errorInd, $msgArr[]) = array(1,"NO INVENTORY STORAGE CONTAINER SPECIFIED.") :  "";
+      //( count($pdta['bgslist']) < 1 ) ? list($errorInd, $msgArr[]) = array(1,"YOU HAVE NOT SCANNED ANY SAMPLES.") :  "";
+
+
+      if ( $errorInd === 0 ) {
+
+          if ( (int)$pdta['crid'] === 0 ) { 
+            //NEW CHART REVIEW
+            $insSQL = "insert into masterrecord.cr_txt_v1 (crtxt, bywhom, onwhen, associd, bgrefd ) values(:doctext,:usr, now(), :associd, :bgrefd )"; 
+            $insRS = $conn->prepare( $insSQL ); 
+            $insRS->execute ( array(':doctext' => $pdta['doctxt'], ':usr' => $u['usr'], ':associd' => $pdta['bgassoc'], ':bgrefd' => $pdta['bgref'] )); 
+            $newCRId = $conn->lastInsertId(); 
+            $updSQL = "update masterrecord.ut_procure_biosample set chartind = 1, crtxtv1id = :newcrid where associd = :associd or pBioSample = :pbg";
+            $updRS = $conn->prepare( $updSQL ); 
+            $updRS->execute(array( ':newcrid' => $newCRId, ':associd' => $pdta['bgassoc'], ':pbg' => $pdta['bgref'] )); 
+            $dta['chartreviewid'] = $newCRId;
+          } else { 
+            //EDITING A CHART REVIEW - Back up Chart First   
+            $bckSQL = "insert into masterrecord.history_cr_txt_v1 (chartreviewid,crtxt,bywhom,onwhen,associd,bgrefd,histby,histon) SELECT *, :usr ,now() FROM masterrecord.cr_txt_v1 where chartreviewid = :crid";
+            $bckRS = $conn->prepare( $bckSQL ); 
+            $bckRS->execute( array( ':crid' => (int)$pdta['crid'], ':usr' => $u['usr'] ));
+            $insSQL = "update masterrecord.cr_txt_v1 set crtxt = :doctext, bywhom = :usr, onwhen = now(), associd = :associd, bgrefd =  :bgrefd where chartreviewid = :crid"; 
+            $insRS = $conn->prepare( $insSQL ); 
+            $insRS->execute ( array(':doctext' => $pdta['doctxt'], ':usr' => $u['usr'], ':associd' => $pdta['bgassoc'], ':bgrefd' => $pdta['bgref'], ':crid' => (int)$pdta['crid'] )); 
+            $newCRId = (int)$pdta['crid']; 
+            $updSQL = "update masterrecord.ut_procure_biosample set chartind = 1, crtxtv1id = :newcrid where associd = :associd or pBioSample = :pbg";
+            $updRS = $conn->prepare( $updSQL ); 
+            $updRS->execute(array( ':newcrid' => $newCRId, ':associd' => $pdta['bgassoc'], ':pbg' => $pdta['bgref'] )); 
+            $dta['chartreviewid'] = $newCRId;
+          }
+          
+          //UPDATE BIOGROUP RECORD WITH REFERENCE
+          $responseCode = 200;
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+
+
+
+    } 
+
     function inventoryactionicount ( $request, $passdata ) { 
       $responseCode = 400;
       $rows = array();
@@ -1134,14 +1202,47 @@ EMAILBODY;
     
     //////////////// ^^^ VAULT ABOVE /////////////////
     
-    
-    
-    
-    
-    
-    
-    
-    
+    function invtryhprtrayscanslidelocation ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      ( !array_key_exists('scancode', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'scancode' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['scancode']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU DID NOT SPECIFY A STANDARD CHTNEastern STORAGE LOCATION CODE")) : "";        
+
+      if ( $errorInd === 0 ) { 
+          $locSQL = "SELECT btmlvl.scancode, trim(concat(if(ifnull(lvl3.locationnote,'')='','',concat(ifnull(lvl3.locationnote,''),' :: ')), if(ifnull(lvl2.locationnote,'')='','',concat(ifnull(lvl2.locationnote,''),' :: ')), if(ifnull(lvl1.locationnote,'')='','',concat(ifnull(lvl1.locationnote,''),' :: ')), if(ifnull(btmlvl.locationnote,'')='','',concat(ifnull(btmlvl.locationnote,''))))) as pathdsp, concat(ifnull(btmlvl.locationdsp,''), if(ifnull(btmlvl.typeolocation,'')='','',concat(' [',ifnull(btmlvl.typeolocation,''),']'))) thislocation FROM four.sys_inventoryLocations btmlvl left join (SELECT locationid, typeolocation, locationdsp, locationnote, parentid FROM four.sys_inventoryLocations where activelocation = 1) as lvl1 on btmlvl.parentid = lvl1.locationid left join (SELECT locationid, typeolocation, locationdsp, locationnote, parentid FROM four.sys_inventoryLocations where activelocation = 1) as lvl2 on lvl1.parentid = lvl2.locationid left join (SELECT locationid, typeolocation, locationdsp, locationnote, parentid FROM four.sys_inventoryLocations where activelocation = 1) as lvl3 on lvl2.parentid = lvl3.locationid left join (SELECT locationid, typeolocation, locationdsp, locationnote, parentid FROM four.sys_inventoryLocations where activelocation = 1) as lvl4 on lvl3.parentid = lvl4.locationid where ifnull(hierarchyBottomInd,0) = 1 and ifnull(hprtrayind,0) = 0 and ifnull(activelocation,0) = 1 and ifnull(physicalLocationInd,0) = 1 and scancode = :SLDLOCCODE and activelocation = 1";
+          $locRS = $conn->prepare($locSQL);
+          $locRS->execute(array(':SLDLOCCODE' => $pdta['scancode']  )); 
+          if ( $locRS->rowCount() <> 1 ) { 
+            $msgArr[] = "The Location Scan-Code ({$pdta['scancode']}) was not found - or is not a valid location";
+          } else { 
+            $dta[] = $locRS->fetch(PDO::FETCH_ASSOC);
+            $responseCode = 200;                
+          }
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    } 
     
     function invtrysegmentstatuser ( $request, $passdata ) { 
       $rows = array(); 
@@ -1287,6 +1388,88 @@ EMAILBODY;
       return $rows;     
     }
 
+    function invtryremoveslidehprtray ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS FURTHER ACTION LOG FILES.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      //TODO:  DO DATA STRUCTURE TESTS
+
+      //{\"scancode\":\"89147T002\",\"newloccode\":\"SSCO001\",\"hprtrayid\":\"HPRT011\"}
+      ( !array_key_exists('scancode', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'labeltext' DOES NOT EXIST.")) : ""; 
+      ( trim($pdta['scancode']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'Biosample Label' cannot be blank")) : "";        
+
+      if ( $errorInd === 0 ) { 
+
+          //BACK-UP SCAN HISTORY
+          $inventoryHistSQL = "insert into masterrecord.history_procure_segment_inventory (segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) select segmentid, bgs, scannedlocation, scanloccode, scannedstatus, scannedby, scanneddate, now(), :usr from masterrecord.ut_procure_segment where replace(bgs,'_','') = :sd";
+          $inventoryHistRS = $conn->prepare($inventoryHistSQL); 
+          $inventoryHistRS->execute(array(':usr' => $u['usr'],':sd' => str_replace("_","", $pdta['scancode'] )));
+            
+          $bckSegStsSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby, newstatus) select segmentid, segstatus, statusBy, statusDate, now(), :usr, :newstatus from  masterrecord.ut_procure_segment where replace(bgs,'_','') = :sd";
+          $bckSegStsRS = $conn->prepare($bckSegStsSQL); 
+          $bckSegStsRS->execute ( array( ':sd' => str_replace("_","", $pdta['scancode'] ), ':usr' => $u['usr'],':newstatus' => 'PERMCOLLECT' ));
+
+          $invSQL = "SELECT ucase(concat(ifnull(lvl4.locationnote,''),' :: ', ifnull(lvl3.locationnote,''),' :: ', ifnull(lvl2.locationnote,''),' :: ', ifnull(lvl1.locationnote,''))) as humanReadLoc FROM four.sys_inventoryLocations lvl1 left join (SELECT * FROM four.sys_inventoryLocations) lvl2 on lvl1.parentid = lvl2.locationid left join (SELECT * FROM four.sys_inventoryLocations) lvl3 on lvl2.parentid = lvl3.locationid left join (SELECT * FROM four.sys_inventoryLocations) lvl4 on lvl3.parentid = lvl4.locationid where lvl1.scancode = :scancode";
+          $invRS = $conn->prepare( $invSQL );
+          $invRS->execute( array(':scancode' => $pdta['newloccode'] ));
+          $inv = $invRS->fetch(PDO::FETCH_ASSOC);
+          //$dta = $inv['humanReadLoc'];
+
+          $segUpdSQL = "update masterrecord.ut_procure_segment set scannedLocation = :humanreadable, scanloccode = :scanloc, scannedStatus = 'SLIDE-REMOVED-FROM-HPR-TRAY', scannedBy = :usrscan, scannedDate = now(), tohpr = 0 , HPRBoxNbr = '', segstatus = 'PERMCOLLECT', statusDate = now(), statusby = :usrstat  where replace(bgs,'_','') = :bgs";
+          $segUpdRS = $conn->prepare( $segUpdSQL );
+          $segUpdRS->execute ( array( ':humanreadable' => $inv['humanReadLoc'], ':scanloc' => $pdta['newloccode'], ':usrscan' => $u['usr'], ':usrstat' => $u['usrscan'], ':bgs' => str_replace("_","",$pdta['scancode'])));
+
+          $trayChkSQL = "SELECT count(1) ttlinTray FROM masterrecord.ut_procure_segment where scanloccode = :trayid";
+          $trayChkRS = $conn->prepare( $trayChkSQL );
+          $trayChkRS->execute( array( ':trayid' => $pdta['hprtrayid'] ));
+          $trayChk = $trayChkRS->fetch(PDO::FETCH_ASSOC);
+
+          //TODO:  IF BIOGROUP IS STILL SUBMITTED TO HPR REMOVE SUBMITTED MARK
+
+
+
+
+
+          if ( (int)$trayChk['ttlinTray'] === 0 ) { 
+            //RESET TRAY
+            $hprHistSQL = "insert into masterrecord.history_hpr_tray_status ( trayscancode, historyby, historyon ) values( :trayscancode, 'HPR-TRAY-EMPTIED-RETURNED',now())"; 
+            $hprHistRS = $conn->prepare( $hprHistSQL ); 
+            $hprHistRS->execute ( array (':trayscancode' => $pdta['hprtrayid'] ));
+            $invUpdSQL = "update four.sys_inventoryLocations set hprtraystatus = 'NOTUSED', hprtrayheldwithin = '', hprtrayheldwithinnote = '', hprtrayreasonnotcomplete = '', hprtrayreasonnotcompletenote = '', hprtraystatusby = :usr, hprtraystatuson = now() where scancode = :hprtray";
+            $invUpdRS = $conn->prepare( $invUpdSQL ); 
+            $invUpdRS->execute( array( ':usr' => $u['usr'], ':hprtray' => $pdta['hprtrayid'] )); 
+
+          } 
+          $itemsfound = (int)$trayChk['ttlinTray'];
+          $dta = $pdta['scancode'];
+          $responseCode = 200;
+      } 
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    } 
+
+
+
     function invtryhprtrayscanpreprocess ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -1313,13 +1496,28 @@ EMAILBODY;
       ( trim($pdta['scancode']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'Biosample Label' cannot be blank")) : "";        
 
       if ( $errorInd === 0 ) { 
-        
 
+         //$trySQL = "SELECT ifnull(scancode,'') as locscancode, ifnull(typeOLocation,'') as typeOfLocation, ifnull(locationnote,'') as locationDisplay, ifnull(hprsts.dspvalue,'') as traystatus, ifnull(hprsts.assignablestatus,0) as assignablestatus, ifnull(hprtrayheldwithin,'') as heldwithin, ifnull(hprtrayreasonnotcomplete,'') as reasonnotcomplete, ifnull(hprtrayreasonnotcompletenote,'') as notcompletenote, ifnull(hprtraystatusby,'') as traystatusby, ifnull(date_format(hprtraystatuson,'%m/%d/%Y %H:%i'),'') as traystatuson FROM four.sys_inventoryLocations il left join (SELECT dspvalue as menuvalue, longvalue as dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'HPRTrayStatus') as hprsts on il.hprtraystatus = hprsts.menuvalue where scancode = :hprtrayid and activelocation = 1 and hprtrayInd = 1";
+          $trySQL = "SELECT ifnull(il.scancode,'') as locscancode, ifnull(il.typeOLocation,'') as typeOfLocation, ifnull(il.locationnote,'') as locationDisplay, ifnull(hprsts.dspvalue,'') as traystatus, ifnull(hprsts.assignablestatus,0) as assignablestatus, ifnull(rtnloc.locationdsp,'') as heldwithin, ifnull(il.hprtrayheldwithinnote,'') as heldnote, ifnull(rsncmp.dspvalue,'') as reasonnotcomplete, ifnull(il.hprtrayreasonnotcompletenote,'') as notcompletenote, ifnull(il.hprtraystatusby,'') as traystatusby, ifnull(date_format(il.hprtraystatuson,'%m/%d/%Y %H:%i'),'') as traystatuson FROM four.sys_inventoryLocations il left join (SELECT dspvalue as menuvalue, longvalue as dspvalue, assignablestatus FROM four.sys_master_menus where menu = 'HPRTrayStatus') as hprsts on il.hprtraystatus = hprsts.menuvalue left join (SELECT scancode, locationdsp FROM four.sys_inventoryLocations where typeOLocation = 'HPRRTNPROCESS') as rtnloc on il.hprtrayheldwithin = rtnloc.scancode left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRRTNINCOMPLETEREASON') as rsncmp on il.hprtrayreasonnotcomplete = rsncmp.menuvalue  where il.scancode = :hprtrayid and il.activelocation = 1 and il.hprtrayInd = 1  " ;
+          $tryRS = $conn->prepare($trySQL); 
+          $tryRS->execute(array(':hprtrayid' => trim($pdta['scancode'])));
+          if ( (int)$tryRS->rowCount() === 1 ) {
+            $tray = $tryRS->fetch(PDO::FETCH_ASSOC);
 
-
-
-
-        //$responseCode = 200;
+            $sldSQL = "SELECT replace(bgs,'_','') as bgs, ifnull(prepmethod,'') as prepmethod, ifnull(preparation,'') as preparation, ifnull(sgsts.longvalue,'') dspstatus, ifnull(sgsts.assignablestatus,0) as assignablestatus, ifnull(bs.tisstype,'') as specimencategory, ifnull(bs.anatomicsite,'') as site, ifnull(bs.diagnosis,'') as dx, ifnull(bs.subdiagnos,'') as sdx FROM masterrecord.ut_procure_segment sg left join (SELECT menuvalue, longvalue, assignablestatus FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') as sgsts on sg.segstatus = sgsts.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample where scanloccode = :scancode";
+            $sldRS = $conn->prepare($sldSQL); 
+            $sldRS->execute(array(':scancode' => trim($pdta['scancode']))); 
+            $slides = array();
+            $itemsfound = $sldRS->rowCount();
+            while ($s = $sldRS->fetch(PDO::FETCH_ASSOC)) { 
+              $slides[] = $s;
+            }
+            $tray['slides'] = $slides;
+            $dta = $tray;
+            $responseCode = 200;
+          } else {
+            (list( $errorInd, $msgArr[] ) = array(1 , "'{$pdta['scancode']}' IS NOT FOUND!"));
+          }
       }
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
@@ -3032,18 +3230,19 @@ PRISTINESQL;
         $chkRS->execute(array(':trayscancode' => $pdta['rtnTrayId']));
         if ( $chkRS->rowCount() < 1 ) { 
           //COMPLETED TRAY
-          $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = 'REVIEWCOMPLETE', hprtraystatusby = :usr, hprtrayheldwithin = :heldwith, hprtrayheldwithinnote = :heldwithinnote, hprtraystatuson = now() where scancode = :scncode";
+          $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = :hprtstatus, hprtraystatusby = :usr, hprtrayheldwithin = :heldwith, hprtrayheldwithinnote = :heldwithinnote, hprtraystatuson = now() where scancode = :scncode";
           $traySTSRS = $conn->prepare($traySTSSQL);
-          $traySTSRS->execute(array(':usr' => $u['usr'], ':scncode' => $pdta['rtnTrayId'], ':heldwith' => $pdta['locationscancode'], ':heldwithinnote' => trim($pdta['returnlocationnote'])   )); 
+          $traySTSRS->execute(array(':usr' => $u['usr'],':hprtstatus' => 'REVIEWCOMPLETE',':scncode' => $pdta['rtnTrayId'], ':heldwith' => $pdta['locationscancode'], ':heldwithinnote' => trim($pdta['returnlocationnote'])   )); 
           $tryHisSQL = "insert into masterrecord.history_hpr_tray_status (trayscancode, tray, traystatus, historyon, historyby, trayheldwithin, trayheldwithinnote) values(:trayscancode, :tray, :traystatus, now(), :historyby, :trayheldwithin, :trayheldwithinnote)";
           $tryHisRS = $conn->prepare($tryHisSQL);
           $tryHisRS->execute(array(':trayscancode' => $pdta['rtnTrayId'], ':tray' => $pdta['rtnTrayId'], ':traystatus' => 'REVIEWCOMPLETE', ':historyby' => $u['usr'], ':trayheldwithin' =>  $pdta['locationscancode'], ':trayheldwithinnote' => trim($pdta['returnlocationnote'])));
           $responseCode = 200;
         } else { 
             //PARTIAL TRAY
-          $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = 'PARTIALCOMPLETE', hprtraystatusby = :usr, hprtrayheldwithin = :heldwith, hprtrayheldwithinnote = :heldwithinnote, hprtrayreasonnotcomplete = :reasonnotcomplete, hprtrayreasonnotcompletenote = :reasonnotcompletenote  where scancode = :scncode";
+          $traySTSSQL = "update four.sys_inventoryLocations set hprtraystatus = :hprtstatus, hprtraystatusby = :usr, hprtrayheldwithin = :heldwith, hprtrayheldwithinnote = :heldwithinnote, hprtrayreasonnotcomplete = :reasonnotcomplete, hprtrayreasonnotcompletenote = :reasonnotcompletenote  where scancode = :scncode";
           $traySTSRS = $conn->prepare($traySTSSQL);
           $traySTSRS->execute(array(':usr' => $u['usr']
+                                  , ':hprtstatus' => 'PARTIALCOMPLETE'
                                   , ':scncode' => $pdta['rtnTrayId'] 
                                   , ':heldwith' => $pdta['locationscancode']
                                   , ':heldwithinnote' => trim($pdta['returnlocationnote'])
@@ -10388,6 +10587,56 @@ class systemposts {
     return $rows;      
   }
 
+  function requestpasswordreset ( $request, $passedData ) { 
+    $responseCode = 200; 
+    $params = json_decode($passedData, true);
+    $rquester = $params['rqstuser']; 
+    if (trim($rquester) !== "") {
+      require(serverkeys . "/sspdo.zck"); 
+      $chkSQL = "SELECT userid, displayname FROM four.sys_userbase where allowind = 1 and emailaddress = :useremail";
+      $chkR = $conn->prepare($chkSQL);
+      $chkR->execute(array(':useremail' => $rquester));
+      if ($chkR->rowCount() > 0) { 
+     
+         $u = $chkR->fetch(PDO::FETCH_ASSOC);
+
+         $backupSQL = "insert into four.sys_userbase_history (userid,failedlogins,friendlyName,lastname,emailAddress,fiveonepword,zackOnly,changePWordInd,originalAccountName,informaticsInd,freshNotificationInd,allowInd,allowWeeklyUpdate,allowlinux,pxipassword,pxipasswordexpire,pxiguidident,pxisessionexpire,allowProc,allowCoord,allowHPR,allowQMS,allowHPRInquirer,allowHPRReview,allowInvtry,allowfinancials,sessionid,presentinstitution,sessionExpire,ssv5guid,sessionNeverExpires,userName,displayName,dspjobtitle,primaryFunction,primaryInstCode,passwordExpireDate,pwordResetCode,pwordResetExpire,altinfochangecode,altinfochangecodeexpire,inputOn,inputBy,accessLevel,accessNbr,lastUpdatedOn,lastUpdatedBy,logCardId,inventorypinkey,logCardExpDte,dspAlternateInDir,dspindirectory,dsporderindirectory,sex,profilePicURL,profilePhone,profileAltEmail,dlExpireDate,altPhone,altPhoneType,altPhoneCellCarrier,cellcarriercode,historyon,historyby)  SELECT *, now() as historyinputon, :userupdater as historyby FROM four.sys_userbase where emailaddress = :emladd";
+         $backupRS = $conn->prepare($backupSQL);
+         $backupRS->execute( array(':emladd' => $rquester, ':userupdater' => "{$rquester} (LOGIN SCREEN [EMAIL RESET])"   ));
+
+         $randomBytes = strtoupper(generateRandomString(9));
+         $options = [ 'cost' => 12, ];        
+         $pword =  password_hash($randomBytes, PASSWORD_BCRYPT, $options);
+         $updSQL = "update four.sys_userbase set fiveonepword = :fiveonepword, allowind = 1, passwordexpiredate = date_add(now(), INTERVAL 2 day), lastupdatedon = now(), lastupdatedby = :thisadmin where emailaddress = :emailaddress";
+         $updRS = $conn->prepare( $updSQL );
+         $updRS->execute ( array ( ':fiveonepword' => $pword, ':thisadmin' => "{$rquester} (PWORD RESET)", ':emailaddress' => $rquester ));
+
+         $sndMsg = <<<EMAILBODY
+<table border>
+<tr><td><h2>ScienceServer Password Reset Email</h2></td></tr>
+<tr><td>Dear {$u['displayname']}, <p>You or a system administrator has requested a password reset for access to ScienceServer at CHTNEast.  The following password {$randomBytes} will be valid for 2 days.  Please log into the system and use the 'Manage Access' Utility under the User Profile Sidebar.  <p>Thanks, <br>ScienceServer</td></tr>
+</table> 
+EMAILBODY;
+         $usrinput = 'ADMIN-PASSWORD-RESET (' . $u['displayname'] . ")";
+
+//          $eText = "The following password: {$randomBytes} is valid for 2 days.  Once logged into ScienceServer, go to the 'Manage Access' utility under the User Profile Sidebar to change the password to something more permanent.";
+          $emaillist[] = "zacheryv@mail.med.upenn.edu";
+          $emaillist[] = $params['rquester'];
+          $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgBody, htmlind, wheninput, bywho) value(:towhoaddressarray, 'CHTNEastern ScienceServer PWord Reset', :msgBody, 1, now(), 'PWORD RESET EMAILER')";
+          $emlRS = $conn->prepare( $emlSQL );
+          $emlRS->execute(array ( ':towhoaddressarray' => json_encode( $emaillist ), ':msgBody' => "<table border=1><tr><td><CENTER>THE MESSAGE BELOW IS FROM THE SCIENCESERVER SYSTEM AT CHTNEAST.ORG ({$u['displayname']}) .  PLEASE DO NOT RESPONSED TO THIS EMAIL.  CONTACT THE CHTNEASTERN OFFICE DIRECTLY EITHER BY EMAIL chtnmail@uphs.upenn.edu OR BY CALLING (215) 662-4570.</td></tr><tr><td>{$sndMsg}</td></tr></table>"));
+
+      }
+
+    } else {
+      $responseCode = 503;
+      $msg = "YOU MUST SUPPLY AN EMAIL USERNAME";
+    }
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => $dta);
+    return $rows;      
+  }
+
   function requestdualcode($request, $passedData) { 
     $responseCode = 200; 
     $params = json_decode($passedData, true);
@@ -10414,12 +10663,17 @@ class systemposts {
          $capID = $conn->lastInsertId();
          $authCode = "{$randomString}"; 
          $rqstr = $chkR->fetch(PDO::FETCH_ASSOC);
-         if (trim($rqstr['altphonecellcarrier']) !== "") { 
-             $emlTo = $rqstr['altphonecellcarrier'];
+         if (trim($rqstr['altphonecellcarrier']) !== "") {
+             $emlToArr[] = $rqstr['altphonecellcarrier']; 
+             $emlToArr[] = $rqstr['emailaddress']; 
+             //$emlTo = $rqstr['altphonecellcarrier'];
          } else { 
-             $emlTo = $rqstr['emailaddress'];
+             $emlToArr[] = $rqstr['emailaddress'];
          }
-         $rtn = sendSSCodeEmail( $emlTo, $authCode );
+
+         foreach ( $emlToArr as $v ) {
+            $rtn = sendSSCodeEmail( $v, $authCode );
+         } 
          $msg = session_id();
       }
 
@@ -10428,7 +10682,7 @@ class systemposts {
       $msg = "YOU MUST SUPPLY AN EMAIL USERNAME";
     }
     $rows['statusCode'] = $responseCode; 
-    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => "");
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => 0,  'DATA' => $dta);
     return $rows;      
   }  
     
@@ -10863,7 +11117,6 @@ function bldDialogGetter($whichdialog, $passedData) {
 function createBGPXI( $bgNbr, $bg ) { 
   require(serverkeys . "/sspdo.zck");
   //GET ORSchedId, ProcedureDate, Institution from Schedule
-
   $orsql = "SELECT orlistid, ifnull(orkey,'') as orkey FROM four.tmp_ORListing where date_format(listdate,'%Y-%m-%d') = :proceduredate and location = :givenlocation and pxicode = :pxicode";
   $orrs = $conn->prepare($orsql); 
   $orrs->execute(array(':proceduredate' => $bg['PRCProcedureDateValue'], ':givenlocation' => $bg['PRCProcedureInstitutionValue'], ':pxicode' => $bg['PRCPXIId'])); 
@@ -10888,7 +11141,7 @@ function createBGPXI( $bgNbr, $bg ) {
 
   $cxvalsql = "SELECT menuvalue FROM four.sys_master_menus where menu = 'CX' and dspValue = :value";
   $cxv = $conn->prepare($cxvalsql);
-  $cxv->execute(array(':value' => $bg['PRCPXICX'])); 
+  $cxv->execute(array(':value' => $bg['PRCPXIDspCX'])); 
   if ($cxv->rowCount() === 0) { 
     $cx = 2; 
   } else { 
@@ -10898,7 +11151,7 @@ function createBGPXI( $bgNbr, $bg ) {
 
   $rxvalsql = "SELECT menuvalue FROM four.sys_master_menus where menu = 'RX' and dspValue = :value";
   $rxv = $conn->prepare($rxvalsql);
-  $rxv->execute(array(':value' => $bg['PRCPXIRX'])); 
+  $rxv->execute(array(':value' => $bg['PRCPXIDspRX'])); 
   if ($rxv->rowCount() === 0) { 
     $rx = 2; 
   } else { 

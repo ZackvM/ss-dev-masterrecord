@@ -2144,7 +2144,8 @@ select bs.pbiosample
       , substr(ifnull(mnupr.dspvalue,''),1,1) as pathologyrptind
       , ifnull(bs.pathreportid,0) as pathologyrptdocid 
       , substr(ifnull(mnuinfc.dspvalue,''),1,1) as informedconsentind
-      , substr(ifnull(mnuch.dspvalue,''),1,1) as chartindicator       
+      , substr(ifnull(mnuch.dspvalue,'N'),1,1) as chartindicator       
+      , ifnull(bs.crtxtv1id,0) as charttextdocid       
       , ifnull(bs.associd,'') as associd
       , ifnull(bs.biosamplecomment,'') as bscomment
       , ifnull(bs.questionhpr,'') as hprquestion

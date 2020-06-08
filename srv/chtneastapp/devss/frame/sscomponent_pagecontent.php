@@ -112,7 +112,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         break;
       case 'trayreturndialog': 
         $pdta = json_decode($passedData, true);          
-        $titleBar = "HPR Unusuable Biosample";
+        $titleBar = "HPR Slide Tray Return";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";              
         $innerDialog = bldHPRReturnTray ( $pdta['dialogid'], $passedData );
@@ -356,6 +356,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $innerDialog = bldQuickEditDonor( $passedData );
         break;
       case 'dataCoordinatorHPROverride':
+        //HPR TRAY   
         if ( count($passedData) > 0 ) {   
           $biogroupTbl = "<form id=frmQMSSubmitter><table border=0><tr><td valign=top rowspan=2><table border=0 id=qmsSldListTbl><thead><tr><th></th><th>Biogroup</th><th>Designation</th><th>Path-Rpt</th><th>QMS Conclusion</th><th>Present Status</th><th>New Status</th><th>Slide Submitted</th></tr></thead><tbody>";
           $submittalCnt = 0;
@@ -1557,16 +1558,26 @@ function bldInventoryProcessHPRTray() {
     $pageContent = <<<PAGECONTENT
 <div id=inventoryCheckinElementHoldr>
   <div id=locationscan>
-  <input type=hidden id=locscancode>
   <div class=scanfieldlabel>1) Scan HPR Slide-tray location label</div>
-  <div id=locscandsp_hprt></div>
+  <div id=locscandsp_hprt> 
+
+        <div class=telemhold><div class=tDataLabel>HPR Tray</div><div class=tData id=tlocdisplay>&nbsp;</div></div>
+        <div class=telemhold><div class=tDataLabel>Tray Status</div><div class=tData id=tstatus>&nbsp;</div></div>
+        <div class=telemhold><div class=tDataLabel>Location</div><div class=tData id=tlocation>&nbsp;</div></div>
+        <div class=telemhold><div class=tDataLabel>Review Note (if applicable)</div><div class=tData id=treview>&nbsp;</div></div>
+
+        <div id=telemholda>   </div>
+
+        <div id=putawaylocation><div id=scanAnnounce>2) Scan location where placing slides ...</div><div id=locationplace>    </div></div>
+
+  </div>
   </div>
   <div id=itemCountDsp>&nbsp;</div>
-  <div id=labelscan>
-    <div id=labelscanholderdiv></div>
+  <div id=labelscan class=scanfieldlabel>3) Scan each slide 'out' of the tray: 
+    <div id=hprlabelscanholderdiv>  </div>
   </div>
   <div id=ctlButtons><center> 
-   <table><tr><td> <div class=iControlBtn id=ctlBtnHPRTrayCommit><center>Submit</div> </td><td>  <div class=iControlBtn id=ctlBtnCheckCancel><center>Cancel</div> </td></tr></table>
+   <table><tr><td> <div class=iControlBtn id=ctlBtnHPRTrayCommit style="display: none;"><center>Submit</div> </td><td>  <div class=iControlBtn id=ctlBtnCheckCancel><center>Clear</div> </td></tr></table>
    </div>
 </div>
 PAGECONTENT;
@@ -2414,15 +2425,21 @@ PRPTNOTATION;
     }
  
 $bgdbl = cryptservice( $val['pbiosample'], 'e');
+
+$chtrvw = substr(( '000000' . (int)$val['charttextdocid'] ),-6);
+$echtrvw = ( (int)$val['charttextdocid'] <> 0 ) ? cryptservice ( substr(( '000000' . (int)$val['charttextdocid'] ),-6), 'e') : "";
+$chtprntline = ( (int)$val['charttextdocid'] <> 0 ) ? "<div class=quickLink onclick=\"printChartReview( event, '{$echtrvw}');\"   ><i class=\"material-icons qlSmallIcon\">print</i> Print Chart Review (#{$chtrvw})</div>" : "";
+
 $chart = <<<CHRTICON
 <div class=ttholder>        
-{$val['chartindicator']}
-<div class=tt>
-<div class=quickLink onclick="generateDialog('chartbldr','{$bgdbl}');"><i class="material-icons qlSmallIcon">file_copy</i> Build Chart (Biogroup: {$dspBG})</div>
-   </div>
+  {$val['chartindicator']}
+  <div class=tt>
+    <div class=quickLink onclick="generateDialog('chartbldr','{$bgdbl}');"><i class="material-icons qlSmallIcon">file_copy</i> Chart Review Dialog</div>
+    {$chtprntline}
+  </div>
 </div>
 CHRTICON;
-    
+
 $rqstvw = (  substr(strtoupper($val['tqrequestnbr']),0,3) === "REQ" ) ? "<div class=ttholder>{$val['tqrequestnbr']}<div class=\"tt righttt\" onclick=\"generateDialog('irequestdisplay','" . cryptservice($val['tqrequestnbr']) . "');\">View Request</div></div>" : "{$val['tqrequestnbr']}";    
     
     
@@ -2782,8 +2799,16 @@ if(!isset($_COOKIE['ssv7auth'])) {
     $authExpire = " will expire on " .date( 'h:iA', strtotime($authCodeAsset['expirydate']));
 }
 
-$addLine = "<tr><td class=label>Dual-Authentication Code <span id=dspAuthExpiry>{$authExpire}</span>&nbsp;<span class=pseudoLink id=btnSndAuthCode>(Send Authentication Code)</span></td></tr><tr><td><input type=text id=ssDualCode value=\"{$authCode}\"></td></tr>";
-$controlBtn = "<table><tr><td class=adminBtn id=btnLoginCtl>Login</td></tr></table>";    
+
+//$addLine = "<tr><td class=label>Dual-Authentication Code <span id=dspAuthExpiry>{$authExpire}</span>&nbsp;<span class=pseudoLink id=btnSndAuthCode>(Send Authentication Code)</span></td></tr><tr><td><input type=text id=ssDualCode value=\"{$authCode}\"></td></tr>";
+$addLine = "<div class=elementHolder><div class=elementLabel>Dual-Authentication Code <span id=dspAuthExpiry>{$authExpire}</span></div><div class=element><input type=text id=ssDualCode value=\"{$authCode}\"></div></div>";
+//$controlBtn = "<table><tr><td class=adminBtn id=btnLoginCtl>Login</td></tr></table>";    
+$controlBtn = <<<CONTROLBTNS
+<div><table id=btnForgotEmail><tr><td class=adminBtn>Forgot Password</td></tr></table></div>
+<div align=right><table width=100% id=btnSndAuthCode><tr><td class=adminBtn><center>Auth Code</td></tr></table></div>
+<div align=right><table width=100%><tr><td class=adminBtn id=btnLoginCtl><center>Login</td></tr></table></div>
+CONTROLBTNS;
+
 $ssversion = scienceserverTagVersion;
 
 
@@ -2792,21 +2817,17 @@ $rtnThis = <<<PAGECONTENT
 <div id=loginHolder>        
 <div id=loginDialogHead>ScienceServer2018 &amp; Investigator Services Login </div>
 <div id=loginGrid>
-<table border=0 cellspacing=0 cellpadding=0 width=100%>
-<tr><td class=label>Email (as User-Id)</td></tr>
-<tr><td><input type=text id=ssUser></td></tr>    
-<tr><td class=label>Password</td></tr>
-<tr><td><input type=password id=ssPswd></td></tr>   
-{$addLine}
-<tr><td align=right>{$controlBtn}</td></tr>
-<tr><td><center> <span class=pseudoLink id=forgetLink>Forgot Password</span> </td></tr>    
-</table>        
+  <div class=elementHolder><div class=elementLabel>User Id (Email Address)</div><div class=element><input type=text id=ssUser></div></div>
+  <div class=elementHolder><div class=elementLabel>Password</div><div class=element><input type=password id=ssPswd></div></div>
+  {$addLine}
+  <div id=elementHolderBTNs >{$controlBtn}</div>
 </div>
 <div id=loginFooter><b>Disclaimer</b>: This is the Specimen Management Data Application (SMDA) for the Eastern Division of the Cooperative Human Tissue Network.  It provides access to collection data by employees, remote site contracts and investigators of the CHTNEastern Division.   You must have a valid username and password to access this system.  If you need credentials for this application, please contact a CHTNED Manager.  Unauthorized activity is tracked and reported! To contact the offices of CHTNED, please call (215) 662-4570 or email chtnmail /at/ uphs.upenn.edu</div>
 <div id=loginvnbr>(SMDA Version: {$ssversion} [ScienceServer])</div>    
 </div>
 
 PAGECONTENT;
+
 return $rtnThis;        
 }
 
@@ -5017,22 +5038,104 @@ function bldChartReviewBuilder ( $dialog, $passedData ) {
     $pdta = json_decode($passedData, true);
     $pbiosample = cryptservice($pdta['objid'], 'd');
     ///CHECK WHETHER THERE IS A CHART FOR THIS BIOGROUP, OTHER BIOGROUPS IN THIS INT-DOUBLE, BY ASSOC GROUP 
-    //(NOT PATIENT!!! AS PER DEE - THINK BMI ACROSS YEARS) 
-    
-    
-    
-    
-    
-    
-    
-    $dspPage = "THIS BIOGROUP: {$pbiosample}"; 
-    
-  $rtnPage = <<<RTNPAGE
+
+    /*
+     * 1) Check BG for CRID
+     * 2) Check assoc to make sure that all assoc have same crid
+     * 3) v1 iteration - do by pbiosample - but this might need to be changed to the readlabel with a 'like' comparison if not all biogroups come up
+     *    select pbiosample, read_label, ifnull(associd,'') as associd, ifnull(chartind,0) as chartind, ifnull(crtxtv1id,0) as crtxtv1id, ifnull(pxirace,'') as pxirace, ifnull(pxigender,'') as pxisex, ifnull(pxiage,0) as pxiage from masterrecord.ut_procure_biosample bs where pbiosample = 87106
+     *    - OR -
+     *    select pbiosample, read_label, ifnull(associd,'') as associd, ifnull(chartind,0) as chartind, ifnull(crtxtv1id,0) as crtxtv1id, ifnull(pxirace,'') as pxirace, ifnull(pxigender,'') as pxisex, ifnull(pxiage,0) as pxiage from masterrecord.ut_procure_biosample bs where replace(read_label,'_','') like '87106%'
+        //(NOT PATIENT!!! AS PER DEE - THINK BMI ACROSS YEARS) 
+     *
+     */
+
+     require(serverkeys . "/sspdo.zck");    
+     $chkSQL = "select pbiosample, read_label, ifnull(associd,'') as associd, ifnull(crtxtv1id,0) as crtxtv1id, ifnull(pxirace,'') as pxirace, ifnull(pxigender,'') as pxisex, ifnull(pxiage,0) as pxiage from masterrecord.ut_procure_biosample bs where pbiosample = :bggrp";
+     $chkRS = $conn->prepare($chkSQL);
+     $chkRS->execute( array( ':bggrp' => $pbiosample ));
+     if ( $chkRS->rowCount() === 1 ) {      
+         $mnCR = $chkRS->fetch(PDO::FETCH_ASSOC);
+         $mnAss = $mnCR['associd']; 
+         $mnCRId = $mnCR['crtxtv1id']; //IF = 0 then New
+         $echtrvw = ( (int)$mnCRId <> 0 ) ? cryptservice ( substr(( '000000' . (int)$mnCRId ),-6), 'e') : "000000";
+         $mnCRBGRead = $mnCR['read_label']; 
+         $mnCRRce = $mnCR['pxirace'];
+         $mnCRSex = $mnCR['pxisex'];
+         $mnCRAge = $mnCR['pxiage'];
+
+         $assSQL = "select pbiosample, replace(read_label,'_','') as readlabel from masterrecord.ut_procure_biosample bs where associd = :assoc"; 
+         $assRS = $conn->prepare($assSQL); 
+         $assRS->execute( array( ':assoc' => $mnAss )); 
+
+         $bgAssList = "";
+         while ( $a = $assRS->fetch(PDO::FETCH_ASSOC)) { 
+           $bgAssList .= ( trim($bgAssList) === "" ) ? $a['readlabel'] : ", {$a['readlabel']}"; 
+         } 
+         $crIDDsp = ( (int)$mnCRId === 0 ) ? "NEW CHART" : substr("000000{$mnCRId}",-6);
+
+         $crDocTxt = "";
+         if ( (int)$mnCRId !== 0 ) { 
+             //GET CRDoc
+           $docSQL = "SELECT * FROM masterrecord.cr_txt_v1 where chartreviewid = :crdocid"; 
+           $docRS = $conn->prepare($docSQL); 
+           $docRS->execute(array(':crdocid' => (int)$mnCRId ));
+           if ( $docRS->rowCount() < 1 ) { 
+             $crDocTxt = "ERROR:  CHART REVIEW IS MISSING!  SEE A CHTNEASTERN STAFF MEMBER";
+           } else { 
+             $cr = $docRS->fetch(PDO::FETCH_ASSOC); 
+             $crDocTxt = $cr['crtxt'];
+             //CAN ALSO DISPLAY $cr['bywhom'] and $cr['onwhen'] FOR LAST EDITORS
+           }
+         }
+
+
+    $rtnPage = <<<RTNPAGE
 <style>
-   
+
+#crinstructions { font-size: 1.4vh; padding: 1vh .5vw; width: 50vw; }    
+
+#crmetrics { display: grid; grid-template-columns: repeat( 5, 1fr); grid-gap: .2vw; margin: 1vh .5vw;   } 
+#crmetrics .metrichold { border: 1px solid #000; }
+#crmetrics .metrichold .metriclbl { background: #000; color: #fff; font-weight: bold; font-size: 1.3vh; padding: .2vh .2vw; }  
+#crmetrics .metrichold .metricdata { padding: .4vh .2vw; font-size: 1.5vh; }
+
+#crtext {  }
+#crtext .docLabel { margin: 1vh .5vw 0 .5vw; font-size: 1.3vh; font-weight: bold; }  
+#crtext #crtexteditor { width: 50vw; margin: .2vh .5vw 1vh .5vw; height: 40vh; border: 1px solid #000; box-sizing: border-box; font-family: Roboto; font-size: 1.3vh;  padding: .6vh .5vw .6vh .5vw; resize: none;   } 
+
+#bttnBarHolder { margin: 0 .5vw 1vh .5vw; } 
+#bttnBarHolder #bttnBar { width: 10vw; display: grid; grid-template-columns: repeat( 3, 1fr); grid-gap: .2vw; } 
+.crBtn { font-size: 1.2vh; border: 1px solid #000; text-align: center; padding: .5vh .2vw;  background: #fff; }
+.crBtn:hover { cursor: pointer; background: #ddd; }   
+
 </style>
-   {$dspPage}
+
+<input type=hidden id=fldCRId value={$mnCRId}>
+<input type=hidden id=fldCRBGRefd value='{$pbiosample}'>
+<input type=hidden id=fldCRAssoc value='{$mnAss}'>
+
+<div id=crinstructions>This is the chart review document editor. Chart Review Text will be attached to this biogroup ({$pbiosample}) and all associative PHI matches (See the 'Chart Applies' list below).  This should be a culminative document - Edit only as necessary. </div>
+<div id=crmetrics>  
+
+<div class=metrichold><div class=metriclbl>Donor Age</div><div class=metricdata>{$mnCRAge}</div></div>
+<div class=metrichold><div class=metriclbl>Donor Race</div><div class=metricdata>{$mnCRRce}</div></div>
+<div class=metrichold><div class=metriclbl>Donor Sex</div><div class=metricdata>{$mnCRSex}</div></div>
+<div class=metrichold><div class=metriclbl>Chart Applies</div><div class=metricdata>{$bgAssList}</div></div>
+<div class=metrichold><div class=metriclbl>Chart ID</div><div class=metricdata><span id=CRIdDsp>{$crIDDsp}</span></div></div>
+
+</div>
+<div id=crtext>
+<div class=docLabel>Document Editor</div>
+<textarea id=crtexteditor>{$crDocTxt}</textarea>
+</div>
+<div id=bttnBarHolder align=right> <div id=bttnBar> <div class=crBtn onclick="savechartreviewdocument();">Save</div><div class=crBtn onclick="printChartReview(event,'{$echtrvw}');">Print</div><div class=crBtn onclick="closeThisDialog('{$dialog}')";>Cancel</div></div></div>
 RTNPAGE;
+  } else { 
+    $rtnPage = <<<RTNPAGE
+<h1>ERROR:  See a CHTNEastern Informatics Person!</h1>
+RTNPAGE;
+  }
   return $rtnPage;  
 }
 
