@@ -1410,6 +1410,18 @@ PAGEHERE;
     return $rtnthis;
 }
 
+function inventorymanifest ( $rqststr, $whichusr ) { 
+    
+   
+    $pg = "<div id=IMMainPage>THIS IS THE INVENTORY MANIFEST ... ZACK WAS HERE </div>";
+    
+$rtnthis = <<<PAGEHERE
+{$topBtnBar} 
+{$pg}
+PAGEHERE;
+return $rtnthis;        
+}
+
 function procurebiosample($rqststr, $whichusr) { 
 
 if (trim($rqststr[2]) === "") { 

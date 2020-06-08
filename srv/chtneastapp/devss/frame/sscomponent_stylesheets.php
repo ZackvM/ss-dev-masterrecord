@@ -830,6 +830,17 @@ STYLESHEET;
 return $rtnThis;    
 }  
   
+function inventorymanifest ( $mobileind ) { 
+$rtnThis = <<<STYLESHEET
+  body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.5vh; } 
+  #IMMainPage { margin-top: 12vh; }  
+    
+    
+    
+STYLESHEET;
+return $rtnThis;    
+}
+
 function biogroupdefinition($mobileind) { 
 $rtnThis = <<<STYLESHEET
 body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.5vh; } 
