@@ -198,6 +198,9 @@ function modaldialogbuilder($whichpage) {
        case 'datacoordinator': 
            $thisModDialog = "<div id=standardModalDialog></div>";
        break;
+       case 'inventorymanifest':
+           $thisModDialog = "<div id=standardModalDialog></div>";
+       break;
        case 'scienceserverhelp':
            $thisModDialog = "<div id=standardModalDialog></div>";
        break;

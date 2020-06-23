@@ -8364,6 +8364,293 @@ MSGTXT;
      return $rows;                        
     } 
 
+   function displaymanifestdetails ( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( (int)checkPostingUser($authuser, $authpw) <> 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+
+     if ( $errorInd === 0 ) { 
+
+       ( !array_key_exists('manifest',$pdta) ) ? list ( $errorInd, $msgArr[] ) = array( 1, "ARRAY KEY 'manifest' DOES NOT EXIST") : "" ;
+
+       if ( $errorInd === 0 ) { 
+
+         $sql = "SELECT replace(sg.bgs,'_','') as bgs, concat(ifnull(sg.prepmethod,''),' / ',ifnull(sg.preparation,'')) as preparation, if(ifnull(sg.metric,'') = '','',concat(ifnull(sg.metric,''), uom.dspvalue)) as metric, ifnull(sg.shipDocRefID,'') as shipdocrefid, ifnull(date_format(sg.shippedDate,'%m/%d/%Y'),'') as shipdate, ifnull(sg.manifestnbr,'') as manifestnbr, sg.qty, sg.hourspost, if( (ifnull(sg.assignedto,'') = 'BANK' OR ifnull(sg.assignedto,'') = 'QC'), ifnull(sg.assignedto,''), concat( ifnull(sg.assignedto,''), ' / ', ifnull(sg.assignedreq,''))) as assignment, date_format(sg.procurementdate,'%m/%d/%Y') as sgProcDate, concat( pxiAge, '/',  substr(ifnull(bs.pxiRace,''),1,1) , '/', substr(bs.pxiGender,1,1) ) as ars, trim(concat(ifnull(bs.anatomicsite,''),' ', ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' (',ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.tisstype,'')='','',concat(' [',ifnull(bs.tisstype,''),']')))) as dxdesignation FROM masterrecord.ut_procure_segment sg LEFT JOIN masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample LEFT JOIN (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'metric') as uom on sg.metricuom = uom.menuvalue where manifestnbr = :manifestnbr order by sg.bgs";
+         $rs = $conn->prepare( $sql );
+         $rs->execute( array( ':manifestnbr' => (int)substr($pdta['manifest'],3) )); 
+         if ( $rs->rowCount() > 0 ) {
+           while ( $r = $rs->fetch(PDO::FETCH_ASSOC) ) { 
+             $dta[] = $r;  
+           }
+         } else {
+         }
+         $responseCode = 200;
+       }
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }    
+
+   function removemanifestdetails ( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( (int)checkPostingUser($authuser, $authpw) <> 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+
+     if ( $errorInd === 0 ) { 
+       $usrs = session_id(); 
+       $usrSQL = "SELECT originalAccountName as usr, presentinstitution as presInst FROM four.sys_userbase where sessionid = :usrs and allowInd = 1 and allowProc = 1 AND TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+       $usrRS = $conn->prepare( $usrSQL ); 
+       $usrRS->execute( array( ':usrs' => $usrs )); 
+     
+       ( $usrRS->rowCount() <> 1 ) ? list ( $errorInd, $msgArr[] ) = array( 1, "USER NOT ALLOWED") : "" ;        
+       ( !array_key_exists('manifest',$pdta) ) ? list ( $errorInd, $msgArr[] ) = array( 1, "ARRAY KEY 'manifest' DOES NOT EXIST") : "" ;
+       ( !array_key_exists('bgs',$pdta) ) ? list ( $errorInd, $msgArr[] ) = array( 1, "ARRAY KEY 'manifest' DOES NOT EXIST") : "" ;
+
+       if ( $errorInd === 0 ) { 
+         $u = $usrRS->fetch(PDO::FETCH_ASSOC);
+
+         //check manifest is open
+         $chkManiSQL = "SELECT * FROM masterrecord.ut_ship_manifest_head where manifestnbr = :manifestnbr and mstatus = 'OPEN'";
+         $chkManiRS = $conn->prepare ( $chkManiSQL );
+         $chkManiRS->execute( array( ':manifestnbr' => $pdta['manifest'] ));
+ 
+         ( $chkManiRS->rowCount() <> 1 ) ?  list ( $errorInd, $msgArr[] ) = array( 1, "Manifest is not open for editing") : "" ;
+    
+         if ( $errorInd === 0 ) {
+     
+           $removeSegSQL = "update masterrecord.ut_procure_segment set manifestnbr = null where replace(bgs,'_','') = :bgs";
+           $removeSegRS = $conn->prepare( $removeSegSQL ); 
+           $removeSegRS->execute( array( ':bgs' => $pdta['bgs'] ));
+   
+           $removeSegManSQL = "update masterrecord.ut_ship_manifest_segment set includeind = 0, addedon = now(), addedby = :usr where manifestnbr = :manifest and bgs = :bgs";
+           $removeSegManRS = $conn->prepare( $removeSegManSQL ); 
+           $removeSegManRS->execute( array( ':manifest' => $pdta['manifest'], ':bgs' => $pdta['bgs'], ':usr' => $u['usr'] . " [REMOVED]"      ));
+
+           $responseCode = 200;
+
+         }
+       }
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
+
+   function addtomanifest ( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( (int)checkPostingUser($authuser, $authpw) <> 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+
+     if ( $errorInd === 0 ) { 
+       $usrs = session_id(); 
+       $usrSQL = "SELECT originalAccountName as usr, presentinstitution as presInst FROM four.sys_userbase where sessionid = :usrs and allowInd = 1 and allowProc = 1 AND TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+       $usrRS = $conn->prepare( $usrSQL ); 
+       $usrRS->execute( array( ':usrs' => $usrs )); 
+     
+       ( $usrRS->rowCount() <> 1 ) ? list ( $errorInd, $msgArr[] ) = array( 1, "USER NOT ALLOWED") : "" ; 
+       
+       ( !array_key_exists('manifest',$pdta) ) ? list ( $errorInd, $msgArr[] ) = array( 1, "ARRAY KEY 'manifest' DOES NOT EXIST") : "" ;
+       ( !array_key_exists('itmlst',$pdta) ) ? list ( $errorInd, $msgArr[] ) = array( 1, "ARRAY KEY 'manifest' DOES NOT EXIST") : "" ;
+
+       if ( $errorInd === 0 ) { 
+         //{"itmlst":["89888T001","89888T002","89888T003","89888T004"],"manifest":"HU-000023"
+
+         $manSQL = "SELECT institutioncode, mstatus FROM masterrecord.ut_ship_manifest_head where manifestnbr = :manifestnbr and mstatus = 'OPEN'";
+         $manRS = $conn->prepare( $manSQL );
+         $manRS->execute( array( ':manifestnbr' => (int)substr($pdta['manifest'],3) ));
+
+         ( $manRS->rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Manifest Not Found or Manifest is not open for editing (" . $pdta['manifest'] . ")")) : "";
+         ( count( $pdta['itmlst'] ) < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "No Segments have been indicated to add to this manifest"))  : "";
+ 
+         if ( $errorInd === 0 ) { 
+
+           $man = $manRS->fetch(PDO::FETCH_ASSOC);
+           $bgsSQL = "SELECT segmentid, bgs, biosamplelabel FROM masterrecord.ut_procure_segment where replace( bgs , '_','') = :bgs and ifnull(shippedDate,'') = '' and ifnull(manifestnbr,'') = '' and ifnull(shipDocRefID,'') = '' and segstatus = 'ONOFFER' and procuredat = :institutioncode";
+           $bgsRS = $conn->prepare( $bgsSQL ); 
+           foreach ( $pdta['itmlst'] as $itm ) {
+             $bgsRS->execute( array( ':bgs' => $itm, ':institutioncode' => $man['institutioncode'] ));
+             ( $bgsRS->rowCount() < 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "{$itm} is not available for addition to the manifest (either due to status or because the segment is already on a ship-doc or manifest)."))  : "";    
+           }
+
+           if ( $errorInd === 0 ) { 
+
+               $u = $usrRS->fetch(PDO::FETCH_ASSOC);
+
+               $insManDetSQL = "insert into masterrecord.ut_ship_manifest_segment ( manifestnbr, segmentid, bgs, includeind, addedon, addedby ) value ( :manifestnbr, :segmentid, :bgs, 1, now(), :addedby )";
+               $insManDetRS = $conn->prepare ( $insManDetSQL );
+               $updSegSQL = "update masterrecord.ut_procure_segment set manifestnbr = :manifestnbr where replace( bgs , '_','') = :bgs and procuredat = :instcode ";
+               $updSegRS = $conn->prepare ( $updSegSQL ); 
+
+             foreach ( $pdta['itmlst'] as $itm ) {                
+               $bgsRS->execute( array( ':bgs' => $itm, ':institutioncode' => $man['institutioncode'] ));
+               $bgs = $bgsRS->fetch(PDO::FETCH_ASSOC);
+               $insManDetRS->execute( array( ':manifestnbr' => (int)substr($pdta['manifest'],3), ':segmentid' => $bgs['segmentid'], ':bgs' => $itm, ':addedby' => $u['usr'] ));
+               $updSegRS->execute( array(':manifestnbr' => (int)substr($pdta['manifest'],3), ':bgs' => $itm, ':instcode' => $man['institutioncode'] ));
+               //$msgArr[] = $itm . " :: " . $bgs['segmentid'] . " :: " . $bgs['biosamplelabel']     ;
+             }
+             
+             $responseCode = 200;
+
+           }
+         } 
+       }
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
+
+   function buildmanifestnew ( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( (int)checkPostingUser($authuser, $authpw) <> 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+
+     if ( $errorInd === 0 ) { 
+       $usrs = session_id(); 
+       $usrSQL = "SELECT originalAccountName as usr, presentinstitution as presInst FROM four.sys_userbase where sessionid = :usrs and allowInd = 1 and allowProc = 1 AND TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+       $usrRS = $conn->prepare( $usrSQL ); 
+       $usrRS->execute( array( ':usrs' => $usrs )); 
+     
+       ( $usrRS->rowCount() <> 1 ) ? list ( $errorInd, $msgArr[] ) = array( 1, "USER NOT ALLOWED") : "" ; 
+
+       if ( $errorInd === 0 ) { 
+         $u = $usrRS->fetch(PDO::FETCH_ASSOC);   
+         $insSQL = "insert into masterrecord.ut_ship_manifest_head ( prefix, mstatus, mstatusdate, manifestdate, createdBy, institutionCode) values ( :prefix, 'OPEN', now(), now(), :usr, :inst )";
+         $insRS = $conn->prepare( $insSQL ); 
+         $insRS->execute( array( ':prefix' => strtoupper(substr( $u['presInst'],0,2)), ':usr' => $u['usr'], ':inst' => $u['presInst'] ));
+         $manifest = strtoupper(substr( $u['presInst'],0,2)) . '-' . substr('000000' . $conn->lastInsertId(), -6);   
+         $dta['manifest'] = $manifest; 
+         $dta['user'] = $u['usr'] . '@' . $u['presInst'];
+         $dta['when'] = date('m/d/Y'); 
+         $responseCode = 200;
+       }
+     }
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
+
+   function buildmanifestrequestlist ( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( (int)checkPostingUser($authuser, $authpw) <> 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( !array_key_exists('institution', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ARRAY KEY 'INSTITUTION' IS MISSING")) : ""; 
+     ( !array_key_exists('startdate', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ARRAY KEY 'startdate' IS MISSING")) : ""; 
+     ( !array_key_exists('enddate', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ARRAY KEY 'enddate' IS MISSING")) : ""; 
+
+     if ( $errorInd === 0 ) { 
+         
+       ( trim($pdta['institution']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'INSTITUTION' IS A REQUIRED FIELD")) : "";
+       ( trim($pdta['startdate']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'START DATE' IS A REQUIRED FIELD")) : "";
+       ( trim($pdta['enddate']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'END DATE' IS A REQUIRED FIELD")) : "";
+ 
+       if ( $errorInd === 0 ) { 
+  
+           $iLookupSQL = "SELECT dspvalue FROM four.sys_master_menus where menu = :menu and menuvalue = :instcode"; 
+           $iLookup = $conn->prepare ( $iLookupSQL ); 
+           $iLookup->execute( array(':menu' => 'INSTITUTION', ':instcode' => $pdta['institution'] )); 
+           ( $iLookup->rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "'INSTITUTION' HAS A NON-ALLOWED VALUE!")) : "";
+
+           ( !ssValidateDate( $pdta['startdate'], 'm/d/Y') ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The 'Start Date' ({$pdta['startdate']}) is not a valid date value!")) : "";      
+           ( !ssValidateDate( $pdta['enddate'], 'm/d/Y') ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The 'Start Date' ({$pdta['startdate']}) is not a valid date value!")) : "";      
+
+           if ( $errorInd === 0 ) { 
+             //write to table 
+             $usrSQL = "SELECT displayname, originalaccountname, emailaddress FROM four.sys_userbase where sessionid = :sess AND TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+             $usrRS = $conn->prepare($usrSQL); 
+             $usrRS->execute(array(':sess' => $authuser)); 
+
+             if ($usrRS->rowCount() === 1) { 
+               $usr = $usrRS->fetch(PDO::FETCH_ASSOC); 
+               $oAccount = "{$usr['displayname']} ({$usr['originalaccountname']})";
+               $eAccount = "{$usr['emailaddress']}";
+             } else { 
+               ( $usrRS->rowCount() !== 1 ) ?  (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT LISTED OR HAS AN EXPIRED PASSWORD.")) : "";
+             }    
+    
+             if ( $errorInd === 0 ) { 
+               $objid = strtolower( generateRandomString() );
+               $insSQL = "insert into four.objsrchdocument (objid, bywho, onwhen, srchterm, doctype) value (:objid,:whoby,now(),:srchtrm,:doctype)";
+               $insR = $conn->prepare($insSQL);
+               $insR->execute(array(':objid' => $objid, ':whoby' => $eAccount, ':srchtrm' => $passdata, ':doctype' => 'INTERNAL-MANIFEST-REQUEST-QUERY'    ));
+               $dta['searchid'] = $objid;
+               $responseCode = 200;
+             }
+           }
+       }
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   } 
+
    function submithelpsearch( $request, $passdata ) { 
      $rows = array(); 
      $dta = array(); 

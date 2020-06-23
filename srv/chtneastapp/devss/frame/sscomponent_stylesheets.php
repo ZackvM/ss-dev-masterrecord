@@ -832,11 +832,43 @@ return $rtnThis;
   
 function inventorymanifest ( $mobileind ) { 
 $rtnThis = <<<STYLESHEET
-  body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.5vh; } 
-  #IMMainPage { margin-top: 12vh; }  
-    
-    
-    
+  body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2vw; font-size: 1.5vh; }  
+  #qryDivLineHolder { display: grid; grid-template-columns: 18vw 18vw 18vw 3vw 10vw 10vw; grid-gap: .2vw; }
+  .dataElementHold {  }  
+  #bsqueryToDate { font-size: 1.3vh; }  
+  #bsqueryFromDate { font-size: 1.3vh;     } 
+  #presentInst { width: 18vw; }
+  #fldManifestNbr { width: 10vw; font-size: 1.3vh; } 
+
+  #dspWorkArea { margin-top: 1vh; display: grid; grid-template-columns: 2fr 1fr; grid-gap: .2vw; }
+
+  #dspWorkArea #onOfferGrid { border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; height: 78vh; overflow: hidden; }
+  #dspWorkArea #onOfferGrid #queryParaLine { display: grid; grid-template-columns: repeat( 3, 1fr ); background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 1.3vh; padding: .4vh .2vw .2vh .2vw; }
+  #dspWorkArea #onOfferGrid #queryParaLine .dataElementHolder .dataElementLabel { font-size: 1vh; font-weight: bold;  }
+
+  #dspWorkArea #onOfferGrid #offerHeader { display: grid; grid-template-columns: 5vw 15vw 4vw 5vw 25vw 5vw 3vw 3vw; } 
+  #dspWorkArea #onOfferGrid #offerHeader .oHeaderDsp { font-size: 1.4vh; font-weight: bold;border-bottom: 1px solid rgba({$this->color_zackgrey},1); border-right: 1px solid rgba({$this->color_zackgrey},1); color: rgba({$this->color_zackgrey},1); padding: 1vh 0 .2vh .2vw; }  
+
+  #dspWorkArea #onOfferGrid #offerElements { height: 70vh; overflow: auto; font-size: 1.5vh;  } 
+  #dspWorkArea #onOfferGrid #offerElements .offerRecord {  display: grid; grid-template-columns: 5vw 15vw 4vw 5vw 25vw 5vw 3vw 3vw;  } 
+  #dspWorkArea #onOfferGrid #offerElements .offerRecord:nth-child(even)  { background: rgba({$this->color_cornflowerblue},.2);    }
+  #dspWorkArea #onOfferGrid #offerElements .offerRecord:hover { cursor: pointer; background: rgba({$this->color_lamber},.4); }
+  #dspWorkArea #onOfferGrid #offerElements .offerRecord[data-selected='1'] { background: rgba({$this->color_darkgreen},.2); }
+
+  #dspWorkArea #onOfferGrid #offerElements .offerRecord .dataElement { font-size: 1.5vh; border-bottom: 1px solid rgba({$this->color_zackgrey},.4); border-right: 1px solid rgba({$this->color_zackgrey},.4); color: rgba({$this->color_black},1); padding: .8vh 0 .8vh .2vw;  }  
+
+
+  #dspWorkArea #manifestDspSide { border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; height: 78vh; overflow: hidden; padding: .1vh .3vw .1vh .3vw; }
+  #dspWorkArea #manifestDspSide #manifestBuildHead { display: grid; grid-template-columns: 7vw 4vw 4vw 6vw 4vw 4vw 4vw;     }
+  #dspWorkArea #manifestDspSide #manifestMetrics { grid-column: span 7; font-size: 1.2vh;    }
+
+  #dspWorkArea #manifestDspSide #manifestDetailHolder { grid-column: span 7; height: 70vh; overflow: auto; box-sizing: border-box;     }
+  #dspWorkArea #manifestDspSide #manifestDetailHolder .manDtlRecord { display: grid; grid-template-columns: 1vw 5vw 10vw auto; font-size: 1.2vh;  } 
+
+  #fldManifestNbrDsp { width: 6vw; } 
+
+
+
 STYLESHEET;
 return $rtnThis;    
 }

@@ -21,7 +21,14 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";         
         $innerDialog = bldSpcSrvSDFee( $passedData );
-      break;                           
+        break; 
+      case 'dialogListManifests':
+        $pdta = json_decode($passedData, true);         
+        $titleBar = "Manifest Listing";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        $innerDialog = "<p>" . json_encode($passedData) . "<div id=porthole></div>";
+      break;      
       case 'donorvault':
         $pdta = json_decode($passedData, true);         
         $titleBar = "Donor Vault Access";
@@ -1410,16 +1417,174 @@ PAGEHERE;
     return $rtnthis;
 }
 
-function inventorymanifest ( $rqststr, $whichusr ) { 
-    
-   
-    $pg = "<div id=IMMainPage>THIS IS THE INVENTORY MANIFEST ... ZACK WAS HERE </div>";
-    
-$rtnthis = <<<PAGEHERE
-{$topBtnBar} 
-{$pg}
+function inventorymanifest ( $rqststr, $usr ) { 
+
+     
+    if ((int)$usr->allowprocure !== 1) { 
+     $rtnthis = "<h1>USER IS NOT ALLOWED TO USE THE PROCUREMENT SCREEN";        
+    } else {
+        
+       if ( trim($rqststr[2]) !== "" ) { 
+           //RUN QUERY - MAKE SURE INSTITUTIONS MATCH 
+           require(serverkeys . "/sspdo.zck");
+           $rqstSQL = "SELECT bywho, onwhen, srchterm FROM four.objsrchdocument where objid = :objid and doctype = :doctype";
+           $rqstRS = $conn->prepare( $rqstSQL ); 
+           $rqstRS->execute( array( ':objid' => trim($rqststr[2]), ':doctype' => 'INTERNAL-MANIFEST-REQUEST-QUERY'));
+     
+           if ( $rqstRS->rowCount() <> 1 ) { 
+             $nowDateS = date('m/d/Y');
+             $nowDateE = date('m/d/Y');
+             $innerWorkBench = "ERROR:  QUERY OBJECT NOT FOUND (BAD REQUEST STRING)";  
+           } else { 
+             $rqst = $rqstRS->fetch(PDO::FETCH_ASSOC);
+             $srchterm = json_decode( $rqst['srchterm'], true); 
+             $nowDateS = $srchterm['startdate'];
+             $nowDateE = $srchterm['enddate'];
+
+             $instSQL = "SELECT dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION' and menuValue = :instcode"; 
+             $instRS = $conn->prepare( $instSQL );
+             $instRS->execute( array( ':instcode' => $srchterm['institution'] ));
+             $inst = $instRS->fetch(PDO::FETCH_ASSOC);
+
+             $insmnu = "<input type=hidden id=presentInstValue value=\"{$srchterm['institution']}\">  "
+                              . "<input type=text id=presentInst READONLY class=\"inputFld\" value=\"{$inst['dspvalue']}\" style=\"font-size: 1.3vh;\">";
+
+
+             $qryParaLine = <<<QRYPARALINE
+<div id=queryParaLine>
+
+  <div class=dataElementHolder>
+    <div class=dataElementLabel>Query By/On</div>
+    <div class=dataElementDsp>{$rqst['bywho']} ({$rqst['onwhen']})</div>
+  </div>
+
+  <div class=dataElementHolder>
+    <div class=dataElementLabel>Institution</div>
+    <div class=dataElementDsp>{$inst['dspvalue']}</div>
+  </div>
+
+  <div class=dataElementHolder>
+    <div class=dataElementLabel>Date Range</div>
+    <div class=dataElementDsp>{$nowDateS}-{$nowDateE}</div>
+  </div>
+
+</div>
+QRYPARALINE;
+
+             $sdte = explode('/',$nowDateS);
+             $edte = explode('/',$nowDateE);
+
+             $onOfferSQL = "SELECT replace(sg.bgs,'_','') as bgs, concat(ifnull(sg.prepmethod,''),' / ',ifnull(sg.preparation,'')) as preparation, if(ifnull(sg.metric,'') = '','',concat(ifnull(sg.metric,''), uom.dspvalue)) as metric, ifnull(sg.shipDocRefID,'') as shipdocrefid, ifnull(date_format(sg.shippedDate,'%m/%d/%Y'),'') as shipdate, ifnull(sg.manifestnbr,'') as manifestnbr, sg.qty, sg.hourspost, if( (ifnull(sg.assignedto,'') = 'BANK' OR ifnull(sg.assignedto,'') = 'QC'), ifnull(sg.assignedto,''), concat( ifnull(sg.assignedto,''), ' / ', ifnull(sg.assignedreq,''))) as assignment, date_format(sg.procurementdate,'%m/%d/%Y') as sgProcDate, concat( pxiAge, '/',  substr(ifnull(bs.pxiRace,''),1,1) , '/', substr(bs.pxiGender,1,1) ) as ars, trim(concat(ifnull(bs.anatomicsite,''),' ', ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' (',ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.tisstype,'')='','',concat(' [',ifnull(bs.tisstype,''),']')))) as dxdesignation FROM masterrecord.ut_procure_segment sg LEFT JOIN masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample LEFT JOIN (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'metric') as uom on sg.metricuom = uom.menuvalue where sg.segStatus = :sgsts and sg.voidind <> 1 and bs.voidind <> 1 and sg.procuredAt = :institution and sg.procurementDate between :startdate and :enddate order by sg.bgs";
+             $onOfferRS = $conn->prepare( $onOfferSQL );
+             $onOfferRS->execute( array( ':institution' => $srchterm['institution'] , ':startdate' => "{$sdte[2]}-{$sdte[0]}-{$sdte[1]}", ':enddate' => "{$edte[2]}-{$edte[0]}-{$edte[1]}", ':sgsts' => 'ONOFFER'  ));
+
+             $oo = $onOfferRS->fetchAll(PDO::FETCH_ASSOC);
+             //[{"shipdate":"","qty":1,"hourspost":0.5,"assignment":"INV4956 \/ REQ25434"}
+             $offers = "<div id=offerHeader> <div class=oHeaderDsp>CHTN #</div> <div class=oHeaderDsp>Preparation</div> <div class=oHeaderDsp>Metric</div> <div class=oHeaderDsp>A/R/S</div> <div class=oHeaderDsp>Designation</div> <div class=oHeaderDsp>Proc Date</div> <div class=oHeaderDsp>SD #</div> <div class=oHeaderDsp>M #</div>  </div><div id=offerElements>";
+             foreach ( $oo as $ky => $vl ) {
+
+               $sddsp = ( trim($vl['shipdocrefid']) === "" ) ? "-" : substr('000000' . $vl['shipdocrefid'], -6);  
+               $mdsp = ( trim($vl['manifestnbr']) === "" ) ? "-" : substr( '000000' . $vl['manifestnbr'] , -6);  
+                 
+               $offers .= <<<RECORD
+                <div class=offerRecord id="OFR{$vl['bgs']}" onclick="selectOfferRecord('OFR{$vl['bgs']}');" data-selected="0" data-sglabel="{$vl['bgs']}" >
+ 
+                  <div class=dataElement>{$vl['bgs']}</div>                 
+                  <div class=dataElement>{$vl['preparation']}</div>                 
+                  <div class=dataElement>{$vl['metric']}</div> 
+                  <div class=dataElement>{$vl['ars']}</div> 
+                  <div class=dataElement>{$vl['dxdesignation']}</div> 
+                  <div class=dataElement>{$vl['sgProcDate']}</div> 
+                  <div class=dataElement>{$sddsp}</div> 
+                  <div class=dataElement>{$mdsp}</div> 
+
+                </div> 
+RECORD;
+             }
+             $offers .= "</div>";
+
+             $maniDiv = <<<MANIFESTCREATE
+<div id=manifestBuildHead>
+
+   <div class=holder>
+     <div class=holderlable>Manifest #</div>
+     <div class=element><input type=text id=fldManifestNbrDsp READONLY></div>
+   </div>
+
+   <div class=holder><button onclick="getNewManifest();">New</button></div>
+   <div class=holder><button onclick="listManifests();">Get</button></div>
+   <div class=holder><button onclick="selectAllRecords();">Toggle Select</button></div>
+   <div class=holder><button onclick="addRecordToManifest();">Add</button></div>
+   <div class=holder><button>Send</button></div>
+   <div class=holder><button>Print</button></div>
+ 
+   <div id=manifestMetrics> </div>
+  
+   <div id=manifestDetailHolder> </div>
+
+</div>
+
+MANIFESTCREATE;
+
+             $innerWorkBench = <<<WRKBENCH
+             <div id=onOfferGrid>
+               {$qryParaLine}
+               {$offers}
+             </div>
+             
+             <div id=manifestDspSide>   
+              {$maniDiv}
+             </div> 
+WRKBENCH;
+
+           }
+
+
+        } else { 
+          $nowDateS = date('m/d/Y');
+          $nowDateE = date('m/d/Y');
+          $insmnu = bldUsrAllowInstDrop($usr);
+        }
+
+        $fCalendar = buildcalendar('biosampleQueryFrom'); 
+        $bsqFromCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=text READONLY id=bsqueryFromDate class="inputFld" style="width: 18vw;" value="{$nowDateS}"></div>
+  <div class=valueDropDown style="width: 18vw;"><div id=bsqCalendar>{$fCalendar}</div></div>
+</div>
+CALENDAR;
+
+        $tCalendar = buildcalendar('biosampleQueryTo'); 
+        $bsqToCalendar = <<<CALENDAR
+<div class=menuHolderDiv>
+  <div class=valueHolder><input type=text READONLY id=bsqueryToDate class="inputFld" style="width: 18vw;" value="{$nowDateE}"></div>
+  <div class=valueDropDown style="width: 18vw;"><div id=bsqtCalendar>{$tCalendar}</div></div>
+</div>
+CALENDAR;
+
+        $topBtnBar = generatePageTopBtnBar('inventorymanifest');
+
+        $rtnthis = <<<PAGEHERE
+{$topBtnBar}
+<div id=qryDivLineHolder>
+  <div class=dataElementHold><div>Present Location</div><div>{$insmnu}</div></div>
+  <div class=dataElementHold><div>Start Date</div><div>{$bsqFromCalendar}</div></div>
+  <div class=dataElementHold><div>End Date</div><div>{$bsqToCalendar}</div></div>
+  <div class=dataElementHold><div>&nbsp;</div><div><table class=tblBtn id=btnRefresh style="width: 6vw;"><tr><td style="font-size: 1.3vh; padding: 1.2vh .5vw;"><center>Refresh</td></tr></table></div></div>
+</div>
+
+<div id=dspWorkArea> 
+  {$innerWorkBench}
+</div>
+
+
+
+
 PAGEHERE;
-return $rtnthis;        
+
+    }
+
+    return $rtnthis;                    
 }
 
 function procurebiosample($rqststr, $whichusr) { 
@@ -3682,6 +3847,13 @@ case 'shipdocedit':
 </tr>        
 BTNTBL;
     break;
+case 'inventorymanifest':
+$innerBar = <<<BTNTBL
+<tr>
+<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>       
+</tr>
+BTNTBL;
+  break;
 case 'procurebiosampleedit':
 $pxibtn = "";
 //<!-- <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPRCSaveEdit border=0><tr><td><!--ICON //--></td><td>Save Edit</td></tr></table></td> //-->

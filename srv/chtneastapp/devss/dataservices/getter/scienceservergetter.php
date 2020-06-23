@@ -587,6 +587,24 @@ class objlisting {
     return $rows;      
   }
 
+  function preprocessdialogmanifestlisting ( $request, $urirqst ) { 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $msgArr = array();
+    $itemsfound = 0;
+    
+    $pdta['dialogid'] = generateRandomString(25);
+
+    $dta = array('pagecontent' => bldDialogGetter('dialogListManifests', $pdta) );
+
+    ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+
+    $msg = $msgArr;
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;      
+  }
+
   function preprocessdialogaddphi($request, $urirqst) { 
     $responseCode = 400; 
     $msg = "BAD REQUEST";

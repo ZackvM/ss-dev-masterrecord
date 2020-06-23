@@ -5006,6 +5006,255 @@ RTNTHIS;
 return $rtnThis;
 }
 
+function inventorymanifest ( $rqststr ) { 
+
+  $tt = treeTop;
+  $regUsr = session_id();  
+    
+$rtnThis = <<<JAVASCR
+
+function fillField(whichfield, whichvalue, whichdisplay) { 
+  if (byId(whichfield)) { 
+     byId(whichfield).value = whichdisplay; 
+     if (byId(whichfield+'Value')) { 
+        byId(whichfield+'Value').value = whichvalue;    
+     }
+  }
+}
+
+var lastRequestCalendarDiv = "";
+function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
+  var mlURL = "/sscalendar/"+whichcalendar+"/"+monthyear;
+  lastRequestCalendarDiv = whichdiv;
+  universalAJAX("GET",mlURL,"",answerGetCalendar,modalCtl);
+}
+
+function answerGetCalendar(rtnData) {
+  if (parseInt(rtnData['responseCode']) === 200) {     
+    var rcd = JSON.parse(rtnData['responseText']);
+    byId(lastRequestCalendarDiv).innerHTML = rcd['DATA']; 
+  } else { 
+    alert("ERROR");  
+  }
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {   
+  if ( byId('btnRefresh') ) {
+    byId('btnRefresh').addEventListener('click', function() { 
+      requestOnOfferListing();
+    }, false);
+  }
+}, false);    
+
+
+function requestOnOfferListing() { 
+  byId('standardModalBacker').style.display = 'block'; 
+  var obj = new Object(); 
+  obj['institution'] = byId('presentInstValue').value; 
+  obj['startdate'] = byId('bsqueryFromDate').value; 
+  obj['enddate'] = byId('bsqueryToDate').value; 
+  var passdata = JSON.stringify ( obj ); 
+  var mlURL = "/data-doers/build-manifest-request-list";
+  universalAJAX("POST",mlURL,passdata,answerBuildManifestRequestList,1);
+}
+
+function answerBuildManifestRequestList ( rtnData ) { 
+  var tt = '{$tt}';
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] ); 
+     location.href = tt+'/inventory-manifest/'+dta['DATA']['searchid'];       
+
+   }       
+}
+
+function selectOfferRecord ( whichOfferId ) {  
+  if (parseInt(byId(whichOfferId).dataset.selected) === 1) {
+    byId(whichOfferId).dataset.selected = '0';
+  } else { 
+    byId(whichOfferId).dataset.selected = '1';
+  }     
+}
+
+function getNewManifest() { 
+  byId('fldManifestNbrDsp').value = ""; 
+  byId('manifestMetrics').innerHTML = ""; 
+  byId('standardModalBacker').style.display = 'block'; 
+  var obj = new Object(); 
+  obj['zxsdc'] = "ZZ"; 
+  var passdata = JSON.stringify ( obj ); 
+  var mlURL = "/data-doers/build-manifest-new";
+  universalAJAX("POST",mlURL,passdata,answerBuildManifestNew,2);
+}
+
+function answerBuildManifestNew ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none'; 
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] );
+     //BLANK ANY DIVS SHOWING SEGMENTS
+     byId('fldManifestNbrDsp').value = dta['DATA']['manifest']; 
+     byId('manifestMetrics').innerHTML = dta['DATA']['user'] + " (" + dta['DATA']['when'] + ")"; 
+     byId('standardModalBacker').style.display = 'none'; 
+   }
+}
+
+function selectAllRecords() { 
+  var x = document.getElementsByClassName("offerRecord");
+  for ( var i = 0; i < x.length ; i++ ) { 
+    selectOfferRecord ( x[i].id );  
+  }
+}
+
+function addRecordToManifest() { 
+  byId('standardModalBacker').style.display = 'block'; 
+  var itm = [];
+  var x = document.getElementsByClassName("offerRecord");
+  for ( var i = 0; i < x.length ; i++ ) { 
+    if ( parseInt(byId( x[i].id ).dataset.selected) === 1 )  { 
+      itm.push ( byId( x[i].id ).dataset.sglabel );
+    } 
+  } 
+  var obj = new Object(); 
+  obj['itmlst'] =  itm;
+  obj['manifest'] = byId('fldManifestNbrDsp').value;
+  var passdata = JSON.stringify ( obj ); 
+  var mlURL = "/data-doers/add-to-manifest";
+  universalAJAX("POST",mlURL,passdata,answerAddToManifest,2);
+}
+
+function answerAddToManifest ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none'; 
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] );
+     //BLANK ANY DIVS SHOWING SEGMENTS
+     alert('Saved!');
+     //Update Manifest Segment Display
+     fillManifestSide();
+     byId('standardModalBacker').style.display = 'none'; 
+   }
+}
+
+function fillManifestSide() { 
+  if ( byId('fldManifestNbrDsp') ) {   
+    byId('standardModalBacker').style.display = 'block'; 
+    byId('manifestDetailHolder').innerHTML = "";
+    var obj = new Object(); 
+    obj['manifest'] = byId('fldManifestNbrDsp').value;
+    var passdata = JSON.stringify ( obj ); 
+    var mlURL = "/data-doers/display-manifest-details";
+    universalAJAX("POST",mlURL,passdata,answerFillManifestSide,2);
+  }
+}
+
+function answerFillManifestSide ( rtnData ) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none'; 
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] );
+     //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":[{"bgs":"89887T001","preparation":"FROZEN \/ Negative 80 Degrees","metric":"5.0ml","shipdocrefid":"","shipdate":"","manifestnbr":"31","qty":1,"hourspost":0.5,"assignment":"INV4956 \/ REQ25434","sgProcDate":"06\/18\/2020","ars":"67\/B\/F","dxdesignation":"BLOOD  [NORMAL]"} 
+
+     var displayDetails = "";
+     for ( var i = 0; i < dta['DATA'].length; i++ ) { 
+       displayDetails += "<div id=\"dtl"+dta['DATA'][i]['bgs']+"\" class=manDtlRecord><div class=delIco onclick=\"removeSegFromManifest('"+dta['DATA'][i]['bgs']+"','"+dta['DATA'][i]['manifestnbr']+"');\">&times;</div><div class=manDetBGS>"+dta['DATA'][i]['bgs']+"</div><div class=manDetPrep>"+dta['DATA'][i]['preparation']+"</div><div class=manDetDesig>"+dta['DATA'][i]['dxdesignation']+"</div>   </div>";
+     }
+     
+     byId('manifestDetailHolder').innerHTML = displayDetails;
+     byId('standardModalBacker').style.display = 'none'; 
+   }
+}
+
+function removeSegFromManifest ( bgs, manifest ) { 
+ byId('standardModalBacker').style.display = 'block'; 
+ var obj = new Object(); 
+ obj['manifest'] = manifest;
+ obj['bgs'] = bgs;
+ var passdata = JSON.stringify ( obj ); 
+ var mlURL = "/data-doers/remove-manifest-details";
+ universalAJAX("POST",mlURL,passdata,answerRemoveManifestDetails,2);
+}
+
+function answerRemoveManifestDetails ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none'; 
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] );
+     //Update Manifest Segment Display
+     fillManifestSide();
+     byId('standardModalBacker').style.display = 'none'; 
+   }
+}
+
+function listManifests() {  
+  var mlURL = "/preprocess-dialog-manifest-listing";
+  universalAJAX("GET",mlURL,"",answerListManifests, 1);
+}
+
+function answerListManifests ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("Add PHI ERROR:\\n"+dspMsg);
+   } else { 
+     //DISPLAY PHI EDIT
+     if (byId('standardModalDialog')) {
+       var dta = JSON.parse(rtnData['responseText']); 
+       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
+       byId('standardModalDialog').style.marginLeft = "-25vw";
+       byId('standardModalDialog').style.left = "50%";
+       byId('standardModalDialog').style.marginTop = 0;
+       byId('standardModalDialog').style.top = "15vh";
+       byId('standardModalBacker').style.display = 'block';
+       byId('standardModalDialog').style.display = 'block';
+     }  
+   }        
+}
+
+function closeThisDialog(dlog) { 
+   byId(dlog).parentNode.removeChild(byId(dlog));
+   byId('standardModalBacker').style.display = 'none';        
+}
+
+JAVASCR;
+return $rtnThis;
+}
+
 function collectiongrid($rqststr) { 
 session_start(); 
     
