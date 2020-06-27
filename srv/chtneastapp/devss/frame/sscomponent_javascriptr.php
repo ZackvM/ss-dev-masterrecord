@@ -5187,6 +5187,7 @@ function answerFillManifestSide ( rtnData ) {
      }
      
      byId('manifestDetailHolder').innerHTML = displayDetails;
+     refreshOOGrid();
      byId('standardModalBacker').style.display = 'none'; 
    }
 }
@@ -5218,38 +5219,87 @@ function answerRemoveManifestDetails ( rtnData ) {
    }
 }
 
-function listManifests() {  
-  var mlURL = "/preprocess-dialog-manifest-listing";
-  universalAJAX("GET",mlURL,"",answerListManifests, 1);
+function generateDialog( whichdialog, whatobject ) { 
+  var dta = new Object(); 
+  dta['whichdialog'] = whichdialog;
+  dta['objid'] = whatobject;   
+  var passdta = JSON.stringify(dta);
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/preprocess-generate-dialog";
+  universalAJAX("POST",mlURL,passdta,answerPreprocessGenerateDialog,2);
 }
-
-function answerListManifests ( rtnData ) { 
+            
+function answerPreprocessGenerateDialog( rtnData ) {
   if (parseInt(rtnData['responseCode']) !== 200) { 
     var msgs = JSON.parse(rtnData['responseText']);
     var dspMsg = ""; 
     msgs['MESSAGE'].forEach(function(element) { 
        dspMsg += "\\n - "+element;
     });
-    alert("Add PHI ERROR:\\n"+dspMsg);
-   } else { 
-     //DISPLAY PHI EDIT
-     if (byId('standardModalDialog')) {
-       var dta = JSON.parse(rtnData['responseText']); 
-       byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
-       byId('standardModalDialog').style.marginLeft = "-25vw";
-       byId('standardModalDialog').style.left = "50%";
-       byId('standardModalDialog').style.marginTop = 0;
-       byId('standardModalDialog').style.top = "15vh";
-       byId('standardModalBacker').style.display = 'block';
-       byId('standardModalDialog').style.display = 'block';
-     }  
-   }        
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+        var dta = JSON.parse(rtnData['responseText']);         
+        //TODO: MAKE SURE ALL ELEMENTS EXIST BEFORE CREATION
+        var d = document.createElement('div');
+        d.setAttribute("id", dta['DATA']['dialogID']); 
+        d.setAttribute("class","floatingDiv");
+        d.style.left = dta['DATA']['left'];
+        d.style.top = dta['DATA']['top'];
+        d.innerHTML = dta['DATA']['pageElement']; 
+        document.body.appendChild(d);
+        byId(dta['DATA']['dialogID']).style.display = 'block';
+        if ( dta['DATA']['primeFocus'].trim() !== "" ) { 
+          byId(dta['DATA']['primeFocus'].trim()).focus();
+        }
+        byId('standardModalBacker').style.display = 'block';
+  }
 }
 
 function closeThisDialog(dlog) { 
    byId(dlog).parentNode.removeChild(byId(dlog));
    byId('standardModalBacker').style.display = 'none';        
 }
+
+function refreshOOGrid () { 
+  var p = window.location.pathname.split('/'); 
+  if ( p[2].trim() !== "" && byId('offerElements') ) { 
+    byId('standardModalBacker').style.display = 'block'; 
+    byId('offerElements').innerHTML = "&nbsp;";
+    var obj = new Object(); 
+    obj['manifestqry'] = p[2];
+    var passdata = JSON.stringify ( obj ); 
+    var mlURL = "/data-doers/manifest-offer-details-refresh";
+    universalAJAX("POST",mlURL,passdata,answerManifestOfferDetails,2);
+  }
+}
+
+function answerManifestOfferDetails ( rtnData ) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none'; 
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] );
+     byId('offerElements').innerHTML = dta['DATA'];
+     byId('standardModalBacker').style.display = 'none'; 
+   }
+
+}
+
+function getThisManifest ( thismanifest ) { 
+  var dta = new Object(); 
+  dta['qrymanifest'] = thismanifest;
+  var passdta = JSON.stringify(dta);
+//  var mlURL = "/data-doers/qry-this-manifest";
+//  universalAJAX("POST",mlURL,passdta,answerThisManifest,2);
+}
+
 
 JAVASCR;
 return $rtnThis;

@@ -5740,7 +5740,12 @@ MBODY;
          $top = '13vh';
          $primeFocus = '';
 
-         switch ( $pdta['whichdialog'] ) { 
+         switch ( $pdta['whichdialog'] ) {
+           case 'dialogListManifests':
+             $primeFocus = "fldQryManifestNbr";
+             $left = '15vw';
+             $top = '12vh';
+             break;               
            case 'chartbldr': 
              $primeFocus = "";
              $left = '5vw';
@@ -8363,6 +8368,66 @@ MSGTXT;
      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
      return $rows;                        
     } 
+
+    function manifestofferdetailsrefresh ( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( (int)checkPostingUser($authuser, $authpw) <> 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+
+     if ( $errorInd === 0 ) { 
+       $rqstSQL = "SELECT bywho, onwhen, srchterm FROM four.objsrchdocument where objid = :objid and doctype = :doctype";
+       $rqstRS = $conn->prepare( $rqstSQL ); 
+       $rqstRS->execute( array( ':objid' => trim($pdta['manifestqry']), ':doctype' => 'INTERNAL-MANIFEST-REQUEST-QUERY'));
+       $rqst = $rqstRS->fetch(PDO::FETCH_ASSOC);
+       $srchterm = json_decode( $rqst['srchterm'], true); 
+       $nowDateS = $srchterm['startdate'];
+       $nowDateE = $srchterm['enddate'];
+
+       $sdte = explode('/',$nowDateS);
+       $edte = explode('/',$nowDateE);
+
+       $onOfferSQL = "SELECT replace(sg.bgs,'_','') as bgs, concat(ifnull(sg.prepmethod,''),' / ',ifnull(sg.preparation,'')) as preparation, if(ifnull(sg.metric,'') = '','',concat(ifnull(sg.metric,''), uom.dspvalue)) as metric, ifnull(sg.shipDocRefID,'') as shipdocrefid, ifnull(date_format(sg.shippedDate,'%m/%d/%Y'),'') as shipdate, ifnull(sg.manifestnbr,'') as manifestnbr, sg.qty, sg.hourspost, if( (ifnull(sg.assignedto,'') = 'BANK' OR ifnull(sg.assignedto,'') = 'QC'), ifnull(sg.assignedto,''), concat( ifnull(sg.assignedto,''), ' / ', ifnull(sg.assignedreq,''))) as assignment, date_format(sg.procurementdate,'%m/%d/%Y') as sgProcDate, concat( pxiAge, '/',  substr(ifnull(bs.pxiRace,''),1,1) , '/', substr(bs.pxiGender,1,1) ) as ars, trim(concat(ifnull(bs.anatomicsite,''),' ', ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' (',ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.tisstype,'')='','',concat(' [',ifnull(bs.tisstype,''),']')))) as dxdesignation FROM masterrecord.ut_procure_segment sg LEFT JOIN masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample LEFT JOIN (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'metric') as uom on sg.metricuom = uom.menuvalue where sg.segStatus = :sgsts and sg.voidind <> 1 and bs.voidind <> 1 and sg.procuredAt = :institution and sg.procurementDate between :startdate and :enddate order by sg.bgs";
+       $onOfferRS = $conn->prepare( $onOfferSQL );
+       $onOfferRS->execute( array( ':institution' => $srchterm['institution'] , ':startdate' => "{$sdte[2]}-{$sdte[0]}-{$sdte[1]}", ':enddate' => "{$edte[2]}-{$edte[0]}-{$edte[1]}", ':sgsts' => 'ONOFFER'  ));
+       $oo = $onOfferRS->fetchAll(PDO::FETCH_ASSOC);
+       foreach ( $oo as $ky => $vl ) {
+         $sddsp = ( trim($vl['shipdocrefid']) === "" ) ? "-" : substr('000000' . $vl['shipdocrefid'], -6);  
+         $mdsp = ( trim($vl['manifestnbr']) === "" ) ? "-" : substr( '000000' . $vl['manifestnbr'] , -6);  
+         $offers .= <<<RECORD
+              <div class=offerRecord id="OFR{$vl['bgs']}" onclick="selectOfferRecord('OFR{$vl['bgs']}');" data-selected="0" data-sglabel="{$vl['bgs']}" >
+ 
+                  <div class=dataElement>{$vl['bgs']}</div>                 
+                  <div class=dataElement>{$vl['preparation']}</div>                 
+                  <div class=dataElement>{$vl['metric']}</div> 
+                  <div class=dataElement>{$vl['ars']}</div> 
+                  <div class=dataElement>{$vl['dxdesignation']}</div> 
+                  <div class=dataElement>{$vl['sgProcDate']}</div> 
+                  <div class=dataElement>{$sddsp}</div> 
+                  <div class=dataElement>{$mdsp}</div> 
+
+                </div> 
+RECORD;
+             } 
+       $dta = $offers;
+       $responseCode = 200;
+     } 
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+    }
 
    function displaymanifestdetails ( $request, $passdata ) { 
      $rows = array(); 

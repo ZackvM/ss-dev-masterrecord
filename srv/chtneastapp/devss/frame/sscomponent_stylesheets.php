@@ -867,7 +867,10 @@ $rtnThis = <<<STYLESHEET
 
   #fldManifestNbrDsp { width: 6vw; } 
 
+  .hoverIco:hover { cursor: pointer; color: rgba({$this->color_cornflowerblue},1);  } 
 
+
+  .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  }       
 
 STYLESHEET;
 return $rtnThis;    

@@ -27,7 +27,7 @@ function sysDialogBuilder($whichdialog, $passedData) {
         $titleBar = "Manifest Listing";
         $standardSysDialog = 0;
         $closer = "closeThisDialog('{$pdta['dialogid']}');";         
-        $innerDialog = "<p>" . json_encode($passedData) . "<div id=porthole></div>";
+        $innerDialog = bldInventoryManifestListing ( $passedData );
       break;      
       case 'donorvault':
         $pdta = json_decode($passedData, true);         
@@ -1512,11 +1512,11 @@ RECORD;
    </div>
 
    <div class=holder><button onclick="getNewManifest();">New</button></div>
-   <div class=holder><button onclick="listManifests();">Get</button></div>
+   <div class=holder><button onclick="generateDialog('dialogListManifests','xxxx-xxxx');">Get</button></div>
    <div class=holder><button onclick="selectAllRecords();">Toggle Select</button></div>
    <div class=holder><button onclick="addRecordToManifest();">Add</button></div>
    <div class=holder><button>Send</button></div>
-   <div class=holder><button>Print</button></div>
+   <div class=holder><button onclick="alert('print');">Print</button></div>
  
    <div id=manifestMetrics> </div>
   
@@ -3850,7 +3850,7 @@ BTNTBL;
 case 'inventorymanifest':
 $innerBar = <<<BTNTBL
 <tr>
-<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPBClearGrid border=0><tr><td><!--ICON //--></td><td>Clear Grid</td></tr></table></td>       
+<td class=topBtnHolderCell onclick="generateDialog('dialogListManifests','xxxx-xxxx');"><table class=topBtnDisplayer id=btn border=0><tr><td><!--ICON //--></td><td>List Manifests</td></tr></table></td>       
 </tr>
 BTNTBL;
   break;
@@ -5013,6 +5013,102 @@ DSPPAGE;
 
 </style>
    {$dspPage}
+RTNPAGE;
+  return $rtnPage;    
+}
+
+function bldInventoryManifestListing ( $passedData ) { 
+
+  require(serverkeys . "/sspdo.zck");
+  session_start();
+  $pdta = json_decode( $passedData, true );
+  //"{\"whichdialog\":\"dialogListManifests\",\"objid\":\"xxxx-xxxx\",\"dialogid\":\"C1ojvsCrqvKDg3q\"}"
+  $objid = json_decode( $pdta['objid'], true );
+  
+  $p = json_encode( $passedData );
+  $who = session_id();
+  $usrSQL = "SELECT emailaddress as usrid, originalaccountname as usr, presentinstitution  FROM four.sys_userbase where sessionid = :sessid and allowInd = 1 and allowProc = 1 and TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+  $usrRS = $conn->prepare( $usrSQL ); 
+  $usrRS->execute( array( ':sessid' => $who ));
+
+  ( $usrRS->rowCount() <> 1 ) ? list( $errorInd, $msgArr[] ) = array( 1, "USER ACCOUNT NOT FOUND") : "";
+
+  if ( $errorInd === 1 ) { 
+
+      $innerSpace = "<div class=errorMsgHead>ERROR:</div>"; 
+      foreach ( $msgArr as $msg ) { 
+        $innerSpace .= "<div class=errorMsgLine>{$msg}</div>";
+      }
+
+  } else { 
+
+      $u = $usrRS->fetch(PDO::FETCH_ASSOC);
+      //{"usrid":"zacheryv@mail.med.upenn.edu","usr":"proczack","presentinstitution":"HUP"}
+      $presInstCode = $u['presentinstitution'];
+      $mSQL = "SELECT mhd.manifestnbr, concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) as manifestnbrdsp, mstatus, date_format(manifestdate,'%m/%d/%Y %H:%i') as manifestdatedsp, createdBy, ifnull(mcnt.segOnMani,0) as segOnMani FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT manifestnbr, count(1) segOnMani FROM masterrecord.ut_ship_manifest_segment where includeind = 1 group by manifestnbr) as mcnt on mhd.manifestnbr = mcnt.manifestnbr where mhd.institutioncode = :instCode and mhd.manifestdate between date_add(now(), interval -30 day) and now() order by mhd.manifestdate desc";
+      $mRS = $conn->prepare( $mSQL );
+      $mRS->execute( array( ':instCode' => $presInstCode  ));
+
+      ( $mRS->rowCount() < 1 ) ? list( $errorInd, $msgArr[] ) = array( 1, "NO MANIFESTS FOUND FOR THIS INSTITUTION (Code: {$presInstCode})") : "";
+
+      if ( $errorInd === 1 ) { 
+
+        $innerSpace = "<div class=errorMsgHead>ERROR:</div>"; 
+        foreach ( $msgArr as $msg ) { 
+          $innerSpace .= "<div class=errorMsgLine>{$msg}</div>";
+        }
+
+      } else {  
+
+        $mnTbl = "<div id=manifestHeadHold><div class=mHeader> </div><div class=mHeader> </div><div class=mHeader>Manifest #</div><div class=mHeader>Status</div><div class=mHeader>Segments</div><div class=mHeader>Creation Date / By</div></div>";   
+        while ( $m = $mRS->fetch(PDO::FETCH_ASSOC) ) {
+          
+          $edtIco = ( $m['mstatus'] === 'OPEN' ) ? "<i class=\"material-icons hoverIco\" onclick=\"alert('{$m['manifestnbrdsp']}');\">edit</i>" : "&nbsp;" ;
+
+          $mnTbl .= "<div class=manifestRecord><div class=manifestIconOne><i class=\"material-icons hoverIco\" onclick=\"alert('{$m['manifestnbrdsp']}');\">print</i></div><div class=manifestIconTwo>{$edtIco}</div><div class=manifestNbrDsp>{$m['manifestnbrdsp']}</div><div class=manifestStsDsp>{$m['mstatus']}</div><div class=segonmani>{$m['segOnMani']}</div><div class=manifestMetDsp>{$m['manifestdatedsp']} ({$m['createdBy']})</div></div>";
+        }
+
+        $innerSpace = <<<QRYBOX
+<div id=mAnnounceHeader>Intra-CHTNEast Inventory Manifests Listing</div>
+  <div id=mInstructions>Below is a list of Intra-CHTN Shipment Manifests created in the last 30 days for your present institution (Code: {$presInstCode}). You may select any open manifest to edit.  Any locked manifests may be printed only. If the manifest you are looking for does not appear on this list, you may enter a manifest number in the space at the bottom to retrieve that manifest. </div>
+  <div id=mListHolder>{$mnTbl}</div>
+  <div id=mQryLine>
+    <div class=label>[OR] Enter a manifest #: </div>
+    <div><input type=text id=fldQryManifestNbr></div>
+    <div><table class=tblBtn id=btnQryGo style="width: 4vw;"><tr><td style="font-size: 1.5vh; padding: 1.4vh .5vw;"><center>Go!</td></tr></table></div>   
+  </div>
+  <div align=right><table class=tblBtn id=btnClose style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.5vh; padding: 1.4vh .5vw;"><center>Close</td></tr></table></div>
+QRYBOX;
+      }
+  }
+
+
+  $rtnPage = <<<RTNPAGE
+<style>
+  #mAnnounceHeader { font-size: 2vh; font-weight: bold; padding: 1vh .5vw 0 .5vw; width: 60vw; box-sizing: border-box;      }
+  #mInstructions { padding: 0 .5vw 1vh .5vw; box-sizing: border-box; width: 60vw; line-height: 1.3em; text-align: justify;  } 
+  #mListHolder { margin: 0 .5vw 1vh .5vw; width: 59vw; border: 1px solid #000; height: 20vh; overflow: auto;  } 
+
+  #manifestHeadHold { width: 50vw; display: grid; grid-template-columns: 2vw 2vw 7vw 7vw 5vw auto; grid-gap: .2vw; }
+  #manifestHeadHold .mHeader { font-weight: bold; padding: .2vh .2vw; border-bottom: 1px solid rgba(0,0,0,.3); border-right: 1px solid rgba(0,0,0,.3);  }
+  
+  .manifestRecord { width: 50vw; display: grid; grid-template-columns: 2vw 2vw 7vw 7vw 5vw auto; grid-gap: .2vw;  }
+
+  .manifestRecord .manifestIconOne { padding: .2vh .2vw;  border-bottom: 1px solid rgba(0,0,0,.3); border-right: 1px solid rgba(0,0,0,.3); text-align: center;}  
+  .manifestRecord .manifestIconTwo { padding: .2vh .2vw;  border-bottom: 1px solid rgba(0,0,0,.3); border-right: 1px solid rgba(0,0,0,.3); text-align: center;}  
+  .manifestRecord .manifestNbrDsp { padding: .2vh .2vw;  border-bottom: 1px solid rgba(0,0,0,.3); border-right: 1px solid rgba(0,0,0,.3);}  
+  .manifestRecord .manifestStsDsp { padding: .2vh .2vw;  border-bottom: 1px solid rgba(0,0,0,.3); border-right: 1px solid rgba(0,0,0,.3);}  
+  .manifestRecord .segonmani { padding: .2vh .2vw; text-align: right;  border-bottom: 1px solid rgba(0,0,0,.3); border-right: 1px solid rgba(0,0,0,.3);} 
+  .manifestRecord .manifestMetDsp { padding: .2vh .2vw;  border-bottom: 1px solid rgba(0,0,0,.3); border-right: 1px solid rgba(0,0,0,.3); }  
+
+  #mQryLine { margin: 0 .5vw 1vh .5vw; width: 59vw; border: 1px solid #000; padding: .5vh .2vw;  display: grid; grid-template-columns: 10vw auto; } 
+  #mQryLine .label { font-weight: bold; grid-column: span 2;   }
+  #fldQryManifestNbr { width: 10vw;    } 
+
+</style>
+<div id=dialogPageDsp> 
+{$innerSpace} 
+</div>
 RTNPAGE;
   return $rtnPage;    
 }
