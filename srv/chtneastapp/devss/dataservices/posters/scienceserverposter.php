@@ -8369,6 +8369,49 @@ MSGTXT;
      return $rows;                        
     } 
 
+    function qrythismanifest ( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( (int)checkPostingUser($authuser, $authpw) <> 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+
+     if ( $errorInd === 0 ) { 
+       $usrs = session_id(); 
+       $usrSQL = "SELECT originalAccountName as usr, presentinstitution as presInst FROM four.sys_userbase where sessionid = :usrs and allowInd = 1 and allowProc = 1 AND TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+       $usrRS = $conn->prepare( $usrSQL ); 
+       $usrRS->execute( array( ':usrs' => $usrs )); 
+       ( $usrRS->rowCount() <> 1 ) ? list ( $errorInd, $msgArr[] ) = array( 1, "USER NOT ALLOWED") : "" ;        
+       if ( $errorInd === 0 ) { 
+         $u = $usrRS->fetch(PDO::FETCH_ASSOC); 
+         $manNbr = (int)preg_replace('/[^0-9]/','',   $pdta['qrymanifest']);
+         $manSQL = "select concat(ifnull(prefix,''),'-',substr(concat( '000000',ifnull(manifestnbr,0)),-6)) as manifestnbr, mstatus, concat(ifnull(createdby,''),'@', ifnull(institutioncode,'')) as whoby, date_format(manifestdate,'%m/%d/%Y') as manifestdate from ut_ship_manifest_head where manifestnbr = :mannbr and institutioncode = :instcode";
+         $manRS = $conn->prepare( $manSQL ); 
+         $manRS->execute( array( ':mannbr' => $manNbr, ':instcode' => $u['presInst'] ));
+         if ( $manRS->rowCount() === 1 ) { 
+            $dta = $manRS->fetchAll(PDO::FETCH_ASSOC);
+            $responseCode = 200;
+         } else { 
+           $msgArr[] = "NO MANIFEST WAS FOUND MATCHING CRITERIA - OR YOU DO NOT HAVE ACCESS RIGHTS (REQUEST: {$pdta['qrymanifest']})";
+         }
+       }
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+    }
+
     function manifestofferdetailsrefresh ( $request, $passdata ) { 
      $rows = array(); 
      $dta = array(); 
@@ -8428,6 +8471,97 @@ RECORD;
      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
      return $rows;                        
     }
+
+   function encryptthismanifest ( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( (int)checkPostingUser($authuser, $authpw) <> 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+
+     if ( $errorInd === 0 ) { 
+
+         ( !array_key_exists('qrymanifest',$pdta) ) ? list ( $errorInd, $msgArr[] ) = array( 1, "ARRAY KEY 'manifest' DOES NOT EXIST") : "" ;
+
+       if ( $errorInd === 0 ) { 
+         $dta = cryptservice( $pdta['qrymanifest'] );
+         $responseCode = 200;
+       }
+     }
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
+
+   function sendthismanifest ( $request, $passdata ) { 
+     $rows = array(); 
+     $dta = array(); 
+     $responseCode = 400;
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = "BAD REQUEST";
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $pdta = json_decode($passdata,true);
+     session_start();      
+     $authuser = $_SERVER['PHP_AUTH_USER']; 
+     $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+     ( session_id() !== $authuser) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+     ( (int)checkPostingUser($authuser, $authpw) <> 200 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "USER IS INVALID")) : "";
+
+     if ( $errorInd === 0 ) { 
+       ( !array_key_exists('qrymanifest',$pdta) ) ? list ( $errorInd, $msgArr[] ) = array( 1, "ARRAY KEY 'manifest' DOES NOT EXIST") : "" ;
+  
+       if ( $errorInd === 0 ) { 
+         $usrs = session_id(); 
+         $usrSQL = "SELECT originalAccountName as usr, presentinstitution as presInst FROM four.sys_userbase where sessionid = :usrs and allowInd = 1 and allowProc = 1 AND TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+         $usrRS = $conn->prepare( $usrSQL ); 
+         $usrRS->execute( array( ':usrs' => $usrs )); 
+         ( $usrRS->rowCount() <> 1 ) ? list ( $errorInd, $msgArr[] ) = array( 1, "USER NOT ALLOWED") : "" ;        
+         if ( $errorInd === 0 ) { 
+           $u = $usrRS->fetch(PDO::FETCH_ASSOC); 
+           $manNbr = (int)preg_replace('/[^0-9]/','',   $pdta['qrymanifest']);
+           $manSQL = "select concat(ifnull(prefix,''),'-',substr(concat( '000000',ifnull(manifestnbr,0)),-6)) as manifestnbr, mstatus, concat(ifnull(createdby,''),'@', ifnull(institutioncode,'')) as whoby, date_format(manifestdate,'%m/%d/%Y') as manifestdate from ut_ship_manifest_head where manifestnbr = :mannbr and institutioncode = :instcode and mstatus = 'OPEN'";
+           $manRS = $conn->prepare( $manSQL ); 
+           $manRS->execute( array( ':mannbr' => $manNbr, ':instcode' => $u['presInst'] ));
+
+           if ( $manRS->rowCount() === 1 ) { 
+
+             $histSQL = "insert into masterrecord.history_ship_manifest_head (prefix, manifestnbr, mstatus, mstatusdate, manifestdate, createdBy, institutionCode, sentOn, sentBy, histOn, histBy) SELECT prefix, manifestnbr, mstatus, mstatusdate, manifestdate, createdBy, institutionCode, sentOn, sentBy, now(), :usr FROM masterrecord.ut_ship_manifest_head where manifestnbr = :manifestnbr";
+             $histRS = $conn->prepare( $histSQL ); 
+             $histRS->execute( array( ':manifestnbr' => $manNbr, ':usr' => $u['usr'] ));
+
+             $updSQL = "update masterrecord.ut_ship_manifest_head set senton = now(), sentby = :usr, mstatus = 'LOCKED', mstatusdate = now() where manifestnbr = :manifestNbr and institutioncode = :instcode";
+             $updRS = $conn->prepare( $updSQL ); 
+             $updRS->execute( array( ':manifestNbr' => $manNbr, ':instcode' => $u['presInst'], ':usr' => $u['usr'] ));             
+
+             $responseCode = 200;
+
+           } else { 
+             $msgArr[] = "NO MANIFEST WAS FOUND MATCHING CRITERIA, IS ALREADY 'LOCKED' OR YOU DO NOT HAVE ACCESS RIGHTS (REQUEST: {$pdta['qrymanifest']})";
+           }
+         }
+       }
+     }
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;                        
+   }
 
    function displaymanifestdetails ( $request, $passdata ) { 
      $rows = array(); 

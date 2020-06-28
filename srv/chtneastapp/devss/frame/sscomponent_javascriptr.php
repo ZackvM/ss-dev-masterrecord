@@ -5085,7 +5085,8 @@ function selectOfferRecord ( whichOfferId ) {
 
 function getNewManifest() { 
   byId('fldManifestNbrDsp').value = ""; 
-  byId('manifestMetrics').innerHTML = ""; 
+  byId('manifestMetrics').innerHTML = "";
+  byId('manifestDetailHolder').innerHTML = "";
   byId('standardModalBacker').style.display = 'block'; 
   var obj = new Object(); 
   obj['zxsdc'] = "ZZ"; 
@@ -5179,13 +5180,10 @@ function answerFillManifestSide ( rtnData ) {
     byId('standardModalBacker').style.display = 'none'; 
    } else {
      var dta = JSON.parse( rtnData['responseText'] );
-     //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":[{"bgs":"89887T001","preparation":"FROZEN \/ Negative 80 Degrees","metric":"5.0ml","shipdocrefid":"","shipdate":"","manifestnbr":"31","qty":1,"hourspost":0.5,"assignment":"INV4956 \/ REQ25434","sgProcDate":"06\/18\/2020","ars":"67\/B\/F","dxdesignation":"BLOOD  [NORMAL]"} 
-
-     var displayDetails = "";
+     var displayDetails = "<div id=detailHeader><div class=dHead>&nbsp;</div><div class=dHead>CHTN #</div><div class=dHead>Preparation</div><div class=dHead>Designation</div></div>";
      for ( var i = 0; i < dta['DATA'].length; i++ ) { 
        displayDetails += "<div id=\"dtl"+dta['DATA'][i]['bgs']+"\" class=manDtlRecord><div class=delIco onclick=\"removeSegFromManifest('"+dta['DATA'][i]['bgs']+"','"+dta['DATA'][i]['manifestnbr']+"');\">&times;</div><div class=manDetBGS>"+dta['DATA'][i]['bgs']+"</div><div class=manDetPrep>"+dta['DATA'][i]['preparation']+"</div><div class=manDetDesig>"+dta['DATA'][i]['dxdesignation']+"</div>   </div>";
      }
-     
      byId('manifestDetailHolder').innerHTML = displayDetails;
      refreshOOGrid();
      byId('standardModalBacker').style.display = 'none'; 
@@ -5292,14 +5290,101 @@ function answerManifestOfferDetails ( rtnData ) {
 
 }
 
+function sendToGetThisManifest ( ) { 
+  getThisManifest( byId('fldQryManifestNbr').value ); 
+}
+
 function getThisManifest ( thismanifest ) { 
   var dta = new Object(); 
   dta['qrymanifest'] = thismanifest;
   var passdta = JSON.stringify(dta);
-//  var mlURL = "/data-doers/qry-this-manifest";
-//  universalAJAX("POST",mlURL,passdta,answerThisManifest,2);
+  var mlURL = "/data-doers/qry-this-manifest";
+  universalAJAX("POST",mlURL,passdta,answerThisQryManifest,2);
 }
 
+function answerThisQryManifest ( rtnData ) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] );
+     byId('fldManifestNbrDsp').value = dta['DATA'][0]['manifestnbr'];    
+     byId('manifestMetrics').innerHTML = dta['DATA'][0]['whoby'] + " ("+dta['DATA'][0]['manifestdate'] + ")"; 
+     if ( byId('manifestdialogid') ) { 
+       fillManifestSide();
+       closeThisDialog( byId('manifestdialogid').value );
+     }
+   }
+
+}
+
+function markManifestSend() { 
+
+  if ( byId('fldManifestNbrDsp').value.trim() !== "" ) { 
+    var dta = new Object(); 
+    dta['qrymanifest'] = byId('fldManifestNbrDsp').value.trim();
+    var passdta = JSON.stringify(dta);
+    var mlURL = "/data-doers/send-this-manifest";
+    universalAJAX("POST",mlURL,passdta,answerSendManifest,2);
+  } else { 
+    alert('No Manifest Specified');
+  }
+
+}
+
+function answerSendManifest ( rtnData ) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] );
+     alert('Manifest has been sent!'); 
+   }
+
+}
+
+function printThisManifest( thismanifest = "" ) { 
+  var dta = new Object(); 
+  if ( thismanifest === "" ) {
+    if ( byId('fldManifestNbrDsp').value.trim() !== "" ) { 
+      dta['qrymanifest'] = byId('fldManifestNbrDsp').value.trim();
+    } else { 
+      alert('No Manifest Specified');
+      return null;
+    }
+  } else { 
+    dta['qrymanifest'] = thismanifest;
+  }
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/encrypt-this-manifest";
+  universalAJAX("POST",mlURL,passdta,answerEncryptManifest,2);
+}
+
+function answerEncryptManifest ( rtnData ) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] );
+     openOutSidePage("{$tt}/print-obj/inventory-manifest/"+dta['DATA']);
+   }
+
+}
 
 JAVASCR;
 return $rtnThis;

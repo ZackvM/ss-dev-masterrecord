@@ -859,16 +859,30 @@ $rtnThis = <<<STYLESHEET
 
 
   #dspWorkArea #manifestDspSide { border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; height: 78vh; overflow: hidden; padding: .1vh .3vw .1vh .3vw; }
-  #dspWorkArea #manifestDspSide #manifestBuildHead { display: grid; grid-template-columns: 7vw 4vw 4vw 6vw 4vw 4vw 4vw;     }
-  #dspWorkArea #manifestDspSide #manifestMetrics { grid-column: span 7; font-size: 1.2vh;    }
+  #dspWorkArea #manifestDspSide #manifestBuildHead { display: grid; grid-template-columns: 5vw 5vw 7vw 5vw 5vw 5vw;     }
+  #dspWorkArea #manifestDspSide #manifestBuildHead .holder button { font-size: 1.5vh; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); width: 99%; height: 5vh; transition: .4s; }
+  #dspWorkArea #manifestDspSide #manifestBuildHead .holder button:hover { background: rgba({$this->color_cornflowerblue},.5); cursor: pointer;   }
 
-  #dspWorkArea #manifestDspSide #manifestDetailHolder { grid-column: span 7; height: 70vh; overflow: auto; box-sizing: border-box;     }
-  #dspWorkArea #manifestDspSide #manifestDetailHolder .manDtlRecord { display: grid; grid-template-columns: 1vw 5vw 10vw auto; font-size: 1.2vh;  } 
+  #dspWorkArea #manifestDspSide #manifestBuildHead #mFldDsp { margin-top: 1vh; }  
+  #dspWorkArea #manifestDspSide #manifestBuildHead #mFldDsp .holderlable { font-size: 1.1vh; font-weight: bold; }
+  #dspWorkArea #manifestDspSide #manifestBuildHead #mFldDsp .element input[type=text] { border: none; padding: 0; } 
+
+  #dspWorkArea #manifestDspSide #manifestMetrics { grid-column: span 6; font-size: 1.2vh; text-align: right; padding: 0 .5vw .3vh 0;   }
+
+  #dspWorkArea #manifestDspSide #manifestDetailHolder { grid-column: span 6; height: 60vh; overflow: auto; box-sizing: border-box; border: 1px solid rgba({$this->color_zackgrey},1);    }
+  #dspWorkArea #manifestDspSide #manifestDetailHolder #detailHeader { display: grid; grid-template-columns: 1vw 5vw 10vw auto; font-size: 1.5vh;   }
+  #dspWorkArea #manifestDspSide #manifestDetailHolder #detailHeader .dHead { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .3vh 0;     }  
+  #dspWorkArea #manifestDspSide #manifestDetailHolder .manDtlRecord { display: grid; grid-template-columns: 1vw 5vw 10vw auto; font-size: 1.5vh; border-top: 1px solid rgba({$this->color_zackgrey},.4);  }
+  #dspWorkArea #manifestDspSide #manifestDetailHolder .manDtlRecord:nth-child(even) {  background: rgba({$this->color_cornflowerblue},.2);  }
+
+  #dspWorkArea #manifestDspSide #manifestDetailHolder .manDtlRecord .delIco { font-size: 2.5vh; text-align: center; }
+  #dspWorkArea #manifestDspSide #manifestDetailHolder .manDtlRecord .delIco:hover { cursor: pointer; color: rgba({$this->color_bred},1); }
+  #dspWorkArea #manifestDspSide #manifestDetailHolder .manDtlRecord .manDetBGS { padding: .5vh .1vw; } 
+  #dspWorkArea #manifestDspSide #manifestDetailHolder .manDtlRecord .manDetPrep { padding: .5vh .1vw; }
+  #dspWorkArea #manifestDspSide #manifestDetailHolder .manDtlRecord .manDetDesig { padding: .5vh .1vw; }
 
   #fldManifestNbrDsp { width: 6vw; } 
-
   .hoverIco:hover { cursor: pointer; color: rgba({$this->color_cornflowerblue},1);  } 
-
 
   .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  }       
 

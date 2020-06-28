@@ -1506,18 +1506,19 @@ RECORD;
              $maniDiv = <<<MANIFESTCREATE
 <div id=manifestBuildHead>
 
-   <div class=holder>
-     <div class=holderlable>Manifest #</div>
-     <div class=element><input type=text id=fldManifestNbrDsp READONLY></div>
-   </div>
-
    <div class=holder><button onclick="getNewManifest();">New</button></div>
    <div class=holder><button onclick="generateDialog('dialogListManifests','xxxx-xxxx');">Get</button></div>
    <div class=holder><button onclick="selectAllRecords();">Toggle Select</button></div>
    <div class=holder><button onclick="addRecordToManifest();">Add</button></div>
-   <div class=holder><button>Send</button></div>
-   <div class=holder><button onclick="alert('print');">Print</button></div>
- 
+   <div class=holder><button onclick="markManifestSend();">Send</button></div>
+   <div class=holder><button onclick="printThisManifest();">Print</button></div>
+
+   <div id=mFldDsp>
+     <div class=holderlable>Manifest #</div>
+     <div class=element><input type=text id=fldManifestNbrDsp READONLY></div>
+   </div>
+
+
    <div id=manifestMetrics> </div>
   
    <div id=manifestDetailHolder> </div>
@@ -5063,19 +5064,20 @@ function bldInventoryManifestListing ( $passedData ) {
         $mnTbl = "<div id=manifestHeadHold><div class=mHeader> </div><div class=mHeader> </div><div class=mHeader>Manifest #</div><div class=mHeader>Status</div><div class=mHeader>Segments</div><div class=mHeader>Creation Date / By</div></div>";   
         while ( $m = $mRS->fetch(PDO::FETCH_ASSOC) ) {
           
-          $edtIco = ( $m['mstatus'] === 'OPEN' ) ? "<i class=\"material-icons hoverIco\" onclick=\"alert('{$m['manifestnbrdsp']}');\">edit</i>" : "&nbsp;" ;
+          $edtIco = ( $m['mstatus'] === 'OPEN' ) ? "<i class=\"material-icons hoverIco\" onclick=\"getThisManifest ('{$m['manifestnbrdsp']}');\">edit</i>" : "&nbsp;" ;
 
-          $mnTbl .= "<div class=manifestRecord><div class=manifestIconOne><i class=\"material-icons hoverIco\" onclick=\"alert('{$m['manifestnbrdsp']}');\">print</i></div><div class=manifestIconTwo>{$edtIco}</div><div class=manifestNbrDsp>{$m['manifestnbrdsp']}</div><div class=manifestStsDsp>{$m['mstatus']}</div><div class=segonmani>{$m['segOnMani']}</div><div class=manifestMetDsp>{$m['manifestdatedsp']} ({$m['createdBy']})</div></div>";
+          $mnTbl .= "<div class=manifestRecord><div class=manifestIconOne><i class=\"material-icons hoverIco\" onclick=\"printThisManifest('{$m['manifestnbrdsp']}');\">print</i></div><div class=manifestIconTwo>{$edtIco}</div><div class=manifestNbrDsp>{$m['manifestnbrdsp']}</div><div class=manifestStsDsp>{$m['mstatus']}</div><div class=segonmani>{$m['segOnMani']}</div><div class=manifestMetDsp>{$m['manifestdatedsp']} ({$m['createdBy']})</div></div>";
         }
 
         $innerSpace = <<<QRYBOX
+<input type=hidden id=manifestdialogid value='{$pdta['dialogid']}'>
 <div id=mAnnounceHeader>Intra-CHTNEast Inventory Manifests Listing</div>
   <div id=mInstructions>Below is a list of Intra-CHTN Shipment Manifests created in the last 30 days for your present institution (Code: {$presInstCode}). You may select any open manifest to edit.  Any locked manifests may be printed only. If the manifest you are looking for does not appear on this list, you may enter a manifest number in the space at the bottom to retrieve that manifest. </div>
   <div id=mListHolder>{$mnTbl}</div>
   <div id=mQryLine>
     <div class=label>[OR] Enter a manifest #: </div>
     <div><input type=text id=fldQryManifestNbr></div>
-    <div><table class=tblBtn id=btnQryGo style="width: 4vw;"><tr><td style="font-size: 1.5vh; padding: 1.4vh .5vw;"><center>Go!</td></tr></table></div>   
+    <div><table class=tblBtn id=btnQryGo style="width: 4vw;" onclick="sendToGetThisManifest();"><tr><td style="font-size: 1.5vh; padding: 1.4vh .5vw;"><center>Go!</td></tr></table></div>   
   </div>
   <div align=right><table class=tblBtn id=btnClose style="width: 6vw;" onclick="closeThisDialog('{$pdta['dialogid']}');"><tr><td style="font-size: 1.5vh; padding: 1.4vh .5vw;"><center>Close</td></tr></table></div>
 QRYBOX;
