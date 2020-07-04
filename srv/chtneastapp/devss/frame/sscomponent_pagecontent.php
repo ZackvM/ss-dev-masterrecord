@@ -1625,6 +1625,7 @@ function inventory ( $rqststr, $whichusr ) {
      $selectordestroy = "";
      $selectorpdestroy = "";
      $selectorinvmedia = "";
+     $selectoriman = "";
      $pageTitle = "Inventory Module";
      $pageDetail = "";
      $topBtnBar = generatePageTopBtnBar('inventory');
@@ -1646,6 +1647,12 @@ function inventory ( $rqststr, $whichusr ) {
          $selectorpull = " data-selected='true' ";
          $pageTitle = "Process Biosamples For Shipment (Pull/Ship)";
          $pageDetail = self::bldInventoryProcessShipment();
+         break;
+       case 'processimanifest':
+         $topBtnBar = generatePageTopBtnBar('imanifest');
+         $selectoriman = " data-selected='true' ";
+         $pageTitle = "Process Intra-CHTNEast Shipment";
+         $pageDetail = self::bldInventoryProcessIntraManifest();
          break;
        case 'icount':
          $topBtnBar = generatePageTopBtnBar('inventory');
@@ -1691,6 +1698,7 @@ function inventory ( $rqststr, $whichusr ) {
    <div class=iControlBtn {$selectorcheckin}><a href="{$tt}/inventory/process-inventory">Process Inventory</a></div>
    <div class=iControlBtn {$selectorhpr}><a href="{$tt}/inventory/process-hpr-tray">Process HPR Tray</a></div>
    <div class=iControlBtn {$selectorpull}><a href="{$tt}/inventory/process-shipment">Process Shipment</a></div>
+   <div class=iControlBtn {$selectoriman}><a href="{$tt}/inventory/process-imanifest">Process Intra-Manifest</a></div>
    <div class=iControlBtn {$selectorcount}><a href="{$tt}/inventory/icount">Inventory Count</a></div>
    <div class=iControlBtn {$selectorpdestroy}><a href="{$tt}/inventory/pending-destroy-biosamples">P-Destroy Biosamples</a></div>
    <div class=iControlBtn {$selectordestroy}><a href="{$tt}/inventory/destroy-biosamples">Destroy Biosamples</a></div>
@@ -1786,6 +1794,76 @@ function bldInventoryProcessInventory() {
 PAGECONTENT;
 return $pageContent;
 }
+
+function bldInventoryProcessIntraManifest() { 
+
+$pageContent = <<<PAGECONTENT
+<div id=instrOne class=instructionLabel>1) Scan an intra-CHTN Shipment Manifest</div>
+<div id=intraMan>
+
+   <div class=elementholder>
+     <div class=elementlabel>Manifest # <input type=hidden id=fldManifestNbr> </div>
+     <div class=dataelement id=dspManifestNbr>&nbsp;</div>
+   </div>
+
+   <div class=elementholder>
+     <div class=elementlabel>Sending Institution</div>
+     <div class=dataelement id=dspInstitution>&nbsp;</div>
+   </div>
+
+   <div class=elementholder>
+     <div class=elementlabel>Created By/Sent By</div>
+     <div class=dataelement id=dspagent>&nbsp;</div>
+   </div>
+
+   <div class=elementholder>
+     <div class=elementlabel>Sent</div>
+     <div class=dataelement id=dspsentdate>&nbsp;</div>
+   </div>
+
+   <div class=elementholder>
+     <div class=elementlabel>Manifest Status</div>
+     <div class=dataelement id=dspmanifeststatus>&nbsp;</div>
+   </div>
+
+   <div class=elementholder>
+     <div class=elementlabel>Segments</div>
+     <div class=dataelement id=dspmanifestsegmentcount>&nbsp;</div>
+   </div>
+
+</div> 
+
+<div id=instrTwo class=instructionLabel>2) Scan Location </div>
+
+<div id=intraManLoc>
+
+   <div class=elementholder>
+     <div class=elementlabel>Check-In Location <input type=hidden id=locscancode></div>
+     <div class=dataelement id=locscandsp>&nbsp;</div>
+   </div>
+
+</div>
+
+
+<div id=instrThree class=instructionLabel>3) Scan CHTN #s from Intra-CHTN shipment.  Scanning will mark as received and change CHTN #'s Status </div>
+
+<div id=intraManSegs>
+
+   <div class=elementholder>
+     <div class=elementlabel>Manifest's Segment Listing</div>
+     <div class=dataelement id=dspSegmentListing>&nbsp;</div>
+   </div>
+
+</div>
+
+
+
+PAGECONTENT;
+return $pageContent;
+
+}
+
+
 
 function bldInventoryProcessShipment() {
     $pageContent = <<<PAGECONTENT
@@ -2521,6 +2599,11 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $sglabel = preg_replace( '/[Tt]_/','',$val['bgs']);
     $stsDte = (trim($val['statusdate']) === "") ? "&nbsp;" : "Status Date: {$val['statusdate']}";
     $stsDte .= (trim($val['statusby']) === "") ? "" : "<br>Status by: {$val['statusby']}";
+
+    if ( trim($val['manifestnbr']) !== "" ) { 
+        $eManifestNbr = cryptservice( $val['manifestprefix'] . "-" . substr('000000' . $val['manifestnbr'], -6) );
+        $stsDte .= "<br><a href=\"javascript:void(0);\" onclick=\"openOutSidePage('{$tt}/print-obj/inventory-manifest/{$eManifestNbr}');\" style=\"color: rgba(57,255,20,1);\" >Manifest #: " . $val['manifestprefix'] . "-" . substr('000000' . $val['manifestnbr'], -6) . "</a> (Manifest Status: {$val['manifeststatus']})";
+    }
 
     $assmnt = (strtoupper(substr($val['assignedinvestigator'],0,3)) === "INV") ?  "{$val['assignedinvestigatorlname']}, {$val['assignedinvestigatorfname']} ({$val['assignedinvestigator']})<br>{$val['assignedinvestigatorinstitute']}" : "" ;
     $subsitedsp = (trim($val['subsite']) === "") ? "" : ("::" . $val['subsite']);
@@ -3751,12 +3834,13 @@ $grid = <<<BSGRID
 </table>
 
 <table>  
-<tr><td class=fldLabel>Assigned To (Investigator Id)</td><td class=fldLabel>TQ-Request Id</td><td class=fldLabel>Ship Doc Number</td><td class=fldLabel>Ship Doc Status</td></tr>
+<tr><td class=fldLabel>Assigned To (Investigator Id)</td><td class=fldLabel>TQ-Request Id</td><td class=fldLabel>Ship Doc Number</td><td class=fldLabel>Ship Doc Status</td><td class=fldLabel>Inventory Manifest #</td></tr>
 <tr>
   <td><div class=suggestionHolder><input type=text id=qryInvestigator class="inputFld"><div id=investSuggestion class=suggestionDisplay>&nbsp;</div></div></td>
   <td><input type=text id=qryREQ class="inputFld" style="width: 10vw;"></td>
   <td><input type=text id=qryShpDocNbr class="inputFld" style="width: 20vw;"></td>
   <td>{$shpsts}</td>
+  <td><input type=text id=qryIManifestNbr class="inputFld" style="width: 10vw; text-align: right;"></td>
 </tr>
 <tr><td>(Type Inv#: for suggestion list type Divisional Code, Name, INV# or Institution.)</td><td>(REQ#)</td><td>(Single, range or series)</td></tr>
 </table>
@@ -3849,9 +3933,9 @@ case 'shipdocedit':
 BTNTBL;
     break;
 case 'inventorymanifest':
+//<td class=topBtnHolderCell onclick="generateDialog('dialogListManifests','xxxx-xxxx');"><table class=topBtnDisplayer id=btn border=0><tr><td><!--ICON //--></td><td>List Manifests</td></tr></table></td>       
 $innerBar = <<<BTNTBL
 <tr>
-<td class=topBtnHolderCell onclick="generateDialog('dialogListManifests','xxxx-xxxx');"><table class=topBtnDisplayer id=btn border=0><tr><td><!--ICON //--></td><td>List Manifests</td></tr></table></td>       
 </tr>
 BTNTBL;
   break;
@@ -3963,7 +4047,19 @@ case 'inventory':
 </tr>
 BTNTBL;
     break;
+case 'imanifest':
+    $innerBar = <<<BTNTBL
+<tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintLocationCard ><tr><td><i class="material-icons">print</i></td><td>Location Card</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintBCCard ><tr><td><i class="material-icons">print</i></td><td>Barcode Tag</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintSlides ><tr><td><i class="material-icons">print</i></td><td>Slides On Manifest</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintFrozens ><tr><td><i class="material-icons">print</i></td><td>Frozens On Manifest</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintPB ><tr><td><i class="material-icons">print</i></td><td>Fixed On Manifest</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintICard ><tr><td><i class="material-icons">print</i></td><td>ICards</td></tr></table></td> 
+</tr>
+BTNTBL;
 
+    break;
 case 'faTable':
 
     $agentListSQL = "SELECT originalaccountname, concat(ifnull(friendlyName,''),' (', ifnull(dspjobtitle,''),')') as dspagent FROM four.sys_userbase where allowInvtry = 1 and allowInd = 1 and primaryInstCode = 'HUP' order by friendlyname";

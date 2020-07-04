@@ -1641,6 +1641,38 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);  }
 #hprlabelscanholderdiv .slidedspdiv .sstatus { font-size: 1.1vh; color: rgba({$this->color_darkgreen},1); padding: .2vh .3vw .5vh .3vw;  text-align: center;  }  
 #hprlabelscanholderdiv .slidedspdiv .sprep { background: rgba({$this->color_dblue},1); font-size: 1vh; text-align: right; color: rgba({$this->color_white},1); padding: .1vh .3vw; } 
 
+
+
+
+.instructionLabel { font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .5vh 0 0 .2vw; }
+#intraMan { display: grid; grid-template-columns: 7vw 20vw 10vw 8vw 10vw 6vw; grid-gap: .2vw; margin: .5vh .2vw 0 .2vw;  }
+#intraMan .elementholder { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .2vh .2vw; box-sizing: border-box; } 
+#intraMan .elementholder .elementlabel { font-size: 1.5vh; color: rgba({$this->color_zackgrey},.6); font-weight: bold; }
+#intraMan .elementholder .dataelement { font-size: 1.8vh; color: rgba({$this->color_black},1); padding: .2vh .2vw; } 
+#dspmanifestsegmentcount { padding: .2vh 2vw;  } 
+
+
+#instrTwo { margin-top: 2vh; } 
+#intraManLoc { display: grid; grid-template-columns: 62vw; grid-gap: .2vw; margin: .5vh .2vw 0 .2vw;  }
+#intraManLoc .elementholder { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .2vh .2vw; box-sizing: border-box; } 
+#intraManLoc .elementholder .elementlabel { font-size: 1.5vh; color: rgba({$this->color_zackgrey},.6); font-weight: bold; }
+#intraManLoc .elementholder .dataelement { font-size: 1.8vh; color: rgba({$this->color_black},1); padding: .2vh .2vw; }
+
+
+#instrThree { margin-top: 2vh; } 
+#intraManSegs { display: grid; grid-template-columns: 62vw; grid-gap: .2vw; margin: .5vh .2vw 0 .2vw;  }
+#intraManSegs .elementholder { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .2vh .2vw; box-sizing: border-box; } 
+#intraManSegs .elementholder .elementlabel { font-size: 1.5vh; color: rgba({$this->color_zackgrey},.6); font-weight: bold; }
+#intraManSegs .elementholder .dataelement { font-size: 1.8vh; color: rgba({$this->color_black},1); padding: .2vh .2vw; }
+#dspSegmentListing { height: 50vh; overflow: auto; } 
+
+#segTblHeaderHold { display: grid; grid-template-columns: 5vw 7vw 12vw 4vw auto; grid-gap: .2vw;     }
+#segTblHeaderHold .sHead { background: rgba({$this->color_zackgrey}, 1);  color: rgba({$this->color_white},1); padding: .2vh .2vw; font-size: 1.5vh; font-weight: bold; } 
+
+.segRecHold { display: grid; grid-template-columns: 5vw 7vw 12vw 4vw auto; grid-gap: .2vw;  }
+.segRecHold:nth-child(even) { background: rgba({$this->color_cornflowerblue},.1); } 
+.segdataelement  { font-size: 1.5vh; border-bottom: 1px solid rgba({$this->color_zackgrey},.4); border-right: 1px solid rgba({$this->color_zackgrey},.4); padding: .3vh .2vw   }
+
 STYLESHEET;
       return $rtnThis;
 

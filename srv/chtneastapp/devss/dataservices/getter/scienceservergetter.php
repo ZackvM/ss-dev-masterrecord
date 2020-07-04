@@ -2090,6 +2090,11 @@ function runbiogroupsearchquery($srchrqstjson) {
             $qryArr += [':hprslidetrayloc' => "{$fldvalue}"];
             $fieldsQueried++;
             break;
+        case 'iManifest':
+            $sqlCritAdd .= " and ( sg.manifestnbr = :manifestnbr ) ";
+            $qryArr += [':manifestnbr' =>   (int)preg_replace('/[^0-9]/','', $fldvalue ) ];
+            $fieldsQueried++;
+            break;
       }
     }
   }
@@ -2129,6 +2134,9 @@ select bs.pbiosample
       , ifnull(date_format(sg.procurementdate,'%m/%d/%Y'),'') as procurementdate 
       , ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shipmentdate 
       , ifnull(sg.shipdocrefid,0) as shipdocnbr
+      , ifnull(sg.manifestnbr,'') as manifestnbr
+      , ifnull(mhd.prefix,'') as manifestprefix
+      , ifnull(mhd.mstatus,'') as manifeststatus
       , ifnull(sd.sdstatus,'') as sdstatus
       , ifnull(sg.procuredat,'') procuringinstitutioncode
       , ifnull(mnuinst.dspvalue,'') as procuringinstitution
@@ -2170,7 +2178,8 @@ select bs.pbiosample
       , ifnull(sg.segmentcomments,'') as sgcomments
 from masterrecord.ut_procure_segment sg 
 left join masterrecord.ut_procure_biosample bs on sg.biosamplelabel = bs.pbiosample 
-left join masterrecord.ut_shipdoc sd on sg.shipdocrefid = sd.shipdocrefid 
+left join masterrecord.ut_shipdoc sd on sg.shipdocrefid = sd.shipdocrefid
+left join masterrecord.ut_ship_manifest_head mhd on sg.manifestnbr = mhd.manifestnbr 
 left join vandyinvest.invest i on sg.assignedto = i.investid 
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'INSTITUTION') mnuinst on sg.procuredAt = mnuinst.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') mnuqms on bs.qcprocstatus = mnuqms.menuvalue
@@ -2183,7 +2192,7 @@ left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'B
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'PROCTYPE') as mnuprctype on bs.proctype = mnuprctype.menuvalue
 left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus mnu where mnu.menu = 'SEGMENTSTATUS') as mnuseg on sg.segstatus = mnuseg.menuvalue
 left join (SELECT iloc.scancode, iloc.locationdsp, ifnull(tsts.longvalue,'')  as hprtraystatusdsp, ifnull(rtn.locationdsp,'')  as heldwithin, ifnull(iloc.hprtrayheldwithinnote,'') as hprtrayheldwithinnote, ifnull(iloc.hprtrayreasonnotcompletenote,'') as hprtrayreasonnotcompletenote, ifnull(date_format(iloc.hprtraystatuson,'%m/%d/%Y'),'') as hprtraystatuson FROM four.sys_inventoryLocations iloc left join (SELECT dspvalue, longvalue FROM four.sys_master_menus where menu = 'HPRTrayStatus') as tsts on iloc.hprtraystatus = tsts.dspvalue left join four.sys_inventoryLocations rtn on iloc.hprtrayheldwithin = rtn.scancode where iloc.parentId = 293) as htry on sg.hprboxnbr = htry.scancode              
-where 1=1 and sg.voidind <> 1 and bs.voidind <> 1   {$sqlCritAdd} 
+where 1=1 and sg.voidind <> 1 and bs.voidind <> 1 {$sqlCritAdd} 
 order by sg.bgs
 limit 0, 5000
 SQLSTMT;

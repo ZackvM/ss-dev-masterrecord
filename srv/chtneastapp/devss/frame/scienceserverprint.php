@@ -11,7 +11,7 @@ class printobject {
     public $style = "";
     public $bodycontent = "";
 
-    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreviewreport', 'helpfile', 'systemreports','systemobjectrequests','furtheractionticket','inventoryitemtag'); //chartreview when that is built 
+    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreviewreport', 'helpfile', 'systemreports','systemobjectrequests','furtheractionticket','inventoryitemtag','inventorymanifest','manifestbarcoderun'); //chartreview when that is built 
     //pxchart = Patient Chart
     
     function __construct() { 		  
@@ -140,6 +140,18 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             $docid = $unencry;
             $bgnbr = '';                  
             break;
+        case 'inventorymanifest':
+            $dt = "SCIENCESERVER INVENTORY MANIFEST";
+            $docIdElem = $unencry;
+            $docid = $unencry;
+            $bgnbr = '';                  
+            break; 
+        case 'manifestbarcoderun':
+            $dt = "SCIENCESERVER MANIFEST BARCODE RUN";
+            $docIdElem = $unencry;
+            $docid = $unencry;
+            $bgnbr = '';                  
+            break;
         default: 
             //RETURN ERROR
     }    
@@ -212,7 +224,13 @@ function pagetabs($docobject) {
       break;
     case 'SCIENCESERVER SYSTEM OBJECT':
       $thisTab = "ScienceServer Object";
-        break;
+      break;
+    case 'SCIENCESERVER INVENTORY MANIFEST':
+      $thisTab = "{$docobject['documentid']} ScienceServer Inventory Manifest";
+      break;
+    case 'SCIENCESERVER MANIFEST BARCODE RUN':
+      $thisTab = "{$docobject['documentid']} ScienceServer Manifest Barcode Run";
+      break;
     default: 
       $thisTab =  "SCIENCESERVER PRINTABLE DOCUMENTS"; 
     break; 
@@ -249,6 +267,12 @@ function documenttext($docobject, $orginalURI) {
         break;    
     case 'SCIENCESERVER SYSTEM OBJECT':
         $doctext =  getSystemObject($docobject['documentid'], $originalURI) ;
+        break;
+    case 'SCIENCESERVER INVENTORY MANIFEST':
+        $doctext = getInventoryManifest ( $docobject['documentid'] , $originalURI );
+        break;
+    case 'SCIENCESERVER MANIFEST BARCODE RUN':
+        $doctext = getInventoryManifestBarcodeRun ( $docobject['documentid'] , $originalURI );
         break;
     }
     return $doctext;
@@ -1574,6 +1598,315 @@ $output = shell_exec($linuxCmd);
     return array('status' => $sts, 'text' =>  'THIS IS A SYSTEM OBJECT', 'pathtodoc' =>  genAppFiles . "/publicobj/documents/pathrpts/pxchart{$filehandle}.pdf", 'format' => 'pdf');
 }
 
+function getInventoryManifestBarcodeRun ( $manifestNbr, $originalURI ) { 
+
+    $at = genAppFiles;
+    $tt = treeTop;
+    require("{$at}/extlibs/bcodeLib/qrlib.php");
+    $tempDir = "{$at}/tmp/";
+    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+    $errorInd = 0;
+    require(serverkeys . "/sspdo.zck");  
+    session_start();
+
+    $who = session_id();
+    $usrSQL = "SELECT emailaddress as usrid, username, originalaccountname as usr, presentinstitution  FROM four.sys_userbase where sessionid = :sessid and allowInd = 1 and allowInvtry = 1 and TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+    $usrRS = $conn->prepare( $usrSQL ); 
+    $usrRS->execute( array( ':sessid' => $who  ));
+
+    ( $usrRS->rowCount() <> 1 ) ? list( $errorInd, $msgArr[] ) = array( 1, "USER ACCOUNT NOT FOUND") : "";
+
+    if ( $errorInd === 0 ) { 
+
+      $u = $usrRS->fetch(PDO::FETCH_ASSOC); 
+      $m = (int)preg_replace('/[^0-9]/','',$manifestNbr); 
+ 
+      $mSQL = "SELECT date_format(sentOn,'%m/%d/%Y') as sentondsp, inst.dspinstitution FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT menuvalue, dspValue as dspinstitution FROM four.sys_master_menus where menu = 'INSTITUTION') inst on mhd.institutionCode = inst.menuvalue where manifestnbr = :m";
+      $mRS = $conn->prepare( $mSQL );
+      $mRS->execute(array(':m' => $m  ));
+
+      ( $mRS->rowCount() <> 1 ) ? list( $errorInd, $msgArr[] ) = array( 1, "MANIFEST ({$manifestNbr}) NOT FOUND" ) : "";
+
+      
+      if ( $errorInd === 0 ) {
+
+          $detSQL = "SELECT replace(sg.bgs,'_','') as bgs, concat(ifnull(sg.prepmethod,''), if(ifnull(sg.preparation,'')='','',concat(' [',ifnull(sg.preparation,''),']'))) as prep , concat(ifnull(sg.metric,''), ifnull(muom.dspshortmetric,'')) as metric, concat(ifnull(bs.pxiAge,0),'/', ifnull(bs.pxiRace,'U'),'/', ifnull(bs.pxiGender,'U')) as ars, concat(if(ifnull(bs.tissType,'')='','',ifnull(bs.tissType,'')) , if( concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat(' (',ifnull(bs.subSite,''),')'))) = '','',concat(' :: ',concat(ifnull(bs.anatomicSite,''), if(ifnull(bs.subSite,'')='','',concat(' (',ifnull(bs.subSite,''),')'))))), if( concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' (',ifnull(bs.subdiagnos,''),')')))='','',concat(' :: ',concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' (',ifnull(bs.subdiagnos,''),')'))))) , if(ifnull(bs.metsSite,'')='','',concat(' :: ',ifnull(bs.metsSite,'')))) as desig FROM masterrecord.ut_ship_manifest_segment msg left join masterrecord.ut_ship_manifest_head mhd on msg.manifestnbr = mhd.manifestnbr left join masterrecord.ut_procure_segment sg on msg.segmentid = sg.segmentId left join (SELECT menu, menuvalue, dspValue as dspshortmetric FROM four.sys_master_menus where menu = 'metric') muom on sg.metricuom = muom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample where msg.includeind = 1 and msg.manifestnbr = :m and sg.prepmethod <> 'SLIDE'";
+          $detRS = $conn->prepare( $detSQL );
+          $detRS->execute( array( ':m' => $m ));
+          if ( $detRS->rowCount() > 0 ) { 
+            $det = $detRS->fetchAll(PDO::FETCH_ASSOC);
+            //[{"bgs":"89889T001","prep":"PB [FFPE]","metric":"0.10g","ars":"28\/BLACK\/F","desig":"DISEASE ::KIDNEY"},
+
+
+            $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: 1in;  \" "); 
+            $cellCntr = 0; 
+            foreach ( $det as $v ) {
+              if ($cellCntr === 2) { 
+                $rowTbl .= "</tr><tr>";
+                $cellCntr = 0;
+              }
+
+
+       //****************CREATE BARCODE
+        $codeContents = "{$v['bgs']}";
+        $fileName = 'bc' . generateRandomString() . '.png';
+        $pngAbsoluteFilePath = $tempDir.$fileName;
+        if (!file_exists($pngAbsoluteFilePath)) {
+          QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+        } 
+        $qrcode = base64file("{$pngAbsoluteFilePath}", "", "png", true," class=dspBarcode ");
+        //********************END BARCODE CREATION
+
+    $lblTbl = <<<LBLLBL
+<table border=0 cellpadding=0 cellspacing=0 class=labelHoldTbl>
+<tr><td style="padding: 4px 0 0 4px;">{$favi}</td><td align=right valign=bottom> 
+
+   <table cellpadding=0 cellspacing=0>
+      <tr><td class=CHTNTitle>CHTNEastern Biosample</td></tr>
+      <tr><td class=CHTNAddress>3400 Spruce Street, DULLES 565<br>Philadelphia, PA 19104</td></tr>
+      <tr><td class=CHTNAddress>(215) 662-4570</td></tr>
+      <tr><td class=CHTNAddress>https://www.chtneast.org</td>
+     </tr></table>
+
+</td></tr>
+<tr><td colspan=2><center>{$qrcode}</td></tr>
+<tr><td colspan=2 class=labelDataLabel>Biosample Number</td></tr>
+<tr><td colspan=2 class=CHTNNbr>{$v['bgs']}</td></tr>
+<tr><td colspan=2 class=labelDataLabel>Diagnosis Designation</td></tr>
+<tr><td colspan=2 style="font-size: 11pt; text-align: center;">{$v['desig']}</td></tr>
+<tr><td colspan=2 class=labelDataLabel>Data Metrics</td></tr>
+<tr><td colspan=2><center>
+                  <table class=DMHold>
+                    <tr><td class=DELbl>Preparation</td><td class=DELbl>Metric</td><td class=DELbl>Donor Age/Race/Sex</td></tr>
+                    <tr><td class=DE>{$v['prep']}</td><td class=DE>{$v['metric']}</td><td>{$v['ars']}</td></tr>
+                  </table></td></tr>
+<tr><td colspan=2 style="max-height: 3in;">&nbsp;</td></tr>
+</table>
+LBLLBL;
+
+
+              $rowTbl .= "<td>{$lblTbl}</td>";
+              $cellCntr++;
+            }
+            $detTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$rowTbl}</tr></table>"; 
+
+          } else { 
+             $detTbl = "<table><tr><td>NO SEGMENTS FOUND FOR THIS MANIFEST (NON-SLIDE SEGMENTS)</td></tr></table>";
+          }
+
+$docText = <<<PRTEXT
+   <html><head>
+   <style>
+     @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
+     html {margin: 0;}
+     body { margin: 0; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1); }
+     .line {border-bottom: 1px solid rgba(0,0,0,1); height: 2pt; }
+  
+     .dataLabel { font-size: 8pt; font-weight: bold; } 
+     .smlDataDsp { font-size: 8pt; } 
+     .pageTitle { font-size: 14pt; font-weight: bold; }
+
+     .labelHoldTbl {  width: 3.8in; height: 4.5in;    border: 1px solid #000000; box-sizing: border-box;  }
+     .CHTNTitle { font-family: Roboto; font-size: 16pt; color: #000084; font-weight: bold; text-align: right; padding: 0 .03in .05in 0;  } 
+     .CHTNAddress { font-family: tahoma, verdana; font-size: 10pt; color: #000084; font-weight: bold; text-align: right; padding-right: .03in;  } 
+
+     .labelDataLabel {  font-size: 9pt; border-bottom: 1px solid #d3d3d3; font-weight: bold; padding: 4px 0 0 4px;  }
+     .CHTNNbr { font-size: 16pt; text-align: center; font-weight: bold;  } 
+
+     .DMHold { font-size: 9pt;  } 
+     .DELbl { font-weight: bold; font-size: 8pt; border-bottom: 1px solid #d3d3d3; }
+     .DE { font-size: 9pt; }  
+
+
+     .dspBarcode { height: 1.2in; } 
+   </style>
+   </head>
+   <body>
+     <table border=0 width=100%> 
+       <tr><td class=pageTitle>MANIFEST BARCODE RUN</td><td align=right><div><div class=dataLabel>Manifest #</div><div class=smlDataDsp>{$manifestNbr}</div></div></td></tr>
+       <tr><td colspan=2 class=line></td></tr>
+     </table>
+       {$detTbl}
+   </body>
+   </html>
+PRTEXT;
+      } else { 
+        $docText = json_encode( $msgArr );
+      }
+
+    } else { 
+        $docText = json_encode( $msgArr );
+    }
+
+    $filehandle = generateRandomString();                
+    $manDocFile = genAppFiles . "/tmp/mnbcr{$filehandle}.html";
+    $manDhandle = fopen($manDocFile, 'w');
+    fwrite($manDhandle, $docText);
+    fclose;
+    $manPDF = genAppFiles . "/publicobj/documents/manifestbcr{$filehandle}.pdf";
+    $linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED MANIFEST BARCODE\" {$manDocFile} {$manPDF}";
+    $output = shell_exec($linuxCmd);
+    
+    return array('status' => $sts, 'text' =>  '', 'pathtodoc' => genAppFiles . "/publicobj/documents/manifestbcr{$filehandle}.pdf", 'format' => 'pdf');
+}
+
+function getInventoryManifest ( $manifestNbr, $originalURI ) { 
+    $at = genAppFiles;
+    $tt = treeTop;
+    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+    $errorInd = 0;
+    require(serverkeys . "/sspdo.zck");  
+    session_start();
+
+    $who = session_id();
+    $usrSQL = "SELECT emailaddress as usrid, username, originalaccountname as usr, presentinstitution  FROM four.sys_userbase where sessionid = :sessid and allowInd = 1 and allowProc = 1 and TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+    $usrRS = $conn->prepare( $usrSQL ); 
+    $usrRS->execute( array( ':sessid' => $who ));
+
+    ( $usrRS->rowCount() <> 1 ) ? list( $errorInd, $msgArr[] ) = array( 1, "USER ACCOUNT NOT FOUND") : "";
+
+    if ( $errorInd === 0 ) { 
+
+      $u = $usrRS->fetch(PDO::FETCH_ASSOC);
+
+      $manHeadSQL = "SELECT mhd.manifestnbr, concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) as manifestnbrdsp, mstatus, date_format(manifestdate,'%m/%d/%Y %H:%i') as manifestdatedsp, createdBy, ifnull(mcnt.segOnMani,0) as segOnMani, institutionCode, inst.dspvalue, inst.address, ifnull(date_format(senton,'%m/%d/%Y'),'') as senddate, ifnull(sentby,'') as sentby  FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT manifestnbr, count(1) segOnMani FROM masterrecord.ut_ship_manifest_segment where includeind = 1 group by manifestnbr) as mcnt on mhd.manifestnbr = mcnt.manifestnbr LEFT JOIN (SELECT menuvalue, dspvalue, ifnull(additionalInformation,'[NO ADDRESS LISTED]') as address FROM four.sys_master_menus where menu = 'INSTITUTION') inst on mhd.institutionCode = inst.menuvalue where mhd.institutioncode = :instcode and concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) = :mannbr";
+      $manHeadRS = $conn->prepare( $manHeadSQL );
+      $manHeadRS->execute( array( ':mannbr' => $manifestNbr, ':instcode' => $u['presentinstitution'] ));
+
+      ( $manHeadRS->rowCount() <> 1 ) ? list( $errorInd, $msgArr[] ) = array( 1, "MANIFEST ({$manifestNbr}) NOT FOUND. EITHER DOESN'T EXIST OR USER NOT ALLOWED") : "";
+
+      if ( $errorInd === 0 ) { 
+        $manHead = $manHeadRS->fetch(PDO::FETCH_ASSOC);
+
+        //****************CREATE BARCODE
+        require ("{$at}/extlibs/bcodeLib/qrlib.php");
+        $tempDir = "{$at}/tmp/";
+        $codeContents = "IMN-{$manifestNbr}";
+        $fileName = 'man' . generateRandomString() . '.png';
+        $pngAbsoluteFilePath = $tempDir.$fileName;
+        if (!file_exists($pngAbsoluteFilePath)) {
+          QRcode::png($codeContents, $pngAbsoluteFilePath, QR_ECLEVEL_L, 2);
+        } 
+        $qrcode = base64file("{$pngAbsoluteFilePath}", "topqrcode", "png", true, " style=\"height: .7in;\"   ");
+        //********************END BARCODE CREATION
+
+        $fromAdd = preg_replace('/\n/','<br>', $manHead['address']);
+        $printDate = date('m/d/Y');
+  
+        $sendDate = ( trim($manHead['senddate']) === "" ) ? "<span class=bigOleError>ERROR: MANIFEST HAS NOT BEEN MARKED AS SENT</span>" : $manHead['senddate']; 
+        $sendBy = ( trim($manHead['sentby']) === "" ) ? "" : " ({$manHead['sentby']})";
+
+        $manint = (int)$manHead['manifestnbr'];
+        $detSQL = "SELECT replace(sg.bgs,'_','') as bgs, concat(ifnull(sg.prepmethod,''), concat(' [',ifnull(sg.preparation,''),']')) as prep, if( ifnull(sg.metric,'') = '' ,'', concat( ifnull(sg.metric,''),' ', ifnull(uom.dspvalue,''))) as metric, trim(concat(ifnull(bs.anatomicSite,''),' ', trim(concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','', concat(' (', ifnull(bs.subdiagnos,''),')')))), concat(' [',ifnull(bs.tissType,''),']'))) as shortdesig, concat(ifnull(bs.pxiAge,'UNK'),'/',substr(ifnull(bs.pxiRace,'UNK'),1,3),'/',ifnull(bs.pxiGender,'UNK')) as ars, date_format(msg.addedon,'%m/%d/%Y') as segaddedon, msg.addedby segaddedby FROM masterrecord.ut_ship_manifest_segment msg LEFT JOIN masterrecord.ut_procure_segment sg on msg.segmentid = sg.segmentid left join (SELECT menuvalue, dspValue FROM four.sys_master_menus where menu = 'metric') uom on sg.metricUOM = uom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample where sg.manifestnbr = :manifestint and msg.includeind = 1 order by replace(sg.bgs,'_','')";
+        $detRS = $conn->prepare( $detSQL ); 
+        $detRS->execute(array(':manifestint' => $manint ));
+
+        if ( $detRS->rowCOunt() > 0 ) { 
+
+
+       $segTbl = "<table width=100% border=0 id=detailTbl><thead><tr><th><!--Line Nbr //--></th><th>CHTN #</th><th>Preparation</th><th>Metric</th><th>Short Designation</th><th>A/R/S</th><th>Added</th></tr></thead><tbody>";
+
+       $rcd = 0; 
+       while ( $r = $detRS->fetch(PDO::FETCH_ASSOC) ) { 
+        $rcd += 1;
+        $segTbl .= "<tr>"
+                 . "<td valign=top>{$rcd}</td>"
+                 . "<td valign=top>{$r['bgs']}</td>"
+                 . "<td valign=top>{$r['prep']}</td>"
+                 . "<td valign=top style=\"white-space: nowrap;\">{$r['metric']}</td>"
+                 . "<td valign=top>{$r['shortdesig']}</td>"
+                 . "<td valign=top>{$r['ars']}</td>"
+                 . "<td valign=top>{$r['segaddedon']}<br>({$r['segaddedby']})</td>"
+                 . "</tr>";
+       }
+
+       $segTbl .= "</tbody></table>";
+
+        } else { 
+          $segTbl = "<table width=100%><tr><td><center><span class=bigOleError>NO SEGMENTS HAVE BEEN ADDED TO THIS MANIFEST</span></td></tr></table>";
+        }
+
+        $docText = <<<PRTEXT
+             <html>
+                <head>
+                <style>
+                   @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
+                   html {margin: 0;}
+                   body { margin: 0; font-family: Roboto; font-size: 1.5vh; color: rgba(48,57,71,1); }
+                   .line {border-bottom: 1px solid rgba(0,0,0,1); height: 2pt; }
+                   .bigOleError { font-size: 10pt; color: rgba(204, 0, 0,1); font-weight: bold; }
+                   #maniHeadTbl { font-size: 10pt; margin-top: 5px; }
+                   #maniHeadTbl #headr { font-weight: bold; text-align: center; border: 1px solid rgba(0,0,0,1); padding: 10px 0; background: rgba(227, 227, 227, 1);  }
+                   #verifWarn {  font-weight: bold; text-align: center; border: 1px solid rgba(0,0,0,1); padding: 10px 0; background: rgba(227, 227, 227, 1); font-size: 10pt; } 
+                   #maniHeadTbl .datalabel { background: rgba(0,0,0,1); color: rgba(255,255,255,1); font-size: 8pt; font-weight: bold; padding: 5px 3px; width: 15px;   }  
+                   #maniHeadTbl .datadsp { border-bottom: 1px solid rgba(0,0,0,1); padding: 0 4px;  }
+                   #shipTbl { font-size: 10pt; }
+                   #shipTbl .shipHead { background: rgba(0,0,0,1); color: rgba(255,255,255,1); font-size: 8pt; font-weight: bold; padding: 5px 3px;     }  
+                   #shipTbl .shipcube { border: 1px solid rgba(0,0,0,1); line-height: 1.3em; padding: 4px;   }
+                   #detailTbl { font-size: 9pt; border: 1px solid rgba(0,0,0,1); }
+                   #detailTbl thead th { background: rgba(0,0,0,1); color: rgba(255,255,255,1); font-weight: bold; }
+                   #detailTbl tbody tr td { border-bottom: 1px solid rgba(150,150,150,1); padding: 3px 2px; border-right: 1px solid rgba(150,150,150,1); } 
+                   #detailTbl tbody tr:nth-child(even) {  background: rgba(227, 227, 227, .6); }
+                </style>
+                </head>
+                <body>
+                <table border=0 width=100%>
+                <tr><td rowspan=2 valign=top style="width: 1in;">{$favi}</td><td style="font-size: 14pt; font-weight: bold; padding: 0 0 0 0; ">INVENTORY MANIFEST: {$manifestNbr} </td><td rowspan=2 align=right valign=top>{$qrcode}</td></tr>
+                <tr><td valign=top style=" font-size: 8pt;"><b>CHTN Eastern Division</b><br>Unversity of Pennsylvania Perelman School of Medicine<br>3400 Spruce Street, Dulles 565, Philadelphia, Pennsylvania 19104 <br>(215) 662 4570 | https://www.chtneast.org | email: chtnmail@uphs.upenn.edu</td></tr>
+                <tr><td colspan=3 class=line></td></tr>
+
+                <tr><td colspan=3>  
+                   <table border=0 width=100% id=maniHeadTbl>
+                     <tr><td colspan=2 id=headr>CHTNEAST INTRA-SHIPPING MANIFEST</td></tr>
+                     <tr><td class=datalabel>Manifest #: </td><td class=datadsp>{$manHead['manifestnbrdsp']}</td></tr>
+                     <tr><td class=datalabel>Status: </td><td class=datadsp>{$manHead['mstatus']}</td></tr>
+                     <tr><td class=datalabel>Segment(s): </td><td class=datadsp>{$manHead['segOnMani']}</td></tr>
+                     <tr><td class=datalabel>Institution: </td><td class=datadsp>{$manHead['dspvalue']} ({$manHead['institutionCode']})</td></tr>
+                     <tr><td class=datalabel>Initiated: </td><td class=datadsp>{$manHead['manifestdatedsp']} ({$manHead['createdBy']})</td></tr>
+                     <tr><td class=datalabel>Sent: </td><td class=datadsp>{$sendDate}{$sendBy}</td></tr>
+                     <tr><td class=datalabel>Printed: </td><td class=datadsp>{$printDate} ({$u['username']})</td></tr>
+                   </table>    
+                </td></tr>
+
+                <tr><td colspan=3>
+                  <table width=100% border=0 id=shipTbl>
+                    <tr><td width=50% class=shipHead>Ship From</td><td width=50% class=shipHead>Ship To</td></tr>
+                    <tr><td valign=top class=shipcube>{$fromAdd}</td><td valign=top class=shipcube><b>CHTN Eastern Division</b><br>Unversity of Pennsylvania Perelman School of Medicine<br>3400 Spruce Street, Dulles 565<br>Philadelphia, Pennsylvania 19104</td></tr>
+
+                  </table>
+                </td></tr>
+
+                <tr><td colspan=3 class=line></td></tr>
+ 
+                <tr><td colspan=3 id=verifWarn>Please ensure that all CHTN segment numbers listed below are contained in the package being sent to the CHTN Eastern distribution facility. Thank you! </td></tr> 
+          
+                <tr><td colspan=3>
+  
+                  {$segTbl}
+
+                </td></tr>
+                </table>
+                </body>
+                </html>
+PRTEXT;
+
+      } else { 
+        $docText = json_encode( $msgArr );
+      }
+    } else {
+      $docText = json_encode( $msgArr );
+    }
+    $filehandle = generateRandomString();                
+    $manDocFile = genAppFiles . "/tmp/prz{$filehandle}.html";
+    $manDhandle = fopen($manDocFile, 'w');
+    fwrite($manDhandle, $docText);
+    fclose;
+    $manPDF = genAppFiles . "/publicobj/documents/manifest{$filehandle}.pdf";
+    $linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED INVENTORY MANIFEST\"     {$manDocFile} {$manPDF}";
+    $output = shell_exec($linuxCmd);
+    
+    return array('status' => $sts, 'text' =>  '', 'pathtodoc' => genAppFiles . "/publicobj/documents/manifest{$filehandle}.pdf", 'format' => 'pdf');
+}
 
 function getPathReportText($pathrptid, $orginalURI) { 
     $at = genAppFiles;

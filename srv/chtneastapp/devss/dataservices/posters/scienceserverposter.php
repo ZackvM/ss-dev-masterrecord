@@ -1201,7 +1201,216 @@ EMAILBODY;
     }
     
     //////////////// ^^^ VAULT ABOVE /////////////////
-    
+
+    function invtryprintimanifestobjects ( $request, $passdata ) { 
+        
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO INVENTORY OR USER'S PASSWORD HAS EXPIRED.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      if ( $errorInd === 0 ) { 
+        //{"typeofprint":"SLIDES","manifestnbr":"55"}
+        ( !array_key_exists('manifestnbr', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'manifestnbr' DOES NOT EXIST.")) : ""; 
+        ( !array_key_exists('typeofprint', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'typeofprint' DOES NOT EXIST.")) : ""; 
+       
+        if ( $errorInd === 0 ) { 
+          
+          ( trim($pdta['manifestnbr']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A Manifest Number is required")) : "";
+          ( trim($pdta['typeofprint']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "A Specified Print Queue is required")) : "";
+
+          if ( $errorInd === 0 ) { 
+            //for printer function see poster line approx 1703
+
+            $baseSQL = "SELECT replace(sg.bgs,'_','') as bgs FROM masterrecord.ut_ship_manifest_segment msg left join masterrecord.ut_ship_manifest_head mhd on msg.manifestnbr = mhd.manifestnbr left join masterrecord.ut_procure_segment sg on msg.segmentid = sg.segmentId where msg.includeind = 1 and mhd.mstatus <> 'OPEN' and msg.manifestnbr = :manifestnbr";
+            //TODO: MAKE THIS DYNAMIC - DON'T HARD CODE PRINTER VALUES BELOW
+            switch ( $pdta['typeofprint'] ) { 
+              case 'SLD':
+                  $baseSQL .= " and sg.prepMethod = 'SLIDE'";
+                  $lpr = "BBP81Coord";
+                  $frmt = "newslideFormat";
+                  break;
+              case 'FRZ':
+                  $baseSQL .= " and sg.prepMethod = 'FROZEN'"; 
+                  $lpr = "Anubis";
+                  $frmt = "anubis";
+                  break;
+              case 'FIX':
+                  $baseSQL .= " and ( sg.prepMethod <> 'FROZEN' and sg.prepMethod <> 'SLIDE' )   "; 
+                  $lpr = "Hades";
+                  $frmt = "hades";
+                  break;
+              default:
+
+            }
+            $baseRS = $conn->prepare( $baseSQL ); 
+            $baseRS->execute(array( ':manifestnbr' => $pdta['manifestnbr']  )); 
+            if ( $baseRS->rowCount() > 0 ) { 
+                $bgsList = $baseRS->fetchAll(PDO::FETCH_ASSOC);
+   
+                if ( $pdta['typeofprint'] <> 'ICRD' ) { 
+                    foreach ( $bgsList as $k => $v ) {
+                      $prnRqst['labeltext'] = $v['bgs'];
+                      $prnRqst['printer'] = $lpr;
+                      $prnRqst['printformat'] = $frmt;
+                      self::printthisinventorylabel( "", json_encode( $prnRqst ) );
+
+                    } 
+                    $responseCode = 200;
+
+                } else { 
+                  $mSQL = "SELECT concat(ifnull(prefix,'XX'),'-', substr(concat('000000',ifnull(manifestnbr,0)),-6)) as manifest FROM masterrecord.ut_ship_manifest_head where manifestnbr = :manifestnbr";
+                  $mRS = $conn->prepare( $mSQL );
+                  $mRS->execute(array( ':manifestnbr' => $pdta['manifestnbr'] ));
+
+                  if ( $mRS->rowCount() < 1 ) { 
+                    $msgArr[] = "ERROR:  MANIFEST NOT FOUND ... SEE CHTNEASTERN INFORMATICS";
+                  } else { 
+                    $m = $mRS->fetch(PDO::FETCH_ASSOC);
+                    $dta[] = cryptservice( $m['manifest'] );
+                    $responseCode = 200;
+                  }
+                }
+
+            } else { 
+                $msgArr[] = "NO SEGMENTS FOUND ON PROVIDED MANIFEST";
+            }
+          }
+        }
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    }
+
+
+    function invtryimanifestbgprocesses ( $request, $passdata ) {
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      //{"manifestnbr":"55","locscancode":"FRZB385","bglabel":"89891T001"}
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO INVENTORY OR USER'S PASSWORD HAS EXPIRED.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      if ( $errorInd === 0 ) { 
+
+        ( !array_key_exists('manifestnbr', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'manifestnbr' DOES NOT EXIST.")) : ""; 
+        ( !array_key_exists('locscancode', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'locscancode' DOES NOT EXIST.")) : ""; 
+        ( !array_key_exists('bglabel', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'bglabel' DOES NOT EXIST.")) : ""; 
+
+        if ( $errorInd === 0 ) { 
+
+           ( trim( $pdta['manifestnbr'] ) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "NO MANIFEST NUMBER SPECIFIED")) : "";
+           ( trim( $pdta['locscancode'] ) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "NO LOCATION CODE SPECIFIED")) : "";
+           ( trim( $pdta['bglabel'] ) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "NO LOCATION CODE SPECIFIED")) : "";
+          
+           if ( $errorInd === 0 ) { 
+
+
+
+
+
+           }
+        }
+      }
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    }
+
+    function invtrygetimanifest ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO INVENTORY OR USER'S PASSWORD HAS EXPIRED.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      if ( $errorInd === 0 ) { 
+        ( !array_key_exists('manifestscan', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'manifestscan' DOES NOT EXIST.")) : ""; 
+        if ( $errorInd === 0 ) { 
+          ( trim($pdta['manifestscan']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "NO SCAN VALUE")) : "";
+
+          if ( $errorInd === 0 ) {    
+
+              ( !preg_match('/^(IMN)-[A-Za-z]{2}-[0-9]{6}$/',$pdta['manifestscan']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED MANIFEST SCAN DOES NOT CONFIRM TO THE PROPER MANIFEST TAG LABEL")) : "";
+              if ( $errorInd === 0 ) { 
+                  $manifestnbr = (int)preg_replace('/[^0-9]/','',$pdta['manifestscan'] );
+
+                  $manifestHeadSQL = "SELECT mhd.manifestnbr, concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) as manifestnbrdsp, mstatus, date_format(manifestdate,'%m/%d/%Y %H:%i') as manifestdatedsp, createdBy, ifnull(mcnt.segOnMani,0) as segOnMani, institutionCode, inst.dspvalue as dspinstitution, inst.address, ifnull(date_format(senton,'%m/%d/%Y'),'') as senddate, ifnull(sentby,'') as sentby  FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT manifestnbr, count(1) segOnMani FROM masterrecord.ut_ship_manifest_segment where includeind = 1 group by manifestnbr) as mcnt on mhd.manifestnbr = mcnt.manifestnbr LEFT JOIN (SELECT menuvalue, dspvalue, ifnull(additionalInformation,'[NO ADDRESS LISTED]') as address FROM four.sys_master_menus where menu = 'INSTITUTION') inst on mhd.institutionCode = inst.menuvalue where mhd.mstatus <> 'OPEN' and mhd.manifestnbr = :manifestInt";
+                  $manifestHeadRS = $conn->prepare( $manifestHeadSQL );
+                  $manifestHeadRS->execute(array( ':manifestInt' => $manifestnbr ));
+                  if ( $manifestHeadRS->rowCount() <> 1 ) { 
+                      $msgArr[] = "SCANNED MANIFEST NUMBER WAS NOT FOUND.  EITHER IT DOESN'T EXIST OR IS NOT IN A STATUS OF 'SENT'";
+                  } else { 
+                    $dta['manifesthead'] = $manifestHeadRS->fetch(PDO::FETCH_ASSOC);
+
+                    $segSQL = "SELECT sg.segmentid, sgs.segstatusdsp, replace(sg.bgs,'_','') as bgs, concat(ifnull(sg.prepmethod,''), concat(' [',ifnull(sg.preparation,''),']')) as prep, if( ifnull(sg.metric,'') = '' ,'', concat( ifnull(sg.metric,''),' ', ifnull(uom.dspvalue,''))) as metric, trim(concat(ifnull(bs.anatomicSite,''),' ', trim(concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','', concat(' (', ifnull(bs.subdiagnos,''),')')))), concat(' [',ifnull(bs.tissType,''),']'))) as shortdesig, concat(ifnull(bs.pxiAge,'UNK'),'/',substr(ifnull(bs.pxiRace,'UNK'),1,3),'/',ifnull(bs.pxiGender,'UNK')) as ars, date_format(msg.addedon,'%m/%d/%Y') as segaddedon, msg.addedby segaddedby FROM masterrecord.ut_ship_manifest_segment msg LEFT JOIN masterrecord.ut_procure_segment sg on msg.segmentid = sg.segmentid left join (SELECT menuvalue, dspValue FROM four.sys_master_menus where menu = 'metric') uom on sg.metricUOM = uom.menuvalue left join (SELECT menuvalue, dspvalue as segstatusdsp FROM four.sys_master_menus where menu = 'SEGMENTSTATUS') sgs on sg.segstatus = sgs.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample where sg.manifestnbr = :manifestint and msg.includeind = 1 order by replace(sg.bgs,'_','')";
+                    $segRS = $conn->prepare( $segSQL );  
+                    $segRS->execute( array( ':manifestint' => $manifestnbr ));
+
+                    $dta['manifestsegments'] = $segRS->fetchAll(PDO::FETCH_ASSOC);
+
+                    $responseCode = 200;
+                  }
+              }
+          }
+        } 
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    } 
+
     function invtryhprtrayscanslidelocation ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -1599,7 +1808,7 @@ EMAILBODY;
           $prntVal['FIELD03'] = $pdta['labeltext'];
           $prntVal['FIELD04'] = $pdta['labeltext'];
           //$msgArr[] = $pdta['printer'] . " ... " . $pdta['printformat'] . " ... " . json_encode($prntVal);
-          $msgArr[] = "ZACK WAS HERE";
+          //$msgArr[] = "ZACK WAS HERE";
 
           $insSQL = "insert into serverControls.lblToPrint( labelrequested, printerrequested, datastringpayload, bywho, onwhen) values(:formatname,:printername,:datastring,:usr,now())";
           $insRS = $conn->prepare($insSQL); 
@@ -8540,18 +8749,30 @@ RECORD;
 
            if ( $manRS->rowCount() === 1 ) { 
 
-             $histSQL = "insert into masterrecord.history_ship_manifest_head (prefix, manifestnbr, mstatus, mstatusdate, manifestdate, createdBy, institutionCode, sentOn, sentBy, histOn, histBy) SELECT prefix, manifestnbr, mstatus, mstatusdate, manifestdate, createdBy, institutionCode, sentOn, sentBy, now(), :usr FROM masterrecord.ut_ship_manifest_head where manifestnbr = :manifestnbr";
-             $histRS = $conn->prepare( $histSQL ); 
-             $histRS->execute( array( ':manifestnbr' => $manNbr, ':usr' => $u['usr'] ));
 
-             $updSQL = "update masterrecord.ut_ship_manifest_head set senton = now(), sentby = :usr, mstatus = 'LOCKED', mstatusdate = now() where manifestnbr = :manifestNbr and institutioncode = :instcode";
-             $updRS = $conn->prepare( $updSQL ); 
-             $updRS->execute( array( ':manifestNbr' => $manNbr, ':instcode' => $u['presInst'], ':usr' => $u['usr'] ));             
+             $segChkSQL = "SELECT count(1) as ttlsegments FROM masterrecord.ut_ship_manifest_segment where manifestnbr = :manifestnbr and includeind = 1";
+             $segChkRS = $conn->prepare( $segChkSQL ); 
+             $segChkRS->execute( array( ':manifestnbr' => $manNbr )); 
 
-             $responseCode = 200;
+             $segs = $segChkRS->fetch(PDO::FETCH_ASSOC); 
 
+             if ( (int)$segs['ttlsegments'] > 0 ) {
+
+               $histSQL = "insert into masterrecord.history_ship_manifest_head (prefix, manifestnbr, mstatus, mstatusdate, manifestdate, createdBy, institutionCode, sentOn, sentBy, histOn, histBy) SELECT prefix, manifestnbr, mstatus, mstatusdate, manifestdate, createdBy, institutionCode, sentOn, sentBy, now(), :usr FROM masterrecord.ut_ship_manifest_head where manifestnbr = :manifestnbr";
+               $histRS = $conn->prepare( $histSQL ); 
+               $histRS->execute( array( ':manifestnbr' => $manNbr, ':usr' => $u['usr'] ));
+  
+               $updSQL = "update masterrecord.ut_ship_manifest_head set senton = now(), sentby = :usr, mstatus = 'SENT', mstatusdate = now() where manifestnbr = :manifestNbr and institutioncode = :instcode";
+               $updRS = $conn->prepare( $updSQL ); 
+               $updRS->execute( array( ':manifestNbr' => $manNbr, ':instcode' => $u['presInst'], ':usr' => $u['usr'] ));             
+
+               $responseCode = 200;
+
+             } else { 
+               $msgArr[] = "THERE ARE NO SEGMENTS ON THIS MANIFEST - ACTION CEASED (REQUEST: {$pdta['qrymanifest']})";
+             }
            } else { 
-             $msgArr[] = "NO MANIFEST WAS FOUND MATCHING CRITERIA, IS ALREADY 'LOCKED' OR YOU DO NOT HAVE ACCESS RIGHTS (REQUEST: {$pdta['qrymanifest']})";
+             $msgArr[] = "NO MANIFEST WAS FOUND MATCHING CRITERIA, IS NOT 'OPEN' OR YOU DO NOT HAVE ACCESS RIGHTS (REQUEST: {$pdta['qrymanifest']})";
            }
          }
        }

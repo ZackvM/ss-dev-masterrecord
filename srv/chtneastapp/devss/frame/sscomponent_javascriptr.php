@@ -1125,6 +1125,236 @@ JAVASCR;
 
 switch ( $rqststr[2] ) { 
 
+  case 'processimanifest': 
+      $rtnThis .= <<<PROCINVT
+
+document.addEventListener('DOMContentLoaded', function() {
+
+  if (  byId('btnPrintSlides') ) { 
+    byId('btnPrintSlides').addEventListener( 'click' , function() { sendPrintRequest('SLD'); }, false );    
+  }
+
+  if (  byId('btnPrintFrozens') ) { 
+    byId('btnPrintFrozens').addEventListener( 'click' , function() { sendPrintRequest('FRZ'); }, false );    
+  }
+  
+  if (  byId('btnPrintPB') ) { 
+    byId('btnPrintPB').addEventListener( 'click' , function() { sendPrintRequest('FIX'); }, false );    
+  }
+  
+  if (  byId('btnPrintICard') ) { 
+    byId('btnPrintICard').addEventListener( 'click' , function() { sendPrintRequest('ICRD'); }, false );    
+  }
+ 
+}, false);          
+
+function sendPrintRequest ( typeofprint ) { 
+  
+  var obj = new Object(); 
+  obj['typeofprint'] = typeofprint;
+  obj['manifestnbr'] = byId('fldManifestNbr').value;
+  var passdta = JSON.stringify(obj);
+  var mlURL = "/data-doers/invtry-print-imanifest-objects";
+  universalAJAX("POST",mlURL,passdta,answerPrintIntraManifestObjects,2);
+
+}
+
+function answerPrintIntraManifestObjects ( rtnData ) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+  } else {
+    var dta = JSON.parse(rtnData['responseText']); 
+    var d = dta['DATA']; 
+    if ( d.length > 0 ) {
+      openOutSidePage("{$tt}/print-obj/manifest-barcode-run/"+dta['DATA']);  
+    } else {       
+      alert('Label(s) have been printed '); 
+    }
+  }
+
+}
+
+function doSomethingWithScan ( scanvalue ) {
+
+  //TODO:  MAKE THIS DYNAMIC - SPECIAL OLD BARCODE ENCODING CHARACTERS
+  scanvalue = scanvalue.replace(/%V$/mg,"@");
+  scanvalue = scanvalue.replace(/%O/g,"");
+  scanvalue = scanvalue.replace(/^(ED)/,"");
+  //////////////////
+
+  var scanmanifest = new RegExp(/^(IMN)-[A-Za-z]{2}-[0-9]{6}$/); 
+  var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
+  var scanloca  = new RegExp(/^SSC[A-Za-z]{1}\d+$/); 
+  var bglabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var zbglabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
+
+
+  var scanworked = 0;
+
+  if ( scanmanifest.test ( scanvalue ) ) {
+    scanworked = 1;
+    getIntraManifest ( scanvalue );
+  }
+
+  if ( scanloc.test( scanvalue ) || scanloca.test( scanvalue ) ) {
+    scanworked = 1;
+    if ( byId('locscandsp') ) { 
+      byId('standardModalBacker').style.display = 'block';    
+      byId('locscancode').value = scanvalue;
+      byId('locscandsp').innerHTML = scanvalue;
+      
+      //MAKE PROMISE TO LOOKUP DATA
+      fillInLocationDisplay ( scanvalue ).then ( function (fulfilled) { 
+        byId('locscandsp').innerHTML = fulfilled;
+      })
+      .catch( function (error) { 
+        byId('locscancode').value = "";
+        byId('locscandsp').innerHTML = error;
+      });
+    }
+  }
+
+  if ( bglabel.test ( scanvalue ) || zbglabel.test ( scanvalue ) ) { 
+    scanworked = 1;
+    byId('standardModalBacker').style.display = 'block';    
+
+    bgprocessor ( scanvalue ).then ( function ( fulfilled ) {
+      alert( fulfilled );
+      byId('standardModalBacker').style.display = 'none';    
+    })
+    .catch ( function ( error ) { 
+      var msgs = JSON.parse( error );
+      var dspMsg = ""; 
+      msgs['MESSAGE'].forEach(function(element) { 
+        dspMsg += "\\n - "+element;
+      });
+      alert("ERROR:\\n"+dspMsg);
+      byId('standardModalBacker').style.display = 'none';    
+    });
+
+  } 
+
+  if ( scanworked === 0 ) { 
+    alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
+  }
+
+}
+
+var bgprocessor = function ( scancode ) { 
+  return new Promise( function ( resolve, reject ) {
+  
+  var obj = new Object(); 
+  obj['manifestnbr'] = byId('fldManifestNbr').value;
+  obj['locscancode'] = byId('locscancode').value;
+  obj['bglabel'] = scancode;
+  var passdta = JSON.stringify(obj);         
+  httpage.open("POST",dataPath+"/data-doers/invtry-imanifest-bg-processes", true)    
+  httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+  httpage.onreadystatechange = function() { 
+  if (httpage.readyState === 4) {
+    if ( parseInt(httpage.status) === 200 ) {
+      resolve( passdta );  
+    } else { 
+      reject( httpage.responseText );
+    }
+  }
+  };
+  httpage.send ( passdta );
+  });
+}
+
+
+var fillInLocationDisplay = function ( scancode ) { 
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scanlabel'] = scancode.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-location-heirach", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) { 
+           var dta = JSON.parse( httpage.responseText );  
+           resolve( dta['DATA']['pathdsp'] ) ;
+           byId('standardModalBacker').style.display = 'none';    
+        } else { 
+          reject("NO LOCATION FOUND WITH THE SCANNED CODE: "+scancode);
+          byId('standardModalBacker').style.display = 'block';    
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}
+
+function blankManifestCheckin ()  { 
+  byId('dspManifestNbr').innerHTML = "&nbsp;";
+  byId('dspInstitution').innerHTML = "&nbsp;";
+  byId('dspagent').innerHTML = "&nbsp;";
+  byId('dspsentdate').innerHTML = "&nbsp;";
+  byId('dspmanifeststatus').innerHTML = "&nbsp;";
+  byId('fldManifestNbr').value = "";
+  byId('dspmanifestsegmentcount').innerHTML = "&nbsp;";
+  byId('dspSegmentListing').innerHTML = "&nbsp;";
+  byId('locscandsp').innerHTML = "&nbsp;"
+  byId('locscancode').value = "";
+}
+
+function getIntraManifest ( whichmanifest ) {
+  byId('standardModalBacker').style.display = 'block';    
+  blankManifestCheckin(); 
+  var obj = new Object(); 
+  obj['manifestscan'] = whichmanifest;
+  var passdta = JSON.stringify(obj);         
+  var mlURL = "/data-doers/invtry-get-imanifest";
+  universalAJAX("POST",mlURL,passdta,answerGetIntraManifest,2);
+}
+
+function answerGetIntraManifest ( rtnData ) { 
+
+  var tt = '{$tt}';
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] );
+     if ( byId('dspManifestNbr') ) { 
+       byId('dspManifestNbr').innerHTML = dta['DATA']['manifesthead']['manifestnbrdsp'];
+       byId('dspInstitution').innerHTML = dta['DATA']['manifesthead']['dspinstitution'];
+       byId('dspagent').innerHTML = dta['DATA']['manifesthead']['createdBy'] + " / " + dta['DATA']['manifesthead']['sentby'];
+       byId('dspsentdate').innerHTML = dta['DATA']['manifesthead']['senddate'];
+       byId('dspmanifeststatus').innerHTML = dta['DATA']['manifesthead']['mstatus'];
+       byId('fldManifestNbr').value = dta['DATA']['manifesthead']['manifestnbr'];
+       byId('dspmanifestsegmentcount').innerHTML = dta['DATA']['manifesthead']['segOnMani'];
+       byId('dspSegmentListing').innerHTML = buildManifestSegmentDisplay ( dta['DATA']['manifestsegments'] )
+     }
+   }       
+   byId('standardModalBacker').style.display = 'none';    
+
+}
+
+function buildManifestSegmentDisplay( segdata ) { 
+   var segDspTbl = " <div id=segTblHeaderHold> <div class=sHead>CHTN #</div><div class=sHead>Seg Status</div> <div class=sHead>Preparation</div> <div class=sHead>Metric</div> <div class=sHead>Abbreviated Designation</div>      </div>";
+   segdata.forEach((element) => { 
+     segDspTbl += "<div id='SEG"+element['segmentid']+"' class=segRecHold>  <div class=segdataelement>"+element['bgs']+"</div> <div class=segdataelement>"+element['segstatusdsp']+"</div> <div class=segdataelement>"+element['prep']+"</div> <div class=segdataelement>"+element['metric']+"</div> <div class=segdataelement>"+element['shortdesig']+"</div>  </div>";
+   });
+   segDspTbl += "</div>";
+   return segDspTbl;
+}
+
+
+PROCINVT;
+    break;
   case 'processinventory':
       $rtnThis .= <<<PROCINVT
 
@@ -8142,6 +8372,7 @@ document.addEventListener('DOMContentLoaded', function() {
       dta['procDateTo'] = byId('bsqueryToDateValue').value.trim();
       dta['shipDateFrom'] = byId('shpQryFromDateValue').value.trim();  
       dta['shipDateTo'] = byId('shpQryToDateValue').value.trim();  
+      dta['iManifest'] = byId('qryIManifestNbr').value.trim();  
       dta['investigatorCode'] = byId('qryInvestigator').value.trim(); 
       dta['requestNbr'] = byId('qryREQ').value.trim(); 
       dta['shipdocnbr'] = byId('qryShpDocNbr').value.trim(); 
