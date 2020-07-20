@@ -1778,11 +1778,11 @@ function getInventoryManifest ( $manifestNbr, $originalURI ) {
       $u = $usrRS->fetch(PDO::FETCH_ASSOC);
 
       if ( substr($manifestNbr,0,5) !== 'DtaC:' ) {
-        $manHeadSQL = "SELECT mhd.manifestnbr, concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) as manifestnbrdsp, mstatus, date_format(manifestdate,'%m/%d/%Y %H:%i') as manifestdatedsp, createdBy, ifnull(mcnt.segOnMani,0) as segOnMani, institutionCode, inst.dspvalue, inst.address, ifnull(date_format(senton,'%m/%d/%Y'),'') as senddate, ifnull(sentby,'') as sentby  FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT manifestnbr, count(1) segOnMani FROM masterrecord.ut_ship_manifest_segment where includeind = 1 group by manifestnbr) as mcnt on mhd.manifestnbr = mcnt.manifestnbr LEFT JOIN (SELECT menuvalue, dspvalue, ifnull(additionalInformation,'[NO ADDRESS LISTED]') as address FROM four.sys_master_menus where menu = 'INSTITUTION') inst on mhd.institutionCode = inst.menuvalue where mhd.institutioncode = :instcode and concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) = :mannbr";
+        $manHeadSQL = "SELECT mhd.manifestnbr, concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) as manifestnbrdsp,  concat(ifnull(prefix,''),'-', substr(concat('000000', ifnull(mhd.parentmanifest,'')), -6)) as parentdsp, ifnull(mhd.parentmanifest,'') as parentmanifest , mstatus, date_format(manifestdate,'%m/%d/%Y %H:%i') as manifestdatedsp, createdBy, ifnull(mcnt.segOnMani,0) as segOnMani, institutionCode, inst.dspvalue, inst.address, ifnull(date_format(senton,'%m/%d/%Y'),'') as senddate, ifnull(sentby,'') as sentby  FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT manifestnbr, count(1) segOnMani FROM masterrecord.ut_ship_manifest_segment where includeind = 1 group by manifestnbr) as mcnt on mhd.manifestnbr = mcnt.manifestnbr LEFT JOIN (SELECT menuvalue, dspvalue, ifnull(additionalInformation,'[NO ADDRESS LISTED]') as address FROM four.sys_master_menus where menu = 'INSTITUTION') inst on mhd.institutionCode = inst.menuvalue where mhd.institutioncode = :instcode and concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) = :mannbr";
         $manHeadRS = $conn->prepare( $manHeadSQL );
         $manHeadRS->execute( array( ':mannbr' => $manifestNbr, ':instcode' => $u['presentinstitution'] ));
       } else { 
-        $manHeadSQL = "SELECT mhd.manifestnbr, concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) as manifestnbrdsp, mstatus, date_format(manifestdate,'%m/%d/%Y %H:%i') as manifestdatedsp, createdBy, ifnull(mcnt.segOnMani,0) as segOnMani, institutionCode, inst.dspvalue, inst.address, ifnull(date_format(senton,'%m/%d/%Y'),'') as senddate, ifnull(sentby,'') as sentby  FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT manifestnbr, count(1) segOnMani FROM masterrecord.ut_ship_manifest_segment where includeind = 1 group by manifestnbr) as mcnt on mhd.manifestnbr = mcnt.manifestnbr LEFT JOIN (SELECT menuvalue, dspvalue, ifnull(additionalInformation,'[NO ADDRESS LISTED]') as address FROM four.sys_master_menus where menu = 'INSTITUTION') inst on mhd.institutionCode = inst.menuvalue where concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) = :mannbr";
+        $manHeadSQL = "SELECT mhd.manifestnbr, concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) as manifestnbrdsp,  concat(ifnull(prefix,''),'-', substr(concat('000000', ifnull(mhd.parentmanifest,'')), -6)) as parentdsp, ifnull(mhd.parentmanifest,'') as parentmanifest , mstatus, date_format(manifestdate,'%m/%d/%Y %H:%i') as manifestdatedsp, createdBy, ifnull(mcnt.segOnMani,0) as segOnMani, institutionCode, inst.dspvalue, inst.address, ifnull(date_format(senton,'%m/%d/%Y'),'') as senddate, ifnull(sentby,'') as sentby  FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT manifestnbr, count(1) segOnMani FROM masterrecord.ut_ship_manifest_segment where includeind = 1 group by manifestnbr) as mcnt on mhd.manifestnbr = mcnt.manifestnbr LEFT JOIN (SELECT menuvalue, dspvalue, ifnull(additionalInformation,'[NO ADDRESS LISTED]') as address FROM four.sys_master_menus where menu = 'INSTITUTION') inst on mhd.institutionCode = inst.menuvalue where concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) = :mannbr";
         $manHeadRS = $conn->prepare( $manHeadSQL );
         $manHeadRS->execute( array( ':mannbr' => substr( $manifestNbr,5) ));
       }
@@ -1841,7 +1841,9 @@ function getInventoryManifest ( $manifestNbr, $originalURI ) {
         }
  
         $mNbr = (  substr($manifestNbr,0,5) !== 'DtaC:' ) ? $manifestNbr : substr($manifestNbr,5);
-
+        $mp = ( $manHead['parentmanifest'] === '' ) ?  "" : " / {$manHead['parentdsp']} (parent)";
+ 
+        
         $docText = <<<PRTEXT
              <html>
                 <head>
@@ -1874,7 +1876,7 @@ function getInventoryManifest ( $manifestNbr, $originalURI ) {
                 <tr><td colspan=3>  
                    <table border=0 width=100% id=maniHeadTbl>
                      <tr><td colspan=2 id=headr>CHTNEAST INTRA-SHIPPING MANIFEST</td></tr>
-                     <tr><td class=datalabel>Manifest #: </td><td class=datadsp>{$manHead['manifestnbrdsp']}</td></tr>
+                     <tr><td class=datalabel>Manifest #: </td><td class=datadsp>{$manHead['manifestnbrdsp']}{$mp}</td></tr>
                      <tr><td class=datalabel>Status: </td><td class=datadsp>{$manHead['mstatus']}</td></tr>
                      <tr><td class=datalabel>Segment(s): </td><td class=datadsp>{$manHead['segOnMani']}</td></tr>
                      <tr><td class=datalabel>Institution: </td><td class=datadsp>{$manHead['dspvalue']} ({$manHead['institutionCode']})</td></tr>

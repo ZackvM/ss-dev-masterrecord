@@ -1197,7 +1197,8 @@ function answerCreateDeviationManifest ( rtnData ) {
     alert("ERROR:\\n"+dspMsg);
   } else {
     var dta = JSON.parse(rtnData['responseText']); 
-    console.log ( rtnData ); 
+    alert('A deviation has been registered in the database and a new child manifest was created ('+dta['DATA']+').  Print out this manifest to proceed.');
+    closeThisDialog( byId('flddialogid').value );      
   }
 
 }

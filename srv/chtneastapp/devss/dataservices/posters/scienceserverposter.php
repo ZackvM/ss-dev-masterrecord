@@ -1226,32 +1226,105 @@ EMAILBODY;
       }       
 
       if ( $errorInd === 0 ) {
-
-
           ( trim( $pdta['manifestnbr'] ) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MANIFEST NBR IS MISSING.")) : "";
           if ( $errorInd === 0 ) { 
             ( count( $pdta['scanlist'] ) === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "NO SEGMENTS HAVE BEEN SPECIFIED")) : "";
 
             if ( $errorInd === 0 ) { 
 
+                $mSQL = "SELECT prefix, manifestnbr, institutioncode FROM masterrecord.ut_ship_manifest_head where (mstatus <> 'OPEN' and mstatus <> 'VOID' and mstatus <> 'SENT' ) and manifestnbr = :manifestnbr";
+                $mRS = $conn->prepare( $mSQL );
+                $mRS->execute( array( ':manifestnbr' => $pdta['manifestnbr'] ));                
+                ( $mRS->rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "ERROR: NO MANIFEST FOUND - EITHER NOTHING HAS BEEN CHECKED IN OR MANIFEST DOESN'T EXIST ")) : "";
+               
+               if ( $errorInd === 0 ) { 
+                  $parent = $mRS->fetch(PDO::FETCH_ASSOC);
+                  //{"prefix":"HU","manifestnbr":70,"institutioncode":"HUP"}
+                  //$msgArr[] = json_encode( $parent['institutioncode'] );
+                   
+                  $chkSegSQL = "SELECT bgs FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :seg and segstatus = 'ONOFFER' and ifnull(manifestnbr,'') = '' and ifnull(shipDocRefID,'') = '' and procuredAt = :instcode";
+                  $chkSegRS = $conn->prepare( $chkSegSQL);
+                  foreach ( $pdta['scanlist'] as $v ) { 
+                    $chkSegRS->execute( array( ':seg' => $v, ':instcode' => $parent['institutioncode']));
+                    ( $chkSegRS->rowCount() === 0 ) ? (list( $errorInd, $msgArr[] ) = array(1 , "{$v} IS EITHER NOT 'ON OFFER', NOT PROCURED AT INSTITUTION OF PARENT MANIFEST, OR ALREADY LISTED ON A MANIFEST (Parent Manifest Creation will not continue!")) : "";
+                  }
+                  
+                  if ( $errorInd === 0 ) { 
+                     
+                    //CREATE CHILD/PARENT MANIFEST
+                    $insManSQL = "insert into masterrecord.ut_ship_manifest_head ( prefix, mstatus, mstatusdate, statusby, manifestdate, createdby, institutioncode, senton, sentby, parentmanifest, parentedon, parentedby) values ( :prefix, 'SENT', now(), :statusby, now(), :createdby, :institutioncode, now(), :sentby, :parentmanifest, now(), :parentedby)";
+                    $insManRS = $conn->prepare( $insManSQL );
+                    $insManRS->execute(array( ':prefix' => strtoupper(substr($parent['institutioncode'], 0,2))
+                                                               , ':statusby' => $u['usr']    
+                                                               , ':createdby' => $u['usr']
+                                                               , ':institutioncode' => $parent['institutioncode']
+                                                               , ':sentby' => $u['usr']
+                                                               , ':parentmanifest' => $pdta['manifestnbr']
+                                                               , ':parentedby' => $u['usr']
+                                                       ));
+                    $cManifestNbr = $conn->lastInsertId();
+                    $cManifestDspNbr = strtoupper(substr($parent['institutioncode'], 0,2)) . "-" . substr('000000' . $cManifestNbr, -6);
+                    
+                    $getSegIdSQL = "SELECT segmentid FROM masterrecord.ut_procure_segment where replace(bgs,'_','') = :bgs and segstatus = 'ONOFFER' and ifnull(manifestnbr,'') = '' and ifnull(shipDocRefID,'') = '' and procuredAt = :instcode";
+                    $getSegIdRS = $conn->prepare( $getSegIdSQL );
+                    $insManSegSQL = "insert into masterrecord.ut_ship_manifest_segment ( manifestnbr, segmentid, bgs, includeind, addedon, addedby)  values ( :manifestnbr, :segmentid, :bgs, 1, now(), :addedby)";
+                    $insManSegRS = $conn->prepare( $insManSegSQL );
+                    $updSegSQL = "update masterrecord.ut_procure_segment set manifestnbr = :manifestnbr  where segmentid = :segmentid";
+                    $updSegRS = $conn->prepare($updSegSQL);                    
+                    foreach ( $pdta['scanlist'] as $v ) {
+                        $getSegIdRS->execute(array(':bgs' => $v, ':instcode' => $parent['institutioncode']));
+                        $segIdRS = $getSegIdRS->fetch(PDO::FETCH_ASSOC);               
+                        $segid = $segIdRS['segmentid'];
+                        $insManSegRS->execute( array(':manifestnbr' => $cManifestNbr, ':segmentid' => $segid, ':bgs' => $v, ':addedby' => $u['usr'] ));
+                        $updSegRS->execute(array(':manifestnbr' => $cManifestNbr, ':segmentid' => $segIdRS['segmentid']));
+                        //$msgArr[] = $v . " // " . $segIdRS['segmentid'];                            
+                    } 
+                    //Log Deviation 
+                    $devSQL = "insert into masterrecord.tbl_operating_deviations (module, whodeviated, whendeviated, operationsarea, functiondeviated, reasonfordeviation, payload) values ('inventory', :whodeviated, now(), 'process-imanifest', 'invtry-imanifest-bld-child-manifest', 'Manifest Found Not Listed on Manifest', :payload)";
+                    $devRS = $conn->prepare($devSQL);
+                    $devRS->execute(array(':whodeviated' => $u['usr'], ':payload' => 'SEE MANIFEST NUMBER: ' . $cManifestDspNbr));
+                    $devNbr = substr('000000' . $conn->lastInsertId(), -6);
+                    // SEND EMAILS
+                    
+                   $mailList[] = "zackvm.zv@gmail.com";
+                   $mailList[] = "dfitzsim@pennmedicine.upenn.edu";
+                   $mailList[] = $u['emailaddress'];
+ 
+                   $sendrSQL = "SELECT emailaddress sendremail FROM masterrecord.ut_ship_manifest_head mhd left join four.sys_userbase u on mhd.sentby = u.originalAccountName where manifestnbr = :pman";
+                   $sendrRS = $conn->prepare($sendrSQL); 
+                   $sendrRS->execute(array(':pman' => $pdta['manifestnbr']));
+                   if ( $sendrRS->rowCount() === 1 ) {
+                     $sendr = $sendrRS->fetch(PDO::FETCH_ASSOC);
+                     $mailList[] = $sendr['sendremail'];
+                   }
 
+                   $dt = date('m/d/Y H:i');
+                   $msg =  <<<MSGTXT
+<style>
+#segMissingTbl { width: 100%; border: 1px solid #000; }
+#segMissingTbl th { font-weight: bold; background: #000; color: #fff; padding: 5px 2px; } 
 
-
-              foreach ( $pdta['scanlist'] as $v ) { 
-                $msgArr[] = $v;
-              }
-
-              /////START HERE 2020-07-19
-
-
-
-
+</style>
+<center>* * * * DO NOT REPLY TO THIS EMAIL * * * *</center><p>
+A deviation to CHTNEastern Standard Operating Procedure has occurred on {$dt} in the inventory intra-manifest module.  An intra-institutional manifest was created outside of the sending institution.  The manifest number created was {$cManifestDspNbr} by {$u['usr']}.  The deviation has been logged in the database (deviation record: {$devNbr}).  <p>Please contact the CHTNED biorepository at (215) 662 4570 to discuss this issue.<p>
+Thank you, <p>AUTOMATED MESSAGE FROM CHTNEastern ScienceServer(v7)  
+<p>
+<center>* * * * DO NOT REPLY TO THIS EMAIL * * * * 
+MSGTXT;
+                   $sbjctLine = "[SCIENCESERVER] SOP Deviation Manifest Creation (" . generateRandomString() . ")";
+                   $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtLine, msgbody, htmlind, wheninput, bywho) value (:towhoaddressarray, :sbjtLine, :msgbody, 1, now(), 'SS-HELP-TICKET-SYSTEM')";
+                   $emlRS = $conn->prepare($emlSQL);
+                   $emlRS->execute(array(':towhoaddressarray' => json_encode( $mailList ),':sbjtLine' => $sbjctLine, ':msgbody' => $msg));  
+                   
+                   $dta = $cManifestDspNbr;
+                   $responseCode = 200;
+                   
+                  }
+               }
             }
 
           }
       }
-
-      $msgArr[] =  "LINE HERE";
 
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 

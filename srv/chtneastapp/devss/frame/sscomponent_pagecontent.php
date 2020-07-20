@@ -1865,7 +1865,7 @@ $pageContent = <<<PAGECONTENT
 
 <div id=instrFour class=instructionLabel>4) If applicable, report manifest errors  </div>
 <div id=intraManErrs>
-  <button id=btnSegExtraRpt>Report Extra Biosamples Included</button> <button id=btnSegMissingRpt>Report Biosample Segments Missing</button> 
+  <button id=btnSegExtraRpt>Extra Biosamples Deviation</button> <button id=btnSegMissingRpt>Report Biosample Segments Missing</button> 
 </div>
 
 
@@ -5252,6 +5252,7 @@ button {  display: block; border: 1px solid rgba( 48,57,71,1); background: rgba(
 button:hover { cursor: pointer; background: rgba(145,145,145,1); color: rgba(57,255,20,1);   } 
 </style>
 
+<input type=hidden id=flddialogid value="{$pdta['dialogid']}">          
 <input type=hidden id=fldParentManifest value="{$pdta['objid']}">
 <div id=dlgHoldr>
 <div id=manInstrPara>
