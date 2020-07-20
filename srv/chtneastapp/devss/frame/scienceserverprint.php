@@ -225,8 +225,9 @@ function pagetabs($docobject) {
     case 'SCIENCESERVER SYSTEM OBJECT':
       $thisTab = "ScienceServer Object";
       break;
-    case 'SCIENCESERVER INVENTORY MANIFEST':
-      $thisTab = "{$docobject['documentid']} ScienceServer Inventory Manifest";
+    case 'SCIENCESERVER INVENTORY MANIFEST': 
+      $mNbr = (  substr($docobject['documentid'],0,5) !== 'DtaC:' ) ?  $docobject['documentid']: substr($docobject['documentid'],5);
+      $thisTab = "{$mNbr} ScienceServer Inventory Manifest";
       break;
     case 'SCIENCESERVER MANIFEST BARCODE RUN':
       $thisTab = "{$docobject['documentid']} ScienceServer Manifest Barcode Run";
@@ -1640,12 +1641,17 @@ function getInventoryManifestBarcodeRun ( $manifestNbr, $originalURI ) {
 
             $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: 1in;  \" "); 
             $cellCntr = 0; 
+            $cellCntrA = 0;
+            $rowTbl = "<table><tr>";
             foreach ( $det as $v ) {
               if ($cellCntr === 2) { 
-                $rowTbl .= "</tr><tr>";
+                $rowTbl .= "</tr></table><p><table><tr>";
                 $cellCntr = 0;
               }
-
+              if ( $cellCntrA === 4 ) { 
+                $rowTbl .= "<div style = \"display:block; clear:both; page-break-after:always;\"></div>";
+                $cellCntrA = 0;
+              }
 
        //****************CREATE BARCODE
         $codeContents = "{$v['bgs']}";
@@ -1687,8 +1693,10 @@ LBLLBL;
 
               $rowTbl .= "<td>{$lblTbl}</td>";
               $cellCntr++;
+              $cellCntrA++;
             }
-            $detTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$rowTbl}</tr></table>"; 
+//            $detTbl .= "<table border=1 style=\"width: 8in;\"><tr>{$rowTbl}</tr></table>"; 
+            $detTbl .= $rowTbl;
 
           } else { 
              $detTbl = "<table><tr><td>NO SEGMENTS FOUND FOR THIS MANIFEST (NON-SLIDE SEGMENTS)</td></tr></table>";
@@ -1753,13 +1761,13 @@ PRTEXT;
 function getInventoryManifest ( $manifestNbr, $originalURI ) { 
     $at = genAppFiles;
     $tt = treeTop;
-    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in; \" ");
     $errorInd = 0;
     require(serverkeys . "/sspdo.zck");  
     session_start();
 
     $who = session_id();
-    $usrSQL = "SELECT emailaddress as usrid, username, originalaccountname as usr, presentinstitution  FROM four.sys_userbase where sessionid = :sessid and allowInd = 1 and allowProc = 1 and TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
+    $usrSQL = "SELECT emailaddress as usrid, username, originalaccountname as usr, presentinstitution FROM four.sys_userbase where sessionid = :sessid and allowInd = 1 and allowProc = 1 and TIMESTAMPDIFF(DAY, now(), passwordExpireDate) > 0";
     $usrRS = $conn->prepare( $usrSQL ); 
     $usrRS->execute( array( ':sessid' => $who ));
 
@@ -1769,11 +1777,17 @@ function getInventoryManifest ( $manifestNbr, $originalURI ) {
 
       $u = $usrRS->fetch(PDO::FETCH_ASSOC);
 
-      $manHeadSQL = "SELECT mhd.manifestnbr, concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) as manifestnbrdsp, mstatus, date_format(manifestdate,'%m/%d/%Y %H:%i') as manifestdatedsp, createdBy, ifnull(mcnt.segOnMani,0) as segOnMani, institutionCode, inst.dspvalue, inst.address, ifnull(date_format(senton,'%m/%d/%Y'),'') as senddate, ifnull(sentby,'') as sentby  FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT manifestnbr, count(1) segOnMani FROM masterrecord.ut_ship_manifest_segment where includeind = 1 group by manifestnbr) as mcnt on mhd.manifestnbr = mcnt.manifestnbr LEFT JOIN (SELECT menuvalue, dspvalue, ifnull(additionalInformation,'[NO ADDRESS LISTED]') as address FROM four.sys_master_menus where menu = 'INSTITUTION') inst on mhd.institutionCode = inst.menuvalue where mhd.institutioncode = :instcode and concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) = :mannbr";
-      $manHeadRS = $conn->prepare( $manHeadSQL );
-      $manHeadRS->execute( array( ':mannbr' => $manifestNbr, ':instcode' => $u['presentinstitution'] ));
+      if ( substr($manifestNbr,0,5) !== 'DtaC:' ) {
+        $manHeadSQL = "SELECT mhd.manifestnbr, concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) as manifestnbrdsp, mstatus, date_format(manifestdate,'%m/%d/%Y %H:%i') as manifestdatedsp, createdBy, ifnull(mcnt.segOnMani,0) as segOnMani, institutionCode, inst.dspvalue, inst.address, ifnull(date_format(senton,'%m/%d/%Y'),'') as senddate, ifnull(sentby,'') as sentby  FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT manifestnbr, count(1) segOnMani FROM masterrecord.ut_ship_manifest_segment where includeind = 1 group by manifestnbr) as mcnt on mhd.manifestnbr = mcnt.manifestnbr LEFT JOIN (SELECT menuvalue, dspvalue, ifnull(additionalInformation,'[NO ADDRESS LISTED]') as address FROM four.sys_master_menus where menu = 'INSTITUTION') inst on mhd.institutionCode = inst.menuvalue where mhd.institutioncode = :instcode and concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) = :mannbr";
+        $manHeadRS = $conn->prepare( $manHeadSQL );
+        $manHeadRS->execute( array( ':mannbr' => $manifestNbr, ':instcode' => $u['presentinstitution'] ));
+      } else { 
+        $manHeadSQL = "SELECT mhd.manifestnbr, concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) as manifestnbrdsp, mstatus, date_format(manifestdate,'%m/%d/%Y %H:%i') as manifestdatedsp, createdBy, ifnull(mcnt.segOnMani,0) as segOnMani, institutionCode, inst.dspvalue, inst.address, ifnull(date_format(senton,'%m/%d/%Y'),'') as senddate, ifnull(sentby,'') as sentby  FROM masterrecord.ut_ship_manifest_head mhd left join (SELECT manifestnbr, count(1) segOnMani FROM masterrecord.ut_ship_manifest_segment where includeind = 1 group by manifestnbr) as mcnt on mhd.manifestnbr = mcnt.manifestnbr LEFT JOIN (SELECT menuvalue, dspvalue, ifnull(additionalInformation,'[NO ADDRESS LISTED]') as address FROM four.sys_master_menus where menu = 'INSTITUTION') inst on mhd.institutionCode = inst.menuvalue where concat(ifnull(prefix,''),'-', substr(concat('000000',ifnull(mhd.manifestnbr,'')),-6)) = :mannbr";
+        $manHeadRS = $conn->prepare( $manHeadSQL );
+        $manHeadRS->execute( array( ':mannbr' => substr( $manifestNbr,5) ));
+      }
 
-      ( $manHeadRS->rowCount() <> 1 ) ? list( $errorInd, $msgArr[] ) = array( 1, "MANIFEST ({$manifestNbr}) NOT FOUND. EITHER DOESN'T EXIST OR USER NOT ALLOWED") : "";
+      ( $manHeadRS->rowCount() <> 1 ) ? list( $errorInd, $msgArr[] ) = array( 1, "MANIFEST ({$manifestNbr}) / " . substr($manifestNbr,0,4) . " NOT FOUND. EITHER DOESN'T EXIST OR USER NOT ALLOWED") : "";
 
       if ( $errorInd === 0 ) { 
         $manHead = $manHeadRS->fetch(PDO::FETCH_ASSOC);
@@ -1781,7 +1795,8 @@ function getInventoryManifest ( $manifestNbr, $originalURI ) {
         //****************CREATE BARCODE
         require ("{$at}/extlibs/bcodeLib/qrlib.php");
         $tempDir = "{$at}/tmp/";
-        $codeContents = "IMN-{$manifestNbr}";
+
+        $codeContents = "IMN-" . preg_replace('/DtaC:/','',$manifestNbr);
         $fileName = 'man' . generateRandomString() . '.png';
         $pngAbsoluteFilePath = $tempDir.$fileName;
         if (!file_exists($pngAbsoluteFilePath)) {
@@ -1797,19 +1812,18 @@ function getInventoryManifest ( $manifestNbr, $originalURI ) {
         $sendBy = ( trim($manHead['sentby']) === "" ) ? "" : " ({$manHead['sentby']})";
 
         $manint = (int)$manHead['manifestnbr'];
-        $detSQL = "SELECT replace(sg.bgs,'_','') as bgs, concat(ifnull(sg.prepmethod,''), concat(' [',ifnull(sg.preparation,''),']')) as prep, if( ifnull(sg.metric,'') = '' ,'', concat( ifnull(sg.metric,''),' ', ifnull(uom.dspvalue,''))) as metric, trim(concat(ifnull(bs.anatomicSite,''),' ', trim(concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','', concat(' (', ifnull(bs.subdiagnos,''),')')))), concat(' [',ifnull(bs.tissType,''),']'))) as shortdesig, concat(ifnull(bs.pxiAge,'UNK'),'/',substr(ifnull(bs.pxiRace,'UNK'),1,3),'/',ifnull(bs.pxiGender,'UNK')) as ars, date_format(msg.addedon,'%m/%d/%Y') as segaddedon, msg.addedby segaddedby FROM masterrecord.ut_ship_manifest_segment msg LEFT JOIN masterrecord.ut_procure_segment sg on msg.segmentid = sg.segmentid left join (SELECT menuvalue, dspValue FROM four.sys_master_menus where menu = 'metric') uom on sg.metricUOM = uom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample where sg.manifestnbr = :manifestint and msg.includeind = 1 order by replace(sg.bgs,'_','')";
+        $detSQL = "SELECT replace(sg.bgs,'_','') as bgs, concat(ifnull(sg.prepmethod,''), concat(' [',ifnull(sg.preparation,''),']')) as prep, if( ifnull(sg.metric,'') = '' ,'', concat( ifnull(sg.metric,''),' ', ifnull(uom.dspvalue,''))) as metric, trim(concat(ifnull(bs.anatomicSite,''),' ', trim(concat(ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','', concat(' (', ifnull(bs.subdiagnos,''),')')))), concat(' [',ifnull(bs.tissType,''),']'))) as shortdesig, concat(ifnull(bs.pxiAge,'UNK'),'/',substr(ifnull(bs.pxiRace,'UNK'),1,3),'/',ifnull(bs.pxiGender,'UNK')) as ars, date_format(msg.addedon,'%m/%d/%Y') as segaddedon, msg.addedby segaddedby, msg.scanned, date_format(msg.scannedon,'%m/%d/%Y') as scannedon FROM masterrecord.ut_ship_manifest_segment msg LEFT JOIN masterrecord.ut_procure_segment sg on msg.segmentid = sg.segmentid left join (SELECT menuvalue, dspValue FROM four.sys_master_menus where menu = 'metric') uom on sg.metricUOM = uom.menuvalue left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample where sg.manifestnbr = :manifestint and msg.includeind = 1 order by replace(sg.bgs,'_','')";
         $detRS = $conn->prepare( $detSQL ); 
         $detRS->execute(array(':manifestint' => $manint ));
 
         if ( $detRS->rowCOunt() > 0 ) { 
+          $segTbl = "<table width=100% border=0 id=detailTbl><thead><tr><th><!--Line Nbr //--></th><th>CHTN #</th><th>Preparation</th><th>Metric</th><th>Short Designation</th><th>A/R/S</th><th>Added</th><th>Scanned To<br>Inventory</th></tr></thead><tbody>";
 
-
-       $segTbl = "<table width=100% border=0 id=detailTbl><thead><tr><th><!--Line Nbr //--></th><th>CHTN #</th><th>Preparation</th><th>Metric</th><th>Short Designation</th><th>A/R/S</th><th>Added</th></tr></thead><tbody>";
-
-       $rcd = 0; 
-       while ( $r = $detRS->fetch(PDO::FETCH_ASSOC) ) { 
-        $rcd += 1;
-        $segTbl .= "<tr>"
+          $rcd = 0; 
+          while ( $r = $detRS->fetch(PDO::FETCH_ASSOC) ) { 
+            $rcd += 1; 
+            $rcvdico = ( (int)$r['scanned'] === 1 ) ?  "<center>RCVD<br>{$r['scannedon']}" : "<center>&nbsp;";
+            $segTbl .= "<tr>"
                  . "<td valign=top>{$rcd}</td>"
                  . "<td valign=top>{$r['bgs']}</td>"
                  . "<td valign=top>{$r['prep']}</td>"
@@ -1817,14 +1831,16 @@ function getInventoryManifest ( $manifestNbr, $originalURI ) {
                  . "<td valign=top>{$r['shortdesig']}</td>"
                  . "<td valign=top>{$r['ars']}</td>"
                  . "<td valign=top>{$r['segaddedon']}<br>({$r['segaddedby']})</td>"
+                 . "<td valign=top>{$rcvdico}</td>"
                  . "</tr>";
-       }
-
-       $segTbl .= "</tbody></table>";
+          }
+          $segTbl .= "</tbody></table>";
 
         } else { 
           $segTbl = "<table width=100%><tr><td><center><span class=bigOleError>NO SEGMENTS HAVE BEEN ADDED TO THIS MANIFEST</span></td></tr></table>";
         }
+ 
+        $mNbr = (  substr($manifestNbr,0,5) !== 'DtaC:' ) ? $manifestNbr : substr($manifestNbr,5);
 
         $docText = <<<PRTEXT
              <html>
@@ -1851,7 +1867,7 @@ function getInventoryManifest ( $manifestNbr, $originalURI ) {
                 </head>
                 <body>
                 <table border=0 width=100%>
-                <tr><td rowspan=2 valign=top style="width: 1in;">{$favi}</td><td style="font-size: 14pt; font-weight: bold; padding: 0 0 0 0; ">INVENTORY MANIFEST: {$manifestNbr} </td><td rowspan=2 align=right valign=top>{$qrcode}</td></tr>
+                <tr><td rowspan=2 valign=top style="width: 1in;">{$favi}</td><td style="font-size: 14pt; font-weight: bold; padding: 0 0 0 0; ">INVENTORY MANIFEST: {$mNbr} </td><td rowspan=2 align=right valign=top>{$qrcode}</td></tr>
                 <tr><td valign=top style=" font-size: 8pt;"><b>CHTN Eastern Division</b><br>Unversity of Pennsylvania Perelman School of Medicine<br>3400 Spruce Street, Dulles 565, Philadelphia, Pennsylvania 19104 <br>(215) 662 4570 | https://www.chtneast.org | email: chtnmail@uphs.upenn.edu</td></tr>
                 <tr><td colspan=3 class=line></td></tr>
 

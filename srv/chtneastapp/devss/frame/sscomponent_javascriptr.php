@@ -1145,18 +1145,160 @@ document.addEventListener('DOMContentLoaded', function() {
   if (  byId('btnPrintICard') ) { 
     byId('btnPrintICard').addEventListener( 'click' , function() { sendPrintRequest('ICRD'); }, false );    
   }
- 
-}, false);          
 
-function sendPrintRequest ( typeofprint ) { 
-  
+  if ( byId('btnNxtManifest') ) { 
+    byId('btnNxtManifest').addEventListener('click' , function() { newManifestRqst(); }, false );
+  }
+
+  if ( byId('btnSegMissingRpt') ) { 
+    byId('btnSegMissingRpt').addEventListener('click' , function() { reportMissingSegments(); }, false );
+  }
+
+  if ( byId('btnSegExtraRpt') ) { 
+    byId('btnSegExtraRpt').addEventListener('click' , function() { reportExtraSegments(); }, false );
+  }
+
+}, false);
+
+function bldNwManLabel( whatvalue ) { 
+  byId('fldDisplayCodeHere').value = byId('fldDisplayCodeHere').value + whatvalue;
+}
+
+function backr() {
+  if (  byId('fldDisplayCodeHere').value.length > 0 ) {
+    byId('fldDisplayCodeHere').value = byId('fldDisplayCodeHere').value.substring( 0, (byId('fldDisplayCodeHere').value.length - 1));
+  }
+}
+
+function createDeviationManifest() { 
+
+    var obj = new Object();
+    var scanlist = [];
+    obj['manifestnbr'] = byId('fldParentManifest').value;
+    var lbls = document.getElementsByClassName("elmCHTNLbl");
+    var lblsl = lbls.length;
+    for ( var i = 0; i < lbls.length; i++ ) { 
+      scanlist.push( byId(lbls[i].id).innerHTML );
+    } 
+    obj['scanlist'] = scanlist;   
+    var passdta = JSON.stringify ( obj ); 
+    var mlURL = "/data-doers/invtry-imanifest-bld-child-manifest";
+    universalAJAX("POST",mlURL,passdta,answerCreateDeviationManifest,2);
+}
+
+function answerCreateDeviationManifest ( rtnData ) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+  } else {
+    var dta = JSON.parse(rtnData['responseText']); 
+    console.log ( rtnData ); 
+  }
+
+}
+
+
+function addCHTNLabel() {
+  if ( byId('fldDisplayCodeHere').value.length > 0 ) {
+    var d = document.createElement('div');
+    var i = byId('fldDisplayCodeHere').value + "-" + makeid(8);
+    var v = byId('fldDisplayCodeHere').value;
+    var m = byId('fldParentManifest').value; 
+    d.setAttribute("id", i); 
+    d.innerHTML = "<div class=elmHldr id='DV"+i+"'><div class=deletr onclick=\"removeAddedSegFromList('"+i+"');\">&times</div><div class=elmCHTNLbl id='chtnlbl"+i+"'>"+byId('fldDisplayCodeHere').value+"</div><div class=elmDataDspr id=\"DESIG"+i+"\">&nbsp;</div>";
+    byId('manListSegSide').appendChild(d); 
+    byId( i ).style.display = 'block';
+    byId('fldDisplayCodeHere').value = "";
+    fillInManSegAdd ( v, m ).then ( function (fulfilled) {
+        var pdta = JSON.parse( fulfilled ); 
+        byId( "DESIG"+i ).innerHTML = pdta['DATA'][0]['desig'] + " (" + pdta['DATA'][0]['prep'] + ")";
+      })
+      .catch( function (error) {
+        alert( "Segment is NOT a candidate for addition to a manifest");
+        removeAddedSegFromList ( i ); 
+      });
+
+  }
+}
+
+var fillInManSegAdd = function ( v, m ) { 
+  return new Promise( function ( resolve, reject ) {
+    var obj = new Object(); 
+    obj['manifestnbr'] = m;
+    obj['seglabel'] = v;
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-imanifest-add-deviation", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+    if (httpage.readyState === 4) {
+      if ( parseInt(httpage.status) === 200 ) {
+        resolve( httpage.responseText );  
+      } else { 
+        reject( httpage.responseText );
+      }
+    }
+    };
+    httpage.send ( passdta );
+  });
+}
+
+function reportExtraSegments() { 
+  if ( byId('fldManifestNbr').value.trim() !== "" ) { 
+    generateDialog ( 'rptExtraManSeg', byId('fldManifestNbr').value );
+  }
+}
+
+function removeAddedSegFromList ( whichdiv ) { 
+  var item = byId( 'DV'+whichdiv );
+  item.parentNode.removeChild(item);
+}
+
+function reportMissingSegments() { 
+  var r = confirm("You are reporting that any 'un-scanned' segments on this manifest are missing.\\n\\nConfirming this action will remove all un-scanned segments from the manifest, close the manifest and report to the sender the error.\\n\\nContinue?  ");
+  if (r == true) {
+    byId('standardModalBacker').style.display = 'block';    
+    var obj = new Object(); 
+    obj['manifestnbr'] = byId('fldManifestNbr').value;
+    var passdta = JSON.stringify(obj);
+    var mlURL = "/data-doers/invtry-imanifest-err-missing-seg";
+    universalAJAX("POST",mlURL,passdta,answerErrMissing,2);
+  }
+}
+
+function answerErrMissing ( rtnData ) { 
+
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+  } else {
+    var dta = JSON.parse(rtnData['responseText']); 
+    alert('Non-Scanned have been marked as not received and removed from the manifest. The sending technician has been notified. Rescan manifest to see changes! \\n\\nPrinting a new copy of the manifest is highly recommended!');
+    location.reload(true); 
+  }
+
+}
+
+function newManifestRqst () { 
+  location.reload(true);
+}          
+
+function sendPrintRequest ( typeofprint ) {  
   var obj = new Object(); 
   obj['typeofprint'] = typeofprint;
   obj['manifestnbr'] = byId('fldManifestNbr').value;
   var passdta = JSON.stringify(obj);
   var mlURL = "/data-doers/invtry-print-imanifest-objects";
   universalAJAX("POST",mlURL,passdta,answerPrintIntraManifestObjects,2);
-
 }
 
 function answerPrintIntraManifestObjects ( rtnData ) { 
@@ -1225,8 +1367,23 @@ function doSomethingWithScan ( scanvalue ) {
     byId('standardModalBacker').style.display = 'block';    
 
     bgprocessor ( scanvalue ).then ( function ( fulfilled ) {
-      alert( fulfilled );
+
+      var dta = JSON.parse( fulfilled );
+      byId('dspmanifeststatus').innerHTML = dta['DATA']['manifeststatus'];
+      if ( byId('ICO'+dta['DATA']['segmentid']) ) { 
+        byId('ICO'+dta['DATA']['segmentid']).innerHTML = "<span class=\"material-icons\">check_circle_outline</span>";
+      }
+      if ( byId('SEGSTS'+dta['DATA']['segmentid']) ) { 
+        byId('SEGSTS'+dta['DATA']['segmentid']).innerHTML = dta['DATA']['segstatus'];
+      }
+      if ( byId('SEG'+dta['DATA']['segmentid']) ) { 
+        byId('SEG'+dta['DATA']['segmentid']).dataset.selected = "true";
+        byId('SEG'+dta['DATA']['segmentid']).dataset.missing = "false";
+        byId('SEG'+dta['DATA']['segmentid']).style.background = "rgba( 0, 112, 13, .1 )";
+      }
       byId('standardModalBacker').style.display = 'none';    
+
+
     })
     .catch ( function ( error ) { 
       var msgs = JSON.parse( error );
@@ -1259,7 +1416,7 @@ var bgprocessor = function ( scancode ) {
   httpage.onreadystatechange = function() { 
   if (httpage.readyState === 4) {
     if ( parseInt(httpage.status) === 200 ) {
-      resolve( passdta );  
+      resolve( httpage.responseText );  
     } else { 
       reject( httpage.responseText );
     }
@@ -1344,14 +1501,32 @@ function answerGetIntraManifest ( rtnData ) {
 }
 
 function buildManifestSegmentDisplay( segdata ) { 
-   var segDspTbl = " <div id=segTblHeaderHold> <div class=sHead>CHTN #</div><div class=sHead>Seg Status</div> <div class=sHead>Preparation</div> <div class=sHead>Metric</div> <div class=sHead>Abbreviated Designation</div>      </div>";
-   segdata.forEach((element) => { 
-     segDspTbl += "<div id='SEG"+element['segmentid']+"' class=segRecHold>  <div class=segdataelement>"+element['bgs']+"</div> <div class=segdataelement>"+element['segstatusdsp']+"</div> <div class=segdataelement>"+element['prep']+"</div> <div class=segdataelement>"+element['metric']+"</div> <div class=segdataelement>"+element['shortdesig']+"</div>  </div>";
+   var segDspTbl = " <div id=segTblHeaderHold> <div class=sHead> </div><div class=sHead>CHTN #</div> <div class=sHead>Seg Status</div> <div class=sHead>Preparation</div> <div class=sHead>Metric</div> <div class=sHead>Abbreviated Designation</div>      </div>";
+   segdata.forEach((element) => {
+     
+     var slcted = ( element['segstatusdsp'] === 'On Offer' ) ? 'false' : 'true';
+     var ico = ( element['segstatusdsp'] === 'On Offer' ) ? 'radio_button_unchecked' : 'check_circle_outline';
+
+     //onclick=\"markMissingSeg(this.id);\"  data-missing='false'
+     segDspTbl += "<div id='SEG"+element['segmentid']+"' data-selected='"+slcted+"'  class=segRecHold>      <div id='ICO"+element['segmentid']+"' class=segdataelement> <span class=\"material-icons\">"+ico+"</span> </div>     <div class=segdataelement>"+element['bgs']+"</div>  <div class=segdataelement id='SEGSTS"+element['segmentid']+"'>"+element['segstatusdsp']+"</div>     <div class=segdataelement>"+element['prep']+"</div>    <div class=segdataelement>"+element['metric']+"</div>     <div class=segdataelement>"+element['shortdesig']+"</div>        </div>";
+
    });
    segDspTbl += "</div>";
+
    return segDspTbl;
 }
 
+function markMissingSeg ( whichseg ) {
+  
+  if ( byId( whichseg ).dataset.selected !== "true" ) {
+    byId( whichseg ).style.background = "rgba(252, 38, 0, .3)";
+    if ( byId('ICO'+parseInt( whichseg.replace(/^SEG/,''))) ) { 
+      byId('ICO'+parseInt( whichseg.replace(/^SEG/,''))).innerHTML = "<span class=\"material-icons\">highlight_off</span>";
+    }
+    byId('ICO'+parseInt( whichseg.replace(/^SEG/,''))).data.missing = 'true';   
+  }
+
+}
 
 PROCINVT;
     break;
@@ -3754,7 +3929,19 @@ function deactivateFA( whichfaid ) {
        bldFurtherActionGrid( pb['DATA'] );
    }    
 }  
-     
+
+function makeid ( length ) { 
+  var result           = ''; 
+  var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for ( var i = 0; i < length; i++ ) { 
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+
+
 JAVASCR;
 return $rtnThis;    
 }

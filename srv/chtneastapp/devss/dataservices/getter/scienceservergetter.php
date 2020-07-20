@@ -633,7 +633,8 @@ class objlisting {
    $orrqst = explode("/", $urirqst);
    session_start(); 
    $usr = chkUserBySession(session_id());
-   if ((int)$usr['allowind'] === 1 && (int)$usr['allowlinux'] === 1 && (int)$usr['allowcoord'] === 1  && (int)$usr['daysuntilpasswordexpire'] > 0 ) {
+   //if ((int)$usr['allowind'] === 1 && (int)$usr['allowlinux'] === 1 && (int)$usr['allowcoord'] === 1  && (int)$usr['daysuntilpasswordexpire'] > 0 ) {
+   if ((int)$usr['allowind'] === 1 && (int)$usr['allowcoord'] === 1  && (int)$usr['daysuntilpasswordexpire'] > 0 ) {
      $usrident = $usr['emailaddress'];
      if ( trim($orrqst[3]) <> "") {
           $pdta['user'] = $usrident;

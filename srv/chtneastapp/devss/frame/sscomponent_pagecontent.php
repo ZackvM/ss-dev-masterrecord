@@ -15,6 +15,13 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'rptExtraManSeg':
+        $pdta = json_decode($passedData, true);         
+        $titleBar = "Report Extra Segments on Manifest";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        $innerDialog = bldQuickBuildManifest ( $passedData );
+        break;  
       case 'shipdocspcsrvfee':
         $pdta = json_decode($passedData, true);         
         $titleBar = "Add Speacial Service Fee";
@@ -1844,7 +1851,6 @@ $pageContent = <<<PAGECONTENT
 
 </div>
 
-
 <div id=instrThree class=instructionLabel>3) Scan CHTN #s from Intra-CHTN shipment.  Scanning will mark as received and change CHTN #'s Status </div>
 
 <div id=intraManSegs>
@@ -1856,6 +1862,11 @@ $pageContent = <<<PAGECONTENT
 
 </div>
 
+
+<div id=instrFour class=instructionLabel>4) If applicable, report manifest errors  </div>
+<div id=intraManErrs>
+  <button id=btnSegExtraRpt>Report Extra Biosamples Included</button> <button id=btnSegMissingRpt>Report Biosample Segments Missing</button> 
+</div>
 
 
 PAGECONTENT;
@@ -2117,7 +2128,6 @@ function scienceserverhelp ( $rqststr, $whichusr ) {
   if ( trim($rqststr[2]) === "" ) {
     //NO TOPIC REQUESTED - DISPLAY GENERAL PAGE
     $topBtnBar = generatePageTopBtnBar('scienceserverhelp', $whichusr);
-
 
     $helpFile = <<<RTNTHIS
 <div id=help_welcomediv>
@@ -2601,7 +2611,7 @@ foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) {
     $stsDte .= (trim($val['statusby']) === "") ? "" : "<br>Status by: {$val['statusby']}";
 
     if ( trim($val['manifestnbr']) !== "" ) { 
-        $eManifestNbr = cryptservice( $val['manifestprefix'] . "-" . substr('000000' . $val['manifestnbr'], -6) );
+        $eManifestNbr = cryptservice( 'DtaC:' . $val['manifestprefix'] . "-" . substr('000000' . $val['manifestnbr'], -6) );
         $stsDte .= "<br><a href=\"javascript:void(0);\" onclick=\"openOutSidePage('{$tt}/print-obj/inventory-manifest/{$eManifestNbr}');\" style=\"color: rgba(57,255,20,1);\" >Manifest #: " . $val['manifestprefix'] . "-" . substr('000000' . $val['manifestnbr'], -6) . "</a> (Manifest Status: {$val['manifeststatus']})";
     }
 
@@ -4056,6 +4066,7 @@ case 'imanifest':
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintFrozens ><tr><td><i class="material-icons">print</i></td><td>Frozens On Manifest</td></tr></table></td> 
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintPB ><tr><td><i class="material-icons">print</i></td><td>Fixed On Manifest</td></tr></table></td> 
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintICard ><tr><td><i class="material-icons">print</i></td><td>ICards</td></tr></table></td> 
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnNxtManifest ><tr><td><i class="material-icons">next_plan</i></td><td>Next Manifest</td></tr></table></td> 
 </tr>
 BTNTBL;
 
@@ -5209,6 +5220,77 @@ QRYBOX;
 </div>
 RTNPAGE;
   return $rtnPage;    
+}
+
+function bldQuickBuildManifest ( $passedData ) { 
+  //{"whichdialog":"rptExtraManSeg","objid":"70","dialogid":"w1JyUMvhRNHZU02"}
+  $pdta = json_decode( $passedData, true);
+
+  $rtnPage = <<<RTNPAGE
+<style>
+
+#dlgHoldr { width: 40vw; display: grid; grid-template-columns: 18vw auto; grid-gap: .5vw;   } 
+#fldDisplayCodeHere { width: 18vw; border: 1px solid #000; margin: .3vh 0 .3vh .2vw; height: 5vh; text-align: center; text-align: center; font-size: 4vh; font-weight: bold; font-family: arial; }
+#keyboardHoldr { margin: .3vh 0 .3vh .2vw; display: grid; grid-template-columns: repeat( 3, 1fr); grid-gap: .2vw; width: 18vw; }
+.actionKey { border: 1px solid #000; text-align: center; font-size: 4vh; font-weight: bold; font-family: arial; padding: .3vh 0; transition: .5s; }  
+.actionKey:hover { cursor: pointer; background: rgba(145,145,145,1); color: rgba(57,255,20,1);  }  
+.spannr { grid-column: span 2; } 
+.bigSpannr { grid-column: span 3; }
+
+#manListSegSide { overflow: auto; height: 40vh; margin: .3vh .1vw .3vh 0;      } 
+
+#manInstrPara { grid-column: span 2; padding: .5vh .5vw; font-size: 1.5vh; line-height: 1.5em; text-align: justify;   }
+#manInstrPara .warning { font-weight: bold; color: rgba(222, 48, 0,1 ); } 
+.elmHldr { border: 1px solid #000; margin-bottom: .2vh; display: grid; grid-template-columns: 1vw auto;   }
+.elmHldr .elmCHTNLbl { font-size: 1.6vh; font-weight: bold; } 
+.elmHldr .elmDataDspr { font-size: 1.4vh; color: rgba(76, 82, 252,1);   } 
+
+.deletr  { grid-row: span 2; text-align: center; font-size: 1.8vh; font-weight: bold; color: rgba(222, 48, 0,1 ); }
+.deletr:hover { cursor: pointer; } 
+
+button {  display: block; border: 1px solid rgba( 48,57,71,1); background: rgba(255,255,255, 1); font-size: 2vh; padding: 1vh 0; color: rgba(84,113,210,1); transition: .5s; width: 100%; }
+button:hover { cursor: pointer; background: rgba(145,145,145,1); color: rgba(57,255,20,1);   } 
+</style>
+
+<input type=hidden id=fldParentManifest value="{$pdta['objid']}">
+<div id=dlgHoldr>
+<div id=manInstrPara>
+<span class=warning>SOP DEVIATION!</span><br>All manifests should be created at the procurement location from which the segment was sent.  By performing this override, it will be logged in the system as an SOP deviation and will be reported to CHTNEastern. This utility should only be used as a last resort. <i><b>Proper Procedure</b>: Call the issuing institution to create a manifest for the extra segment(s) found in the shipment</i>.   
+</div>
+  <div id=pullSegSide>
+    <input type=text id=fldDisplayCodeHere READONLY>
+    <div id=keyboardHoldr>
+       <div class=spannr> </div>    
+       <div class=actionKey onclick="backr();"> < </div>
+ 
+       <div class=actionKey onclick="bldNwManLabel('7');"> 7 </div>
+       <div class=actionKey onclick="bldNwManLabel('8');"> 8 </div>
+       <div class=actionKey onclick="bldNwManLabel('9');"> 9 </div>
+
+       <div class=actionKey onclick="bldNwManLabel('4');"> 4 </div>
+       <div class=actionKey onclick="bldNwManLabel('5');"> 5 </div>
+       <div class=actionKey onclick="bldNwManLabel('6');"> 6 </div>
+
+       <div class=actionKey onclick="bldNwManLabel('1');"> 1 </div>
+       <div class=actionKey onclick="bldNwManLabel('2');"> 2 </div>
+       <div class=actionKey onclick="bldNwManLabel('3');"> 3 </div>
+
+       <div class="actionKey spannr" onclick="bldNwManLabel('0');"> 0 </div>
+       <div class=actionKey onclick="bldNwManLabel('T');"> T </div>
+
+       <div class="actionKey bigSpannr" onclick="addCHTNLabel();"> Add CHTN #</div>
+
+    </div>
+  </div>
+  <div id=manListSegSide>
+
+
+  </div>
+  <div>&nbsp;</div><div><button onclick="createDeviationManifest();">Create Child Manifest</button></div>
+</div>
+RTNPAGE;
+  return $rtnPage;    
+
 }
 
 function bldSpcSrvSDFee( $passedData ) { 
@@ -9518,18 +9600,6 @@ RTNTHIS;
   }
 
   return $rtnThis;
-
-//<td><table class=tblBtn id=btnADDNoQMS onclick="displayNOQMSReason();" style="width: 6vw;"><tr><td style=" font-size: 1.1vh;"><center>No QMS</td></tr></table></td>
-  //<td class=prcFldLbl>Cut from Block (Slides Only)</td><td><input type=text id=fldSEGCutFrom></td>
-  //<table border=1>
-//<tr> 
-//    <td class=prcFldLbl>Additives</td>
-//</tr>
-//<tr>
-//    
-//    <td>/ADDITIVES/</td>
-//</tr>
-//</table>
 
 }
 
