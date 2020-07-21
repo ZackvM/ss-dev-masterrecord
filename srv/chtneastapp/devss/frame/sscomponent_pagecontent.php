@@ -1877,8 +1877,22 @@ return $pageContent;
 
 
 function bldInventoryProcessShipment() {
+
+
     $pageContent = <<<PAGECONTENT
-THIS IS THE SHIPMENT SCREEN HOLDER - Pick Pull or ship
+<div id=instrOne class=instructionLabel>1) Scan a CHTN Shipment Document: </div>
+
+<div id=intraMan>
+
+   <div class=elementholder>
+     <div class=elementlabel>Ship-Doc # <input type=hidden id=fldManifestNbr> </div>
+     <div class=dataelement id=dspManifestNbr>&nbsp;</div>
+   </div>
+
+
+
+</div>
+
 PAGECONTENT;
 return $pageContent;
 }

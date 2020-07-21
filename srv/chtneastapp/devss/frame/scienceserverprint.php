@@ -809,7 +809,7 @@ function getShipmentDocument($sdid, $originalURL) {
        require ("{$at}/extlibs/bcodeLib/qrlib.php");
         $tempDir = "{$at}/tmp/";
         //$codeContents = "{$tt}{$orginalURL}";
-        $codeContents = "SD[{$dspsd}]";
+        $codeContents = "SDM-{$dspsd}";
         $fileName = 'pr' . generateRandomString() . '.png';
         $pngAbsoluteFilePath = $tempDir.$fileName;
         if (!file_exists($pngAbsoluteFilePath)) {
@@ -1002,6 +1002,7 @@ function getShipmentDocument($sdid, $originalURL) {
             $miaText =  ( $miaa === 1 && $mias === 0 ) ? "<tr><td class=MIAText>* We strive to provide you with all required specimen data available at the time of tissue shipment, but there are some exceptions.  Same-day direct tissue shipments (Fresh) are provided with a provisional diagnosis only, as pathology reports are not immediately available.  Autopsy reports may not be available for one to two months.  The missing reports will be emailed to you as soon as they become available. Please feel free to contact our coordinators at (215) 662-4570 if you have any questions.  Thank you. </td></tr>" : "";
             $miaText =  ( $miaa === 0 && $mias === 1 ) ? "<tr><td class=MIAText> </td></tr>" : "";
 
+    //<td valign=top align=right style="width: 3vw; padding: 10px 1px 0 2px; ">{$sidebcode}</td>    
     $docText = <<<RTNTHIS
 <html>
 <head>
@@ -1046,7 +1047,7 @@ body { margin: 0; font-family: Roboto; font-size: 9pt; color: rgba(48,57,71,1); 
              </table>
             
             </td>
-            <td valign=top align=right style="width: 3vw; padding: 10px 1px 0 2px; ">{$sidebcode}</td>    
+            <td valign=top align=right style="width: 3vw; padding: 10px 1px 0 2px; ">{$sidebcodeZ}&nbsp;</td>    
             </tr>
             </table>
             

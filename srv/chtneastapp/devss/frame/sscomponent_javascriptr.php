@@ -2574,23 +2574,48 @@ function doSomethingWithScan ( scanvalue ) {
   //var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$(@)?/);
   //var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   //var scanhpr   = new RegExp(/^HPRT\d+$/); 
-  var sdlabel = new RegExp(/^SD\[\d{6}\]$/);
-
-
+  var sdlabel = new RegExp(/^SDM-\d{6}$/);
 
   var scanworked = 0;
-
   if ( sdlabel.test( scanvalue ) ) { 
     scanworked = 1;
-    //BIOSAMPLE LABEL SCANNED
-    alert( 'SHIP DOC: ' + scanvalue );
+    //RESET PAGE
+    getShipdoc( scanvalue );
   }
   
   if ( scanworked === 0 ) { 
     alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
   }
 
-} 
+}
+
+function getShipdoc( shipdoclbl ) {
+  var obj = new Object(); 
+  obj['shipdoclbl'] = shipdoclbl; 
+  var passdta = JSON.stringify(obj);         
+  byId('standardModalBacker').style.display = 'block';
+  console.log ( passdta );
+  var mlURL = "/data-doers/inventory-sd-get-shipdoc";
+  universalAJAX("POST",mlURL,passdta,answerGetShipdoc,2);
+}
+
+function answerGetShipdoc ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+     
+
+     byId('standardModalBacker').style.display = 'none';    
+   }
+}
+
+
 PROCINVT;
       break;
 }    

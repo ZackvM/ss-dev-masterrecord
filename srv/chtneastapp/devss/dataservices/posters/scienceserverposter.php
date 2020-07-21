@@ -1202,6 +1202,92 @@ EMAILBODY;
     
     //////////////// ^^^ VAULT ABOVE /////////////////
 
+    function inventorysdgetshipdoc ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      //{"manifestnbr":"70","scanlist":["90025T001","90017T001"]}
+      $at = genAppFiles;
+      session_start(); 
+      $sessid = session_id(); 
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowInvtry = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid ));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO INVENTORY OR USER'S PASSWORD HAS EXPIRED.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+      
+
+      if ( $errorInd === 0 ) {
+        ( !array_key_exists('shipdoclbl', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "FATAL ERROR:  ARRAY KEY 'shipdoclbl' DOES NOT EXIST.")) : ""; 
+
+        if ( $errorInd === 0 ) { 
+            ( trim($pdta['shipdoclbl']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "You must provide a scanned shipdoc barcode")) : ""; 
+
+            if ( $errorInd === 0 ) { 
+                ( !preg_match('/^(SDM)-[0-9]{6}$/',$pdta['shipdoclbl']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED SHIPDOC SCAN DOES NOT CONFIRM TO THE PROPER SHIPDOC TAG LABEL")) : "";
+                if ( $errorInd === 0 ) { 
+                    $scancode = (int)preg_replace('/^SDM-/','',$pdta['shipdoclbl']);
+                    $msgArr[] = $scancode;
+                    $sdHeadSQL = "SELECT substr(concat('000000',ifnull(sdh.shipdocrefid ,'')), -6) as shipdocnbr, ifnull(sdh.sdstatus,'ERROR') as sdstatus, ifnull(sdh.ponbr,'') as ponbr, ifnull(date_format(sdh.rqstpulldate,'%m/%d/%Y'),'') as rqstpulldate, ifnull(date_format(sdh.rqstshipdate,'%m/%d/%Y'),'') as rqstshipdate, ifnull(sdh.comments,'') as comments, ifnull(sdh.investcode,'') as investcode, ifnull(sdh.investname,'') as investname , ifnull(sdh.courier,'') as courier, ifnull(sdh.couriernbr,'') as couriernbr, ifnull(sdh.shipAddy,'') as shipaddy, ifnull(sdh.shipphone,'') as shipphone, ifnull(date_format(sdh.setupon,'%m/%d/%Y'),'') as setupon, ifnull(sdh.setupby,'') as setupby, ifnull(sdh.salesorder,'') as salesorder FROM masterrecord.ut_shipdoc sdh where shipdocrefid = :sdnbr and (sdstatus <> 'CLOSED' and sdstatus <> 'VOID')";
+                    $sdHeadRS = $conn->prepare( $sdHeadSQL );
+                    $sdHeadRS->execute( array( ':sdnbr' => $scancode ));
+
+                    if ( $sdHeadRS->rowCount() <> 1 ) { 
+                      (list( $errorInd, $msgArr[] ) = array(1 , "SHIPDOC HEADER FILE ERROR - NO SHIPDOC FOUND FOR {$pdta['shipdoclbl']}"));
+                    } else { 
+
+                    }
+
+
+
+                }
+            }
+        }
+      }
+
+      $msgArr[] = "ZACK WAS HERE";
+
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     function invtryimanifestbldchildmanifest ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
