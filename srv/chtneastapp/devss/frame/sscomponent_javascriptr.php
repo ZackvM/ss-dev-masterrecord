@@ -2092,7 +2092,6 @@ function sendICountRequest() {
   obj['bgslist'] = bgslist;
   obj['scanloccode'] = byId('locscancode').value;
   var passdta = JSON.stringify(obj);
-  //{"bgslist":{"0":"46925A7PBQ"},"scanloccode":"FRZB381"} 
   byId('standardModalBacker').style.display = 'block';
   var mlURL = "/data-doers/inventory-action-icount";
   universalAJAX("POST",mlURL,passdta,answerSendICountRequest,2);
@@ -2784,6 +2783,13 @@ function toggleShip( chkd ) {
   }
 }
 
+    function selectThisShipper( btnID ) {
+      var btnArr = document.getElementsByClassName('shpIndBtn'); 
+      for ( var i = 0; i < btnArr.length; i++ ) { 
+        byId( btnArr[i].id ).dataset.selected = 'false';
+      }
+      byId(btnID).dataset.selected = 'true';
+    }
 
 PROCINVT;
       break;

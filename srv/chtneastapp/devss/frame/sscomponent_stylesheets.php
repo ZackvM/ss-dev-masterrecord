@@ -1717,8 +1717,10 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);  }
 .shipperInformationDiv #titleBar { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); display: grid; grid-template-columns: auto .8vw; font-size: 1.4vh; padding: .2vh .2vw;   }   
 .shipperInformationDiv #titleBar #closeBtnHere { font-size: 2vh; } 
 .shipperInformationDiv #titleBar #closeBtnHere:hover { cursor: pointer; color: rgba({$this->color_bred},1); font-size: 2vh; } 
-.shipperInformationDiv #buttonLine { display: grid; grid-template-columns: repeat( 8, 1fr); grid-gap: .2vw; padding: .3vh 0; }
-.shipperInformationDiv #buttonLine .shpIndBtn { border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); font-size: 2.8vh;       }  
+.shipperInformationDiv #buttonLine { display: grid; grid-template-columns: repeat( 7, 1fr); grid-gap: .2vw; padding: .3vh 0; }
+.shipperInformationDiv #buttonLine .shpIndBtn { border: 1px solid rgba({$this->color_zackgrey},.4); background: rgba({$this->color_white},1); font-size: 2.5vh;  text-align: center; color: rgba({$this->color_zackgrey},.4); padding: 1vh 0;}  
+.shipperInformationDiv #buttonLine .shpIndBtn:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.3); }  
+.shipperInformationDiv #buttonLine .shpIndBtn[data-selected='true'] { background: rgba({$this->color_darkgreen},.5); color: rgba({$this->color_white},1); } 
 
 
 STYLESHEET;

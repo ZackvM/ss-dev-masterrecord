@@ -1254,15 +1254,20 @@ EMAILBODY;
   <div id=titleBar><div>Enter Shipping Information</div><div align=right onclick="closeThisDialog('{$dlogid}');" id=closeBtnHere>&times;</div></div>
   <div id=buttonLine>
     <div>&nbsp;</div>
-    <div class=shpIndBtn>FED-EX</div>
-    <div class=shpIndBtn>UPS</div>
-    <div class=shpIndBtn>USPS</div>
-    <div class=shpIndBtn>DHL</div>
-    <div class=shpIndBtn>International</div>
-    <div class=shpIndBtn>Local Pick-up</div>
+    <div class=shpIndBtn id=shprFedex data-selected='true' onclick="selectThisShipper(this.id);">FED-EX</div>
+    <div class=shpIndBtn id=shprUPS data-selected='false' onclick="selectThisShipper(this.id);">UPS</div>
+    <div class=shpIndBtn id=shprUSPS data-selected='false' onclick="selectThisShipper(this.id);">USPS</div>
+    <div class=shpIndBtn id=shprDHL data-selected='false' onclick="selectThisShipper(this.id);">DHL</div>
+    <div class=shpIndBtn id=shprINation data-selected='false' onclick="selectThisShipper(this.id);">International</div>
     <div>&nbsp;</div>
   </div>
 
+  <div id=trckElementHolder>
+    <div id=trckElementLbl>Scan the shipment tracking number</div>
+    <div id=trckNbrGoesHere>  <input type=text id=shipmentTrackingNbr> </div>
+  </div>
+  
+  <div id=shpBtnHolder><button>Ship It!</button></div>
 
 
 </div>

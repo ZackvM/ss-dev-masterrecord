@@ -1685,6 +1685,13 @@ function inventory ( $rqststr, $whichusr ) {
          $pageTitle = "Scan Investigator Supplies (Media/Kits)";
          $pageDetail = self::bldInventoryIMedia();
          break;
+       case 'localpickup':
+         $topBtnBar = generatePageTopBtnBar('inventory');
+         $selectorlocal = " data-selected='true' ";
+         $pageTitle = "Shipment Local Pick-up";
+         $pageDetail = "&nbsp;";
+         //$pageDetail = self::bldInventoryIMedia();
+         break;
      }
 
      $pageDetail = ( trim($pageDetail) === "" ) ?  self::bldInventoryMaster() : $pageDetail;
@@ -1705,11 +1712,12 @@ function inventory ( $rqststr, $whichusr ) {
    <div class=iControlBtn {$selectorcheckin}><a href="{$tt}/inventory/process-inventory">Process Inventory</a></div>
    <div class=iControlBtn {$selectorhpr}><a href="{$tt}/inventory/process-hpr-tray">Process HPR Tray</a></div>
    <div class=iControlBtn {$selectorpull}><a href="{$tt}/inventory/process-shipment">Process Shipment</a></div>
+   <div class=iControlBtn {$selectorlocal}><a href="{$tt}/inventory/local-pickup">Local Pick-up</a></div>    
    <div class=iControlBtn {$selectoriman}><a href="{$tt}/inventory/process-imanifest">Process Intra-Manifest</a></div>
    <div class=iControlBtn {$selectorcount}><a href="{$tt}/inventory/icount">Inventory Count</a></div>
    <div class=iControlBtn {$selectorpdestroy}><a href="{$tt}/inventory/pending-destroy-biosamples">P-Destroy Biosamples</a></div>
    <div class=iControlBtn {$selectordestroy}><a href="{$tt}/inventory/destroy-biosamples">Destroy Biosamples</a></div>
-   <div class=iControlBtn {$selectorinvmedia}><a href="{$tt}/inventory/investigator-supplies">Investigator Supplies</a></div>    
+   
  </div>
 <div id=inventoryControlPage>{$pageDetail}</div>
 </div>
