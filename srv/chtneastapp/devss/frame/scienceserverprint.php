@@ -960,7 +960,7 @@ function getShipmentDocument($sdid, $originalURL) {
                     // $insRS = $conn->prepare($insSQL); 
                     // $insRS->execute(array(':objshipdoc' => $sdid, ':activeind' => 1,   ':biosampleref' => (int)$dtl['pbiosample'], ':rqstby' => $usr['originalaccountname'], ':miatype' => "MIA-{$dtl['proctype']}"));
                     //TODO:  DO NOT HARD CODE THESE VALUES - Assigned Agent Value
-                    $insSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule, activeind,objshipdoc,objpbiosample,actioncode,actiondesc,actionrequestedby,actionrequestedon, assignedagent) VALUES ('SHIPPING', :activeind,:objshipdoc,:biosampleref,:miatype,'PRE-QMS DIRECT SHIPMENT',:rqstby,now(), 'Gina')";
+                    $insSQL = "INSERT INTO masterrecord.ut_master_furtherlabactions (frommodule, activeind,objshipdoc,objpbiosample,actioncode,actiondesc,actionrequestedby,actionrequestedon, assignedagent) VALUES ('SHIPPING', :activeind,:objshipdoc,:biosampleref,:miatype,'PRE-QMS DIRECT SHIPMENT',:rqstby,now(), 'Xavier')";
                     $insRS = $conn->prepare($insSQL); 
                     $insRS->execute(array(':objshipdoc' => $sdid, ':activeind' => 1,   ':biosampleref' => (int)$dtl['pbiosample'], ':rqstby' => $usr['originalaccountname'], ':miatype' => "MIA-{$dtl['proctype']}"));                     
                    }

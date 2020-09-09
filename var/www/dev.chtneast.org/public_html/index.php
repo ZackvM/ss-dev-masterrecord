@@ -84,11 +84,10 @@ if ($detect->isMobile()) {
 
 
 switch ($request[1]) {
+    
 
     case 'chtneasternmicroscope': 
-      
         $pg = <<<PAGECONTENT
-
 <html>  
   <head>
     <title>CHTN Eastern Microscope</title>
@@ -129,7 +128,46 @@ switch ($request[1]) {
 PAGECONTENT;
 echo $pg;
         exit();
-        break; 
+        break;
+    case 'transientinventoryservices':
+
+      header('Content-type: application/json; charset=utf8');
+      header('Access-Control-Allow-Origin: *'); 
+      header('Access-Control-Allow-Header: Origin, X-Requested-With, Content-Type, Accept');
+      header('Access-Control-Max-Age: 3628800'); 
+      header('Access-Control-Allow-Methods:  POST');              
+      $authuser = $_SERVER['PHP_AUTH_USER']; 
+      $authpw = $_SERVER['PHP_AUTH_PW']; 
+
+      switch ($method) { 
+        case 'POST':   
+          $chkUsr = (int)checkTIUser($authuser, $authpw);
+          //USER: chtneasttransientuser PW: UFJwTEx0ZDRoa1B2dVQ0SlJvaUtFZz09 (Z _ _ _ _ _ _ _ o!)  
+          if ( $chkUsr === 200) { 
+              $postedData = file_get_contents('php://input');
+              $passedPayLoad = "";
+              if (trim($postedData) !== "") { 
+                $passedPayLoad = trim($postedData);
+              } 
+              require(genAppFiles . "/dataservices/posters/transientinventoryservicesclass.php"); 
+              $tisrvc = new transientdataservices ( $originalRequest, $passedPayLoad ) ;
+              $rtndata['RESPONSE'] = $tisrvc->rtnData;
+              $responseCode = $tisrvc->responseCode;
+          } else {
+            $rtndata['RESPONSE'] = "USER UNAUTHORIZED (" . strtoupper( $authuser ) . ")";
+            $responseCode = $chkUsr;
+          }
+          break;
+        default:
+          $responseCode = 405;
+          $rtndata['RESPONSE'] = "METHOD NOT ALLOWED (" . strtoupper( $method ) . ")";
+      }
+
+      http_response_code($responseCode);
+      echo json_encode( $rtndata );
+      
+      exit(); 
+      break; 
     case 'dataservices': 
         //BOTH GET AND POSTS GO HERE
         $responseCode = 400;

@@ -109,7 +109,22 @@ function getipinformation($ip) {
    $ws = file_get_contents("http://ip-api.com/json/{$ip}");
    return $ws;
 }
- 
+
+function checkTIUser ( $username, $passwrd) { 
+  $responseCode = 401;  //UNAUTHORIZED 
+  require(serverkeys . "/sspdo.zck"); 
+  $usrChk = $conn->prepare( "SELECT userid, fiveonepword FROM four.sys_userbase where allowind = 1 and failedlogins < 6 and originalaccountname = :uname and datediff(passwordexpiredate, now()) > -1");
+  $usrChk->execute(array(':uname' => $username ));
+  if ( $usrChk->rowCount() === 1 ) { 
+    $usr = $usrChk->fetch(PDO::FETCH_ASSOC);
+    $p = cryptservice( $passwrd, 'd');
+    if (password_verify($p,  $usr['fiveonepword'])) {
+      $responseCode = 200;
+    }  
+  }
+  return $responseCode;
+}
+
 function checkPostingUser($usrname, $passwrd) { 
     $responseCode = 401;  //UNAUTHORIZED 
     if ($usrname === serverIdent) { 
@@ -118,8 +133,6 @@ function checkPostingUser($usrname, $passwrd) {
           $responseCode = 200;
       }
     } else { 
-      
-
       //CHECK CODE IN DATABASE   
       require(serverkeys . "/sspdo.zck"); 
       //TODO: MAKE THIS AWEBSERVICE
@@ -132,8 +145,6 @@ function checkPostingUser($usrname, $passwrd) {
             $responseCode = 200;
           }
       }
-      
-      
     }
     return $responseCode;
 }

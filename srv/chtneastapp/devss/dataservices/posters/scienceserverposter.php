@@ -1202,6 +1202,82 @@ EMAILBODY;
     
     //////////////// ^^^ VAULT ABOVE /////////////////
 
+    function inventorysdcheckscanlist ( $request, $passdata ) { 
+      $rows = array(); 
+      $dta = array();
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      //{"sd":"5916","scanlist":["rrHz09iJemNIVSmeiLIDZ+TSHGMaMW1bqlXdItt2YkJFTc4zx0cmfGRGlzZx2ofcnQueoaLGSNggpNg9QMWRmb2uGz5hu3yJfgCbX/mNMYwfxNlBl2a2psR0O4StMEd5r21nTPVwy2nlmZzB8PWnNVQ4QuZduxOeY1cHq0+Zqo+c6vmHn/8oLehsAabix4Y6EJdZujWgJJ22GRgCTn+rFLEvk34Kx5cQ6g+H8YH3C40J2GLDH5DUuoQ36aLvGZ93lvJSWjFmLAs6YUxxT39nJI+hiGTsegM4+EbDfoXOw72oWv68wPbhQ7jpy8ElTMfjROQODgIDgBFwqEg6fEYbbA==","UqjcxsHaywP1TKlSYn0mUI50vAL6pLKTsEsgH2lMHM4KgT7I7YSkvT5O6oJ5SFsFwP9EuqC41lxEUfsj+9sgyXWrfIL1dVlIA/Jf6/cR2+hkM0Zijjns18bW53lWifJ0vUC0DUwr5Ppz9HFVehkBbLt76D02Xv40vWWc3iiNMf4D7ecq+OEhaPVqQxnwAlGn2mvQXPutZ39VM7J7rzVFqcGLSF8Uplqy8qvYL6mRJEBfgQHbGff2r5ZvdYUfqlpZPzdZwOEfzWyiKUU7mC5KxCYfzRTA9KB8u9CGnOW8n3EkIiXTR98d4nFggLTyQB08dPZUlsPhbKbRqORNgg0aGQ=="]}
+
+      //TODO: DATA CHECKS GO HERE
+
+      $sdChk = $conn->prepare( "SELECT sdstatus, shipdocrefid FROM masterrecord.ut_shipdoc where shipdocrefid = :sd and sdstatus <> 'CLOSED'");
+      $sdChk->execute( array( ':sd' => $pdta['sd'] ));
+      if ( $sdChk->rowCount() <> 1 ) { 
+        $msgArr[] = $pdta['sd'] . ' is NOT an open Ship Doc and cannot be scanned to ship!';
+      } else {
+
+        foreach ( $pdta['scanlist'] as $v ) { 
+          $scnList[] = chtndecrypt ( $v, true);
+        }
+        $shpDoc = $conn->prepare( "SELECT segmentid, bgs FROM masterrecord.ut_procure_segment where shipdocrefid = :sd and segstatus <> 'SHIPPED' and ifnull(shippedDate,'') = ''");
+        $shpDoc->execute( array( ':sd' => $pdta['sd'] ));
+        if ( $shpDoc->rowCount() < 1 ) { 
+          //error
+          $msgArr[] = "Shipdoc: {$pdta['sd']} - No Open Segments found";
+        } else { 
+          //check 
+          $scanSegId = array();  
+          $foundall = 1;
+          while ( $s = $shpDoc->fetch(PDO::FETCH_ASSOC) ) { 
+            if ( !in_array( $s['bgs'], $scnList ) ) { 
+              //MISSING SCAN
+              $msgArr[] = "You did not scan " . $s['bgs'];
+              $foundall = 0;   
+            } else { 
+              $scanSegId[] = cryptservice( $s['segmentid'], 'e' );
+            }     
+          }
+        }
+        //CONTINUE ON
+
+      }
+      if ( $foundall === 1 ) { 
+
+       $dlogid = generateRandomString(15);   
+       $dlgPage = <<<RTNPAGE
+<div class=shipperInformationDiv>
+  <div id=titleBar><div>Enter Shipping Information</div><div align=right onclick="closeThisDialog('{$dlogid}');" id=closeBtnHere>&times;</div></div>
+  <div id=buttonLine>
+    <div>&nbsp;</div>
+    <div class=shpIndBtn>FED-EX</div>
+    <div class=shpIndBtn>UPS</div>
+    <div class=shpIndBtn>USPS</div>
+    <div class=shpIndBtn>DHL</div>
+    <div class=shpIndBtn>International</div>
+    <div class=shpIndBtn>Local Pick-up</div>
+    <div>&nbsp;</div>
+  </div>
+
+
+
+</div>
+RTNPAGE;
+
+
+        $dta = array("pageElement" => $dlgPage, "dialogID" => $dlogid, 'left' => "10vw" , 'top' => "15vh", 'primeFocus' => "");
+        $responseCode = 200;    
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;     
+    } 
+
     function inventorysdgetshipdoc ( $request, $passdata ) { 
       $rows = array(); 
       $dta = array();
@@ -1236,7 +1312,7 @@ EMAILBODY;
                 ( !preg_match('/^(SDM)-[0-9]{6}$/',$pdta['shipdoclbl']) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED SHIPDOC SCAN DOES NOT CONFIRM TO THE PROPER SHIPDOC TAG LABEL")) : "";
                 if ( $errorInd === 0 ) { 
                     $scancode = (int)preg_replace('/^SDM-/','',$pdta['shipdoclbl']);
-                    $msgArr[] = $scancode;
+//                    $msgArr[] = $scancode;
                     $sdHeadSQL = "SELECT substr(concat('000000',ifnull(sdh.shipdocrefid ,'')), -6) as shipdocnbr, ifnull(sdh.sdstatus,'ERROR') as sdstatus, ifnull(sdh.ponbr,'') as ponbr, ifnull(date_format(sdh.rqstpulldate,'%m/%d/%Y'),'') as rqstpulldate, ifnull(date_format(sdh.rqstshipdate,'%m/%d/%Y'),'') as rqstshipdate, ifnull(sdh.comments,'') as comments, ifnull(sdh.investcode,'') as investcode, ifnull(sdh.investname,'') as investname , ifnull(sdh.courier,'') as courier, ifnull(sdh.couriernbr,'') as couriernbr, ifnull(sdh.shipAddy,'') as shipaddy, ifnull(sdh.shipphone,'') as shipphone, ifnull(date_format(sdh.setupon,'%m/%d/%Y'),'') as setupon, ifnull(sdh.setupby,'') as setupby, ifnull(sdh.salesorder,'') as salesorder FROM masterrecord.ut_shipdoc sdh where shipdocrefid = :sdnbr and (sdstatus <> 'CLOSED' and sdstatus <> 'VOID')";
                     $sdHeadRS = $conn->prepare( $sdHeadSQL );
                     $sdHeadRS->execute( array( ':sdnbr' => $scancode ));
@@ -1244,46 +1320,23 @@ EMAILBODY;
                     if ( $sdHeadRS->rowCount() <> 1 ) { 
                       (list( $errorInd, $msgArr[] ) = array(1 , "SHIPDOC HEADER FILE ERROR - NO SHIPDOC FOUND FOR {$pdta['shipdoclbl']}"));
                     } else { 
-
+                      $dta['shipdoc'] = $sdHeadRS->fetch(PDO::FETCH_ASSOC); 
+                      $detSQL = "SELECT ifnull(sdd.pulledInd,0) as pulledind, ifnull(sdd.pulledBy,'') as pulledby, ifnull(date_format(sdd.pulledOn,'%m/%d/%Y'),'') as pulledon, ifnull(sg.bgs,'') as bgs, ifnull(sg.prepmethod,'') as prepmethod, ifnull(sg.preparation,'') as preparation, sgsts.dspvalue as segstatusdsp, sg.scannedLocation, ifnull(date_format(sg.scannedDate,'%m/%d/%Y'),'') as scanneddate , sg.scannedStatus , trim(concat(bs.tissType, if(ifnull(bs.anatomicSite,'') = '','', concat(' / ', ifnull(bs.anatomicSite,''))), ' ', ifnull(bs.diagnosis,'-'), if(ifnull(bs.subdiagnos,'')='','',concat(' (',ifnull(bs.subdiagnos,''),')')))) shortdesig FROM masterrecord.ut_shipdocdetails sdd LEFT JOIN masterrecord.ut_procure_segment sg on sdd.segID = sg.segmentid left join masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pbiosample left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'segmentstatus') sgsts on sg.segstatus = sgsts.menuvalue where sdd.shipdocrefid = :shipdoc order by sg.prepmethod, sg.bgs";
+                      $detRS = $conn->prepare( $detSQL ); 
+                      $detRS->execute(array(':shipdoc' => $scancode )); 
+                      $dta['details'] = $detRS->fetchAll(PDO::FETCH_ASSOC);
+                      $responseCode = 200;
                     }
-
-
-
                 }
             }
         }
       }
-
-      $msgArr[] = "ZACK WAS HERE";
 
       $msg = $msgArr;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;     
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -4872,7 +4925,7 @@ MBODY;
       $sd = cryptservice($pdta['sdency'],'d');
       //$dspsd = substr('000000' . $sd, -6);      
 
-      $chkUsrSQL = "SELECT originalaccountname as usr FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1 and allowfinancials = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $chkUsrSQL = "SELECT originalaccountname as usr FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowCoord = 1 and allowfinancials = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
       $rs = $conn->prepare($chkUsrSQL); 
       $rs->execute(array(':sessid' => $sessid));
       if ($rs->rowCount() === 1) { 
@@ -5442,19 +5495,20 @@ MBODY;
       $sdnbr = cryptservice( $pdta['sdency'] , 'd');
       $dspsd = substr('000000' . $sdnbr, -6);
 
-      ( !array_key_exists('sdency', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdency' missing from passed data")) : "";
-      ( !array_key_exists('sdcRqstShipDateValue', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcRqstShipDateValue' missing from passed data")) : "";
-      ( !array_key_exists('sdcRqstToLabDateValue', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcRqstToLabDateValue' missing from passed data")) : "";
-      ( !array_key_exists('sdcAcceptedBy', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcAcceptedBy' missing from passed data")) : "";
-      ( !array_key_exists('sdcAcceptorsEmail', $pdta) || !filter_var(trim($pdta['sdcAcceptorsEmail']), FILTER_VALIDATE_EMAIL)) ? (list( $errorind, $msgArr[] ) = array(1 , "The Acceptor's email address is invalid or the array key 'sdcAcceptorsEmail' is missing")) : "";
-      ( !array_key_exists('sdcPurchaseOrder', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcPurchaseOrder' missing from passed data")) : "";
+      ( !array_key_exists('sdency', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdency' missing from passed data")) : "";
+      ( !array_key_exists('sdcRqstShipDateValue', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcRqstShipDateValue' missing from passed data")) : "";
+      ( !array_key_exists('sdcRqstToLabDateValue', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcRqstToLabDateValue' missing from passed data")) : "";
+      ( !array_key_exists('sdcAcceptedBy', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcAcceptedBy' missing from passed data")) : "";
+      ( !array_key_exists('sdcAcceptorsEmail', $pdta) || !filter_var(trim($pdta['sdcAcceptorsEmail']), FILTER_VALIDATE_EMAIL)) ? (list( $errorInd, $msgArr[] ) = array(1 , "The Acceptor's email address is invalid or the array key 'sdcAcceptorsEmail' is missing")) : "";
+      ( !array_key_exists('sdcPurchaseOrder', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcPurchaseOrder' missing from passed data")) : "";
       //( !array_key_exists('sdcShipDocSalesOrder', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcShipDocSalesOrder' missing from passed data")) : "";
-      ( !array_key_exists('sdcInvestShippingAddress', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcInvestShippingAddress' missing from passed data")) : "";
-      ( !array_key_exists('sdcShippingPhone', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcShippingPhone' missing from passed data")) : "";
-      ( !array_key_exists('sdcCourierInfoValue', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcCourierInfoValue' missing from passed data")) : "";
-      ( !array_key_exists('sdcInvestBillingAddress', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcInvestBillingAddress' missing from passed data")) : "";
-      ( !array_key_exists('sdcBillPhone', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcBillPhone' missing from passed data")) : "";
-      ( !array_key_exists('sdcPublicComments', $pdta)) ? (list( $errorind, $msgArr[] ) = array(1 , "array key 'sdcPublicComments' missing from passed data")) : "";
+      ( !array_key_exists('sdcInvestShippingAddress', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcInvestShippingAddress' missing from passed data")) : "";
+      ( !array_key_exists('sdcShippingPhone', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcShippingPhone' missing from passed data")) : "";
+      ( !array_key_exists('sdcCourierInfoValue', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcCourierInfoValue' missing from passed data")) : "";
+      ( !array_key_exists('sdcInvestBillingAddress', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcInvestBillingAddress' missing from passed data")) : "";
+      ( !array_key_exists('sdcBillPhone', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcBillPhone' missing from passed data")) : "";
+      ( !array_key_exists('sdcPublicComments', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcPublicComments' missing from passed data")) : "";
+      ( !array_key_exists('sdcSendSurvey', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sdcSendSurvey' missing from passed data")) : "";
 
       //1. check the the shipdoc is open/locked!!!!!
       //TODO:  MAKE STATUSES DYNAMIC
@@ -5477,7 +5531,7 @@ MBODY;
         $chkCourierRS = $conn->prepare($chkCourierSQL); 
         $chkCourierRS->execute(array(':courierid' => trim($pdta['sdcCourierInfoValue']), ':investid' => $sd['investcode']));
         if ( $chkCourierRS->rowCount() <> 1 ) {
-          (list( $errorind, $msgArr[] ) = array(1 , "THE COURIER IS NOT VALID FOR THIS INVESTIGATOR"));
+          (list( $errorInd, $msgArr[] ) = array(1 , "THE COURIER IS NOT VALID FOR THIS INVESTIGATOR"));
         } else { 
           $courierrecord = $chkCourierRS->fetch(PDO::FETCH_ASSOC);
           $courierid = (int)$pdta['sdcCourierInfoValue'];
@@ -5497,6 +5551,9 @@ MBODY;
       //7. CHECK SALES ORDER
       //( trim($pdta['sdcShipDocSalesOrder']) !== "" && !is_numeric($pdta['sdcShipDocSalesOrder']) ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "THE SALES ORDER NUMBER MUST BE A NUMERIC VALUE")) : "" ; 
 
+      $sdcSurvey = ( !$pdta['sdcSendSurvey'] ) ? 2 : 0;
+
+
       if ( $errorInd === 0 ) {
         //GET ORIGINAL VALUES
         //$oSQL = "SELECT *  FROM masterrecord.ut_shipdoc where shipdocrefid = :sdrefid";
@@ -5508,12 +5565,12 @@ MBODY;
         $backupRS = $conn->prepare($backupSQL); 
         $backupRS->execute(array( ':usr' => $u['originalaccountname'], ':sdnbr' => (int)$sdnbr)); 
         //WRITE DATA 
-        $updSQL = "update masterrecord.ut_shipdoc set acceptedby = :accptedby, acceptedbyemail = :acceptedbyemail, ponbr = :ponbr, rqstshipdate = :rqstshipdate, rqstpulldate = :rqstpulldate, comments = :comments, tqcourierid = :tqcourierid, courier = :courier, couriernbr = :couriernbr, shipAddy = :shipaddy, shipphone = :shipphone, billAddy = :billaddy, billphone = :billphone, lasteditby = :lasteditby, lastediton = now() where shipdocrefid = :sdnbr";
+        $updSQL = "update masterrecord.ut_shipdoc set acceptedby = :accptedby, acceptedbyemail = :acceptedbyemail, ponbr = :ponbr, rqstshipdate = :rqstshipdate, rqstpulldate = :rqstpulldate, comments = :comments, tqcourierid = :tqcourierid, courier = :courier, couriernbr = :couriernbr, shipAddy = :shipaddy, shipphone = :shipphone, billAddy = :billaddy, billphone = :billphone, surveyemailsent = :surveyemailsent, lasteditby = :lasteditby, lastediton = now() where shipdocrefid = :sdnbr";
         $updRS = $conn->prepare($updSQL);
         //, salesorder = :salesorder //removed from $updSQL above
         //$so = ( trim($pdta['sdcShipDocSalesOrder']) !== "") ? (int)$pdta['sdcShipDocSalesOrder'] : null;  
         //,':salesorder' => $so (TAKEN OUT OF SQL BELOW ON 2019-05-21)
-        $updVal = array(':accptedby' => trim($pdta['sdcAcceptedBy']),':sdnbr' => (int)$sdnbr,':acceptedbyemail' => trim($pdta['sdcAcceptorsEmail']) ,':ponbr' => trim($pdta['sdcPurchaseOrder']),':rqstshipdate' => $pdta['sdcRqstShipDateValue'],':rqstpulldate' => $pdta['sdcRqstToLabDateValue'],':comments' => trim($pdta['sdcPublicComments']),':tqcourierid' => $courierid ,':courier' => $courier,':couriernbr' => $courierNbr,':shipaddy' => trim($pdta['sdcInvestShippingAddress']),':shipphone' => trim($pdta['sdcShippingPhone']),':billaddy' => trim($pdta['sdcInvestBillingAddress']),':billphone' => trim($pdta['sdcBillPhone']),':lasteditby' => trim($u['originalaccountname']) );
+        $updVal = array(':accptedby' => trim($pdta['sdcAcceptedBy']),':sdnbr' => (int)$sdnbr,':acceptedbyemail' => trim($pdta['sdcAcceptorsEmail']) ,':ponbr' => trim($pdta['sdcPurchaseOrder']),':rqstshipdate' => $pdta['sdcRqstShipDateValue'],':rqstpulldate' => $pdta['sdcRqstToLabDateValue'],':comments' => trim($pdta['sdcPublicComments']),':tqcourierid' => $courierid ,':courier' => $courier,':couriernbr' => $courierNbr,':shipaddy' => trim($pdta['sdcInvestShippingAddress']),':shipphone' => trim($pdta['sdcShippingPhone']),':billaddy' => trim($pdta['sdcInvestBillingAddress']),':billphone' => trim($pdta['sdcBillPhone']), ':surveyemailsent' => $sdcSurvey,':lasteditby' => trim($u['originalaccountname']) );
         $updRS->execute($updVal); 
         $responseCode = 200; 
       } 
@@ -5537,7 +5594,7 @@ MBODY;
         $pdta = json_decode($passdata, true);
         $sdnbr = cryptservice( $pdta['sdency'] , 'd');
 
-        $sdHeadSQL = "SELECT shipdocrefid, ifnull(sdstatus,'CLOSED') as sdstatus, ifnull(date_format(statusdate,'%m/%d/%Y'),'') as statusdate, ifnull(acceptedby,'') as acceptedby, ifnull(acceptedbyemail,'') as acceptedbyemail, ifnull(ponbr,'') as ponbr,ifnull(date_format(rqstshipdate,'%Y-%m-%d'),'') as rqstshipdateval, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as rqstshipdate, ifnull(date_format(rqstpulldate,'%Y-%m-%d'),'') as rqstpulldateval, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as rqstpulldate, ifnull(comments,'') as comments, ifnull(investcode,'') as investcode, ifnull(investname,'') as investname, ifnull(investemail,'') as investemail, ifnull(investinstitution,'') as investinstitution, ifnull(institutiontype,'') as institutiontype, ifnull(investdivision,'') as investdivision, ifnull(oncreationinveststatus,'') as tqstatusoncreation, ifnull(shipmentTrackingNbr,'') as shipmenttrackingnbr, ifnull(shipAddy,'') as shipmentaddress, ifnull(shipphone,'') as shipmentphone, ifnull(billAddy,'') as billaddress, ifnull(billphone,'') as billphone, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby, ifnull(salesorder,0) as salesorder, ifnull(salesorderamount,0) as salesorderamount, ifnull(SOBY,'') as salesorderby, ifnull(date_format(SOON,'%m/%d/%Y'),'') as salesorderon, ifnull(courier,'') courier, ifnull(couriernbr,'') as couriernbr, ifnull(tqcourierid,0) tqcourierid  FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
+        $sdHeadSQL = "SELECT shipdocrefid, ifnull(sdstatus,'CLOSED') as sdstatus, ifnull(date_format(statusdate,'%m/%d/%Y'),'') as statusdate, ifnull(acceptedby,'') as acceptedby, ifnull(acceptedbyemail,'') as acceptedbyemail, ifnull(ponbr,'') as ponbr,ifnull(date_format(rqstshipdate,'%Y-%m-%d'),'') as rqstshipdateval, ifnull(date_format(rqstshipdate,'%m/%d/%Y'),'') as rqstshipdate, ifnull(date_format(rqstpulldate,'%Y-%m-%d'),'') as rqstpulldateval, ifnull(date_format(rqstpulldate,'%m/%d/%Y'),'') as rqstpulldate, ifnull(comments,'') as comments, ifnull(investcode,'') as investcode, ifnull(investname,'') as investname, ifnull(investemail,'') as investemail, ifnull(investinstitution,'') as investinstitution, ifnull(institutiontype,'') as institutiontype, ifnull(investdivision,'') as investdivision, ifnull(oncreationinveststatus,'') as tqstatusoncreation, ifnull(shipmentTrackingNbr,'') as shipmenttrackingnbr, ifnull(shipAddy,'') as shipmentaddress, ifnull(shipphone,'') as shipmentphone, ifnull(billAddy,'') as billaddress, ifnull(billphone,'') as billphone, ifnull(date_format(setupon,'%m/%d/%Y'),'') as setupon, ifnull(setupby,'') as setupby, ifnull(salesorder,0) as salesorder, ifnull(salesorderamount,0) as salesorderamount, ifnull(SOBY,'') as salesorderby, ifnull(date_format(SOON,'%m/%d/%Y'),'') as salesorderon, ifnull(courier,'') courier, ifnull(couriernbr,'') as couriernbr, ifnull(tqcourierid,0) tqcourierid, if( ifnull(surveyemailsent,0) = 2, '', 'checked' ) as surveyemailsent  FROM masterrecord.ut_shipdoc where shipdocrefid = :sdnbr";
         $sdHeadRS = $conn->prepare($sdHeadSQL);
         $sdHeadRS->execute(array(':sdnbr' => $sdnbr));
         if ( $sdHeadRS->rowCount() > 0 ) { 
@@ -9820,7 +9877,7 @@ UPDSQL;
 
      if ( $errorInd === 0 ) { 
         //CHECK USER
-        $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and originalaccountname = :userid and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and inventorypinkey = :pinkey and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+        $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and originalaccountname = :userid and sessionid = :sessid and (allowInd = 1 and allowCoord = 1) and inventorypinkey = :pinkey and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
         $rs = $conn->prepare($chkUsrSQL); 
         $rs->execute(array(':userid' => $pdta['user'], ':sessid' => $sessid, ':pinkey' => $usrpin));
         if ($rs->rowCount() === 1) { 
@@ -9914,7 +9971,7 @@ UPDSQL;
      session_start();      
      $sessid = session_id();
 
-     $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+     $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
      $rs = $conn->prepare($chkUsrSQL); 
      $rs->execute(array(':sessid' => $sessid));
      if ($rs->rowCount() === 1) { 

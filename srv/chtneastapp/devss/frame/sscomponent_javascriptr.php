@@ -624,7 +624,11 @@ function saveShipDoc() {
   var dta = new Object();
   for (var i = 0; i < elements.length; i++) { 
     if ( parseInt(elements[i].dataset.frminclude) === 1 ) {
-      dta[elements[i].id] = elements[i].value.trim();      
+      if ( elements[i].type == 'checkbox' ) { 
+        dta[elements[i].id] = elements[i].checked;      
+      } else { 
+        dta[elements[i].id] = elements[i].value.trim();      
+      }
     }
   }
   var passdata = JSON.stringify(dta);
@@ -2359,7 +2363,7 @@ function doSomethingWithScan ( scanvalue ) {
       switch ( trayassignable ) {
         case 0: 
           //DO NOTHING
-          alert('This HPR tray, '+byId('tlocdisplay').innerHTML+', is not in a state to process.  It must be released from review');         
+          alert('This HPR tray, '+byId('tlocdisplay').innerHTML+', is not in a state to process.  It must be released from review');
           break;
         case 1:
           //LOAD TRAY 
@@ -2502,8 +2506,6 @@ var slideRemoveFromTray = function ( scancode, newloccode, hprtrayid ) {
   });
 }
 
-
-
 var fillInDesigLabelCode = function ( scancode  ) {
   return new Promise(function(resolve, reject) {
     var obj = new Object(); 
@@ -2570,23 +2572,149 @@ PROCINVT;
 
 function doSomethingWithScan ( scanvalue ) {
 
+
+  //TODO:  MAKE THIS DYNAMIC - SPECIAL OLD BARCODE ENCODING CHARACTERS
+  scanvalue = scanvalue.replace(/%V$/mg,"@");
+  scanvalue = scanvalue.replace(/%O/g,"");
+  scanvalue = scanvalue.replace(/^(ED)/,"");
+  //////////////////
+
   //TODO:  SPECIAL BARCODE ENCODING
-  //var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$(@)?/);
-  //var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
-  //var scanhpr   = new RegExp(/^HPRT\d+$/); 
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$(@)?/);
+  var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
+  var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
   var sdlabel = new RegExp(/^SDM-\d{6}$/);
 
   var scanworked = 0;
   if ( sdlabel.test( scanvalue ) ) { 
     scanworked = 1;
     //RESET PAGE
+    byId('standardModalBacker').style.display = 'block';    
     getShipdoc( scanvalue );
   }
-  
+
+  if ( scanloc.test ( scanvalue ) ) { 
+    scanworked = 1;    
+    if ( byId('scanlocdspholder').style.display !== 'none' ) { 
+      byId('locscancode').value = scanvalue;
+      byId('locscandsp').innerHTML = scanvalue;
+
+      //MAKE PROMISE TO LOOKUP DATA
+      fillInLocationDisplay ( scanvalue ).then ( function (fulfilled) { 
+        byId('locscandsp').innerHTML = fulfilled;
+      })
+      .catch( function (error) { 
+        byId('locscancode').value = "";
+        byId('locscandsp').innerHTML = error;
+      });
+
+    }
+  }
+ 
+  if ( scanlabel.test ( scanvalue ) || zlabel.test ( scanvalue ) ) { 
+    scanworked = 1;
+    markScreenBGS ( scanvalue );
+  }
+
   if ( scanworked === 0 ) { 
     alert('This scan ('+scanvalue+') is formatted INCORRECTLY and cannot be identified by ScienceServer.  Please create a new label for this component to trigger an action');
   }
 
+}
+
+function markScreenBGS ( whichbgs ) {
+
+  if ( !byId('checkboxPSInput').checked ) {
+    //MARK PULLED 
+    alert( byId('locscandsp').innerHTML );
+  } else { 
+   //MARK SHIPPED 
+   if ( byId('BG'+whichbgs) ) { 
+     byId('ICO' + whichbgs ).innerHTML = "<span class=\"material-icons\">check_circle</span>";
+     byId('BG'+whichbgs ).dataset.scanned = 'true';
+   } else { 
+     alert( 'This segment label, '+whichbgs+', was not found on this shipment document\\r\\nIf you include this biosample segment in this shipment IT WILL NOT BE STATUSED AS SHIPPED!\\r\\n\\r\\nMODIFY THE SHIPMENT DOCUMENT IF YOU INTEND TO SHIP THIS SEGMENT!');
+   }
+
+  }
+}
+
+var fillInLocationDisplay = function ( scancode ) { 
+  return new Promise(function(resolve, reject) {
+    var obj = new Object(); 
+    obj['scanlabel'] = scancode.trim();
+    var passdta = JSON.stringify(obj);         
+    httpage.open("POST",dataPath+"/data-doers/invtry-location-heirach", true)    
+    httpage.setRequestHeader("Authorization","Basic " + btoa("{$regUsr}:{$regCode}"));
+    httpage.onreadystatechange = function() { 
+      if (httpage.readyState === 4) {
+         if ( parseInt(httpage.status) === 200 ) { 
+           var dta = JSON.parse( httpage.responseText );  
+           resolve( dta['DATA']['pathdsp'] ) ;
+           byId('standardModalBacker').style.display = 'none';    
+        } else { 
+          reject("NO LOCATION FOUND WITH THE SCANNED CODE: "+scancode);
+          byId('standardModalBacker').style.display = 'block';    
+        }
+      }
+    };
+    httpage.send ( passdta );
+  });
+}
+ 
+function submitShipmentRqst () { 
+
+  byId('submitShipment').blur(); 
+
+  if ( !byId('checkboxPSInput').checked ) {
+    //PULL
+    alert('pull here');
+  } else { 
+    //chtnlbllist
+    //bgslbldsp
+    if ( !byId('fldShipmentDocNbr') || byId('fldShipmentDocNbr').value.trim() === '' ) { 
+      alert('No Shipment Document Number specified'); 
+      return null;
+    }
+    var obj = new Object(); 
+    obj['sd'] = byId('fldShipmentDocNbr').value; 
+    var containerDiv = byId("chtnlbllist");
+    var innerDivs = containerDiv.getElementsByClassName("bgslbldsp");
+    var scannedlist = [];
+    for(var i=0; i<innerDivs.length; i++) {
+      if ( innerDivs[i].dataset.scanned === 'true' ) {
+        scannedlist.push( window.btoa( encryptedString(key, innerDivs[i].dataset.bgs, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) ) );
+      }
+    }
+    obj['scanlist'] = scannedlist;
+    var passdta = JSON.stringify(obj);         
+    byId('standardModalBacker').style.display = 'block';
+    var mlURL = "/data-doers/inventory-sd-check-scanlist";
+    universalAJAX("POST",mlURL,passdta,answerCheckScanList,2);
+  }
+  
+}
+
+function answerCheckScanList( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+     var dta = JSON.parse( rtnData['responseText'] );
+     var d = document.createElement('div');
+     d.setAttribute("id", dta['DATA']['dialogID']); 
+     d.setAttribute("class","floatingDiv");
+     d.style.left = dta['DATA']['left'];
+     d.style.top = dta['DATA']['top'];
+     d.innerHTML = dta['DATA']['pageElement'];
+     document.body.appendChild(d);
+     byId(dta['DATA']['dialogID']).style.display = 'block';
+   }
 }
 
 function getShipdoc( shipdoclbl ) {
@@ -2594,7 +2722,6 @@ function getShipdoc( shipdoclbl ) {
   obj['shipdoclbl'] = shipdoclbl; 
   var passdta = JSON.stringify(obj);         
   byId('standardModalBacker').style.display = 'block';
-  console.log ( passdta );
   var mlURL = "/data-doers/inventory-sd-get-shipdoc";
   universalAJAX("POST",mlURL,passdta,answerGetShipdoc,2);
 }
@@ -2609,10 +2736,52 @@ function answerGetShipdoc ( rtnData ) {
     alert("ERROR:\\n"+dspMsg);
     byId('standardModalBacker').style.display = 'none';    
    } else {
-     
 
+     var dta = JSON.parse( httpage.responseText );  
+     byId('dspSDShipdoc').innerHTML = ( dta['DATA']['shipdoc']['shipdocnbr'].trim() === '' ) ? "ERROR!" : dta['DATA']['shipdoc']['shipdocnbr'].trim()+"&nbsp;<input type=hidden id=fldShipmentDocNbr value="+parseInt(dta['DATA']['shipdoc']['shipdocnbr'].trim())+">";
+     byId('dspSDStatus').innerHTML =  ( dta['DATA']['shipdoc']['sdstatus'].trim() === '' )   ? "ERROR!" : dta['DATA']['shipdoc']['sdstatus'].trim()+"&nbsp;"     ;
+     byId('dspSDPullDate').innerHTML =( dta['DATA']['shipdoc']['rqstpulldate'].trim() === '' ) ? "NO PULL DATE" : dta['DATA']['shipdoc']['rqstpulldate'].trim()+"&nbsp;";
+     byId('dspSDShipDate').innerHTML =  ( dta['DATA']['shipdoc']['rqstshipdate'].trim() === '' ) ? "NO REQUESTED SHIPDATE" : dta['DATA']['shipdoc']['rqstshipdate'].trim()+"&nbsp;";
+     byId('dspSDSetupDate').innerHTML = ( dta['DATA']['shipdoc']['setupon'].trim() === '' ) ? "UNKNOWN SETUP DATE" : dta['DATA']['shipdoc']['setupon'].trim()+"&nbsp;";
+     byId('dspSDSetupBy').innerHTML =  ( dta['DATA']['shipdoc']['setupby'].trim() === '' ) ? "UNKNOWN SETUP COORDINATOR" : dta['DATA']['shipdoc']['setupby'].trim()+"&nbsp;";
+     byId('dspSDInvestigator').innerHTML = dta['DATA']['shipdoc']['investname'] + " ("+dta['DATA']['shipdoc']['investcode']+")"+"&nbsp;";
+     byId('dspSDShipAddress').innerHTML = dta['DATA']['shipdoc']['shipaddy'].replace(/\\n/g,"<br>")+"&nbsp;";
+     byId('dspSDPhone').innerHTML = dta['DATA']['shipdoc']['shipphone']+"&nbsp;";
+     byId('dspSDPONbr').innerHTML = ( dta['DATA']['shipdoc']['ponbr'].trim() === '' ) ? "ERROR: NO P.O. Number" : dta['DATA']['shipdoc']['ponbr']+"&nbsp;";
+     byId('dspSDSONbr').innerHTML = ( dta['DATA']['shipdoc']['salesorder'].trim() === '' ) ? "NO SALES ORDER SPECIFIED" : dta['DATA']['shipdoc']['salesorder']+"&nbsp;";
+     var cn = ( dta['DATA']['shipdoc']['couriernbr'].trim() === '' ) ? "" : " ("+dta['DATA']['shipdoc']['couriernbr'].trim()+")";
+     byId('dspSDCourier').innerHTML = ( dta['DATA']['shipdoc']['courier'].trim() === '' ) ? "ERROR: NO COURIER SPECIFIED" : dta['DATA']['shipdoc']['courier']+cn+"&nbsp;";
+     byId('dspSDShipComments').innerHTML = ( dta['DATA']['shipdoc']['comments'].trim() === '' ) ? "&nbsp;" :  dta['DATA']['shipdoc']['comments'].trim()+"&nbsp;";
+
+     var bgslist = "";
+     for ( var i = 0; i < dta['DATA']['details'].length; i++ ) {
+       var scd = ( dta['DATA']['details'][i]['scanneddate'].trim() === "" ) ? "" : " ("+dta['DATA']['details'][i]['scanneddate'].trim()+")";
+//       var ico = ( parseInt(dta['DATA']['details'][i]['pulledind']) === 0 ) ? "<span class=\"material-icons\">remove_circle</span>" : "<span class=\"material-icons\">check_circle</span>"; 
+       var ico = "<span class=\"material-icons\">remove_circle</span>"; 
+       var bgs = dta['DATA']['details'][i]['bgs'].replace(/_/mg,"");
+       var shrtd = dta['DATA']['details'][i]['shortdesig'];
+       var prp = dta['DATA']['details'][i]['prepmethod']+" / "+dta['DATA']['details'][i]['preparation'];
+       var scnl = dta['DATA']['details'][i]['scannedLocation'];
+       bgslist += "<div class=bgslbldsp id='BG"+bgs+"' data-bgs='"+bgs+"' data-scanned='false'><div class=lineone><div id='ICO"+bgs+"'>"+ico+"</div><div class=bgsnbr>"+bgs+"</div></div><div class=desigLine>"+shrtd+"</div><div class=preparation>"+prp+"</div><div class=storage>"+scnl+scd+"</div></div>"; 
+     }
+
+     byId('chtnlbllist').innerHTML = bgslist; 
      byId('standardModalBacker').style.display = 'none';    
    }
+}
+
+function toggleShip( chkd ) {
+  if ( chkd ) {
+    //shipping
+    byId('locscancode').value = "";
+    byId('locscandsp').innerHTML = "&nbsp;"; 
+    byId('scanlocdspholder').style.display = 'none';
+  } else {
+    //pulling
+    byId('locscancode').value = "";
+    byId('locscandsp').innerHTML = "&nbsp;"; 
+    byId('scanlocdspholder').style.display = 'block';
+  }
 }
 
 

@@ -819,6 +819,12 @@ body { margin: 0; margin-top: 11vh; box-sizing: border-box; padding: 0 .2vw 0 .2
 #shipDocQryRsltTbl .dspCell { padding: 8px; border-bottom: 1px solid rgba({$this->color_mgrey},.6); border-right: 1px solid rgba({$this->color_mgrey},.6);  }
 #shipDocQryRsltTbl .rowDsp:hover { cursor: pointer; background: rgba({$this->color_lamber},1); }
 
+.checkboxThree { width: 5vw; height: 3vh; background: rgba( {$this->color_lamber}, 1 ); margin: 0; border-radius: 2px; position: relative; border: 1px solid rgba({$this->color_zackgrey},1); }
+.checkboxThree:before { content: 'Yes'; position: absolute; top: .7vh; left: .5vw; height: .1vh; color: rgba({$this->color_darkgreen},1 ); font-family: 'Roboto'; font-size: 1.4vh; }
+.checkboxThree:after  { content: 'No '; position: absolute; top: .7vh; left: 3.2vw; height: .1vh; color: rgba({$this->color_bred},1); font-family: 'Roboto'; font-size: 1.4vh; }
+.checkboxThree label  { display: block; width: 2vw; height: 1.7vh; border-radius: 50px; transition: all .5s ease; cursor: pointer; position: absolute; top: .7vh; z-index: 1; left: .5vw; background: rgba( {$this->color_zackgrey}, 1  ); }
+.checkboxThree input[type=checkbox]:checked + label { left: 2.3vw; background: rgba( {$this->color_darkgreen}, 1 ); }
+.checkboxThree .checkboxThreeInput { visibility: hidden; }
 
 STYLESHEET;
 //.rTable    { display: table; }
@@ -1648,7 +1654,6 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);  }
 #intraMan .elementholder .dataelement { font-size: 1.8vh; color: rgba({$this->color_black},1); padding: .2vh .2vw; } 
 #dspmanifestsegmentcount { padding: .2vh 2vw;  } 
 
-
 #instrTwo { margin-top: 2vh; } 
 #intraManLoc { display: grid; grid-template-columns: 62vw; grid-gap: .2vw; margin: .5vh .2vw 0 .2vw;  }
 #intraManLoc .elementholder { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .2vh .2vw; box-sizing: border-box; } 
@@ -1677,7 +1682,43 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);  }
 #intraManErrs button { display: block; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white}, 1); font-size: 2vh; padding: 1vh 0; color: rgba({$this->color_lblue},1); transition: .5s; }
 #intraManErrs button:hover { cursor: pointer; background: rgba({$this->color_darkgrey},1); color: rgba({$this->color_neongreen},1);     }
 
+#workbenchholder { display: grid; grid-template-columns: 2fr 1fr; grid-gap: .2vw; margin-top: .2vh; } 
+#workbenchholder #workbench { } 
+#workbenchholder #workbench #intraMan { display: grid; grid-template-columns: repeat( 6, 1fr); grid-gap: .2vw; margin: .5vh .2vw 0 .2vw;  }
 
+#workbenchholder #workbench #intraManOne {display: grid; grid-template-columns: 15vw auto; grid-gap: .5vw; }  
+#workbenchholder #workbench #intraManOne .checkboxThree { width: 15vw; height: 5vh; background: rgba( {$this->color_lamber}, 1 ); margin: 0; border-radius: 2px; position: relative; border: 1px solid rgba({$this->color_zackgrey},1); }
+#workbenchholder #workbench #intraManOne .checkboxThree:before { content: 'SHIP'; position: absolute; top: 1.2vh; left: .5vw; height: .1vh; color: rgba({$this->color_darkgreen},1 ); font-family: 'Roboto'; font-size: 2.3vh; font-weight: bold; }
+#workbenchholder #workbench #intraManOne .checkboxThree:after  { content: 'PULL'; position: absolute; top: 1.2vh; left: 11.5vw; height: .1vh; color: rgba({$this->color_mblue},1); font-family: 'Roboto'; font-size: 2.3vh; font-weight: bold; }
+#workbenchholder #workbench #intraManOne .checkboxThree label  { display: block; width: 5vw; height: 3.7vh; border-radius: 50px; transition: all .5s ease; cursor: pointer; position: absolute; top: .7vh; z-index: 1; left: .3vw; background: rgba({$this->color_mblue},1); }
+#workbenchholder #workbench #intraManOne .checkboxThree input[type=checkbox]:checked + label { left: 9.7vw; background: rgba( {$this->color_darkgreen}, 1 ); }
+#workbenchholder #workbench #intraManOne .checkboxThree .checkboxThreeInput { visibility: hidden; }
+
+#workbenchholder #workbench #intraManOne .elementholder { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .2vh .2vw; box-sizing: border-box; }
+#workbenchholder #workbench #intraManOne .elementholder .elementlabel { font-size: 1.5vh; color: rgba({$this->color_zackgrey},.6); font-weight: bold; }
+#workbenchholder #workbench #intraManOne .elementholder .dataelement { font-size: 1.8vh; color: rgba({$this->color_black},1); padding: .2vh .2vw; }
+#workbenchholder #sdsidepanel { display: grid; grid-gap: .2vh; } 
+#workbenchholder #sdsidepanel .elementholder { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .2vh .2vw; box-sizing: border-box; }
+#workbenchholder #sdsidepanel .elementholder .elementlabel { font-size: 1.5vh; color: rgba({$this->color_zackgrey},.6); font-weight: bold; }
+#workbenchholder #sdsidepanel .elementholder .dataelement { font-size: 1.8vh; color: rgba({$this->color_black},1); padding: .2vh .2vw; }
+
+
+#workbenchholder #workbench #chtnlbllist { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .2vh .2vw; box-sizing: border-box; height: 40vh; overflow: auto; display: grid; grid-template-columns: repeat( 4, 1fr ); grid-gap: .2vw; grid-template-rows: repeat( 200, 10vh); }
+#workbenchholder #workbench #chtnlbllist .bgslbldsp { border: 1px solid rgba({$this->color_zackgrey},.4); height: 11vh; background: rgba({$this->color_white},1);  }
+#workbenchholder #workbench #chtnlbllist .bgslbldsp[data-scanned='true'] { background: rgba({$this->color_darkgreen},.1);  color: rgba({$this->color_zackgrey},1);      } 
+#workbenchholder #workbench #chtnlbllist .bgslbldsp .lineone { display: grid; grid-template-columns: 1fr 8fr; }
+#workbenchholder #workbench #chtnlbllist .bgslbldsp .lineone .bgsnbr { font-size: 1.8vh; font-weight: bold; }
+#workbenchholder #workbench #chtnlbllist .bgslbldsp .desigLine { font-size: 1.3vh; padding: 0 .2vw 0 .2vw; }
+#workbenchholder #workbench #chtnlbllist .bgslbldsp .preparation { padding: .2vh .2vw 0 .2vw; font-style: italic;   }
+#workbenchholder #workbench #chtnlbllist .bgslbldsp .storage { padding: .3vh .2vw .3vh .2vw;   } 
+#bttnHoldr { border: 1px solid rgba({$this->color_zackgrey},1); } 
+
+.shipperInformationDiv {  width: 70vw; background: rgba({$this->color_white},1); padding: .1vh .1vw .5vh .1vw; } 
+.shipperInformationDiv #titleBar { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); display: grid; grid-template-columns: auto .8vw; font-size: 1.4vh; padding: .2vh .2vw;   }   
+.shipperInformationDiv #titleBar #closeBtnHere { font-size: 2vh; } 
+.shipperInformationDiv #titleBar #closeBtnHere:hover { cursor: pointer; color: rgba({$this->color_bred},1); font-size: 2vh; } 
+.shipperInformationDiv #buttonLine { display: grid; grid-template-columns: repeat( 8, 1fr); grid-gap: .2vw; padding: .3vh 0; }
+.shipperInformationDiv #buttonLine .shpIndBtn { border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); font-size: 2.8vh;       }  
 
 
 STYLESHEET;

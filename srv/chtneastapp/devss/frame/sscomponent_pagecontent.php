@@ -834,7 +834,7 @@ function useradministration ( $rqststr, $usr ) {
   require(genAppFiles . "/dataconn/sspdo.zck");     
   $topBtnBar = generatePageTopBtnBar('useradministration', $usr, "" );
     
-  $userSideSQL = "SELECT userid, username, emailaddress,  allowind, failedlogins, date_format(passwordexpiredate,'%m/%d/%Y' ) as pwordexpire, primaryinstcode FROM four.sys_userbase order by allowind desc, primaryInstCode, lastname";
+  $userSideSQL = "SELECT userid, username, emailaddress,  allowind, failedlogins, date_format(passwordexpiredate,'%m/%d/%Y' ) as pwordexpire, primaryinstcode FROM four.sys_userbase where primaryfunction <> 'INVESTIGATOR' order by allowind desc, primaryInstCode, lastname";
   $userSideRS = $conn->prepare( $userSideSQL); 
   $userSideRS->execute();
   $instWriter = "";
@@ -1877,21 +1877,107 @@ return $pageContent;
 
 
 function bldInventoryProcessShipment() {
+  
 
+     //{"MESSAGE":[],"ITEMSFOUND":0,"DATA":{"details":[{"pulledind":"0","pulledby":"","pulledon":"","segstatusdsp":"On Shipdoc","scanneddate":"02\/11\/2020","scannedStatus":"CHECK IN TO INVENTORY"}
 
     $pageContent = <<<PAGECONTENT
-<div id=instrOne class=instructionLabel>1) Scan a CHTN Shipment Document: </div>
+<div id=workbenchholder>
+  <div id=workbench>
 
-<div id=intraMan>
+    <div id=instrOne class=instructionLabel>1) Scan a CHTN Shipment Document: </div>
+    <div id=intraMan>
 
-   <div class=elementholder>
-     <div class=elementlabel>Ship-Doc # <input type=hidden id=fldManifestNbr> </div>
-     <div class=dataelement id=dspManifestNbr>&nbsp;</div>
-   </div>
+       <div class=elementholder>
+         <div class=elementlabel>Ship-Doc #</div>
+         <div class=dataelement id=dspSDShipdoc>&nbsp;</div>
+       </div>
+
+       <div class=elementholder>
+         <div class=elementlabel>Shipdoc Status</div>
+         <div class=dataelement id=dspSDStatus>&nbsp;</div>
+       </div>
+
+       <div class=elementholder>
+         <div class=elementlabel>Requested Pull Date</div>
+         <div class=dataelement id=dspSDPullDate>&nbsp;</div>
+       </div>
+
+       <div class=elementholder>
+         <div class=elementlabel>Requested Ship Date</div>
+         <div class=dataelement id=dspSDShipDate>&nbsp;</div>
+       </div>
+
+       <div class=elementholder>
+         <div class=elementlabel>Setup Date</div>
+         <div class=dataelement id=dspSDSetupDate>&nbsp;</div>
+       </div>
+
+       <div class=elementholder>
+         <div class=elementlabel>Setup By</div>
+         <div class=dataelement id=dspSDSetupBy>&nbsp;</div>
+       </div>
+
+    </div>
+
+    <div id=instrTwo class=instructionLabel>2) Pulling or Shipping? </div>
+    <div id=intraManOne>
+      <div class="checkboxThree"><input type="checkbox" class="checkboxThreeInput" id="checkboxPSInput" onchange="toggleShip(this.checked);" /><label for="checkboxPSInput"></label></div>
+      
+      <div class=elementholder id=scanlocdspholder>
+        <div class=elementlabel>Holding Location <input type=hidden id=locscancode></div>
+        <div class=dataelement id=locscandsp>&nbsp;</div>
+      </div>
+
+    </div>
+
+    <div id=instrTwo class=instructionLabel>3) Scan CHTN Labels</div>
+    <div id=chtnlbllist>&nbsp;</div>
 
 
+<div id=instrFour class=instructionLabel>4) Submit Work</div>
+<div id=bttnHoldr><center><button id=submitShipment onclick="submitShipmentRqst();">Submit</button></div>
+  </div>
+  <div id=sdsidepanel>
+
+       <div class=elementholder>
+         <div class=elementlabel>Investigator</div>
+         <div class=dataelement id=dspSDInvestigator>&nbsp;</div>
+       </div>
+       
+       <div class=elementholder>
+         <div class=elementlabel>Ship Address </div>
+         <div class=dataelement id=dspSDShipAddress>&nbsp;</div>
+       </div>
+
+       <div class=elementholder>
+         <div class=elementlabel>Phone Number </div>
+         <div class=dataelement id=dspSDPhone>&nbsp;</div>
+       </div>
+
+       <div class=elementholder>
+         <div class=elementlabel>P.O. Nbr</div>
+         <div class=dataelement id=dspSDPONbr>&nbsp;</div>
+       </div>
+
+       <div class=elementholder>
+         <div class=elementlabel>Sales Order</div>
+         <div class=dataelement id=dspSDSONbr>&nbsp;</div>
+       </div>
+
+       <div class=elementholder>
+         <div class=elementlabel>Courier</div>
+         <div class=dataelement id=dspSDCourier>&nbsp;</div>
+       </div>
+
+       <div class=elementholder>
+         <div class=elementlabel>Shipment Comments</div>
+         <div class=dataelement id=dspSDShipComments>&nbsp;</div>
+       </div>
+  </div>
 
 </div>
+
 
 PAGECONTENT;
 return $pageContent;
@@ -2142,7 +2228,6 @@ function scienceserverhelp ( $rqststr, $whichusr ) {
   if ( trim($rqststr[2]) === "" ) {
     //NO TOPIC REQUESTED - DISPLAY GENERAL PAGE
     $topBtnBar = generatePageTopBtnBar('scienceserverhelp', $whichusr);
-
     $helpFile = <<<RTNTHIS
 <div id=help_welcomediv>
 <div id=help_welcometitle>ScienceServer v7 Help Files</div>
@@ -3100,7 +3185,7 @@ $ssversion = scienceserverTagVersion;
 $rtnThis = <<<PAGECONTENT
 
 <div id=loginHolder>        
-<div id=loginDialogHead>ScienceServer2018 &amp; Investigator Services Login </div>
+<div id=loginDialogHead>ScienceServer Specimen Management System Login </div>
 <div id=loginGrid>
   <div class=elementHolder><div class=elementLabel>User Id (Email Address)</div><div class=element><input type=text id=ssUser></div></div>
   <div class=elementHolder><div class=elementLabel>Password</div><div class=element><input type=password id=ssPswd></div></div>
@@ -8438,6 +8523,7 @@ function bldShipDocEditPage( $whichsdency ) {
    $rqstpulldateval = $sd['DATA']['sdhead'][0]['rqstpulldateval'];
    $sdsetupon = $sd['DATA']['sdhead'][0]['setupon'];
    $sdsetupby = $sd['DATA']['sdhead'][0]['setupby'];
+   $sdcsrvysent = $sd['DATA']['sdhead'][0]['surveyemailsent'];
    $sdsonbr = ( (int)$sd['DATA']['sdhead'][0]['salesorder'] === 0 ) ? "" : substr('000000' .  (int)$sd['DATA']['sdhead'][0]['salesorder'], -6);
    $sdsoamt = ( $sd['DATA']['sdhead'][0]['salesorderamount'] === 0 ) ? "" : sprintf("$%01.2f", $sd['DATA']['sdhead'][0]['salesorderamount']); //salesorderamount
    $sdsoon =  $sd['DATA']['sdhead'][0]['salesorderon'];
@@ -8484,7 +8570,8 @@ function bldShipDocEditPage( $whichsdency ) {
 SHTBL;
 
    $bilTbl = <<<SHTBL
-<table><tr><td class=sdFieldLabel>Billing Address *</td></tr><tr><td><TEXTAREA class=sdinput id=sdcInvestBillingAddress data-frminclude=1>{$sdbladd}</TEXTAREA></td></tr><tr><td class=sdFieldLabel>Billing Phone * (format: '(123) 456-7890 x0000' / x is optional)</td></tr><tr><td><input type=text class=sdinput id=sdcBillPhone value="{$sdblphn}" data-frminclude=1></td></tr></table>
+<table><tr><td class=sdFieldLabel>Billing Address *</td></tr><tr><td><TEXTAREA class=sdinput id=sdcInvestBillingAddress data-frminclude=1>{$sdbladd}</TEXTAREA></td></tr><tr><td class=sdFieldLabel>Billing Phone * (format: '(123) 456-7890 x0000' / x is optional)</td></tr><tr><td><input type=text class=sdinput id=sdcBillPhone value="{$sdblphn}" data-frminclude=1></td></tr><tr><td class=sdFieldLabel>Send Survey When Shipment Complete</td></tr><tr><td><div class="checkboxThree">
+   <input type="checkbox" class="checkboxThreeInput" id="sdcSendSurvey" {$sdcsrvysent}  data-frminclude=1 /><label for="sdcSendSurvey"></label></div></td></tr></table>
 SHTBL;
 
 $shCalendar = buildcalendar('shipSDCFrom'); 
@@ -8993,7 +9080,7 @@ function bldDialogUploadPathRpt ( $passeddata ) {
     $rtnThis = "ERROR!";
     session_start();      
     $sessid = session_id();
-    $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+    $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
     $rs = $conn->prepare($chkUsrSQL); 
     $rs->execute(array(':sessid' => $sessid));
     if ($rs->rowCount() === 1) { 
@@ -9084,7 +9171,7 @@ function bldDialogEditPathRpt( $passeddata ) {
   session_start();      
      $sessid = session_id();
 
-     $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowlinux = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+     $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
      $rs = $conn->prepare($chkUsrSQL); 
      $rs->execute(array(':sessid' => $sessid));
      if ($rs->rowCount() === 1) { 
