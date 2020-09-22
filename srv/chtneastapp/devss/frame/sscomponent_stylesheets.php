@@ -1704,14 +1704,16 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);  }
 
 
 #workbenchholder #workbench #chtnlbllist { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .2vh .2vw; box-sizing: border-box; height: 40vh; overflow: auto; display: grid; grid-template-columns: repeat( 4, 1fr ); grid-gap: .2vw; grid-template-rows: repeat( 200, 10vh); }
-#workbenchholder #workbench #chtnlbllist .bgslbldsp { border: 1px solid rgba({$this->color_zackgrey},.4); height: 11vh; background: rgba({$this->color_white},1);  }
+#workbenchholder #workbench #chtnlbllist .bgslbldsp { border: 1px solid rgba({$this->color_zackgrey},.4); min-height: 11vh; background: rgba({$this->color_white},1);  }
 #workbenchholder #workbench #chtnlbllist .bgslbldsp[data-scanned='true'] { background: rgba({$this->color_darkgreen},.1);  color: rgba({$this->color_zackgrey},1);      } 
 #workbenchholder #workbench #chtnlbllist .bgslbldsp .lineone { display: grid; grid-template-columns: 1fr 8fr; }
 #workbenchholder #workbench #chtnlbllist .bgslbldsp .lineone .bgsnbr { font-size: 1.8vh; font-weight: bold; }
 #workbenchholder #workbench #chtnlbllist .bgslbldsp .desigLine { font-size: 1.3vh; padding: 0 .2vw 0 .2vw; }
 #workbenchholder #workbench #chtnlbllist .bgslbldsp .preparation { padding: .2vh .2vw 0 .2vw; font-style: italic;   }
 #workbenchholder #workbench #chtnlbllist .bgslbldsp .storage { padding: .3vh .2vw .3vh .2vw;   } 
-#bttnHoldr { border: 1px solid rgba({$this->color_zackgrey},1); } 
+#bttnHoldr { margin: 1vh 0 0 0;  }
+.basicButton { border: 1px solid rgba({$this->color_zackgrey},1); padding: 1vh .5vw; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); transition: .4s; }
+.basicButton:hover { cursor: pointer; background: rgba({$this->color_dblue},1); color: rgba({$this->color_white},1); }  
 
 .shipperInformationDiv {  width: 70vw; background: rgba({$this->color_white},1); padding: .1vh .1vw .5vh .1vw; } 
 .shipperInformationDiv #titleBar { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); display: grid; grid-template-columns: auto .8vw; font-size: 1.4vh; padding: .2vh .2vw;   }   
@@ -1722,6 +1724,8 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);  }
 .shipperInformationDiv #buttonLine .shpIndBtn:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.3); }  
 .shipperInformationDiv #buttonLine .shpIndBtn[data-selected='true'] { background: rgba({$this->color_darkgreen},.5); color: rgba({$this->color_white},1); } 
 
+.shipperInformationDiv #trckElementHolder #trckElementLbl { font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_zackgrey},.7); padding: 2vh .5vw 0 1vw; }  
+.shipperInformationDiv #trckElementHolder #trckNbrGoesHere { width: 69vw; height: 5vh; text-align: center; padding: 1vh .2vw; font-size: 3vh; color: rgba({$this->color_zackgrey},.7); }     
 
 STYLESHEET;
       return $rtnThis;

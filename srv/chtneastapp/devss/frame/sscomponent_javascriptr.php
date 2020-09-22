@@ -2583,6 +2583,7 @@ function doSomethingWithScan ( scanvalue ) {
   var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
   var sdlabel = new RegExp(/^SDM-\d{6}$/);
+  var trcknbr = new RegExp(/^[A-Za-z0-9\-]{12,35}$/);
 
   var scanworked = 0;
   if ( sdlabel.test( scanvalue ) ) { 
@@ -2613,6 +2614,14 @@ function doSomethingWithScan ( scanvalue ) {
   if ( scanlabel.test ( scanvalue ) || zlabel.test ( scanvalue ) ) { 
     scanworked = 1;
     markScreenBGS ( scanvalue );
+  }
+
+  if ( trcknbr.test ( scanvalue ) ) {
+    scanworked = 1;
+    if ( byId('dlgShipmentTrackingNbr') ) {
+      byId('trckNbrGoesHere').innerHTML = scanvalue;
+      byId('dlgShipmentTrackingNbr').value = scanvalue;
+    }
   }
 
   if ( scanworked === 0 ) { 
@@ -2783,13 +2792,49 @@ function toggleShip( chkd ) {
   }
 }
 
-    function selectThisShipper( btnID ) {
-      var btnArr = document.getElementsByClassName('shpIndBtn'); 
-      for ( var i = 0; i < btnArr.length; i++ ) { 
-        byId( btnArr[i].id ).dataset.selected = 'false';
-      }
-      byId(btnID).dataset.selected = 'true';
+function selectThisShipper( btnID ) {
+  var btnArr = document.getElementsByClassName('shpIndBtn'); 
+  for ( var i = 0; i < btnArr.length; i++ ) { 
+    byId( btnArr[i].id ).dataset.selected = 'false';
+  }
+  byId(btnID).dataset.selected = 'true';
+}
+
+function shipTheShipdoc() { 
+  var carrier = 'UNKNOWN';
+  var btnArr = document.getElementsByClassName('shpIndBtn'); 
+  for ( var i = 0; i < btnArr.length; i++ ) { 
+    if ( byId( btnArr[i].id ).dataset.selected === 'true' ) { 
+      carrier = byId( btnArr[i].id ).dataset.carrier;
     }
+  }
+  var obj = new Object(); 
+  obj['sd'] = byId('dlgSD').value;
+  obj['scanlist'] = byId('dlgScanList').value;
+  obj['dlogid'] = byId('dlgDialogId').value;
+  obj['tracknbr'] = byId('dlgShipmentTrackingNbr').value;    
+  obj['carrier'] = carrier;
+  var pdta = JSON.stringify ( obj );
+  console.log ( pdta );    
+  byId('standardModalBacker').style.display = 'block';
+  var mlURL = "/data-doers/shipdoc-ship";
+  universalAJAX("POST",mlURL,pdta,answerShipTheShipdoc,2);
+}
+
+function answerShipTheShipdoc ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+   } else {
+     alert( 'This Ship-Doc has been marked as shipped.  The screen will now refresh.');
+     var dta = JSON.parse(rtnData['responseText']);         
+     location.reload ( true );
+   }
+}
 
 PROCINVT;
       break;

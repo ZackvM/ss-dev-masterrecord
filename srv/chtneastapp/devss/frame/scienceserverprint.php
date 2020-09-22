@@ -11,7 +11,7 @@ class printobject {
     public $style = "";
     public $bodycontent = "";
 
-    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreviewreport', 'helpfile', 'systemreports','systemobjectrequests','furtheractionticket','inventoryitemtag','inventorymanifest','manifestbarcoderun'); //chartreview when that is built 
+    private $registeredPages = array('pathologyreport','shipmentmanifest','reports','chartreviewreport', 'helpfile', 'systemreports','systemobjectrequests','furtheractionticket','inventoryitemtag','inventorymanifest','manifestbarcoderun','autoreportprinter'); //chartreview when that is built 
     //pxchart = Patient Chart
     
     function __construct() { 		  
@@ -49,12 +49,12 @@ class printobject {
         $conDoc = new documentconstructor();
     
         $elArr['object'] =  (method_exists($conDoc,'unencryptedDocID') ? $conDoc->unencryptedDocID($docType, $docId) : "");
-        $elArr['pagetitle'] = (method_exists($conDoc,'pagetabs') ? $conDoc->pagetabs($elArr['object']) : "");        
+        $elArr['pagetitle'] = (method_exists($conDoc,'pagetabs') ? $conDoc->pagetabs($elArr['object'])   : "");        
         $elArr['headr'] = (method_exists($conDoc,'generateheader') ? $conDoc->generateheader() : ""); 
         $elArr['tabicon'] = (method_exists($conDoc,'faviconBldr') ? $conDoc->faviconBldr($elArr['object']) : "");
         $elArr['style'] = (method_exists($conDoc,'globalstyles') ? $conDoc->globalstyles() : "");        
         $elArr['bodycontent'] = $elArr['object']['documentid'];
-        $bdy = (method_exists($conDoc,'documenttext') ? $conDoc->documenttext($elArr['object'], $originalURI) : "");
+        $bdy = (method_exists($conDoc,'documenttext') ? $conDoc->documenttext( $elArr['object'], $originalURI) : "");
         if ($bdy['format'] === "pdf") { 
          $elArr['bodycontent'] = $bdy['pathtodoc'];   
          $elArr['htmlpdfind'] = 0;
@@ -92,6 +92,10 @@ function unencryptedDocID( $docType, $encryptedDocId ) {
             break;
         case 'chartreviewreport':     
             $dt = "CHART REVIEW";
+            $docid = $unencry;
+            break;        
+        case 'autoreportprinter':     
+            $dt = "PRINT AUTO REPORT";
             $docid = $unencry;
             break;
         case 'shipmentmanifest':
@@ -190,6 +194,7 @@ public $color_lightgrey = "239, 239, 239";
 public $color_zackgrey = "48,57,71";  //#303947
 public $color_zackcomp = "235,242,255"; //#ebf2ff
 
+
 function globalstyles() {
 $rtnthis = <<<RTNTHIS
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Quicksand|Coda+Caption:800|Fira+Sans);
@@ -230,8 +235,11 @@ function pagetabs($docobject) {
       $thisTab = "{$mNbr} ScienceServer Inventory Manifest";
       break;
     case 'SCIENCESERVER MANIFEST BARCODE RUN':
-      $thisTab = "{$docobject['documentid']} ScienceServer Manifest Barcode Run";
+      $thisTab = "ScienceServer Manifest Barcode Run";
       break;
+    case 'PRINT AUTO REPORT':
+      $thisTab = "ScienceServer Printable Auto Email";
+      break;  
     default: 
       $thisTab =  "SCIENCESERVER PRINTABLE DOCUMENTS"; 
     break; 
@@ -274,6 +282,9 @@ function documenttext($docobject, $orginalURI) {
         break;
     case 'SCIENCESERVER MANIFEST BARCODE RUN':
         $doctext = getInventoryManifestBarcodeRun ( $docobject['documentid'] , $originalURI );
+        break;
+    case 'PRINT AUTO REPORT':    
+        $doctext = getAutoEmailRpt ( $docobject['documentid'] , $originalURI ) ;
         break;
     }
     return $doctext;
@@ -1215,6 +1226,27 @@ $prPDF = genAppFiles . "/publicobj/documents/fatickets/iit{$filehandle}.pdf";
 $linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED  {$crnbr}\"     {$prDocFile} {$prPDF}";
 $output = shell_exec($linuxCmd);
     return array('status' => $sts, 'text' =>  '', 'pathtodoc' => genAppFiles . "/publicobj/documents/fatickets/iit{$filehandle}.pdf", 'format' => 'pdf');    
+}
+
+function getAutoEmailRpt ( $docid, $originalURI ) { 
+  require(serverkeys . "/sspdo.zck");      
+  $rs = $conn->prepare( "SELECT textofemail FROM four.sys_auto_emails_history where selectorid = :rptid ");
+  $rs->execute(array(':rptid' => $docid));
+  if ( $rs->rowCount() <> 1 ) { 
+    $docText = "ERROR:  NO AUTO REPORT FOUND WITH ID: " . $docid;
+  } else { 
+    $d = $rs->fetch(PDO::FETCH_ASSOC);  
+    $docText = $d['textofemail'];  
+  }
+  $filehandle = generateRandomString();                
+  $prDocFile = genAppFiles . "/tmp/AUTOE{$filehandle}.html";
+  $prDhandle = fopen($prDocFile, 'w');
+  fwrite($prDhandle, $docText);
+  fclose;
+  $prPDF = genAppFiles . "/publicobj/documents/autorpts/{$filehandle}.pdf";
+  $linuxCmd = "wkhtmltopdf --load-error-handling ignore --page-size Letter  --margin-bottom 15 --margin-left 8  --margin-right 8  --margin-top 8  --footer-spacing 5 --footer-font-size 8 --footer-line --footer-right  \"page [page]/[topage]\" --footer-center \"https://www.chtneast.org\" --footer-left \"CHTNED\" {$prDocFile} {$prPDF}";
+  $output = shell_exec($linuxCmd);
+  return array('status' => $sts, 'text' =>  '', 'pathtodoc' => genAppFiles . "/publicobj/documents/autorpts/{$filehandle}.pdf", 'format' => 'pdf');    
 }
 
 function getFATicket( $docid, $originalURI ) { 
@@ -2275,8 +2307,6 @@ HEADERTBL;
       $resultTbl .= "<table border=0 style=\"width: 8in;\"><tr>{$introTbl} {$rowTbl}</tr></table>"; 
       return $resultTbl;    
     }
-
-
 
     function barcoderun($rptdef) {     
       $at = genAppFiles;

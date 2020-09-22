@@ -1943,8 +1943,7 @@ function bldInventoryProcessShipment() {
     <div id=chtnlbllist>&nbsp;</div>
 
 
-<div id=instrFour class=instructionLabel>4) Submit Work</div>
-<div id=bttnHoldr><center><button id=submitShipment onclick="submitShipmentRqst();">Submit</button></div>
+<div id=bttnHoldr><center><button id=submitShipment class=basicButton onclick="submitShipmentRqst();">Submit</button></div>
   </div>
   <div id=sdsidepanel>
 

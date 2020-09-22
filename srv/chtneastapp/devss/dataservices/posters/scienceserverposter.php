@@ -1248,26 +1248,32 @@ EMAILBODY;
       }
       if ( $foundall === 1 ) { 
 
-       $dlogid = generateRandomString(15);   
+       $dlogid = generateRandomString(15);  
+       $sList = json_encode( $scanSegId );
        $dlgPage = <<<RTNPAGE
 <div class=shipperInformationDiv>
+  <input type=hidden id=dlgDialogId value='{$dlogid}'>
+  <input type=hidden id=dlgSD value='{$pdta['sd']}'>
+  <input type=hidden id=dlgScanList value='{$sList}'>
+
   <div id=titleBar><div>Enter Shipping Information</div><div align=right onclick="closeThisDialog('{$dlogid}');" id=closeBtnHere>&times;</div></div>
+
   <div id=buttonLine>
     <div>&nbsp;</div>
-    <div class=shpIndBtn id=shprFedex data-selected='true' onclick="selectThisShipper(this.id);">FED-EX</div>
-    <div class=shpIndBtn id=shprUPS data-selected='false' onclick="selectThisShipper(this.id);">UPS</div>
-    <div class=shpIndBtn id=shprUSPS data-selected='false' onclick="selectThisShipper(this.id);">USPS</div>
-    <div class=shpIndBtn id=shprDHL data-selected='false' onclick="selectThisShipper(this.id);">DHL</div>
-    <div class=shpIndBtn id=shprINation data-selected='false' onclick="selectThisShipper(this.id);">International</div>
+    <div class=shpIndBtn id=shprFedex data-selected='true' data-carrier='FEDEX' onclick="selectThisShipper(this.id);">FED-EX</div>
+    <div class=shpIndBtn id=shprUPS data-selected='false' data-carrier='UPS' onclick="selectThisShipper(this.id);">UPS</div>
+    <div class=shpIndBtn id=shprUSPS data-selected='false' data-carrier='USPS' onclick="selectThisShipper(this.id);">USPS</div>
+    <div class=shpIndBtn id=shprDHL data-selected='false' data-carrier='DHL' onclick="selectThisShipper(this.id);">DHL</div>
+    <div class=shpIndBtn id=shprINation data-selected='false' data-carrier='INATIONAL' onclick="selectThisShipper(this.id);">International</div>
     <div>&nbsp;</div>
   </div>
 
   <div id=trckElementHolder>
     <div id=trckElementLbl>Scan the shipment tracking number</div>
-    <div id=trckNbrGoesHere>  <input type=text id=shipmentTrackingNbr> </div>
+    <div id=trckNbrGoesHere>   </div> <input type=hidden id=dlgShipmentTrackingNbr>
   </div>
   
-  <div id=shpBtnHolder><button>Ship It!</button></div>
+  <div id=shpBtnHolder><center><button class=basicButton onclick="shipTheShipdoc();">Ship It!</button></div>
 
 
 </div>
@@ -3879,6 +3885,17 @@ PRISTINESQL;
 
         }
 
+        //$queSQL = "SELECT replace(ifnull(bs.read_label,''),'_','') as readlabel, ifnull(bs.tisstype,'') as procspeccat, ifnull(bs.anatomicsite,'') as procsite, ifnull(bs.subsite,'') as procsubsite, ifnull(bs.diagnosis,'') as procdiagnosis"
+        //        . ", ifnull(bs.subdiagnos,'') as procsubdiagnosis, ifnull(bs.QCProcStatus,'') as qmsprocstatusvalue, ifnull(hsts.dspvalue,'') as qmsstatusdsp, ifnull(bs.HPRDecision,'') as hprdecisionvalue"
+        //        . ", ifnull(hdc.dspvalue,'') as hprdecisiondsp, ifnull(hpr.speccat,'') as hprspeccat, ifnull(hpr.site,'') as hprsite, ifnull(hpr.subsite,'') as hprsubsite, ifnull(hpr.dx,'') as hprdiagnosis"
+        //        . ", ifnull(hpr.subdiagnosis,'') as hprsubdiagnosis, ifnull(bs.HPRResult,0) as hprresultid, replace(ifnull(bs.HPRSlideReviewed,''),'_','') as hprslidereviewed, ifnull(bs.HPRBy,'') as hprby "
+        //        . ", ifnull(date_format(bs.HPROn, '%m/%d/%Y'),'') as hpron "
+        //        . "FROM masterrecord.ut_procure_biosample bs "
+        //        . "left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as hsts on bs.qcprocstatus = hsts.menuvalue "
+        //        . "left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hdc on bs.hprdecision = hdc.menuvalue "
+        //        . "left join (SELECT biohpr, speccat, site, subsite, dx, subdiagnosis FROM masterrecord.ut_hpr_biosample) as hpr on bs.hprresult = hpr.biohpr "
+        //        . "where hprind = 1 and qcind = 0 and bs.qcprocstatus = 'H' {$addhprdecision} order by pbiosample asc";
+
         $queSQL = "SELECT replace(ifnull(bs.read_label,''),'_','') as readlabel, ifnull(bs.tisstype,'') as procspeccat, ifnull(bs.anatomicsite,'') as procsite, ifnull(bs.subsite,'') as procsubsite, ifnull(bs.diagnosis,'') as procdiagnosis"
                 . ", ifnull(bs.subdiagnos,'') as procsubdiagnosis, ifnull(bs.QCProcStatus,'') as qmsprocstatusvalue, ifnull(hsts.dspvalue,'') as qmsstatusdsp, ifnull(bs.HPRDecision,'') as hprdecisionvalue"
                 . ", ifnull(hdc.dspvalue,'') as hprdecisiondsp, ifnull(hpr.speccat,'') as hprspeccat, ifnull(hpr.site,'') as hprsite, ifnull(hpr.subsite,'') as hprsubsite, ifnull(hpr.dx,'') as hprdiagnosis"
@@ -3888,7 +3905,7 @@ PRISTINESQL;
                 . "left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSStatus') as hsts on bs.qcprocstatus = hsts.menuvalue "
                 . "left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRDECISION') as hdc on bs.hprdecision = hdc.menuvalue "
                 . "left join (SELECT biohpr, speccat, site, subsite, dx, subdiagnosis FROM masterrecord.ut_hpr_biosample) as hpr on bs.hprresult = hpr.biohpr "
-                . "where hprind = 1 and qcind = 0 and bs.qcprocstatus = 'H' {$addhprdecision} order by pbiosample asc";
+                . "where hprind = 1 and bs.qcprocstatus = 'H' {$addhprdecision} order by pbiosample asc";
           $queRS = $conn->prepare($queSQL);
           if ( $addhprdecision !== "" ) { 
               $queRS->execute(array(':decisioncode' => $hprdecisioncode )); 
@@ -4981,6 +4998,108 @@ MBODY;
       $rows['statusCode'] = $responseCode; 
       $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
       return $rows;         
+    }
+
+    function shipdocship ( $request, $passdata ) { 
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      //{"sd":"5916","scanlist":"[\"dFhMQXdSTlNPd3V2M0NzSGZXajAwUT09\",\"b29NN29Cd241RmdYRmdVRm14WU9CUT09\"]","dlogid":"aF4E2TRK1AT1dA3","tracknbr":"9632085000667108136500918088477923","carrier":"FEDEX"}
+      session_start();
+      $sessid = session_id();
+      ( !array_key_exists('sd', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'sd' missing from passed data")) : "";
+      ( !array_key_exists('scanlist', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'scanlist' missing from passed data")) : "";
+      ( !array_key_exists('dlogid', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'dlogid' missing from passed data")) : "";
+      ( !array_key_exists('tracknbr', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'tracknbr' missing from passed data")) : "";
+      ( !array_key_exists('carrier', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "array key 'carrier' missing from passed data")) : "";
+      if ( $errorInd === 0 ) {
+        $chkUsrSQL = "SELECT originalaccountname FROM four.sys_userbase where 1=1 and sessionid = :sessid and (allowInd = 1 and allowCoord = 1) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+        $rs = $conn->prepare($chkUsrSQL); 
+        $rs->execute(array(':sessid' => $sessid ));
+        if ($rs->rowCount() === 1) { 
+          $u = $rs->fetch(PDO::FETCH_ASSOC);
+        } else { 
+          (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED USER INVALID.  LOGOUT AND BACK INTO SCIENCESERVER AND TRY AGAIN OR SEE A CHTNEASTERN INFORMATICS STAFF MEMEBER."));
+        }
+        if ( $errorInd === 0 ) {
+          //MAKE SURE THAT THE SHIPDOC IS NOT ALREADY CLOSED
+          $sdChkSQL = "SELECT shipdocrefid FROM masterrecord.ut_shipdoc where shipdocrefid = :sd and sdstatus <> 'CLOSED' and ifnull(shipmentTrackingNbr,'') = ''";
+          $sdChkRS = $conn->prepare($sdChkSQL);
+          $sdChkRS->execute(array( ':sd' => $pdta['sd'] ));
+          ( $sdChkRS->rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "SHIPDOC {$pdta['sd']} IS CLOSED, ALREADY HAS A COURIER TRACKING NUMBER OR DOES NOT EXIST. IT CANNOT BE MODIFIED")) : "" ;
+          if ( $errorInd === 0 ) { 
+            ( trim($pdta['tracknbr']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The Courier Tracking Number may not be blank")) : "";
+            ( trim($pdta['carrier']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "The Courier may not be blank")) : "";
+            if ( $errorInd === 0 ) {
+
+              $sl = json_decode( $pdta['scanlist'] );
+              for ( $i = 0; $i < count( $sl ); $i++ ) {
+                $scnList[] = cryptservice( $sl[$i] , 'd');
+              }
+              $shpDoc = $conn->prepare( "SELECT segmentid, bgs FROM masterrecord.ut_procure_segment where shipdocrefid = :sd and segstatus <> 'SHIPPED' and ifnull(shippedDate,'') = ''");
+              $shpDoc->execute( array( ':sd' => $pdta['sd'] ));
+              if ( $shpDoc->rowCount() < 1 ) { 
+                //error
+                $msgArr[] = "Shipdoc: {$pdta['sd']} - No Open Segments found";
+              } else { 
+                //check 
+                $scanSegId = array();  
+                $foundall = 1;
+                while ( $s = $shpDoc->fetch(PDO::FETCH_ASSOC) ) { 
+                  if ( !in_array( $s['segmentid'], $scnList ) ) { 
+                    //MISSING SCAN
+                    $msgArr[] = "You did not scan " . $s['bgs'];
+                    $foundall = 0;   
+                  } else { 
+                    //$scanSegId[] = cryptservice( $s['segmentid'], 'e' );
+                  }     
+                }
+              }
+
+              if ( $foundall === 1 ) {
+                //UPDATE SHIPDOC AND ALL SEGMENTS WITH SHIPDOC SHIPDATE AND THEN CLOSED SHIPDOC
+
+                //BACK-UP SCAN HISTORY
+                $inventoryHistSQL = "insert into masterrecord.history_procure_segment_inventory (segmentid, bgs, scannedlocation, scannedinventorycode, inventoryscanstatus, scannedby, scannedon, historyon, historyby) select segmentid, bgs, scannedlocation, scanloccode, scannedstatus, scannedby, scanneddate, now(), :usr from masterrecord.ut_procure_segment where shipdocrefid = :sd";
+                $inventoryHistRS = $conn->prepare($inventoryHistSQL); 
+                $inventoryHistRS->execute(array(':usr' => $u['originalaccountname'],':sd' => $pdta['sd'] ));
+
+                //BACK-UP STATUS HISTORY
+                $segStatSQL = "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby, newstatus) SELECT segmentid, segstatus, statusby, statusdate, now(), :usr, 'SHIPPED'  FROM masterrecord.ut_procure_segment where shipdocrefid = :sd";
+                $segStatRS = $conn->prepare($segStatSQL); 
+                $segStatRS->execute(array( ':usr' => $u['originalaccountname'],':sd' => $pdta['sd'] ));
+
+                //UPDATE SEGMENTS
+                $updSegSQL = "update masterrecord.ut_procure_segment set shippeddate = now(), segstatus = 'SHIPPED', statusdate = now(), statusby = :usr, scanloccode = 'SHIPPEDOUT', scannedlocation = 'SHIPPED TO INVESTIGATOR', scannedstatus = 'SHIPPED TO INVESTIGATOR', scanneddate = now() where shipdocrefid = :sd";
+                $updSegRS = $conn->prepare($updSegSQL);
+                $updSegRS->execute(array(':usr' => $u['originalaccountname'], ':sd' => $pdta['sd'] ));
+
+                //UPDATE SHIPDOC
+                $insHistSQL = "insert into masterrecord.history_shipdoc (historyon, historyby, shipdocrefid, sdstatus, statusdate, acceptedby, acceptedbyemail, ponbr, rqstshipdate, actualshipdate, rqstpulldate, comments, investcode, investname, investemail, investinstitution, institutiontype, investdivision, oncreationinveststatus, tqcourierid, courier, couriernbr, shipmentTrackingNbr, shipAddy, shipphone, billAddy, billphone, setupon, setupby, salesorder, SAPified, SOBY, SOON, reconciledInd, reconciledshiplogon, reconciledBy, closedOn, closedBy, surveyEmailSent, lasteditby, lastediton) SELECT now(), :usr, shipdocrefid, sdstatus, statusdate, acceptedby, acceptedbyemail, ponbr, rqstshipdate, actualshipdate, rqstpulldate, comments, investcode, investname, investemail, investinstitution, institutiontype, investdivision, oncreationinveststatus, tqcourierid, courier, couriernbr, shipmentTrackingNbr, shipAddy, shipphone, billAddy, billphone, setupon, setupby, salesorder, SAPified, SOBY, SOON, reconciledInd, reconciledshiplogon, reconciledBy, closedOn, closedBy, surveyEmailSent, lasteditby, lastediton FROM masterrecord.ut_shipdoc where shipdocrefid = :sd";
+                $insHistRS = $conn->prepare($insHistSQL);
+                $insHistRS->execute(array(':usr' => $u['originalaccountname'], ':sd' => $pdta['sd']));
+
+                //CLOSE SHIPDOC      
+                $updShpDocSQL = "update masterrecord.ut_shipdoc set sdstatus = 'CLOSED', actualshipdate = now(), shipmentTrackingNbr = :tracknbr, shipmentbycourier = :sbyC, lasteditby = :usr, lastediton = now() where shipdocrefid = :sd"; 
+                $updShpDocRS = $conn->prepare($updShpDocSQL);
+                $updShpDocRS->execute(array( ':sd' => $pdta['sd'], ':usr' => $u['originalaccountname'], ':tracknbr' => $pdta['tracknbr'], ':sbyC' => $pdta['carrier'] ));
+
+                $responseCode = 200;
+
+              }
+            }
+          }
+        }
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;       
     }
 
     function shipdocoverrideshipdate ( $request, $passdata ) {
