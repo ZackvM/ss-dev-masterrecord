@@ -398,6 +398,22 @@ class objlisting {
      return $rows;       
   }  
 
+  function setuphelpdocnewdialog ( $whichobj, $urirqst ) { 
+    $responseCode = 400; 
+    $msg = "BAD REQUEST";
+    $errorInd = 0;
+    $msgArr = array();
+    $itemsfound = 0;
+    if ( $errorInd === 0 ) { 
+      $dta = array('pagecontent' => bldDialogGetter( 'dialogHelpDocNew',json_encode($pdta)));
+      ( trim($dta) !== "" ) ? $responseCode = 200 : "";
+    }
+    $msg = $msgArr;
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;      
+  }
+
   function setuphelpdoceditdialog ( $whichobj, $urirqst ) { 
     $responseCode = 400; 
     $msg = "BAD REQUEST";
@@ -408,7 +424,7 @@ class objlisting {
     ( trim($uri[3]) === "" ) ? list($errorInd, $msgArr[]) = array(1,"Help Doc id not specified") : "";
     (!cryptservice ( $uri[3],'d') )  ? list($errorInd, $msgArr[]) = array(1,"Encrypted helpdocid cannot be decoded ... ") : list( $hdocid ) = array ( cryptservice( $uri[3], 'd'));
     if ( $errorInd === 0 ) { 
-        $pdta['helpdocid'] = $hdocid;
+      $pdta['helpdocid'] = $hdocid;
       $dta = array('pagecontent' => bldDialogGetter( 'dialogHelpDocEdit',json_encode($pdta)));
       ( trim($dta) !== "" ) ? $responseCode = 200 : "";
     }
@@ -433,6 +449,41 @@ class objlisting {
   }
 
   function helpdocumenttext ( $whichobj, $urirqst ) { 
+    $responseCode = 400; 
+    $msgArr = array();
+    $modArray = array();
+    $itemsfound = 0;
+
+    if ( trim($whichobj) !== "" ) { 
+      require(serverkeys . "/sspdo.zck");
+      //******* DO NOT USE TXT FROM THIS TABLE base_ss7_help *******/
+      $docRS = $conn->prepare( "SELECT hlpid, ifnull(helptype,'') as hlpType, ifnull(pdfdocurl,'') as pdfdocurl, ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(helpurl,'') as helpurl, ifnull(versionmajor,'') as versionmajor, ifnull( versionminor,0 ) as versionminor, if( substr(screenreference,1,4) = 'NONE', '', screenreference) as screenreference  FROM four.base_ss7_help where replace(helpurl,'-','') = :helpobj and helpdspind = 1" );
+      $docRS->execute( array( ':helpobj' => $whichobj ));
+      if ( $docRS->rowCount() === 1 ) { 
+          //FOUND
+          $itemsfound = $docRS->rowCount(); 
+          $dta['docobj'] = $docRS->fetch(PDO::FETCH_ASSOC); 
+       
+          $modulesRS = $conn->prepare( "SELECT md.module FROM four.base_ss7_help_doc_to_idx hdi left join four.base_ssv7_help_index_modulelist md on hdi.modindxid = md.moduleid where hdi.dspind = 1 and md.dspind = 1 and hdi.helpdocid = :docid order by md.dsporder" );
+          $modulesRS->execute( array ( ':docid' =>  $dta['docobj']['hlpid'] )); 
+          $dta['modules'] = $modulesRS->fetchAll(PDO::FETCH_ASSOC);
+
+          $docSecRS = $conn->prepare( "SELECT sc.versionnbr, sch.dspvalue as sectionhead, sch.dsporder as ordernbr, sc.sectiontext FROM four.base_ss7_help_doc_sections sc left join ( SELECT menuvalue, dspvalue, dsporder FROM four.sys_master_menus where menu = 'SOPHELPSECTIONS' and dspind = 1 order by dsporder ) sch on sc.sectionid = sch.menuvalue where sc.helpdocid = :hlpid and sc.activeind = 1 order by sch.dsporder" );  
+          $docSecRS->execute( array(':hlpid' => $dta['docobj']['hlpid'] ));
+          $dta['doctxt'] = $docSecRS->fetchAll(PDO::FETCH_ASSOC);
+
+      } else { 
+        $responseCode = 404;
+        $msgArr[] = $whichobj . " WAS NOT FOUND IN DATABASE AS A HELP DOCUMENT OBJECT";
+      }
+    }
+    $msg = $msgArr;
+    $rows['statusCode'] = $responseCode; 
+    $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+    return $rows;      
+  }
+
+  function helpdocumenttext_bu ( $whichobj, $urirqst ) { 
     $responseCode = 400; 
     $msgArr = array();
     $modArray = array();
@@ -547,6 +598,7 @@ class objlisting {
           $modArray[$modArrCnt]['module'] = $modList['module'];
           $modArray[$modArrCnt]['modurlref'] = $modList['modurlref'];
           $topicArray = array();
+          //$topicSQL = "SELECT hlpid, helptype, helpurl, screenreference, title FROM four.base_ss7_help h left join four.base_ss7_help_doc_to_idx m on h.hlpid = m.helpdocid where m.dspind = 1 and m.modindxid = :modIndex order by m.orderbyind";
           $topicSQL = "SELECT hlpid, helptype, helpurl, screenreference, title FROM four.base_ss7_help h left join four.base_ss7_help_doc_to_idx m on h.hlpid = m.helpdocid where m.dspind = 1 and (helptype = 'SCREEN' or helptype = 'TOPIC' or helptype = 'PDF') and m.modindxid = :modIndex order by m.orderbyind";
           $topicRS = $conn->prepare($topicSQL);
           $topicRS->execute(array(':modIndex' => $modList['moduleid'])); 

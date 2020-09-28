@@ -704,7 +704,7 @@ function getSystemHelpDocument($docid, $originalURL) {
 
     $at = genAppFiles;
     $tt = treeTop;    
-    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .8in;  \" ");
+    $favi = base64file("{$at}/publicobj/graphics/chtn_trans.png", "mastericon", "png", true, " style=\"height: .5in;  \" ");
     
     //****************CREATE BARCODE
         require ("{$at}/extlibs/bcodeLib/qrlib.php");
@@ -719,62 +719,110 @@ function getSystemHelpDocument($docid, $originalURL) {
         
         //********************END BARCODE CREATION
 
-require(genAppFiles . "/dataconn/sspdo.zck"); 
-$hlpSQL = "SELECT ifnull(helptype,'') as hlpType, ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt , ifnull(helpurl,'') as helpurl FROM four.base_ss7_help where replace(helpurl,'-','') = :dataurl ";        
-$hlpR = $conn->prepare($hlpSQL); 
-$hlpR->execute(array(':dataurl' => trim($docid)   ));        
-if ($hlpR->rowCount() < 1) { 
-    $helpFile = "NO HELP FILE FOUND WITH THAT URL" . $docid . " - " . $originalURL;
-      } else {           
-        $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);    
-          $hlpTitle = $hlp['hlpTitle'];
-          $hlpSubTitle = $hlp['hlpSubTitle'];
-          $hlpEmail = $hlp['byemail'];
-          $hlpDte = ( trim($hlp['initialdte']) !== "" ) ? " / {$hlp['initialdte']}" : "";
-          $hlpTxt = putPicturesInPrintHelpText( $hlp['htmltxt'] );          
-          $helpFile = <<<RTNTHIS
-   <div id=hlpMainHolderDiv>
-   <div id=hlpMainTitle>{$hlpTitle}</div> 
-   <div id=hlpMainSubTitle>{$hlpSubTitle}</div>            
-   <div id=hlpMainByLine>{$hlpEmail} {$hlpDte}</div>             
-   <div id=hlpMainText>
-        {$hlpTxt}
-        <p>&nbsp;
+    require(genAppFiles . "/dataconn/sspdo.zck"); 
+    $hlpSQL = "SELECT ifnull(helpurl,'') as helpurl, ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, 'THIS IS A PLACE HOLDER' as htmltxt FROM four.base_ss7_help where (replace(helpurl,'-','') = :pgename or replace(screenreference,'-','') = :pgenamea ) and helptype = :hlptype ";
+    $hlpR = $conn->prepare($hlpSQL); 
+    $hlpR->execute(array(':pgename' => trim($docid), ':pgenamea' => trim($docid), ':hlptype' => 'SCREEN'));
+    if ($hlpR->rowCount() < 1) { 
+        //NO HELP FILE
+        $rthis = <<<RTNTHIS
+   <div id=hlpHolderDiv>
+   <div id=hlpTitle>ScienceServer Help Files</div> 
+   <div id=hlpSubTitle></div>            
+   <div id=hlpText>
+       There is no help file for this ScienceServer screen. You can search the main help files by click the 'HELP' Menu on the main menu bar. <p> ({$docid})  
    </div>
-   </div>         
+   </div>                
 RTNTHIS;
-      }
+    } else { 
+      $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);
+      $rsltdta = json_decode(callrestapi("GET", dataTree . "/help-document-text/{$hlp['helpurl']}", serverIdent, serverpw),true);
+      if ( (int)$rsltdta['ITEMSFOUND'] > 0 ) {
+        $sctionnbr = ""; 
+        $sectionnbrdsp = 0;  
+        $subsection = 0;
+        $hlpTxt = "<table border=0 cellspacing=0 cellpadding=0>";
+        foreach ( $rsltdta['DATA']['doctxt'] as $v  ) { 
+          if ( $sctionnbr !== (int)$v['ordernbr'] ) { 
+            $sectionnbrdsp += 1;
+            $subsection = 1;
+            $sctionnbr = (int)$v['ordernbr'];
+          }
+          $minor = (int)$v['versionnbr']; 
+          $hlpTxt .= "<tr><td style=\"font-size: 10pt; font-weight: bold; border-bottom: 1px solid rgba(0,0,0,1); padding: 10px 0 0 0; \">Section: {$sectionnbrdsp}.{$subsection} {$v['sectionhead']} </td></tr><tr><td style=\"padding: 8px 0 0 0; font-size: 10pt; text-align: justify; line-height: 1.5em; \">" . putPicturesInHelpText( $v['sectiontext'] ) . "</td></tr>";
+          $subsection++;
+        }
+        $hlpTxt .= "</table>";
+        $modules = "";
+        foreach ( $rsltdta['DATA']['modules'] as $v  ) { 
+          $modules .= ( trim($modules) === "" ) ? "&#8227; {$v['module']}" : " &#8227; {$v['module']}";  
+        }
+        $lstby = ( trim($rsltdta['DATA']['docobj']['lstemail']) === "" ) ? "&nbsp;" : "{$rsltdta['DATA']['docobj']['lstemail']}";
+        $lstdte = ( trim($rsltdta['DATA']['docobj']['lstdte']) === "" ) ? "&nbsp;" : "({$rsltdta['DATA']['docobj']['lstdte']})";
+        $versioning = substr("0000{$rsltdta['DATA']['docobj']['versionmajor']}",-2) . "." . substr("0000{$rsltdta['DATA']['docobj']['versionminor']}", -2) . "." . substr("00000{$minor}",-4);
+     }
+          $rthis = <<<RTNTHIS
+   <table border=0 style="font-family: Roboto; " cellspacing=0 cellpadding=0>
+       <tr><td style="font-size: 8pt; font-weight: bold;">{$rsltdta['DATA']['docobj']['hlpType']}</td></tr>
+       <tr><td style="font-size: 12pt; font-weight: bold; padding: 8px 0 0 0;">{$rsltdta['DATA']['docobj']['hlpTitle']}</td></tr>
+       <tr><td style="font-size: 10pt; padding: 0 0 5px 0;">{$rsltdta['DATA']['docobj']['hlpSubTitle']}</td></tr> 
+       <tr><td>{$hlpTxt}</td></tr>
+   </table>
+   <p>
+  <center>
+    <table border=0 style="margin: 55px; font-family: 10pt; border: 1px solid #000; width: 90%;">
+      <tr><td colspan=4 style="font-size: 7pt; background: #000; color: #fff; font-weight: bold; padding: 5px 0 5px 3px;">Document Metrics</td></tr> 
 
-$dte = date('l jS, M Y H:i');
-        
+      <tr>
+
+        <td valign=top style="border: 1px solid #000; width: 20%">
+          <table width=100%><tr><td style="font-size: 7pt; background: #000; color: #fff; font-weight: bold; padding: 3px 0 3px 3px;">Document<br>Version</td></tr>
+          <tr><td style="font-size: 7pt;padding: 5px 2px;">{$versioning}</td></tr></table>
+        </td>
+
+        <td valign=top style="border: 1px solid #000;">
+          <table width=100%><tr><td style="font-size: 7pt; background: #000; color: #fff; font-weight: bold; padding: 3px 0 3px 3px;">Creating<br>Author</td></tr>
+          <tr><td style="font-size: 7pt;padding: 5px 2px;">{$rsltdta['DATA']['docobj']['byemail']}<br>
+          ({$rsltdta['DATA']['docobj']['initialdte']})</td></tr></table>
+        </td>
+
+        <td valign=top style="border: 1px solid #000;">
+          <table width=100%><tr><td style="font-size: 7pt; background: #000; color: #fff; font-weight: bold; padding: 3px 0 3px 3px;">Last<br>Edited By</td></tr>
+          <tr><td style="font-size: 7pt;padding: 5px 2px;">{$lstby}<br>
+          {$lstdte}</td></tr></table>
+        </td>
+
+        <td valign=top style="border: 1px solid #000;">
+          <table width=100%><tr><td style="font-size: 7pt; background: #000; color: #fff; font-weight: bold; padding: 3px 0 3px 3px;">Documentation<br>Modules</td></tr>
+          <tr><td style="font-size: 7pt;padding: 5px 2px;">{$modules}</td></tr></table>
+        </td>
+      
+      </tr>
+         
+      </table> 
+
+   </center>
+RTNTHIS;
+    }
+
+$dte = date('l jS, M Y H:i');        
 $docText = <<<RTNTHIS
 <html>
 <head>
 <style>
 @import url(https://fonts.googleapis.com/css?family=Roboto);
-html {margin: 0;}
-body { margin: 0; font-family: Roboto; font-size: 9pt; color: rgba(48,57,71,1); }
-.line {border-bottom: 1px solid rgba(0,0,0,1); height: 2pt; }
-        
-#hlpMainHolderDiv {padding: 5vh 1vw 0 1vw;   } 
-#hlpMainTitle { width: 100%; font-family: Roboto; font-size: 18pt; font-weight: bold; color: rgba(48,57,71,1); text-align: center; padding: 15px 0 8px 0; }
-#hlpMainSubTitle { width: 100%; font-family: Roboto; font-size: 16pt; font-weight: bold; color: rgba(48,57,71,1); text-align: center; padding: 5px 0 10px 0; }
-#hlpMainByLine { width: 100%; font-family: Roboto; font-size: 11pt; color: rgba(0, 112, 13,1); text-align: right; padding: 10px 0 10px 0; }
-#hlpMainText { width: 100%; font-family: Roboto; font-size: 10.5pt; line-height: 1.8em; text-align: justify; padding: 10px 0 0 0; }
-        
-.helppicturecaption { font-size: 9pt; color: rgba(145,145,145,1); font-weight: bold; font-style: italics; }
-        
+         
 </style>
 </head>
 <body>
-<table border=0 width=100%>
-  <tr><td rowspan=3 valign=top style="width: 1in;">{$favi}</td><td style="font-size: 14pt; font-weight: bold; padding: 0 0 0 0; ">ScienceServer HELP Document / Specimen Management System</td><td rowspan=2 align=right valign=top>{$qrcode}</td></tr>
-  <tr><td valign=top style=" font-size: 8pt;"><b>CHTN Eastern Division</b><br>Unversity of Pennsylvania Perelman School of Medicine<br>3400 Spruce Street, Dulles 565, Philadelphia, Pennsylvania 19104 <br>(215) 662 4570 | https://www.chtneast.org | email: chtnmail@uphs.upenn.edu</td></tr>
-  <tr><td valign=top style=" font-size: 7pt;">Print Date: {$dte}</td></tr>
-  <tr><td colspan=3 class=line></td></tr>        
-</table>
-        
- {$helpFile}
+
+<table border=0 cellspacing=0 cellpadding=0 width=100% style="border-bottom: 1px solid rgba(0,0,0,1);"><tr><td valign=top width=10%>{$favi}</td><td valign=top style="padding: 0 0 10px 0;"><table border=0 cellspacing=0 cellpadding=0 style="font-family: Roboto; font-size: 9pt;"><tr><td><b>CHTN Eastern Division</b><br>3400 Spruce Street, 565 DULLES<br>Philadelphia, Pennsylvania 19104<br>(215) 662-4570 | chtnmail@uphs.upenn.edu</td></tr></table></td><td valign=top align=right>{$qrcode}</td></tr><tr><td colspan=3 style="font-size: 8pt; font-weight: bold; background: rgba(0,0,0,1); color: rgba(255,255,255,1); padding: 5px 0; text-align: center;">SCIENCESERVER SOP/HELP DOCUMENTATION</td></tr></table>
+
+<table width=100%><tr><td align=right valign=top style="font-size: 7pt; padding: 5px 0 0 0;">Print Date: {$dte}</td></tr></table>
+{$rthis}
+
+
+
 RTNTHIS;
 
     $filehandle = generateRandomString();                

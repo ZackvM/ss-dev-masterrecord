@@ -47,8 +47,6 @@ if ($whichpage !== "login") {
     $at = genAppFiles;
     $chtn = base64file("{$at}/publicobj/graphics/smlchtnlogo.png", "barchtnlogo", "png", true);   
     
-
-
     $controlList = "<table border=0 cellpadding=0 cellspacing=0>";
     foreach ($whichUsr->allowedmodules as $modval) {
         if (trim($modval[2]) !== "") { 
@@ -89,8 +87,6 @@ if ($whichpage !== "login") {
     }
     $controlList .= "</table>";
 
-
-
     $uBtnsj = json_decode(callrestapi("GET", dataTree . "/ssuniversalcontrols", serverIdent, serverpw),true);
     $controlListUniverse = "<table border=0 cellspacing=0 cellpadding=0>";
     foreach ($uBtnsj['DATA'] as $unbr => $univval) { 
@@ -107,7 +103,7 @@ if ($whichpage !== "login") {
     foreach ($whichUsr->allowedinstitutions as $inskey => $insval) {
       if ( trim($whichUsr->presentinstitution) === $insval[0]) {
         $igivendspvalue = "{$insval[1]} ({$insval[0]})";
-      }
+     }
     }
 
     $expDay = ((int)$whichUsr->daysuntilpasswordexp === 1) ? "{$whichUsr->daysuntilpasswordexp} day" : "{$whichUsr->daysuntilpasswordexp} days";
@@ -523,34 +519,6 @@ PERSONTBL;
 
 }
 
-function buildHelpFiles($whichpage, $request) { 
-
-    $c = count($request);
-    if ((int)$c > 2) { 
-        $whichpage .= ":subpage";
-    }
-    
-    //TODO - PULL FROM A WEB SERVICE    
-    require(genAppFiles . "/dataconn/sspdo.zck"); 
-    $hlpSQL = "SELECT ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, ifnull(txt,'') as htmltxt FROM four.base_ss7_help where screenreference = :pgename and helptype = :hlptype ";
-    $hlpR = $conn->prepare($hlpSQL); 
-    $hlpR->execute(array(':pgename' => $whichpage, ':hlptype' => 'SCREEN'));
-
-
-    if ($hlpR->rowCount() < 1) { 
-        //NO HELP FILE
-        $rthis = <<<RTNTHIS
-   <div id=hlpHolderDiv>
-   <div id=clsBtnHold><table width=100%><tr><td></td><td id=closeBtn onclick="openAppCard('appcard_help');">&times;</td></tr></table></div>   
-   <div id=hlpTitle>ScienceServer Help Files</div> 
-   <div id=hlpSubTitle>&nbsp;</div>            
-   <div id=hlpByLine>&nbsp;</div>             
-   <div id=hlpText>
-       There is no help file for this ScienceServer screen. You can search the main help files by click the 'HELP' Menu on the main menu bar. <p> ({$whichpage})  
-   </div>
-   </div>                
-RTNTHIS;
-    } else { 
 
 /*
  * NOTETOZACK: TO ADD PICTURES TO THE HELP FILE EMBED A JSON STRING INTO THE DATABASE FILE AS BELOW:
@@ -567,23 +535,105 @@ RTNTHIS;
  * caption is text that will be placed in grey under the picture
  *
  */
-        $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);
-        $ar = json_encode($hlp);
-    $hlpTitle = $hlp['hlpTitle'];
-    $hlpSubTitle = $hlp['hlpSubTitle'];
-    $hlpEmail = $hlp['byemail'];
-    $hlpDte = ( trim($hlp['initialdte']) !== "" ) ? " / {$hlp['initialdte']}" : "";
-    $hlpTxt = putPicturesInHelpText( $hlp['htmltxt'] );
+
+function buildHelpFiles($whichpage, $request) { 
+    $c = count($request);
+    if ((int)$c > 2) { 
+        $whichpage .= ":subpage";
+    }
+    //TODO - PULL FROM A WEB SERVICE    
+    require(genAppFiles . "/dataconn/sspdo.zck"); 
+    $hlpSQL = "SELECT ifnull(helpurl,'') as helpurl, ifnull(title,'') as hlpTitle, ifnull(subtitle,'') as hlpSubTitle, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte, 'THIS IS A PLACE HOLDER' as htmltxt FROM four.base_ss7_help where screenreference = :pgename and helptype = :hlptype ";
+    $hlpR = $conn->prepare($hlpSQL); 
+    $hlpR->execute(array(':pgename' => $whichpage, ':hlptype' => 'SCREEN'));
+    if ($hlpR->rowCount() < 1) { 
+        //NO HELP FILE
         $rthis = <<<RTNTHIS
    <div id=hlpHolderDiv>
    <div id=clsBtnHold><table width=100%><tr><td></td><td id=closeBtn onclick="openAppCard('appcard_help');">&times;</td></tr></table></div>   
-   <div id=hlpTitle>{$hlpTitle}</div> 
-   <div id=hlpSubTitle>{$hlpSubTitle}</div>            
-   <div id=hlpByLine>{$hlpEmail} {$hlpDte}</div>             
+   <div id=hlpTitle>ScienceServer Help Files</div> 
+   <div id=hlpSubTitle></div>            
    <div id=hlpText>
-        {$hlpTxt}
-        <p>&nbsp;
+       There is no help file for this ScienceServer screen. You can search the main help files by click the 'HELP' Menu on the main menu bar. <p> ({$whichpage})  
    </div>
+   </div>                
+RTNTHIS;
+    } else { 
+      $hlp = $hlpR->fetch(PDO::FETCH_ASSOC);
+      //$ar = json_encode($hlp);
+      //$hlpTitle = $hlp['hlpTitle'];
+      //$hlpSubTitle = $hlp['hlpSubTitle'];
+      //$hlpEmail = $hlp['byemail'];
+      //$hlpDte = ( trim($hlp['initialdte']) !== "" ) ? " / {$hlp['initialdte']}" : "";
+      $rsltdta = json_decode(callrestapi("GET", dataTree . "/help-document-text/{$hlp['helpurl']}", serverIdent, serverpw),true);
+      if ( (int)$rsltdta['ITEMSFOUND'] > 0 ) {
+        $sctionnbr = ""; 
+        $sectionnbrdsp = 0;  
+        $subsection = 0;
+        foreach ( $rsltdta['DATA']['doctxt'] as $v  ) { 
+          if ( $sctionnbr !== (int)$v['ordernbr'] ) { 
+            $sectionnbrdsp += 1;
+            $subsection = 1;
+            $sctionnbr = (int)$v['ordernbr'];
+          }
+          $minor = (int)$v['versionnbr']; 
+          $hlpTxt .= "<div class=hlpSectionDspNbr>Section: {$sectionnbrdsp}.{$subsection} {$v['sectionhead']} </div><div class=hlpSectionTxt>" . putPicturesInHelpText( $v['sectiontext'] ) . "</div>";
+          $subsection++;
+        }
+        $modules = "";
+        foreach ( $rsltdta['DATA']['modules'] as $v  ) { 
+          $modules .= ( trim($modules) === "" ) ? "&#8227; {$v['module']}" : " &#8227; {$v['module']}";  
+        }
+        $lstby = ( trim($rsltdta['DATA']['docobj']['lstemail']) === "" ) ? "&nbsp;" : "{$rsltdta['DATA']['docobj']['lstemail']}";
+        $lstdte = ( trim($rsltdta['DATA']['docobj']['lstdte']) === "" ) ? "&nbsp;" : "({$rsltdta['DATA']['docobj']['lstdte']})";
+        $versioning = substr("0000{$rsltdta['DATA']['docobj']['versionmajor']}",-2) . "." . substr("0000{$rsltdta['DATA']['docobj']['versionminor']}", -2) . "." . substr("00000{$minor}",-4);
+     }
+          $rthis = <<<RTNTHIS
+   <div id=hlpHolderDiv>
+     <div id=clsBtnHold><table width=100%><tr><td></td><td id=closeBtn onclick="openAppCard('appcard_help');">&times;</td></tr></table></div>  
+     <div id=appCardHelpFileHolder>  
+       <div id=hDocType>{$rsltdta['DATA']['docobj']['hlpType']}</div>
+       <div id=hDocTitle>{$rsltdta['DATA']['docobj']['hlpTitle']}</div>
+       <div id=hDocSTitle>{$rsltdta['DATA']['docobj']['hlpSubTitle']}</div> 
+       <div id=hlpText>{$hlpTxt}</div>
+<p>
+  <center>
+  <div id=hDocMetricsHolder>
+    <div id=metricBox>
+      <div id=metricTitle>Document Metrics</div> 
+
+      <div class=mElemHld>
+
+        <div class=hdiv>
+          <div class=mElemLbl>Document Version</div>
+          <div class=mElemDta>{$versioning}</div>
+        </div>
+
+        <div class=hdiv>
+          <div class=mElemLbl>Creating Author</div>
+          <div class=mElemDta>{$rsltdta['DATA']['docobj']['byemail']}</div>
+          <div class=mElemDta>({$rsltdta['DATA']['docobj']['initialdte']})</div>
+        </div>
+
+        <div class=hdiv>
+          <div class=mElemLbl>Last Edited By</div>
+          <div class=mElemDta>{$lstby}</div>
+          <div class=mElemDta>{$lstdte}</div>
+        </div>
+
+        <div class=hdiv>
+          <div class=mElemLbl>Documentation Modules</div>
+          <div class=mElemDta>{$modules}</div>
+        </div>
+
+      </div>
+    </div>
+   </div> 
+   </center>
+
+
+     </div>
+
    </div>         
 RTNTHIS;
     }

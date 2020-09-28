@@ -328,9 +328,14 @@ function sysDialogBuilder($whichdialog, $passedData) {
         //$footerBar = "DONOR RECORD";
         break;
       case 'dialogHelpDocEdit': 
-        $titleBar = "ScienceServer Edit Help Document";
+        $titleBar = "ScienceServer Edit SOP/Help Document";
         //$footerBar = "DONOR RECORD";
         $innerDialog = bldHelpDocumentEditDialogBox($passedData);
+        break;
+      case 'dialogHelpDocNew': 
+        $titleBar = "ScienceServer New SOP/Help Document";
+        //$footerBar = "DONOR RECORD";
+        $innerDialog = bldHelpDocumentNewDialogBox($passedData);
         break;
       case 'dialogHelpTicket':
         $titleBar = "ScienceServer HelpTicket Submission";
@@ -2317,70 +2322,82 @@ RTNTHIS;
    
     $rsltdta = json_decode(callrestapi("GET", dataTree . "/help-document-text/{$rqststr[3]}", serverIdent, serverpw),true);
     if ( (int)$rsltdta['ITEMSFOUND'] > 0 ) {
+  
       $topBtnBar = generatePageTopBtnBar('scienceserverhelp', $whichusr, $rqststr[3] );
       if ( $rsltdta['DATA']['docobj']['hlpType'] === 'PDF' ) { 
-        $hlpTxt = base64file( genAppFiles . $rsltdta['DATA']['docobj']['htmltxt'], "HELPDSPPDF","pdfhlp",true);
+        $hlpTxt = base64file( genAppFiles . $rsltdta['DATA']['docobj']['pdfdocurl'], "HELPDSPPDF","pdfhlp",true);
       } else {
-        $hlpTxt = putPicturesInHelpText( $rsltdta['DATA']['docobj']['htmltxt'] );
+          //[{"versionnbr":1,"sectionhead":"General Procedure","ordernbr":0.1,"sectiontext":"Welcome to ScienceServer version 7. Throughout the years, CHTN - Eastern has built a massive database with over 20 years of collection and distribution data. This application will grant you access to this data dependent on your access rights."}] 
+
+         $sctionnbr = ""; 
+         $sectionnbrdsp = 0;  
+         $subsection = 0;
+         foreach ( $rsltdta['DATA']['doctxt'] as $v  ) { 
+           if ( $sctionnbr !== (int)$v['ordernbr'] ) { 
+             $sectionnbrdsp += 1;
+             $subsection = 1;
+             $sctionnbr = (int)$v['ordernbr'];
+           }
+           $minor = (int)$v['versionnbr']; 
+           $hlpTxt .= "<div class=hlpSectionDspNbr>Section: {$sectionnbrdsp}.{$subsection} {$v['sectionhead']} </div><div class=hlpSectionTxt>" . putPicturesInHelpText( $v['sectiontext'] ) . "</div>";
+           $subsection++;
+         }
+
+         $modules = "";
+         foreach ( $rsltdta['DATA']['modules'] as $v  ) { 
+           $modules .= ( trim($modules) === "" ) ? "&#8227; {$v['module']}" : " &#8227; {$v['module']}";  
+         }
+
       }
 
-      $modDsp = "";
-      foreach ( $rsltdta['DATA']['docobj']['modules'] as $mk => $mv ) {
-        $chk = ( (int)$mv['helpdocid'] <> 0 ) ? "<span class=cGreen>In</span> " : "Not In";  
-        $modDsp .= "<div class=mElemHldMod>{$chk} {$mv['module']} </div>";
-      }
+      $lstby = ( trim($rsltdta['DATA']['docobj']['lstemail']) === "" ) ? "&nbsp;" : "{$rsltdta['DATA']['docobj']['lstemail']}";
+      $lstdte = ( trim($rsltdta['DATA']['docobj']['lstdte']) === "" ) ? "&nbsp;" : "({$rsltdta['DATA']['docobj']['lstdte']})";
+      $versioning = substr("0000{$rsltdta['DATA']['docobj']['versionmajor']}",-2) . "." . substr("0000{$rsltdta['DATA']['docobj']['versionminor']}", -2) . "." . substr("00000{$minor}",-4);
 
       $helpFile = <<<RTNTHIS
 <div id=hDocObjHoldr>
+
+  <div id=hDocType>{$rsltdta['DATA']['docobj']['hlpType']}</div>
   <div id=hDocTitle>{$rsltdta['DATA']['docobj']['hlpTitle']}</div>
   <div id=hDocSTitle>{$rsltdta['DATA']['docobj']['hlpSubTitle']}</div>
-  <div id=hDocText>
-    {$hlpTxt} 
-  </div>
 
+  <center>
   <div id=hDocMetricsHolder>
-    <center>
     <div id=metricBox>
-      <div id=metricTitle>Document Metrics</div>
-
-    
-      <div class=mElemHld>
-        <div class=mElemLbl>Type</div>
-        <div class=mElemDta>{$rsltdta['DATA']['docobj']['hlpType']}</div>
-      </div>
+      <div id=metricTitle>Document Metrics</div> 
 
       <div class=mElemHld>
-        <div class=mElemLbl>Document Version</div>
-        <div class=mElemDta>{$rsltdta['DATA']['docobj']['versionmajor']}.{$rsltdta['DATA']['docobj']['versionminor']}</div>
+
+        <div class=hdiv>
+          <div class=mElemLbl>Document Version</div>
+          <div class=mElemDta>{$versioning}</div>
+        </div>
+
+        <div class=hdiv>
+          <div class=mElemLbl>Creating Author</div>
+          <div class=mElemDta>{$rsltdta['DATA']['docobj']['byemail']}</div>
+          <div class=mElemDta>({$rsltdta['DATA']['docobj']['initialdte']})</div>
+        </div>
+
+        <div class=hdiv>
+          <div class=mElemLbl>Last Edited By</div>
+          <div class=mElemDta>{$lstby}</div>
+          <div class=mElemDta>{$lstdte}</div>
+        </div>
+
+        <div class=hdiv>
+          <div class=mElemLbl>Documentation Modules</div>
+          <div class=mElemDta>{$modules}</div>
+        </div>
+
       </div>
-
-      <div class=mElemHld>
-        <div class=mElemLbl>Creating Author</div>
-        <div class=mElemDta>{$rsltdta['DATA']['docobj']['byemail']}</div>
-      </div>
-
-      <div class=mElemHld>
-        <div class=mElemLbl>Creation Date</div>
-        <div class=mElemDta>{$rsltdta['DATA']['docobj']['initialdte']}</div>
-      </div>
-
-      <div class=mElemHld>
-        <div class=mElemLbl>Last Edited By</div>
-        <div class=mElemDta>{$rsltdta['DATA']['docobj']['lstemail']}</div>
-      </div>
-
-      <div class=mElemHld>
-        <div class=mElemLbl>Last Edited</div>
-        <div class=mElemDta>{$rsltdta['DATA']['docobj']['lstdte']}</div>
-      </div>
-
-      <div id=metricModTitle>Modules</div>
-
-        {$modDsp} 
-
     </div>
-
    </div> 
+   </center>
+
+  <div id=hDocText>{$hlpTxt}</div>
+
+
 </div>
 RTNTHIS;
     } else {
@@ -2920,7 +2937,7 @@ $dspTbl = <<<DSPTHIS
 </table>
 DSPTHIS;
 
-$topBtnBar = generatePageTopBtnBar('coordinatorResultGrid');
+$topBtnBar = generatePageTopBtnBar('coordinatorResultGrid',$whichusr);
 $rtnthis = <<<MAINQGRID
 {$topBtnBar}
 <table border=0 id=mainRsltGridHoldTbl cellspacing=0 cellpadding=0>
@@ -3055,7 +3072,27 @@ $rtnthis = <<<PAGEHERE
 PAGEHERE;
 return $rtnthis;  
 }
- 
+
+function continuousprocessimprovementtracker ( $rqstStr, $whichUsr ) { 
+
+      require(genAppFiles . "/dataconn/sspdo.zck"); 
+      $hlpR = $conn->prepare( "SELECT * FROM four.app_cti_helptickets cti left join four.app_helpTicket htck on cti.itticketreference = htck.ticketnumber" ); 
+      $hlpR->execute();
+      $cti = json_encode( $hlpR->fetchAll(PDO::FETCH_ASSOC) );
+
+
+
+  $rtnthis = <<<PAGEHERE
+<div id=mainPageHolder>
+Continuous Process Improvement Ticket Track
+<div>
+ {$cti}
+</div>
+</div>
+PAGEHERE;
+return $rtnthis;
+}
+
 function root($rqstStr, $whichUsr) { 
     //$whichUsr THIS IS THE USER ARRAY {"statusCode":200,"loggedsession":"i46shslvmj1p672lskqs7anmu1","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":20,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"googleiconcode":"lock_open","menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"googleiconcode":"account_balance","menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""}]],["472","REPORTS","",[{"googleiconcode":"account_balance","menuvalue":"All Reports","pagesource":"all-reports","additionalcode":""}]],["473","UTILITIES","",[{"googleiconcode":"account_balance","menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474",null,null,[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]} 
  //TAG RELEASE  
@@ -4007,13 +4044,13 @@ switch ($whichpage) {
           
       $hlpurl = cryptservice( $additionalinfo );
       $pBtn = "<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintDoc border=0 onclick=\"openOutSidePage('{$tt}/print-obj/help-file/{$hlpurl}');\"><tr><td><i class=\"material-icons\">print</i></td><td>Print Document</td></tr></table></td>";
-      if ( $whichusr->useremail === 'zacheryv@mail.med.upenn.edu' || $whichusr->useremail === 'dfitzsim@pennmedicine.upenn.edu' || $whichusr->useremail === 'xarthur@pennmedicine.upenn.edu') {  
+      if ( $whichusr->useremail === 'zacheryv@mail.med.upenn.edu' || $whichusr->useremail === 'dfitzsim@pennmedicine.upenn.edu' ) {  
         $eBtn = "<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintDoc border=0 onclick=\"openEditDocDialog('{$hlpurl}');\"><tr><td><i class=\"material-icons\">edit</i></td><td>Edit Document</td></tr></table></td>";
       }
     }
 
-    if ( $whichusr->useremail === 'zacheryv@mail.med.upenn.edu' || $whichusr->useremail === 'dfitzsim@pennmedicine.upenn.edu' || $whichusr->useremail === 'xarthur@pennmedicine.upenn.edu') {
-        $nBtn = "<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintDoc border=0 onclick=\"alert('_new');\"><tr><td><i class=\"material-icons\">note_add</i></td><td>New Document</td></tr></table></td>";
+    if ( $whichusr->useremail === 'zacheryv@mail.med.upenn.edu' || $whichusr->useremail === 'dfitzsim@pennmedicine.upenn.edu' ) {
+        $nBtn = "<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnPrintDoc border=0 onclick=\"openNewDocDialog();\"><tr><td><i class=\"material-icons\">note_add</i></td><td>New Document</td></tr></table></td>";
     } 
 
     $innerBar = <<<BTNTBL
@@ -4295,6 +4332,8 @@ $innerBar = <<<BTNTBL
 BTNTBL;
 break; 
 case 'coordinatorResultGrid':
+
+    $ovrRdBtn = ( $whichusr->accesslevel === 'ADMINISTRATOR' ) ? "<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltInventoryOverride><tr><td><i class=\"material-icons\">blur_linear</i></td><td>Check-In Override</td></tr></table></td>" : "" ;
   //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
 $innerBar = <<<BTNTBL
 <tr>
@@ -4345,7 +4384,8 @@ $innerBar = <<<BTNTBL
     </div>
   </td>           
 
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltInventoryOverride><tr><td><i class="material-icons">blur_linear</i></td><td>Check-In Override</td></tr></table></td>           
+  {$ovrRdBtn}
+
 </tr>
 BTNTBL;
     break;
@@ -4639,82 +4679,258 @@ RTNTHIS;
   return $rtnThis;
 }
 
+function bldHelpDocumentNewDialogBox () { 
+  require(serverkeys . "/sspdo.zck");
+
+
+//TODO: DON'T HARD CODE THIS
+$typem = "<table border=0 class=menuDropTbl>";
+$typem .= "<tr><td onclick=\"fillField('fldDocType','SCREEN','SS-Screen Instructions/SOP');\" class=ddMenuItem>SS-Screen Instructions/SOP</td></tr>";
+$typem .= "<tr><td onclick=\"fillField('fldDocType','TOPIC','Topic/SOP');\" class=ddMenuItem>Topic/SOP</td></tr>";
+//$typem .= "<tr><td onclick=\"fillField('fldDocType','FUNCTIONALITYDESC','Functionality/Technical Documentation');\" class=ddMenuItem>Functionality/Technical Documentation</td></tr>";
+$typem .= "</table>";
+$doctypemnu = "<div class=menuHolderDiv><input type=hidden id=fldDocTypeValue value=\"\"><input type=text id=fldDocType READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddDocType>{$typem}</div></div>";
+
+//TODO; MAKE THIS A SERVICE
+$modListRS = $conn->prepare( "SELECT moduleid, module FROM four.base_ssv7_help_index_modulelist where dspind = 1 order by dsporder" );
+$modListRS->execute();
+$modulelisting = "";
+$allowCntr = 0;
+foreach ( $modListRS as $mkey => $mval ) {
+  $modInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" onchange=\"\" class=\"checkboxThreeInput modchkbox\" id=\"m{$mval['moduleid']}\" {$chkd} /><label for=\"m{$mval['moduleid']}\"></label></div>";
+  $modulelisting .= "<div class=modDspDiv><div class=allowLabelDsp>" . $mval['module']  . "</div><div class=allowIndicator align=right>{$modInd}</div></div>";
+  $allowCntr++;
+}
+
+    //TODO:: MAKE A SERVICE
+    $sectRS = $conn->prepare( "SELECT menuvalue, dspvalue, dsporder FROM four.sys_master_menus where menu = 'SOPHELPSECTIONS' and dspInd = 1 order by dsporder" ); 
+    $sectRS->execute(); 
+    $sectm = "<table border=0 class=menuDropTbl>";
+    while ( $s = $sectRS->fetch(PDO::FETCH_ASSOC) ) { 
+      $sectm .= "<tr><td onclick=\"fillField('fldSectionList','{$s['menuvalue']}','{$s['dspvalue']}');\" class=ddMenuItem>{$s['dspvalue']}</td></tr>";
+    }
+    $sectm .= "</table>";
+    $sectlistmnu = "<div class=menuHolderDiv><input type=hidden id=fldSectionListValue value=\"\"><input type=text id=fldSectionList READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddDocType>{$sectm}</div></div><div id=btnAddSection onclick=\"makeNewSection();\"> + </div><div id=docInstructions><b>Instructions</b>: Once the document header is saved (This creates a document in the system), the user may select sections off the section menu (left of these instructions).  Click the plus button (+).  This will add the section to the document.  In the final document the sections are always kept in the ScienceServer Document Section Order - not the order that they were added to the screen.  Once you have finished filling in all sections, click the \"Save Sections\" button below.  This will save all sections to the document.  To remove a section, click the delete button ( &times; ) above that sections text. (Basic HTML can be used in these sections).   </div>";
+
+
+$rtnThis = <<<RTNTHIS
+<div id=docHead>
+
+  <div class=dataelementhold>
+    <div class=dataelementlabel>Doc-ID</div>
+    <div class=dataelement><input type=text READONLY id=fldDocId></div>
+  </div>
+
+  <div class=dataelementhold>
+    <div class=dataelementlabel>Type</div>
+    <div class=dataelement>{$doctypemnu}</div>
+  </div>
+
+  <div class=dataelementhold>
+    <div class=dataelementlabel>Document Title</div>
+    <div class=dataelement><input type=text id=fldDocTitle></div>
+  </div>
+
+  <div class=dataelementhold>
+    <div class=dataelementlabel>Document Sub-Title</div>
+    <div class=dataelement><input type=text id=fldDocSubTitle></div>
+  </div>
+
+  <div class=dataelementhold>
+    <div class=dataelementlabel>Screen Ref (IT Staff Only)</div>
+    <div class=dataelement><input type=text id=fldScreenRef></div>
+  </div>
+
+</div>
+
+<div id=docCtlLine>
+
+  <div id=modsList>
+    <div id=modsListHead>ScienceServer Help Modules</div> 
+    {$modulelisting}
+  </div>
+ 
+  <div id=ctlBox align=right>
+    <button id=saveDocButton onclick="saveDocument();">Save Document Head</button>
+  </div>
+
+</div>
+
+<div id=sectiondisplay>
+  <div id=sectionselectordiv>{$sectlistmnu}</div>
+  <div id=workbenchdiv>  </div>
+  <div id=sectionworkbuttons align=right><button id=saveSection onclick="saveScreenSections();">Save Sections</button></div>
+</div>
+
+RTNTHIS;
+
+  return $rtnThis;
+}
+
 function bldHelpDocumentEditDialogBox ( $passedData ) { 
 
   session_start(); 
   $sid = session_id();
   $pdta = json_decode($passedData,true);
   //{"helpdocid":"reportingmodule"} 
+
+  //TODO:  MAKE THIS A WEBSERVICE
   require(serverkeys . "/sspdo.zck");
+  $hlpHeadRS = $conn->prepare( "SELECT hlpid, helptype, title, subtitle, screenreference FROM four.base_ss7_help where replace(helpurl,'-','') = :hlpurl and helpdspind = 1" );
+  $hlpHeadRS->execute( array( ':hlpurl' => $pdta['helpdocid'] ));
 
-  $hdocSQL = "SELECT h.helpurl, h.versionmajor, h.versionminor, h.helptype, h.screenreference, h.helpdspind, h.title, h.subtitle, h.bywhomemail, h.initialdate, h.lasteditbyemail, h.lastedit, h.txt FROM four.base_ss7_help h where replace(helpurl,'-','') = :docid"; 
-  $hdocRS = $conn->prepare($hdocSQL);
-  $hdocRS->execute(array(':docid' => $pdta['helpdocid'] ));
-  if ( $hdocRS->rowCount() > 0 ) {
-    $hdoc = $hdocRS->fetch(PDO::FETCH_ASSOC);
-   
-    $hdsp = ( (int)$hdoc['helpdspind'] === 1 ) ? "Yes" : "No"; 
-
+  if ( $hlpHeadRS->rowCount() <> 1 ) {
     $rtnThis = <<<RTNTHIS
-  <style>
-    #instrTbl { width: 80vw; font-size: 1.5vh; text-align: justify; line-height: 1.6em;  }
-    #docEditor { width: 80vw; height: 30vh; resize: none; font-family: arial; font-size: 1.3vh; }
-    #hdocMetLine { display: grid; grid-template-columns: repeat( 4, 1fr); grid-gap: .2vw; padding: .2vh .1vw; border: 1px solid #000; margin-top: .5vh; margin-bottom: .5vh;  } 
-    #hdocMetLine .hdocMSectionline { grid-column: span 4; background: rgba(48,57,71,1); color: rgba(255,255,255,1); font-size: 1.5vh; font-weight: bold; padding: .2vh .3vw; }
-    #hdocMetLine .hdocMetElemHold { border: 1px solid rgba(48,57,71,1); padding: .2vh .1vw; }
-    #hdocMetLine .hdocMetElemHold .hdocMetElemLbl { font-size: 1.3vh; font-weight: bold; color: rgba(48,57,71,1); }
-    #hdocMetLine .hdocMetElemHold .hdocMetElem { font-size: 1.3vh; color: rgba(48,57,71,1);  }
-
-  </style>
-
-<table id=instrTbl>
-<tr>
-   <td class=cellholder><b>Instructions</b>: Help Document Edit Screen ... </td></tr>
-</table>
-
-<div id=hdocMetLine>
-   <div class=hdocMSectionline>Document Metrics</div>
-
-   <div class=hdocMetElemHold>
-     <div class=hdocMetElemLbl>Version</div>
-     <div class=hdocMetElem>{$hdoc['versionmajor']}.{$hdoc['versionminor']}</div>
-   </div>
-
-   <div class=hdocMetElemHold>
-     <div class=hdocMetElemLbl>Type</div>
-     <div class=hdocMetElem>{$hdoc['helptype']}</div>
-   </div>
-
-   <div class=hdocMetElemHold>
-     <div class=hdocMetElemLbl>Screen Reference</div>
-     <div class=hdocMetElem>{$hdoc['screenreference']}</div>
-   </div>
-
-   <div class=hdocMetElemHold>
-     <div class=hdocMetElemLbl>Display Indicator</div>
-     <div class=hdocMetElem>{$hdsp}</div>
-   </div>
-
-
-</div>
-<div 
-
-<div>
-  <div class=editLbl>Text</div>
-  <div class=editElem> 
-    <TEXTAREA id=docEditor>{$hdoc['txt']}</TEXTAREA>
-  </div>
-</div>
-<div>BTNS</div>
-
+HELP DOCUMENT ({$pdta['helpdocid']}) NOT FOUND! 
 RTNTHIS;
-
   } else { 
+    $hlpHead = $hlpHeadRS->fetch(PDO::FETCH_ASSOC);
+
+    //TODO: DON'T HARD CODE THIS 
+    $typem = "<table border=0 class=menuDropTbl>";
+    $typem .= "<tr><td onclick=\"fillField('fldDocType','SCREEN','SS-Screen Instructions/SOP');\" class=ddMenuItem>SS-Screen Instructions/SOP</td></tr>";
+    $typem .= "<tr><td onclick=\"fillField('fldDocType','TOPIC','Topic/SOP');\" class=ddMenuItem>Topic/SOP</td></tr>";
+    //$typem .= "<tr><td onclick=\"fillField('fldDocType','FUNCTIONALITYDESC','Functionality/Technical Documentation');\" class=ddMenuItem>Functionality/Technical Documentation</td></tr>";
+    $typem .= "</table>";
+    $htv = "";
+    $htd = "";
+    switch ( $hlpHead['helptype'] ) {
+      case 'SCREEN':
+        $htv = 'SCREEN';
+        $htd = 'SS-Screen Instructions/SOP';
+        break;
+      case 'TOPIC':
+        $htv = 'TOPIC';
+        $htd = 'Topic/SOP';
+        break;
+      //case 'FUNCTIONALITYDESC':
+      //  $htv = 'FUNCTIONALITYDESC';
+      //  $htd = 'Functionality/Technical Documentation';
+        break;
+    }
+    $doctypemnu = "<div class=menuHolderDiv><input type=hidden id=fldDocTypeValue value=\"{$htv}\"><input type=text id=fldDocType READONLY class=\"inputFld\" value=\"{$htd}\"><div class=valueDropDown id=ddDocType>{$typem}</div></div>";
+
+
+    //TODO:: MAKE A SERVICE
+    $sectRS = $conn->prepare( "SELECT menuvalue, dspvalue, dsporder FROM four.sys_master_menus where menu = 'SOPHELPSECTIONS' and dspInd = 1 order by dsporder" ); 
+    $sectRS->execute(); 
+    $sectm = "<table border=0 class=menuDropTbl>";
+    while ( $s = $sectRS->fetch(PDO::FETCH_ASSOC) ) { 
+      $sectm .= "<tr><td onclick=\"fillField('fldSectionList','{$s['menuvalue']}','{$s['dspvalue']}');\" class=ddMenuItem>{$s['dspvalue']}</td></tr>";
+    }
+    $sectm .= "</table>";
+    $sectlistmnu = "<div class=menuHolderDiv><input type=hidden id=fldSectionListValue value=\"\"><input type=text id=fldSectionList READONLY class=\"inputFld\" value=\"\"><div class=valueDropDown id=ddDocType>{$sectm}</div></div><div id=btnAddSection onclick=\"makeNewSection();\"> + </div><div id=docInstructions><b>Instructions</b>: Once the document header is saved (This creates a document in the system), the user may select sections off the section menu (left of these instructions).  Click the plus button (+).  This will add the section to the document.  In the final document the sections are always kept in the ScienceServer Document Section Order - not the order that they were added to the screen.  Once you have finished filling in all sections, click the \"Save Sections\" button below.  This will save all sections to the document.  To remove a section, click the delete button ( &times; ) above that sections text. (Basic HTML can be used in these sections).  </div>";
+
+
+//TODO; MAKE THESE QUERIES A SERVICE
+$docModListRS = $conn->prepare( "SELECT md.module FROM four.base_ss7_help_doc_to_idx hdi left join four.base_ssv7_help_index_modulelist md on hdi.modindxid = md.moduleid where hdi.dspind = 1 and md.dspind = 1 and hdi.helpdocid = :hlpid order by md.dsporder" );
+$docModListRS->execute( array( ':hlpid' => $hlpHead['hlpid'] ));
+$docModList = $docModListRS->fetchAll(PDO::FETCH_ASSOC);
+$dm = array();
+foreach ( $docModList as $v ) { 
+  $dm[] = $v['module'];
+}
+
+$modListRS = $conn->prepare( "SELECT moduleid, module FROM four.base_ssv7_help_index_modulelist where dspind = 1 order by dsporder" );
+$modListRS->execute();
+$modulelisting = "";
+$allowCntr = 0;
+foreach ( $modListRS as $mkey => $mval ) {
+  $chkd = ( in_array( $mval['module'], $dm ) ) ? " CHECKED " : "";   
+  $modInd = "<div class=\"checkboxThree\"><input type=\"checkbox\" class=\"checkboxThreeInput modchkbox\" id=\"m{$mval['moduleid']}\" {$chkd} /><label for=\"m{$mval['moduleid']}\"></label></div>";
+  $modulelisting .= "<div class=modDspDiv><div class=allowLabelDsp>" . $mval['module']  . "</div><div class=allowIndicator align=right>{$modInd}</div></div>";
+  $allowCntr++;
+}
+
+$sectionRS = $conn->prepare( "SELECT sechd.menuvalue as sectionid, sechd.dspvalue as sectiondsp, sechd.dsporder as delimit, sec.sectiontext, sec.bywhom, date_format(sec.onwhen,'%m/%d/%Y') as onwhen FROM four.base_ss7_help_doc_sections sec left join ( SELECT menuvalue, dspvalue, dsporder FROM four.sys_master_menus where menu = 'SOPHELPSECTIONS' and dspInd = 1 order by dsporder ) sechd on sec.sectionid = sechd.menuvalue where sec.helpdocid = :hlpdocid and sec.activeind = 1 order by sechd.dsporder" );
+$sectionRS->execute(array(':hlpdocid' => $hlpHead['hlpid'] ));
+if ( $sectionRS->rowCount() > 0 ) { 
+  $sectioncount = 0; 
+  $sectionnbrmj = 0;
+  $sectionnbrdsp = 1;
+  $inseccount = 1;
+  while ( $s = $sectionRS->fetch(PDO::FETCH_ASSOC) ) { 
+    if ( (int)$s['delimit'] !== $sectionnbrmj ) {
+      $sectionnbrdsp++;  
+      $sectionnbrmj = (int)$s['delimit'];
+      $inseccount = 1;
+    }
+
+    $secdspnbr = substr( ('000'.$sectionnbrdsp) , -2) . "." . substr(('0000'.$inseccount),-3);
+
+    $secdsp .= <<<SECTTHIS
+<div class=sectionHolderDiv id="sectionbox{$sectioncount}">
+
+  <input type=hidden id='secttype{$sectioncount}' class=sectiondenotesection value='{$s['sectionid']}'>
+  <div id='sectiondsp{$sectioncount}' class=sectiondelimitline>
+    <div class=sectiondelimit><b>{$secdspnbr}</b> {$s['sectiondsp']}</div>
+    <div class=setiondeleter id='secdel{$sectioncount}' onclick="removeSectionFromScreen({$sectioncount});">&times;</div>
+  </div>
+  <div class=sectiontxtbox><textarea id="sectiontext{$sectioncount}" class=sectxtbox>{$s['sectiontext']}</textarea></div>
+  <div class=sectionmetric>{$s['bywhom']} | {$s['onwhen']} </div>
+
+</div>
+SECTTHIS;
+    $sectioncount++;
+    $inseccount++;
+  }
+}
 
     $rtnThis = <<<RTNTHIS
-NO HELP DOCUMENT FOUND!
+<div id=docHead>
+
+  <div class=dataelementhold>
+    <div class=dataelementlabel>Doc-ID</div>
+    <div class=dataelement><input type=text READONLY id=fldDocId value="{$hlpHead['hlpid']}"></div>
+  </div>
+
+  <div class=dataelementhold>
+    <div class=dataelementlabel>Type</div>
+    <div class=dataelement>{$doctypemnu}</div>
+  </div>
+
+  <div class=dataelementhold>
+    <div class=dataelementlabel>Document Title</div>
+    <div class=dataelement><input type=text id=fldDocTitle value="{$hlpHead['title']}"></div>
+  </div>
+
+  <div class=dataelementhold>
+    <div class=dataelementlabel>Document Sub-Title</div>
+    <div class=dataelement><input type=text id=fldDocSubTitle value="{$hlpHead['subtitle']}"></div>
+  </div>
+
+  <div class=dataelementhold>
+    <div class=dataelementlabel>Screen Ref (IT Staff Only)</div>
+    <div class=dataelement><input type=text id=fldScreenRef value="{$hlpHead['screenreference']}"></div>
+  </div>
+
+</div>
+
+<div id=docCtlLine>
+
+  <div id=modsList>
+    <div id=modsListHead>ScienceServer Help Modules</div> 
+    {$modulelisting}
+  </div>
+ 
+  <div id=ctlBox align=right>
+    <button id=saveDocButton onclick="saveDocument();">Save Document Head</button>
+  </div>
+
+</div>
+
+<div id=sectiondisplay>
+  <div id=sectionselectordiv>{$sectlistmnu}  </div>
+  <div id=workbenchdiv>  {$secdsp}  </div>
+  <div id=sectionworkbuttons align=right><button id=saveSection onclick="saveScreenSections();">Save Section</button>  </div>
+</div>
+
 RTNTHIS;
+
+
   }
+
+
   return $rtnThis;
 
 }

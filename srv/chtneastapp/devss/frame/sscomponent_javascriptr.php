@@ -1655,7 +1655,8 @@ function doSomethingWithScan ( scanvalue ) {
   scanvalue = scanvalue.replace(/^(ED)/,"");
   //////////////////
 
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  //BACKUP var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,4})?(\d|(@))?$/);
   var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
   var scanloca  = new RegExp(/^SSC[A-Za-z]{1}\d+$/); 
@@ -1836,7 +1837,8 @@ function doSomethingWithScan ( scanvalue ) {
   scanvalue = scanvalue.replace(/%O/g,"");
   //////////////////
 
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  //BACKUP var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,4})?(\d|(@))?$/);
   var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
 
   var scanworked = 0;
@@ -2006,7 +2008,9 @@ function doSomethingWithScan ( scanvalue ) {
   scanvalue = scanvalue.replace(/%O/g,"");
   //////////////////
 
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  //var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  //BACKUP var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,4})?(\d|(@))?$/);
   var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
 
   var scanworked = 0;
@@ -2188,7 +2192,9 @@ function doSomethingWithScan ( scanvalue ) {
   scanvalue = scanvalue.replace(/%O/g,"");
   //////////////////
 
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  //var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  //BACKUP var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,4})?(\d|(@))?$/);
   var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
 
@@ -2579,7 +2585,9 @@ function doSomethingWithScan ( scanvalue ) {
   //////////////////
 
   //TODO:  SPECIAL BARCODE ENCODING
-  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$(@)?/);
+  //var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?$(@)?/);
+  //BACKUP var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var scanlabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,4})?(\d|(@))?$/);
   var zlabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
   var sdlabel = new RegExp(/^SDM-\d{6}$/);
@@ -4218,11 +4226,78 @@ document.addEventListener('DOMContentLoaded', function() {
 
 }, false);        
 
+function makeNewSection() {
+  var lastdivnbr = 0;
+  if ( byId('fldSectionListValue').value !== "" ) { 
+    var rqstsect = byId('fldSectionListValue').value; 
+    if ( byId('workbenchdiv') ) {
+      var existsect = document.getElementsByClassName( "sectiondenotesection" );
+      for ( var i = 0; i < existsect.length; i++ ) {
+        if ( rqstsect ===  existsect[i].value ) { 
+          alert("This section, '"+byId('fldSectionList').value+"', already exists in this document.  You cannot have two of the same section in the same document"); 
+          return null; 
+        }
+        lastdivnbr = parseInt ( existsect[i].id.replace('secttype','') );
+      }
+      var d = document.createElement('div');
+      d.setAttribute("id","sectionbox"+(lastdivnbr + 1)); 
+      d.setAttribute("class","sectionHolderDiv");
+      d.innerHTML = "<input type=hidden id='secttype"+(lastdivnbr + 1)+"' class=sectiondenotesection value='"+rqstsect+"'><div id='sectiondsp"+(lastdivnbr + 1)+"' class=sectiondelimitline><div class=sectiondelimit><b>xx.xx</b> "+byId('fldSectionList').value+"</div><div class=setiondeleter id='secdel"+(lastdivnbr + 1)+"' onclick=\"removeSectionFromScreen("+(lastdivnbr + 1)+");\">&times;</div></div><div class=sectiontxtbox><textarea id='sectiontext"+(lastdivnbr + 1)+"' class=sectxtbox> </textarea></div><div class=sectionmetric>NOT YET SAVED</div>"; 
+      byId('workbenchdiv').appendChild(d);
+      byId('sectiontext'+(lastdivnbr + 1 )).focus(); 
+    }
+  }
+}
+ 
+function removeSectionFromScreen ( whichsection ) { 
+    byId('sectionbox'+whichsection).parentNode.removeChild(byId('sectionbox'+whichsection));
+}
+
+function saveScreenSections() { 
+  var obj = new Object();
+  obj['hdocid'] = byId('fldDocId').value.trim();
+  var sec = new Object();
+  if ( byId('workbenchdiv') ) {
+    var existsect = document.getElementsByClassName( "sectiondenotesection" );
+    var existtxt = document.getElementsByClassName( "sectxtbox" );
+     if ( existsect.length > 0 ) {
+      for ( var i = 0; i < existsect.length; i++ ) {
+        sec[ existsect[i].value ] = existtxt[i].value;
+      } 
+    } else { 
+      alert('No Sections to save');
+      return null;
+    }
+  }
+  obj['sectionarr'] = sec;
+  var passdta = JSON.stringify(obj);
+  var mlURL = "/data-doers/save-doc-section-text";
+  universalAJAX("POST",mlURL,passdta,answerSaveDocSectionText,2);
+}
+
+function answerSaveDocSectionText ( rtnData ) {
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("DOCUMENT SECTION ERROR:\\n"+dspMsg);
+   } else { 
+     alert('Document has been saved.  Refresh your screen to see the changes');
+   }
+}
+
 function openEditDocDialog( whichdocumentid ) { 
   if ( whichdocumentid.trim() !== "" ) { 
     var mlURL = "/setup-help-doc-edit-dialog/" + whichdocumentid;
     universalAJAX("GET",mlURL,"",answerEditDocDialog, 1);
   }
+}
+
+function openNewDocDialog( whichdocumentid ) { 
+  var mlURL = "/setup-help-doc-new-dialog";
+  universalAJAX("GET",mlURL,"",answerEditDocDialog, 1);
 }
 
 function answerEditDocDialog ( rtnData ) { 
@@ -4240,7 +4315,8 @@ function answerEditDocDialog ( rtnData ) {
           byId('waitIcon').style.display = 'none';  
         }
        byId('standardModalDialog').innerHTML = dta['DATA']['pagecontent'];
-       byId('standardModalDialog').style.marginLeft = "-40vw";
+       byId('standardModalDialog').style.width = "85vw"; 
+       byId('standardModalDialog').style.marginLeft = "-42vw";
        byId('standardModalDialog').style.left = "50%";
        byId('standardModalDialog').style.marginTop = 0;
        byId('standardModalDialog').style.top = "2vh";
@@ -4249,6 +4325,7 @@ function answerEditDocDialog ( rtnData ) {
      }  
    }        
 }
+
 
 function openHelpTicket() { 
   var mlURL = "/get-help-ticket-dialog";
@@ -4359,6 +4436,45 @@ function displayIndex() {
   } 
 }
 
+function closeThisDialog(dlog) { 
+   byId(dlog).parentNode.removeChild(byId(dlog));
+   byId('standardModalBacker').style.display = 'none';        
+}
+
+function saveDocument() { 
+  var obj = new Object();
+  obj['hdocid'] = byId('fldDocId').value.trim();
+  obj['hdtype'] = byId('fldDocTypeValue').value.trim();
+  obj['htitle'] = byId('fldDocTitle').value.trim();
+  obj['hstitle'] = byId('fldDocSubTitle').value.trim();
+  obj['hscrref'] = byId('fldScreenRef').value.trim();
+  var m = [];
+  var c = document.getElementsByClassName('modchkbox'); 
+  for ( var i = 0; i < c.length; i++ ) { 
+    if ( byId( c[i].id ).checked ) { 
+      m.push ( c[i].id );
+    }  
+  }
+  obj['modlist'] = JSON.stringify ( m );
+  var passdata = JSON.stringify(obj); 
+  var mlURL = "/data-doers/save-help-document";
+  universalAJAX("POST",mlURL,passdata,answerSaveHelpDocument,2);
+}
+
+function answerSaveHelpDocument ( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("HELP DOCUMENT SAVE ERROR:\\n"+dspMsg);
+   } else {
+     var dta = JSON.parse(rtnData['responseText']);
+     byId('fldDocId').value = dta['DATA']['hlpdocid'];
+     alert( 'Document has been saved.  To see changes, you must refresh your screen (if you\'ve changed the title the URL will be invalid!)' );
+   }        
+}
 
 JAVASCR;
 return $rtnThis;

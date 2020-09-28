@@ -60,9 +60,9 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 #standardModalDialog {display: none; background: rgba({$this->color_lgrey},1); position: fixed; margin-left: -20vw; left: 50%; margin-top: -10vh; top: 50%; z-index: 101; border: 2px solid rgba({$this->color_white},1); }
 
 #systemDialogClose { width: .5vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 2vh;text-align: right; padding: .3vh .1vw; }
-#systemDialogClose:hover {cursor: pointer; color: rgba({$this->color_bred},1); }
+#systemDialogClose:hover { cursor: pointer; color: rgba({$this->color_bred},1); }
 
-#systemDialogTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 1.3vh; padding: .3vh .3vw; }
+#systemDialogTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 1.3vh; padding: .3vh .3vw; width:100%; }
 
 .material-icons {font-size: 2.3vh; }
 #topMenuHolder {position: fixed; top: 0; left: 0; width: 100vw; z-index: 50; border-bottom: 1px solid rgba({$this->color_zackgrey},1); }
@@ -100,12 +100,12 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 
 #hlpHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
 #directoryDisplay { padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
-#clsBtnHold #closeBtn { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
+#clsBtnHold #closeBtn { font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
 #clsBtnHold #closeBtn:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
-#hlpTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
-#hlpSubTitle { width: 100%; font-family: Roboto; font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
-#hlpByLine { width: 100%; font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_darkgreen},1); text-align: right; }
-#hlpText { width: 100%; font-family: Roboto; font-size: 1.8vh; line-height: 1.6em; text-align: justify; padding: 1vh 0 0 0; }
+#hlpTitle { width: 100%; font-family: Roboto; font-size: 1.8vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
+#hlpSubTitle { width: 100%; font-family: Roboto; font-size: 1.5vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
+#hlpByLine { width: 100%; font-family: Roboto; font-size: 1.5vh; color: rgba({$this->color_darkgreen},1); text-align: right; }
+#hlpText { width: 100%; font-family: Roboto; font-size: 1.5vh; line-height: 1.6em; text-align: justify; padding: 1vh 0 0 0; }
 
 #vocsrchHolderDiv { width: 48vw; padding: 0 1vw 0 1vw; height: 92vh; overflow: auto;}
 #vsclsBtnHold #closeBtn { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
@@ -122,8 +122,6 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 #vocabularyDisplayTable .vocDspSpeccat { width: 8vw; }
 #vocabularyDisplayTable .vocDspSite { width: 10vw; }
 #vocabularyDisplayTable .vocDspSSite { width: 8vw; }
-
-
 
 #environHolderDiv {  padding: 0 1vw 0 1vw; height: 92vh; overflow: auto; box-sizing: border-box;}
 #environBtnHold #envCloseBtn { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
@@ -145,7 +143,6 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 .sensorMetricTbl .utcValue { font-size: 1.1vh; text-align: right; }
 .sensorMetricTbl .trendIconDsp { width: 1vw; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_lamber},1); }
 .uparrow { font-size: 1.7vh; color:  rgba({$this->color_darkgreen},1); font-weight: bold;}
-
 
 .sidebarprofilepicture { height: 15.5vh; }
 .circularOverlay { position: relative; height: 15vh; width: 8vw; overflow: hidden; border-radius: 50%; }
@@ -233,7 +230,7 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 /* DROP DOWN TABLES */
 .menuHolderDiv { position: relative; }
 .menuHolderDiv:hover .valueDropDown { display: block; cursor: pointer; }
-.valueDropDown {background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .07vh; min-height: 15vh; max-height: 33vh; overflow: auto; display: none; z-index: 25; }
+.valueDropDown {background: rgba({$this->color_white},1);position: absolute; border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; margin-top: .07vh; min-height: 15vh; max-height: 33vh; overflow: auto; min-width: 10vw; width: 20vw;  display: none; z-index: 25; }
 .menuDropTbl { font-size: 1.8vh; padding: .6vh .1vw .6vh .1vw; white-space: nowrap; background: rgba({$this->color_white},1); width: 100%; }
 
 .inputiconcontainer { position: relative; }
@@ -273,10 +270,25 @@ input[type=checkbox]:checked + label { color: rgba({$this->color_bred},1); font-
 #topBtnBarTbl .topBtnDisplayer td {white-space: nowrap; }
 
 .usrAccountTitle { font-size: 2vh; font-weight: bold; color: rgba({$this->color_dblue},1); }
-
 .helppicturecaption { font-size: 1.1vh; color: rgba({$this->color_darkgrey},1); font-weight: bold; font-style: italics; }
-
 .masterFloatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
+
+#appCardHelpFileHolder { height: 82vh; overflow: auto; padding: 0 1vw 1vh 1vw; box-sizing: border-box; } 
+#appCardHelpFileHolder #hDocType {font-family: Roboto; font-size: 1vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: left; margin: 0 0 .8vh 0; }
+#appCardHelpFileHolder #hDocTitle { font-family: Roboto; font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: left; }
+#appCardHelpFileHolder #hDocSTitle { font-family: Roboto; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); text-align: left; border-bottom: 2px solid rgba({$this->color_zackgrey},1); padding-bottom: .4vh; margin-bottom: 1vh; }
+#appCardHelpFileHolder #hDocText { font-family: Roboto; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); line-height: 1.5em; text-align: justify; } 
+.hlpSectionDspNbr { font-size: 1.5vh; font-weight: bold; margin: 2vh 0 1vh 0; border-bottom: 1px solid rgba({$this->color_zackgrey},.3);      }   
+
+#hDocMetricsHolder { margin: 2vh 0 3vh 0; clear: both; }
+#hDocMetricsHolder #metricBox { border: 1px solid rgba({$this->color_zackgrey},1); padding: .3vh .2vw; text-align: left;  } 
+#hDocMetricsHolder #metricBox #metricTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.3vh; font-weight: bold; padding: .4vh .3vw; text-align: left; grid-column: span 6;  }
+#hDocMetricsHolder #metricBox .mElemHld { box-sizing: border-box; display: grid; grid-template-columns: 1fr 2fr 2fr 3fr; grid-gap: .2vw; }
+#hDocMetricsHolder #metricBox .mElemHld .hdiv { border: 1px solid rgba({$this->color_zackgrey},.4); margin-top: .2vh; }
+#hDocMetricsHolder #metricBox .mElemHldMod { border: 1px solid rgba({$this->color_zackgrey},.4); box-sizing: border-box; font-family: Roboto; font-size: 1.5vh; padding: .2vh .3vw;  }
+#hDocMetricsHolder #metricBox .mElemHldMod .cGreen { color: rgba({$this->color_darkgreen},1); font-weight: bold; }
+#hDocMetricsHolder #metricBox .mElemHld .mElemLbl { font-family: Roboto; font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .3vh .2vw 0 .2vw; } 
+#hDocMetricsHolder #metricBox .mElemHld .mElemDta { font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_zackgrey},1); padding: 0 .2vw .3vh .2vw; } 
 
 STYLESHEET;
 
@@ -296,7 +308,16 @@ STYLESHEET;
 return $rtnThis;
 
   }
-  
+
+  function continuousprocessimprovementtracker ( ) { 
+$rtnThis = <<<STYLESHEET
+
+#mainPageHolder { margin: 8vh 1vw; } 
+
+STYLESHEET;
+return $rtnThis;
+  }
+
    function useradministration ( $mobileind ) { 
 $rtnThis = <<<STYLESHEET
 
@@ -1454,16 +1475,14 @@ body { margin: 0; box-sizing: border-box;  }
 
 
 
-#help_welcometitle { font-size: 3vh; color: rgba({$this->color_zackgrey},1); text-align: center; font-weight: bold; }
-#help_welcomeinstructions { font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); padding: 3vh 8vw; text-align: justify; line-height: 1.8em; }
+#help_welcometitle { font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; font-weight: bold; padding: 5vh 0 0 0; }
+#help_welcomeinstructions { font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); padding: 2vh 8vw; text-align: justify; line-height: 1.8em; }
    .ssdsp { font-weight: bold; color: rgba({$this->color_cornflowerblue},1);   }
 
 #moduletitleline { border-bottom: 2px solid rgba({$this->color_zackgrey},1); } 
 #moduletitleline #mtitle { font-family: Roboto; font-size: 3vh; color: rgba({$this->color_zackgrey},1); font-weight: bold; }  
 #moduletitleline #mtitle .smllr { font-size: 1.8vh; } 
 #moduletitleline #mDesc { font-family: Roboto; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); }  
-
-
 
 #mDocumentList { display: grid; grid-template-columns: repeat( 4, 1fr); grid-gap: .3vw; padding: 3vh .5vw; }
 #mDocumentList a { text-decoration: none; display: grid; grid-template-columns: 3vw auto; color: rgba({$this->color_zackgrey},1); border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_lgrey},1); height: 7vh; overflow: hidden; }
@@ -1473,27 +1492,75 @@ body { margin: 0; box-sizing: border-box;  }
 #mDocumentList a .mDocTitle { font-family: Roboto; font-size: 1.7vh; padding: .3vh .2vw; }
 #mDocumentList a .mDocSTitle { font-family: Roboto; font-size: 1.4vh; padding: 0 .2vw 3vh .2vw; text-align: justify; line-height: 1.4em; }      
 
-#hDocObjHoldr { margin: 1vh 3vw; border-left: 1px solid rgba({$this->color_zackgrey},.4); border-right: 1px solid rgba({$this->color_zackgrey},.4);padding: 1vh 1vw; } 
-#hDocTitle { font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
-#hDocSTitle { font-family: Roboto; font-size: 2vh; color: rgba({$this->color_zackgrey},1); text-align: center; border-bottom: 2px solid rgba({$this->color_zackgrey},1); padding-bottom: .4vh; margin-bottom: 2vh; }
-#hDocText { font-family: Roboto; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); line-height: 1.5em; text-align: justify; }  
+#hDocObjHoldr { margin: 1vh 3vw; border-left: 1px solid rgba({$this->color_zackgrey},.4); border-right: 1px solid rgba({$this->color_zackgrey},.4);padding: 0 1vw 0 1vw; } 
+#hDocType {font-family: Roboto; font-size: 1vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: left; margin: 0 0 .8vh 0; }
+#hDocTitle { font-family: Roboto; font-size: 2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: left; }
+#hDocSTitle { font-family: Roboto; font-size: 1.8vh; color: rgba({$this->color_zackgrey},1); text-align: left; border-bottom: 2px solid rgba({$this->color_zackgrey},1); padding-bottom: .4vh; margin-bottom: 1vh; }
+#hDocText { font-family: Roboto; font-size: 1.5vh; color: rgba({$this->color_zackgrey},1); line-height: 1.5em; text-align: justify; } 
+#hDocText .hlpSectionDspNbr { font-size: 1.2vh; font-weight: bold; margin: 2vh 0 1vh 0; border-bottom: 1px solid rgba({$this->color_zackgrey},.3);      }   
 
-#hDocMetricsHolder { margin: 3vh 5vw;  }
-#hDocMetricsHolder #metricBox { border: 1px solid rgba({$this->color_zackgrey},1); padding: .3vh .2vw; text-align: left; display: grid; grid-template-columns: repeat( 6, 1fr); grid-gap: .3vw;} 
+#hDocMetricsHolder { margin: 2vh 0 3vh 0; clear: both; }
+#hDocMetricsHolder #metricBox { border: 1px solid rgba({$this->color_zackgrey},1); padding: .3vh .2vw; text-align: left; width: 60vw; } 
 #hDocMetricsHolder #metricBox #metricTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.3vh; font-weight: bold; padding: .4vh .3vw; text-align: left; grid-column: span 6;  }
-#hDocMetricsHolder #metricBox #metricModTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.3vh; font-weight: bold; padding: .4vh .3vw; text-align: left; grid-column: span 6;    }
-#hDocMetricsHolder #metricBox .mElemHld { border: 1px solid rgba({$this->color_zackgrey},.4); box-sizing: border-box; }
+#hDocMetricsHolder #metricBox .mElemHld { box-sizing: border-box; display: grid; grid-template-columns: 1fr 2fr 2fr 3fr; grid-gap: .2vw; }
+#hDocMetricsHolder #metricBox .mElemHld .hdiv { border: 1px solid rgba({$this->color_zackgrey},.4); margin-top: .2vh; }
 #hDocMetricsHolder #metricBox .mElemHldMod { border: 1px solid rgba({$this->color_zackgrey},.4); box-sizing: border-box; font-family: Roboto; font-size: 1.5vh; padding: .2vh .3vw;  }
 #hDocMetricsHolder #metricBox .mElemHldMod .cGreen { color: rgba({$this->color_darkgreen},1); font-weight: bold; }
 #hDocMetricsHolder #metricBox .mElemHld .mElemLbl { font-family: Roboto; font-size: 1.2vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); padding: .3vh .2vw 0 .2vw; } 
 #hDocMetricsHolder #metricBox .mElemHld .mElemDta { font-family: Roboto; font-size: 1.4vh; color: rgba({$this->color_zackgrey},1); padding: 0 .2vw .3vh .2vw; } 
  
+#docHead { display: grid; grid-template-columns: 5vw 12vw 25vw 25vw 15vw; grid-gap: .2vw; margin: 1vh 0 0 .2vw; width: 84vw;   }
+#docHead .dataelementhold { padding: .3vh 0 .3vh 0; }  
+#docHead .dataelementlabel { font-size: 1.3vh; font-weight: bold; }  
+
+#fldDocId { width: 4.9vw; } 
+#fldDocType { width: 11.9vw; } 
+#fldDocTitle { width: 24.9vw; } 
+#fldDocSubTitle { width: 24.9vw; } 
+#fldScreenRef { width: 14.9vw;   } 
+#fldSectionList { width: 20vw; margin: .3vh .2vw; } 
+
+#docCtlLine { display: grid; grid-template-columns: 4fr 1fr; border-bottom: 1px solid rgba({$this->color_cornflowerblue},1); margin: 0 0 .8vh 0; } 
+
+#modsList { display: grid; grid-template-columns: repeat( 4, 1fr); grid-gap: .2vw; width: 70vw; margin: 1vh 0 1vh .2vw;  }
+#modsList #modsListHead { grid-column: span 4; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .2vh 0 .2vh .2vw; font-size: 1.4vh; }  
+.modDspDiv { border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_grey},.5); display: grid; grid-template-columns: 2fr 1fr; } 
+.allowLabelDsp {  font-size: 1.3vh; padding: .2vh .3vw; box-sizing: border-box;  } 
+.allowIndicator { padding: .2vh .1vw .2vh 0; } 
+
+.checkboxThree { width: 5vw; height: 3vh; background: rgba( {$this->color_lamber}, 1 ); margin: 0; border-radius: 2px; position: relative; border: 1px solid rgba({$this->color_zackgrey},1); }
+.checkboxThree:before { content: 'On '; position: absolute; top: .7vh; left: .5vw; height: .1vh; color: rgba({$this->color_darkgreen},1 ); font-family: 'Roboto'; font-size: 1.4vh; }
+.checkboxThree:after  { content: 'Off'; position: absolute; top: .7vh; left: 3.2vw; height: .1vh; color: rgba({$this->color_bred},1); font-family: 'Roboto'; font-size: 1.4vh; }
+.checkboxThree label  { display: block; width: 2vw; height: 1.7vh; border-radius: 50px; transition: all .5s ease; cursor: pointer; position: absolute; top: .7vh; z-index: 1; left: .5vw; background: rgba( {$this->color_zackgrey}, 1  ); }
+.checkboxThree input[type=checkbox]:checked + label { left: 2.3vw; background: rgba( {$this->color_darkgreen}, 1 ); }
+.checkboxThree .checkboxThreeInput { visibility: hidden; }
+
+#ctlBox {    } 
+#saveDocButton { border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_grey},1); margin: 1vh 2vw 0 0; font-size: 1.5vh; font-weight: bold; padding: .5vh .8vw; } 
 
 
+#sectiondisplay { height: 65vh; display: grid; grid-template-rows: 6vh 55vh 3vh; grid-gap: .2vh; }    
+#sectiondisplay #sectionselectordiv { display: grid; grid-template-columns: 20.5vw 4vw auto; } 
+#btnAddSection { margin: .3vh 0; border: 1px solid rgba({$this->color_zackgrey},1); height: 4.8vh; width: 3vw; text-align: center; font-size: 3.8vh; background: rgba({$this->color_white},1); color:rgba({$this->color_zackgrey},1); transition: .5s; }
+#btnAddSection:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.6); }
+#sectiondisplay #workbenchdiv { overflow: auto; }
+
+.sectionHolderDiv { margin: .8vh .2vw; padding: .8vh .2vw; border: 1px solid rgba({$this->color_zackgrey},1); } 
+.sectiondelimitline { display: grid; grid-template-columns: 82vw 1vw; }
+.sectiondelimitline .sectiondelimit { font-size: 1.4vh; }  
+.sectiondelimitline .setiondeleter { border: 1px solid rgba({$this->color_zackgrey},1);  text-align: center; font-size: 2vh; background: rgba({$this->color_white},1); color:rgba({$this->color_bred},1); transition: .5s;   } 
+.sectiondelimitline .setiondeleter:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},1); color: rgba({$this->color_white},1); } 
+.sectiontxtbox textarea { font-size: 1.3vh; width: 83vw; height: 15vh; } 
+.sectionmetric { font-size: 1.1vh; text-align: right; font-weight: bold; width: 83vw; }  
+
+#docInstructions { font-size: 1.2vh; line-height: 1.4em; text-align: justify; padding: 0 .5vw 0 0; } 
+
+#sectiondisplay #sectionworkbuttons { padding: .5vh .5vw 0 0;  } 
 
 
 STYLESHEET;
 return $rtnThis;
+//#hDocMetricsHolder #metricBox #metricModTitle { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1.3vh; font-weight: bold; padding: .4vh .3vw; text-align: left; grid-column: span 6;    }
 }
 
 

@@ -102,6 +102,158 @@ class datadoers {
       return $rows;         
     }
 
+    function savedocsectiontext ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true);
+      //{"hdocid":"","sectionarr":{"PURPOSE":"zack was here ","AUD":"Everyone "}}
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sid and allowind = 1 and accessnbr > 42 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+        (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO STATUS SEGMENTS AS DESTROYED. LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }
+
+      ( trim( $pdta['hdocid'] ) === "" || !is_numeric( $pdta['hdocid'] ) ) ? ( list($errorInd, $msgArr[]) = array(1,"Document ID is missing or invalid") ) :  "";
+      $rs = $conn->prepare( "SELECT * FROM four.base_ss7_help where hlpid = :docid and helpdspind = 1 and helptype <> 'PDF'" );
+      $rs->execute( array( ':docid' => $pdta['hdocid'] )); 
+      ( $rs->rowCount() === 0 ) ? ( list($errorInd, $msgArr[]) = array(1,"This is an invalid document id") ) :  "";
+      if ( $errorInd === 0 ) { 
+        ( count( $pdta['sectionarr'] ) === 0 ) ? ( list($errorInd, $msgArr[]) = array(1,"You have not specified any sections to this document") ) :  "";
+        if ( $errorInd === 0 ) {
+          $vrs = $conn->prepare( "SELECT ifnull(max(versionnbr),0) as lastversion FROM four.base_ss7_help_doc_sections where helpdocid = :hlpdocid" );
+          $vrs->execute( array(':hlpdocid' => $pdta['hdocid'] ));
+          $v = $vrs->fetch(PDO::FETCH_ASSOC);
+          $nxtversion = $v['lastversion'] + 1;
+
+          $turnOffAct = $conn->prepare( "update four.base_ss7_help_doc_sections set activeind = 0 where helpdocid = :hlpdocid" ); 
+          $turnOffAct->execute(array(':hlpdocid' => $pdta['hdocid'] ));
+          $ins = $conn->prepare( "insert into four.base_ss7_help_doc_sections ( helpdocid, activeind, sectionid, sectiontext, bywhom, onwhen, versionnbr ) values ( :helpdocid, 1, :sectionid, :sectiontext, :bywhom, now(), :versionnbr )" );
+          foreach ( $pdta['sectionarr'] as $k => $v ) { 
+            $ins->execute( array( ':helpdocid' => $pdta['hdocid'], ':sectionid' => $k, ':sectiontext' => $v, ':bywhom' => $u['emailaddress'], ':versionnbr' => $nxtversion ));  
+          }
+          $histRS = $conn->prepare( "insert into four.history_base_ss7_help ( hlpid,helptype,pdfdocurl,helpdspind,helpdsporder,helpurl,screenreference,title,subtitle,bywhomemail,initialdate,lastedit,lasteditbyemail,versionmajor,versionminor,txt, histon) select hlpid,helptype,pdfdocurl,helpdspind,helpdsporder,helpurl,screenreference,title,subtitle,bywhomemail,initialdate,lastedit,lasteditbyemail,versionmajor,versionminor,txt, now() from four.base_ss7_help where hlpid = :hlpid" );
+          $histRS->execute( array(':hlpid' => $pdta['hlpdocid'] ));
+          $updoc = $conn->prepare( "update four.base_ss7_help set lastedit = now(), lasteditbyemail = :uemail where hlpid = :hlpdocid" );
+          $updoc->execute( array( ':hlpdocid' => $pdta['hdocid'], ':uemail' => $u['emailaddress'] ));
+          $responseCode = 200;
+        }
+      }
+
+      $msgArr[] = "ZACK WAS HERE";
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    }
+
+    function savehelpdocument ($request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true);
+      //{"hdocid":"","hdtype":"SCREEN","htitle":"Using ScienceServer v7 Main Screen","hstitle":"Welcome to ScienceServer","hscrref":"","modlist":"[]"} 
+      $at = genAppFiles;
+      $m = json_decode( $pdta['modlist'] );
+
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sid and allowind = 1 and allowcoord = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+        (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO STATUS SEGMENTS AS DESTROYED. LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      ( trim($pdta['hdtype']) === "" ) ?  list($errorInd, $msgArr[]) = array(1,"Document Type may not be blank - Select a document type") :  "";
+      ( trim($pdta['hdtype']) !== "SCREEN" &&  trim($pdta['hdtype']) !== "TOPIC" ) ?  list($errorInd, $msgArr[]) = array(1,"Document Type is not a valid value") :  "";
+      ( trim($pdta['htitle']) === "" ) ? list($errorInd, $msgArr[]) = array(1,"This document needs a title.") :  "";
+      ( count( $m ) < 1 ) ? list($errorInd, $msgArr[]) = array(1,"At least one module must be selected for this document.") :  "";
+      $chkTitle = '%' . preg_replace( '/\s/','%',  preg_replace( '/\s{2,}/',' ', trim($pdta['htitle']) )) . '%'; 
+      $urldoctitle = strtolower( preg_replace( '/\s/','-', preg_replace( '/\s{2,}/',' ',  preg_replace( '/[^A-Za-z0-9]/',' ', trim($pdta['htitle']) ))));
+      $scRef = ( trim($pdta['hscrref']) === "" ) ? "NONE" . date('YmdHis') : trim($pdta['hscrref']); 
+
+      if ( $errorInd === 0 ) {
+        if ( trim( $pdta['hdocid'] ) === "" || !is_numeric ( $pdta['hdocid'] ) ) { 
+          //ADD NEW DOCUMENT
+          $titleChkRS = $conn->prepare( "select title from four.base_ss7_help where hlpid = 1 and title like :likestring " );
+          $titleChkRS->execute( array( ':likestring' => $chkTitle )); 
+          ( $titleChkRS->rowCount() > 0 ) ? list($errorInd, $msgArr[]) = array(1,"Another Help Document has too similar of a title.  Try again.") :  "";     
+          $urlChkRS = $conn->prepare( "select helpurl from four.base_ss7_help where hlpid = 1 and helpurl = :urlchk" ); 
+          $urlChkRS->execute( array(':urlchk' => $urldoctitle ));
+          ( $urlChkRS->rowCount() > 0 ) ? list($errorInd, $msgArr[]) = array(1,"Another Help Document has too similar of a title.  Try again.") :  "";     
+
+          if ( $errorInd === 0 ) {  
+            $insRS = $conn->prepare( "insert into four.base_ss7_help ( helptype, helpdspind, helpurl, title, subtitle, screenreference, bywhomemail, initialdate, versionmajor, versionminor, txt)  values ( :helptype, 1, :helpurl, :title, :subtitle, :screenreference, :bywhomemail, now(), 1, 0, 'PLACEHOLDER')" ); 
+            $insRS->execute( array( ':helptype' => trim($pdta['hdtype']), ':helpurl' => $urldoctitle, ':title' => preg_replace( '/\s{2,}/',' ', trim($pdta['htitle'])), ':subtitle' => preg_replace( '/\s{2,}/',' ', trim($pdta['hstitle'])), ':screenreference' => $scRef, ':bywhomemail' => $u['emailaddress']));
+            $newdocid = $conn->lastInsertId(); 
+
+            $mxModNbrRS = $conn->prepare( "SELECT (ifnull(max( orderbyind ),0) + 1 ) as nxtord FROM four.base_ss7_help_doc_to_idx where modindxid  = :modnbr and dspind = 1" );
+            $modInsRS = $conn->prepare( "insert into four.base_ss7_help_doc_to_idx ( helpdocid, modindxid, orderbyind, dspind ) value ( :helpdocid, :modindxid, :orderbyind, 1 ) " );
+            for ( $i = 0; $i <  count( $m ); $i++ ) { 
+              $mxModNbrRS->execute( array( ':modnbr' => (int)preg_replace('/[^0-9]/','',$m[$i]))); 
+              $mxN = $mxModNbrRS->fetch(PDO::FETCH_ASSOC); 
+              $nxtModNbr = $mxN['nxtord'];
+              $modInsRS->execute( array( ':helpdocid' => $newdocid, ':modindxid' => (int)preg_replace('/[^0-9]/','',$m[$i]), ':orderbyind' => $nxtModNbr )); 
+            } 
+            $dta['hlpdocid'] = $newdocid;
+            $responseCode = 200;
+          }
+
+        } else { 
+            //EDIT DOCUMENT
+          $docid = (int)trim($pdta['hdocid']);  
+          $titleChkRS = $conn->prepare( "select title from four.base_ss7_help where hlpid = 1 and title like :likestring and hlpid <> :docid" );
+          $titleChkRS->execute( array( ':likestring' => $chkTitle, ':docid' => $docid )); 
+          ( $titleChkRS->rowCount() > 0 ) ? list($errorInd, $msgArr[]) = array(1,"Another Help Document has too similar of a title.  Try again.") :  "";     
+          $urlChkRS = $conn->prepare( "select helpurl from four.base_ss7_help where hlpid = 1 and helpurl = :urlchk and hlpid <> :docid" ); 
+          $urlChkRS->execute( array(':urlchk' => $urldoctitle, ':docid' => $docid ));
+          ( $urlChkRS->rowCount() > 0 ) ? list($errorInd, $msgArr[]) = array(1,"Another Help Document has too similar of a title.  Try again.") :  "";     
+  
+          if ( $errorInd === 0 ) { 
+            //SAVE TO HISTORY -  UPDATE DOCUMENT - CHANGE VERSION MINOR
+            $histRS = $conn->prepare( "insert into four.history_base_ss7_help ( hlpid,helptype,pdfdocurl,helpdspind,helpdsporder,helpurl,screenreference,title,subtitle,bywhomemail,initialdate,lastedit,lasteditbyemail,versionmajor,versionminor,txt, histon) select hlpid,helptype,pdfdocurl,helpdspind,helpdsporder,helpurl,screenreference,title,subtitle,bywhomemail,initialdate,lastedit,lasteditbyemail,versionmajor,versionminor,txt, now() from four.base_ss7_help where hlpid = :hlpid" );
+            $histRS->execute( array(':hlpid' => $docid ));
+            $modoffRS = $conn->prepare( "update four.base_ss7_help_doc_to_idx set dspind = 0 where helpdocid = :docid" ); 
+            $modoffRS->execute(array(':docid' => $docid ));
+
+            $updRS = $conn->prepare( "update four.base_ss7_help set helptype = :t, helpurl = :u, screenreference = :r, title = :ttl, subtitle = :sttl, lastedit = now(), lasteditbyemail = :e, versionminor = ( versionminor + 1 ) where hlpid = :docid" );
+            $updRS->execute( array( ':t' => trim($pdta['hdtype']), ':u' => $urldoctitle, ':r' => $scRef, ':ttl' => preg_replace( '/\s{2,}/',' ', trim($pdta['htitle'])), ':sttl' => preg_replace( '/\s{2,}/',' ', trim($pdta['hstitle'])), ':e' => $u['emailaddress'], ':docid' => $docid )); 
+
+            $mxModNbrRS = $conn->prepare( "SELECT (ifnull(max( orderbyind ),0) + 1 ) as nxtord FROM four.base_ss7_help_doc_to_idx where modindxid  = :modnbr and dspind = 1" );
+            $modInsRS = $conn->prepare( "insert into four.base_ss7_help_doc_to_idx ( helpdocid, modindxid, orderbyind, dspind ) value ( :helpdocid, :modindxid, :orderbyind, 1 ) " );
+            for ( $i = 0; $i <  count( $m ); $i++ ) { 
+              $mxModNbrRS->execute( array( ':modnbr' => (int)preg_replace('/[^0-9]/','',$m[$i]))); 
+              $mxN = $mxModNbrRS->fetch(PDO::FETCH_ASSOC); 
+              $nxtModNbr = $mxN['nxtord'];
+              $modInsRS->execute( array( ':helpdocid' => $docid, ':modindxid' => (int)preg_replace('/[^0-9]/','',$m[$i]), ':orderbyind' => $nxtModNbr )); 
+            } 
+            $dta['hlpdocid'] = $docid;
+            $responseCode = 200;
+          }
+        }    
+      }
+      $msgArr[] = "ZACK WAS HERE";
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    }
+
     function savechartreviewdocument ( $request, $passdata ) { 
       $responseCode = 400;
       $rows = array();
@@ -1234,7 +1386,7 @@ EMAILBODY;
           $scanSegId = array();  
           $foundall = 1;
           while ( $s = $shpDoc->fetch(PDO::FETCH_ASSOC) ) { 
-            if ( !in_array( $s['bgs'], $scnList ) ) { 
+            if ( !in_array( preg_replace( '/_/','',$s['bgs']), $scnList ) ) { 
               //MISSING SCAN
               $msgArr[] = "You did not scan " . $s['bgs'];
               $foundall = 0;   
@@ -1264,7 +1416,8 @@ EMAILBODY;
     <div class=shpIndBtn id=shprUPS data-selected='false' data-carrier='UPS' onclick="selectThisShipper(this.id);">UPS</div>
     <div class=shpIndBtn id=shprUSPS data-selected='false' data-carrier='USPS' onclick="selectThisShipper(this.id);">USPS</div>
     <div class=shpIndBtn id=shprDHL data-selected='false' data-carrier='DHL' onclick="selectThisShipper(this.id);">DHL</div>
-    <div class=shpIndBtn id=shprINation data-selected='false' data-carrier='INATIONAL' onclick="selectThisShipper(this.id);">International</div>
+<!--    <div class=shpIndBtn id=shprINation data-selected='false' data-carrier='INATIONAL' onclick="selectThisShipper(this.id);">International</div> //-->
+    <div class=shpIndBtn id=shprLOCLPCK data-selected='false' data-carrier='LOCLPCK' onclick="selectThisShipper(this.id);byId('trckNbrGoesHere').innerHTML = 'LOCAL-PICKUP';">LOCAL</div> 
     <div>&nbsp;</div>
   </div>
 
