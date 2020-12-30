@@ -15,6 +15,39 @@ function sysDialogBuilder($whichdialog, $passedData) {
  
     $standardSysDialog = 1;
     switch($whichdialog) {
+      case 'moremetrics':
+        $pdta = json_decode($passedData, true);
+        switch ( $pdta['objid'] ) { 
+          case 'procurement':    
+            $titleBar = "More Procurement Metric Information"; 
+            break;
+          case 'qms':    
+            $titleBar = "More Quality Management System Metric Information"; 
+            break;
+          case 'shipping':    
+            $titleBar = "More Shipping Metric Information"; 
+            break;
+          case 'data-inventory':    
+            $titleBar = "More Data &amp; Inventory Metric Information"; 
+            break;
+          case 'environment':    
+            $titleBar = "More Environmental Monitor Metric Information"; 
+            break;
+
+          default: 
+            $titleBar = "More Metric Information"; 
+        }
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        $innerDialog = bldMoreMetricInfScreen ( $passedData );
+        break;  
+      case 'bldHotList':
+        $pdta = json_decode($passedData, true);         
+        $titleBar = "Edit the Hot-List";
+        $standardSysDialog = 0;
+        $closer = "closeThisDialog('{$pdta['dialogid']}');";         
+        $innerDialog = "ZACK WAS HERE";        
+        break;  
       case 'rptExtraManSeg':
         $pdta = json_decode($passedData, true);         
         $titleBar = "Report Extra Segments on Manifest";
@@ -1444,8 +1477,10 @@ function inventorymanifest ( $rqststr, $usr ) {
            $rqstRS->execute( array( ':objid' => trim($rqststr[2]), ':doctype' => 'INTERNAL-MANIFEST-REQUEST-QUERY'));
      
            if ( $rqstRS->rowCount() <> 1 ) { 
-             $nowDateS = date('m/d/Y');
-             $nowDateE = date('m/d/Y');
+//             $nowDateS = date('m/d/Y');
+//             $nowDateE = date('m/d/Y');
+             $nowDateS = "01/01/2012";
+             $nowDateE = date('m/d/Y', strtotime( date('m/d/Y') . ' + 1 day'));
              $innerWorkBench = "ERROR:  QUERY OBJECT NOT FOUND (BAD REQUEST STRING)";  
            } else { 
              $rqst = $rqstRS->fetch(PDO::FETCH_ASSOC);
@@ -1461,7 +1496,16 @@ function inventorymanifest ( $rqststr, $usr ) {
              $insmnu = "<input type=hidden id=presentInstValue value=\"{$srchterm['institution']}\">  "
                               . "<input type=text id=presentInst READONLY class=\"inputFld\" value=\"{$inst['dspvalue']}\" style=\"font-size: 1.3vh;\">";
 
+             $sdte = explode('/',$nowDateS);
+             $edte = explode('/',$nowDateE);
 
+             $onOfferSQL = "SELECT replace(sg.bgs,'_','') as bgs, concat(ifnull(sg.prepmethod,''),' / ',ifnull(sg.preparation,'')) as preparation, if(ifnull(sg.metric,'') = '','',concat(ifnull(sg.metric,''), uom.dspvalue)) as metric, ifnull(sg.shipDocRefID,'') as shipdocrefid, ifnull(date_format(sg.shippedDate,'%m/%d/%Y'),'') as shipdate, ifnull(sg.manifestnbr,'') as manifestnbr, sg.qty, sg.hourspost, if( (ifnull(sg.assignedto,'') = 'BANK' OR ifnull(sg.assignedto,'') = 'QC'), ifnull(sg.assignedto,''), concat( ifnull(sg.assignedto,''), ' / ', ifnull(sg.assignedreq,''))) as assignment, date_format(sg.procurementdate,'%m/%d/%Y') as sgProcDate, concat( pxiAge, '/',  substr(ifnull(bs.pxiRace,''),1,1) , '/', substr(bs.pxiGender,1,1) ) as ars, trim(concat(ifnull(bs.anatomicsite,''),' ', ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' (',ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.tisstype,'')='','',concat(' [',ifnull(bs.tisstype,''),']')))) as dxdesignation FROM masterrecord.ut_procure_segment sg LEFT JOIN masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample LEFT JOIN (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'metric') as uom on sg.metricuom = uom.menuvalue where sg.segStatus = :sgsts and sg.voidind <> 1 and bs.voidind <> 1 and sg.procuredAt = :institution and sg.procurementDate between :startdate and :enddate order by sg.bgs";
+             $onOfferRS = $conn->prepare( $onOfferSQL );
+             $onOfferRS->execute( array( ':institution' => $srchterm['institution'] , ':startdate' => "{$sdte[2]}-{$sdte[0]}-{$sdte[1]}", ':enddate' => "{$edte[2]}-{$edte[0]}-{$edte[1]}", ':sgsts' => 'ONOFFER'  ));
+             $oo = $onOfferRS->fetchAll(PDO::FETCH_ASSOC);
+
+             $ooCount = count( $oo );
+             
              $qryParaLine = <<<QRYPARALINE
 <div id=queryParaLine>
 
@@ -1480,17 +1524,16 @@ function inventorymanifest ( $rqststr, $usr ) {
     <div class=dataElementDsp>{$nowDateS}-{$nowDateE}</div>
   </div>
 
+  <div class=dataElementHolder>
+    <div class=dataElementLabel align=right>On Offer Total</div>
+    <div class=dataElementDsp align=right>{$ooCount}</div>
+  </div>
+
+
+
 </div>
 QRYPARALINE;
 
-             $sdte = explode('/',$nowDateS);
-             $edte = explode('/',$nowDateE);
-
-             $onOfferSQL = "SELECT replace(sg.bgs,'_','') as bgs, concat(ifnull(sg.prepmethod,''),' / ',ifnull(sg.preparation,'')) as preparation, if(ifnull(sg.metric,'') = '','',concat(ifnull(sg.metric,''), uom.dspvalue)) as metric, ifnull(sg.shipDocRefID,'') as shipdocrefid, ifnull(date_format(sg.shippedDate,'%m/%d/%Y'),'') as shipdate, ifnull(sg.manifestnbr,'') as manifestnbr, sg.qty, sg.hourspost, if( (ifnull(sg.assignedto,'') = 'BANK' OR ifnull(sg.assignedto,'') = 'QC'), ifnull(sg.assignedto,''), concat( ifnull(sg.assignedto,''), ' / ', ifnull(sg.assignedreq,''))) as assignment, date_format(sg.procurementdate,'%m/%d/%Y') as sgProcDate, concat( pxiAge, '/',  substr(ifnull(bs.pxiRace,''),1,1) , '/', substr(bs.pxiGender,1,1) ) as ars, trim(concat(ifnull(bs.anatomicsite,''),' ', ifnull(bs.diagnosis,''), if(ifnull(bs.subdiagnos,'')='','',concat(' (',ifnull(bs.subdiagnos,''),')')), if(ifnull(bs.tisstype,'')='','',concat(' [',ifnull(bs.tisstype,''),']')))) as dxdesignation FROM masterrecord.ut_procure_segment sg LEFT JOIN masterrecord.ut_procure_biosample bs on sg.biosampleLabel = bs.pBioSample LEFT JOIN (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'metric') as uom on sg.metricuom = uom.menuvalue where sg.segStatus = :sgsts and sg.voidind <> 1 and bs.voidind <> 1 and sg.procuredAt = :institution and sg.procurementDate between :startdate and :enddate order by sg.bgs";
-             $onOfferRS = $conn->prepare( $onOfferSQL );
-             $onOfferRS->execute( array( ':institution' => $srchterm['institution'] , ':startdate' => "{$sdte[2]}-{$sdte[0]}-{$sdte[1]}", ':enddate' => "{$edte[2]}-{$edte[0]}-{$edte[1]}", ':sgsts' => 'ONOFFER'  ));
-
-             $oo = $onOfferRS->fetchAll(PDO::FETCH_ASSOC);
              //[{"shipdate":"","qty":1,"hourspost":0.5,"assignment":"INV4956 \/ REQ25434"}
              $offers = "<div id=offerHeader> <div class=oHeaderDsp>CHTN #</div> <div class=oHeaderDsp>Preparation</div> <div class=oHeaderDsp>Metric</div> <div class=oHeaderDsp>A/R/S</div> <div class=oHeaderDsp>Designation</div> <div class=oHeaderDsp>Proc Date</div> <div class=oHeaderDsp>SD #</div> <div class=oHeaderDsp>M #</div>  </div><div id=offerElements>";
              foreach ( $oo as $ky => $vl ) {
@@ -1554,8 +1597,10 @@ WRKBENCH;
 
 
         } else { 
-          $nowDateS = date('m/d/Y');
-          $nowDateE = date('m/d/Y');
+          //$nowDateS = date('m/d/Y');
+          //$nowDateE = date('m/d/Y');
+          $nowDateS = "01/01/2012";
+          $nowDateE = date('m/d/Y', strtotime( date('m/d/Y') . ' + 1 day'));
           $insmnu = bldUsrAllowInstDrop($usr);
         }
 
@@ -2666,12 +2711,14 @@ $dataTbl .= <<<TOPROW
 TOPROW;
 
 $pbident = "";
+$pbiosampecnt = 0;
 foreach ($dta['DATA']['searchresults'][0]['data'] as $fld => $val) { 
     if ($pbident <> $val['pbiosample']) { 
         //GET NEW COLOR
         $colorArray = getColor($val['pbiosample']);
         $pbSqrBgColor = " style=\"background: rgba({$colorArray[0]}, {$colorArray[1]}, {$colorArray[2]},1); \" ";
         $pbident = $val['pbiosample'];
+        $pbiosamplecnt++;
     }
     if ($val['bsvoid'] === 1 || $val['sgvoid'] === 1) { 
       //MARK AS VOIDED
@@ -2905,7 +2952,7 @@ $parameterGrid = <<<TBLPARAGRID
 <tr><td class=columnQParamName>Query Object: </td>          <td class=ColumnDataObj>{$objid}</td></tr>
 <tr><td class=columnQParamName>Created By: </td>            <td class=ColumnDataObj>{$bywho}</td></tr>
 <tr><td class=columnQParamName>Create On: </td>             <td class=ColumnDataObj>{$onwhendsp}</td></tr>
-<tr><td class=columnQParamName>Records Found: </td>         <td class=ColumnDataObj>{$itemsfound}</td></tr>
+<tr><td class=columnQParamName>Records Found: </td>         <td class=ColumnDataObj>Biosample Groups: {$pbiosamplecnt} / Segment Records: {$itemsfound}</td></tr>
 <tr><td colspan=2 id=srchTrmParaTitle >SEARCH TERM PARAMETERS</td></tr>
 <tr><td class=columnQParamName>Biogroups: </td>             <td class=ColumnDataObj>{$srchtrm['BG']}</td></tr>
 <tr><td class=columnQParamName>Procuring Institution: </td> <td class=ColumnDataObj>{$srchtrm['procInst']}</td></tr>
@@ -2932,7 +2979,7 @@ TBLPARAGRID;
 
 
 $dspTbl = <<<DSPTHIS
-<table border=0><tr><td>Items found: {$itemsfound} <input type=hidden value="{$rqststr[2]}" id=urlrequestid></td><td align=right>(Hover mouse on grid for context menu)</td></tr>
+<table border=0><tr><td>Biosample Groups Found: {$pbiosamplecnt} / Segment Recordss found: {$itemsfound} <input type=hidden value="{$rqststr[2]}" id=urlrequestid></td><td align=right>(Hover mouse on grid for context menu)</td></tr>
 <tr><td colspan=2>{$dataTbl}&nbsp;</td></tr>
 </table>
 DSPTHIS;
@@ -3065,12 +3112,239 @@ $rtnthis = <<<PAGEHERE
     <tr>
          <td colspan=4>
          <!-- RESULTS SECTION //-->
-             {$dtadsp}
+             {$dtadsp}   
          </td>
     </tr>    
 </table>      
 PAGEHERE;
 return $rtnthis;  
+}
+
+function scienceserverchangelog ( $rqstStr, $whichUsr ) { 
+  require(genAppFiles . "/dataconn/sspdo.zck"); 
+  $tt = treeTop;
+
+  $rs = $conn->prepare("SELECT date_format(dategitchange,'%Y-%M') as dategitchangedsp, ssversionnbr, gittag, changenotes FROM four.app_changelog order by dategitchange desc");
+  $rs->execute();
+  $chngTbl = "<table border=0 id=chngLogTbl><tr><th>Date Implemented</th><th>Version Reference</th><th>GitHub Tag</th><th>Implementation Notes</th></tr><tbody>";
+  while ( $r = $rs->fetch(PDO::FETCH_ASSOC) ) { 
+    $chngTbl .= "<tr><td valign=top class=dtedsp>{$r['dategitchangedsp']}</td><td valign=top class=ssversion>{$r['ssversionnbr']}</td><td valign=top class=gittag>{$r['gittag']}</td><td valign=top>{$r['changenotes']}</td></tr>";
+  }
+  $chgnTbl .= "</tbody></table>";
+
+
+
+  $rtnthis = <<<PAGEHERE
+<div id=mainPageHolder>
+<div id=head>ScienceServer Application Change-Log</div>
+<div id=instructions>This screen shows the progression of changes to the CHTNEastern Application framework (front-facing website / CHTNEastern Transient Inventory / ScienceServer Development &amp; ScienceServer Production).  The initial records were taken from GITHub records and may be missing some application deployment milestones, as the GitHub Repository did not track all changes (just major release candidates).  However, as of development release v7.0.8 (hlpandstuff) all records are entered directly into this changelog.  Displayed newest to oldest. </div>
+<div id=dataholder>{$chngTbl}</div>
+</div>
+PAGEHERE;
+return $rtnthis;
+}
+
+function scienceserverhelpdeskticketmanagement ( $rqstStr, $whichUsr ) { 
+  require(genAppFiles . "/dataconn/sspdo.zck"); 
+  $tt = treeTop;
+
+  $tcktRS = $conn->prepare( "SELECT ticketnumber, bywho, date_format(onwhen,'%m/%d/%Y') as onwhen, reasoncode, affectedSSModule, ticketstatus  FROM four.app_helpTicket ht where ifnull(ticketstatus,'') <> 'CLOSED' order by ticketnumber desc" );
+  $tcktRS->execute();
+  $openTicketList = "";
+  $openTicketCount = 0;
+  while ( $t = $tcktRS->fetch(PDO::FETCH_ASSOC) ) {
+      
+    $ticketnumber = substr(("000000" . $t['ticketnumber']),-6);
+    $ticketstatus = ( trim( $t['ticketstatus'] ) === "" ) ? "OPEN" : trim( $t['ticketstatus'] );
+    $ticketEncyr = cryptservice( generateRandomString(5) . "::" . ($t['ticketnumber']."::".generateRandomString(5) ),'e');   
+    $openTicketList .= <<<TICKET
+      <a href="{$tt}/scienceserver-helpdesk-ticket-management/{$ticketEncyr}" id="ticket{$ticketnumber}" class="openticketticket" >
+        <div class=opnTicketLine>{$ticketnumber} ({$ticketstatus})</div>
+        <div class=opnTicketReason>Reason: <b>{$t['reasoncode']}</b></div>
+        <div class=opnTicketMod>Module: <b>{$t['affectedSSModule']}</b></div>
+        <div class=opnTicketBy>Requested By: <i>{$t['bywho']} [{$t['onwhen']}]</i></div>
+      </a>
+TICKET;
+    $openTicketCount++;
+  } 
+
+  $ctcktRS = $conn->prepare( "SELECT ticketnumber, bywho, date_format(onwhen,'%m/%d/%Y') as onwhen, reasoncode, affectedSSModule, ticketstatus, date_format( statuswhen,'%m/%d/%Y') as statuswhen  FROM four.app_helpTicket ht where ifnull(ticketstatus,'') = 'CLOSED' and statuswhen > date_add( now(), interval -30 day) order by ticketnumber desc" );
+  $ctcktRS->execute();
+  $closedTicketList = "";
+  $closedTicketCount = 0;
+  $ticketEncyr = cryptservice( ( generateRandomString(10)."::".$t['ticketnumber']."::".generateRandomString(5) ),'e');   
+  while ( $t = $ctcktRS->fetch(PDO::FETCH_ASSOC) ) {
+    $closedticketnumber = substr(("000000" . $t['ticketnumber']),-6);
+    //$closedticketstatus = ( trim( $t['ticketstatus'] ) === "" ) ? "OPEN" : trim( $t['ticketstatus'] );
+    $closedticketstatus = $t['statuswhen'];
+    $cticketEncyr = cryptservice( generateRandomString(5) . "::" . ($t['ticketnumber']."::".generateRandomString(5) ),'e');   
+    $closedTicketList .= <<<TICKET
+      <a  href="{$tt}/scienceserver-helpdesk-ticket-management/{$cticketEncyr}" id="cticket{$closedticketnumber}" class="openticketticket">
+        <div class=opnTicketLine>{$closedticketnumber} ({$closedticketstatus})</div>
+        <div class=opnTicketReason>Reason: <b>{$t['reasoncode']}</b></div>
+        <div class=opnTicketMod>Module: <b>{$t['affectedSSModule']}</b></div>
+        <div class=opnTicketBy>Requested By: <i>{$t['bywho']} [{$t['onwhen']}]</i></div>
+      </a>
+TICKET;
+  } 
+
+  $sideWorkbench = "";
+  if ( $rqstStr[2] ) { 
+    $url = explode("/",$_SERVER['REQUEST_URI']);
+    $tickency = cryptservice( $url[2], 'd');
+    if ( trim($tickency) === "" ) { 
+      $sideWorkbench = "ERROR: TICKET ENCRYPTION FAILED";
+    } else {    
+      $t = explode("::",$tickency);    
+      $ticket = $t[1];
+      $thisticketRS = $conn->prepare( "SELECT substr(concat('000000',ht.ticketnumber),-6) as ticketnumber, ifnull(ht.bywho,'') as bywho, ifnull(ht.bywhoemail,'') as bywhoemail, ifnull(date_format(ht.onwhen,'%m/%d/%Y'),'') as onwhen, ifnull(ht.reasoncode,'Other') as reasoncode, ifnull(ht.affectedssmodule,'NO MODULE STATED') as affectedssmodule, ifnull(ht.recreateind,'No') as recreateind, ifnull(ht.description,'-') as descriptionofissue, ifnull(ht.solutioncategory,'') solutioncategory, ifnull(ht.persontakenby,'') persontakenby, ifnull(date_format(ht.startedwhen,'%m/%d/%Y'),'') as takenwhen, ifnull(ht.ticketstatus,'OPEN') as ticketstatus, ifnull(date_format(ht.statuswhen,'%m/%d/%Y'),'') as statuswhen , ifnull(ht.title,'') as title, ifnull(ht.githubid,'') as githubid, ifnull(ht.itnotes,'') as itnotes FROM four.app_helpTicket ht where ticketnumber = :ticketnumber" );
+      $thisticketRS->execute(array(':ticketnumber' => $ticket ));
+      if ( $thisticketRS->rowCount() <> 1 ) {
+        $sideWorkbench = "ERROR: CANNOT FIND TICKET {$ticket}";
+      } else {
+          $ti = $thisticketRS->fetch(PDO::FETCH_ASSOC);
+          //{"assignedtosection":"","persontakenby":"","takenwhen":"","ticketstatus":"OPEN","statuswhen":"","title":"","githubid":"","itnotes":""}
+          $itext = preg_replace('/\\n{1}/','<br>',  preg_replace('/\\n{2}/','&nbsp;<p>', $ti['descriptionofissue']));
+
+
+    $stsRS = $conn->prepare( "SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HELPTICKETSTATUS' and dspind = 1 order by dsporder" );
+    $stsRS->execute(); 
+    $stsm = "<table border=0 class=menuDropTbl>";
+    $givensdspvalue = "";
+    $givensdspcode = "";
+    while ( $s = $stsRS->fetch(PDO::FETCH_ASSOC) ) { 
+      if ( $s['menuvalue'] === $ti['ticketstatus'] ) { 
+        $givensdspvalue = $s['dspvalue'];
+        $givensdspcode = $s['menuvalue'];
+      }
+      $stsm .= "<tr><td onclick=\"fillField('fldtsts','{$s['menuvalue']}','{$s['dspvalue']}');\" class=ddMenuItem>{$s['dspvalue']}</td></tr>";
+    }
+    $stsm .= "</table>";
+    $stsmnu = "<div class=menuHolderDiv><input type=hidden id=fldtstsValue value=\"{$givensdspcode}\"><input type=text id=fldtsts READONLY class=\"inputFld\" value=\"{$givensdspvalue}\"><div class=valueDropDown id=ddtsts>{$stsm}</div></div>";
+
+    $solRS = $conn->prepare( "SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HELPTICKETSOLUTIONCAT' and dspind = 1 order by dsporder" );
+    $solRS->execute(); 
+    $solm = "<table border=0 class=menuDropTbl>";
+    $givensodspvalue = "";
+    $givensodspcode = "";
+    while ( $so = $solRS->fetch(PDO::FETCH_ASSOC) ) { 
+      if ( $so['menuvalue'] === $ti['solutioncategory'] ) { 
+        $givensodspvalue = $so['dspvalue'];
+        $givensodspcode = $so['menuvalue'];
+      }
+      $solm .= "<tr><td onclick=\"fillField('fldtsol','{$so['menuvalue']}','{$so['dspvalue']}');\" class=ddMenuItem>{$so['dspvalue']}</td></tr>";
+    }
+
+    $solm .= "</table>";
+    $solmnu = "<div class=menuHolderDiv><input type=hidden id=fldtsolValue value=\"{$givensodspcode}\"><input type=text id=fldtsol READONLY class=\"inputFld\" value=\"{$givensodspvalue}\"><div class=valueDropDown id=ddtsol>{$solm}</div></div>";
+
+    $htrarr = json_decode(callrestapi("GET", dataTree . "/global-menu/help-ticket-reasons",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    foreach ($htrarr['DATA'] as $agval) {
+        if ( $ti['reasoncode'] === $agval['menuvalue'] ) { 
+          $givendspvalue = "{$agval['menuvalue']}";
+          $givendspcode = "{$agval['codevalue']}";
+        } 
+        $agm .= "<tr><td onclick=\"fillField('fldHTR','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+    }
+    $agm .= "</table>";
+    $htrmnu = "<div class=menuHolderDiv><input type=hidden id=fldHTRValue value=\"{$givendspcode}\"><input type=text id=fldHTR READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddHTR>{$agm}</div></div>";
+
+
+    $sideWorkbench = <<<TICKETGOESHERE
+<div id=dspticketnumber>Ticket Number: {$ti['ticketnumber']} <input type=hidden id=fldWorkTicket value="{$url[2]}"></div>
+
+<div id=dspmetricline>
+
+  <div class=metricsqr>
+    <div class=label>Reason</div>
+    <div> {$htrmnu} </div>
+  </div>
+
+  <div class=metricsqr>
+    <div class=label>Affected Module</div>
+    <div>{$ti['affectedssmodule']}</div>
+  </div>
+  
+  <div class=metricsqr>
+    <div class=label>Recreate Issue</div>
+    <div>{$ti['recreateind']}</div>
+  </div>
+
+  <div class=metricsqr>
+    <div class=label>Ticket By</div>
+    <div>{$ti['bywho']}</div>
+    <a href="javascript:void(0);">{$ti['bywhoemail']}</a>
+  </div>
+
+  <div class=metricsqr>
+    <div class=label>Opened On</div>
+    <div>{$ti['onwhen']}</div>
+  </div>
+
+<div class=issuetext>
+  <div class=label>Issue: </div>
+  <div id=itext>{$itext}</div>
+</div>
+
+</div>
+
+
+<div id=dspmetriclineA>
+
+  <div class=metricsqr>
+    <div class=label>Ticket Status</div>
+    <div> {$stsmnu} </div>
+  </div>
+
+  <div class=metricsqr>
+    <div class=label>Solution</div>
+    <div> {$solmnu} </div>
+  </div>
+
+  <div class=metricsqr>
+    <div class=label>GITHub Ticket #</div>
+    <div><input type=text id=fldGitHub value="{$ti['githubid']}"></div>
+  </div>
+
+</div>
+
+
+<div id=dspmetriclineB>
+
+  <div class=metricsqr>
+    <div class=label>Title</div>
+    <div> <input type=text id=fldSolutionTitle value="{$ti['title']}"></div>
+    <div class=label style="margin-top: 1vh;">Informatics Notes</div>
+    <div><TEXTAREA style="width: 100%; height: 15vh;" id=fldSolutionText>{$ti['itnotes']}</TEXTAREA></div>
+  </div>
+
+</div>
+
+
+<div id=btnBar><button id=btnSaveTicketWork>Save</button></div>
+
+
+
+TICKETGOESHERE;
+      }
+    }
+  }
+
+
+  //<div align=right><div style="width: 10vw; text-align: left;">Search Ticket Number</div><div style="width: 10vw;"><input type=text id=fldSrchTickets style="width: 10vw;"></div></div>
+  $rtnthis = <<<PAGEHERE
+<div id=mainPageHolder>
+  <div id=workbench>
+    <div id=headr>ScienceServer Technical Helpdesk Ticket Management</div>
+    <div class=ticketSqrHead>Open Tickets (Open Tickets: {$openTicketCount})<div id=openticketlisting>{$openTicketList}</div></div><div id=detailWorkbench> <div>{$sideWorkbench}</div></div>
+    <div class=ticketSqrHead>Close (Last 30 Days)<div id=closeticketlisting>{$closedTicketList}</div></div>
+  </div>
+</div>
+PAGEHERE;
+return $rtnthis;
 }
 
 function continuousprocessimprovementtracker ( $rqstStr, $whichUsr ) { 
@@ -3094,54 +3368,208 @@ return $rtnthis;
 }
 
 function root($rqstStr, $whichUsr) { 
-    //$whichUsr THIS IS THE USER ARRAY {"statusCode":200,"loggedsession":"i46shslvmj1p672lskqs7anmu1","dbuserid":1,"userid":"proczack","username":"Zack von Menchhofen","useremail":"zacheryv@mail.med.upenn.edu","chngpwordind":0,"allowpxi":1,"allowprocure":1,"allowcoord":1,"allowhpr":1,"allowinventory":1,"presentinstitution":"HUP","primaryinstitution":"HUP","daysuntilpasswordexp":20,"accesslevel":"ADMINISTRATOR","profilepicturefile":"l7AbAkYj.jpeg","officephone":"215-662-4570 x10","alternateemail":"zackvm@zacheryv.com","alternatephone":"215-990-3771","alternatephntype":"CELL","textingphone":"2159903771@vtext.com","drvlicexp":"2020-11-24","allowedmodules":[["432","PROCUREMENT","",[{"googleiconcode":"airline_seat_flat","menuvalue":"Operative Schedule","pagesource":"op-sched","additionalcode":""},{"googleiconcode":"favorite","menuvalue":"Procurement Grid","pagesource":"procurement-grid","additionalcode":""},{"googleiconcode":"play_for_work","menuvalue":"Add Biogroup","pagesource":"collection","additionalcode":""}]],["433","DATA COORDINATOR","",[{"googleiconcode":"search","menuvalue":"Data Query (Coordinators Screen)","pagesource":"data-coordinator","additionalcode":""},{"googleiconcode":"account_balance","menuvalue":"Document Library","pagesource":"document-library","additionalcode":""},{"googleiconcode":"lock_open","menuvalue":"Unlock Ship-Doc","pagesource":"unlock-shipdoc","additionalcode":""}]],["434","HPR-QMS","",[{"googleiconcode":"account_balance","menuvalue":"Review CHTN case","pagesource":"hpr-review","additionalcode":""}]],["472","REPORTS","",[{"googleiconcode":"account_balance","menuvalue":"All Reports","pagesource":"all-reports","additionalcode":""}]],["473","UTILITIES","",[{"googleiconcode":"account_balance","menuvalue":"Payment Tracker","pagesource":"payment-tracker","additionalcode":""}]],["474",null,null,[]]],"allowedinstitutions":[["HUP","Hospital of The University of Pennsylvania"],["PENNSY","Pennsylvania Hospital "],["READ","Reading Hospital "],["LANC","Lancaster Hospital "],["ORTHO","Orthopaedic Collections"],["PRESBY","Presbyterian Hospital"],["OEYE","Oregon Eye Bank"]]} 
  //TAG RELEASE  
 
 $fsCalendar = buildcalendar('mainroot', date('m'), date('Y'), $whichUsr->friendlyname, $whichUsr->useremail, $whichUsr->loggedsession );
 
-//DISPLAY WEEKLY GOALS
-//  if ($whichUsr->primaryinstitution === 'HUP') { 
-//      $weekGoal = bldWeeklyGoals($whichUsr);
-//  } else { 
-//      $weekGoal = "";
-//  }
-
-$graphListArr = ["grphfreezer" => "root_freezers.png", "grphrollshipgrid" => "root_yearrollship.png" , "grphinvestigatorinf" => "root_invnbrs.png", "grphsegshiptotal" => "root_totlshipped.png", "grphslidessubmitted" => "root_hprslidessubmitted.png"];
+//$graphListArr = ["grphfreezer" => "root_freezers.png", "grphrollshipgrid" => "root_yearrollship.png" , "grphinvestigatorinf" => "root_invnbrs.png", "grphsegshiptotal" => "root_totlshipped.png", "grphslidessubmitted" => "root_hprslidessubmitted.png", "hprpie" => "hpr_last10weekdecision_pie.png", "grphcollected" => "chtn_segment_collections.png", "grphshipped" => "chtn_segment_distribute.png", "grphinvest" => "inv_acttoinvest_pie" ];
+$graphListArr = ["grphrollshipgrid" => "root_yearrollshipa.png", "grphslidessubmitted" => "root_hprslidessubmitted.png","hprpie" => "hpr_last10weekdecision_pie.png","grphcollected" => "chtn_segment_collections.png","grphshipped" => "chtn_segment_distribute.png","grphinvest" => "inv_acttoinvest_pie.png","grphstarrate" => "star_survey_rating.png","grphprisassign" => "pristine_assignment.png" ];
 $graphics = array();
 $at = genAppFiles;
-
 foreach ( $graphListArr as $key => $grph ) {
-    if ( file_exists("{$at}/publicobj/graphics/sysgraphics/{$grph}" ) ) { 
-      $graphics[$key] = base64file("{$at}/publicobj/graphics/sysgraphics/{$grph}", "{$key}", "png", true , " onclick = \"enlargeDashboardGraphic('{$grph}');\" class=\"rootScreenGraph dashboardimage\" ");         
-    }
+  if ( file_exists("{$at}/publicobj/graphics/sysgraphics/{$grph}" ) ) { 
+    $graphics[$key] = base64file("{$at}/publicobj/graphics/sysgraphics/{$grph}", "{$key}", "png", true , " onclick = \"enlargeDashboardGraphic('{$grph}');\" class=\"dashboardimage\" "); 
+  }
 }
 
-$grphTbl = <<<METRICGRPHS
-<table border=0>
-<tr><td rowspan=3 valign=top class=dashBoardGraphic>{$graphics['grphrollshipgrid']}</td><td valign=top class=dashBoardGraphic style="height: 10vh;">{$graphics['grphinvestigatorinf']}</td><td class=dashBoardGraphic rowspan=3 valign=top>{$graphics['grphfreezer']}</td></tr>
-<tr><td valign=top class=dashBoardGraphic style="height: 10vh;"> {$graphics['grphsegshiptotal']} </td></tr>
-<tr><td valign=top class=dashBoardGraphic style="height: 10vh;"> {$graphics['grphslidessubmitted']} </td></tr>
-</table>
-METRICGRPHS;
+$starwhite = base64file("{$at}/publicobj/graphics/starwhite.png", "whiteStar", "png", true , " style=\"width: 90%; height: auto;\" ");
+$staryellow = base64file("{$at}/publicobj/graphics/staryellow.png", "yellowStar", "png", true , " style=\"width: 90%; height: auto;\" ");
+$starhalf = base64file("{$at}/publicobj/graphics/starhalf.png", "yellowStar", "png", true , " style=\"width: 90%; height: auto;\" ");
 
-//TODO:  MAKE THIS A WEBSERVICE
+//TODO:  MAKE THESE A WEBSERVICE
 require(serverkeys . "/sspdo.zck");
-$faCntSQL = "SELECT count(1) as assignedme FROM masterrecord.ut_master_furtherlabactions where activeind = 1 and actioncompletedon is null and assignedagent = :usrid union SELECT count(1) as assignedme FROM masterrecord.ut_master_furtherlabactions where activeind = 1 and actioncompletedon is null and trim(ifnull(assignedagent,'')) = ''";
+
+$sRS = $conn->prepare("SELECT sum(qty) shipttl FROM masterrecord.ut_procure_segment where shippeddate between date_format(now(),'%Y-01-01') and date_format(now(),'%Y-12-31')"); 
+$sRS->execute(); 
+$s = $sRS->fetch(PDO::FETCH_ASSOC);
+
+$faCntSQL = "SELECT count(1) as assignedme FROM masterrecord.ut_master_furtherlabactions where activeind = 1 and actioncompletedon is null and assignedagent = :usrid union SELECT ifnull(count(1),0) as assignedme FROM masterrecord.ut_master_furtherlabactions where activeind = 1 and actioncompletedon is null and trim(ifnull(assignedagent,'')) = ''";
 $faCntRS = $conn->prepare($faCntSQL); 
 $faCntRS->execute(array(':usrid' => $whichUsr->userid));
-$faCnt = $faCntRS->fetchall(PDO::FETCH_ASSOC); 
+$faCnt = $faCntRS->fetchAll(PDO::FETCH_ASSOC); 
 
-$fatTbl = "<table id=faQueueDspTbl cellspacing=0 cellpadding=0><tr><td colspan=2 id=faQueueTitleDsp>Further Action Tickets</td></tr><tr><td class=faQueueItemTitle>Tickets Assigned To Me </td><td class=faQueueItemMetric>{$faCnt[0]['assignedme']}</td></tr><tr><td class=faQueueItemTitle>Tickets Not Yet Assigned</td><td class=faQueueItemMetric>{$faCnt[1]['assignedme']}</td></tr><tr><td colspan=2 style=\"padding: 1vh 0 .5vh 0;\"><center> <table cellspacing=3><tr><td onclick=\"generateDialog('bgRqstFA', 'xxx-xxxx' );\" class=faQueueDspBtn>Create<br>Ticket</td><td onclick=\"navigateSite('further-action-requests');\" class=faQueueDspBtn>Go To<br>Queue</td></tr></table>     </td></tr></table>";
+$actRQRS = $conn->prepare( "select * from (select count(1) reqservedthisyear from (SELECT distinct assignedReq FROM masterrecord.ut_procure_segment where shippeddate between date_format(now(),'%Y-01-01') and now()) distincti) as reqsrv, (SELECT count(1) actyr FROM vandyinvest.activeinvesttissreq where activeyear = date_format(now(),'%Y') ) actreq" );
+$actRQRS->execute(); 
+if ( $actRQRS->rowCount() <> 1 ) { 
+  $rqSrvdLine = "0 / 0";
+} else { 
+  $act = $actRQRS->fetch(PDO::FETCH_ASSOC);
+  $rqSrvdLine = "{$act['reqservedthisyear']}/{$act['actyr']}";
+}
 
-  $rtnthis = <<<PAGEHERE
-<table border=0 id=rootTable>
-    <tr><td rowspan=2 valign=top>{$grphTbl}</td><td style="width: 42vw;" align=right valign=top>{$weekGoal}</td></tr>
-    <tr><td style="width: 42vw;" align=right valign=top rowspan=3><div id="mainRootCalendar">{$fsCalendar}</div></td></tr> 
-    <tr><td valign=top> <table width=100% border=0><tr><td> {$fatTbl} </td><td>&nbsp;</td></tr></table>  </td></tr>
-    <tr><td>&nbsp;</td></tr>
-</table>
+$ooRS = $conn->prepare( "Select *  from (select count(1) as onoffer from masterrecord.ut_procure_segment where segstatus = 'ONOFFER'  and procuredat = 'HUP' ) oo, (SELECT count(1) as sentman FROM masterrecord.ut_ship_manifest_head where mstatus = 'SENT' and institutioncode = 'HUP' ) mn" );
+$ooRS->execute(); 
+if ( $ooRS->rowCount() <> 1 ) { 
+  $rqSrvdLine = "0 / 0";
+} else { 
+  $oo = $ooRS->fetch(PDO::FETCH_ASSOC);
+  $ooLine = "{$oo['onoffer']}/{$oo['sentman']}";
+}
+
+$shpSQL = "SELECT count(1) as slidecount FROM masterrecord.ut_procure_segment where toHPR = 1 and ifnull(hprslideread,0) = 0 and ifnull(hprboxnbr,'') <> ''";
+$shpRS = $conn->prepare($shpSQL);
+$shpRS->execute();                  
+$shpT = $shpRS->fetch(PDO::FETCH_ASSOC);
+$qmssub = $shpT['slidecount'];
+
+$starRS = $conn->prepare( "select round(( strs.ttlvalue / ansr.ttlanswer ),1) averageRating, ansr.ttlanswer from (SELECT if(sum(starvalue)=0,1,sum(starvalue)) as ttlvalue FROM webcapture.srvy_answers where activeind = 1 and answeredOn between date_add( now(), interval -6 month) and now()) strs, (SELECT if( count(1) = 0, 1,count(1))  as ttlanswer FROM webcapture.srvy_answers where activeind = 1 and answeredOn between date_add( now(), interval -6 month) and now()) ansr" );
+$starRS->execute();
+$star = $starRS->fetch(PDO::FETCH_ASSOC);
+$starrating = (double)$star['averageRating'];
+
+$stardelimited = $starrating;
+$innerStarsHere = "";
+for ( $i = 0; $i < 5; $i++ ) {
+//  $innerStarsHere .= " / " . $stardelimited; 
+  if ( $stardelimited > 0.9 ) {
+    $innerStarsHere .= "<div>{$staryellow}</div>";     
+  } else { 
+    if ( $stardelimited > 0.1 ) {  
+      $innerStarsHere .= "<div>{$starhalf}</div>";     
+    } else {     
+      $innerStarsHere .= "<div>{$starwhite}</div>";     
+    }
+  }   
+  $stardelimited = ( $stardelimited - 1 );
+
+}
+
+
+$opsdRS = $conn->prepare( "select replace(sbtbl.invest,'Dr. ','') as invest, sbtbl.shipdoc, sdstatus, rqshipdate, sum( qty ) ttlseg from (SELECT concat('[',ifnull(sd.investcode,'-') , '] ', ifnull(sd.investname,'') ) as invest, substr(concat('000000',sd.shipdocrefid),-6) as shipdoc, sds.longvalue sdstatus, date_format( sd.rqstshipdate, '%m/%d/%Y') as rqshipdate, sg.shipDocRefID, sg.qty FROM masterrecord.ut_shipdoc sd left join masterrecord.ut_procure_segment sg on sd.shipdocrefid = sg.shipDocRefID left join (SELECT menuvalue, longvalue FROM four.sys_master_menus where menu = 'SDStat') sds on sd.sdstatus = sds.menuvalue where ( sd.sdstatus <> 'CLOSED' and sd.sdstatus <> 'VOID' ) and sg.voidind <> 1 ) sbtbl group by invest, shipdoc, sdstatus, rqshipdate order by rqshipdate" );
+$opsdRS->execute();
+
+$weekshpTbl = "<table width=100% id=weekshiptbl><tr><th>Invest</th><th>Ship Doc</th><th>Status</th><th>Rqst On</th><th>Segments</th></tr><tbody>";
+$ttlttlseg = 0;
+$ttlsd = 0;
+while ( $r = $opsdRS->fetch(PDO::FETCH_ASSOC)) {  
+  $i = explode( " ", $r['invest'] );  
+  $icode = $i[0];
+  $iname = $i[(count( $i ) - 1)];
+  $weekshpTbl .= "<tr><td>{$icode} {$iname}</td><td>{$r['shipdoc']}</td><td>{$r['sdstatus']}</td><td>{$r['rqshipdate']}</td><td align=right>{$r['ttlseg']}</td></tr>";
+  $ttlttlseg += (int)$r['ttlseg'];
+  $ttlsd += 1;
+}
+$weekshpTbl .= "</tbody><tr><td colspan=5 align=right id=sdtotl>Ship-Docs: {$ttlsd} / Segments: {$ttlttlseg}</td></tr>";
+$weekshpTbl .= "</table>";
+
+
+
+
+
+$dd = date("l") . ", " . date("jS") . " of " . date("F") . ", " . date("Y");
+//<div class=infoHold><div class=iLabel>Requests Served / Active</div><div class=iData>{$rqSrvdLine}</div></div>
+$rtnthis = <<<PAGEHERE
+<div id=dashboardholder>
+
+  <div id=headr>
   
+   <div id=tagger>
+      <div id=headrTag>CHTNEastern ScienceServer</div>
+      <div id=dash>Your Daily Dashboard</div>
+    </div>
+    <div id=moreInfoBar>
+      <a href="javascript:void(0)" onclick="generateDialog('moremetrics','procurement');">More Procurement</a>
+      <a href="javascript:void(0)" onclick="generateDialog('moremetrics','qms');">More QMS</a>
+      <a href="javascript:void(0)" onclick="generateDialog('moremetrics','shipping');">More Shipping</a>
+      <a href="javascript:void(0)" onclick="generateDialog('moremetrics','data-inventory');">More Data/Inventory</a>
+      <a href="javascript:void(0)" onclick="generateDialog('moremetrics','environment');">More Environment</a>
+    </div>
+    <div id=datedsp> {$dd} </div>
+  </div>
+
+  <div id=calendarHolder>
+    <div id=calHead>CHTNCalendar</div>
+    <div id=theCalendar>{$fsCalendar}</div>
+  </div>
+ 
+  <div class=displayerDiv>
+    <div class=metricHead>Shipping Metrics</div>
+    <div>{$graphics['grphshipped']}</div>
+  </div>
+
+  <div class=displayerDiv>
+    <div class=metricHead>Collection Metrics</div>
+    <div>{$graphics['grphcollected']}</div>
+  </div>
+
+  <div class=displayerDiv>
+    <div class=metricHead>Investigator Metrics</div>
+    <div>{$graphics['grphinvest']}</div>
+  </div>
+
+  <div class=displayerDiv>
+    <div class=metricHead>QMS Metrics</div>
+    <div>{$graphics['hprpie']}</div>
+  </div>
+
+<div id=multiInfoLine>
+
+  <div class=infoHold  onclick="navigateSite('further-action-requests');">
+    <div class=iLabel>Your Further Actions</div>
+    <div id=fadatadsp> 
+      <div class=sidelbl>Your Tickets</div><div class=sidedata>{$faCnt[0]['assignedme']}</div>
+      <div class=sidelbl>Non-Assigned</div><div class=sidedata>{$faCnt[1]['assignedme']}</div>
+      <div class=sidelbl id=takerlink>Click here to go to Futher Actions </div>
+    </div>
+  </div>
+  
+  <div class=infoHold>
+    <div class=iLabel>Shipped This Year</div>
+    <div class=iData>{$s['shipttl']}</div>
+  </div>
+
+
+  <div class=infoHold>
+    <div class=iLabel>QMS Slides Submitted</div>
+    <div class=iData>{$qmssub}</div>
+  </div>
+  
+  <div class=infoHold>
+    <div class=iLabel>On Offer/Manifests (HUP)</div>
+    <div class=iData>{$ooLine}</div>
+  </div>
+    
+   <div id=starrating>
+      <div class=iLabel>Survey Star Rating</div>
+      <div id=starholdercntdsp>
+        {$innerStarsHere}
+      </div>
+      <div class=iLabelA>Star Rating: {$starrating}</div> 
+    </div>
+
+</div>
+
+<div class=displayDivSmlr>
+
+    <div id=anotherMetricDspA><div class=iLabel>Pristine Segment Assignments (Exclude QMS)</div><div>{$graphics['grphprisassign']}</div></div>
+    <div id=weekship><div class=metricHead>Week Ship-Listing (Scrollable)</div><div id=weekshipholder>{$weekshpTbl}</div> </div>
+
+</div>
+
+
+<div id=multiInfoLineTwo>
+
+  <div class=displayerDivLong>
+    <div>{$graphics['grphrollshipgrid']}</div>
+  </div>
+
+
+</div>
+
+</div>
 PAGEHERE;
+//<div onclick="doTheHotlist();" id=hotListHolder><div class=metricHead>Weekly Hot-List - What's in "high" demand ...</div>    </div>
+//<div class=datasqr><div class=datalabel>Shipped This Year</div><div class=datadsp>{$s['shipttl']}</div></div>      
 return $rtnthis;
 }
 
@@ -4159,7 +4587,7 @@ break;
 case 'qmsactionwork':
     $innerBar = <<<BTNTBL
 <tr>
-  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGridWork onclick="window.location.href= '{$additionalinfo}'" ><tr><td><i class="material-icons">layers_clear</i></td><td>Queue List</td></tr></table></td>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGridWork onclick="window.location.href= '{$tt}/qms-actions'" ><tr><td><i class="material-icons">layers_clear</i></td><td>Queue List</td></tr></table></td>
   <td class=topBtnHolderCell onclick="revealPR();"><table class=topBtnDisplayer id=btnRevealPR><tr><td><i class="material-icons">arrow_right_alt</i></td><td>Pathology Report</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnRqstFA><tr><td><i class="material-icons">perm_data_setting</i></td><td>Rqst Further Action</td></tr></table></td>
   <td class=topBtnHolderCell onclick="markQMSComplete();"><table class=topBtnDisplayer id=btnReloadGridWork><tr><td><i class="material-icons">done_all</i></td><td>Mark QA Complete</td></tr></table></td>
@@ -4247,6 +4675,7 @@ BTNTBL;
 case 'faTableEdit':
     $innerBar = <<<BTNTBL
 <tr>
+  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnReloadGridWork onclick="window.location.href= '{$tt}/further-action-requests'" ><tr><td><i class="material-icons">layers_clear</i></td><td>Queue List</td></tr></table></td>
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="generateDialog('bgRqstFA', 'xxx-xxxx' );" ><tr><td><i class="material-icons">post_add</i></td><td>New Ticket</td></tr></table></td> 
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="printThisTicket();"><tr><td><i class="material-icons">print</i></td><td>Print Ticket</td></tr></table></td> 
   <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnExport onclick="sendThisTicket();"><tr><td><i class="material-icons">mail</i></td><td>Send Ticket</td></tr></table></td> 
@@ -4333,7 +4762,7 @@ BTNTBL;
 break; 
 case 'coordinatorResultGrid':
 
-    $ovrRdBtn = ( $whichusr->accesslevel === 'ADMINISTRATOR' ) ? "<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltInventoryOverride><tr><td><i class=\"material-icons\">blur_linear</i></td><td>Check-In Override</td></tr></table></td>" : "" ;
+    $ovrRdBtn = ( $whichusr->accesslevel === 'ADMINISTRATOR' ||  $whichusr->useremail === 'andrea.stone@towerhealth.org' ) ? "<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltInventoryOverride><tr><td><i class=\"material-icons\">blur_linear</i></td><td>Check-In Override</td></tr></table></td>" : "" ;
   //<td class=topBtnHolderCell><table class=topBtnDisplayer id=btnBarRsltAssignSample><tr><td><i class="material-icons">person_add</i></td><td>Assign</td></tr></table></td>
 $innerBar = <<<BTNTBL
 <tr>
@@ -4363,6 +4792,7 @@ $innerBar = <<<BTNTBL
         <table class=btnBarDropMenuItems cellspacing=0 cellpadding=0 border=0>
           <tr class=btnBarDropMenuItem id=btnBarRsltAssignSample><td><i class="material-icons">arrow_right</i></td><td>Assign/Status Segments &nbsp;&nbsp;&nbsp</td></tr>     
           <tr class=btnBarDropMenuItem id=btnBarRsltRequestLink><td><i class="material-icons">arrow_right</i></td><td>Create Request Linkage &nbsp;&nbsp;&nbsp</td></tr>     
+          <tr class=btnBarDropMenuItem id=btnBarLongTermMarker><td><i class="material-icons">arrow_right</i></td><td>Toggle Long-Term Storage &nbsp;&nbsp;&nbsp</td></tr>     
         </table>
       </div>  
     </div>
@@ -4809,7 +5239,6 @@ RTNTHIS;
         break;
     }
     $doctypemnu = "<div class=menuHolderDiv><input type=hidden id=fldDocTypeValue value=\"{$htv}\"><input type=text id=fldDocType READONLY class=\"inputFld\" value=\"{$htd}\"><div class=valueDropDown id=ddDocType>{$typem}</div></div>";
-
 
     //TODO:: MAKE A SERVICE
     $sectRS = $conn->prepare( "SELECT menuvalue, dspvalue, dsporder FROM four.sys_master_menus where menu = 'SOPHELPSECTIONS' and dspInd = 1 order by dsporder" ); 
@@ -5544,6 +5973,24 @@ RTNPAGE;
   return $rtnPage;    
 }
 
+function bldMoreMetricInfScreen ( $passedData ) { 
+  $pdta = json_decode( $passedData, true);
+  //{"whichdialog":"moremetrics","objid":"procurement","dialogid":"RgHQE6GfNxkb37S"} 
+  $rtnPage = <<<RTNPAGE
+<style>
+#mmMainDiv { width: 94vw; height: 90vh; overflow: auto;     } 
+
+</style>
+<div id=mmMainDiv>
+
+  {$passedData}
+
+
+</div>
+RTNPAGE;
+  return $rtnPage;    
+}
+
 function bldQuickBuildManifest ( $passedData ) { 
   //{"whichdialog":"rptExtraManSeg","objid":"70","dialogid":"w1JyUMvhRNHZU02"}
   $pdta = json_decode( $passedData, true);
@@ -5898,7 +6345,7 @@ function bldChartReviewBuilder ( $dialog, $passedData ) {
 <input type=hidden id=fldCRBGRefd value='{$pbiosample}'>
 <input type=hidden id=fldCRAssoc value='{$mnAss}'>
 
-<div id=crinstructions>This is the chart review document editor. Chart Review Text will be attached to this biogroup ({$pbiosample}) and all associative PHI matches (See the 'Chart Applies' list below).  This should be a culminative document - Edit only as necessary. </div>
+<div id=crinstructions>This is the chart review document editor. Chart Review Text will be attached to this biogroup ({$pbiosample}) and all associative PHI matches (See the 'Chart Applies' list below).  This should be a culminative document - Edit only as necessary. <p><u>Cut/Paste from a notepad ONLY</u>.  <b>Verify formatting of document after save</b>. </div>
 <div id=crmetrics>  
 
 <div class=metrichold><div class=metriclbl>Donor Age</div><div class=metricdata>{$mnCRAge}</div></div>
@@ -6066,6 +6513,7 @@ $elementallist .= " data-courier='{$head['courier']}' ";
 $elementallist .= " data-tracknbr='{$head['trackingnbr']}' ";
 $elementallist .= " data-salesorder='{$head['salesorder']}' ";
 $elementallist .= " data-designation='{$desig}' ";
+$elementallist .= " data-iname='{$iname}' ";
 
 
 foreach ( $edta['DATA']['qmsletters'] as $ltky => $ltvl ) { 
@@ -7087,7 +7535,6 @@ function bldQAWorkbench ( $encryreviewid ) {
      //INCONCLUSIVE WORKBENCH GOES HERE    
      $hprDecDataDisplay = bldQAWorkbench_hprData( $headdta );
      $assWork = bldQAWorkBench_assDsp ( $ass, $headdta, 1 ); 
-     
      //TODO:  TURN INTO A WEBSERVICE     
      require(serverkeys . "/sspdo.zck");    
      $faSQL = "SELECT actiontype, actionnote, date_format(actionrequestedon,'%m/%d/%Y') as actionrequestedon  FROM masterrecord.ut_hpr_factions where biohpr = :biohpr";
@@ -7101,15 +7548,12 @@ function bldQAWorkbench ( $encryreviewid ) {
          }
          $faList = "<div class=dataHolderDiv id=hprDataDecision><div class=datalabel>Further/Lab Action Requested List</div><div class=datadisplay>{$faListInner}</div></div>";                     
      }
-         
      $faArr['requestingmodule'] = "QMS-QA";
      $faArr['biohpr'] = $headdta['biohpr'];
      $faArr['slidebgs'] = $headdta['slidebgs'];
      $faArr['bgreadlabel'] = $headdta['bsreadlabel'];
      $faArr['pbiosample'] = $headdta['pbiosample'];
-
      $actiondialog = bldFurtherActionDialog ('xxxx-xxxxx', json_encode( $faArr) );
-
      $workbench = <<<WORKBENCH
 <div id=inconWorkbenchWrapper>            
      <div id=inconSideBar>       
@@ -7117,11 +7561,8 @@ function bldQAWorkbench ( $encryreviewid ) {
             {$faList}
      </div>
      <div id=inconWorkBenchArea style="border: 1px solid #000;">
-
      {$actiondialog}
-
      {$h} 
-
      </div>
      <div id=associativemess>
             <div id=dataRowFour>Associated Biogroups and All Segments</div>
@@ -7134,12 +7575,7 @@ function bldQAWorkbench ( $encryreviewid ) {
 WORKBENCH;
     $topBtnBar = generatePageTopBtnBar('qmsactionworkincon', "", $_SERVER['HTTP_REFERER'] );
   
-    
-    
-    
-    
   } else { 
-  
     $prnbr = substr(("000000" . $headdta['pathreportid']),-6);
     $uploadline = ( trim($headdta['pruploadedby']) !== "" ) ? "<b>Uploaded</b>: {$headdta['pruploadedby']} :: {$headdta['uploadedon']} (<b>Pathology Report</b>: {$prnbr})" : "";
     $hprDecDataDisplay = bldQAWorkbench_hprData( $headdta );
@@ -7153,9 +7589,7 @@ WORKBENCH;
      $faArr['bgreadlabel'] = $headdta['bsreadlabel'];
      $faArr['pbiosample'] = $headdta['pbiosample'];
      $faArrRead = cryptservice ( $headdta['bsreadlabel'] , 'e');
-     
-  
-     
+ 
     $workbench = <<<WORKBENCHPARTS
 <div id=workbenchwrapper>
             <input type=hidden id=fldFAGetter value={$faArrRead}>
@@ -7181,9 +7615,16 @@ WORKBENCHPARTS;
     $topBtnBar = generatePageTopBtnBar('qmsactionwork', "", $_SERVER['HTTP_REFERER'] );
   }
   } else { 
-      
+
+    $bg = cryptservice(  $encryreviewid . "::" . $headdta['pbiosample'], 'e');
     $workbench = <<<WORKBENCH
-  <h3>QMS-QA has already been performed on this biogroup.  Please edit data using data coordinator functions.  Thanks
+<input type=hidden id=fldEncyBGRev value='{$bg}'>
+
+<div id=qmsErrorDone>
+  <div id=qmsErrorHead>QMS Already Complete</div>
+  <div id=qmsAdvisor>QA Review has already been performed on biogroup {$headdta['bsreadlabel']}. Review that information by querying the biogroup on the 'Data Coordinator' Screen.<p>There are two action options:<br> 1) if you just want to mark QA complete with the last actions, click the 'Just Mark Done' button below and the biogroup will be removed from the QMS-QA Queue Listing, or<br>2) To re-perform QA review on this biogroup, click the 'Reset QMS' button.</div> 
+  <div id=qmsActionBtns><center> <button id=btnJustMark>Just Mark Done</button> <button id=btnResetQMS>Reset QMS</button></div>
+</div>
 WORKBENCH;
   }
   $pg = <<<PGCONTENT
@@ -7355,7 +7796,7 @@ $rtnThis = <<<RTNTHIS
    </div>
 </div>
 
-<center><table style="margin-top: 2vh;"><tr><td class=makeBtn style="font-size: 1.6vh;" onclick="saveMolePrc();">Save Percent/Tests</td></tr></table>
+<center><table style="margin-top: 2vh;"><tr><td class=makeBtn style="font-size: 1.6vh;" onclick="saveMolePrc();">Save</td></tr></table>
 RTNTHIS;
 return $rtnThis;
 }
@@ -8061,18 +8502,20 @@ function bldEnlargeDashboardGraphic ( $whichgraphic ) {
   $at = genAppFiles;
   if ( file_exists("{$at}/publicobj/graphics/sysgraphics/{$whichgraphic}" ) ) { 
     $id = generateRandomString();  
-    $graphics = base64file("{$at}/publicobj/graphics/sysgraphics/{$whichgraphic}", "{$id}", "png", true);         
+    $graphics = base64file("{$at}/publicobj/graphics/sysgraphics/{$whichgraphic}", "{$id}", "png", true , " style=\"width: 100%; height: auto;\" ");         
   } else { 
     $graphics = "NO GRAPHIC FOUND ({$whichgraphic})";
   }
 
   list($iwidth, $iheight, $itype, $iattr) = getimagesize("{$at}/publicobj/graphics/sysgraphics/{$whichgraphic}");
-  
+  $orientation = ( $iwidth != $iheight ? ( $iwidth > $iheight ? 'landscape' : 'portrait' ) : 'square' );
+
   $pgGraphics = <<<ENLRGDGRPH
-<table border=0>
-<tr><td>{$iwidth} / {$iheight} / {$itype} / {$iattr} </td></tr>
-<tr><td style="padding: 2vh 2vw;">{$graphics}</td></tr>
-</table>
+<div id=dashboardenlargeimagehold_{$orientation}>
+  {$graphics}
+
+</div>
+
 ENLRGDGRPH;
 return $pgGraphics;
 }
@@ -9947,6 +10390,9 @@ if ($errorInd === 0) {
   $devm .= "</table>";
 
 $bg = $pdta['pbiosample'];
+//<td style="padding: 0 0 0 .5vw;"><div class=menuHolderDiv><input type=text id=fldDialogPRUPDeviationReason style="font-size: 1.3vh; width: 13vw;"><div class=valueDropDown>{$devm}</div></div></td>
+//<td style="width: 12vw;" valign=bottom> <div class="ttholder headhead">SOP DEVIATION (?)<div class=tt style="width: 25vw;">This is NOT a standard operational screen and should only be used in extenuating circumstances.  The use of this screen will be tracked as a deviation from standard operating procedures.<br>Please enter a reason for the deviation below.</div></div>   </td>
+
 $rtnThis = <<<RTNTHIS
 <input type=hidden id=fldDialogPRUPLabelNbr value='{$pdta['labelnbr']}'>
 <input type=hidden id=fldDialogPRUPBG value='{$pdta['pbiosample']}'>
@@ -9963,8 +10409,11 @@ $rtnThis = <<<RTNTHIS
 <tr><td colspan=7 style="padding: .4vh .8vw .4vh .8vw;"><input type=checkbox id=HIPAACertify><label for=HIPAACertify id=HIPAABoxLabel>By clicking this box, I ({$pdta['user']}) certify that this Pathology Report Text DOES NOT contain any HIPAA patient identifiers.  This includes:  names, birthdays, addresses, phone numbers, email addresses, physician names, pathology assistance names, technician names, institution names, dates, etc.  I have made myself familiar with the HIPAA identifiers and certify that ALL HIPAA idenitifers have been removed as per CHTNEastern Standard Operating Procedures.  This pathology report is redacted so that the donor/patient cannot be identified.</td></tr>
 
 <tr><td colspan=7><center>
-<table><tr><td class=headhead valign=bottom>Override PIN (Inventory PIN)</td><td style="width: 12vw;" valign=bottom> <div class="ttholder headhead">SOP DEVIATION (?)<div class=tt style="width: 25vw;">This is NOT a standard operational screen and should only be used in extenuating circumstances.  The use of this screen will be tracked as a deviation from standard operating procedures.<br>Please enter a reason for the deviation below.</div></div>   </td></tr>
-<tr><td style="padding: 0 0 0 .5vw;"><input type=password id=fldUsrPIN style="width: 11vw; font-size: 1.3vh;"></td><td style="padding: 0 0 0 .5vw;"><div class=menuHolderDiv><input type=text id=fldDialogPRUPDeviationReason style="font-size: 1.3vh; width: 13vw;"><div class=valueDropDown>{$devm}</div></div></td></tr>
+<table><tr><td class=headhead valign=bottom>Override PIN (Inventory PIN)</td></tr>
+<tr><td style="padding: 0 0 0 .5vw;"><input type=password id=fldUsrPIN style="width: 11vw; font-size: 1.3vh;"></td>
+
+
+</tr>
 </table>
 </td></tr>
 

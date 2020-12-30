@@ -33,7 +33,77 @@ function __construct() {
 }
 
 class datadoers {
+
+    function updatehelpticket ( $request, $passdata ) { 
+      $responseCode = 400;
+      $rows = array();
+      $msgArr = array(); 
+      $errorInd = 0;
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      session_start(); 
+      $sessid = session_id();      
+      $pdta = json_decode($passdata, true);
+      //{"ticket":"VmtTUUhrcjY4a1o2ajVhUGhRU1JvNTJjSzNENGJaTVJqNXQvQWtsWldvdz0=","reason":"Other","status":"OPEN","solution":"","github":"","soltitle":"" ,'solutiontxt'} 
+      $at = genAppFiles;
  
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sid and allowind = 1 and accessnbr > 42 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0 and ( userid = 1 or userid = 65 ) "; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+        (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO UPDATE HELP TICKETS. LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }
+
+
+      if ( $errorInd === 0 ) { 
+        $tickency = cryptservice( $pdta['ticket'], 'd'); 
+        $t = explode("::",$tickency);    
+        $ticket = $t[1];
+
+        $chkRS = $conn->prepare( "SELECT * FROM four.app_helpTicket where ticketnumber = :ticket and ifnull(ticketstatus,'')  <> 'CLOSED'" );
+        $chkRS->execute( array( ':ticket' => $ticket ));
+
+        if ( $chkRS->rowCount() <> 1 ) { 
+           $msgArr[] = "This ticket {$ticket} doesn't exist or is closed";
+        } else { 
+            
+          $histRS = $conn->prepare( "insert into four.app_helpTicket_history (ticketnumber,byWho,bywhoemail,onwhen,reasoncode,affectedSSModule,recreateind,description,ticketstatus,statuswhen,statusby,solutioncategory,personTakenBy,startedWhen,title,ITNotes,githubID,histoon) SELECT ticketnumber,byWho,bywhoemail,onwhen,reasoncode,affectedSSModule,recreateind,description,ticketstatus,statuswhen,statusby,solutioncategory,personTakenBy,startedWhen,title,ITNotes,githubID,now() FROM four.app_helpTicket where ticketnumber = :ticket" ); 
+          $histRS->execute(array( ':ticket' => $ticket ));
+
+          $tickArr = $chkRS->fetch(PDO::FETCH_ASSOC);
+          if ( $tickArr['startedWhen'] == null ) { 
+            $updWHENRS = $conn->prepare( "update four.app_helpTicket set startedWhen = now(), personTakenBy = :by where ticketnumber = :ticket and ifnull(ticketstatus,'') <> 'CLOSED'" );
+            $updWHENRS->execute(array(':ticket' => $ticket, ':by' => $u['emailaddress'] ));
+          }
+     
+          $updRS = $conn->prepare( "update four.app_helpTicket set reasoncode = :reasoncode, ticketstatus = :ticketstatus, statuswhen = now(), statusby = :statusby, solutioncategory = :solutioncategory, title = :title, ITNotes = :ITNotes, githubID = :githubID where ticketnumber = :ticket and ifnull(ticketstatus,'') <> 'CLOSED'" );
+          $updRS->execute( array( ':reasoncode' => $pdta['reason'] , ':ticketstatus' => $pdta['status'] , ':statusby' => $u['emailaddress'], ':solutioncategory' => $pdta['solution'], ':title' => $pdta['soltitle'], ':ITNotes' => $pdta['solutiontxt'], ':githubID' => $pdta['github'], ':ticket' => $ticket ));
+
+
+          if ( $pdta['status'] === 'CLOSED' ) { 
+            $ticketdsp = substr(("000000" . $ticket),-6);
+            $eText = "CHTNEASTERN Informatics Ticket {$ticketdsp} ({$tickArr['onwhen']})  has been closed.  With the following notes: <p> {$pdta['solutiontxt']} <p>-------------------------------<br>If you have any questions, contact CHTNEastern Informatics";
+            $emaillist[] = "zackvm.zv@gmail.com";
+            $emaillist[] = "zacheryv@mail.med.upenn.edu";
+            $rando = generateRandomString(4);
+            $emaillist[] = $tickArr['bywhoemail'];
+            $emlSQL = "insert into serverControls.emailthis (towhoaddressarray, sbjtline, msgBody, htmlind, wheninput, bywho) value(:towhoaddressarray, 'CHTNEastern Informatics Ticket Update ({$rando})', :msgBody, 1, now(), 'IT Ticket EMAILER')";
+            $emlRS = $conn->prepare( $emlSQL );
+            $emlRS->execute(array ( ':towhoaddressarray' => json_encode( $emaillist ), ':msgBody' => "<table border=1><tr><td><CENTER>THE MESSAGE BELOW IS FROM THE SCIENCESERVER SYSTEM AT CHTNEAST.ORG ({$u['friendlyname']}/{$u['emailaddress']}) .  PLEASE DO NOT RESPONSED TO THIS EMAIL.  CONTACT THE CHTNEASTERN OFFICE DIRECTLY EITHER BY EMAIL chtnmail@uphs.upenn.edu OR BY CALLING (215) 662-4570.</td></tr><tr><td>{$eText}</td></tr></table>"));
+
+
+          }
+          $responseCode = 200;
+        } 
+      }
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array( 'RESPONSECODE' => $responseCode, 'MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+      return $rows;         
+    }
+   
     function transientbanksearch ( $request, $passdata ) { 
       $responseCode = 400;
       $rows = array();
@@ -4158,6 +4228,60 @@ PRISTINESQL;
       return $rows;
     }
 
+    function overrideqmsmark ( $request, $passdata ) {
+      $rows = array(); 
+      $responseCode = 503;
+      $msgArr = array(); 
+      $errorInd = 0;
+      $msg = "BAD REQUEST";
+      $itemsfound = 0;
+      require(serverkeys . "/sspdo.zck");
+      $pdta = json_decode($passdata, true);
+      //{"ency":"aW85UE5lOTZMMlVEdFQzWk5WRUJrTjZCWHJ0QlFLVVVhUHNueXNDaWR3MHJLM2pOYWNRM0tZZTE2WXpIbkw1Sk1nUGpjU0NnNGdaTTgxaEJWNFZQSlE9PQ==","action":0}
+      session_start(); 
+      $sessid = session_id();
+
+      ( !array_key_exists('ency', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'ency' is missing.  Fatal Error")) : "";
+      ( !array_key_exists('action', $pdta) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array key 'action' is missing.  Fatal Error")) : "";
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, ifnull(allowHPRReview,0) as allowhprreview FROM four.sys_userbase where 1=1 and sessionid = :sessid and ( allowInd = 1 and allowQMS = 1 ) and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sessid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+         (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO QMS-QA.  LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR."));
+      } else { 
+         $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+
+      if ( $errorInd === 0 ) {
+
+          $id = explode( "::", cryptservice( $pdta['ency'] , 'd'));
+          $buSQL = "insert into masterrecord.history_procure_biosample_qms (pbiosample, readlabel, qcvalv2, hprindicator, hprmarkbyon, qcindicator, qcmarkbyon, qcprocstatus, labaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresultid, slidereviewed, hpron, hprby, historyrecordon, historyrecordby)  SELECT pbiosample, read_label, qcvalv2, hprind, hprmarkbyon, qcind, qcmarkbyon, qcprocstatus, labactionaction, labactionnote, qmsstatusby, qmsstatuson, hprdecision, hprresult, hprslidereviewed, hpron, hprby, now() as historyrecordon, 'HPR-REVIEW-MODULE' as  historyrecordby FROM masterrecord.ut_procure_biosample where pbiosample = :pbiosample";
+          $buRS = $conn->prepare($buSQL); 
+          $buRS->execute(array(':pbiosample' => $id[1]));
+          
+          
+          switch ((int)$pdta['action']) { 
+            case 0: 
+                //just reset mark
+                  $updRS = $conn->prepare("update masterrecord.ut_procure_biosample set QCProcStatus = 'Q', qmsstatusby = :u, qmsstatuson = now(), qmsnote = concat( ifnull(qmsnote,''), ' QMS DONE OVERRIDE'), qcind = 1, QCMarkByOn = :byon  where pbiosample = :pbiosample" );
+                  $updRS->execute( array(':u' => $u['usr'], ':byon' => $u['usr'] . "::" . date('Y-m-d'), ':pbiosample' => $id[1]  ));
+                  $responseCode = 200;
+                break; 
+            case 1: 
+                  $updRS = $conn->prepare("update masterrecord.ut_procure_biosample set QCProcStatus = 'H', qmsstatusby = :u, qmsstatuson = now(), qmsnote = concat( ifnull(qmsnote,''), ' QMS RE-DO OVERRIDE'), qcind = 0, QCMarkByOn = ''  where pbiosample = :pbiosample" );
+                  $updRS->execute( array(':u' => $u['usr'], ':pbiosample' => $id[1]  ));
+                  $responseCode = 200;
+            break;    
+          }           
+    
+          $msgArr[] = cryptservice ( $id[0], 'd');
+      } 
+      $msg = $msgArr;
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $rptlist);
+      return $rows;
+    }
+
     function hprsaveinconreview ( $request, $passdata ) { 
       $rows = array(); 
       $responseCode = 503;
@@ -6723,6 +6847,14 @@ MBODY;
       ( !array_key_exists('whichdialog', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'whichdialog' missing from passed data")) : ( trim($pdta['whichdialog']) === '' )  ? (list( $errorInd, $msgArr[] ) = array(1 , "Dialog Not Specified")) : "";
       ( !array_key_exists('objid', $pdta)) ? (list( $errorInd, $msgArr[] ) = array(1 , "Array Key 'objid' missing from passed data")) : ( trim($pdta['objid']) === '' )  ? (list( $errorInd, $msgArr[] ) = array(1 , "Object Not Specified")) : "";
 
+      //TODO: DON't HARD CODE
+      if ( $pdta['whichdialog'] === 'bldHotList' ) {
+        ( $u['emailaddress'] !== "zacheryv@mail.med.upenn.edu" && $u['emailaddress'] !== "dfitzsim@pennmedicine.upenn.edu" && $u['emailaddress'] !== "deneen.mack@uphs.upenn.edu") ? (list( $errorInd, $msgArr[] ) = array(1 , "You don't have the access rights to perform this function")) :  ""; 
+      }
+
+
+
+
        //TODO - CHECK VALID OBJID      
       if ( $errorInd === 0 ) { 
  
@@ -6925,6 +7057,16 @@ MBODY;
              $left = '8vw';
              $top = '8vh';
              break;
+           case 'bldHotList':
+             $primeFocus = "";  
+             $left = '8vw';
+             $top = '8vh';
+             break;
+           case 'moremetrics':
+             $primeFocus = "";  
+             $left = '3vw';
+             $top = '3vh';
+             break;
          }
 
          $dta = array("pageElement" => $dlgPage, "dialogID" => $pdta['dialogid'], 'left' => $left, 'top' => $top, 'primeFocus' => $primeFocus);
@@ -6964,7 +7106,8 @@ MBODY;
             //NO DATA
             $dta['molecular'] = null;
         }
-        $prcSQL = "SELECT prc.prcid, mprc.dspvalue prctype, prcvalue, date_format(inputon, '%m/%d/%Y') as inputon, inputby FROM masterrecord.ut_procure_biosample_samplecomposition prc left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSPERCENTMAKEUP') as mprc on prc.prctype = mprc.menuvalue where dspind = 1 and readlabel = :readlabel";
+        //$prcSQL = "SELECT prc.prcid, mprc.dspvalue prctype, prcvalue, date_format(inputon, '%m/%d/%Y') as inputon, inputby FROM masterrecord.ut_procure_biosample_samplecomposition prc left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'QMSPERCENTMAKEUP') as mprc on prc.prctype = mprc.menuvalue where dspind = 1 and readlabel = :readlabel";
+        $prcSQL = "SELECT prc.prcid, mprc.dspvalue prctype, prcvalue, date_format(inputon, '%m/%d/%Y') as inputon, inputby FROM masterrecord.ut_procure_biosample_samplecomposition prc left join (SELECT menuvalue, dspvalue FROM four.sys_master_menus where menu = 'HPRPERCENTAGE') as mprc on prc.prctype = mprc.menuvalue where dspind = 1 and readlabel = :readlabel";
         $prcRS = $conn->prepare($prcSQL); 
         $prcRS->execute(array(':readlabel' => $bgn));
         if ( $prcRS->rowCount() > 0 ) { 
@@ -10282,7 +10425,7 @@ UPDSQL;
             $dta = array('pagecontent' => bldDialogGetter('dataCoordEditPR', $pdta) ); 
             $responseCode = 200;
        } else { 
-         (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  PATHOLOGY REPORT NOT FOUND IN DATABASE."));
+         (list( $errorInd, $msgArr[] ) = array(1 , "ERROR:  PATHOLOGY REPORT NOT FOUND IN DATABASE ({$prid})."));
        }
      }
      $msg = $msgArr;
@@ -10313,7 +10456,7 @@ UPDSQL;
      ( $pdta['bg'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU HAVE NOT SPECIFIED A BIOGROUP.  SEE A CHTNEASTERN INFORMATICS STAFF MEMBER")) : "";
      ( $pdta['user'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "SCIENCESERVER DOES NOT RECOGNIZE YOUR USER NAME OR USER NAME IS MISSING")) : "";
      ( trim($pdta['prtxt']) === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU MUST SPECIFY SOME HIPAA REDACTED PATHOLOGY REPORT TEXT")) : "";
-     ( $pdta['deviation'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU ARE DEVIATING FROM CHTNEASTERN SOPs AND MUST THEREFORE SPECIFY A REASON")) : "";
+     //( $pdta['deviation'] === "" ) ? (list( $errorInd, $msgArr[] ) = array(1 , "YOU ARE DEVIATING FROM CHTNEASTERN SOPs AND MUST THEREFORE SPECIFY A REASON")) : "";
 
      if ( $errorInd === 0 ) { 
         //CHECK USER
@@ -11569,7 +11712,73 @@ SQLSTMT;
       return $rows;        
     }
 
-    function preprocessoverridehpr($request, $passdata) { 
+    function preprocessltis ( $request, $passdata ) { 
+      $responseCode = 400; 
+      require(serverkeys . "/sspdo.zck");  
+      $error = 0;
+      $msg = "";
+      $itemsfound = 0;
+      $data = array();
+      $errorInd = 0;
+      $pdta = json_decode($passdata, true);
+      $bgArr = array();
+      session_start(); 
+      $sessid = session_id();
+      $chkUsrSQL = "SELECT friendlyname, originalaccountname as usr, emailaddress, accessnbr FROM four.sys_userbase where 1=1 and sessionid = :sid and allowind = 1 and allowCoord = 1 and TIMESTAMPDIFF(MINUTE,now(),sessionexpire) > 0 and TIMESTAMPDIFF(DAY, now(), passwordexpiredate) > 0"; 
+      $rs = $conn->prepare($chkUsrSQL); 
+      $rs->execute(array(':sid' => $sessid));
+      if ( $rs->rowCount() <  1 ) {
+        (list( $errorInd, $msgArr[] ) = array(1 , "USER IS NOT ALLOWED ACCESS TO STATUS SEGMENTS. LOG OUT AND BACK IN IF YOU FEEL THIS IS IN ERROR. "));
+      } else { 
+        $u = $rs->fetch(PDO::FETCH_ASSOC);
+      }       
+      //{"0":{"biogroup":"84278","bgslabel":"84278001","segmentid":"445631"},"1":{"biogroup":"84278","bgslabel":"84278002","segmentid":"445632"}}
+      foreach ($pdta as $key => $value) {
+        $seglist[] = $value['segmentid'];
+      }
+      //DATA CHECKS  
+      ( count($seglist) < 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "NO SEGMENTS SUBMITTED FOR LTIS TOGGLE")) : "";
+
+      if ( $errorInd === 0 ) {
+ 
+        $chkRS = $conn->prepare( "SELECT * FROM masterrecord.ut_procure_segment where (segstatus = 'LTIS' or segstatus = 'ASSIGNED') and segmentId = :segid");
+        foreach ($pdta as $key => $value) {
+          $chkRS->execute( array(':segid' => $value['segmentid'] ));
+          ( $chkRS->rowCount() <> 1 ) ? (list( $errorInd, $msgArr[] ) = array( 1 , "NOT ALL SEGMENTS ARE STATUSED FOR TOGGLE (EITHER ASSIGNED OR LONG-TERM ONLY ({$value['bgslabel']})")) : "";
+        }    
+
+          if ( $errorInd === 0 ) {
+
+
+            //WRITE HISTORY 
+            $histRS = $conn->prepare( "insert into masterrecord.history_procure_segment_status (segmentid, previoussegstatus, previoussegstatusupdater, previoussegdate, enteredon, enteredby) SELECT segmentid, segstatus, statusBy, statusdate, now(), :u FROM masterrecord.ut_procure_segment where (segstatus = 'LTIS' or segstatus = 'ASSIGNED') and segmentId = :segmentid" );
+            $chkRS = $conn->prepare( "SELECT * FROM masterrecord.ut_procure_segment where (segstatus = 'LTIS' or segstatus = 'ASSIGNED') and segmentId = :segid");
+            $updrs = $conn->prepare( "update masterrecord.ut_procure_segment set segstatus = :stat, statusdate = now(), statusby = :u where segmentid = :segid" );
+            foreach ($pdta as $key => $value) {
+              $histRS->execute( array( ':segmentid' => $value['segmentid'], ':u' => 'LTIS-TOGGLE [' . $u['usr'] . ']' ));  
+              $chkRS->execute( array(':segid' => $value['segmentid'] ));
+              $sg = $chkRS->fetch(PDO::FETCH_ASSOC);
+              if ( trim($sg['segStatus']) === 'LTIS' ) { 
+                //TOGGLE TO ASSIGNED
+                $updrs->execute(array(':segid' => $value['segmentid'], ':stat' => 'ASSIGNED', ':u' => 'LTIS-TOGGLE [' . $u['usr'] . ']' ));
+              } else { 
+                //TOGGLE TO LTIS
+                $updrs->execute(array(':segid' => $value['segmentid'], ':stat' => 'LTIS', ':u' => 'LTIS-TOGGLE [' . $u['usr'] . ']' ));
+              }
+          }    
+            //SUCCESS 
+            $responseCode = 200;
+        }
+      }
+
+      $msg = $msgArr;
+
+      $rows['statusCode'] = $responseCode; 
+      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound,  'DATA' => $dta);
+      return $rows;        
+    }
+
+    function preprocessoverridehpr($request, $passdata ) { 
       $responseCode = 400; 
       require(serverkeys . "/sspdo.zck");  
       $error = 0;

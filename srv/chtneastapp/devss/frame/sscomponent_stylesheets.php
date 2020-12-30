@@ -33,6 +33,10 @@ class stylesheets {
   
 function globalstyles($mobileInd) {
 
+$at = genAppFiles;
+$floorMap = base64file("{$at}/publicobj/graphics/sysgraphics/baseimages/floorMap.png", "background", "bgurl", true );   
+
+
 $rtnThis = <<<STYLESHEET
 
 @import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Bungee);
@@ -123,14 +127,22 @@ box-shadow: -8px 0px 29px -8px rgba({$this->color_zackgrey},0.29);
 #vocabularyDisplayTable .vocDspSite { width: 10vw; }
 #vocabularyDisplayTable .vocDspSSite { width: 8vw; }
 
-#environHolderDiv {  padding: 0 1vw 0 1vw; height: 92vh; overflow: auto; box-sizing: border-box;}
-#environBtnHold #envCloseBtn { font-family: Roboto; font-size: 4vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; width: 2vw;  }
-#environBtnHold #envCloseBtn:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
+/* APP TRAY ENVIRONMENTAL */
+#titleholder { display: grid; grid-template-columns: 47vw 2vw; width: 49vw; box-sizing: border-box; }
+#titleholder #apptrayEnvironTitle {  font-family: Roboto; font-size: 1.8vh; font-weight: bold; padding: .2vh 0 0 .3vw; font-family: Roboto;    } 
+#titleholder #envCloseBtn { font-family: Roboto; font-size: 2.8vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: right; box-sizing: border-box; padding: 0 0 0 0; }
+#titleholder #envCloseBtn:hover { color: rgba({$this->color_bred},1); cursor: pointer; }
 #environmentalTitle { width: 100%; font-family: Roboto; font-size: 3vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; }
+#environHolderDiv {  height: 55vh; width: 49vw; box-sizing: border-box; background-repeat: no-repeat; background-attachment: fixed; background: {$floorMap} no-repeat top left; background-size: 94vh; position: relative; }
+#environHolderDiv .tempBox { border: 1px solid rgba({$this->color_dblue},1); width: 5vw; background: rgba({$this->color_white},.7); position: absolute; padding: 2px;  }
+#environHolderDiv .tempBox .tempBoxTitle { background: rgba({$this->color_dblue},.6); color: rgba({$this->color_white},1); font-family: Roboto; font-size: 1vh; text-align: center; font-weight: bold; overflow: hidden; white-space: nowrap; } 
+#environHolderDiv .tempBox .tempBoxValue { border: 1px solid rgba({$this->color_dblue},1); padding: 2px; text-align: center; font-size: 1.3vh; font-weight: bold;     }  
+
+#enviroDetails { border: 1px solid #000; width: 49vw; box-sizing: border-box; height: 28vh; overflow: auto;   } 
 
 #environmentalReadingsHolder { } 
 
-#sensorDspHolder { width: 46vw; border: 1px solid rgba({$this->color_darkgrey},.5);}
+#sensorDspHolder { width: 48vw; border: 1px solid rgba({$this->color_darkgrey},.5);}
 #sensorDspHolder #sensorNbr { font-size: 1.3vh; font-weight: bold; text-align: right; color: rgba({$this->color_darkgrey},.5); padding: .8vh .3vw;  }
 #sensorDspHolder .holdercell { box-sizing: border-box; width: 23vw; padding: .8vh .3vw .8vh .3vw; }
 
@@ -307,6 +319,59 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
 STYLESHEET;
 return $rtnThis;
 
+  }
+
+  function scienceserverhelpdeskticketmanagement () { 
+$rtnThis = <<<STYLESHEET
+
+#mainPageHolder { margin: 8vh 1vw; } 
+#mainPageHolder #workbench { display: grid; grid-template-columns: 30vw auto; grid-gap: .2vw; } 
+#mainPageHolder #workbench #headr { grid-column: span 2; text-align: center; border-bottom: 2px solid rgba({$this->color_zackgrey},1); font-size: 1.8vh; padding: .5vh 0 0 0; font-variant: small-caps;   }
+
+#openticketlisting { border: 1px solid rgba({$this->color_zackgrey},1); height: 50vh; overflow: auto;   }
+#detailWorkbench { grid-row: span 2; border: 1px solid rgba({$this->color_zackgrey},1); padding: 0 .5vw; }
+
+#dspticketnumber { font-size: 1.5vh; padding: 1vh 0 .4vh 0;   } 
+
+
+
+#closeticketlisting { border: 1px solid rgba({$this->color_zackgrey},1); height: 25vh; overflow: auto;   }
+
+.openticketticket { display: block; text-decoration: none; margin: 0 0 0 0; padding: .2vh .3vw .8vh .3vw; border-top: 1px solid rgba({$this->color_zackgrey},.6); background: rgba({$this->color_white},1); font-family: Roboto; color: rgba({$this->color_zackgrey},1); }
+
+.opnTicketLine { font-size: 1.8vh;  }
+.opnTicketReason { font-size: 1.5vh; }
+.opnTicketMod { font-size: 1.5vh; }
+.opnTicketBy {font-size: 1.2vh; } 
+.ticketSqrHead { font-family: Roboto; font-size: 2vh; padding: 1vh 0 0 0; color:  rgba({$this->color_bred},1);    } 
+
+.openticketticket:nth-child( even ) { background: rgba({$this->color_darkgreen},.1); }  
+.openticketticket:hover { background: rgba({$this->color_cornflowerblue},.1); cursor: pointer; } 
+
+#dspmetricline { display: grid; grid-template-columns: repeat( 5, 1fr); grid-gap: .2vw; padding: 0 .2vw; }
+#dspmetricline .metricsqr { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .3vh .2vw; font-size: 1.4vh;  } 
+#dspmetricline .metricsqr .label { font-weight: bold; }
+
+#dspmetricline .issuetext { grid-column: span 5; }   
+#dspmetricline .issuetext .label { font-weight: bold; font-size: 1.4vh; }
+#dspmetricline .issuetext #itext { border: 1px solid rgba({$this->color_zackgrey},.4); height: 10vh; overflow: auto; padding: .2vh .2vw; text-align: justify; line-height: 1.5em; font-size: 1.4vh;   }
+
+#fldtsts { width: 20vw; } 
+#dspmetriclineA { display: grid; grid-template-columns: repeat( 3, 1fr); grid-gap: .2vw; padding: 0 .2vw; margin: .8vh 0 0 0; }
+#dspmetriclineA .metricsqr { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .3vh .2vw; font-size: 1.4vh;  } 
+#dspmetriclineA .metricsqr .label { font-weight: bold; }
+#fldGitHub { width: 18vw; } 
+
+#dspmetriclineB { display: grid; grid-template-columns: repeat( 1, 1fr); grid-gap: .2vw; padding: 0 .2vw; margin: .8vh 0 0 0; }
+#dspmetriclineB .metricsqr { border: 1px solid rgba({$this->color_zackgrey},.4); padding: .3vh .2vw; font-size: 1.4vh;  } 
+#dspmetriclineB .metricsqr .label { font-weight: bold; }
+#fldSolutionTitle { width: 100%;   } 
+
+#btnBar { text-align: right; grid-column: span 5; margin: 1vh 0 0 0; }
+#btnBar button { font-size: 1.4vh;     }
+
+STYLESHEET;
+return $rtnThis;
   }
 
   function continuousprocessimprovementtracker ( ) { 
@@ -700,6 +765,15 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .2vw; margin-right: .2vw;   b
   #associativemess #associativeTblDsp .inassdsp { padding: .5vh 3vw 3vh 3vw; display: none;  }
   #associativemess #associativeTblDsp .inassdspthisgroup { padding: .5vh 3vw 3vh 3vw; display: block;  }
 
+#qmsErrorDone { width: 40vw; margin: 15vh 30vw; border: 4px solid rgba({$this->color_mgrey},.3); padding: .2vh .1vw; border-radius: 8px; }
+#qmsErrorDone #qmsErrorHead { font-size: 2vh; background: rgba({$this->color_cornflowerblue},.8); color: rgba({$this->color_white},1); padding: .5vh .3vw; border-top-left-radius: 5px; border-top-right-radius: 5px; }
+#qmsErrorDone #qmsAdvisor { font-size: 1.7vh; line-height: 2.5vh; text-align: justify; padding: 1vh .5vw;  }
+#qmsErrorDone #qmsActionBtns { padding: 1vh 0; } 
+#qmsErrorDone #qmsActionBtns button { font-size: 1.7vh; width: 15vw;     } 
+
+
+
+
 
 STYLESHEET;
 return $rtnThis;
@@ -870,7 +944,7 @@ $rtnThis = <<<STYLESHEET
   #dspWorkArea { margin-top: 1vh; display: grid; grid-template-columns: 2fr 1fr; grid-gap: .2vw; }
 
   #dspWorkArea #onOfferGrid { border: 1px solid rgba({$this->color_zackgrey},1); box-sizing: border-box; height: 78vh; overflow: hidden; }
-  #dspWorkArea #onOfferGrid #queryParaLine { display: grid; grid-template-columns: repeat( 3, 1fr ); background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 1.3vh; padding: .4vh .2vw .2vh .2vw; }
+  #dspWorkArea #onOfferGrid #queryParaLine { display: grid; grid-template-columns: 30% 30% 22% 8%; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 1.3vh; padding: .8vh .2vw .8vh .2vw; }
   #dspWorkArea #onOfferGrid #queryParaLine .dataElementHolder .dataElementLabel { font-size: 1vh; font-weight: bold;  }
 
   #dspWorkArea #onOfferGrid #offerHeader { display: grid; grid-template-columns: 5vw 15vw 4vw 5vw 25vw 5vw 3vw 3vw; } 
@@ -1423,6 +1497,29 @@ STYLESHEET;
 return $rtnThis;
 }
 
+function scienceserverchangelog () { 
+
+$rtnThis = <<<STYLESHEET
+body { margin: 0; box-sizing: border-box;  }
+
+#mainPageHolder { margin: 8vh 15vw; }
+#mainPageHolder #head { font-size: 2.2vh; font-weight: bold; } 
+#mainPageHolder #instructions { font-size: 1.8vh; line-height: 2.5vh; text-align: justify; margin: 1vh 0 2vh 0; }
+#chngLogTbl { width: 70vw; font-family: Roboto; font-size: 1.5vh; border: 4px solid rgba({$this->color_zackgrey},1); }
+#chngLogTbl tr th { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); padding: .5vh 0;    } 
+#chngLogTbl tbody tr:nth-child(even) { background: rgba({$this->color_neongreen},.2); }
+#chngLogTbl tbody tr td { padding: .5vh .3vw; border: 1px solid rgba({$this->color_zackgrey},.4); border-top: none; border-left: none; }
+#chngLogTbl tbody tr .dtedsp { width: 8vw; } 
+#chngLogTbl tbody tr .ssversion { width: 7vw; }  
+#chngLogTbl tbody tr .gittag { width: 7vw; }  
+
+
+
+STYLESHEET;
+return $rtnThis;
+}
+
+
 function scienceserverhelp ( ) {
 
       $rtnThis = <<<STYLESHEET
@@ -1910,45 +2007,79 @@ return $rtnThis;
 
 function root($mobileind) { 
 
-      $rtnThis = <<<STYLESHEET
-
-body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;  }     
+/*
 #rootTable { font-family: Roboto; font-size: 1.5vh; width: 100%; }
+/// SCREEN CALENDAR FORMATTING
+.dashBoardGraphic { padding-left: .5vw; padding-right: .5vw; padding-bottom: .5vh; border-right: 1px solid rgba({$this->color_mgrey},.5); border-bottom: 1px solid rgba({$this->color_mgrey},.5); }
+.dashBoardGraphic:hover {  border-right: 1px solid rgba({$this->color_bred},1); border-bottom: 1px solid rgba({$this->color_bred},1); cursor: pointer; }
+#grphfreezer { width: 25vw; }
+#grphinvestigatorinf { width: 13vw; }
+#grphrollshipgrid { height: 37vh;}
+#grphsegshiptotal { width: 13vw; }
+#grphslidessubmitted { width: 13vw; }
+#faQueueDspTbl { border: 1px solid rgba({$this->color_mgrey},.5); border-left: none; border-top: none; padding-bottom: .5vh; padding-right: .5vw; }
+#faQueueDspTbl:hover {  border-right: 1px solid rgba({$this->color_bred},1); border-bottom: 1px solid rgba({$this->color_bred},1); } 
+#faQueueTitleDsp { font-size: 1.4vh; font-weight: bold;  text-align: center; border-bottom: 2px solid rgba({$this->color_cornflowerblue},1); } 
+.faQueueItemTitle { font-size: 1.3vh; border-bottom: 1px solid rgba({$this->color_zackgrey},.5); padding-top: .8vh;  }
+.faQueueItemMetric { font-size: 1.3vh; text-align: right; border-bottom: 1px solid rgba({$this->color_zackgrey},.5); padding-top: .8vh; padding-left: .5vw; }
+.faQueueDspBtn { font-size: 1.1vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; border: 1px solid rgba({$this->color_mgrey},.5); padding: 8px 8px; background: rgba({$this->color_mgrey},.2); width: 3vw; } 
+.faQueueDspBtn:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.3); } 
+ */
 
-/* SCREEN CALENDAR FORMATTING */ 
-#mainRootTbl { width: 45vw; border: 1px solid rgba({$this->color_darkgrey},.5); box-sizing: border-box; }               
-#mainRootTbl #mainRootLeftCtl { width: 1vw; height: 4vh; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_darkgrey},.5); }              
-#mainRootTbl #mainRootLeftCtl:hover { cursor: pointer; color: rgba({$this->color_darkgreen},1); }
-#mainRootTbl #mainRootRightCtl { width: 1vw; height: 4vh; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_darkgrey},.5); }              
-#mainRootTbl #mainRootRightCtl:hover { cursor: pointer; color: rgba({$this->color_darkgreen},1); }
-#mainRootTbl #mainRootCalTitle { text-align: center; background: rgba({$this->color_darkgrey},.5); font-weight: bold; font-size: 1.8vh; padding: .8vh 0;  }
-#mainRootTbl .mainRootCalHeadDay { font-size: 1.2vh; width: 6vw; height: 3vh; border: 1px solid rgba({$this->color_darkgrey},.5); border-right: none; background: rgba({$this->color_darkgrey},1); text-align: center; }
-#mainRootTbl .starterHeadCell { border-left: none;   }
-#mainRootTbl .mainRootTopSpacer {background: rgba({$this->color_lightgrey},.7); }
-#mainRootTbl .mainRootBtmSpacer {background: rgba({$this->color_lightgrey},.7); }
-#mainRootTbl .mnuMainRootDaySquare { border: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: none; border-right: none; width: 7vw; height: 10vh; }
-#mainRootTbl .calendarEndDay { border-left: none; }
-#mainRootTbl .todayDsp { background: rgba({$this->color_lamber},.5); }
-#mainRootTbl #mainRootBtmLine { border-top: 1px solid rgba({$this->color_darkgrey},.5); padding: 1vh 1vw; background: rgba({$this->color_lightgrey},1); }
-#mainRootTbl #saluations { font-size: 1.2vh; font-weight: bold; }
+      $rtnThis = <<<STYLESHEET
+body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 0 0 0;  }     
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; }
 
+ #dashboardholder { display: grid; grid-template-columns: repeat( 4, 1fr ); grid-gap: .5vw; padding: 0 .5vw 0 .5vw; }
+
+ #dashboardholder #headr { grid-column: span 4; border-bottom: 1px solid rgba({$this->color_mgrey},1); padding: .5vh .4vw 0 .4vw; display: grid; grid-template-columns: repeat( 4, 1fr);  }
+
+ #dashboardholder #headr #tagger { grid-column: span 1; } 
+
+ #dashboardholder #headr #moreInfoBar { grid-column: span 2; display: grid; grid-template-columns: repeat( 5, 1fr); grid-gap: .2vw; margin: 0 0 .2vh 0;  } 
+ #dashboardholder #headr #moreInfoBar a {  display: block; text-decoration: none; outline: none;  color: rgba({$this->color_cornflowerblue},1); font-family: Roboto; font-size: 1.4vh; border: 1px solid rgba({$this->color_cornflowerblue},1); text-align: center; line-height: 3vh; background: rgba({$this->color_mgrey},.1); transition: all 0.5s; height: 3vh;  }
+ #dashboardholder #headr #moreInfoBar a:hover { background: rgba({$this->color_darkgreen},1); color: rgba({$this->color_white},1); font-weight: bold; } 
+
+
+
+
+ #dashboardholder #headr #headrTag { font-family: Roboto; font-size: 1.5vh;  color: rgba({$this->color_darkgreen},1); }
+ #dashboardholder #headr #headrTag #chtn { font-weight: bold; color: rgba({$this->color_cornflowerblue},1); } 
+ #dashboardholder #headr #dash { font-family: Roboto; font-size: 1.3vh;  color: rgba({$this->color_zackgrey},1);   }  
+
+ #dashboardholder #headr #datedsp { grid-column: span 1; font-size: 2vh; text-align: right; padding: 1vh 0 0 0; color: rgba({$this->color_darkgreen},1); }
+ #dashboardholder #headr #datedsp #ddMonth {  font-weight: bold; color: rgba({$this->color_cornflowerblue},1);  }
+
+ #dashboardholder #calendarHolder { grid-column: span 2; grid-row: span 2; border: 3px solid rgba({$this->color_mgrey},.3); padding: .2vh .2vw;  }
+ #dashboardholder #calendarHolder #calHead { font-family: Roboto; font-size: 1.5vh;  color: rgba({$this->color_darkgreen},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); } 
+
+ #dashboardholder #calendarHolder #theCalendar { border: 1px solid rgba({$this->color_darkgrey},.5);margin: .2vh 0 0 0; }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl {  box-sizing: border-box; width: 100%;   }              
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl #mainRootLeftCtl { width: 14%; height: 4vh; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_darkgrey},.5); }              
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl #mainRootLeftCtl:hover { cursor: pointer; color: rgba({$this->color_darkgreen},1); }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl #mainRootRightCtl { width: 14%; height: 4vh; color: rgba({$this->color_zackgrey},1); background: rgba({$this->color_darkgrey},.5); }              
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl #mainRootRightCtl:hover { cursor: pointer; color: rgba({$this->color_darkgreen},1); }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl #mainRootCalTitle { text-align: center; background: rgba({$this->color_darkgrey},.5); font-weight: bold; font-size: 1.8vh; padding: .8vh 0;  }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl .mainRootCalHeadDay { font-size: 1.2vh; width: 5vw; height: 2vh; border: 1px solid rgba({$this->color_darkgrey},.5); border-right: none; background: rgba({$this->color_darkgrey},1); text-align: center; }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl .starterHeadCell { border-left: none;   }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl .mainRootTopSpacer {background: rgba({$this->color_lightgrey},.7); }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl .mainRootBtmSpacer {background: rgba({$this->color_lightgrey},.7); }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl .mnuMainRootDaySquare { border: 1px solid rgba({$this->color_darkgrey},.5); border-bottom: none; border-right: none; width: 6vw; height: 8vh; }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl .calendarEndDay { border-left: none; }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl .todayDsp { background: rgba({$this->color_lamber},.5); }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl #mainRootBtmLine { border-top: 1px solid rgba({$this->color_darkgrey},.5); padding: 1vh 1vw; background: rgba({$this->color_lightgrey},1); }
+ #dashboardholder #calendarHolder #theCalendar #mainRootTbl #saluations { font-size: 1.2vh; font-weight: bold; }
 .caldayeventholder { font-size: 1vh; position: relative; padding: 0 3px 0 3px; box-sizing: border-box;  }
-.caldayday { float: left; margin-top: 1px; margin-right: 1px; padding-left: 1px; font-size: 1.6vh; color: rgba({$this->color_darkgrey},.8); }
+.caldayday { float: left; margin-top: 1px; margin-right: 1px; padding-left: 1px; font-size: 1.6vh; color: rgba({$this->color_zackgrey},.8); }
 .caldaytoday { color: rgba({$this->color_darkgreen},1); font-weight: bold; }
 .eventHoverDisplay { position: absolute; top: 30px; left: -30px; background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); padding: 4px; display: none; z-index: 48; width: 15vw;  }
 .caldayeventholder:hover .eventHoverDisplay { display: block; }
-
 .eventDspItemTable { border-collapse: collapse; } 
 .eventDspItemTable tr td { white-space: nowrap; }
-
 .popEvntTbl { width: 12vw; }
 .popTimeCell {  white-space: nowrap; width: 3.5vw; border-top: 1px solid rgba({$this->color_darkgrey},.5);  }
 .popEvtType {  font-size: 1vh;  color: rgba({$this->color_darkgrey},.5); text-align: right; border-top: 1px solid rgba({$this->color_darkgrey},.5);  }
-
-.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; }
-
 .rEventFld { font-size: 1.3vh; }
-
 #rootEventDate { width: 8vw; }
 #rootEventDropCal { width: 12vw; }
 #rootEventStart { width: 6vw; }
@@ -1961,24 +2092,57 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 #icmdheader { display: none; }
 #rootEventInstitution { width: 100%; }
 
-.dashBoardGraphic { padding-left: .5vw; padding-right: .5vw; padding-bottom: .5vh; border-right: 1px solid rgba({$this->color_mgrey},.5); border-bottom: 1px solid rgba({$this->color_mgrey},.5); }
-.dashBoardGraphic:hover {  border-right: 1px solid rgba({$this->color_bred},1); border-bottom: 1px solid rgba({$this->color_bred},1); cursor: pointer; }
+.displayerDiv { grid-column: span 1; grid-row: span 1; border: 3px solid rgba({$this->color_mgrey},.3); padding: .2vh .2vw; } 
+.displayerDivLong { grid-column: span 5; grid-row: span 1; border: 3px solid rgba({$this->color_mgrey},.3); padding: .2vh .2vw; } 
+.metricHead { font-family: Roboto; font-size: 1.2vh;  color: rgba({$this->color_darkgreen},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); }
+.dashboardimage { width: 100%; }
 
-#grphfreezer { width: 25vw; }
-#grphinvestigatorinf { width: 13vw; }
-#grphrollshipgrid { height: 37vh;}
-#grphsegshiptotal { width: 13vw; }
-#grphslidessubmitted { width: 13vw; }
+#dashboardenlargeimagehold_landscape { width: 39vw; height: 50vh; overflow: hidden; } 
+#dashboardenlargeimagehold_portrait { width: 39vw; height: 50vh; overflow: hidden; } 
+#dashboardenlargeimagehold_square { width: 39vw; height: 50vh; overflow: hidden; }
 
-#faQueueDspTbl { border: 1px solid rgba({$this->color_mgrey},.5); border-left: none; border-top: none; padding-bottom: .5vh; padding-right: .5vw; }
-#faQueueDspTbl:hover {  border-right: 1px solid rgba({$this->color_bred},1); border-bottom: 1px solid rgba({$this->color_bred},1); } 
-#faQueueTitleDsp { font-size: 1.4vh; font-weight: bold;  text-align: center; border-bottom: 2px solid rgba({$this->color_cornflowerblue},1); } 
-.faQueueItemTitle { font-size: 1.3vh; border-bottom: 1px solid rgba({$this->color_zackgrey},.5); padding-top: .8vh;  }
+.datasqr { display: grid; grid-template-columns: 3fr 1fr;  margin: .2vh 0 .2vh 0; border: 3px solid rgba({$this->color_zackgrey},1); padding: .2vh .2vw; border-radius: 5px; }  
+.datasqr .datalabel { font-size: 1.3vh;  }  
+.datasqr .datadsp   { font-size: 1.3vh; font-weight: bold; text-align: right; }  
 
-.faQueueItemMetric { font-size: 1.3vh; text-align: right; border-bottom: 1px solid rgba({$this->color_zackgrey},.5); padding-top: .8vh; padding-left: .5vw; }
+#fadatadsp { display: grid; grid-template-columns: repeat( 2, 1fr); }
+#fadatadsp .sidelbl { color: rgba({$this->color_darkgreen},1); font-size: 1.3vh; }  
+#fadatadsp .sidedata { text-align: right; color: rgba({$this->color_darkgreen},1); font-size: 1.3vh; } 
+#fadatadsp #takerlink { grid-column: span 2; text-align: center; } 
 
-.faQueueDspBtn { font-size: 1.1vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; border: 1px solid rgba({$this->color_mgrey},.5); padding: 8px 8px; background: rgba({$this->color_mgrey},.2); width: 3vw; } 
-.faQueueDspBtn:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.3); } 
+#dashboardholder #multiInfoLine { grid-column: span 2; display: grid; grid-template-columns: repeat( 5, 1fr); grid-gap: .5vw; }
+#dashboardholder #multiInfoLine .infoHold {  border: 3px solid rgba({$this->color_mgrey},.3); padding: .1vh .2vw;  }
+#dashboardholder #multiInfoLine .infoHold .iLabel { font-family: Roboto; font-size: 1.2vh; color: rgba({$this->color_darkgreen},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); } 
+#dashboardholder #multiInfoLine .infoHold .iData {  font-family: Roboto; font-size: 3vh; font-weight: bold;  color: rgba({$this->color_zackgrey},1); text-align: center; padding: 1vh 0;  }
+
+#dashboardholder .displayDivSmlr { grid-column: span 2; grid-row: span 2;  display: grid; grid-template-columns: repeat( 2, 1fr); grid-gap: .5vw;  }
+#dashboardholder .displayDivSmlr #weekship { border: 3px solid rgba({$this->color_mgrey},.3); padding: .2vh .2vw;  }
+#dashboardholder .displayDivSmlr #weekship #weekshipholder { height: 17vh; overflow: auto; }  
+
+
+
+#dashboardholder #multiInfoLine #starrating { border: 3px solid rgba({$this->color_mgrey},.3); padding: .2vh .2vw; overflow: hidden;  }
+#dashboardholder #multiInfoLine #starrating .iLabel { font-family: Roboto; font-size: 1.2vh; color: rgba({$this->color_darkgreen},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); }
+#dashboardholder #multiInfoLine #starrating .iLabelA { font-family: Roboto; font-size: 1.2vh; color: rgba({$this->color_darkgreen},1);  }
+#dashboardholder #multiInfoLine #starrating #starholdercntdsp { display: grid; grid-template-columns: repeat( 5,1fr); padding: .5vh 0;  }
+
+#dashboardholder .displayDivSmlr #anotherMetricDsp { border: 3px solid rgba({$this->color_mgrey},.3); padding: .2vh .2vw; height: 8vh;   }
+#dashboardholder .displayDivSmlr #anotherMetricDspA { border: 3px solid rgba({$this->color_mgrey},.3); padding: .2vh .2vw;  }
+#dashboardholder .displayDivSmlr #anotherMetricDspA .iLabel { font-family: Roboto; font-size: 1.2vh; color: rgba({$this->color_darkgreen},1); border-bottom: 1px solid rgba({$this->color_mgrey},1); }
+
+#dashboardholder #multiInfoLineTwo { grid-column: span 2; display: grid; grid-template-columns: repeat( 5, 1fr); grid-gap: .5vw; }
+
+#weekshiptbl { font-family: Roboto; font-size: 1.3vh;  }
+#weekshiptbl tr th { text-align: left; font-weight: bold; color: rgba({$this->color_darkgreen},1); border-bottom: 1px solid rgba({$this->color_darkgreen},1); }
+#weekshiptbl tbody tr:nth-child(even) { background: rgba({$this->color_neongreen},.3);   }
+#weekshiptbl tbody tr td { padding: .4vh .2vw;  } 
+#sdtotl { background: rgba({$this->color_black},1); color: rgba({$this->color_white},1); padding: .2vh .2vw; } 
+
+
+
+
+
+.smlGreyFont { color: rgba({$this->color_cornflowerblue},1); font-size: .9vh; font-weight: bold;  } 
 
 STYLESHEET;
 return $rtnThis;

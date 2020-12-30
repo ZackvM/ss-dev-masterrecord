@@ -765,47 +765,44 @@ while ($currentDay <= $numberOfDays) {
          $btmLineDsp = "<tr><td colspan=7 class=calBtmLineClear onclick=\" fillField('shpQryToDate','','');\" ><center>[clear]</td></tr>";
          break;
          case 'mainroot':
+           $caldayeventlistdsp = "";
+           $caleventpop = "";
+           $eventcnt = 0;
 
-         $caldayeventlistdsp = "";
-         $caleventpop = "";
-         $eventcnt = 0;
-         if ( array_key_exists( (int)$currentDayDsp , $eventListArr[(int)$pyear][(int)$monthNbr]) ) {
-           //$caldayeventlistdsp = "<table border=1 class=eventDspItemTable>";  
-           $caleventpop = "<div class=\"eventHoverDisplay\">";   
-           foreach ( $eventListArr[(int)$pyear][(int)$monthNbr][(int)$currentDayDsp] as $ck => $cv) { 
-
+           if ( array_key_exists( (int)$currentDayDsp , $eventListArr[(int)$pyear][(int)$monthNbr]) ) {
+             $caleventpop = "<div class=\"eventHoverDisplay\">";   
+             foreach ( $eventListArr[(int)$pyear][(int)$monthNbr][(int)$currentDayDsp] as $ck => $cv) { 
                $colorSqr = "<table style=\"border-collapse: collapse;\"><tr><td style=\" background: rgba({$cv['icondspcolor']}); width: 3px; height: 4px;\"></td></tr></table>";
-               $caldayeventlistdsp .= "<table border=0 class=eventDspItemTable><tr><td>{$colorSqr}</td><td>{$cv['stime']} {$cv['name']}</td></tr></table>";
-               
+               $caldayeventlistdsp .= "<table border=0 class=eventDspItemTable><tr><td>{$colorSqr}</td><td>{$cv['stime']} {$cv['name']}</td></tr></table>"; 
                $caleventpop .= ( $eventcnt  === 0 ) ? "<table border=0 cellspacing=0 cellpadding=0 class=popEvntTbl><tr><td rowspan=3 valign=top class=popTimeCell>{$cv['time']}</td><td class=popEvtType>{$cv['typedsc']}</td></tr><tr><td>{$cv['name']} </td></tr><tr><td>{$cv['description']}</td></tr></table>" : "<table border=0 cellspacing=0 cellpadding=0 class=popEvntTbl><tr><td rowspan=3 valign=top class=popTimeCell>{$cv['time']}</td><td class=popEvtType>{$cv['typedsc']}</td></tr><tr><td>{$cv['name']} </td></tr><tr><td>{$cv['description']}</td></tr></table>";              
                $eventcnt++;
-           }
-           //$caldayeventlistdsp .= "</table>";
-           $caleventpop .= "</div>";
-         }  
+             }
+             $caleventpop .= "</div>";
+           }   
              
-          if ( "{$monthNbr}/{$currentDayDsp}/{$pyear}" === $chkToday ) {
-            //THIS IS TODAY  
-            $daySquare = ( $dayOfWeek === 0 ) ? "mnuMainRootDaySquare calendarEndDay todayDsp" : "mnuMainRootDaySquare todayDsp";
-            $nbrSquare = "caldayday caldaytoday";
-          } else { 
-            //THIS IS NOT TODAY  
-            $daySquare = ( $dayOfWeek === 0 ) ? "mnuMainRootDaySquare calendarEndDay" : "mnuMainRootDaySquare";
-            $nbrSquare = "caldayday";
-          }
-
-          $dayDsp = <<<DAYDSP
+           if ( "{$monthNbr}/{$currentDayDsp}/{$pyear}" === $chkToday ) {
+             //THIS IS TODAY  
+             $daySquare = ( $dayOfWeek === 0 ) ? "mnuMainRootDaySquare calendarEndDay todayDsp" : "mnuMainRootDaySquare todayDsp";
+             $nbrSquare = "caldayday caldaytoday";
+           } else { 
+             //THIS IS NOT TODAY  
+             $daySquare = ( $dayOfWeek === 0 ) ? "mnuMainRootDaySquare calendarEndDay" : "mnuMainRootDaySquare";
+             $nbrSquare = "caldayday";
+           }
+           $dWeek = ( date("D", strtotime("{$monthNbr}/{$currentDayDsp}/{$pyear}")) == 'Sun' ) ? "&nbsp;<span class=smlGreyFont>[Week " . date('W', strtotime("{$monthNbr}/{$currentDayDsp}/{$pyear}")) . "]</span> " : "";
+           $dayDsp = <<<DAYDSP
 <div class=caldayeventholder>
   <div class="{$nbrSquare}">{$currentDayDsp}</div>
+  {$dWeek}
   {$caldayeventlistdsp}
-  {$caleventpop}
+  {$caleventpop} 
 </div>
 DAYDSP;
-          $sqrID = "daySqr{$currentDayDsp}";
-          $action = " onclick=\"makeEventDialog('{$pyear}{$monthNbr}{$currentDayDsp}');\" ";
-          //TODO:  THIS IS WHERE THE CURRENT DAY SQUARE DISPLAY GOES
-          $btmLineDsp = "<tr><td colspan=7 id={$btmLine}><div id=mainRootTodayActivityDsp>{$dspChkToday}</div></td></tr>";
-         break;
+           $sqrID = "daySqr{$currentDayDsp}";
+           $action = " onclick=\"makeEventDialog('{$pyear}{$monthNbr}{$currentDayDsp}');\" ";
+           //TODO:  THIS IS WHERE THE CURRENT DAY SQUARE DISPLAY GOES
+           $btmLineDsp = "<tr><td colspan=7 id={$btmLine}><div id=mainRootTodayActivityDsp>{$dspChkToday}</div></td></tr>";
+           break;
        default: 
          $sqrID = "daySqr{$currentDayDsp}";
          $action = " onclick=\"alert('{$monthNbr}/{$currentDayDsp}/{$pyear}');\" ";

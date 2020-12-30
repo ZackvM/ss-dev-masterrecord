@@ -417,14 +417,17 @@ $sensorReadings = json_decode(callrestapi("GET", dataTree .  "/chtn-eastern-envi
 $readingsTbl = "<table border=0 cellpadding=0 cellspacing=0 id=sensorDspHolder><tr><td colspan=2 id=sensorNbr>Sensors Read: {$sensorReadings['ITEMSFOUND']}</td></tr><tr>";
 $cellCntr = 0;
 
+$tpr = 3; 
 foreach ( $sensorReadings['DATA'] as $ky => $value) { 
     $lastRead = ""; 
-    $innerRow = ""; 
+    $innerRow = "";
+    $firstreadingval = ""; 
     foreach ( $value['readings'] as $k => $v ) { 
 
        if ( $lastRead === "" ) { $lastRead = $v['dtegathered']; }  
        $fvalue = sprintf("%1\$.1f&#176; C",$v['readinginc']);
        $ths = floatval( $v['readinginc'] );
+       if ( trim($firstreadingval) === "" ) { $firstreadingval = $fvalue; } 
        if ( trim($value['readings'][$k + 1]['readinginc']) !== "") { 
          $nxt =   floatval(  $value['readings'][$k + 1]['readinginc'] );
        } else { 
@@ -436,27 +439,46 @@ foreach ( $sensorReadings['DATA'] as $ky => $value) {
          if ($ths < $nxt) { $trendInd = "<i class=\"material-icons uparrow\">arrow_downward</i>"; }
          if ($ths === $nxt) { $trendInd = "<i class=\"material-icons uparrow\">subdirectory_arrow_right</i>"; }
        } 
-       $innerRow .= "<tr class=rowColor><td class=sensorValue>{$fvalue}  </td><td class=trendIconDsp>{$trendInd}</td><td class=sensorTime>{$v['gathertime']}</td><td class=utcValue> ({$v['utctimestamp']})</td></tr>";    
-       } 
+       $innerRow .= "<tr class=rowColor><td class=sensorValue>{$fvalue}</td><td class=trendIconDsp>{$trendInd}</td><td class=sensorTime>{$v['gathertime']}</td><td class=utcValue> ({$v['utctimestamp']})</td></tr>";    
+    } 
 
     if ( $cellCntr === 2 ) { $readingsTbl .= "</tr><tr>"; $cellCntr = 0; } 
     $readingsTbl .= "<td valign=top class=holdercell><table border=0 class=sensorMetricTbl><tr><td colspan=4 class=sensorDspName>{$value['sensorname']} </td></tr><tr><td colspan=4 class=lastread>Last Read: {$lastRead}</td></tr>{$innerRow}</table></td>";
+
+
+    $xy = json_decode( $value['shortboxxy'] );
+    $mapper .= "<div class=tempBox id=amb570 style=\"top: " . $xy[1] . "vh; left: " . $xy[0] . "vw;\"><div class=tempBoxTitle>{$value['shortboxsensor']}</div><div class=tempBoxValue>{$firstreadingval}</div></div>"; 
     $cellCntr++;
+    $tpr++;
 }
 $readingsTbl .= "</tr></table>";
 
+
+
+
+
+
 $rtnthis = <<<VOCABSRCH
+<div id=titleholder><div id=apptrayEnvironTitle>CHTNEastern Environmental Monitoring System</div><div id=envCloseBtn onclick="openAppCard('appcard_environmentals');">&times;</div></div>
 <div id=environHolderDiv>
-  <div id=environBtnHold><table width=100%><tr><td></td><td id=envCloseBtn onclick="openAppCard('appcard_environmentals');">&times;</td></tr></table></div>   
-  <div id=environmentalTitle>Environmental Monitor Data</div> 
-  <div id=environmentalReadingsHolder>
-{$readingsTbl}
-<p>
+  {$mapper}
 </div>
-<p>&nbsp;</p>
-</div>
-<p>
+<div id=enviroDetails>{$readingsTbl}</div>
 VOCABSRCH;
+
+//$rtnthis = <<<VOCABSRCH
+//<div id=environHolderDiv>
+//  <div id=environBtnHold><table width=100%><tr><td></td><td id=envCloseBtn onclick="openAppCard('appcard_environmentals');">&times;</td></tr></table></div>   
+//  <div id=environmentalTitle>Environmental Monitor Data</div> 
+//  <div id=environmentalReadingsHolder>
+//{$readingsTbl}
+//<p>
+//</div>
+//<p>&nbsp;</p>
+//</div>
+//<p>
+//VOCABSRCH;
+
   return $rtnthis;    
 }
 

@@ -698,7 +698,7 @@ function getCalendar(whichcalendar, whichdiv, monthyear, modalCtl = 0) {
   obj['monthyear'] = monthyear;  
   var passeddata = JSON.stringify(obj);
   var mlURL = "/data-doers/front-sscalendar";  
-  lastRequestCalendarDiv = whichdiv;      
+  lastRequestCalendarDiv = 'theCalendar';      
   universalAJAX("POST",mlURL,passeddata,answerGetCalendar,modalCtl);
 }
 
@@ -713,6 +713,10 @@ function answerGetCalendar(rtnData) {
 
 function makeEventDialog(eventDate) { 
   generateDialog('eventCalendarEventAdd',eventDate);
+}
+
+function doTheHotlist() { 
+  generateDialog('bldHotList','xxx');
 }
 
 function enlargeDashboardGraphic(whichgraphic) { 
@@ -1338,9 +1342,9 @@ function doSomethingWithScan ( scanvalue ) {
   var scanmanifest = new RegExp(/^(IMN)-[A-Za-z]{2}-[0-9]{6}$/); 
   var scanloc   = new RegExp(/^FRZ[A-Za-z]{1}\d+$/); 
   var scanloca  = new RegExp(/^SSC[A-Za-z]{1}\d+$/); 
-  var bglabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
+  var bglabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?(@)?$/);
+  //var bglabel = new RegExp(/^(ED)?\d{5}[A-Za-z]{1}\d{1,3}([A-Za-z]{1,3})?(@)?$/);
   var zbglabel = new RegExp(/^(Z)?\d{4}[A-Za-z]{1}\d{1,}([A-Za-z]{1,3})?$/);  
-
 
   var scanworked = 0;
 
@@ -4200,6 +4204,58 @@ JAVASCR;
 return $rtnThis;    
 }
 
+function scienceserverhelpdeskticketmanagement ( $rqststr ) { 
+
+
+$rtnThis = <<<JAVASCR
+
+function fillField(whichfield, whatvalue, whatplaintext, whatmenudiv) { 
+  if (byId(whichfield)) { 
+    if (byId(whichfield+'Value')) {
+      byId(whichfield+'Value').value = whatvalue;
+    }    
+    byId(whichfield).value = whatplaintext; 
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {  
+
+  if (byId('btnSaveTicketWork')) { 
+    byId('btnSaveTicketWork').addEventListener('click', function() { 
+      var dta = new Object(); 
+      dta['ticket'] = byId('fldWorkTicket').value.trim();
+      dta['reason'] = byId('fldHTR').value.trim();
+      dta['status'] = byId('fldtstsValue').value.trim();
+      dta['solution'] = byId('fldtsolValue').value.trim();
+      dta['github'] = byId('fldGitHub').value.trim();
+      dta['soltitle'] = byId('fldSolutionTitle').value.trim();
+      dta['solutiontxt'] = byId('fldSolutionText').value.trim();
+      var passdta = JSON.stringify(dta);
+      var mlURL = "/data-doers/update-help-ticket";
+      universalAJAX("POST",mlURL,passdta,answerUpdateTicket,1);
+    }, false);
+  }
+
+}, false);        
+
+function answerUpdateTicket ( rtnData ) { 
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("Update Ticket Error:\\n"+dspMsg);
+   } else { 
+     alert('Ticket has been saved.');
+   }
+}
+
+
+JAVASCR;
+   return $rtnThis;
+} 
+
 function scienceserverhelp($rqststr) { 
 
   session_start(); 
@@ -4815,7 +4871,7 @@ function qmsactions ( $rqststr ) {
 
 $tt = treeTop; 
 $rtnThis = <<<RTNTHIS
-
+ 
 document.addEventListener('DOMContentLoaded', function() {  
   
   if ( byId('btnRqstFA')) { 
@@ -4829,9 +4885,45 @@ document.addEventListener('DOMContentLoaded', function() {
         location.reload(true);
      }, false);        
    }
+
+   if ( byId('btnJustMark')) { 
+    byId('btnJustMark').addEventListener('click', function() { 
+      resetMarkQMS( 0 );
+     }, false);        
+   }
        
+   if ( byId('btnResetQMS')) { 
+    byId('btnResetQMS').addEventListener('click', function() { 
+      resetMarkQMS( 1 );
+     }, false);        
+   }
+
 }, false);  
-        
+
+function resetMarkQMS( whichaction ) {
+  byId('standardModalBacker').style.display = 'block';
+  var dta = new Object(); 
+  dta['ency'] = byId('fldEncyBGRev').value;
+  dta['action'] = whichaction; 
+  var passdta = JSON.stringify(dta);
+  var mlURL = "/data-doers/override-qms-mark";
+  universalAJAX("POST",mlURL,passdta,answerOverrideQMSMark,2);
+}
+
+function answerOverrideQMSMark ( rtnData ) { 
+  var tt = '{$tt}';
+  if (parseInt(rtnData['responseCode']) !== 200) { 
+    var msgs = JSON.parse(rtnData['responseText']);
+    var dspMsg = ""; 
+    msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+    });
+    alert("ERROR:\\n"+dspMsg);
+    byId('standardModalBacker').style.display = 'none';    
+   } else {
+     location.href = tt+'/qms-actions';       
+  }
+}
 
 function changeSupportingTab(whichtab) { 
   var divs = document.getElementsByClassName('HPRReviewDocument'); 
@@ -5576,13 +5668,11 @@ function answerSaveQMSSegReassign( rtnData ) {
 }
 
 function emailer_emailselect(whichid) { 
-
    if ( byId(whichid).dataset.selected === 'true' ) { 
      byId(whichid).dataset.selected = 'false';
    } else { 
      byId(whichid).dataset.selected = 'true';
    } 
-
 }
 
 function insertAtCursor(myField, myValue) {
@@ -5599,7 +5689,6 @@ function insertAtCursor(myField, myValue) {
 }
 
 function getQMSLetter( whichletter ) {
-
    var dta = new Object();
    dta['qmsletter'] = whichletter;
    dta['bgs'] = byId('insertElementals').dataset.bgs;
@@ -5617,6 +5706,7 @@ function getQMSLetter( whichletter ) {
    dta['courier'] = byId('insertElementals').dataset.courier;
    dta['tracknbr'] = byId('insertElementals').dataset.tracknbr;
    dta['salesorder'] = byId('insertElementals').dataset.salesorder;
+   dta['iname'] = byId('insertElementals').dataset.iname;
    var passeddata = JSON.stringify( dta );
    var mlURL = "/data-doers/qms-get-email-letter";
    universalAJAX("POST",mlURL,passeddata,answerGetQMSLetter,2);
@@ -5923,7 +6013,7 @@ function answerAddToManifest ( rtnData ) {
     msgs['MESSAGE'].forEach(function(element) { 
        dspMsg += "\\n - "+element;
     });
-    alert("ERROR:\\n"+dspMsg);
+    ahlert("ERROR:\\n"+dspMsg);
     byId('standardModalBacker').style.display = 'none'; 
    } else {
      var dta = JSON.parse( rtnData['responseText'] );
@@ -5964,6 +6054,7 @@ function answerFillManifestSide ( rtnData ) {
        displayDetails += "<div id=\"dtl"+dta['DATA'][i]['bgs']+"\" class=manDtlRecord><div class=delIco onclick=\"removeSegFromManifest('"+dta['DATA'][i]['bgs']+"','"+dta['DATA'][i]['manifestnbr']+"');\">&times;</div><div class=manDetBGS>"+dta['DATA'][i]['bgs']+"</div><div class=manDetPrep>"+dta['DATA'][i]['preparation']+"</div><div class=manDetDesig>"+dta['DATA'][i]['dxdesignation']+"</div>   </div>";
      }
      byId('manifestDetailHolder').innerHTML = displayDetails;
+     byId('mansegttl').innerHTML = "Manifest Segments: " + parseInt( dta['DATA'].length );     
      refreshOOGrid();
      byId('standardModalBacker').style.display = 'none'; 
    }
@@ -6093,7 +6184,7 @@ function answerThisQryManifest ( rtnData ) {
    } else {
      var dta = JSON.parse( rtnData['responseText'] );
      byId('fldManifestNbrDsp').value = dta['DATA'][0]['manifestnbr'];    
-     byId('manifestMetrics').innerHTML = dta['DATA'][0]['whoby'] + " ("+dta['DATA'][0]['manifestdate'] + ")"; 
+     byId('manifestMetrics').innerHTML = dta['DATA'][0]['whoby'] + " ("+dta['DATA'][0]['manifestdate'] + ") <span id=mansegttl></div>"; 
      if ( byId('manifestdialogid') ) { 
        fillManifestSide();
        closeThisDialog( byId('manifestdialogid').value );
@@ -8732,7 +8823,9 @@ function datacoordinator($rqststr) {
   $eExpo = encryptExponent;
   $si = serverIdent;
   $pw = serverpw;
-    
+
+//dta['deviation'] = byId('fldDialogPRUPDeviationReason').value.trim();
+
 $rtnthis = <<<JAVASCR
 
 var rowidclick = "";
@@ -8834,6 +8927,20 @@ document.addEventListener('DOMContentLoaded', function() {
         var passdta = JSON.stringify(selection['selectionListing']);
         var mlURL = "/data-doers/preprocess-override-hpr";
         universalAJAX("POST",mlURL,passdta,answerPreprocessOverrideHPR,1);   
+      } else { 
+        alert(selection['message']);
+      }
+    }, false);
+  }
+
+  if ( byId('btnBarLongTermMarker') ) { 
+    byId('btnBarLongTermMarker').addEventListener('click', function() { 
+      var selection = gatherSelection();
+      if (parseInt(selection['responseCode']) === 200) { 
+        byId('standardModalBacker').style.display = 'block';
+        var passdta = JSON.stringify(selection['selectionListing']);
+        var mlURL = "/data-doers/preprocess-ltis";
+        universalAJAX("POST",mlURL,passdta,answerPreprocessLTIS,1);   
       } else { 
         alert(selection['message']);
       }
@@ -9211,7 +9318,6 @@ function uploadPathologyReportText() {
   dta['prtxt'] = byId('fldDialogPRUPPathRptTxt').value.trim();
   dta['hipaacert'] = byId('HIPAACertify').checked;
   dta['usrpin'] = window.btoa( encryptedString(key, byId('fldUsrPIN').value, RSAAPP.PKCS1Padding, RSAAPP.RawEncoding) );
-  dta['deviation'] = byId('fldDialogPRUPDeviationReason').value.trim();
   var passdata = JSON.stringify(dta); 
   //TODO MAKE A 'PLEASE WAIT' INDICATION - AS THIS PROCESS CAN TAKE UP TO 10+ SECONDS 
   var mlURL = "/data-doers/pathology-report-upload-override";
@@ -9435,6 +9541,21 @@ function answerQueryRequest(rtnData) {
   }        
 }
 
+function answerPreprocessLTIS ( rtnData ) { 
+   if (parseInt(rtnData['responseCode']) !== 200) { 
+     var msgs = JSON.parse(rtnData['responseText']);
+     var dspMsg = ""; 
+     msgs['MESSAGE'].forEach(function(element) { 
+       dspMsg += "\\n - "+element;
+     });
+     alert("LTIS Error:\\n"+dspMsg);
+     byId('standardModalBacker').style.display = 'none';
+   } else { 
+    location.reload();
+   }
+}
+
+
 function answerPreprocessOverrideHPR(rtnData) { 
    if (parseInt(rtnData['responseCode']) !== 200) { 
      var msgs = JSON.parse(rtnData['responseText']);
@@ -9457,7 +9578,6 @@ function answerPreprocessOverrideHPR(rtnData) {
        byId('systemDialogTitle').style.width = "80vw";
 
        byId('standardModalBacker').style.display = 'block';
-       byId('standardModalDialog').style.display = 'block';
      }  
 
    }

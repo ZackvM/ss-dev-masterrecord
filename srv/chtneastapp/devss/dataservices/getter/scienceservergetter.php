@@ -341,7 +341,7 @@ class objlisting {
      $authuser = $_SERVER['PHP_AUTH_USER']; 
      $authpw = $_SERVER['PHP_AUTH_PW'];
 
-     $sensorListSQL = "SELECT ifnull(menuValue,'') as sensorid, ifnull(longValue,'') as sensorname FROM four.sys_master_menus where menu = :sensorlistid and dspInd = 1 order by dspOrder";
+     $sensorListSQL = "SELECT ifnull(menuValue,'') as sensorid, ifnull(longValue,'') as sensorname, ifnull(dspvalue,'') as shortboxsensorname, ifnull(googleiconcode,'[0,0]') as xycoord FROM four.sys_master_menus where menu = :sensorlistid and dspInd = 1 order by dspOrder";
      $sensorListRS = $conn->prepare($sensorListSQL);
      $sensorListRS->execute(array(':sensorlistid' => 'CORISSENSORLIST'));
 
@@ -350,6 +350,8 @@ class objlisting {
      while ($sensors = $sensorListRS->fetch(PDO::FETCH_ASSOC)) { 
        $id =  $sensors['sensorid']; 
        $sensor[$id]['sensorname'] = $sensors['sensorname'];
+       $sensor[$id]['shortboxsensor'] = $sensors['shortboxsensorname'];
+       $sensor[$id]['shortboxxy'] = $sensors['xycoord'];
        $sensorDtaSQL = "select utctimestamp, sensorid, corisnamelabel as namelabel, readinginc, date_format(onwhen, '%H:%i') as gathertime, date_format(onwhen, '%m/%d/%Y') as gatherdate, date_format(onwhen,'%b %D, %Y :: %h:%i %p') as dtegathered from (SELECT @row := @row +1 AS rownum, s.* FROM (SELECT @row :=0) r, four.enviro_coris_lastweek s where s.sensorid = :sensorid order by s.onwhen desc ) as sensorrows where rownum % 9 = 1 limit 0,5";
        $sensorDtaRS = $conn->prepare($sensorDtaSQL); 
        $sensorDtaRS->execute(array(':sensorid' => $sensors['sensorid']));
@@ -1496,11 +1498,11 @@ function docsrch($whichobj, $rqst) {
                    $strm = "%{$searchTerm}%";
                break;
                case 'PRBGNBR':
-                   $ssql = "select prid, selector, trim(substr(stripHTML(pathreport),1,200)) as abstract, dnpr_nbr as dspmark from masterrecord.qcpathreports where dnpr_nbr like :srchtrm order by dnpr_nbr desc  limit 250";
+                   $ssql = "select prid, selector, trim(substr(pathreport,1,200)) as abstract, dnpr_nbr as dspmark from masterrecord.qcpathreports where dnpr_nbr like :srchtrm order by dnpr_nbr desc  limit 250";
                    $strm = "{$searchTerm}%";
                    break;
                case 'PATHOLOGYRPT':
-                   $ssql = "select prid, selector, trim(substr(stripHTML(pathreport),1,200)) as abstract, dnpr_nbr as dspmark from masterrecord.qcpathreports where pathreport like :srchtrm order by dnpr_nbr desc  limit 250";
+                   $ssql = "select prid, selector, trim(substr(pathreport,1,200)) as abstract, dnpr_nbr as dspmark from masterrecord.qcpathreports where pathreport like :srchtrm order by dnpr_nbr desc  limit 500";
                    $strm = "% {$searchTerm} %";
                    break;
                case 'SHIPDOC': 
@@ -1864,11 +1866,14 @@ function runhelpsearchquery($srchrqstjson) {
   require(serverkeys . "/sspdo.zck");
   $rqstDta = json_decode($srchrqstjson, true);
 //  $sql = "SELECT helpurl, screenreference, title, subtitle, txt, ifnull(bywhomemail,'') as byemail, ifnull(date_format(initialdate,'%M %d, %Y'),'') as initialdte, ifnull(lasteditbyemail,'') as lstemail, ifnull(date_format(lastedit,'%M %d, %Y'),'') as lstdte FROM four.base_ss7_help where 1=1 and ((ifnull(txt,'') like :textsrch) or (ifnull(title,'') like :titlesrch) or (ifnull(subtitle,'') like :subtitlesrch))";
-  $sql = "SELECT  x.modurlref, h.helpurl, h.screenreference, h.title, h.subtitle, h.txt, ifnull(h.bywhomemail,'') as byemail, ifnull(date_format(h.initialdate,'%M %d, %Y'),'') as initialdte, ifnull(h.lasteditbyemail,'') as lstemail, ifnull(date_format(h.lastedit,'%M %d, %Y'),'') as lstdte FROM four.base_ss7_help h  left join four.base_ss7_help_doc_to_idx m on h.hlpid = m.helpdocid left join four.base_ssv7_help_index_modulelist x on m.modindxid = x.moduleid where 1=1 and m.dspind = 1 and ((ifnull(txt,'') like :textsrch) or (ifnull(title,'') like :titlesrch) or (ifnull(subtitle,'') like :subtitlesrch))";
+//  $sql = "SELECT  x.modurlref, h.helpurl, h.screenreference, h.title, h.subtitle, h.txt, ifnull(h.bywhomemail,'') as byemail, ifnull(date_format(h.initialdate,'%M %d, %Y'),'') as initialdte, ifnull(h.lasteditbyemail,'') as lstemail, ifnull(date_format(h.lastedit,'%M %d, %Y'),'') as lstdte FROM four.base_ss7_help h  left join four.base_ss7_help_doc_to_idx m on h.hlpid = m.helpdocid left join four.base_ssv7_help_index_modulelist x on m.modindxid = x.moduleid where 1=1 and m.dspind = 1 and ((ifnull(txt,'') like :textsrch) or (ifnull(title,'') like :titlesrch) or (ifnull(subtitle,'') like :subtitlesrch))";
+   $sql = "SELECT  x.modurlref, h.helpurl, h.screenreference, h.title, h.subtitle, texter.doctext txt, ifnull(h.bywhomemail,'') as byemail, ifnull(date_format(h.initialdate,'%M %d, %Y'),'') as initialdte, ifnull(h.lasteditbyemail,'') as lstemail, ifnull(date_format(h.lastedit,'%M %d, %Y'),'') as lstdte FROM four.base_ss7_help h left join four.base_ss7_help_doc_to_idx m on h.hlpid = m.helpdocid left join four.base_ssv7_help_index_modulelist x on m.modindxid = x.moduleid left join (SELECT helpdocid, group_concat(sectiontext separator ' ') as doctext FROM four.base_ss7_help_doc_sections where activeind = 1 group by helpdocid) as texter on h.hlpid = texter.helpdocid where 1=1 and m.dspind = 1 and ((ifnull(texter.doctext,'') like :textsrch ) or (ifnull(title,'') like :titlesrch ) or (ifnull(subtitle,'') like :subtitlesrch ))";
   $rs = $conn->prepare($sql); 
   $rs->execute(array(":textsrch" => "%{$rqstDta['searchterm']}%", ":titlesrch" => "%{$rqstDta['searchterm']}%", ":subtitlesrch" => "%{$rqstDta['searchterm']}%"));
+
   $rtnData = array();
   if ( $rs->rowCount() > 0 ) {
+  
     $rsltCntr = 0;  
     while ( $r = $rs->fetch(PDO::FETCH_ASSOC)) {
       $rtnData[$rsltCntr]['matchesfound']       = $rs->rowCount();
@@ -1895,6 +1900,8 @@ function runhelpsearchquery($srchrqstjson) {
       $rtnData[$rsltCntr]['abstract']           = preg_replace("/{$rqstDta['searchterm']}/i","<b>$0</b>",$txtStr);
       $rsltCntr++;
     }
+
+
   } else { 
   }
   return $rtnData; 
@@ -2165,28 +2172,11 @@ where parentId = 293 */
       $masterSQL = <<<SQLSTMT
 select bs.pbiosample
       , sg.segmentid
-      , bs.voidind bsvoid 
-      , sg.voidind sgvoid
-      , ucase(ifnull(sg.bgs,'')) as bgs
-      , sg.segstatus as segstatuscode
-      , ifnull(mnuseg.dspvalue,'ERROR') as segstatus        
-      , ifnull(date_format(sg.statusdate,'%m/%d/%Y'),'') as statusdate
-      , ifnull(sg.statusby,'') as statusby
-      , ifnull(bs.qcprocstatus,'') as qcstatuscode
-      , trim(ifnull(hprdecision,'')) as hprdecision
-      , ifnull(hprresult,0) as hprresultid
-      , trim(ifnull(hprby,'')) as hprreviewer
-      , ifnull(date_format(hpron,'%m/%d/%Y'),'') as reviewedon
-      , ucase(ifnull(mnuqms.dspvalue,'')) as qcstatus
-      , ifnull(bs.pxiage,'') as phiage
-      , ucase(substr(ifnull(bs.pxirace,''),1,3)) as phiracecode
-      , ucase(ifnull(bs.pxirace,'')) as phirace
-      , ifnull(bs.pxigender,'') as phigender
-      , ifnull(bs.proctype,'') as proctype
-      , ifnull(mnuprctype.dspvalue,'') as proctypedsp
-      , ifnull(date_format(sg.procurementdate,'%m/%d/%Y'),'') as procurementdate 
-      , ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shipmentdate 
-      , ifnull(sg.shipdocrefid,0) as shipdocnbr
+      , bs.voidind bsvoid, sg.voidind sgvoid, ucase(ifnull(sg.bgs,'')) as bgs, sg.segstatus as segstatuscode, ifnull(mnuseg.dspvalue,'ERROR') as segstatus, ifnull(date_format(sg.statusdate,'%m/%d/%Y'),'') as statusdate
+      , ifnull(sg.statusby,'') as statusby, ifnull(bs.qcprocstatus,'') as qcstatuscode, trim(ifnull(hprdecision,'')) as hprdecision, ifnull(hprresult,0) as hprresultid, trim(ifnull(hprby,'')) as hprreviewer
+      , ifnull(date_format(hpron,'%m/%d/%Y'),'') as reviewedon, ucase(ifnull(mnuqms.dspvalue,'')) as qcstatus, ifnull(bs.pxiage,'') as phiage, ucase(substr(ifnull(bs.pxirace,''),1,3)) as phiracecode
+      , ucase(ifnull(bs.pxirace,'')) as phirace, ifnull(bs.pxigender,'') as phigender, ifnull(bs.proctype,'') as proctype, ifnull(mnuprctype.dspvalue,'') as proctypedsp
+      , ifnull(date_format(sg.procurementdate,'%m/%d/%Y'),'') as procurementdate, ifnull(date_format(sg.shippeddate,'%m/%d/%Y'),'') as shipmentdate, ifnull(sg.shipdocrefid,0) as shipdocnbr
       , ifnull(sg.manifestnbr,'') as manifestnbr
       , ifnull(mhd.prefix,'') as manifestprefix
       , ifnull(mhd.mstatus,'') as manifeststatus
