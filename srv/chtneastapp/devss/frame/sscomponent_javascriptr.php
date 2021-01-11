@@ -7814,6 +7814,120 @@ return $rtnthis;
 
 }
 
+function reportbuilder ( $rqststr ) { 
+
+    $sp = serverpw; 
+    $tt = treeTop;
+
+    $rtnthis = <<<JAVASCR
+
+function changeRptWorkArea ( whicharea ) {
+  var wa = document.getElementsByClassName("btnwiz");
+  for ( var i = 0; i < wa.length; i++ ) {
+    wa[i].dataset.selected = 'false';           
+  }
+  byId('btnwiz'+whicharea).dataset.selected = 'true';
+  var rb = document.getElementsByClassName("rptwork");
+  for ( var j = 0; j < rb.length; j++ ) {
+    rb[j].style.display = 'none';
+  } 
+  byId('rptWrk'+whicharea).style.display = 'block';
+}
+
+function getContainerList ( whichschema ) { 
+  byId('availdataelementlist').innerHTML = "&nbsp;";  
+  var wa = document.getElementsByClassName("schemaHolder");
+  for ( var i = 0; i < wa.length; i++ ) {
+    wa[i].dataset.selected = 'false';           
+  }
+  byId('SID'+whichschema).dataset.selected = 'true' 
+  var mlURL = "/rpt-get-container-list/"+whichschema;
+  universalAJAX("GET",mlURL,"",answerContainerListing,2);
+}
+
+function answerContainerListing ( rtnData ) {
+   if (parseInt(rtnData['responseCode']) !== 200) {             
+     var resultTbl = "No Containers found in Data Schema";         
+   } else {
+         
+     var dta = JSON.parse(rtnData['responseText']);  
+     var resultTbl = "";
+     dta['DATA'].forEach(function(element) { 
+       resultTbl += "<div class=dcontainer id='DCON"+element['containerid']+"' onclick=\"getContainerElements("+element['containerid']+");\" data-selected='false'>"+element['containername']+"</div>";
+     });  
+
+     byId('pickedschema').innerHTML = "Selected Schema: "+dta['MESSAGE'][0]; 
+
+   }
+   if (byId('cworkbench')) { 
+     byId('cworkbench').innerHTML = resultTbl;         
+   }
+
+}
+
+function getContainerElements ( whichcontainer ) {
+  byId('availdataelementlist').innerHTML = "&nbsp;";  
+  var wa = document.getElementsByClassName("dcontainer");
+  for ( var i = 0; i < wa.length; i++ ) {
+    wa[i].dataset.selected = 'false';           
+  }
+  byId('DCON'+whichcontainer).dataset.selected = 'true' 
+  var mlURL = "/rpt-get-field-list/"+whichcontainer;
+  universalAJAX("GET",mlURL,"",answerFieldListing,2);
+}
+
+function answerFieldListing( rtnData ) {
+   byId('availdataelementlist').innerHTML = "&nbsp;";  
+   if (parseInt(rtnData['responseCode']) !== 200) {             
+     var resultTbl = "No Containers found in Data Schema";         
+   } else {
+     var dta = JSON.parse(rtnData['responseText']);  
+     byId('pickedcontainer').innerHTML = "Selected Container: "+dta['MESSAGE'][0]; 
+
+     var resultTbl = "";
+     var qTbl = "";
+     dta['DATA'].forEach(function(element) { 
+       resultTbl += "<div onclick=\"selectDElement("+element['fieldid']+");\" class=felement id='FELM"+element['fieldid']+"' data-selector='"+element['selector']+"' data-selected='false'><div class=felemname>"+element['labelname']+"</div><div class=seqFld><input type=text class=fldOrd id='deFLD"+element['fieldid']+"'></div><div class=felemdesc>"+element['fielddesc']+"</div></div>";
+       if ( element['qryableind'] == 1 ) {
+
+
+         var ftype = "";
+         if ( element['fieldtype'] == 'MENU' ) { 
+           ftype = "<div><button onclick=\"alert('"+element['whichmenu']+"');\">Menu</button></div>"; 
+         } else { 
+           ftype = "<div>&nbsp;</div>"; 
+         }
+
+         qTbl += "<div class=qLine><div><input type=checkbox></div><div class=qelement>"+element['labelname']+"</div><div><input type=text class=defaultvalue></div>"+ftype+"</div>";
+
+
+       }
+
+     });  
+
+     byId('qworkbench').innerHTML = qTbl;
+     byId('availdataelementlist').innerHTML = resultTbl;  
+   }
+
+}
+
+function selectDElement ( whichelement ) { 
+  if ( byId('FELM'+whichelement).dataset.selected == 'false' || byId('FELM'+whichelement).dataset.selected == '' ) { 
+    byId('FELM'+whichelement).dataset.selected = 'true';
+
+  } else {
+    byId('FELM'+whichelement).dataset.selected = 'false';
+  }
+
+  
+
+}
+
+JAVASCR;
+return $rtnthis;
+
+}
+
 function reports($rqststr) { 
 
     $sp = serverpw; 

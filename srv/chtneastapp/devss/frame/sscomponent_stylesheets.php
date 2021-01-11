@@ -383,6 +383,72 @@ STYLESHEET;
 return $rtnThis;
   }
 
+  function reportbuilder ( $mobileind ) { 
+$rtnThis = <<<STYLESHEET
+
+body { margin: 0; margin-top: 10.5vh; margin-left: .8vw; margin-right: .8vw;   box-sizing: border-box; }
+.floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
+
+#pageContentHolder { min-height: 80vh; box-sizing: border-box; }
+#wizardButtons { display: grid; grid-template-columns: repeat( 17, 1fr ); grid-gap: .2vw; } 
+#wizardButtons .btnwiz { border: 1px solid rgba({$this->color_zackgrey},1); text-align: center; font-size: 1.3vh; line-height: 3vh; transition: all .5s ease;      } 
+#wizardButtons .btnwiz:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.3); }
+#wizardButtons .btnwiz[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
+
+#rptworkarea { position: relative; }
+.rptwork {  position: absolute; top: .3vh; left: 0; width: 100%; background: rgba({$this->color_white},1); min-height: 80vh; }
+
+#rptWrk0 { display: block;  }
+#rptWrk0 #titleLine { font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_zackgrey},1); text-align: center; margin: 3vh 10vw .5vh 10vw;  }  
+#rptWrk0 #instructions { font-size: 1.8vh; margin: 0 10vw; text-align: justify; } 
+
+#rptWrk1 { display: none;  }
+#rptWrk1 #titleLine { font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_zackgrey},1); padding: .8vh .3vw; margin: .2vh 0 0 0; }  
+#rptWrk1 #instrLine { font-size: 1.8vh; padding: 1.8vh; padding: .3vh 0; } 
+#rptWrk1 #workbench { height: 65vh; overflow: auto; }
+#rptWrk1 #workbench .schemaHolder { border: 1px solid rgba({$this->color_zackgrey},1); margin: .5vh 0 0 0; }
+#rptWrk1 #workbench .schemaHolder:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.2); } 
+#rptWrk1 #workbench .schemaHolder[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
+#rptWrk1 #workbench .schemaHolder .schemaname { font-size: 1.6vh; color: rgba({$this->color_zackgrey},1); padding: .5vh .4vw 0 .4vw;   }
+#rptWrk1 #workbench .schemaHolder .schemadesc { font-size: 1.4vh; color: rgba({$this->color_zackgrey},1); padding: 0 .4vw .5vw .4vw;   }  
+
+#rptWrk2 { display: none;  } 
+#rptWrk2 #titleLine { font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_zackgrey},1); padding: .8vh .3vw; margin: .2vh 0 0 0; }  
+#rptWrk2 #instrLine { font-size: 1.8vh; padding: 1.8vh; padding: .3vh 0; } 
+#rptWrk2 #cworkbench { height: 65vh; overflow: auto; display: grid; grid-template-columns: repeat( 8, 1fr ); grid-gap: .2vw;   }
+#rptWrk2 #cworkbench .dcontainer { font-size: 1.8vh; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); padding: .5vh 0; text-align: center; height: 6vh; transition: all .5s ease;    }
+#rptWrk2 #cworkbench .dcontainer:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.3); } 
+#rptWrk2 #cworkbench .dcontainer[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
+
+#rptWrk3 { display: none;  } 
+#rptWrk3 #titleLine { font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_zackgrey},1); padding: .8vh .3vw; margin: .2vh 0 0 0; }  
+#rptWrk3 #instrLine { font-size: 1.8vh; padding: 1.8vh; padding: .3vh 0; }
+#rptWrk3 #fworkbench { display: grid; grid-template-columns: 1fr;  }  
+#rptWrk3 #fworkbench .topLabels { background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-weight: bold; font-size: 1.3vh; padding: .3vh 0 .3vh .3vw;    } 
+#rptWrk3 #fworkbench #availdataelementlist { border: 1px solid rgba({$this->color_zackgrey},1); height: 70vh; overflow: auto; }
+#rptWrk3 #fworkbench #availdataelementlist .felement { margin: .3vh .2vw 0 .2vw; border: 1px solid rgba({$this->color_zackgrey},1); display: grid; grid-template-columns: 30fr 1fr; grid-gap: .2vw; }
+#rptWrk3 #fworkbench #availdataelementlist .felement:hover  { cursor: pointer; background: rgba({$this->color_cornflowerblue},.3); }
+#rptWrk3 #fworkbench #availdataelementlist .felement[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
+#rptWrk3 #fworkbench #availdataelementlist .felement .felemname { font-size: 1.7vh; padding: .5vh .3vw 0 .3vw;   } 
+#rptWrk3 #fworkbench #availdataelementlist .felement .felemdesc { font-size: 1.5vh; padding: 0 .3vw .5vh .3vw; } 
+#rptWrk3 #fworkbench #availdataelementlist .seqFld { grid-row: span 2; }
+#rptWrk3 #fworkbench #availdataelementlist .seqFld .fldOrd { width: 2vw; text-align: center; font-size: 1.5vh; background: rgba({$this->color_white},1); margin: .5vh 0 .5vh 0; display: none; }    
+
+#rptWrk4 { display: none;  }
+#rptWrk4 #titleLine { font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_zackgrey},1); padding: .8vh .3vw; margin: .2vh 0 0 0; }  
+#rptWrk4 #instrLine { font-size: 1.8vh; padding: 1.8vh; padding: .3vh 0; }
+#rptWrk4 #qworkbench { height: 70vh; overflow: auto; border: 1px solid rgba({$this->color_zackgrey},1); } 
+#rptWrk4 #qworkbench .qLine { display: grid; grid-template-columns: 2vw 15vw 11vw auto; margin: 0 0 0 0; padding: .3vh 0 .3vh 0; border-bottom: 1px solid rgba({$this->color_zackgrey},1);   }
+#rptWrk4 #qworkbench .qLine .qelement { font-size: 1.5vh; }
+#rptWrk4 #qworkbench .qLine .defaultvalue { font-size: 1.3vh; width: 10vw; }    
+
+
+#rptWrk5 { display: none;  } 
+
+STYLESHEET;
+return $rtnThis;
+  }
+
    function useradministration ( $mobileind ) { 
 $rtnThis = <<<STYLESHEET
 

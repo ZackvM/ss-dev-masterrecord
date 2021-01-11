@@ -868,6 +868,61 @@ RTNTHIS;
 
 }
 
+function reportbuilder ( $rqststr, $usr ) {
+
+
+    $dta = json_decode(callrestapi("GET", dataTree . "/sys-rptbld-schema-list", serverIdent, serverpw), true);
+    $sList = "";
+    foreach ( $dta['DATA'] as $k => $v ) { 
+      $sList .= "<div class=schemaHolder id=\"SID{$v['dataschemaid']}\" onclick=\"getContainerList({$v['dataschemaid']});\" data=selected=false><div class=schemaname>{$v['dataschemaname']}</div><div class=schemadesc>{$v['schemadescription']}</div></div>";
+    }
+
+
+$topBtnBar = generatePageTopBtnBar('reportbuilder', $usr, "" );
+$rtnthis = <<<PGCONTENT
+{$topBtnBar}
+<div id=pageContentHolder>
+
+  <div id=wizardButtons>
+    <div class=btnwiz id=btnwiz0 onclick="changeRptWorkArea(0);" data-selected='true'>Instructions</div> 
+    <div class=btnwiz id=btnwiz1 onclick="changeRptWorkArea(1);" data-selected='false'>Data Schema</div>
+    <div class=btnwiz id=btnwiz2 onclick="changeRptWorkArea(2);" data-selected='false'>Data Container</div>
+    <div class=btnwiz id=btnwiz3 onclick="changeRptWorkArea(3);" data-selected='false'>Display Fields</div>
+    <div class=btnwiz id=btnwiz4 onclick="changeRptWorkArea(4);" data-selected='false'>Selection Criteria</div>
+    <div class=btnwiz id=btnwiz5 onclick="changeRptWorkArea(5);" data-selected='false'>Build &amp; Save</div>
+  </div>
+
+  <div id=rptworkarea>
+    <div class=rptwork id=rptWrk0 data-selected='true'>
+      <div id=titleLine>Instructions</div>
+      <div id=instructions>This 'Wizard' will lead you through the steps of building a data report in ScienceServer.  Alternatively, if the data elements and criteria are known (or if editing a pre-existing report), skipping to the last step ('Check &amp; Save') can be performed directly.  Click the buttons above in the order in which they appear to walk through the build wizard.</div>
+    </div>
+    <div class=rptwork id=rptWrk1 data-selected='false'><div id=titleLine>Data Schema</div><div id=instrLine>Select one data schema</div><div id=workbench>{$sList}</div></div>
+    <div class=rptwork id=rptWrk2 data-selected='false'><div id=titleLine>Containers</div><div id=instrLine>Select one container (<span id=pickedschema></span>)  </div><div id=cworkbench>   </div></div>
+    <div class=rptwork id=rptWrk3 data-selected='false'>
+                                                        <div id=titleLine>Data Elements to Display </div>
+                                                        <div id=instrLine>Select data elements to display on report (<span id=pickedcontainer></span>)</div>
+                                                        <div id=fworkbench>
+                                                          <div class=topLabels>Available Data Elements</div>
+                                                          <div id=availdataelementlist>Data Element Listing</div>
+                                                        </div>
+    </div>
+    <div class=rptwork id=rptWrk4 data-selected='false'>
+                                                        <div id=titleLine>Criteria Set </div>
+                                                        <div id=instrLine>Available Querible Data Elements. Outline the criteria/parameters for this report by checking the boxes of the elements to use as criteria. Fill in the fields on the right to set a default value.  Leave the field blank to allow user input (ScienceServer will build the correct input for the user interface based on the selected field). Delimit multiple values with a semi-colon. </div> 
+                                                        <div id=qworkbench>
+                                                         
+                                                        </div>
+    </div>
+    <div class=rptwork id=rptWrk5 data-selected='false'>Build and Save</div>
+
+  </div>
+
+</div>
+PGCONTENT;
+return $rtnthis;    
+}
+
 function useradministration ( $rqststr, $usr ) { 
   require(genAppFiles . "/dataconn/sspdo.zck");     
   $topBtnBar = generatePageTopBtnBar('useradministration', $usr, "" );
@@ -4583,7 +4638,14 @@ $innerBar = <<<BTNTBL
 </tr>
 BTNTBL;
 break;    
+case 'reportbuilder':
+//$innerBar = <<<BTNTBL
+//<tr>
+//  <td class=topBtnHolderCell><table class=topBtnDisplayer id=btnRRExport><tr><td><i class="material-icons">save</i></td><td>Save Definition</td></tr></table></td>
+//</tr>
+//BTNTBL;
 
+break;    
 case 'qmsactionwork':
     $innerBar = <<<BTNTBL
 <tr>

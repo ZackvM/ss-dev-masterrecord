@@ -178,7 +178,90 @@ class objlisting {
      return $rows;     
   }
 
+  function rptgetfieldlist ( $whichobj, $urirqst ) { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     //$msgArr[] = $whichobj;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
 
+     $cqRS = $conn->prepare("SELECT fl.fieldid, concat(tableprefix,'.',metaname) as selector, labelname, ifnull(fielddesc,'') as fielddesc, fieldtype, ifnull( whichmenu,'') as whichmenu, qryableind FROM four.sys_rpt_container_to_field ctofld left join four.sys_rpt_fieldlist fl on ctofld.fieldid = fl.fieldid  where ctofld.dspind = 1 and ctofld.containerid = :containerid and fl.dspind = 1 order by ctofld.dsporder");
+     $cqRS->execute(array(':containerid' => (int)$whichobj ));
+
+     if ( $cqRS->rowCount() > 0 ) {
+       $itemsfound = $cqRS->rowCount(); 
+       $dta = $cqRS->fetchAll(PDO::FETCH_ASSOC);
+
+       $objRS = $conn->prepare( "SELECT containername FROM four.sys_rpt_datacontainers srdc where dspind = 1 and containerid = :container"); 
+       $objRS->execute(array(':container' => (int)$whichobj ));
+       $sch = $objRS->fetch(PDO::FETCH_ASSOC);
+       $msgArr[] = $sch['containername'];
+
+       $responseCode = 200;
+     }
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;
+  } 
+
+  function rptgetcontainerlist ( $whichobj, $urirqst ) { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = $whichobj;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     //$msgArr[] = $whichobj; 
+     $cqRS = $conn->prepare("SELECT srdc.containerid, srdc.containername FROM four.sys_rpt_schema_to_container srsc left join four.sys_rpt_datacontainers srdc on srsc.containerid = srdc.containerid where srsc.dspind = 1 and srdc.dspind = 1 and schemaid = :schemaid order by dsporder");
+     $cqRS->execute(array(':schemaid' => (int)$whichobj ));
+
+     if ( $cqRS->rowCount() > 0 ) {
+       $itemsfound = $cqRS->rowCount(); 
+       $dta = $cqRS->fetchAll(PDO::FETCH_ASSOC);
+
+       $objRS = $conn->prepare( "SELECT dataschemaname FROM four.sys_rpt_dataschema where dspind = 1 and dataschemaid = :schema"); 
+       $objRS->execute(array(':schema' => (int)$whichobj ));
+       $sch = $objRS->fetch(PDO::FETCH_ASSOC);
+       $msgArr[] = $sch['dataschemaname'];
+
+
+       $responseCode = 200;
+     }
+
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;
+  }
+
+  function sysrptbldschemalist ( $whichobj, $urirqst ) { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msg = $whichobj;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+     $msgArr[] = $whichobj;
+     
+     $cquestionSQL = "SELECT dataschemaid, dataschemaname, schemadescription FROM four.sys_rpt_dataschema where dspind = 1 order by dsporder";
+     $cqRS = $conn->prepare($cquestionSQL);
+     $cqRS->execute();
+     if ( $cqRS->rowCount() > 0 ) {
+       $itemsfound = $cqRS->rowCount(); 
+       $dta = $cqRS->fetchAll(PDO::FETCH_ASSOC);
+       $responseCode = 200;
+     }
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;     
+  }
 
   function vaultconsentdocquestionstext( $whichobj, $urirqst ) {
      $responseCode = 400;
