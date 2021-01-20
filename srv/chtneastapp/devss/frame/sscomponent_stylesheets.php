@@ -390,10 +390,11 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .8vw; margin-right: .8vw;   b
 .floatingDiv {  z-index: 101;  background: rgba({$this->color_white},1); border: 1px solid rgba({$this->color_zackgrey},1); position: fixed; padding: 2px; top: 150px ; left: 150px;  } 
 
 #pageContentHolder { min-height: 80vh; box-sizing: border-box; }
-#wizardButtons { display: grid; grid-template-columns: repeat( 17, 1fr ); grid-gap: .2vw; } 
+#wizardButtons { display: grid; grid-template-columns: repeat( 12, 1fr ); grid-gap: .2vw; } 
 #wizardButtons .btnwiz { border: 1px solid rgba({$this->color_zackgrey},1); text-align: center; font-size: 1.3vh; line-height: 3vh; transition: all .5s ease;      } 
 #wizardButtons .btnwiz:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.3); }
 #wizardButtons .btnwiz[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
+#wizardButtons .nbrcirc { background: rgba({$this->color_dblue},1); padding: .1vh .3vw; border-radius: 30px; color: rgba({$this->color_white},1); font-weight: bold; } 
 
 #rptworkarea { position: relative; }
 .rptwork {  position: absolute; top: .3vh; left: 0; width: 100%; background: rgba({$this->color_white},1); min-height: 80vh; }
@@ -415,10 +416,11 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .8vw; margin-right: .8vw;   b
 #rptWrk2 { display: none;  } 
 #rptWrk2 #titleLine { font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_zackgrey},1); padding: .8vh .3vw; margin: .2vh 0 0 0; }  
 #rptWrk2 #instrLine { font-size: 1.8vh; padding: 1.8vh; padding: .3vh 0; } 
-#rptWrk2 #cworkbench { height: 65vh; overflow: auto; display: grid; grid-template-columns: repeat( 8, 1fr ); grid-gap: .2vw;   }
-#rptWrk2 #cworkbench .dcontainer { font-size: 1.8vh; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); padding: .5vh 0; text-align: center; height: 6vh; transition: all .5s ease;    }
+#rptWrk2 #cworkbench { height: 65vh; overflow: auto; display: grid; grid-template-columns: repeat( 6, 1fr ); grid-gap: .2vw;   }
+#rptWrk2 #cworkbench .dcontainer { font-size: 1.6vh; border: 1px solid rgba({$this->color_zackgrey},1); background: rgba({$this->color_white},1); padding: .5vh 0; text-align: center; height: 6vh; transition: all .5s ease; display: grid; grid-template-rows: 2fr 1fr; }
 #rptWrk2 #cworkbench .dcontainer:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.3); } 
 #rptWrk2 #cworkbench .dcontainer[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
+#rptWrk2 #cworkbench .dcontainer .dcdesc { font-size: 1.1vh; } 
 
 #rptWrk3 { display: none;  } 
 #rptWrk3 #titleLine { font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_zackgrey},1); padding: .8vh .3vw; margin: .2vh 0 0 0; }  
@@ -438,12 +440,27 @@ body { margin: 0; margin-top: 10.5vh; margin-left: .8vw; margin-right: .8vw;   b
 #rptWrk4 #titleLine { font-size: 2.5vh; font-weight: bold; color: rgba({$this->color_white},1); background: rgba({$this->color_zackgrey},1); padding: .8vh .3vw; margin: .2vh 0 0 0; }  
 #rptWrk4 #instrLine { font-size: 1.8vh; padding: 1.8vh; padding: .3vh 0; }
 #rptWrk4 #qworkbench { height: 70vh; overflow: auto; border: 1px solid rgba({$this->color_zackgrey},1); } 
-#rptWrk4 #qworkbench .qLine { display: grid; grid-template-columns: 2vw 15vw 11vw auto; margin: 0 0 0 0; padding: .3vh 0 .3vh 0; border-bottom: 1px solid rgba({$this->color_zackgrey},1);   }
+#rptWrk4 #qworkbench .qLine { display: grid; grid-template-columns: 2vw 15vw 5vw 11vw auto; margin: 0 0 0 0; padding: .3vh 0 .3vh 0; border-bottom: 1px solid rgba({$this->color_zackgrey},1);   }
 #rptWrk4 #qworkbench .qLine .qelement { font-size: 1.5vh; }
 #rptWrk4 #qworkbench .qLine .defaultvalue { font-size: 1.3vh; width: 10vw; }    
 
 
-#rptWrk5 { display: none;  } 
+#rptWrk5 { grid-template-columns: repeat( 3, 1fr ); grid-gap: .2vw; grid-template-rows: 1fr 15fr 2vh 7fr; display: none;}
+#rptWrk5 #bAndSTitle { grid-column: span 3; padding: .8vh 0 .4vh 0 ; font-size: 1.8vh; border-bottom: 3px solid rgba({$this->color_zackgrey},1); display: grid; grid-template-columns: 5vw auto;    } 
+#rptWrk5 #rptDef {  font-size: 1.8vh; border-bottom: 3px solid rgba({$this->color_zackgrey},1); height: 2vh; grid-column: span 3;  }
+#rptWrk5 #defgrid { grid-column: span 3; display: grid; grid-template-columns: repeat( 5, 1fr ); grid-gap: .2vw; } 
+
+#paraDataContainer { width: 100%; border: 1px solid rgba({$this->color_zackgrey},1); height: 50vh; font-size: 1.2vh; padding: .2vh .2vw; } 
+#selectorBox { width: 100%; border: 1px solid rgba({$this->color_zackgrey},1); height: 50vh; font-size: 1.2vh;  padding: .4vh .2vw; }
+#paraJSONList { width: 100%; border: 1px solid rgba({$this->color_zackgrey},1); height: 50vh; font-size: 1.2vh;  padding: .4vh .2vw; }
+.rptSecHead { font-size: 2vh; padding: 2vh 0 0 0;      }
+
+
+#menuOptionDspTitleBar { width: 20vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); font-size: 1.4vh; font-weight: bold; padding: .6vh .4vw;  } 
+#rptMenuOptionList { height: 50vh; overflow: auto; border: 1px solid rgba({$this->color_zackgrey},1); margin: .3vh .1vw; } 
+.optoption { padding: .3vh .2vw; font-size: 1.4vh; }
+.optoption:hover { cursor: pointer; background: rgba({$this->color_cornflowerblue},.2); }
+.optoption[data-selected='true'] { background: rgba({$this->color_darkgreen},.2); }
 
 STYLESHEET;
 return $rtnThis;
@@ -1380,7 +1397,7 @@ textarea { font-size: 1.3vh; }
 #fldPRCDiagnosisDesignation { width: 25vw; }
 #fldPRCMETSDesignation {width: 32vw; }
 #fldPRCSystemicDX {width: 32vw; }
-#fldPRCPXISex {width: 4vw;  }
+#fldPRCPXISex {width: 3vw;  }
 #fldPRCPXIId { display: none; }
 #fldPRCPXIInitials { width: 4vw;  }
 #fldADDPXIInitials { width: 4vw; }
@@ -1389,7 +1406,8 @@ textarea { font-size: 1.3vh; }
 #fldPRCPXIAgeMetric {width: 2.8vw; }
 #fldADDAgeUOM {width: 5vw;}
 #ddADDAgeUOM {min-width: 6vw; }
-#fldPRCPXIRace {width: 10vw;  }
+#fldPRCPXIRace {width: 8vw;  }
+#fldPRCPXIEth { width: 8vw; } 
 #fldPRCPXIInfCon {width: 5vw;  }
 #fldPRCPXILastFour {width: 4vw;  }
 #fldPRCPXIDspCX {width: 6vw;  }
@@ -1398,8 +1416,8 @@ textarea { font-size: 1.3vh; }
 #fldPRCPXIDspRX {width: 6vw;  }
 #fldPRCPXIRX {width: 5vw;  }
 #ddPRCPXIRX {min-width: 6vw;}
-#fldPRCPXISubjectNbr { width: 11vw;  }
-#fldPRCPXIProtocolNbr { width: 11vw; }
+#fldPRCPXISubjectNbr { width: 9vw;  }
+#fldPRCPXIProtocolNbr { width: 9vw; }
 #fldPRCPXISOGI {width: 5vw;  }
 #fldPRCUpennSOGI { width: 10vw; }
 #ddPRCUpennSOGI { width: 10vw; }
@@ -1469,11 +1487,12 @@ textarea { font-size: 1.3vh; }
 #fldDNRAge { width: 3vw; text-align: right; }
 #fldDNRAgeUOM {width: 6vw; }
 #ddDNRAgeUOM { min-width: 6vw; }
-#fldDNRRace { width: 10vw; }
+#fldDNRRace { width: 5vw; }
+#fldDNREthno {width: 5vw; } 
 #fldADDRace {width: 10vw; }
 #ddDNRRace { min-width: 10vw; }
 #ddADDRace {min-width: 10vw; }
-#fldDNRSex { width: 5vw; }
+#fldDNRSex { width: 4vw; }
 #ddDNRSex { min-width: 5vw; }
 #fldADDSex { width: 5vw; }
 #ddADDSex { min-width: 5vw; }
@@ -2608,7 +2627,40 @@ body { margin: 0; margin-top: 7vh; box-sizing: border-box; padding: 0 2vw 0 2vw;
 STYLESHEET;
 return $rtnThis;
 }      
-   
+
+function softwaremanual () { 
+
+  //#masterhead #crumbhld { text-align: right; padding: 0 1vw 0 0; font-size: 1vh; grid-column: span 3;     }  
+  $at = genAppFiles; 
+  $bgPic = base64file("{$at}/publicobj/graphics/bg.png","background","bgurl",true);
+  $rtnThis = <<<STYLESHTS
+
+@import url(https://fonts.googleapis.com/css?family=Roboto|Material+Icons|Fira+Sans);
+html {margin: 0; height: 100%; width: 100%; font-family: Roboto; font-size: 1vh; color: rgba({$this->color_black},1);}
+body {margin: 5vh 0 0 0; width: 100%; background: rgba({$this->color_white},1); color: rgba({$this->color_zackgrey},1); }
+
+#masterhead { position: fixed; top: 0; left: 0; background: rgba({$this->color_white},1); width: 100%; display: grid; grid-template-columns: 4.5vw 90vw; grid-gap: .2vw; background: rgba({$this->color_zackgrey},1);  z-index: 99; border-bottom: 1px solid rgba({$this->color_white},1); }
+#masterhead #headlogohld { margin: .6vh 0 .3vh .5vw; width: 4vw;  } 
+#masterhead #headlogohld #bluStar { height: 3vh; }   
+#masterhead #titlehld {  font-size: 1.8vh; font-weight: bold; margin: .3vh 0 .3vh 0; line-height: 3.5vh; padding: .6vh 0 0 0; height: 3vh; overflow: hidden; color: rgba({$this->color_white},1);  }  
+
+#toctray { position: fixed; top: 0; right: -37vw; display: grid; grid-template-columns: 1.6vw auto; z-index: 98; transition:  all 1s ease; }
+#toctray #trayctl { display: grid; grid-template-rows:  9vh auto; height: 100vh; }
+#toctray .sidehold { border-right: 1px solid rgba({$this->color_zackgrey},1);  }
+#toctray #ctlbtn { border: 1px solid rgba({$this->color_zackgrey},1); border-right: none; padding: 5vh 0 0 0; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); }
+#toctray #ctlbtn:hover { cursor: pointer; color: rgba({$this->color_neongreen},1);   } 
+#toctray #ctlbtn .material-icons { font-size: 3vh; }  
+#toctray #tocdsp { padding: 5vh 1vw 0 1vw; width: 35vw; background: rgba({$this->color_zackgrey},1); color: rgba({$this->color_white},1); }  
+#toctray #tocdsp #TOCTitle { font-size: 2vh; font-weight: bold; border-bottom: 6px solid rgba({$this->color_white},1); } 
+#toctray #tocdsp #sortbtns { display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; grid-gap: .2vw; }
+#toctray #tocdsp #sortbtns .sortbtn { border: 1px solid rgba({$this->color_white},1); text-align: center; padding: .3vh 0; margin: .2vh 0 0 0;  }
+#toctray #tocdsp #sortbtns .sortbtn:hover { cursor: pointer; color: rgba({$this->color_neongreen},1);   } 
+
+
+STYLESHTS;
+return $rtnThis;           
+}
+
 function login($mobileInd) {
 $at = genAppFiles; 
   $bgPic = base64file("{$at}/publicobj/graphics/bg.png","background","bgurl",true);
@@ -2640,6 +2692,9 @@ body {margin: 0; height: 100%; width: 100%; background: rgba({$this->color_white
 
 #loginFooter {font-family: Roboto; font-size: 1.2vh; line-height: 1.8em; padding: 2vh .8vw 2vh .8vw; text-align: justify; border-top: 1px solid rgba({$this->color_dblue},1); background: rgba({$this->color_lightgrey},1); }
 #loginvnbr { font-family: Roboto; font-size: .9vh; padding: .4vh .4vw .4vh .8vw; text-align: right; background: rgba({$this->color_lightgrey},1); }
+
+#manuallink { font-family: Roboto; font-size: .9vh; padding: .4vh .4vw .4vh .8vw; text-align: right; background: rgba({$this->color_lightgrey},1); }
+#manuallink a { color: blue; } 
 
 .adminBtn {font-family: Roboto; font-size: 1.4vh; font-weight: bold;  border: 1px solid rgba({$this->color_mblue},1); color: rgba({$this->color_mblue}, 1); padding: 8px 4px 8px 4px; }
 .adminBtn:hover {cursor: pointer; background: rgba({$this->color_lgrey},1); }

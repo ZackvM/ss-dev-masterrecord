@@ -18,7 +18,7 @@
 session_start(); 
 //DEFINE APPLICATION PATH PARAMETERS
 define("uriPath","dev.chtneast.org");
-define("scienceserverTagVersion","v7.0.8 hlpandstuff");
+define("scienceserverTagVersion","v7.0.9 ethno");
 define("ownerTree","https://www.chtneast.org");
 define("treeTop","https://dev.chtneast.org");
 define("dataTree","https://dev.chtneast.org/data-services");
@@ -220,7 +220,49 @@ echo $pg;
         http_response_code($responseCode);
         echo $data;
     break;        
+    case 'scienceserversoftwaremanual':
+       require(applicationTree . "/bldscienceserver.php"); 
+       $pageBld = new pagebuilder("softwaremanual", $request, $mobileprefix, "");
+       $pgIcon = (trim($pageBld->pagetitleicon) !== "") ? $pageBld->pagetitleicon : "";
+//       $pgHead = (trim($pageBld->headr) !== "") ? $pageBld->headr : "";
+       $pgHead = <<<PGHDR
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="chrome=1">
+<meta http-equiv="refresh" content="28800">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+PGHDR;
 
+
+       $pgTitle = "<title>CHTN Eastern / Software &amp; IT Procedure Manual</title>";
+       $pgStyle = (trim($pageBld->stylr) !== "") ? "<style>" . $pageBld->stylr . "\n</style>" :  "";
+       $pgScriptr = (trim($pageBld->scriptrs) !== "") ? "<script lang=javascript>" . $pageBld->scriptrs . "</script>" : "";
+       //$pgControls = $pageBld->pagecontrols;
+       $pgBody = $pageBld->bodycontent;
+       $pgModal = $pageBld->modalrs;
+       $pgDialogs = $pageBld->modalrdialogs;
+       $rt = <<<RTNTHIS
+<!DOCTYPE html>
+<html>
+<head>
+{$pgIcon}            
+{$pgHead}
+{$pgTitle}
+{$pgStyle}
+{$pgScriptr}
+</head>
+<body>
+{$pgBody}
+{$pgModal}
+{$pgDialogs}    
+</body>
+</html>
+RTNTHIS;
+
+
+        echo "{$rt}"; 
+        exit();    
+    break;
     case 'printobj': 
       //PRINT OBJECT - GET ONLY  
       if ($method === "GET") { 

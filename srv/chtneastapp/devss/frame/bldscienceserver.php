@@ -20,16 +20,16 @@ class pagebuilder {
   public $modalrs = "";
   public $modalrdialogs = "";
   //PAGE NAME MUST BE REGISTERED IN THIS ARRAY - COULD DO A METHOD SEARCH - BUT I LIKE THE CONTROL OF NOT ALLOWING A PAGE THAT IS NOT READY FOR DISPL
-  private $registeredPages = array('login','root','datacoordinator','documentlibrary','hprreview','scienceserverhelp','reports','procurebiosample','collectiongrid','paymenttracker','systemreports','biogroupdefinition','inventory','shipmentdocument','qmsactions','furtheractionrequests','invintake','chartreviewbuilder','astrequestlisting','useradministration','inventorymanifest','scienceserverchangelog','continuousprocessimprovementtracker','scienceserverhelpdeskticketmanagement','reportbuilder');  
+  private $registeredPages = array('login','root','datacoordinator','documentlibrary','hprreview','scienceserverhelp','reports','procurebiosample','collectiongrid','paymenttracker','systemreports','biogroupdefinition','inventory','shipmentdocument','qmsactions','furtheractionrequests','invintake','chartreviewbuilder','astrequestlisting','useradministration','inventorymanifest','scienceserverchangelog','continuousprocessimprovementtracker','scienceserverhelpdeskticketmanagement','reportbuilder','softwaremanual');  
   //THE SECURITY EXCPETIONS ARE THOSE PAGES THAT DON'T REQUIRE USER RIGHTS TO ACCESS
-  private $securityExceptions = array('login','root','scienceserverhelp','scienceserverchangelog');
+  private $securityExceptions = array('login','root','scienceserverhelp','scienceserverchangelog','softwaremanual');
 
 function __construct() { 		  
   $args = func_get_args();   
    if (trim($args[0]) === "") {	  		
    } else {
      session_start();
-     if ($_SESSION['loggedin'] !== "true" && $args[0] !== "login") {
+     if ($_SESSION['loggedin'] !== "true" && $args[0] !== "login" && $args[0] !== 'softwaremanual') {
          $this->statusCode = 403;
      } else {           
        $mobileInd = $args[2];  
@@ -68,12 +68,12 @@ function getPageElements($whichpage, $rqststr, $mobileInd, $usrmetrics) {
   $elArr['tabicon']      =   (method_exists($oe,'faviconBldr') ? $oe->faviconBldr($whichpage) : "");
   $elArr['headr']        =   (method_exists($pc,'generateHeader') ? $pc->generateHeader($mobileInd, $whichpage) : "");
   //STYLESHEETS ---------------------------------------------------
-  if ($whichpage !== "login") {
+  if ($whichpage !== "login" && $whichpage !== "softwaremanual") {
     $elArr['styleline']    =   (method_exists($ss,'globalstyles') ? $ss->globalstyles($mobileInd) : "");
   }
   $elArr['styleline']   .=   (method_exists($ss, $whichpage) ? $ss->$whichpage($rqststr) : " (STYLESHEET MISSING {$whichpage}) ");
   //JAVASCRIPT COMPONENTS -------------------------------------------
-  if ($whichpage !== "login") {  
+  if ($whichpage !== "login" && $whichpage !== "softwaremanual") {  
     //$ky = json_decode(self::buildsessionkeypair($usr),true);
     $elArr['scripts']      =   (method_exists($js,'globalscripts') ? $js->globalscripts( "", "") : "");
   }

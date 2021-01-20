@@ -877,6 +877,7 @@ function reportbuilder ( $rqststr, $usr ) {
       $sList .= "<div class=schemaHolder id=\"SID{$v['dataschemaid']}\" onclick=\"getContainerList({$v['dataschemaid']});\" data=selected=false><div class=schemaname>{$v['dataschemaname']}</div><div class=schemadesc>{$v['schemadescription']}</div></div>";
     }
 
+    $aclvl = "<select id=fldAccessLevel><option value=3>Everyone</option><option value=43>Management</option></select>";
 
 $topBtnBar = generatePageTopBtnBar('reportbuilder', $usr, "" );
 $rtnthis = <<<PGCONTENT
@@ -885,17 +886,17 @@ $rtnthis = <<<PGCONTENT
 
   <div id=wizardButtons>
     <div class=btnwiz id=btnwiz0 onclick="changeRptWorkArea(0);" data-selected='true'>Instructions</div> 
-    <div class=btnwiz id=btnwiz1 onclick="changeRptWorkArea(1);" data-selected='false'>Data Schema</div>
-    <div class=btnwiz id=btnwiz2 onclick="changeRptWorkArea(2);" data-selected='false'>Data Container</div>
-    <div class=btnwiz id=btnwiz3 onclick="changeRptWorkArea(3);" data-selected='false'>Display Fields</div>
-    <div class=btnwiz id=btnwiz4 onclick="changeRptWorkArea(4);" data-selected='false'>Selection Criteria</div>
-    <div class=btnwiz id=btnwiz5 onclick="changeRptWorkArea(5);" data-selected='false'>Build &amp; Save</div>
+    <div class=btnwiz id=btnwiz1 onclick="changeRptWorkArea(1);" data-selected='false'><span class=nbrcirc>1</span> Data Schema</div>
+    <div class=btnwiz id=btnwiz2 onclick="changeRptWorkArea(2);" data-selected='false'><span class=nbrcirc>2</span> Data Container</div>
+    <div class=btnwiz id=btnwiz3 onclick="changeRptWorkArea(3);" data-selected='false'><span class=nbrcirc>3</span> Display Fields</div>
+    <div class=btnwiz id=btnwiz4 onclick="changeRptWorkArea(4);" data-selected='false'><span class=nbrcirc>4</span> Selection Criteria</div>
+    <div class=btnwiz id=btnwiz5 onclick="changeRptWorkArea(5);" data-selected='false'><span class=nbrcirc>5</span> Build &amp; Save</div>
   </div>
 
   <div id=rptworkarea>
     <div class=rptwork id=rptWrk0 data-selected='true'>
       <div id=titleLine>Instructions</div>
-      <div id=instructions>This 'Wizard' will lead you through the steps of building a data report in ScienceServer.  Alternatively, if the data elements and criteria are known (or if editing a pre-existing report), skipping to the last step ('Check &amp; Save') can be performed directly.  Click the buttons above in the order in which they appear to walk through the build wizard.</div>
+      <div id=instructions>This 'Wizard' will lead you through the steps of building a data report in ScienceServer. Click the buttons above in the order in which they appear to walk through the build wizard. Alternatively, if the data elements and criteria are known (or if editing a pre-existing report), skipping to the last step ('Build &amp; Save') can be performed directly.  </div>
     </div>
     <div class=rptwork id=rptWrk1 data-selected='false'><div id=titleLine>Data Schema</div><div id=instrLine>Select one data schema</div><div id=workbench>{$sList}</div></div>
     <div class=rptwork id=rptWrk2 data-selected='false'><div id=titleLine>Containers</div><div id=instrLine>Select one container (<span id=pickedschema></span>)  </div><div id=cworkbench>   </div></div>
@@ -914,10 +915,41 @@ $rtnthis = <<<PGCONTENT
                                                          
                                                         </div>
     </div>
-    <div class=rptwork id=rptWrk5 data-selected='false'>Build and Save</div>
 
+    <div class=rptwork id=rptWrk5 data-selected='false'>
+     
+       <div id=bAndSTitle>
+        <div><button onclick="buildRptNow();">Build Now</button></div>
+        <div>Build &amp; Save</div>
+      </div>
+      
+      <div><div class=rptSecHead>Select Grid</div><div><textarea id=selectorBox></textarea></div></div>
+      <div><div class=rptSecHead>Data Container</div><div><textarea id=paraDataContainer></textarea></div></div>
+      <div><div class=rptSecHead>Parameter Criteria</div><div><textarea id=paraJSONList></textarea></div></div>
+
+
+      <div id=rptDef>Report Definition</div>
+      <div id=defgrid>    
+
+        <div class=defCtl>
+          <div class=defCtlLbl>Report Name</div>
+          <div class=defCtlInp><input type=text></div>
+        </div>
+
+        <div class=defCtl>
+          <div class=defCtlLbl>Report Description</div>
+          <div class=defCtlInp><input type=text></div>
+        </div>
+
+        <div class=defCtl>
+          <div class=defCtlLbl>Access Level</div>
+          <div class=defCtlInp>{$aclvl}</div>
+        </div>
+
+
+      </div>
+    </div>
   </div>
-
 </div>
 PGCONTENT;
 return $rtnthis;    
@@ -3683,11 +3715,49 @@ PAGECONTENT;
   return $pg;
 }
 
+function softwaremanual ( $rqststr ) { 
+
+  $at = genAppFiles;
+  $clogo = base64file("{$at}/publicobj/graphics/smlchtnlogo.png", "bluStar", "png", true , " ");
+  
+  //$rqststr[2] = document url
+  $rtnThis = <<<PAGECONTENT
+<div id=masterhead>
+  <div id=headlogohld>{$clogo}</div>
+  <div id=titlehld> [CHTNEastern's ScienceServer Software, Informatic Procedure &amp; Technical Manual]</div>
+</div>
+
+<div id=toctray>
+  <div id=trayctl>
+    <div id=ctlbtn><span class="material-icons">menu_open</span></div>
+    <div class=sidehold></div>
+  </div>
+
+  <div id=tocdsp>
+    <div id=TOCTitle>Document Contents</div>
+    <div id=sortbtns> <div></div><div class=sortbtn>By Section</div><div class=sortbtn>By Title</div><div class=sortbtn>By BAP #</div>     </div>
+    <div id=TOC> contents </div>
+  </div>
+</div>
+
+
+
+THIS IS THE SOFTWARE/IT PROCEDURE MANUAL FOR CHTN Eastern/ScienceServer 
+
+
+PAGECONTENT;
+
+return $rtnThis;        
+
+
+}
+
 function login($rqststr) {
  
 //THIS SETS THE COOKIE
 $authCode = "";
 $authExpire = "";
+$tt = treeTop;
 if(!isset($_COOKIE['ssv7auth'])) {
 } else {             
     $authCodeAsset = json_decode( $_COOKIE['ssv7auth'] , true );
@@ -3719,8 +3789,9 @@ $rtnThis = <<<PAGECONTENT
   {$addLine}
   <div id=elementHolderBTNs >{$controlBtn}</div>
 </div>
-<div id=loginFooter><b>Disclaimer</b>: This is the Specimen Management Data Application (SMDA) for the Eastern Division of the Cooperative Human Tissue Network.  It provides access to collection data by employees, remote site contracts and investigators of the CHTNEastern Division.   You must have a valid username and password to access this system.  If you need credentials for this application, please contact a CHTNED Manager.  Unauthorized activity is tracked and reported! To contact the offices of CHTNED, please call (215) 662-4570 or email chtnmail /at/ uphs.upenn.edu</div>
-<div id=loginvnbr>(SMDA Version: {$ssversion} [ScienceServer])</div>    
+<div id=loginFooter><b><u>Disclaimer</u></b>: This is the Specimen Management Data Application (SMDA) for the Eastern Division of the Cooperative Human Tissue Network.  It provides access to collection data by employees, remote site contracts and investigators of the CHTNEastern Division.   You must have a valid username and password to access this system.  If you need credentials for this application, please contact a CHTNED Manager.  Unauthorized activity is tracked and reported! To contact the offices of CHTNED, please call (215) 662-4570 or email chtnmail /at/ uphs.upenn.edu</div>
+<div id=loginvnbr>(SMDA Version: {$ssversion} [ScienceServer])</div>   
+<div id=manuallink>To access the software/procedure manual for ScienceServer: <a href="{$tt}/scienceserver-software-manual" target="_new">Click here</a></div>
 </div>
 
 PAGECONTENT;
@@ -10513,6 +10584,7 @@ function bldQuickEditDonor($passeddata) {
     $donorinitials = $doarr['DATA']['donorinitials'];
     $lastfour = $doarr['DATA']['lastfour'];
     $donorage = $doarr['DATA']['donorage'];
+    $donoreth = $doarr['DATA']['donorethn'];
     $donorageuom = $doarr['DATA']['ageuom'];
     $donorrace = $doarr['DATA']['donorrace'];
     $donorsex = $doarr['DATA']['donorsex'];
@@ -10590,6 +10662,8 @@ function bldQuickEditDonor($passeddata) {
       $agm .= "</table>";
       $ageuommnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRAgeUOMValue value=\"{$givendspcode}\"><input type=text id=fldDNRAgeUOM READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddDNRAgeUOM>{$agm}</div></div>";
 
+
+
     $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-race",serverIdent, serverpw), true);
     $agm = "<table border=0 class=menuDropTbl>";
     $givendspvalue = "";
@@ -10613,6 +10687,32 @@ function bldQuickEditDonor($passeddata) {
       }
       $agm .= "</table>";
       $racemnu = "<div class=menuHolderDiv><input type=hidden id=fldDNRRaceValue value=\"{$givendspcode}\"><input type=text id=fldDNRRace READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddDNRRace>{$agm}</div></div>";
+
+
+    $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-ethno",serverIdent, serverpw), true);
+    $agm = "<table border=0 class=menuDropTbl>";
+    $givendspvalue = "";
+    $givendspcode = "";
+    $dfltrce = "";
+    $dfltrceval = "";
+    foreach ($agarr['DATA'] as $agval) {
+        if ($agval['menuvalue'] === $donoreth ) { 
+          $givendspcode = $agval['codevalue'];
+          $givendspvalue = $agval['menuvalue'];
+        }
+        if ((int)$agval['useasdefault'] === 1) { 
+            $dfltrce = $agval['menuvalue'];
+            $dfltrceval = $agval['codevalue'];
+        }
+        $agm .= "<tr><td onclick=\"fillField('fldDNREthno','{$agval['codevalue']}','{$agval['menuvalue']}');\" class=ddMenuItem>{$agval['menuvalue']}</td></tr>";
+      }
+      if ($givendspcode === "" && $dfltrce !== "") { 
+          $givendspcode = $dfltrceval;
+          $givendspvalue = $dfltrce;          
+      }
+      $agm .= "</table>";
+      $ethmnu = "<div class=menuHolderDiv><input type=hidden id=fldDNREthnoValue value=\"{$givendspcode}\"><input type=text id=fldDNREthno READONLY class=\"inputFld\" value=\"{$givendspvalue}\"><div class=valueDropDown id=ddDNRRace>{$agm}</div></div>";
+
 
     $agarr = json_decode(callrestapi("GET", dataTree . "/global-menu/pxi-sex",serverIdent, serverpw), true);
     $agm = "<table border=0 class=menuDropTbl>";
@@ -10700,7 +10800,7 @@ function bldQuickEditDonor($passeddata) {
   <td> {$targetmnu} </td>
   <td> {$infcmnu} </td>
   <td><table><tr><td>{$fldAge}</td><td>{$ageuommnu}</td></tr></table></td>
-  <td>{$racemnu}</td>
+  <td><table><tr><td>{$racemnu}</td><td>{$ethmnu}</td></tr></table></td>
   <td>{$sexmnu}</td>
   <td>{$lastFourDsp}</td>
 </tr>
@@ -10816,7 +10916,7 @@ PROCCELL;
     $ageuom = "yrs";
     //oncontextmenu=\"return false;\"
     $innerTbl .= <<<ORLINE
-    <tr  onclick="fillPXIInformation('{$val['pxicode']}','{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$prace}','{$val['pxisex']}','{$informed}','{$lastfour}','{$val['studysubjectnbr']}', '{$val['studyprotocolnbr']}','{$val['cx']}','{$val['rx']}','{$val['sogi']}');" class=displayRows>
+    <tr  onclick="fillPXIInformation('{$val['pxicode']}','{$val['pxiinitials']}','{$val['pxiage']}','{$ageuom}','{$prace}','{$val['pxisex']}','{$informed}','{$lastfour}','{$val['studysubjectnbr']}', '{$val['studyprotocolnbr']}','{$val['cx']}','{$val['rx']}','{$val['sogi']}','{$val['donorethn']}');" class=displayRows>
       <td valign=top class=dspORInitials>{$val['pxiinitials']}</td>
       <td valign=top class="dspORTarget {$targetBck}">{$target}</td>
       <td valign=top class=dspORInformed>{$icicon}</td>
@@ -10957,7 +11057,7 @@ $giveSelector = $selector;
     <tr>
       <td class=prcFldLbl>Initials </td>
       <td class=prcFldLbl>Age </td>
-      <td class=prcFldLbl>Race </td>       
+      <td class=prcFldLbl>Race/Ethnicity </td>       
       <td class=prcFldLbl>Sex </td>
       <td class=prcFldLbl>Chemo-Therapy </td>
       <td class=prcFldLbl>Radiation </td>       
@@ -10971,7 +11071,7 @@ $giveSelector = $selector;
       <td><input type=text id=fldPRCPXIId READONLY value="{$bg['bgphiid']}">
           <input type=text id=fldPRCPXIInitials READONLY value="{$bg['bgphiinitials']}" class=lockfield></td>
       <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY value="{$bg['bgphiage']}" class=lockfield></td><td><input type=text id=fldPRCPXIAgeMetric READONLY value="{$bg['bgphiageuom']}" class=lockfield></td></tr></table></td>
-      <td><input type=text id=fldPRCPXIRace READONLY value="{$bg['bgphirace']}" class=lockfield></td>
+      <td><table><tr><td><input type=text id=fldPRCPXIRace READONLY value="{$bg['bgphirace']}" class=lockfield></td><td><input type=text id=fldPRCPXIEth READONLY value="{$bg['bgphiethno']}" class=lockfield></td></tr></table></td>
       <td><input type=text id=fldPRCPXISex READONLY value="{$bg['bgphisex']}" class=lockfield></td>
       <td><input type=text id=fldPRCPXIDspCX READONLY value="{$bg['bgphicx']}" class=lockfield></td>
       <td><input type=text id=fldPRCPXIDspRX READONLY value="{$bg['bgphirx']}" class=lockfield></td> 
@@ -11187,7 +11287,7 @@ $rtnTbl = <<<RTNTBL
     <tr>
       <td class=prcFldLbl>Initials <span class=reqInd>*</span></td>
       <td class=prcFldLbl>Age <span class=reqInd>*</span></td>
-      <td class=prcFldLbl>Race <span class=reqInd>*</span></td>       
+      <td class=prcFldLbl>Race/Ethnicity <span class=reqInd>*</span></td>       
       <td class=prcFldLbl>Sex <span class=reqInd>*</span></td>
       <td class=prcFldLbl>Chemo-Therapy <span class=reqInd>*</span></td>
       <td class=prcFldLbl>Radiation <span class=reqInd>*</span></td>       
@@ -11200,7 +11300,7 @@ $rtnTbl = <<<RTNTBL
     <tr>
       <td><input type=text id=fldPRCPXIId READONLY><input type=text id=fldPRCPXIInitials READONLY></td>
       <td><table><tr><td><input type=text id=fldPRCPXIAge READONLY></td><td><input type=text id=fldPRCPXIAgeMetric READONLY></td></tr></table></td>
-      <td><input type=text id=fldPRCPXIRace READONLY></td>
+      <td><table><tr><td><input type=text id=fldPRCPXIRace READONLY></td><td><input type=text id=fldPRCPXIEth READONLY></td></tr></table></td>
       <td><input type=text id=fldPRCPXISex READONLY></td>
       <td><input type=text id=fldPRCPXIDspCX READONLY></td>
       <td><input type=text id=fldPRCPXIDspRX READONLY></td> 

@@ -8575,6 +8575,7 @@ SELECT bg.pbiosample, ifnull(bg.migrated,0) as migratedind
 , ifnull(phi.procedureassoccode,'') as associativecode
 , ifnull(phi.pxiinitials,'') as phiinitials
 , ifnull(phi.pxirace,'') as phirace
+, ifnull(phi.pxiEthnicity,'') as phiethnicity
 , ifnull(phi.pxigender,'') as phisex
 , ifnull(phi.pxiage, '') as phiage
 , ifnull(phi.pxiageuom,'') as phiageuom
@@ -8660,6 +8661,7 @@ BGSQLHERE;
         $dta['bgphiinitials'] = $bg['phiinitials'];
 
         $dta['bgphirace'] = $bg['phirace'];
+        $dta['bgphiethno'] = $bg['phiethnicity'];
         $dta['bgphisex'] = $bg['phisex'];
         $dta['bgphiage'] = $bg['phiage'];
         $dta['bgphiageuom'] = $bg['phiageuom'];
@@ -10116,13 +10118,15 @@ RECORD;
 
      $mnuValRS->execute(array(':whichmenu' => 'PXRACE', ':whichvalue' => $pdta['racevalue'] ));
      ( $mnuValRS->rowCount() !== 1) ?  (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED DONOR RACE IS INVALID" )) : "";
-     
+
+     $mnuValRS->execute(array(':whichmenu' => 'DNRETHN', ':whichvalue' => $pdta['ethnicityvalue']  ));
+     ( $mnuValRS->rowCount() !== 1) ?  (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED DONOR ETHNICITY IS INVALID " . $pdta['ethnicityvalue'] )) : "";
+
      $mnuDspRS->execute(array( ':whichmenu' => 'PXSEX', ':whichvalue' => $pdta['sex'] ));
      ( $mnuDspRS->rowCount() !== 1) ?  (list( $errorInd, $msgArr[] ) = array(1 , "SPECIFIED DONOR SEX IS INVALID" )) : "";
      
      //TODO - CHECK CX/RX/SOGI VALUES
-     
-          
+               
      (  trim($pdta['targetindvalue']) === "N" &&  trim($pdta['notrcvdnote']) === ""  ) ? (list( $errorInd, $msgArr[] ) = array(1 , "WHEN SPECIFYING AN ENCOUNTER WAS NOT RECEIVED, YOU MUST SUPPLY A REASON" )) : "";
      //The 'Last Four' field is Optional
      
@@ -10141,6 +10145,7 @@ RECORD;
                             , pxiAge = :pxage
                             , ageuomcode = :pxageuom
                             , pxiRace = :pxrace
+                            , pxiEthn = :pxiethn
                             , pxiSex = :pxsex
                             , lastfourmrn = :lastfour
                             , studysubjectnbr = :ssbjctnbr
@@ -10173,6 +10178,7 @@ UPDSQL;
                            ,':pxage' => $pdta['age']
                            ,':pxageuom' => $pdta['ageuomvalue']
                            ,':pxrace' => $pdta['racevalue']
+                           ,':pxiethn' => $pdta['ethnicityvalue']
                            ,':pxsex' => substr($pdta['sex'],0,1)
                            ,':lastfour' => $pdta['lastfour']
                            ,':ssbjctnbr' => trim($pdta['subjectnbr'])
@@ -10517,6 +10523,7 @@ UPDSQL;
           , ifnull(pxiage,'') as donorage
           , ifnull(ageuom.dspValue,'') donorageuom
           , ifnull(pxirace,'') as donorrace
+          , ifnull(pxiEthn,'') as donorethn
           , ifnull(pxisex,'') as donorsex
           , ifnull(proctext,'') as proctext
           , ifnull(targetind,0) as targetind
@@ -10554,6 +10561,7 @@ SQLSTMT;
        $dta['donorinitials'] = $r['donorinitials'];
        $dta['lastfour'] = $r['lastfour'];
        $dta['donorage'] = $r['donorage'];
+       $dta['donorethn'] = $r['donorethn'];
        $dta['ageuom'] = $r['donorageuom'];
        $dta['donorrace'] = $r['donorrace'];
        $dta['donorsex'] = $r['donorsex'];
@@ -12877,7 +12885,7 @@ function createBGPXI( $bgNbr, $bg ) {
   }
 
   //WRITE DATA
-  $insSQL = "insert into four.ref_procureBiosample_PXI (pbiosample, activeInd, proceduredate, fromInstitution, orkey, procedureAssocCode, pxiid, pxiInitials, pxiRace, pxiGender, pxiAge, pxiAgeUOM, SOGI, CX, RX, subjectnumber, protocolnumber, InformedConsent, callback, byWho, inputOn, fromModule) values (:pbiosample, 1, :proceduredate, :fromInstitution, :orkey, :procedureAssocCode, :pxiid, :pxiInitials, :pxiRace, :pxiGender, :pxiAge, :pxiAgeUOM, :SOGI, :CX, :RX, :subjectnumber, :protocolnumber, :InformedConsent, :callback, :byWho, now(), 'PROCUREMENT')";
+  $insSQL = "insert into four.ref_procureBiosample_PXI (pbiosample, activeInd, proceduredate, fromInstitution, orkey, procedureAssocCode, pxiid, pxiInitials, pxiRace, pxiEthnicity, pxiGender, pxiAge, pxiAgeUOM, SOGI, CX, RX, subjectnumber, protocolnumber, InformedConsent, callback, byWho, inputOn, fromModule) values (:pbiosample, 1, :proceduredate, :fromInstitution, :orkey, :procedureAssocCode, :pxiid, :pxiInitials, :pxiRace, :pxiEthnicity, :pxiGender, :pxiAge, :pxiAgeUOM, :SOGI, :CX, :RX, :subjectnumber, :protocolnumber, :InformedConsent, :callback, :byWho, now(), 'PROCUREMENT')";
   $insRS = $conn->prepare($insSQL); 
   $insRS->execute(array(
    ':pbiosample' => $bgNbr 
@@ -12888,6 +12896,7 @@ function createBGPXI( $bgNbr, $bg ) {
   ,':pxiid' => $bg['PRCPXIId']
   ,':pxiInitials' => $bg['PRCPXIInitials']
   ,':pxiRace' => $bg['PRCPXIRace']
+  ,':pxiEthnicity' => $bg['PRCPXIEth']
   ,':pxiGender' => $bg['PRCPXISex']
   ,':pxiAge' => $bg['PRCPXIAge']
   ,':pxiAgeUOM' => $bg['PRCPXIAgeMetric']
@@ -13095,6 +13104,7 @@ function initialBGDataCheckOne($bg) {
       ( !array_key_exists('PRCPXIAge', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIAge)")) : "";      
       ( !array_key_exists('PRCPXIAgeMetric', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIAgeMetric)")) : "";      
       ( !array_key_exists('PRCPXIRace', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIRace)")) : "";      
+      ( !array_key_exists('PRCPXIEth', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIEth)")) : "";      
       ( !array_key_exists('PRCPXISex', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXISex)")) : "";            
       ( !array_key_exists('PRCPXIInfCon', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXIInfCon)")) : "";      
       ( !array_key_exists('PRCPXIDspCX', $bg) ) ? (list( $errorInd, $msgArr[] ) = array(1 , "MALFORMED PAYLOAD (MISSING: PRCPXICXValue)")) : "";

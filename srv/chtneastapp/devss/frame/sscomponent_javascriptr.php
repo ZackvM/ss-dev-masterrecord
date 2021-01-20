@@ -3636,7 +3636,33 @@ function answerSaveQMSAction(rtnData) {
 JAVASCR;
 return $rtnThis;
 }
-    
+
+function softwaremanual ( $rqststr ) { 
+
+
+  $rtnThis = <<<JAVASCR
+
+var byId = function( id ) { return document.getElementById( id ); };
+
+document.addEventListener('DOMContentLoaded', function() {  
+
+  if ( byId('ctlbtn') ) { 
+    byId('ctlbtn').addEventListener('click', function() {
+      if ( parseInt(byId('toctray').style.right) < 0 || byId('toctray').style.right == '' ) {
+        byId('toctray').style.right = 0;
+      } else {
+        byId('toctray').style.right = '-37vw';
+      } 
+    }, false);
+  }
+
+
+}, false);
+
+JAVASCR;
+return $rtnThis;    
+}
+
 function globalscripts ( $keypaircode, $usrid ) {  
 
   session_start();
@@ -6536,12 +6562,12 @@ function createInitialBG() {
       });
       }
       var passdata = JSON.stringify(dta);
+      //console.log( passdata );
       var mlURL = "/data-doers/initial-bgroup-save";
       byId('standardModalDialog').innerHTML = "";
       byId('standardModalBacker').style.display = 'block';
       byId('standardModalDialog').style.display = 'none';  
       universalAJAX("POST",mlURL,passdata,answerInitialBGroupSave,2);
-      //console.log(passdata);       
     } else { 
       alert('ERROR-SEE A CHTNEASTERN INFORMATICS STAFF');
       return null;  
@@ -6570,13 +6596,15 @@ function answerInitialBGroupSave(rtnData) {
    }        
 }
 
-function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxisex, pxiinformed, pxilastfour, sbjtNbr, protocolNbr, cx, rx, sogi ) { 
+function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxisex, pxiinformed, pxilastfour, sbjtNbr, protocolNbr, cx, rx, sogi, ethn ) { 
    //TODO:  CHECK FIELD EXISTANCE
 
    byId('fldPRCPXIId').value = "";
    byId('fldPRCPXIInitials').value = "";            
    byId('fldPRCPXIAge').value = "";
    byId('fldPRCPXIRace').value = "";            
+   byId('fldPRCPXIRace').value = "";    
+   byId('fldPRCPXIEth').value = "";        
    byId('fldPRCPXISex').value = "";                        
    byId('fldPRCPXILastFour').value = "";
    byId('fldPRCPXIInfCon').value = "";
@@ -6591,6 +6619,7 @@ function fillPXIInformation( pxiid, pxiinitials, pxiage, pxiageuom, pxirace, pxi
    byId('fldPRCPXIAge').value = pxiage.toUpperCase().trim();
    byId('fldPRCPXIAgeMetric').value = pxiageuom.toLowerCase().trim();
    byId('fldPRCPXIRace').value = pxirace.toUpperCase().trim();                        
+   byId('fldPRCPXIEth').value = ethn;        
    byId('fldPRCPXISex').value = pxisex.toUpperCase().trim();  
    byId('fldPRCPXILastFour').value = pxilastfour;  
    byId('fldPRCPXIInfCon').value = ( pxiinformed == 1) ? 'NO' : 'PENDING';        
@@ -6693,6 +6722,8 @@ function saveDonorSpecifics() {
   dta['ageuomvalue'] = byId('fldDNRAgeUOMValue').value.trim();
   dta['race'] = byId('fldDNRRace').value.trim();
   dta['racevalue'] = byId('fldDNRRaceValue').value.trim();
+  dta['ethnicity'] = byId('fldDNREthno').value.trim();
+  dta['ethnicityvalue'] = byId('fldDNREthnoValue').value.trim();
   dta['sex'] = byId('fldDNRSex').value.trim();
   dta['sexvalue'] = byId('fldDNRSexValue').value.trim();
   dta['lastfour'] = byId('fldDNRLastFour').value.trim();
@@ -7170,7 +7201,7 @@ function answerUpdateORSched(rtnData) {
        
        var proc = "<table class=procedureSpellOutTbl border=0><tr><td valign=top class=smallORTblLabel>A-R-S::Callback</td><td valign=top>"+element['ars']+"::"+lastfour+"</td></tr>"+studyNbrLineDsp+cxrxDsp+"<tr></tr><tr><td valign=top class=smallORTblLabel>Procedure </td><td valign=top>"+element['proceduretext']+"</td></tr><tr><td valign=top class=smallORTblLabel>Surgeon </td><td valign=top>"+element['surgeon']+"</td></tr><tr><td valign=top class=smallORTblLabel>Start Time </td><td valign=top>"+element['starttime']+" "+ordsp+"</td></tr><tr><td colspan=2> <div class=btnEditPHIRecord onclick=\"editPHIRecord(event,'"+element['pxicode']+"');\">Edit Record</div></td></tr></table>";
        var prace = (element['pxirace'].trim() == "-") ? "" : element['pxirace'].trim();
-       innerRows += "<tr oncontextmenu=\"return false;\" onclick=\"fillPXIInformation('"+element['pxicode']+"','"+element['pxiinitials']+"','"+element['pxiage']+"','"+ageuom+"','"+prace+"','"+element['pxisex']+"','"+informed+"','"+lastfour+"','"+element['studysubjectnbr']+"','"+element['studyprotocolnbr']+"','"+element['cx']+"','"+element['rx']+"','"+element['sogi']+"');\" class=displayRows><td valign=top class=dspORInitials>"+element['pxiinitials']+"</td><td valign=top class=\"dspORTarget "+targetBck+"\">"+target+"</td><td valign=top class=dspORInformed>"+icicon+"</td><td valign=top class=dspORAdded>"+addeddonor+"</td><td valign=top class=procedureTxt>"+proc+"</td></tr>";
+       innerRows += "<tr oncontextmenu=\"return false;\" onclick=\"fillPXIInformation('"+element['pxicode']+"','"+element['pxiinitials']+"','"+element['pxiage']+"','"+ageuom+"','"+prace+"','"+element['pxisex']+"','"+informed+"','"+lastfour+"','"+element['studysubjectnbr']+"','"+element['studyprotocolnbr']+"','"+element['cx']+"','"+element['rx']+"','"+element['sogi']+"','"+element['donorethn']+"');\" class=displayRows><td valign=top class=dspORInitials>"+element['pxiinitials']+"</td><td valign=top class=\"dspORTarget "+targetBck+"\">"+target+"</td><td valign=top class=dspORInformed>"+icicon+"</td><td valign=top class=dspORAdded>"+addeddonor+"</td><td valign=top class=procedureTxt>"+proc+"</td></tr>";
      });
 
      if (byId('PXIDspBody')) { 
@@ -7831,7 +7862,7 @@ function changeRptWorkArea ( whicharea ) {
   for ( var j = 0; j < rb.length; j++ ) {
     rb[j].style.display = 'none';
   } 
-  byId('rptWrk'+whicharea).style.display = 'block';
+  byId('rptWrk'+whicharea).style.display = 'grid';
 }
 
 function getContainerList ( whichschema ) { 
@@ -7853,7 +7884,7 @@ function answerContainerListing ( rtnData ) {
      var dta = JSON.parse(rtnData['responseText']);  
      var resultTbl = "";
      dta['DATA'].forEach(function(element) { 
-       resultTbl += "<div class=dcontainer id='DCON"+element['containerid']+"' onclick=\"getContainerElements("+element['containerid']+");\" data-selected='false'>"+element['containername']+"</div>";
+       resultTbl += "<div class=dcontainer id='DCON"+element['containerid']+"' onclick=\"getContainerElements("+element['containerid']+");\" data-selected='false'><div>"+element['containername']+"</div><div class=dcdesc>"+element['containerdesc']+"</div></div>";
      });  
 
      byId('pickedschema').innerHTML = "Selected Schema: "+dta['MESSAGE'][0]; 
@@ -7887,22 +7918,20 @@ function answerFieldListing( rtnData ) {
      var resultTbl = "";
      var qTbl = "";
      dta['DATA'].forEach(function(element) { 
-       resultTbl += "<div onclick=\"selectDElement("+element['fieldid']+");\" class=felement id='FELM"+element['fieldid']+"' data-selector='"+element['selector']+"' data-selected='false'><div class=felemname>"+element['labelname']+"</div><div class=seqFld><input type=text class=fldOrd id='deFLD"+element['fieldid']+"'></div><div class=felemdesc>"+element['fielddesc']+"</div></div>";
+       resultTbl += "<div onclick=\"selectDElement("+element['fieldid']+");\" class=felement id='FELM"+element['fieldid']+"' data-selector='"+element['selector']+"' data-labelname='"+element['labelname']+"' data-selected='false'><div class=felemname>"+element['labelname']+"</div><div class=seqFld><input type=text class=fldOrd id='deFLD"+element['fieldid']+"'></div><div class=felemdesc>"+element['fielddesc']+"</div></div>";
        if ( element['qryableind'] == 1 ) {
 
-
          var ftype = "";
+         var critid = Math.random().toString(36).slice(2);
          if ( element['fieldtype'] == 'MENU' ) { 
-           ftype = "<div><button onclick=\"alert('"+element['whichmenu']+"');\">Menu</button></div>"; 
+           ftype = "<div><button onclick=\"getStandardMenuOptions('"+element['whichmenu']+"','critFld"+critid+"');\">Menu</button></div>"; 
          } else { 
            ftype = "<div>&nbsp;</div>"; 
          }
-
-         qTbl += "<div class=qLine><div><input type=checkbox></div><div class=qelement>"+element['labelname']+"</div><div><input type=text class=defaultvalue></div>"+ftype+"</div>";
-
+         var eqmnu = "<select id='equiv"+critid+"' class='equivFld'><option value='equals'>=</option><option value='like'>like</option><option value='notequal'><></option><option value='grtthen'>></option><option value='lessthen'><</option><option value='btween'>between</option></select>";
+         qTbl += "<div class=qLine><div><input type=checkbox class=eqselector id='"+critid+"' data-fld='"+element['selector']+"'></div><div class=qelement>"+element['labelname']+"</div><div class=equivdsp>"+eqmnu+"</div><div><input type=text class=defaultvalue id='critFld"+critid+"'></div>"+ftype+"</div>";
 
        }
-
      });  
 
      byId('qworkbench').innerHTML = qTbl;
@@ -7918,9 +7947,126 @@ function selectDElement ( whichelement ) {
   } else {
     byId('FELM'+whichelement).dataset.selected = 'false';
   }
+}
 
-  
+var lastcritfld = "";
+function getStandardMenuOptions ( whichmenu, whichcritfld ) { 
+  lastcritfld = whichcritfld;
+  var mlURL = "/rpt-get-standard-menu-options/"+whichmenu;
+  universalAJAX("GET",mlURL,"",answerStandardMenuOptions,2);
+}
 
+function answerStandardMenuOptions ( rtnData ) { 
+   var resultTbl = "";
+   if (parseInt(rtnData['responseCode']) !== 200) {             
+     resultTbl = "Service not found on server";         
+   } else {
+     var dta = JSON.parse(rtnData['responseText']);  
+     if ( parseInt( dta['ITEMSFOUND'] ) == 0 ) { 
+       resultTbl = "No Options found for this menu";         
+     } else { 
+       dta['DATA'].forEach ( function( element ) { 
+         var thisoptid = Math.random().toString(36).slice(2); 
+         resultTbl += "<div data-selected='false' data-mvalue='"+element['menuvalue'] + "' id='opt"+thisoptid+"' onclick=\"selectOptOption('opt"+thisoptid+"');\" class=optoption>" + element['longvalue'] + "</div>";
+       }); 
+     }
+   }
+   var d = document.createElement('div');
+   var thisid = Math.random().toString(36).slice(2); 
+   d.setAttribute("id", thisid); 
+   d.setAttribute("class","floatingDiv");
+   d.style.left = '30vw';
+   d.style.top = '10vh';
+   d.innerHTML = "<div id=menuOptionDspTitleBar>Select Default Report Options</div><div>Click the options to use as parameter criteria in this report</div><div id=rptMenuOptionList>"+resultTbl+"</div><div><center><button onclick=\"selectOptions();\">Select</button> <button onclick=\"closeThisDialog('"+thisid+"');\">Close</button> </div>";
+   document.body.appendChild(d);
+   byId( thisid ).style.display = 'block';
+   byId('standardModalBacker').style.display = 'block';
+}
+
+function closeThisDialog(dlog) { 
+   byId(dlog).parentNode.removeChild(byId(dlog));
+   lastcritfld = "";
+   byId('standardModalBacker').style.display = 'none';        
+}        
+
+function selectOptOption ( whichoption ) { 
+  if ( byId( whichoption ).dataset.selected == '' ||  byId( whichoption ).dataset.selected == 'false' ) { 
+    byId( whichoption ).dataset.selected = true; 
+  } else { 
+    byId( whichoption ).dataset.selected = 'false';
+  }
+}
+
+function selectOptions() { 
+
+  var selval = ""; 
+  var critflds = document.getElementsByClassName("optoption"); 
+  for ( var i = 0; i < critflds.length; i++ ) {
+   if ( byId( critflds[i].id ).dataset.selected == 'true' ) {
+     selval +=  ( selval.trim() === "" ) ? byId( critflds[i].id ).dataset.mvalue : ","+byId( critflds[i].id ).dataset.mvalue; 
+   } 
+  }
+  byId( lastcritfld ).value = selval; 
+}
+
+function buildRptNow() { 
+
+  var fd = "";
+  var fdcnt = 0;
+  var fdlst = document.getElementsByClassName('felement');
+  for ( f = 0; f < fdlst.length; f++ ) {
+    if ( fdlst[f].dataset.selected == 'true') {
+      fdcnt++;
+      fd += ( fd.trim() == "" ) ? fdlst[f].dataset.selector + " as " + fdlst[f].dataset.labelname : ", " +fdlst[f].dataset.selector + " as " + fdlst[f].dataset.labelname;
+    }
+  }
+
+  if ( fdcnt < 1 ) {
+    alert( 'NO DISPLAY FIELDS SELECTED FOR THIS REPORT');
+    return null;
+  }
+
+  byId('selectorBox').value = fd; 
+
+
+ //GET CONTAINER
+ var dc;
+ var dccnt = 0;
+ var dcon = document.getElementsByClassName('dcontainer');
+ for ( var i = 0; i < dcon.length; i++ ) {
+   if ( dcon[i].dataset.selected == 'true' ) {     
+     dccnt++;
+     dc =  dcon[i].id ; 
+   }
+ }
+
+ if ( dccnt !== 1 ) { 
+   alert('NO DATA CONTAINER SELECTED OR MULTIPLE DATA CONTAINERS SELECTED');
+   return null;  
+ } 
+
+ byId('paraDataContainer').value = dc;
+
+ var eq;
+ var eqcnt = 0; 
+ var eqcon = document.getElementsByClassName('eqselector');
+ var eqlst = []; 
+ for ( var e = 0; e < eqcon.length; e++ ) {
+   if ( eqcon[e].checked ) { 
+     eqlst.push ( [ eqcon[e].dataset.fld ,  byId('equiv'+eqcon[e].id).value ,  byId('critFld'+eqcon[e].id).value ]   ); 
+//     console.log ( eqcon[e].dataset.fld + " :: " +  byId('equiv'+eqcon[e].id).value + " :: " + byId('critFld'+eqcon[e].id).value );
+     eqcnt++;
+   }
+ }
+
+ if ( eqcnt < 1 ) { 
+   alert( 'You must specify criteria parameters.  ScienceServer will NOT allow blank criteria select reports to be run in the system.'); 
+   return null; 
+ }
+
+ var jcrit = JSON.stringify( eqlst );
+ byId('paraJSONList').value = jcrit; 
+ 
 }
 
 JAVASCR;

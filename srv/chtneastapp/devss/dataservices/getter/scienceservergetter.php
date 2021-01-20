@@ -154,7 +154,6 @@ class objlisting {
      return $rows;     
   }  
 
-
   function vaultsearchbg ( $whichobj, $urirqst ) {
      $responseCode = 400;
      $rows = array();
@@ -177,6 +176,31 @@ class objlisting {
      $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
      return $rows;     
   }
+
+  function rptgetstandardmenuoptions ( $whichobj, $urirqst ) { 
+     $responseCode = 400;
+     $rows = array();
+     $msgArr = array(); 
+     $errorInd = 0;
+     $msgArr[] = $whichobj;
+     $itemsfound = 0;
+     require(serverkeys . "/sspdo.zck");
+
+     $RS = $conn->prepare( "SELECT menuvalue, if(ifnull( longvalue,'')='',dspvalue,longvalue) as longvalue  FROM four.sys_master_menus where menu = :menuobj and dspind = 1 order by dspOrder" );
+     $RS->execute(array(':menuobj' => $whichobj )); 
+
+     if ( $RS->rowCount() < 1 ) { 
+     } else { 
+       $itemsfound = $RS->rowCount(); 
+       $dta = $RS->fetchAll(PDO::FETCH_ASSOC);
+     }
+
+     $responseCode = 200;
+     $msg = $msgArr;
+     $rows['statusCode'] = $responseCode; 
+     $rows['data'] = array('MESSAGE' => $msg, 'ITEMSFOUND' => $itemsfound, 'DATA' => $dta);
+     return $rows;
+  } 
 
   function rptgetfieldlist ( $whichobj, $urirqst ) { 
      $responseCode = 400;
@@ -217,7 +241,7 @@ class objlisting {
      $itemsfound = 0;
      require(serverkeys . "/sspdo.zck");
      //$msgArr[] = $whichobj; 
-     $cqRS = $conn->prepare("SELECT srdc.containerid, srdc.containername FROM four.sys_rpt_schema_to_container srsc left join four.sys_rpt_datacontainers srdc on srsc.containerid = srdc.containerid where srsc.dspind = 1 and srdc.dspind = 1 and schemaid = :schemaid order by dsporder");
+     $cqRS = $conn->prepare("SELECT srdc.containerid, srdc.containername, srdc.containerdesc FROM four.sys_rpt_schema_to_container srsc left join four.sys_rpt_datacontainers srdc on srsc.containerid = srdc.containerid where srsc.dspind = 1 and srdc.dspind = 1 and schemaid = :schemaid order by dsporder");
      $cqRS->execute(array(':schemaid' => (int)$whichobj ));
 
      if ( $cqRS->rowCount() > 0 ) {
@@ -228,7 +252,6 @@ class objlisting {
        $objRS->execute(array(':schema' => (int)$whichobj ));
        $sch = $objRS->fetch(PDO::FETCH_ASSOC);
        $msgArr[] = $sch['dataschemaname'];
-
 
        $responseCode = 200;
      }
@@ -855,7 +878,7 @@ class objlisting {
        //TODO: MAKE CHECKS OF DATA TYPE OF REQUEST
        //TODO: MAKE SURE USER HAS RIGHT TO SEE INSTITUTION
 
-       $orSQL = "SELECT ifnull(pxicode,'ERROR') as pxicode, ifnull(targetind,'') as targetind, if(ifnull(infcind,1)=0,1, ifnull(infcind,1))  as informedconsentindicator , if(linkeddonor = 1 or delinkeddonor = 1,'X','-') as linkage, ucase(ifnull(pxiini,'NO INITIALS')) as pxiinitials, ifnull(lastfourmrn,'0000') as lastfourmrn, ifnull(pxiage,'') as pxiage, ucase(ifnull(pxirace,'')) as pxirace, ucase(ifnull(pxisex,'')) as pxisex, trim(concat(ifnull(pxiage,'-'), '/', ucase(substr(ifnull(pxirace,'-'),1,4)), '/', ucase(ifnull(pxisex,'-')))) as ars, ifnull(starttime,'') starttime, ifnull(room,'') room, ucase(ifnull(surgeons,'')) surgeon, trim(ifnull(proctext,'')) as proceduretext, ifnull(studysubjectnbr,'') studysubjectnbr, ifnull(studyprotocolnbr,'') studyprotocolnbr, ifnull(chemotherapyind,'') as cx, ifnull(radiationind, '') as rx, ifnull(upennsogi,'') as sogi  FROM four.tmp_ORListing ors where date_format(listdate,'%Y%m%d') = :ordate and location = :orinstitution order by pxiini";
+       $orSQL = "SELECT ifnull(pxicode,'ERROR') as pxicode, ifnull(targetind,'') as targetind, if(ifnull(infcind,1)=0,1, ifnull(infcind,1))  as informedconsentindicator , if(linkeddonor = 1 or delinkeddonor = 1,'X','-') as linkage, ucase(ifnull(pxiini,'NO INITIALS')) as pxiinitials, ifnull(lastfourmrn,'0000') as lastfourmrn, ifnull(pxiage,'') as pxiage, ucase(ifnull(pxirace,'')) as pxirace, ifnull(pxiEthn,'') as donorethn, ucase(ifnull(pxisex,'')) as pxisex, trim(concat(ifnull(pxiage,'-'), '/', ucase(substr(ifnull(pxirace,'-'),1,4)), '/', ucase(ifnull(pxisex,'-')))) as ars, ifnull(starttime,'') starttime, ifnull(room,'') room, ucase(ifnull(surgeons,'')) surgeon, trim(ifnull(proctext,'')) as proceduretext, ifnull(studysubjectnbr,'') studysubjectnbr, ifnull(studyprotocolnbr,'') studyprotocolnbr, ifnull(chemotherapyind,'') as cx, ifnull(radiationind, '') as rx, ifnull(upennsogi,'') as sogi  FROM four.tmp_ORListing ors where date_format(listdate,'%Y%m%d') = :ordate and location = :orinstitution order by pxiini";
        $orR = $conn->prepare($orSQL);
        $orR->execute(array(':ordate' => $orrqst[4], ':orinstitution' => $orrqst[3])); 
        $itemsfound = $orR->rowCount();    
@@ -1880,6 +1903,10 @@ class globalMenus {
 
     function ageuoms() {
       return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'AGEUOM' and mnu.dspInd = 1 order by mnu.dsporder";
+    }
+
+    function pxiethno() { 
+      return "SELECT ifnull(mnu.dspvalue,'') as codevalue, ifnull(mnu.dspvalue,'') as menuvalue, ifnull(mnu.useasdefault,0) as useasdefault, ucase(ifnull(mnu.menuvalue,'')) as lookupvalue FROM four.sys_master_menus mnu where mnu.menu = 'DNRETHN' and mnu.dspInd = 1 order by mnu.dsporder";
     }
 
     function pxirace() {
